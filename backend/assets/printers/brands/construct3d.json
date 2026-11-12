@@ -1,0 +1,513 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "construct3d",
+  "name": "CONSTRUCT3D"
+ },
+ "printers": [
+  {
+   "id": "construct3d-construct1",
+   "brand": "construct3d",
+   "model": "Construct 1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 260,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Construct-1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Construct 1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Construct 1 0.4 nozzle",
+         "defaultProcess": "0.22mm Quality @Construct 1",
+         "processes": [
+          {
+           "name": "0.14mm Quality @Construct 1",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.22mm Standard @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.25mm Industrial @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.30mm Draft @Construct 1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @C1",
+           "PLA": "Generic PLA @C1"
+          },
+          "products": {
+           "generic high flow petg": "Generic High Flow PETG @C1",
+           "generic petg": "Generic PETG @C1",
+           "generic pla": "Generic PLA @C1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Construct 1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Construct 1 0.4 nozzle",
+         "defaultProcess": "0.22mm Quality @Construct 1",
+         "processes": [
+          {
+           "name": "0.14mm Quality @Construct 1",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.22mm Standard @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.25mm Industrial @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.30mm Draft @Construct 1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Construct 1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Construct 1 0.4 nozzle",
+         "defaultProcess": "0.22mm Quality @Construct 1",
+         "processes": [
+          {
+           "name": "0.14mm Quality @Construct 1",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.22mm Standard @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.25mm Industrial @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.30mm Draft @Construct 1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Construct 1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Construct 1 0.4 nozzle",
+         "defaultProcess": "0.22mm Quality @Construct 1",
+         "processes": [
+          {
+           "name": "0.14mm Quality @Construct 1",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.22mm Standard @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.25mm Industrial @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.30mm Draft @Construct 1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Construct 1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Construct 1 0.4 nozzle",
+         "defaultProcess": "0.22mm Quality @Construct 1",
+         "processes": [
+          {
+           "name": "0.14mm Quality @Construct 1",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.22mm Standard @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.25mm Industrial @Construct 1",
+           "layerHeight": 0.22
+          },
+          {
+           "name": "0.30mm Draft @Construct 1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "construct3d-construct1xl",
+   "brand": "construct3d",
+   "model": "Construct 1 XL",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 325,
+    "y": 370,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Construct-1-XL"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Construct 1 XL",
+      "presets": {
+       "0.6": [
+        {
+         "name": "Construct 1 XL 0.6 nozzle",
+         "defaultProcess": "0.20mm Quality @Construct 1 XL",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Construct 1 XL",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Industrial @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Draft @Construct 1 XL",
+           "layerHeight": 0.38
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @C1",
+           "PLA": "Generic PLA @C1"
+          },
+          "products": {
+           "generic high flow petg": "Generic High Flow PETG @C1",
+           "generic petg": "Generic PETG @C1",
+           "generic pla": "Generic PLA @C1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Construct 1 XL",
+      "presets": {
+       "0.6": [
+        {
+         "name": "Construct 1 XL 0.6 nozzle",
+         "defaultProcess": "0.20mm Quality @Construct 1 XL",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Construct 1 XL",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Industrial @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Draft @Construct 1 XL",
+           "layerHeight": 0.38
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Construct 1 XL",
+      "presets": {
+       "0.6": [
+        {
+         "name": "Construct 1 XL 0.6 nozzle",
+         "defaultProcess": "0.20mm Quality @Construct 1 XL",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Construct 1 XL",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Industrial @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Draft @Construct 1 XL",
+           "layerHeight": 0.38
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Construct 1 XL",
+      "presets": {
+       "0.6": [
+        {
+         "name": "Construct 1 XL 0.6 nozzle",
+         "defaultProcess": "0.20mm Quality @Construct 1 XL",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Construct 1 XL",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Industrial @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Draft @Construct 1 XL",
+           "layerHeight": 0.38
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Construct 1 XL",
+      "presets": {
+       "0.6": [
+        {
+         "name": "Construct 1 XL 0.6 nozzle",
+         "defaultProcess": "0.20mm Quality @Construct 1 XL",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Construct 1 XL",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Industrial @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Construct 1 XL",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Draft @Construct 1 XL",
+           "layerHeight": 0.38
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -25,7 +25,8 @@ import {
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
-import { deleteNormalized3mf } from "./normalized3mfCache";
+import { deleteAdapted3mfs } from "./adapted3mfCache";
+import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
 import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
@@ -150,6 +151,7 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   if (mime.toLowerCase().startsWith("image/") && IMAGE_EXTS.has(ext)) {
     await saveThumbFromFile(plateId, effectivePath);
   } else if (ext === ".3mf") {
+    await storePlateFormat(plateId, filename, effectivePath);
     await ensurePlateThumbnail(plateId, effectivePath);
     // "on-demand" builds the preview on first view, "disabled" never. Not awaited: it can be slow.
     if ((await getPreviewMode()) === "automatic") void generateModelPreviewGlb(plateId, effectivePath);
@@ -450,7 +452,7 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {
-  await deleteNormalized3mf(plate.id);
+  await deleteAdapted3mfs(plate.id);
   const abs = path.join(STORAGE, plate.storagePath);
   try {
     await fs.rm(abs, { force: true });

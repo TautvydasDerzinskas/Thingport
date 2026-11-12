@@ -1,0 +1,184 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "emotiontech",
+  "name": "eMotionTech"
+ },
+ "printers": [
+  {
+   "id": "emotiontech-dual600",
+   "brand": "emotiontech",
+   "model": "DUAL600",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 420,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 495,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 415,
+    "bed": 140
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "strateo3d"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "strateo3d",
+      "nozzles": [
+       "High temp 0.4",
+       "Standard 0.4",
+       "Standard 0.6",
+       "Standard 0.8",
+       "Standard 1.0 Experimental",
+       "Standard 1.2 Experimental"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "emotiontech-i3metalmotion",
+   "brand": "emotiontech",
+   "model": "I3 Metal Motion",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "I3MetalMotion"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "I3MetalMotion",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "emotiontech-idex420",
+   "brand": "emotiontech",
+   "model": "IDEX420",
+   "aliases": [
+    "idex420duplicate",
+    "idex420mirror"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 420,
+    "y": 320,
+    "origin": [
+     -210,
+     -160
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "strateo3d_IDEX420"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "strateo3d_IDEX420",
+      "nozzles": [
+       "IDEX420 Acier Durci 0.4",
+       "IDEX420 Laiton 0.4",
+       "IDEX420 Laiton 0.6",
+       "IDEX420 Laiton 0.8"
+      ]
+     },
+     {
+      "config": "Duplicate",
+      "definition": "strateo3d_IDEX420_duplicate",
+      "nozzles": [
+       "IDEX420 Acier Durci 0.4",
+       "IDEX420 Laiton 0.4",
+       "IDEX420 Laiton 0.6",
+       "IDEX420 Laiton 0.8"
+      ]
+     },
+     {
+      "config": "Mirror",
+      "definition": "strateo3d_IDEX420_mirror",
+      "nozzles": [
+       "IDEX420 Acier Durci 0.4",
+       "IDEX420 Laiton 0.4",
+       "IDEX420 Laiton 0.6",
+       "IDEX420 Laiton 0.8"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

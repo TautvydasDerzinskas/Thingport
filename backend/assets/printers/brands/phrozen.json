@@ -1,0 +1,135 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "phrozen",
+  "name": "Phrozen"
+ },
+ "printers": [
+  {
+   "id": "phrozen-arco",
+   "brand": "phrozen",
+   "model": "Arco",
+   "aliases": [
+    "phrozenarco"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Phrozen Arco"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Phrozen Arco",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Phrozen Arco 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Phrozen Arco",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Phrozen Arco 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Phrozen PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "phrozen pla": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Phrozen Arco",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Phrozen Arco 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Phrozen Arco 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Phrozen PLA @Phrozen Arco 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PLA": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          },
+          "products": {
+           "phrozen pla": "Phrozen PLA @Phrozen Arco 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

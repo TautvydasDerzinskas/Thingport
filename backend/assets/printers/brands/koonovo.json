@@ -1,0 +1,189 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "koonovo",
+  "name": "Koonovo"
+ },
+ "printers": [
+  {
+   "id": "koonovo-elf",
+   "brand": "koonovo",
+   "model": "Elf",
+   "aliases": [
+    "koonovoelf"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 345,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "koonovo_elf"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "koonovo_elf",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "koonovo-kn3idex",
+   "brand": "koonovo",
+   "model": "KN3 Idex",
+   "aliases": [
+    "koonovokn3idex"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "koonovo_kn3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "koonovo_kn3",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "koonovo-kn5idex",
+   "brand": "koonovo",
+   "model": "KN5 Idex",
+   "aliases": [
+    "koonovokn5idex"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 420,
+    "y": 420,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "koonovo_kn5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "koonovo_kn5",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "koonovo-pyramid",
+   "brand": "koonovo",
+   "model": "Pyramid",
+   "aliases": [
+    "koonovopyramid"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "koonovo_pyramid"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "koonovo_pyramid",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

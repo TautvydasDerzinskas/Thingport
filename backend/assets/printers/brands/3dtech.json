@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "3dtech",
+  "name": "3DTech"
+ },
+ "printers": [
+  {
+   "id": "3dtech-semiprofessional",
+   "brand": "3dtech",
+   "model": "Semi-Professional",
+   "aliases": [
+    "3dtechsemiprofessional"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "3dtech_semi_professional"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "3dtech_semi_professional",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

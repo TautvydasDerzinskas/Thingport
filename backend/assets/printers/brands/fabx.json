@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fabx",
+  "name": "FabX"
+ },
+ "printers": [
+  {
+   "id": "fabx-pro",
+   "brand": "fabx",
+   "model": "Pro",
+   "aliases": [
+    "fabxpro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 170,
+    "y": 170,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 170,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fabxpro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fabxpro",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

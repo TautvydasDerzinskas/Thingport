@@ -69,7 +69,7 @@ const cards: Card[] = [
     line: `${capital(list(synced, "and"))} kept up to date`,
   },
   facts.slicers.length > 0 && { icon: "printer", link: "features/slicers", line: list(facts.slicers, "or") },
-  facts.bambuProjects && { icon: "cube", link: "features/normalized-3mf", line: "Its 3MFs in other slicers" },
+  facts.bambuProjects && { icon: "cube", link: "features/adapted-3mf", line: "Its 3MFs in other slicers" },
   facts.trending && { icon: "activity", link: "features/dashboard", line: `Explore its ${facts.trending} models` },
   facts.categories
     ? {

@@ -1,0 +1,2920 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "seemecnc",
+  "name": "SeeMeCNC"
+ },
+ "printers": [
+  {
+   "id": "seemecnc-artemis",
+   "brand": "seemecnc",
+   "model": "Artemis",
+   "aliases": [
+    "seemecncartemis"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 290,
+    "y": 290,
+    "origin": [
+     -145,
+     -145
+    ],
+    "diameter": 290
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 530,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "seemecnc_artemis"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "seemecnc_artemis",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "seemecnc-artemis300",
+   "brand": "seemecnc",
+   "model": "Artemis 300",
+   "aliases": [
+    "seemecncartemis300"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 290,
+    "y": 290,
+    "origin": [
+     -145,
+     -145
+    ],
+    "diameter": 290
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_ARTEMIS_300"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC Artemis 300",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC Artemis 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC Artemis 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC Artemis 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC Artemis 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC Artemis 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC Artemis 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC Artemis 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC Artemis 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC Artemis 300",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC Artemis 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC Artemis 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC Artemis 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC Artemis 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC Artemis 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC Artemis 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC Artemis 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC Artemis 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC Artemis 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC Artemis 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC Artemis 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC Artemis 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-bossdelta300",
+   "brand": "seemecnc",
+   "model": "BOSSdelta 300",
+   "aliases": [
+    "seemecncbossdelta300"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     -150,
+     -150
+    ],
+    "diameter": 300
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 495,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_BOSSDELTA_300"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 300",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 300 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 300 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 300 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 300 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 300",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 300 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 300 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 300 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 300 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 300 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 300 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 300 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 300 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 300 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-bossdelta5000505",
+   "brand": "seemecnc",
+   "model": "BOSSdelta 500 0505",
+   "aliases": [
+    "seemecncbossdelta5000505"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     -250,
+     -250
+    ],
+    "diameter": 500
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_BOSSDELTA_500_0505"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0505",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0505 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0505 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0505 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0505 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0505",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0505 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0505 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0505 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0505 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0505 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0505 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-bossdelta5000510",
+   "brand": "seemecnc",
+   "model": "BOSSdelta 500 0510",
+   "aliases": [
+    "seemecncbossdelta5000510"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     -250,
+     -250
+    ],
+    "diameter": 500
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_BOSSDELTA_500_0510"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0510",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0510 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0510 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0510 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0510 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0510",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0510 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0510 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0510 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0510 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0510 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0510 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-bossdelta5000521",
+   "brand": "seemecnc",
+   "model": "BOSSdelta 500 0521",
+   "aliases": [
+    "seemecncbossdelta5000521"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     -250,
+     -250
+    ],
+    "diameter": 500
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 2100,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_BOSSDELTA_500_0521"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0521",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0521 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0521 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0521 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0521 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC BOSSdelta 500 0521",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0521 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0521 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0521 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC BOSSdelta 500 0521 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0521 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC BOSSdelta 500 0521 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-rostockmaxv32",
+   "brand": "seemecnc",
+   "model": "RostockMAX v3.2",
+   "aliases": [
+    "seemecncrostockmaxv32"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 270,
+    "y": 270,
+    "origin": [
+     -135,
+     -135
+    ],
+    "diameter": 270
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 385,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_ROSTOCKMAX_V32",
+    "cura": "seemecnc_v32"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC RostockMAX v3.2",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC RostockMAX v3.2 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC RostockMAX v3.2 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC RostockMAX v3.2 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC RostockMAX v3.2 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC RostockMAX v3.2",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC RostockMAX v3.2 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC RostockMAX v3.2 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC RostockMAX v3.2 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC RostockMAX v3.2 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC RostockMAX v3.2 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC RostockMAX v3.2 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC RostockMAX v3.2 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "seemecnc_v32",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seemecnc-rostockmaxv4",
+   "brand": "seemecnc",
+   "model": "RostockMAX v4",
+   "aliases": [
+    "seemecncrostockmaxv4"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     -140,
+     -140
+    ],
+    "diameter": 280
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 385,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.7",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "SEEMECNC_ROSTOCKMAX_V4"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SeeMeCNC RostockMAX v4",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC RostockMAX v4 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC RostockMAX v4 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC RostockMAX v4 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC RostockMAX v4 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SeeMeCNC RostockMAX v4",
+      "presets": {
+       "1": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @SeeMeCNC RostockMAX v4 1.0",
+         "processes": [
+          {
+           "name": "0.40mm Fine @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Standard @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft @SeeMeCNC RostockMAX v4 1.0",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SeeMeCNC RostockMAX v4 0.4",
+         "processes": [
+          {
+           "name": "0.16mm Fine @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SeeMeCNC RostockMAX v4 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @SeeMeCNC RostockMAX v4 0.5",
+         "processes": [
+          {
+           "name": "0.20mm Fine @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Standard @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Draft @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Extra Draft @SeeMeCNC RostockMAX v4 0.5",
+           "layerHeight": 0.35
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "SeeMeCNC RostockMAX v4 0.7 nozzle",
+         "defaultProcess": "0.35mm Standard @SeeMeCNC RostockMAX v4 0.7",
+         "processes": [
+          {
+           "name": "0.28mm Fine @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm TPU Solid @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Standard @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.35mm TPU Vase @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.42mm Draft @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.49mm Extra Draft @SeeMeCNC RostockMAX v4 0.7",
+           "layerHeight": 0.49
+          }
+         ],
+         "defaultFilament": "SeeMeCNC PLA",
+         "filaments": {
+          "types": {
+           "ABS": "SeeMeCNC ABS",
+           "PA-CF": "SeeMeCNC PA-CF",
+           "PETG": "SeeMeCNC PETG",
+           "PETG-CF": "SeeMeCNC PETG-CF",
+           "PLA": "SeeMeCNC PLA",
+           "TPU": "SeeMeCNC TPU"
+          },
+          "products": {
+           "seemecnc abs": "SeeMeCNC ABS",
+           "seemecnc pa-cf": "SeeMeCNC PA-CF",
+           "seemecnc petg": "SeeMeCNC PETG",
+           "seemecnc petg-cf": "SeeMeCNC PETG-CF",
+           "seemecnc pla": "SeeMeCNC PLA",
+           "seemecnc tpu": "SeeMeCNC TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

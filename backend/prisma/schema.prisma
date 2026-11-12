@@ -74,6 +74,13 @@ model User {
   // The slicers with a link handler of their own that open through Thingport Bridge instead, for when one can't
   // download from this instance. Kept while a slicer is switched off.
   bridgedSlicers           String[]                 @default([])
+  // The printer each slicer's adapted copies are made for (src/adapter/printer.ts), as { [slicer id]: catalogue id }
+  // of one of `printers`. A slicer not listed asks which when a model is opened adapted in it.
+  slicerPrinters           Json?
+  // The slicers that open a model's file as it is, with "Open adapted" switched off for them.
+  unadaptedSlicers         String[]                 @default([])
+  // Printers suggested to them that they turned down, by catalogue id: still shown, as declined.
+  declinedPrinters         String[]                 @default([])
   // "light" | "dark" | "system"; null means never set.
   themePreference          String?
   // One of ACCENT_COLORS; null means Thingport green.
@@ -138,6 +145,7 @@ model User {
   tools                    Tool[]
   toolData                 ToolData[]
   icons                    UserIcon[]
+  printers                 UserPrinter[]
   studioDesigns            StudioDesign[]
   collectionSyncs          CollectionSync[]
   providerListings         ProviderListing[]
@@ -664,6 +672,9 @@ model Plate {
   // The printability check's result (services/meshQuality.ts QualityReport), or { version, status: "skipped" }
   // for a file it couldn't check. Null until the model is first opened with checks on.
   qualityCheck     Json?
+  // What kind of 3MF it is (src/adapter/format.ts ThreeMfFormat): which slicer wrote it, its designer's printer, its
+  // plates. Read when it's stored; null for other files and until an older 3MF's model is opened.
+  format           Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -902,6 +913,20 @@ model UserIcon {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// A printer someone prints on, from the printer catalogue (assets/printers): adapted copies can be made for it.
+model UserPrinter {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// The catalogue's id, "<brand>-<model>" ("bambulab-p1s").
+  printerId String
+  /// The nozzle fitted, in mm as slicers name it ("0.4").
+  nozzle    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, printerId])
 }
 
 model Setting {

@@ -18,7 +18,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Profile and activity](features/profile-and-activity.md)**
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
-- **[Normalized MakerWorld 3MFs](features/normalized-3mf.md)**
+- **[Adapted 3MFs: a model opens in your slicer as if it had been made there, for your printer](features/adapted-3mf.md)**
 - **[Print profiles on the model page, with their print time, filament and plates](features/importing.md#what-comes-with-a-model)**
 - **[Everything to print it](features/supporting-files.md)**
 - **[Licences: what each model lets you do, filters by it, and LICENSE.txt beside the files](features/licenses.md)**

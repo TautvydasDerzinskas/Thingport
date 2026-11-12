@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "hardprint",
+  "name": "HardPrint"
+ },
+ "printers": [
+  {
+   "id": "hardprint-hozoix",
+   "brand": "hardprint",
+   "model": "Hozo iX",
+   "aliases": [
+    "hardprinthozoix"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hardprint_hozo_ix"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hardprint_hozo_ix",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hardprint-hozohozo",
+   "brand": "hardprint",
+   "model": "Hozo, Hozo",
+   "aliases": [
+    "hardprinthozohozo"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hardprint_hozo"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hardprint_hozo",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

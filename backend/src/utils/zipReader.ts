@@ -85,6 +85,51 @@ export async function readZipEntry(filePath: string, entryName: string, maxBytes
   });
 }
 
+/**
+ * At most the first `bytes` of an entry, however big it is: what the start of a large model file says, without
+ * inflating its meshes. Null if the entry is missing or a directory.
+ */
+export async function readZipEntryHead(filePath: string, entryName: string, bytes: number): Promise<Buffer | null> {
+  const zipfile = await openZip(filePath);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (value: Buffer | null, err?: Error) => {
+      if (settled) return;
+      settled = true;
+      zipfile.close();
+      if (err) reject(err);
+      else resolve(value);
+    };
+    zipfile.on("entry", (entry) => {
+      if (entry.fileName !== entryName || entry.fileName.endsWith("/")) {
+        zipfile.readEntry();
+        return;
+      }
+      zipfile.openReadStream(entry, (err, stream) => {
+        if (err || !stream) {
+          finish(null, err ?? undefined);
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let total = 0;
+        stream.on("data", (chunk: Buffer) => {
+          chunks.push(chunk);
+          total += chunk.length;
+          if (total >= bytes) {
+            stream.destroy();
+            finish(Buffer.concat(chunks).subarray(0, bytes));
+          }
+        });
+        stream.on("end", () => finish(Buffer.concat(chunks)));
+        stream.on("error", (streamErr) => finish(null, streamErr));
+      });
+    });
+    zipfile.on("end", () => finish(null));
+    zipfile.on("error", (err) => finish(null, err));
+    zipfile.readEntry();
+  });
+}
+
 /** An entry whose bytes run past the cap -- including one whose own directory entry understated its size. */
 class EntryOverCapError extends Error {}
 

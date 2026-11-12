@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ateamventures",
+  "name": "Ateam Ventures"
+ },
+ "printers": [
+  {
+   "id": "ateamventures-creatabled3",
+   "brand": "ateamventures",
+   "model": "Creatable D3",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     -125,
+     -125
+    ],
+    "diameter": 250
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "creatable_d3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "creatable_d3",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

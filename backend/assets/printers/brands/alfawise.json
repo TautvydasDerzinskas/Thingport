@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "alfawise",
+  "name": "Alfawise"
+ },
+ "printers": [
+  {
+   "id": "alfawise-u20",
+   "brand": "alfawise",
+   "model": "U20",
+   "aliases": [
+    "alfawiseu20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "alfawise_u20"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "alfawise_u20",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "alfawise-u30",
+   "brand": "alfawise",
+   "model": "U30",
+   "aliases": [
+    "alfawiseu30"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "alfawise_u30"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "alfawise_u30",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

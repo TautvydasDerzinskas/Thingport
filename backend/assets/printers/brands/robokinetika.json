@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "robokinetika",
+  "name": "Robokinetika"
+ },
+ "printers": [
+  {
+   "id": "robokinetika-erzay3d",
+   "brand": "robokinetika",
+   "model": "Erzay3D",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 210,
+    "y": 210,
+    "origin": [
+     -105,
+     -105
+    ],
+    "diameter": 210
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "erzay3d"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "erzay3d",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,3 +1,4 @@
+import { storedFormat, type ThreeMfFormat } from "./adapter";
 import fs from "node:fs";
 import { readNotificationMessage, type NotificationMessage } from "./services/notificationMessage";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
@@ -133,6 +134,9 @@ export type PlateOut = {
   profile_id: string | null;
   /** That profile as the model page shows it, on the detail fetch only (services/printProfileService.ts). */
   profile?: PrintProfileOut | null;
+  /** What kind of 3MF it is (src/adapter/format.ts), from which the page tells which slicers get an adapted copy;
+   *  null for other files, and for an older 3MF until its model is opened. */
+  format: ThreeMfFormat | null;
 };
 
 export type PrintFileOut = {
@@ -323,6 +327,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile_id: plate.sourceInstanceId ?? null,
+    format: storedFormat(plate.format),
   };
 }
 

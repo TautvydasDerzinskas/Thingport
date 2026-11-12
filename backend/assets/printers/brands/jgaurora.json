@@ -1,0 +1,281 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "jgaurora",
+  "name": "JGAurora"
+ },
+ "printers": [
+  {
+   "id": "jgaurora-a1",
+   "brand": "jgaurora",
+   "model": "A1",
+   "aliases": [
+    "jgauroraa1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_a1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_a1",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "jgaurora-a3s",
+   "brand": "jgaurora",
+   "model": "A3S",
+   "aliases": [
+    "jgauroraa3s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_a3s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_a3s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "jgaurora-a5",
+   "brand": "jgaurora",
+   "model": "A5",
+   "aliases": [
+    "a5a5s",
+    "a5s",
+    "jgauroraa5a5s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_a5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_a5",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "jgaurora-a6",
+   "brand": "jgaurora",
+   "model": "A6",
+   "aliases": [
+    "jgauroraa6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_a6"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_a6",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "jgaurora-jgmakermagic",
+   "brand": "jgaurora",
+   "model": "JGMaker Magic",
+   "aliases": [
+    "jgaurorajgmakermagic"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_jgmaker_magic"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_jgmaker_magic",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "jgaurora-z603s",
+   "brand": "jgaurora",
+   "model": "Z-603S",
+   "aliases": [
+    "jgauroraz603s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "jgaurora_z_603s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "jgaurora_z_603s",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

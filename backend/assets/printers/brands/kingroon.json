@@ -1,0 +1,988 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "kingroon",
+  "name": "Kingroon"
+ },
+ "printers": [
+  {
+   "id": "kingroon-klp1",
+   "brand": "kingroon",
+   "model": "KLP1",
+   "aliases": [
+    "kingroonklp1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Kingroon KLP1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Kingroon KLP1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KLP1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KLP1",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Kingroon KLP1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KLP1",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Kingroon KLP1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KLP1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KLP1",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Kingroon KLP1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KLP1",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Kingroon KLP1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KLP1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KLP1",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Kingroon KLP1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KLP1",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Kingroon KLP1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KLP1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KLP1",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Kingroon KLP1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KLP1",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "kingroon-kp3",
+   "brand": "kingroon",
+   "model": "KP3",
+   "aliases": [
+    "kingroonkp3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kingroon_kp3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kingroon_kp3",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "kingroon-kp3s",
+   "brand": "kingroon",
+   "model": "KP3S",
+   "aliases": [
+    "kingroonkp3s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kingroon_kp3s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kingroon_kp3s",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "kingroon-kp3s3",
+   "brand": "kingroon",
+   "model": "KP3S 3.0",
+   "aliases": [
+    "kingroonkp3s3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Kingroon KP3S 3.0"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Kingroon KP3S 3.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S 3.0 0.4 nozzle",
+         "defaultProcess": "0.30mm Standard @Kingroon KP3S 3.0",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Kingroon KP3S 3.0",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Kingroon KP3S 3.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S 3.0 0.4 nozzle",
+         "defaultProcess": "0.30mm Standard @Kingroon KP3S 3.0",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Kingroon KP3S 3.0",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Kingroon KP3S 3.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S 3.0 0.4 nozzle",
+         "defaultProcess": "0.30mm Standard @Kingroon KP3S 3.0",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Kingroon KP3S 3.0",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Kingroon KP3S 3.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S 3.0 0.4 nozzle",
+         "defaultProcess": "0.30mm Standard @Kingroon KP3S 3.0",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Kingroon KP3S 3.0",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Kingroon KP3S 3.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S 3.0 0.4 nozzle",
+         "defaultProcess": "0.30mm Standard @Kingroon KP3S 3.0",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Kingroon KP3S 3.0",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "kingroon-kp3spro",
+   "brand": "kingroon",
+   "model": "KP3S Pro",
+   "aliases": [
+    "kingroonkp3spro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kingroon_kp3s_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kingroon_kp3s_pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "kingroon-kp3spros1",
+   "brand": "kingroon",
+   "model": "KP3S PRO S1",
+   "aliases": [
+    "kingroonkp3spros1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Kingroon-KP3S-PRO-S1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Kingroon KP3S PRO S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO S1",
+         "processes": [
+          {
+           "name": "0.08mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Kingroon KP3S PRO S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO S1",
+         "processes": [
+          {
+           "name": "0.08mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Kingroon KP3S PRO S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO S1",
+         "processes": [
+          {
+           "name": "0.08mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Kingroon KP3S PRO S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO S1",
+         "processes": [
+          {
+           "name": "0.08mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Kingroon KP3S PRO S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO S1",
+         "processes": [
+          {
+           "name": "0.08mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO S1",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "kingroon-kp3sprov2",
+   "brand": "kingroon",
+   "model": "KP3S PRO V2",
+   "aliases": [
+    "kingroonkp3sprov2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Kingroon-KP3S-PRO-V2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Kingroon KP3S PRO V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Kingroon KP3S PRO V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Kingroon Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Kingroon Generic ABS",
+           "ASA": "Kingroon Generic ASA",
+           "PA": "Kingroon Generic PA",
+           "PA-CF": "Kingroon Generic PA-CF",
+           "PC": "Kingroon Generic PC",
+           "PETG": "Kingroon Generic PETG",
+           "PLA": "Kingroon Generic PLA",
+           "PLA-CF": "Kingroon Generic PLA-CF",
+           "PVA": "Kingroon Generic PVA",
+           "TPU": "Kingroon Generic TPU"
+          },
+          "products": {
+           "kingroon generic abs": "Kingroon Generic ABS",
+           "kingroon generic asa": "Kingroon Generic ASA",
+           "kingroon generic pa": "Kingroon Generic PA",
+           "kingroon generic pa-cf": "Kingroon Generic PA-CF",
+           "kingroon generic pc": "Kingroon Generic PC",
+           "kingroon generic petg": "Kingroon Generic PETG",
+           "kingroon generic pla": "Kingroon Generic PLA",
+           "kingroon generic pla-cf": "Kingroon Generic PLA-CF",
+           "kingroon generic pva": "Kingroon Generic PVA",
+           "kingroon generic tpu": "Kingroon Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Kingroon KP3S PRO V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Kingroon KP3S PRO V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Kingroon KP3S PRO V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S PRO V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S PRO V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S PRO V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "kingroon-kp3sv1",
+   "brand": "kingroon",
+   "model": "KP3S V1",
+   "aliases": [
+    "kingroonkp3sv1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Kingroon KP3S V1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Kingroon KP3S V1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S V1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S V1",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S V1",
+           "layerHeight": null
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Kingroon KP3S V1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S V1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S V1",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S V1",
+           "layerHeight": null
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Kingroon KP3S V1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S V1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S V1",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S V1",
+           "layerHeight": null
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Kingroon KP3S V1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Kingroon KP3S V1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Kingroon KP3S V1",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Kingroon KP3S V1",
+           "layerHeight": null
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

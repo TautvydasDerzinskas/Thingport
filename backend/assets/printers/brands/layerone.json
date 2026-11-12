@@ -1,0 +1,163 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "layerone",
+  "name": "Layer One"
+ },
+ "printers": [
+  {
+   "id": "layerone-atom2",
+   "brand": "layerone",
+   "model": "Atom 2",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 210,
+    "y": 210,
+    "origin": [
+     -105,
+     -105
+    ],
+    "diameter": 210
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atom2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atom2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "layerone-atom3",
+   "brand": "layerone",
+   "model": "Atom 3",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 270,
+    "y": 270,
+    "origin": [
+     -135,
+     -135
+    ],
+    "diameter": 270
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 340,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atom3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atom3",
+      "nozzles": [
+       "All metal hotend + 0.2mm brass nozzle",
+       "All metal hotend + 0.4mm brass nozzle",
+       "All metal hotend + 0.6mm brass nozzle",
+       "PTFE hotend + 0.2mm brass nozzle",
+       "PTFE hotend + 0.4mm brass nozzle",
+       "PTFE hotend + 0.6mm brass nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "layerone-atom3lite",
+   "brand": "layerone",
+   "model": "Atom 3 Lite",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 270,
+    "y": 270,
+    "origin": [
+     -135,
+     -135
+    ],
+    "diameter": 270
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 340,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atom3_lite"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atom3_lite",
+      "nozzles": [
+       "All metal hotend + 0.2mm brass nozzle",
+       "All metal hotend + 0.4mm brass nozzle",
+       "All metal hotend + 0.6mm brass nozzle",
+       "PTFE hotend + 0.2mm brass nozzle",
+       "PTFE hotend + 0.4mm brass nozzle",
+       "PTFE hotend + 0.6mm brass nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

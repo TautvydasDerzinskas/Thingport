@@ -25,6 +25,7 @@ reviews:
     - "!**/CHANGELOG.md"
     - "!web/.astro/**"
     - "!**/dist/**"
+    - "!backend/assets/printers/**"
     # Fixtures
     - "!regression/fixtures/**"
 

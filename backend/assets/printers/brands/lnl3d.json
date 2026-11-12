@@ -1,0 +1,2191 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "lnl3d",
+  "name": "LNL3D"
+ },
+ "printers": [
+  {
+   "id": "lnl3d-d3",
+   "brand": "lnl3d",
+   "model": "D3",
+   "aliases": [
+    "lnl3dd3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "LNL3D_D3",
+    "cura": "lnl3d_d3"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "LNL3D D3",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LNL3D D3 (0.2 mm nozzle)",
+         "defaultProcess": "\"0.12 mm DETAIL (0.2 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LNL3D D3 (0.4 mm nozzle)",
+         "defaultProcess": "\"0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LNL3D D3 (0.6 mm nozzle)",
+         "defaultProcess": "\"0.24 mm DRAFT (0.6 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LNL3D D3 (0.8 mm nozzle)",
+         "defaultProcess": "\"0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "lnl3d_d3",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lnl3d-d3v2",
+   "brand": "lnl3d",
+   "model": "D3 V2",
+   "aliases": [
+    "lnl3dd3v2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "LNL3D_D3_V2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "LNL3D D3 V2",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LNL3D D3 V2 (0.2 mm nozzle)",
+         "defaultProcess": "\"0.12 mm DETAIL (0.2 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LNL3D D3 V2 (0.4 mm nozzle)",
+         "defaultProcess": "\"0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LNL3D D3 V2 (0.6 mm nozzle)",
+         "defaultProcess": "\"0.24 mm DRAFT (0.6 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LNL3D D3 V2 (0.8 mm nozzle)",
+         "defaultProcess": "\"0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lnl3d-d3vulcan",
+   "brand": "lnl3d",
+   "model": "D3 Vulcan",
+   "aliases": [
+    "lnl3dd3vulcan"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 295,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "LNL3D_D3_VULCAN",
+    "cura": "lnl3d_d3_vulcan"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "LNL3D D3 Vulcan",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LNL3D D3 Vulcan (0.2 mm nozzle)",
+         "defaultProcess": "\"0.12 mm DETAIL (0.2 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LNL3D D3 Vulcan (0.4 mm nozzle)",
+         "defaultProcess": "\"0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LNL3D D3 Vulcan (0.6 mm nozzle)",
+         "defaultProcess": "\"0.24 mm DRAFT (0.6 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LNL3D D3 Vulcan (0.8 mm nozzle)",
+         "defaultProcess": "\"0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "lnl3d_d3_vulcan",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lnl3d-d5",
+   "brand": "lnl3d",
+   "model": "D5",
+   "aliases": [
+    "lnl3dd5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "LNL3D_D5",
+    "cura": "lnl3d_d5"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "LNL3D D5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LNL3D D5 (0.2 mm nozzle)",
+         "defaultProcess": "\"0.12 mm DETAIL (0.2 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LNL3D D5 (0.4 mm nozzle)",
+         "defaultProcess": "\"0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LNL3D D5 (0.6 mm nozzle)",
+         "defaultProcess": "\"0.24 mm DRAFT (0.6 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LNL3D D5 (0.8 mm nozzle)",
+         "defaultProcess": "\"0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "lnl3d_d5",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lnl3d-d6",
+   "brand": "lnl3d",
+   "model": "D6",
+   "aliases": [
+    "lnl3dd6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "LNL3D_D6",
+    "cura": "lnl3d_d6"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "LNL3D D6",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LNL3D D6 (0.2 mm nozzle)",
+         "defaultProcess": "\"0.12 mm DETAIL (0.2 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.2 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LNL3D D6 (0.4 mm nozzle)",
+         "defaultProcess": "\"0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.06 mm ULTRADETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08 mm SUPERDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.4 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LNL3D D6 (0.6 mm nozzle)",
+         "defaultProcess": "\"0.24 mm DRAFT (0.6 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.6 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LNL3D D6 (0.8 mm nozzle)",
+         "defaultProcess": "\"0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D\"",
+         "processes": [
+          {
+           "name": "0.08 mm SUPERDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10 mm HIGHDETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12 mm DETAIL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16 mm OPTIMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16 mm OPTIMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20 mm NORMAL (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20 mm NORMAL SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24 mm DRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24 mm DRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28 mm SUPERDRAFT SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.36 mm CHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36 mm CHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY HIGHSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.44 mm SUPERCHUNKY SUPERSPEED (0.8 mm nozzle) @LNL3D",
+           "layerHeight": 0.44
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "lnl3d_d6",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

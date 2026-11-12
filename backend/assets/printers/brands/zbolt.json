@@ -1,0 +1,5561 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "zbolt",
+  "name": "Z-Bolt"
+ },
+ "printers": [
+  {
+   "id": "zbolt-classic",
+   "brand": "zbolt",
+   "model": "Classic",
+   "aliases": [
+    "zboltclassic"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "z-bolt_classic"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "z-bolt_classic",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "zbolt-plus",
+   "brand": "zbolt",
+   "model": "Plus",
+   "aliases": [
+    "zboltplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 335,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "z-bolt_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "z-bolt_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "zbolt-s1000",
+   "brand": "zbolt",
+   "model": "S1000",
+   "aliases": [
+    "s1000dual",
+    "zbolts1000",
+    "zbolts1000dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Z-Bolt-S1000"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Z-Bolt S1000",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S1000 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Z-Bolt S1000",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S1000 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Z-Bolt S1000",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S600",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S600",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S1000 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S1000",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S600",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S600",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S1000 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S1000 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S1000 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zbolt-s300",
+   "brand": "zbolt",
+   "model": "S300",
+   "aliases": [
+    "s300dual",
+    "zbolts300",
+    "zbolts300dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Z-Bolt-S300"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Z-Bolt S300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S300 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Z-Bolt S300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S300 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Z-Bolt S300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt S300",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt S300",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S300",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S300",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S300",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S300 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S300 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S300",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt S300",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt S300",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S300",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S300",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S300",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S300",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S300 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S300 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S300 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S300 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zbolt-s400",
+   "brand": "zbolt",
+   "model": "S400",
+   "aliases": [
+    "s400dual",
+    "zbolts400",
+    "zbolts400dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 700,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Z-Bolt-S400"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Z-Bolt S400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S400 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Z-Bolt S400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S400 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Z-Bolt S400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt S400",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt S400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S400",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S400",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S400 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S400 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S400",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Z-Bolt S400",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Z-Bolt S400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S400",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S400",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S400 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S400 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S400 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S400 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zbolt-s600",
+   "brand": "zbolt",
+   "model": "S600",
+   "aliases": [
+    "s600dual",
+    "zbolts600",
+    "zbolts600dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 900,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Z-Bolt-S600"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Z-Bolt S600",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S600 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Z-Bolt S600",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S600 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Z-Bolt S600",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S600",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S600",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S600 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S600 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S600",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S600",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S600",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S600",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S600",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S600 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S600 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S600 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S600 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zbolt-s800",
+   "brand": "zbolt",
+   "model": "S800",
+   "aliases": [
+    "s800dual",
+    "zbolts800dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 802,
+    "y": 802,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 802,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S800 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S800 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S800",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S800 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S800 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S800 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S800 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S800",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.4 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.4 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.4 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.4 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.4 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S800 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm High Quality @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt 0.6 nozzle",
+           "layerHeight": 0.42
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.6 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.6 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.6 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.6 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.6 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S800 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Generic PLA @Z-Bolt 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "PA": "Generic PA @Z-Bolt 0.8 nozzle",
+           "PETG": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "PLA": "Generic PLA @Z-Bolt 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Z-Bolt 0.8 nozzle",
+           "generic abs ht": "Generic ABS HT @Z-Bolt 0.8 nozzle",
+           "generic pa": "Generic PA @Z-Bolt 0.8 nozzle",
+           "generic petg": "Generic PETG @Z-Bolt 0.8 nozzle",
+           "generic pla": "Generic PLA @Z-Bolt 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "Z-Bolt S800 Dual",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Z-Bolt S800 Dual 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Z-Bolt S800",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Z-Bolt S800",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Z-Bolt S800",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Z-Bolt S800",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Z-Bolt S800",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S800",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Z-Bolt S800",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Z-Bolt S800",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Z-Bolt S800",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Z-Bolt S800 Dual 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.16mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Z-Bolt S800 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Z-Bolt S800 Dual 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Z-Bolt S800 0.8 nozzle",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Z-Bolt Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Z-Bolt ABS",
+           "PA": "Z-Bolt PA",
+           "PETG": "Z-Bolt PETG",
+           "PLA": "Z-Bolt PLA"
+          },
+          "products": {
+           "z-bolt abs": "Z-Bolt ABS",
+           "z-bolt abs ht": "Z-Bolt ABS HT",
+           "z-bolt pa": "Z-Bolt PA",
+           "z-bolt petg": "Z-Bolt PETG",
+           "z-bolt pla": "Z-Bolt PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

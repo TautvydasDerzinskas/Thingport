@@ -76,6 +76,7 @@ import { resetHoverSlideshowEnabled } from "./hooks/useHoverSlideshowEnabled";
 import { resetCustomWidgets } from "./hooks/useCustomWidgets";
 import { resetTools } from "./hooks/useTools";
 import { resetToolsView } from "./hooks/useToolsView";
+import { resetUserPrinters } from "./hooks/useUserPrinters";
 import { DEFAULT_ACCENT, type ResolvedTheme, type ThemeSelection } from "./constants/settingsOptions";
 import { buildTheme } from "./theme";
 import ScrollReset from "./components/Layout/ScrollReset";
@@ -554,6 +555,7 @@ export default function App() {
     resetCustomWidgets();
     resetTools();
     resetToolsView();
+    resetUserPrinters();
     storeToken(tok);
     storeUser(loggedInUser);
     setToken(tok);
@@ -622,12 +624,22 @@ export default function App() {
     });
   }, [restoring, renew]);
 
-  // Another tab's sign-in, renewal or sign-out is this tab's too: they share the stored token.
+  // Another tab's sign-in, renewal or sign-out is this tab's too: they share the stored token. Another account's
+  // starts the shell again without this one's printers; a renewal of the same account changes nothing else.
+  const userId = React.useRef(user?.id ?? null);
+  React.useEffect(() => {
+    userId.current = user?.id ?? null;
+  }, [user]);
   React.useEffect(
     () =>
       onStoredSessionChange(() => {
+        const stored = readUser();
+        if ((stored?.id ?? null) !== userId.current) {
+          resetUserPrinters();
+          setSessionKey((key) => key + 1);
+        }
         setToken(readToken());
-        setUser(readUser());
+        setUser(stored);
       }),
     [],
   );
@@ -663,6 +675,7 @@ export default function App() {
     resetCustomWidgets();
     resetTools();
     resetToolsView();
+    resetUserPrinters();
     clearToken();
     clearUser();
     setToken(null);

@@ -1,0 +1,873 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "positron3d",
+  "name": "Positron 3D"
+ },
+ "printers": [
+  {
+   "id": "positron3d-thepositron",
+   "brand": "positron3d",
+   "model": "The Positron",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 165,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "thepositron_1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "The Positron",
+      "presets": {
+       "0.2": [
+        {
+         "name": "The Positron 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "The Positron 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "The Positron 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "The Positron 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @The Positron",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "The Positron",
+      "presets": {
+       "0.2": [
+        {
+         "name": "The Positron 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "The Positron 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "The Positron 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "The Positron 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @The Positron",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Positron Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Positron Generic ABS",
+           "ASA": "Positron Generic ASA",
+           "PA": "Positron Generic PA",
+           "PA-CF": "Positron Generic PA-CF",
+           "PC": "Positron Generic PC",
+           "PETG": "Positron Generic PETG",
+           "PLA": "Positron Generic PLA",
+           "PLA-CF": "Positron Generic PLA-CF",
+           "PVA": "Positron Generic PVA",
+           "TPU": "Positron Generic TPU"
+          },
+          "products": {
+           "positron generic abs": "Positron Generic ABS",
+           "positron generic asa": "Positron Generic ASA",
+           "positron generic pa": "Positron Generic PA",
+           "positron generic pa-cf": "Positron Generic PA-CF",
+           "positron generic pc": "Positron Generic PC",
+           "positron generic petg": "Positron Generic PETG",
+           "positron generic pla": "Positron Generic PLA",
+           "positron generic pla-cf": "Positron Generic PLA-CF",
+           "positron generic pva": "Positron Generic PVA",
+           "positron generic tpu": "Positron Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "The Positron",
+      "presets": {
+       "0.2": [
+        {
+         "name": "The Positron 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "The Positron 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "The Positron 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "The Positron 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @The Positron",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "The Positron",
+      "presets": {
+       "0.2": [
+        {
+         "name": "The Positron 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "The Positron 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "The Positron 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "The Positron 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @The Positron",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "The Positron",
+      "presets": {
+       "0.2": [
+        {
+         "name": "The Positron 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "The Positron 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "The Positron 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @The Positron",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @The Positron",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "The Positron 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @The Positron",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @The Positron",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @The Positron",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @The Positron",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @The Positron",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @The Positron",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @The Positron",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @The Positron",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

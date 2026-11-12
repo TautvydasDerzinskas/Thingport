@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "kemiq",
+  "name": "Kemiq"
+ },
+ "printers": [
+  {
+   "id": "kemiq-q2beta",
+   "brand": "kemiq",
+   "model": "Q2 Beta",
+   "aliases": [
+    "kemiqq2beta"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 190,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 273,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kemiq_q2_beta"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kemiq_q2_beta",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "kemiq-q2gama",
+   "brand": "kemiq",
+   "model": "Q2 Gama",
+   "aliases": [
+    "kemiqq2gama"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 190,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 273,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kemiq_q2_gama"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kemiq_q2_gama",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

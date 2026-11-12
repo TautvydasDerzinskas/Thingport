@@ -20,6 +20,13 @@ module.exports = {
     "npm run studio:sync",
     "git add --all -- backend/src/studio/*.generated.ts",
   ],
+  // The 3MF adapter, copied into the web app and Grab (scripts/sync-adapter.mjs), is committed with it: copied from
+  // the sources as they're committed (these files with the fixes above, the rest as staged), and only the copies are
+  // added.
+  "{backend/src/adapter/**,scripts/sync-adapter.mjs}": (files) => [
+    `npm run adapter:sync -- --staged ${files.map((file) => JSON.stringify(file)).join(" ")}`,
+    "git add --all -- frontend/src/adapter/*.generated.ts extension/src/adapter/*.generated.ts",
+  ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>
     "npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",

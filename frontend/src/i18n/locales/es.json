@@ -3051,7 +3051,8 @@
       "tabs": {
         "appearance": "Apariencia",
         "providers": "Proveedores",
-        "slicer": "Slicer"
+        "slicer": "Slicer",
+        "printers": "Impresoras"
       }
     },
     "providers": {
@@ -3077,7 +3078,12 @@
       "lastUsed": "Último usado",
       "deactivate": "Desactivar",
       "throughBridge": "A través de Thingport Bridge",
-      "throughBridgeHelp": "Thingport Bridge descarga el archivo y se lo pasa a {{slicer}}, para cuando {{slicer}} no puede descargarlo por sí mismo de esta instancia de Thingport."
+      "throughBridgeHelp": "Thingport Bridge descarga el archivo y se lo pasa a {{slicer}}, para cuando {{slicer}} no puede descargarlo por sí mismo de esta instancia de Thingport.",
+      "openAdapted": "Abrir adaptado",
+      "openAdaptedHelp": "{{slicer}} abre un modelo como una copia hecha para él, y para tu impresora si admite una. Desactivado, abre cada archivo tal cual.",
+      "printer": "Impresora",
+      "askPrinter": "Preguntar al abrir un modelo",
+      "addPrinters": "Añadir impresoras…"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} de {{total}} modelos",
@@ -4419,6 +4425,59 @@
       "emptyLibrary": "Tu biblioteca aún no tiene modelos.",
       "loadFailed": "No se pudieron cargar tus modelos.",
       "limit_many": "Elige hasta {{count}}"
+    },
+    "printers": {
+      "subtitle": "Haz doble clic en una impresora para añadirla o quitarla; clic derecho para su boquilla y sus slicers.",
+      "failed": "No se pudo guardar la impresora.",
+      "loadFailed": "No se pudieron cargar tus impresoras.",
+      "yours": "tuya, boquilla de {{nozzle}} mm",
+      "suggested": "Sugerida",
+      "notYours": "No es tuya",
+      "nozzleShort": "{{nozzle}} mm",
+      "suggestedSliced_one": "{{count}} de tus impresiones se laminó para ella",
+      "suggestedSliced_many": "{{count}} de tus impresiones se laminaron para ella",
+      "suggestedSliced_other": "{{count}} de tus impresiones se laminaron para ella",
+      "suggestedProjects_one": "{{count}} de tus proyectos está hecho para ella",
+      "suggestedProjects_many": "{{count}} de tus proyectos están hechos para ella",
+      "suggestedProjects_other": "{{count}} de tus proyectos están hechos para ella",
+      "empty": "Añade las impresoras en las que imprimes y los modelos se abrirán en tu slicer preparados para ellas.",
+      "bambu": {
+        "region": "Tu cuenta de Bambu Lab",
+        "question": "¿Buscar tus impresoras en tu cuenta de Bambu Lab?",
+        "find": "Buscarlas",
+        "later": "Ahora no",
+        "found_one": "Se añadió {{count}} impresora de tu cuenta de Bambu Lab.",
+        "found_many": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
+        "found_other": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
+        "none": "Tu cuenta de Bambu Lab no tiene impresoras que Thingport conozca.",
+        "expired": "Tu sesión de MakerWorld ha caducado. Vuelve a iniciarla en Proveedores.",
+        "signedOut": "Inicia sesión en MakerWorld en Proveedores primero.",
+        "failed": "Bambu Lab no listó tus impresoras. Inténtalo más tarde."
+      },
+      "menu": {
+        "nozzle": "Boquilla",
+        "usedWith": "Se usa con",
+        "slicers_one": "{{count}} slicer",
+        "slicers_many": "{{count}} slicers",
+        "slicers_other": "{{count}} slicers",
+        "unused": "Ninguno",
+        "noSlicers": "No hay ningún slicer activado que admita impresora",
+        "notIn": "No está en {{slicer}}",
+        "remove": "Quitar",
+        "add": "Añadir a mis impresoras",
+        "notMine": "No es mía",
+        "suggestAgain": "Volver a sugerirla"
+      },
+      "add": {
+        "tile": "Añadir",
+        "title": "Añadir una impresora",
+        "search": "Buscar impresoras",
+        "brands": "Marcas",
+        "failed": "No se pudieron cargar las impresoras.",
+        "none": "Ninguna impresora coincide con «{{query}}».",
+        "added": "añadida",
+        "done": "Hecho"
+      }
     }
   },
   "common": {
@@ -5205,13 +5264,22 @@
       },
       "openInSlicer": "Abrir en {{slicer}}",
       "openInStudio": "Abrir en Thingport Studio",
-      "openNormalizedInSlicer": "Abrir versión normalizada en {{slicer}}",
-      "normalizedInfo": "Los archivos de MakerWorld son proyectos de Bambu Studio, que {{slicer}} a menudo abre sin sus colores ni sus ajustes de impresión. Esta opción abre una copia convertida que conserva los colores pintados, los colores del filamento, las placas y los ajustes del diseñador (paredes, altura de capa, relleno, soportes). Atención: los objetos con varias piezas pueden fusionarse en uno, se pierden los ajustes específicos por objeto y los cambios de color por capa, y debes elegir tu propio perfil de impresora. El archivo guardado no se modifica.",
-      "normalizePreparing": "Preparando el archivo normalizado…",
-      "normalizePreparingShort": "Preparando el archivo normalizado…",
-      "normalizeReady": "Listo: haz clic para abrir en {{slicer}}",
-      "normalizeReadyShort": "Listo: haz clic para abrir",
-      "normalizeFailed": "No se pudo preparar una copia normalizada de este archivo. Usa la acción Abrir normal.",
+      "openAdaptedInSlicer": "Abrir versión adaptada en {{slicer}}",
+      "adaptedInfo": {
+        "prusa": "Una copia hecha para {{slicer}}: entra en tus propios ajustes de impresora, filamento e impresión, con la altura de capa, las paredes, el relleno y los soportes del diseñador en cada objeto, y los colores pintados en tus extrusores. El archivo guardado no cambia.",
+        "cura": "Una copia hecha para {{slicer}}, un proyecto de Cura para cualquier impresora: abierto como UCP, la altura de capa, la adherencia y el tipo de soportes del diseñador pasan a los ajustes de tu impresora, y cada objeto conserva su extrusor. Los objetos con varias piezas conservan sus piezas, y las paredes, capas superiores e inferiores, relleno y soportes del diseñador se ajustan en cada objeto. Cura no lee los colores pintados. El archivo guardado no cambia.",
+        "bambu": "Una copia que {{slicer}} abre como su propio proyecto: piezas, placas, pintura y ajustes del diseñador tal cual, sin preguntas sobre la versión del archivo ni sobre ajustes que llama de otra forma. El archivo guardado no cambia.",
+        "bambuPrinter": "Una copia que {{slicer}} abre como su propio proyecto en tu impresora: sus perfiles para esa impresora, con los cambios del diseñador encima, y las placas movidas a su cama. Las piezas y la pintura quedan como están. El archivo guardado no cambia.",
+        "fromPrusa": "Una copia que {{slicer}} abre como su propio proyecto, hecha a partir de este proyecto de PrusaSlicer: piezas y pintura intactas, cada cama como una placa, la altura de capa, las paredes, el relleno y los soportes del diseñador en cada objeto, y tus propios ajustes de impresora, filamento e impresión. El archivo guardado no cambia.",
+        "fromPrusaPrinter": "Una copia que {{slicer}} abre como su propio proyecto en tu impresora, hecha a partir de este proyecto de PrusaSlicer: sus perfiles para esa impresora con la altura de capa, las paredes, el relleno y los soportes del diseñador encima, los colores de los filamentos, y cada cama del diseñador como una placa en la cama de la impresora. Las piezas y la pintura quedan como están. El archivo guardado no cambia.",
+        "prusaPlain": "Una copia hecha para {{slicer}}: un extrusor para cada color del archivo, cada objeto y pieza en el de su color y los triángulos de otro color pintados, en tus propios ajustes de impresora, filamento e impresión. El archivo guardado no cambia.",
+        "curaPlain": "Una copia hecha para {{slicer}}, un proyecto de Cura para cualquier impresora: abierto como UCP, cada objeto y pieza va en el extrusor de su color; importado como modelos, solo las piezas de los objetos con varias piezas. El archivo guardado no cambia."
+      },
+      "adaptPreparing": "Preparando el archivo adaptado…",
+      "adaptPreparingShort": "Preparando el archivo adaptado…",
+      "adaptReady": "Listo: haz clic para abrir en {{slicer}}",
+      "adaptReadyShort": "Listo: haz clic para abrir",
+      "adaptFailed": "No se pudo preparar una copia adaptada de este archivo. Usa la acción Abrir normal.",
       "openInSlicerGeneric": "Abrir en slicer",
       "preparedPrintFile": "Impresión preparada",
       "downloadPickerTitle": "Descargar",
@@ -5325,7 +5393,17 @@
       "customize": "Personalizar…",
       "scriptWithheld": "Script no compartido",
       "scriptWithheldHint": "Este modelo se creó a partir de un script, pero su autor decidió no compartirlo, así que aquí no hay nada que personalizar. Solo él puede cambiarlo.",
-      "internalPlateObjectCount_many": "{{count}} objetos"
+      "internalPlateObjectCount_many": "{{count}} objetos",
+      "askPrinter": {
+        "title": "¿Para qué impresora es?",
+        "subtitle": "{{slicer}} recibe una copia hecha para ella, con los ajustes del diseñador.",
+        "notIn": "No está en {{slicer}}",
+        "detail": "{{nozzle}} mm · {{x}} × {{y}}",
+        "nozzle": "{{nozzle}} mm",
+        "remember": "Recordar para {{slicer}}",
+        "changeLater": "se cambia en Configuración",
+        "open": "Abrir"
+      }
     },
     "customizer": {
       "title": "Personalizando {{model}}",

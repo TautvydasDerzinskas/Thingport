@@ -1,0 +1,200 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "draftshiftdesign",
+  "name": "DraftShift Design"
+ },
+ "printers": [
+  {
+   "id": "draftshiftdesign-voron2stealthchanger250",
+   "brand": "draftshiftdesign",
+   "model": "Voron2 StealthChanger 250",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.35",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "voron2_stealthchanger_250"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "voron2_stealthchanger_250",
+      "nozzles": [
+       "V6 0.25mm",
+       "V6 0.30mm",
+       "V6 0.35mm",
+       "V6 0.40mm",
+       "V6 0.50mm",
+       "V6 0.60mm",
+       "V6 0.80mm",
+       "Volcano 0.40mm",
+       "Volcano 0.60mm",
+       "Volcano 0.80mm",
+       "Volcano 1.20mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "draftshiftdesign-voron2stealthchanger300",
+   "brand": "draftshiftdesign",
+   "model": "Voron2 StealthChanger 300",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.35",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "voron2_stealthchanger_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "voron2_stealthchanger_300",
+      "nozzles": [
+       "V6 0.25mm",
+       "V6 0.30mm",
+       "V6 0.35mm",
+       "V6 0.40mm",
+       "V6 0.50mm",
+       "V6 0.60mm",
+       "V6 0.80mm",
+       "Volcano 0.40mm",
+       "Volcano 0.60mm",
+       "Volcano 0.80mm",
+       "Volcano 1.00mm",
+       "Volcano 1.20mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "draftshiftdesign-voron2stealthchanger350",
+   "brand": "draftshiftdesign",
+   "model": "Voron2 StealthChanger 350",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.35",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "voron2_stealthchanger_350"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "voron2_stealthchanger_350",
+      "nozzles": [
+       "V6 0.25mm",
+       "V6 0.30mm",
+       "V6 0.35mm",
+       "V6 0.40mm",
+       "V6 0.50mm",
+       "V6 0.60mm",
+       "V6 0.80mm",
+       "Volcano 0.40mm",
+       "Volcano 0.60mm",
+       "Volcano 0.80mm",
+       "Volcano 1.00mm",
+       "Volcano 1.00mm",
+       "Volcano 1.20mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,1159 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "eryone",
+  "name": "Eryone"
+ },
+ "printers": [
+  {
+   "id": "eryone-er20",
+   "brand": "eryone",
+   "model": "ER20",
+   "aliases": [
+    "eryoneer20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 243,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "orca": "Eryone ER20",
+    "cura": "eryone_er20"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Eryone ER20",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Eryone ER20 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Eryone ER20 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Optimal @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Draft @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Extra Draft @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Eryone ER20 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Eryone ER20",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Eryone ER20",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Eryone ER20",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Eryone ER20",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Eryone ER20",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Eryone ER20",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Eryone ER20",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Eryone ER20 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Eryone ER20 0.5 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Eryone ER20 0.5 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Standard @Eryone ER20 0.5 nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Eryone ER20 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Eryone ER20 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Eryone ER20 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Eryone ER20 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Eryone ER20",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Eryone ER20 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Eryone ER20 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Optimal @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Draft @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Extra Draft @Eryone ER20 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Eryone ER20 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Eryone ER20",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Eryone ER20",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Eryone ER20",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Eryone ER20",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Eryone ER20",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Eryone ER20",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Eryone ER20",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Eryone ER20 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Eryone ER20 0.5 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Eryone ER20 0.5 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Standard @Eryone ER20 0.5 nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Eryone ER20 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Eryone ER20 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Eryone ER20 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Eryone ER20 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Eryone ER20 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Eryone ER20 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "eryone_er20",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "eryone-er20klipper",
+   "brand": "eryone",
+   "model": "ER20 Klipper",
+   "aliases": [
+    "eryoneer20klipper"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 243,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": false,
+   "codes": {
+    "orca": "Eryone ER20 Klipper"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Eryone ER20 Klipper",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Eryone ER20 Klipper 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Eryone ER20 Klipper 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Optimal @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Draft @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Extra Draft @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Eryone ER20 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Eryone ER20 Klipper",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Eryone ER20 Klipper",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Eryone ER20 Klipper",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Eryone ER20 Klipper",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Eryone ER20 Klipper",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Eryone ER20 Klipper",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Eryone ER20 Klipper",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Eryone ER20 Klipper 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Eryone ER20 Klipper 0.5 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Eryone ER20 Klipper 0.5 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Standard @Eryone ER20 Klipper 0.5 nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Eryone ER20 Klipper 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Eryone ER20 Klipper 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Eryone ER20 Klipper 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Eryone ER20 Klipper 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Eryone ER20 Klipper",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Eryone ER20 Klipper 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Eryone ER20 Klipper 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Optimal @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Draft @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Extra Draft @Eryone ER20 Klipper 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Eryone ER20 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Eryone ER20 Klipper",
+         "processes": [
+          {
+           "name": "0.12mm High Quality @Eryone ER20 Klipper",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Eryone ER20 Klipper",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Eryone ER20 Klipper",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Eryone ER20 Klipper",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Eryone ER20 Klipper",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Eryone ER20 Klipper",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Eryone ER20 Klipper 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Eryone ER20 Klipper 0.5 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Eryone ER20 Klipper 0.5 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Standard @Eryone ER20 Klipper 0.5 nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Eryone ER20 Klipper 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Eryone ER20 Klipper 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Eryone ER20 Klipper 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Eryone ER20 Klipper 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Eryone ER20 Klipper 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Eryone ER20 Klipper 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "eryone-thinkerdirectdrive",
+   "brand": "eryone",
+   "model": "Thinker DirectDrive",
+   "aliases": [
+    "eryonethinkerdirectdrive"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eryone_thinker_direct"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eryone_thinker_direct",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eryone-thinkerseries",
+   "brand": "eryone",
+   "model": "Thinker Series",
+   "aliases": [
+    "eryonethinkerseries",
+    "thinker"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eryone_thinker"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eryone_thinker",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eryone-thinkerx400",
+   "brand": "eryone",
+   "model": "Thinker X400",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Thinker-X400"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Thinker X400",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Thinker X400 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Thinker X400 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Thinker X400 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Eryone PLA @0.2 nozzle;Eryone ABS @0.2 nozzle;Eryone ASA @0.2 nozzle;Eryone PETG @0.2 nozzle;Eryone Silk PLA @0.2 nozzle;Eryone TPU @0.2 nozzle;Eryone ABS-CF @0.2 nozzle;Eryone ASA-CF @0.2 nozzle;Eryone PA @0.2 nozzle;Eryone PA-CF @0.2 nozzle;Eryone PA-GF @0.2 nozzle;Eryone PETG-CF @0.2 nozzle;Eryone PLA-CF @0.2 nozzle;Eryone PP @0.2 nozzle;Eryone PP-CF @0.2 nozzle;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS @0.2 nozzle",
+           "ABS-CF": "Eryone ABS-CF @0.2 nozzle",
+           "ASA": "Eryone ASA @0.2 nozzle",
+           "ASA-CF": "Eryone ASA-CF @0.2 nozzle",
+           "PA": "Eryone PA @0.2 nozzle",
+           "PA-CF": "Eryone PA-CF @0.2 nozzle",
+           "PA-GF": "Eryone PA-GF @0.2 nozzle",
+           "PETG": "Eryone PETG @0.2 nozzle",
+           "PETG-CF": "Eryone PETG-CF @0.2 nozzle",
+           "PLA": "Eryone PLA @0.2 nozzle",
+           "PLA Silk": "Eryone Silk PLA @0.2 nozzle",
+           "PLA-CF": "Eryone PLA-CF @0.2 nozzle",
+           "PP": "Eryone PP @0.2 nozzle",
+           "PP-CF": "Eryone PP-CF @0.2 nozzle",
+           "TPU": "Eryone TPU @0.2 nozzle"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS @0.2 nozzle",
+           "eryone abs-cf": "Eryone ABS-CF @0.2 nozzle",
+           "eryone asa": "Eryone ASA @0.2 nozzle",
+           "eryone asa-cf": "Eryone ASA-CF @0.2 nozzle",
+           "eryone pa": "Eryone PA @0.2 nozzle",
+           "eryone pa-cf": "Eryone PA-CF @0.2 nozzle",
+           "eryone pa-gf": "Eryone PA-GF @0.2 nozzle",
+           "eryone petg": "Eryone PETG @0.2 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF @0.2 nozzle",
+           "eryone pla": "Eryone PLA @0.2 nozzle",
+           "eryone pla-cf": "Eryone PLA-CF @0.2 nozzle",
+           "eryone pp": "Eryone PP @0.2 nozzle",
+           "eryone pp-cf": "Eryone PP-CF @0.2 nozzle",
+           "eryone silk pla": "Eryone Silk PLA @0.2 nozzle",
+           "eryone tpu": "Eryone TPU @0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Thinker X400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Thinker X400",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Thinker X400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Standard @Thinker X400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Thinker X400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Thinker X400",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA Silk": "Eryone Silk PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone abs-gf": "Eryone ABS-GF @Thinker X400 0.4 nozzle",
+           "eryone abs+-hs": "Eryone ABS+-HS @Thinker X400 0.4 nozzle",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone asa-hs": "Eryone ASA-HS @Thinker X400 0.4 nozzle",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg hs": "Eryone PETG HS @Thinker X400 0.4 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone petg-galaxy": "Eryone petg-Galaxy @Thinker X400 0.4 nozzle",
+           "eryone petg-gf": "Eryone PETG-GF @Thinker X400 0.4 nozzle",
+           "eryone petg-lite": "Eryone PETG-Lite @Thinker X400 0.4 nozzle",
+           "eryone petg-matte": "Eryone PETG-Matte @Thinker X400 0.4 nozzle",
+           "eryone petg-translucent": "Eryone PETG-Translucent @Thinker X400 0.4 nozzle",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pla-matte": "Eryone PLA-Matte @Thinker X400 0.4 nozzle",
+           "eryone pla-matte hs": "Eryone PLA-Matte HS @Thinker X400 0.4 nozzle",
+           "eryone pla-ultra silk": "Eryone pla-Ultra Silk @Thinker X400 0.4 nozzle",
+           "eryone pla+hs": "Eryone PLA+HS @Thinker X400 0.4 nozzle",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Thinker X400",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Thinker X400 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Thinker X400 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Thinker X400 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Eryone PLA @0.2 nozzle;Eryone ABS @0.2 nozzle;Eryone ASA @0.2 nozzle;Eryone PETG @0.2 nozzle;Eryone Silk PLA @0.2 nozzle;Eryone TPU @0.2 nozzle;Eryone ABS-CF @0.2 nozzle;Eryone ASA-CF @0.2 nozzle;Eryone PA @0.2 nozzle;Eryone PA-CF @0.2 nozzle;Eryone PA-GF @0.2 nozzle;Eryone PETG-CF @0.2 nozzle;Eryone PLA-CF @0.2 nozzle;Eryone PP @0.2 nozzle;Eryone PP-CF @0.2 nozzle;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS @0.2 nozzle",
+           "ABS-CF": "Eryone ABS-CF @0.2 nozzle",
+           "ASA": "Eryone ASA @0.2 nozzle",
+           "ASA-CF": "Eryone ASA-CF @0.2 nozzle",
+           "PA": "Eryone PA @0.2 nozzle",
+           "PA-CF": "Eryone PA-CF @0.2 nozzle",
+           "PA-GF": "Eryone PA-GF @0.2 nozzle",
+           "PETG": "Eryone PETG @0.2 nozzle",
+           "PETG-CF": "Eryone PETG-CF @0.2 nozzle",
+           "PLA": "Eryone PLA @0.2 nozzle",
+           "PLA Silk": "Eryone Silk PLA @0.2 nozzle",
+           "PLA-CF": "Eryone PLA-CF @0.2 nozzle",
+           "PP": "Eryone PP @0.2 nozzle",
+           "PP-CF": "Eryone PP-CF @0.2 nozzle",
+           "TPU": "Eryone TPU @0.2 nozzle"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS @0.2 nozzle",
+           "eryone abs-cf": "Eryone ABS-CF @0.2 nozzle",
+           "eryone asa": "Eryone ASA @0.2 nozzle",
+           "eryone asa-cf": "Eryone ASA-CF @0.2 nozzle",
+           "eryone pa": "Eryone PA @0.2 nozzle",
+           "eryone pa-cf": "Eryone PA-CF @0.2 nozzle",
+           "eryone pa-gf": "Eryone PA-GF @0.2 nozzle",
+           "eryone petg": "Eryone PETG @0.2 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF @0.2 nozzle",
+           "eryone pla": "Eryone PLA @0.2 nozzle",
+           "eryone pla-cf": "Eryone PLA-CF @0.2 nozzle",
+           "eryone pp": "Eryone PP @0.2 nozzle",
+           "eryone pp-cf": "Eryone PP-CF @0.2 nozzle",
+           "eryone silk pla": "Eryone Silk PLA @0.2 nozzle",
+           "eryone tpu": "Eryone TPU @0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Thinker X400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Thinker X400",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Thinker X400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Standard @Thinker X400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Thinker X400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Thinker X400",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA Silk": "Eryone Silk PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Thinker X400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Thinker X400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Thinker X400",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Thinker X400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Standard @Thinker X400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Thinker X400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Thinker X400",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "Silk": "Eryone Silk PLA",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Thinker X400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Thinker X400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Thinker X400",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Thinker X400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Standard @Thinker X400",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Thinker X400",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Thinker X400",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System;Generic ABS @System;Generic ASA @System;Generic PETG @System;Generic PLA Silk @System;Generic TPU @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,1278 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "flyingbear",
+  "name": "FlyingBear"
+ },
+ "printers": [
+  {
+   "id": "flyingbear-ghost4s",
+   "brand": "flyingbear",
+   "model": "Ghost 4S",
+   "aliases": [
+    "flyingbearghost4s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "flyingbear_ghost_4s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "flyingbear_ghost_4s",
+      "nozzles": [
+       "0.25mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "flyingbear-ghost5",
+   "brand": "flyingbear",
+   "model": "Ghost 5",
+   "aliases": [
+    "flyingbearghost5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "flyingbear_ghost_5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "flyingbear_ghost_5",
+      "nozzles": [
+       "0.25mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "flyingbear-ghost6",
+   "brand": "flyingbear",
+   "model": "Ghost 6",
+   "aliases": [
+    "flyingbearghost6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.25",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "FlyingBear Ghost 6",
+    "cura": "flyingbear_ghost_6"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FlyingBear Ghost 6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost 6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost 6",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @FlyingBear",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FlyingBear",
+           "PA-CF": "Generic PA-CF @FlyingBear",
+           "PC": "Generic PC @FlyingBear",
+           "PETG": "Generic PETG @FlyingBear",
+           "PLA": "Generic PLA @FlyingBear",
+           "TPU": "Generic TPU @FlyingBear"
+          },
+          "products": {
+           "flyingbear pla hyper": "FlyingBear PLA Hyper",
+           "generic abs": "Generic ABS @FlyingBear",
+           "generic pa-cf": "Generic PA-CF @FlyingBear",
+           "generic pc": "Generic PC @FlyingBear",
+           "generic petg": "Generic PETG @FlyingBear",
+           "generic pla": "Generic PLA @FlyingBear",
+           "generic tpu": "Generic TPU @FlyingBear"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FlyingBear Ghost 6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost 6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost 6",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FlyingBear Ghost 6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost 6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost 6",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FlyingBear Ghost 6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost 6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost 6",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost 6 0.4 nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "flyingbear_ghost_6",
+      "nozzles": [
+       "0.25mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flyingbear-ghost7",
+   "brand": "flyingbear",
+   "model": "Ghost7",
+   "aliases": [
+    "flyingbearghost7"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      242,
+      0
+     ],
+     [
+      250,
+      0
+     ],
+     [
+      250,
+      30
+     ],
+     [
+      242,
+      30
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FlyingBear_Ghost7"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FlyingBear Ghost7",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost7 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost7",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Ghost7",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost7",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost7",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost7",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost7",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA Basic @Ghost7",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear ABS @Ghost7",
+           "PA-CF": "FlyingBear PA-CF @Ghost7",
+           "PC": "FlyingBear PC @Ghost7",
+           "PETG Basic": "FlyingBear PETG Basic @Ghost7",
+           "PLA": "FlyingBear PLA Basic @Ghost7",
+           "TPU": "FlyingBear TPU Basic @Ghost7"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @Ghost7",
+           "flyingbear pa-cf": "FlyingBear PA-CF @Ghost7",
+           "flyingbear pc": "FlyingBear PC @Ghost7",
+           "flyingbear petg basic": "FlyingBear PETG Basic @Ghost7",
+           "flyingbear pla basic": "FlyingBear PLA Basic @Ghost7",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @Ghost7",
+           "flyingbear tpu basic": "FlyingBear TPU Basic @Ghost7"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FlyingBear Ghost7",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost7 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost7",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Ghost7",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost7",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost7",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost7",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost7",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA Basic @Ghost7",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear ABS @Ghost7",
+           "PA-CF": "FlyingBear PA-CF @Ghost7",
+           "PC": "FlyingBear PC @Ghost7",
+           "PETG Basic": "FlyingBear PETG Basic @Ghost7",
+           "PLA": "FlyingBear PLA Basic @Ghost7",
+           "TPU": "FlyingBear TPU Basic @Ghost7"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @Ghost7",
+           "flyingbear pa-cf": "FlyingBear PA-CF @Ghost7",
+           "flyingbear pc": "FlyingBear PC @Ghost7",
+           "flyingbear petg basic": "FlyingBear PETG Basic @Ghost7",
+           "flyingbear pla basic": "FlyingBear PLA Basic @Ghost7",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @Ghost7",
+           "flyingbear tpu basic": "FlyingBear TPU Basic @Ghost7"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FlyingBear Ghost7",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Ghost7 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Ghost7",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Ghost7",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Ghost7",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Ghost7",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Ghost7",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Ghost7",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @Ghost7",
+         "filaments": {
+          "types": {
+           "PLA": "FlyingBear PLA @Ghost7"
+          },
+          "products": {
+           "flyingbear pla": "FlyingBear PLA @Ghost7"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flyingbear-reborn3",
+   "brand": "flyingbear",
+   "model": "Reborn3",
+   "aliases": [
+    "flyingbearreborn3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FlyingBear Reborn3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FlyingBear Reborn3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Reborn3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Reborn3",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Reborn3",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Reborn3",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Reborn3",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Reborn3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Reborn3",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @FlyingBear",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FlyingBear",
+           "PA-CF": "Generic PA-CF @FlyingBear",
+           "PC": "Generic PC @FlyingBear",
+           "PETG": "Generic PETG @FlyingBear",
+           "PLA": "Generic PLA @FlyingBear",
+           "TPU": "Generic TPU @FlyingBear"
+          },
+          "products": {
+           "flyingbear pla hyper": "FlyingBear PLA Hyper",
+           "generic abs": "Generic ABS @FlyingBear",
+           "generic pa-cf": "Generic PA-CF @FlyingBear",
+           "generic pc": "Generic PC @FlyingBear",
+           "generic petg": "Generic PETG @FlyingBear",
+           "generic pla": "Generic PLA @FlyingBear",
+           "generic tpu": "Generic TPU @FlyingBear"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FlyingBear Reborn3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Reborn3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Reborn3",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Reborn3",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Reborn3",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Reborn3",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Reborn3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Reborn3",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FlyingBear Reborn3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Reborn3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Reborn3",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Reborn3",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Reborn3",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Reborn3",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Reborn3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Reborn3",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FlyingBear Reborn3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Reborn3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Reborn3",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Reborn3",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Reborn3",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Reborn3",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Reborn3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Reborn3",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FlyingBear Reborn3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear Reborn3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear Reborn3",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear Reborn3",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear Reborn3",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear Reborn3",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear Reborn3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear Reborn3",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FlyingBear Generic ABS",
+           "PA-CF": "FlyingBear Generic PA-CF",
+           "PC": "FlyingBear Generic PC",
+           "PETG": "FlyingBear Generic PETG",
+           "PLA": "FlyingBear Generic PLA",
+           "TPU": "FlyingBear Generic TPU"
+          },
+          "products": {
+           "flyingbear generic abs": "FlyingBear Generic ABS",
+           "flyingbear generic pa-cf": "FlyingBear Generic PA-CF",
+           "flyingbear generic pc": "FlyingBear Generic PC",
+           "flyingbear generic petg": "FlyingBear Generic PETG",
+           "flyingbear generic pla": "FlyingBear Generic PLA",
+           "flyingbear generic tpu": "FlyingBear Generic TPU",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flyingbear-s1",
+   "brand": "flyingbear",
+   "model": "S1",
+   "aliases": [
+    "flyingbears1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FlyingBear_S1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FlyingBear S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear S1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear S1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FlyingBear S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear S1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear S1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FlyingBear S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear S1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear S1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FlyingBear S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear S1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear S1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FlyingBear S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FlyingBear S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FlyingBear S1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FlyingBear S1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FlyingBear S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FlyingBear S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FlyingBear S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FlyingBear S1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "FlyingBear PLA @S1",
+         "filaments": {
+          "types": {
+           "ABS": "Other ABS @S1",
+           "PA-CF": "Other PA-CF @S1",
+           "PC": "Other PC @S1",
+           "PETG": "Other PETG @S1",
+           "PLA": "Other PLA @S1",
+           "TPU": "Other TPU @S1"
+          },
+          "products": {
+           "flyingbear abs": "FlyingBear ABS @S1",
+           "flyingbear pa-cf": "FlyingBear PA-CF @S1",
+           "flyingbear pc": "FlyingBear PC @S1",
+           "flyingbear petg": "FlyingBear PETG @S1",
+           "flyingbear pla": "FlyingBear PLA @S1",
+           "flyingbear pla hyper": "FlyingBear PLA Hyper @S1",
+           "flyingbear tpu": "FlyingBear TPU @S1",
+           "other abs": "Other ABS @S1",
+           "other pa-cf": "Other PA-CF @S1",
+           "other pc": "Other PC @S1",
+           "other petg": "Other PETG @S1",
+           "other pla": "Other PLA @S1",
+           "other pla hyper": "Other PLA Hyper @S1",
+           "other tpu": "Other TPU @S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

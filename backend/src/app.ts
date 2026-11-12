@@ -8,6 +8,7 @@ import { pathToken, requireAuth } from "./auth";
 import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
 import iconRoutes from "./routes/icons";
+import printerRoutes from "./routes/printers";
 import profileRoutes from "./routes/profile";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
@@ -88,6 +89,8 @@ export function createApp(): Express {
   app.use("/api", profileRoutes);
   // And the pictures of release notes read from a checkout.
   app.use("/api", releaseNotesFilesRoutes);
+  // And a catalogue printer's picture.
+  app.use("/api", printerRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);

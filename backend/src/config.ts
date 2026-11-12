@@ -53,10 +53,13 @@ export const ICONS = path.join(STORAGE, "icons");
 export const COVERS = path.join(STORAGE, "covers");
 // Avatars people upload, and in gravatar/ the Gravatars fetched for the others to see.
 export const AVATARS = path.join(STORAGE, "avatars");
-// Slicer-compatible copies of MakerWorld 3MFs, rebuilt when the source plate changes.
-export const NORMALIZED_3MFS = path.join(STORAGE, "normalized-3mf");
-// Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request.
-export const NORMALIZE_3MF_TIMEOUT_SECONDS = envInt("NORMALIZE_3MF_TIMEOUT_SECONDS", 600);
+// Copies of 3MFs adapted for the slicer they're opened in (src/adapter), rebuilt when the source plate changes.
+export const ADAPTED_3MFS = path.join(STORAGE, "adapted-3mf");
+// Large multi-part projects take minutes on a slow CPU; the page waits for it, not the request. The old name still counts.
+export const ADAPT_3MF_TIMEOUT_SECONDS = envInt(
+  "ADAPT_3MF_TIMEOUT_SECONDS",
+  envInt("NORMALIZE_3MF_TIMEOUT_SECONDS", 600),
+);
 
 // A worker can't even start below a few MB, and Node 24 then takes the whole process down with it.
 const MIN_PREVIEW_MEMORY_MB = 8;

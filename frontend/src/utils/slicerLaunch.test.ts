@@ -10,6 +10,12 @@ describe("slicerLaunchUrl", () => {
     );
   });
 
+  it("names a 3MF for eufyMake Studio in the lowercase it opens", () => {
+    expect(slicerLaunchUrl("eufystudio3d", FILE, "Ghost light.3MF")).toBe(
+      `eufystudio3d://open/?file=${encodeURIComponent(FILE)}&name=Ghost%20light.3mf`,
+    );
+  });
+
   it("sends the slicers that won't take a self-hosted link through the Bridge", () => {
     expect(slicerLaunchUrl("prusaslicer", FILE, "a.stl")).toBe(
       `thingport://open?url=${encodeURIComponent(FILE)}&slicer=prusaslicer&filename=a.stl`,

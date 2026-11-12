@@ -1,0 +1,178 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "zyyxlabs",
+  "name": "ZYYX Labs"
+ },
+ "printers": [
+  {
+   "id": "zyyxlabs-zyyxpro",
+   "brand": "zyyxlabs",
+   "model": "ZYYX Pro",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 265,
+    "y": 228,
+    "origin": [
+     -132.5,
+     -114
+    ]
+   },
+   "exclude": [
+    [
+     [
+      74.5,
+      -3.5
+     ],
+     [
+      74.5,
+      6
+     ],
+     [
+      82.5,
+      6
+     ],
+     [
+      82.5,
+      -3.5
+     ]
+    ],
+    [
+     [
+      251.5,
+      -3.5
+     ],
+     [
+      251.5,
+      6
+     ],
+     [
+      272.5,
+      6
+     ],
+     [
+      272.5,
+      -3.5
+     ]
+    ],
+    [
+     [
+      74.5,
+      231.5
+     ],
+     [
+      74.5,
+      222
+     ],
+     [
+      82.5,
+      222
+     ],
+     [
+      82.5,
+      231.5
+     ]
+    ],
+    [
+     [
+      251.5,
+      231.5
+     ],
+     [
+      251.5,
+      222
+     ],
+     [
+      272.5,
+      222
+     ],
+     [
+      272.5,
+      231.5
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 195,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "makerbot",
+   "relativeE": false,
+   "codes": {
+    "cura": "zyyx_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "zyyx_pro",
+      "nozzles": [
+       "Carbon0.6",
+       "Carbon1.2",
+       "Multi0.2",
+       "Multi0.4",
+       "Multi0.8"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "zyyxlabs-zyyxplus",
+   "brand": "zyyxlabs",
+   "model": "ZYYX+",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 265,
+    "y": 210,
+    "origin": [
+     -132.5,
+     -105
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 195,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "makerbot",
+   "relativeE": false,
+   "codes": {
+    "cura": "zyyx_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "zyyx_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

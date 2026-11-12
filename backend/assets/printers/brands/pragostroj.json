@@ -1,0 +1,510 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "pragostroj",
+  "name": "Pragostroj"
+ },
+ "printers": [
+  {
+   "id": "pragostroj-kinarb1hb",
+   "brand": "pragostroj",
+   "model": "KINARB 1HB",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 460,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "V1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "KINARB 1HB",
+      "presets": {
+       "1": [
+        {
+         "name": "KINARB 1HB 1.0 nozzle",
+         "defaultProcess": "0.5mm Draft @Pragostroj 1.0",
+         "processes": [
+          {
+           "name": "0.5mm Draft @Pragostroj 1.0",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "KINARB 1HB 0.4 nozzle",
+         "defaultProcess": "0.2mm Draft @Pragostroj 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Draft @Pragostroj 0.4",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "KINARB 1HB 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @Pragostroj 0.5",
+         "processes": [
+          {
+           "name": "0.15mm PETG fine @Pragostroj 0.5",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Draft @Pragostroj 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm PP Draft @Pragostroj 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm quality @Pragostroj 0.5 - 100mms",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PETG": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj petg": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "KINARB 1HB 0.6 nozzle",
+         "defaultProcess": "0.3mm Draft @Pragostroj 0.6",
+         "processes": [
+          {
+           "name": "0.3mm Draft @Pragostroj 0.6",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "KINARB 1HB 0.8 nozzle",
+         "defaultProcess": "0.4mm Draft @Pragostroj 0.8",
+         "processes": [
+          {
+           "name": "0.4mm Draft @Pragostroj 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.4mm PP Draft @Pragostroj 0.8",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "KINARB 1HB 1.2 nozzle",
+         "defaultProcess": "0.6mm Draft @Pragostroj 1.2",
+         "processes": [
+          {
+           "name": "0.6mm Draft @Pragostroj 1.2",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "1.6": [
+        {
+         "name": "KINARB 1HB 1.6 nozzle",
+         "defaultProcess": "0.8mm Draft @Pragostroj 1.6",
+         "processes": [
+          {
+           "name": "0.8mm Draft @Pragostroj 1.6",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "pragostroj-kinarb2hb",
+   "brand": "pragostroj",
+   "model": "KINARB 2HB",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 540,
+    "y": 450,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": [
+    {
+     "shape": "rectangle",
+     "x": 540,
+     "y": 450,
+     "origin": [
+      0,
+      0
+     ]
+    },
+    {
+     "shape": "rectangle",
+     "x": 540,
+     "y": 450,
+     "origin": [
+      0,
+      0
+     ]
+    }
+   ],
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.6"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "V1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "KINARB 2HB",
+      "presets": {
+       "1": [
+        {
+         "name": "KINARB 2HB 1.0 nozzle",
+         "defaultProcess": "0.5mm Draft @Pragostroj 1.0",
+         "processes": [
+          {
+           "name": "0.5mm Draft @Pragostroj 1.0",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "KINARB 2HB 0.4 nozzle",
+         "defaultProcess": "0.2mm Draft @Pragostroj 0.4",
+         "processes": [
+          {
+           "name": "0.2mm Draft @Pragostroj 0.4",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "KINARB 2HB 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @Pragostroj 0.5",
+         "processes": [
+          {
+           "name": "0.15mm PETG fine @Pragostroj 0.5",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.25mm Draft @Pragostroj 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm PP Draft @Pragostroj 0.5",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm quality @Pragostroj 0.5 - 100mms",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PETG": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj petg": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "KINARB 2HB 0.6 nozzle",
+         "defaultProcess": "0.3mm Draft @Pragostroj 0.6",
+         "processes": [
+          {
+           "name": "0.3mm Draft @Pragostroj 0.6",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "KINARB 2HB 0.8 nozzle",
+         "defaultProcess": "0.4mm Draft @Pragostroj 0.8",
+         "processes": [
+          {
+           "name": "0.4mm Draft @Pragostroj 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.4mm PP Draft @Pragostroj 0.8",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "KINARB 2HB 1.2 nozzle",
+         "defaultProcess": "0.6mm Draft @Pragostroj 1.2",
+         "processes": [
+          {
+           "name": "0.6mm Draft @Pragostroj 1.2",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ],
+       "1.6": [
+        {
+         "name": "KINARB 2HB 1.6 nozzle",
+         "defaultProcess": "0.8mm Draft @Pragostroj 1.6",
+         "processes": [
+          {
+           "name": "0.8mm Draft @Pragostroj 1.6",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

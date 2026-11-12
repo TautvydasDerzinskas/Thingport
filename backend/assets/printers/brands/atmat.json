@@ -1,0 +1,620 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "atmat",
+  "name": "ATMAT"
+ },
+ "printers": [
+  {
+   "id": "atmat-asterion",
+   "brand": "atmat",
+   "model": "Asterion",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_asterion"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_asterion",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-asterionht",
+   "brand": "atmat",
+   "model": "Asterion HT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_asterion_ht"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_asterion_ht",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-galaxy500",
+   "brand": "atmat",
+   "model": "Galaxy 500",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_galaxy_500"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_galaxy_500",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-galaxy600",
+   "brand": "atmat",
+   "model": "Galaxy 600",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_galaxy_600"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_galaxy_600",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro300v1",
+   "brand": "atmat",
+   "model": "Signal Pro 300 v1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_300_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_300_v1",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro300v2",
+   "brand": "atmat",
+   "model": "Signal Pro 300 v2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_300_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_300_v2",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro400v1",
+   "brand": "atmat",
+   "model": "Signal Pro 400 v1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_400_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_400_v1",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro400v2",
+   "brand": "atmat",
+   "model": "Signal Pro 400 v2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_400_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_400_v2",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro500v1",
+   "brand": "atmat",
+   "model": "Signal Pro 500 v1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_500_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_500_v1",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalpro500v2",
+   "brand": "atmat",
+   "model": "Signal Pro 500 v2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_pro_500_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_pro_500_v2",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalxl",
+   "brand": "atmat",
+   "model": "Signal XL",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_xl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_xl",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalxxl",
+   "brand": "atmat",
+   "model": "Signal XXL",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 385,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_xxl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_xxl",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "atmat-signalxxxl",
+   "brand": "atmat",
+   "model": "Signal XXXL",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "atmat_signal_xxxl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atmat_signal_xxxl",
+      "nozzles": [
+       "V6 0.40mm",
+       "V6 0.80mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

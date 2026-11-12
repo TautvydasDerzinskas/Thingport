@@ -1,0 +1,345 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "xyzprinting",
+  "name": "XYZprinting"
+ },
+ "printers": [
+  {
+   "id": "xyzprinting-davinci1pro",
+   "brand": "xyzprinting",
+   "model": "da Vinci 1.0 Pro",
+   "aliases": [
+    "xyzprintingdavinci1pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_1p0_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_1p0_pro",
+      "nozzles": [
+       "Copper 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davincijr10apro",
+   "brand": "xyzprinting",
+   "model": "da Vinci Jr. 1.0A Pro",
+   "aliases": [
+    "xyzprintingdavincijr10apro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 175,
+    "y": 175,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_jr_1p0a_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_jr_1p0a_pro",
+      "nozzles": [
+       "Copper 0.4mm Nozzle",
+       "Hardened Steel 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davincijrproxplus",
+   "brand": "xyzprinting",
+   "model": "da Vinci Jr. Pro X+",
+   "aliases": [
+    "xyzprintingdavincijrproxplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 175,
+    "y": 175,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_jr_pro_xplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_jr_pro_xplus",
+      "nozzles": [
+       "Copper 0.4mm Nozzle",
+       "Hardened Steel 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davincijrproxeplus",
+   "brand": "xyzprinting",
+   "model": "da Vinci Jr. Pro Xe+",
+   "aliases": [
+    "xyzprintingdavincijrproxeplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 175,
+    "y": 175,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_jr_pro_xeplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_jr_pro_xeplus",
+      "nozzles": [
+       "Copper 0.4mm Nozzle",
+       "Hardened Steel 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davincijrwifipro",
+   "brand": "xyzprinting",
+   "model": "da Vinci Jr. WiFi Pro",
+   "aliases": [
+    "xyzprintingdavincijrwifipro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_jr_w_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_jr_w_pro",
+      "nozzles": [
+       "Hardened Steel 0.4mm Nozzle",
+       "Stainless Steel 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davinciproevo",
+   "brand": "xyzprinting",
+   "model": "da Vinci Pro EVO",
+   "aliases": [
+    "xyzprintingdavinciproevo"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_pro_evo"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_pro_evo",
+      "nozzles": [
+       "Hardened Steel 0.4mm Nozzle",
+       "Hardened Steel High Temp. 0.6mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "xyzprinting-davincisuper",
+   "brand": "xyzprinting",
+   "model": "da Vinci Super",
+   "aliases": [
+    "xyzprintingdavincisuper"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "xyzprinting_da_vinci_super"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "xyzprinting_da_vinci_super",
+      "nozzles": [
+       "Copper 0.4mm Nozzle",
+       "Hardened Steel 0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

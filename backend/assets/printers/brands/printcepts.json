@@ -1,0 +1,78 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "printcepts",
+  "name": "Printcepts"
+ },
+ "printers": [
+  {
+   "id": "printcepts-babybeltpro",
+   "brand": "printcepts",
+   "model": "BabyBelt Pro",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 95,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Printcepts_BabyBelt_Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BabyBelt Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BabyBelt Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @BabyBelt Pro",
+         "processes": [
+          {
+           "name": "0.20mm Standard @BabyBelt Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @BabyBelt Pro",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @BabyBelt Pro",
+           "PLA": "Generic PLA @BabyBelt Pro"
+          },
+          "products": {
+           "esun pla": "eSUN PLA @BabyBelt Pro",
+           "generic petg": "Generic PETG @BabyBelt Pro",
+           "generic pla": "Generic PLA @BabyBelt Pro"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

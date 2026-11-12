@@ -1,0 +1,769 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "rolohaundesign",
+  "name": "RolohaunDesign"
+ },
+ "printers": [
+  {
+   "id": "rolohaundesign-rolohaundeltaflyerrefit",
+   "brand": "rolohaundesign",
+   "model": "Rolohaun Delta Flyer Refit",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 110,
+    "y": 110,
+    "origin": [
+     -55,
+     -55
+    ],
+    "diameter": 110
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 115,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "RDFR1_1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Rolohaun Delta Flyer Refit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rolohaun Delta Flyer Refit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Super Fine @Delta Flyer Refit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Fine @Delta Flyer Refit",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.16mm Optimal @Delta Flyer Refit",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Delta Flyer Refit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Vase Mode @Delta Flyer Refit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Delta Flyer Refit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Rough Draft @Delta Flyer Refit",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Rolohaun Delta Flyer Refit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rolohaun Delta Flyer Refit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Super Fine @Delta Flyer Refit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Fine @Delta Flyer Refit",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.16mm Optimal @Delta Flyer Refit",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Delta Flyer Refit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2mm Vase Mode @Delta Flyer Refit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Delta Flyer Refit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Rough Draft @Delta Flyer Refit",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Rolohaun Delta Flyer Refit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rolohaun Delta Flyer Refit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "rolohaundesign-rookmk1ldo",
+   "brand": "rolohaundesign",
+   "model": "Rook MK1 LDO",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 110,
+    "y": 110,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 111,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "RKMK1_1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Rook MK1 LDO",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Rook MK1 LDO 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Rook MK1 LDO 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Rook MK1 LDO 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Rook MK1 LDO 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Rook MK1 LDO",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Rook MK1 LDO 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Rook MK1 LDO 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Rook MK1 LDO 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Rook MK1 LDO 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Rook MK1 LDO",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Rook MK1 LDO 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Rook MK1 LDO 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Rook MK1 LDO 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Rook MK1 LDO 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Rook MK1 LDO",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Rook MK1 LDO 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Rook MK1 LDO 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Rook MK1 LDO 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Rook MK1 LDO",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Rook MK1 LDO",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Rook MK1 LDO 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Rook MK1 LDO",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Rook MK1 LDO",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Rook MK1 LDO",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Rook MK1 LDO",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @Rook MK1 LDO",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

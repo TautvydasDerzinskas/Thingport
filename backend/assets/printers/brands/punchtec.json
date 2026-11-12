@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "punchtec",
+  "name": "Punchtec"
+ },
+ "printers": [
+  {
+   "id": "punchtec-connectxl",
+   "brand": "punchtec",
+   "model": "Connect XL",
+   "aliases": [
+    "punchtecconnectxl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 304,
+    "y": 304,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "punchtec_connect_xl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "punchtec_connect_xl",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

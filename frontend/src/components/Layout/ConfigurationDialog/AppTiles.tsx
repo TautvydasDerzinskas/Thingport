@@ -30,8 +30,8 @@ type TileProps = {
   logo: React.ReactNode;
   /** Coloured when on, grey when off. */
   on: boolean;
-  /** A tick or a cross in the corner; none when undefined. */
-  badge?: boolean;
+  /** A tick or a cross in the corner, or a plus for one to add; none when undefined. */
+  badge?: boolean | "add";
   /** A small icon in the opposite corner, for something about how the app is used (Thingport Bridge's cable). */
   cornerIcon?: React.ReactNode;
   /** Shown as if hovered, while its menu or box is open. */
@@ -149,8 +149,51 @@ export function AppTile({
   );
 }
 
-/** A circle with a tick or a cross. SVG, so dark mode's square-corners rule leaves it round. */
-function StatusBadge({ ok }: { ok: boolean }) {
+/** The tile at the end of a grid that adds another: a dashed square with a plus, sized like the app tiles. */
+export function AddTile({ label, onClick, size = TILE }: { label: string; onClick: () => void; size?: number }) {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      aria-label={label}
+      sx={{
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        gap: 0.75,
+        px: 0.5,
+        py: 1,
+        borderRadius: "10px",
+        "&:hover": { bgcolor: hoverBg },
+        "&.Mui-focusVisible": { outline: 2, outlineColor: "primary.main", outlineOffset: -2 },
+      }}
+    >
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          borderRadius: `${Math.round(size * 0.27)}px`,
+          border: "1.5px dashed",
+          borderColor: "divider",
+          color: "text.secondary",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "border-color 150ms, color 150ms",
+          "button:hover > &": { borderColor: "primary.main", color: "primary.main" },
+        }}
+      >
+        <Box component="svg" viewBox="0 0 24 24" aria-hidden="true" sx={{ width: size * 0.4, height: size * 0.4 }}>
+          <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </Box>
+      </Box>
+      <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem", lineHeight: 1.25 }}>
+        {label}
+      </Typography>
+    </ButtonBase>
+  );
+}
+
+/** A circle with a tick, a cross or a plus. SVG, so dark mode's square-corners rule leaves it round. */
+function StatusBadge({ ok }: { ok: boolean | "add" }) {
   return (
     <Box
       component="svg"
@@ -165,16 +208,19 @@ function StatusBadge({ ok }: { ok: boolean }) {
         color: "background.paper",
       }}
     >
-      <circle
+      <Box
+        component="circle"
         cx="8"
         cy="8"
         r="7.25"
-        fill={ok ? "#16a34a" : "#dc2626"}
+        sx={{ fill: (theme) => (ok === "add" ? theme.palette.primary.main : ok ? "#16a34a" : "#dc2626") }}
         // A ring in the panel's colour sets it off the tile.
         stroke="currentColor"
         strokeWidth="1.5"
       />
-      {ok ? (
+      {ok === "add" ? (
+        <path d="M8 4.75v6.5M4.75 8h6.5" fill="none" stroke="#fff" strokeWidth="1.75" strokeLinecap="round" />
+      ) : ok ? (
         <path
           d="M4.75 8.25 7 10.5l4.25-4.75"
           fill="none"

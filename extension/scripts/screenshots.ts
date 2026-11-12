@@ -122,7 +122,7 @@ function startMockInstance(state: MockState): Promise<{ url: string; close: () =
         return json({ supported: true, sync: null });
       case "POST /api/import":
         return json({ id: "demo-imported", title: state.inspectTitle, import_outcome: "created", thumb_url: null });
-      // No slicer, so MakerWorld pages don't add their "Download normalized" button.
+      // No slicer, so MakerWorld pages don't add their "Download adapted" button.
       case "GET /api/settings/slicer":
         return json({ slicer: null });
       // Every provider on: one the instance doesn't list counts as on.

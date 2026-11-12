@@ -1,0 +1,918 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "rh3d",
+  "name": "RH3D"
+ },
+ "printers": [
+  {
+   "id": "rh3d-e3ngv12s",
+   "brand": "rh3d",
+   "model": "E3NG v1.2S",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 232,
+    "y": 232,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 245,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "E3NGV12S"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "E3NG v1.2S",
+      "presets": {
+       "0.2": [
+        {
+         "name": "E3NG v1.2S - 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Fast @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.3": [
+        {
+         "name": "E3NG v1.2S - 0.3 nozzle",
+         "defaultProcess": "0.15mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Fast @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "E3NG v1.2S - 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Fast @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "E3NG v1.2S - 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.15mm Fast @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "E3NG v1.2S - 0.6 nozzle",
+         "defaultProcess": "0.25mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "E3NG v1.2S",
+      "presets": {
+       "0.2": [
+        {
+         "name": "E3NG v1.2S - 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.3": [
+        {
+         "name": "E3NG v1.2S - 0.3 nozzle",
+         "defaultProcess": "0.15mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "E3NG v1.2S - 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.10mm Standard @E3NG v1.2S",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "E3NG v1.2S - 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.15mm Standard @E3NG v1.2S",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "E3NG v1.2S - 0.6 nozzle",
+         "defaultProcess": "0.25mm Standard @E3NG v1.2S",
+         "processes": [
+          {
+           "name": "0.20mm Fast @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @E3NG v1.2S",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @E3NG v1.2S",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @E3NG v1.2S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "rh3d-virtue3",
+   "brand": "rh3d",
+   "model": "VIRTU E3",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 232,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 232,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "VIRTUE3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "VIRTU E3",
+      "presets": {
+       "0.2": [
+        {
+         "name": "VIRTU E3 - 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @VIRTU E3",
+         "processes": [
+          {
+           "name": "0.10mm Fast @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @VIRTU E3",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3"
+          }
+         }
+        }
+       ],
+       "0.3": [
+        {
+         "name": "VIRTU E3 - 0.3 nozzle",
+         "defaultProcess": "0.15mm Standard @VIRTU E3",
+         "processes": [
+          {
+           "name": "0.10mm Fast @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @VIRTU E3",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "VIRTU E3 - 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @VIRTU E3",
+         "processes": [
+          {
+           "name": "0.10mm Fast @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Slow @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @VIRTU E3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @VIRTU E3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "VIRTU E3 - 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @VIRTU E3",
+         "processes": [
+          {
+           "name": "0.15mm Fast @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Slow @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Standard @VIRTU E3",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @VIRTU E3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PC-CF": "Generic PCCF @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic pccf": "Generic PCCF @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "VIRTU E3 - 0.6 nozzle",
+         "defaultProcess": "0.25mm Standard @VIRTU E3",
+         "processes": [
+          {
+           "name": "0.20mm Fast @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Slow @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @VIRTU E3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Slow @VIRTU E3",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Standard @VIRTU E3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PC-CF": "Generic PCCF @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic pccf": "Generic PCCF @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

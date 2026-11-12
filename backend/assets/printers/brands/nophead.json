@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "nophead",
+  "name": "Nophead"
+ },
+ "printers": [
+  {
+   "id": "nophead-mendel90",
+   "brand": "nophead",
+   "model": "Mendel90",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     -100,
+     -100
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mendel90"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mendel90",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

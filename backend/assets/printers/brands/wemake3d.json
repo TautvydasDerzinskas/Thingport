@@ -1,0 +1,541 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "wemake3d",
+  "name": "WEMAKE3D"
+ },
+ "printers": [
+  {
+   "id": "wemake3d-phoenixprov1",
+   "brand": "wemake3d",
+   "model": "PhoenixProV1",
+   "aliases": [
+    "wemake3dphoenixprov1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "v1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "WEMAKE3D PhoenixProV1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.2mm nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Fine @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.15mm Draft @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Draft @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.16
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.3mm nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Extra Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Extra Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Standard @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.24mm Draft @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.1mm Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Draft @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.4mm nozzle",
+         "processes": [
+          {
+           "name": "0.1mm Extra Fine @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Standard @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3mm Draft @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.32mm Draft @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.6mm nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.25mm Fine @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.4mm Draft @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Extra Draft @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.48
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "WEMAKE3D PhoenixProV1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.2mm nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Fine @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.15mm Draft @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Draft @WEMAKE3D PhoenixProV1 0.2mm nozzle",
+           "layerHeight": 0.16
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.3mm nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Extra Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Extra Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Standard @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.24mm Draft @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.1mm Fine @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Draft @WEMAKE3D PhoenixProV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.4mm nozzle",
+         "processes": [
+          {
+           "name": "0.1mm Extra Fine @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Standard @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3mm Draft @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.32mm Draft @WEMAKE3D PhoenixProV1 0.4mm nozzle",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "WEMAKE3D PhoenixProV1 0.6mm nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.25mm Fine @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.4mm Draft @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Extra Draft @WEMAKE3D PhoenixProV1 0.6mm nozzle",
+           "layerHeight": 0.48
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wemake3d-tinybotv1",
+   "brand": "wemake3d",
+   "model": "TinyBotV1",
+   "aliases": [
+    "wemake3dtinybotv1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "v1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "WEMAKE3D TinyBotV1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.2mm nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Fine @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Draft @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Draft @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.16
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.3mm nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Extra Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Extra Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Standard @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.24mm Draft @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.1mm Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Draft @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.4mm nozzle",
+         "processes": [
+          {
+           "name": "0.1mm Extra Fine @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Standard @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3mm Draft @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.32mm Draft @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.6mm nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.25mm Fine @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.4mm Draft @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Extra Draft @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.48
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "WEMAKE3D TinyBotV1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.2mm nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Fine @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Draft @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Draft @WEMAKE3D TinyBotV1 0.2mm nozzle",
+           "layerHeight": 0.16
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.3mm nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Extra Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm Extra Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Standard @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.24mm Draft @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.1mm Fine @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Draft @WEMAKE3D TinyBotV1 0.3mm nozzle",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.4mm nozzle",
+         "processes": [
+          {
+           "name": "0.1mm Extra Fine @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.2mm Standard @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3mm Draft @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.32mm Draft @WEMAKE3D TinyBotV1 0.4mm nozzle",
+           "layerHeight": 0.32
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "WEMAKE3D TinyBotV1 0.6mm nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Extra Fine @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.25mm Fine @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.4mm Draft @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Extra Draft @WEMAKE3D TinyBotV1 0.6mm nozzle",
+           "layerHeight": 0.48
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,1882 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "felix",
+  "name": "FELIX"
+ },
+ "printers": [
+  {
+   "id": "felix-food",
+   "brand": "felix",
+   "model": "Food",
+   "aliases": [
+    "felixfoodsingle",
+    "foodsingle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 195,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.5",
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Single",
+      "model": "FELIX Food Single",
+      "presets": {
+       "1": [
+        {
+         "name": "FELIX Food Single 1.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 1.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 1.00mm",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "FELIX Food Normal @ 1.00mm",
+           "layerHeight": 0.62
+          },
+          {
+           "name": "FELIX Food Coarse @ 1.00mm",
+           "layerHeight": 0.75
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @1.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @1.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @1.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @1.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @1.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @1.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @1.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @1.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @1.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @1.00mm"
+          }
+         }
+        }
+       ],
+       "2": [
+        {
+         "name": "FELIX Food Single 2.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 2.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 2.00mm",
+           "layerHeight": 1
+          },
+          {
+           "name": "FELIX Food Normal @ 2.00mm",
+           "layerHeight": 1.25
+          },
+          {
+           "name": "FELIX Food Coarse @ 2.00mm",
+           "layerHeight": 1.5
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @2.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @2.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @2.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @2.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @2.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @2.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @2.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @2.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @2.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @2.00mm"
+          }
+         }
+        }
+       ],
+       "3": [
+        {
+         "name": "FELIX Food Single 3.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 3.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 3.00mm",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "FELIX Food Normal @ 3.00mm",
+           "layerHeight": 1.75
+          },
+          {
+           "name": "FELIX Food Coarse @ 3.00mm",
+           "layerHeight": 2
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @3.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @3.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @3.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @3.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @3.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @3.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @3.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @3.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @3.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @3.00mm"
+          }
+         }
+        }
+       ],
+       "4": [
+        {
+         "name": "FELIX Food Single 4.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 4.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 4.00mm",
+           "layerHeight": 2
+          },
+          {
+           "name": "FELIX Food Normal @ 4.00mm",
+           "layerHeight": 2.5
+          },
+          {
+           "name": "FELIX Food Coarse @ 4.00mm",
+           "layerHeight": 3
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @4.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @4.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @4.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @4.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @4.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @4.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @4.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @4.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @4.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @4.00mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Food Single 0.50mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Food Normal @ 0.50mm",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "FELIX Food Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @0.50mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @0.50mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @0.50mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @0.50mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @0.50mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @0.50mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @0.50mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @0.50mm",
+           "food very thin stainless steel syringe": "Food Very Thin Stainless Steel Syringe @0.50mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-fooddouble",
+   "brand": "felix",
+   "model": "Food Double",
+   "aliases": [
+    "felixfooddouble"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 195,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.5",
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_food_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Food Double",
+      "presets": {
+       "1": [
+        {
+         "name": "FELIX Food Double 1.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 1.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 1.00mm",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "FELIX Food Normal @ 1.00mm",
+           "layerHeight": 0.62
+          },
+          {
+           "name": "FELIX Food Coarse @ 1.00mm",
+           "layerHeight": 0.75
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @1.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @1.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @1.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @1.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @1.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @1.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @1.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @1.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @1.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @1.00mm"
+          }
+         }
+        }
+       ],
+       "2": [
+        {
+         "name": "FELIX Food Double 2.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 2.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 2.00mm",
+           "layerHeight": 1
+          },
+          {
+           "name": "FELIX Food Normal @ 2.00mm",
+           "layerHeight": 1.25
+          },
+          {
+           "name": "FELIX Food Coarse @ 2.00mm",
+           "layerHeight": 1.5
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @2.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @2.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @2.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @2.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @2.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @2.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @2.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @2.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @2.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @2.00mm"
+          }
+         }
+        }
+       ],
+       "3": [
+        {
+         "name": "FELIX Food Double 3.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 3.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 3.00mm",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "FELIX Food Normal @ 3.00mm",
+           "layerHeight": 1.75
+          },
+          {
+           "name": "FELIX Food Coarse @ 3.00mm",
+           "layerHeight": 2
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @3.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @3.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @3.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @3.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @3.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @3.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @3.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @3.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @3.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @3.00mm"
+          }
+         }
+        }
+       ],
+       "4": [
+        {
+         "name": "FELIX Food Double 4.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 4.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 4.00mm",
+           "layerHeight": 2
+          },
+          {
+           "name": "FELIX Food Normal @ 4.00mm",
+           "layerHeight": 2.5
+          },
+          {
+           "name": "FELIX Food Coarse @ 4.00mm",
+           "layerHeight": 3
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @4.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @4.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @4.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @4.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @4.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @4.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @4.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @4.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @4.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @4.00mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Food Double 0.50mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Food Normal @ 0.50mm",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "FELIX Food Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @0.50mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @0.50mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @0.50mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @0.50mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @0.50mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @0.50mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @0.50mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @0.50mm",
+           "food very thin stainless steel syringe": "Food Very Thin Stainless Steel Syringe @0.50mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-foodswitch",
+   "brand": "felix",
+   "model": "Food Switch",
+   "aliases": [
+    "felixfoodswitch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 195,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.5",
+    "1",
+    "2",
+    "3",
+    "4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_food_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Food Switch",
+      "presets": {
+       "1": [
+        {
+         "name": "FELIX Food Switch 1.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 1.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 1.00mm",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "FELIX Food Normal @ 1.00mm",
+           "layerHeight": 0.62
+          },
+          {
+           "name": "FELIX Food Coarse @ 1.00mm",
+           "layerHeight": 0.75
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @1.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @1.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @1.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @1.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @1.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @1.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @1.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @1.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @1.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @1.00mm"
+          }
+         }
+        }
+       ],
+       "2": [
+        {
+         "name": "FELIX Food Switch 2.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 2.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 2.00mm",
+           "layerHeight": 1
+          },
+          {
+           "name": "FELIX Food Normal @ 2.00mm",
+           "layerHeight": 1.25
+          },
+          {
+           "name": "FELIX Food Coarse @ 2.00mm",
+           "layerHeight": 1.5
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @2.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @2.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @2.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @2.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @2.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @2.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @2.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @2.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @2.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @2.00mm"
+          }
+         }
+        }
+       ],
+       "3": [
+        {
+         "name": "FELIX Food Switch 3.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 3.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 3.00mm",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "FELIX Food Normal @ 3.00mm",
+           "layerHeight": 1.75
+          },
+          {
+           "name": "FELIX Food Coarse @ 3.00mm",
+           "layerHeight": 2
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @3.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @3.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @3.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @3.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @3.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @3.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @3.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @3.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @3.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @3.00mm"
+          }
+         }
+        }
+       ],
+       "4": [
+        {
+         "name": "FELIX Food Switch 4.00mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 4.00mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 4.00mm",
+           "layerHeight": 2
+          },
+          {
+           "name": "FELIX Food Normal @ 4.00mm",
+           "layerHeight": 2.5
+          },
+          {
+           "name": "FELIX Food Coarse @ 4.00mm",
+           "layerHeight": 3
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @4.00mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @4.00mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @4.00mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @4.00mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @4.00mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @4.00mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @4.00mm",
+           "food very thick stainless steel syringe": "Food Very Thick Stainless Steel Syringe @4.00mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @4.00mm",
+           "food very thin stainless steel  syringe": "Food Very Thin Stainless Steel  Syringe  @4.00mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Food Switch 0.50mm nozzle",
+         "defaultProcess": "FELIX Food Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Food Fine @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Food Normal @ 0.50mm",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "FELIX Food Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Food Medium Plastic Syringe @0.50mm",
+         "filaments": {
+          "types": {
+           "PVB": "Food Thin Plastic Syringe @0.50mm"
+          },
+          "products": {
+           "food medium plastic syringe": "Food Medium Plastic Syringe @0.50mm",
+           "food medium stainless steel syringe": "Food Medium Stainless Steel Syringe @0.50mm",
+           "food thick stainless steel syringe": "Food Thick Stainless Steel Syringe @0.50mm",
+           "food thin plastic syringe": "Food Thin Plastic Syringe @0.50mm",
+           "food thin stainless steel syringe": "Food Thin Stainless Steel Syringe @0.50mm",
+           "food very thin plastic syringe": "Food Very Thin Plastic Syringe @0.50mm",
+           "food very thin stainless steel syringe": "Food Very Thin Stainless Steel Syringe @0.50mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-pro2",
+   "brand": "felix",
+   "model": "Pro 2",
+   "aliases": [
+    "felixpro2dual",
+    "pro2dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 225,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 245,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.7"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "felixpro2dual",
+      "nozzles": [
+       "0.25 mm",
+       "0.35 mm",
+       "0.50 mm",
+       "0.70 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "felix-pro3",
+   "brand": "felix",
+   "model": "Pro 3",
+   "aliases": [
+    "felixpro3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 244,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 235,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.7"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_pro_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Pro 3",
+      "presets": {
+       "0.25": [
+        {
+         "name": "FELIX Pro 3 0.25mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.25mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.25mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.25mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.25mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.25mm",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.25mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.25mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.25mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.25mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.25mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.25mm"
+          }
+         }
+        }
+       ],
+       "0.35": [
+        {
+         "name": "FELIX Pro 3 0.35mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.35mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.35mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.35mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.35mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.35mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.35mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.35mm",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.35mm",
+           "PETG": "FELIX PETG Brass @ 0.35mm",
+           "PLA": "FELIX Wood  Brass @ 0.35mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.35mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.35mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.35mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.35mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.35mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+           "felix wood  brass": "FELIX Wood  Brass @ 0.35mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.35mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.35mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.35mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.35mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.35mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.35mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.35mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.35mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Pro 3 0.50mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Very Fine @ 0.50mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.50mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.50mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.50mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.50mm",
+           "PETG": "FELIX PETG Brass @ 0.50mm",
+           "PLA": "FELIX Wood Brass @ 0.50mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.50mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.50mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.50mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.50mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.50mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+           "felix wood brass": "FELIX Wood Brass @ 0.50mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.50mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.50mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.50mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.50mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.50mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.50mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.50mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.50mm"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "FELIX Pro 3 0.70mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.70mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Fine @ 0.70mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.70mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.70mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.70mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.70mm",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "FELIX Plastic Super Coarse @ 0.70mm",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.70mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.70mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.70mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.70mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.70mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.70mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-prol3",
+   "brand": "felix",
+   "model": "Pro L 3.0",
+   "aliases": [
+    "felixprol3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.7"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_pro_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Pro L 3.0",
+      "presets": {
+       "0.25": [
+        {
+         "name": "FELIX Pro L 3.0 0.25mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.25mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.25mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.25mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.25mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.25mm",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.25mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.25mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.25mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.25mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.25mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.25mm"
+          }
+         }
+        }
+       ],
+       "0.35": [
+        {
+         "name": "FELIX Pro L 3.0 0.35mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.35mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.35mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.35mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.35mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.35mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.35mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.35mm",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.35mm",
+           "PETG": "FELIX PETG Brass @ 0.35mm",
+           "PLA": "FELIX Wood  Brass @ 0.35mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.35mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.35mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.35mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.35mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.35mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+           "felix wood  brass": "FELIX Wood  Brass @ 0.35mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.35mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.35mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.35mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.35mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.35mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.35mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.35mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.35mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Pro L 3.0 0.50mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Very Fine @ 0.50mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.50mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.50mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.50mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.50mm",
+           "PETG": "FELIX PETG Brass @ 0.50mm",
+           "PLA": "FELIX Wood Brass @ 0.50mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.50mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.50mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.50mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.50mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.50mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+           "felix wood brass": "FELIX Wood Brass @ 0.50mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.50mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.50mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.50mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.50mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.50mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.50mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.50mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.50mm"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "FELIX Pro L 3.0 0.70mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.70mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Fine @ 0.70mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.70mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.70mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.70mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.70mm",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "FELIX Plastic Super Coarse @ 0.70mm",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.70mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.70mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.70mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.70mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.70mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.70mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-proxl3",
+   "brand": "felix",
+   "model": "Pro XL 3.0",
+   "aliases": [
+    "felixproxl3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.7"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_pro_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Pro XL 3.0",
+      "presets": {
+       "0.25": [
+        {
+         "name": "FELIX Pro XL 3.0 0.25mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.25mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.25mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.25mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.25mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.25mm",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.25mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.25mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.25mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.25mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.25mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.25mm"
+          }
+         }
+        }
+       ],
+       "0.35": [
+        {
+         "name": "FELIX Pro XL 3.0 0.35mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.35mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.35mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.35mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.35mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.35mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.35mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.35mm",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.35mm",
+           "PETG": "FELIX PETG Brass @ 0.35mm",
+           "PLA": "FELIX Wood  Brass @ 0.35mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.35mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.35mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.35mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.35mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.35mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+           "felix wood  brass": "FELIX Wood  Brass @ 0.35mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.35mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.35mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.35mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.35mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.35mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.35mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.35mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.35mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Pro XL 3.0 0.50mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Very Fine @ 0.50mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.50mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.50mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.50mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.50mm",
+           "PETG": "FELIX PETG Brass @ 0.50mm",
+           "PLA": "FELIX Wood Brass @ 0.50mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.50mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.50mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.50mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.50mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.50mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+           "felix wood brass": "FELIX Wood Brass @ 0.50mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.50mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.50mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.50mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.50mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.50mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.50mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.50mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.50mm"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "FELIX Pro XL 3.0 0.70mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.70mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Fine @ 0.70mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.70mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.70mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.70mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.70mm",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "FELIX Plastic Super Coarse @ 0.70mm",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.70mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.70mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.70mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.70mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.70mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.70mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "felix-tec4",
+   "brand": "felix",
+   "model": "Tec 4",
+   "aliases": [
+    "felixtec4",
+    "felixtec4dual",
+    "tec4dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 255,
+   "nozzles": [
+    "0.25",
+    "0.35",
+    "0.5",
+    "0.7"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "orca": "felix_tec_series"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FELIX Tec 4",
+      "presets": {
+       "0.25": [
+        {
+         "name": "FELIX Tec 4 0.25mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.25mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.25mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.25mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.25mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.25mm",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.25mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.25mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.25mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.25mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.25mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.25mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.25mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.25mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.25mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.25mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.25mm"
+          }
+         }
+        }
+       ],
+       "0.35": [
+        {
+         "name": "FELIX Tec 4 0.35mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.35mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Super Fine @ 0.35mm",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "FELIX Plastic Very Fine @ 0.35mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.35mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.35mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.35mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.35mm",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.35mm",
+           "PETG": "FELIX PETG Brass @ 0.35mm",
+           "PLA": "FELIX Wood  Brass @ 0.35mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.35mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.35mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.35mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.35mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.35mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.35mm",
+           "felix wood  brass": "FELIX Wood  Brass @ 0.35mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.35mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.35mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.35mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.35mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.35mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.35mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.35mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.35mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.35mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.35mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.35mm"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "FELIX Tec 4 0.50mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.50mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Very Fine @ 0.50mm",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "FELIX Plastic Fine @ 0.50mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.50mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.50mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.50mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.50mm",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "ASA": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "FLEX": "FELIX FLEX  Brass @ 0.50mm",
+           "PETG": "FELIX PETG Brass @ 0.50mm",
+           "PLA": "FELIX Wood Brass @ 0.50mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm"
+          },
+          "products": {
+           "felix flex  brass": "FELIX FLEX  Brass @ 0.50mm",
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.50mm",
+           "felix petg brass": "FELIX PETG Brass @ 0.50mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.50mm",
+           "felix premium pla brass": "FELIX Premium PLA Brass @ 0.50mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.50mm",
+           "felix wood brass": "FELIX Wood Brass @ 0.50mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.50mm",
+           "formfutura appolox asa brass": "FORMFUTURA AppoloX ASA Brass @ 0.50mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.50mm",
+           "formfutura aquasolve pva brass": "FORMFUTURA Aquasolve PVA Brass @ 0.50mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.50mm",
+           "formfutura epla brass": "FORMFUTURA ePLA Brass @ 0.50mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.50mm",
+           "formfutura titanx abs brass": "FORMFUTURA TitanX ABS Brass @ 0.50mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.50mm",
+           "ultrafuse abs fusion+ brass": "Ultrafuse ABS Fusion+ Brass @ 0.50mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.50mm"
+          }
+         }
+        }
+       ],
+       "0.7": [
+        {
+         "name": "FELIX Tec 4 0.70mm nozzle",
+         "defaultProcess": "FELIX Plastic Normal @ 0.70mm",
+         "processes": [
+          {
+           "name": "FELIX Plastic Fine @ 0.70mm",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "FELIX Plastic Normal @ 0.70mm",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "FELIX Plastic Slightly Coarse @ 0.70mm",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "FELIX Plastic Coarse @ 0.70mm",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "FELIX Plastic Very Coarse @ 0.70mm",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "FELIX Plastic Super Coarse @ 0.70mm",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+         "filaments": {
+          "types": {
+           "ABS": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ASA": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "FLEX": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "PETG": "FELIX PETG Hardened Steel @ 0.70mm",
+           "PLA": "FELIX Wood Hardened Steel @ 0.70mm",
+           "PVA": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm"
+          },
+          "products": {
+           "felix flex hardened steel": "FELIX FLEX Hardened Steel @ 0.70mm",
+           "felix petg hardened steel": "FELIX PETG Hardened Steel @ 0.70mm",
+           "felix premium pla hardened steel": "FELIX Premium PLA Hardened Steel @ 0.70mm",
+           "felix wood hardened steel": "FELIX Wood Hardened Steel @ 0.70mm",
+           "formfutura appolox asa hardened steel": "FORMFUTURA AppoloX ASA Hardened Steel @ 0.70mm",
+           "formfutura aquasolve pva hardened steel": "FORMFUTURA Aquasolve PVA Hardened Steel @ 0.70mm",
+           "formfutura epla hardened steel": "FORMFUTURA ePLA Hardened Steel @ 0.70mm",
+           "formfutura titanx abs hardened steel": "FORMFUTURA TitanX ABS Hardened Steel @ 0.70mm",
+           "ultrafuse abs fusion+ hardened steel": "Ultrafuse ABS Fusion+ Hardened Steel @ 0.70mm"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "felixtec4dual",
+      "nozzles": [
+       "0.25 mm",
+       "0.35 mm",
+       "0.50 mm",
+       "0.70 mm"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

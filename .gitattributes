@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Written by npm run printers:update, so GitHub folds it in diffs
+backend/assets/printers/** linguist-generated=true

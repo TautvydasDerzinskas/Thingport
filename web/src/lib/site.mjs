@@ -233,13 +233,13 @@ export const DOCS = [
     description: "Open files straight in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura and other slicers.",
   },
   {
-    slug: "features/normalized-3mf",
-    source: "docs/features/normalized-3mf.md",
+    slug: "features/adapted-3mf",
+    source: "docs/features/adapted-3mf.md",
     group: "Features",
-    title: "Normalized MakerWorld 3MFs",
-    nav: "Normalized 3MFs",
+    title: "Adapted 3MFs",
+    nav: "Adapted 3MFs",
     description:
-      "Open MakerWorld's Bambu Studio projects in other slicers with their colours, plates and print settings.",
+      "Open a 3MF from any site in your slicer as if it had been made there: colours, parts, plates and print settings.",
   },
   {
     slug: "features/supporting-files",

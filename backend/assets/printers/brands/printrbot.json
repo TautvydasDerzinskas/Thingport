@@ -1,0 +1,195 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "printrbot",
+  "name": "Printrbot"
+ },
+ "printers": [
+  {
+   "id": "printrbot-play",
+   "brand": "printrbot",
+   "model": "Play",
+   "aliases": [
+    "printrbotplay",
+    "printrbotplayheatedbed"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 130,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "printrbot_play"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "printrbot_play",
+      "nozzles": []
+     },
+     {
+      "definition": "printrbot_play_heated",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "printrbot-simple",
+   "brand": "printrbot",
+   "model": "Simple",
+   "aliases": [
+    "printrbotsimple"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 140,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "printrbot_simple"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "printrbot_simple",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "printrbot-simplemakerskit1405",
+   "brand": "printrbot",
+   "model": "Simple Maker's Kit (1405)",
+   "aliases": [
+    "printrbotsimplemakerskit1405",
+    "simplemakerskit"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 115,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "printrbot_simple_makers_kit"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "printrbot_simple_makers_kit",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "printrbot-simplemetalextended",
+   "brand": "printrbot",
+   "model": "Simple Metal Extended",
+   "aliases": [
+    "printrbotsimplemetalextended"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 235,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "printrbot_simple_extended"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "printrbot_simple_extended",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

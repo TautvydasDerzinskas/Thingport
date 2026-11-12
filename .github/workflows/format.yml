@@ -30,5 +30,7 @@ jobs:
         run: npm run sdk:check
       - name: Studio's backend copies match frontend/src/studio
         run: npm run studio:check
+      - name: The 3MF adapter's copies match backend/src/adapter
+        run: npm run adapter:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }

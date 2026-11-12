@@ -427,7 +427,7 @@ export const PROVIDER_DOCS = ${JSON.stringify(pages, null, 2)};
  *    "recommended", "optional" or "none". \`grabSite\`: "builtin", or "optional", which Grab's popup turns on once.
  *    \`collections\` and \`likes\`, and \`sync\`, true with either: a sync follows both. \`profiles\`: print profiles.
  *    \`slicers\`: the names of its printer maker's own, if any. \`bambuProjects\`: Bambu Studio 3MFs, which other
- *    slicers open normalized. \`trending\`: the dashboard's trending panel's list, "trending", "popular", "featured"
+ *    slicers open adapted. \`trending\`: the dashboard's trending panel's list, "trending", "popular", "featured"
  *    or "recommended", or null where it has none. \`categories\`: false where its models name none, so they come in
  *    uncategorized. */
 export const PROVIDER_PAGES = ${JSON.stringify(manifests.map(pageExtras), null, 2)};

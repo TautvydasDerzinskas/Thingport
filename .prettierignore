@@ -2,6 +2,8 @@
 package-lock.json
 **/CHANGELOG.md
 backend/prisma/migrations/
+# The printer catalogue, written by scripts/printers/update.mjs
+backend/assets/printers/
 web/.astro/
 # A tool's built files, and the original Multiboard Planner's core and tests, kept as it has them
 tools/*/tool.js

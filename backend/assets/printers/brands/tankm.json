@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tankm",
+  "name": "tank_m"
+ },
+ "printers": [
+  {
+   "id": "tankm-tankm3",
+   "brand": "tankm",
+   "model": "Tank M3",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tank_m3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tank_m3",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "tankm-tankm3max",
+   "brand": "tankm",
+   "model": "Tank M3 Max",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tank_m3_max"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tank_m3_max",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

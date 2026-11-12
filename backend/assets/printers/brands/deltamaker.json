@@ -1,0 +1,708 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "deltamaker",
+  "name": "DeltaMaker"
+ },
+ "printers": [
+  {
+   "id": "deltamaker-2",
+   "brand": "deltamaker",
+   "model": "2",
+   "aliases": [
+    "deltamaker2"
+   ],
+   "bed": {
+    "shape": "polygon",
+    "x": 276,
+    "y": 240,
+    "origin": [
+     -138,
+     -120
+    ],
+    "points": [
+     [
+      -69,
+      -120
+     ],
+     [
+      -138,
+      0
+     ],
+     [
+      -69,
+      120
+     ],
+     [
+      69,
+      120
+     ],
+     [
+      138,
+      0
+     ],
+     [
+      69,
+      -120
+     ]
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.35"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "deltamaker-2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "DeltaMaker 2",
+      "presets": {
+       "0.35": [
+        {
+         "name": "DeltaMaker 2 0.35 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "DeltaMaker 2",
+      "presets": {
+       "0.35": [
+        {
+         "name": "DeltaMaker 2 0.35 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "DeltaMaker 2",
+      "presets": {
+       "0.35": [
+        {
+         "name": "DeltaMaker 2 0.35 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "DeltaMaker 2",
+      "presets": {
+       "0.35": [
+        {
+         "name": "DeltaMaker 2 0.35 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "deltamaker-2t",
+   "brand": "deltamaker",
+   "model": "2T",
+   "aliases": [
+    "deltamaker2t"
+   ],
+   "bed": {
+    "shape": "polygon",
+    "x": 276,
+    "y": 240,
+    "origin": [
+     -138,
+     -120
+    ],
+    "points": [
+     [
+      -69,
+      -120
+     ],
+     [
+      -138,
+      0
+     ],
+     [
+      -69,
+      120
+     ],
+     [
+      69,
+      120
+     ],
+     [
+      138,
+      0
+     ],
+     [
+      69,
+      -120
+     ]
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 460,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "deltamaker-2t"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "DeltaMaker 2T",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2T 0.5 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "DeltaMaker 2T",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2T 0.5 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "DeltaMaker 2T",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2T 0.5 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "DeltaMaker 2T",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2T 0.5 nozzle",
+         "defaultProcess": "0.18mm Standard @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "deltamaker-2xt",
+   "brand": "deltamaker",
+   "model": "2XT",
+   "aliases": [
+    "deltamaker2xt"
+   ],
+   "bed": {
+    "shape": "polygon",
+    "x": 276,
+    "y": 240,
+    "origin": [
+     -138,
+     -120
+    ],
+    "points": [
+     [
+      -69,
+      -120
+     ],
+     [
+      -138,
+      0
+     ],
+     [
+      -69,
+      120
+     ],
+     [
+      69,
+      120
+     ],
+     [
+      138,
+      0
+     ],
+     [
+      69,
+      -120
+     ]
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 565,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "deltamaker-2xt"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "DeltaMaker 2XT",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2XT 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @DeltaMaker",
+           "PLA": "Generic PLA @DeltaMaker",
+           "TPU": "Generic TPU @DeltaMaker"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "generic petg": "Generic PETG @DeltaMaker",
+           "generic pla": "Generic PLA @DeltaMaker",
+           "generic tpu": "Generic TPU @DeltaMaker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "DeltaMaker 2XT",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2XT 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "DeltaMaker 2XT",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2XT 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "DeltaMaker 2XT",
+      "presets": {
+       "0.5": [
+        {
+         "name": "DeltaMaker 2XT 0.5 nozzle",
+         "defaultProcess": "0.25mm Draft @DeltaMaker",
+         "processes": [
+          {
+           "name": "0.12mm Fine @DeltaMaker",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @DeltaMaker",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @DeltaMaker",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "DeltaMaker Brand PLA",
+         "filaments": {
+          "types": {
+           "PETG": "DeltaMaker Generic PETG",
+           "PLA": "DeltaMaker Generic PLA",
+           "TPU": "DeltaMaker Generic TPU"
+          },
+          "products": {
+           "deltamaker brand pla": "DeltaMaker Brand PLA",
+           "deltamaker generic petg": "DeltaMaker Generic PETG",
+           "deltamaker generic pla": "DeltaMaker Generic PLA",
+           "deltamaker generic tpu": "DeltaMaker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

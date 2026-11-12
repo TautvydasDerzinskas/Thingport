@@ -1,0 +1,973 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "raise3d",
+  "name": "Raise3D"
+ },
+ "printers": [
+  {
+   "id": "raise3d-n2",
+   "brand": "raise3d",
+   "model": "N2",
+   "aliases": [
+    "n2dual",
+    "n2single",
+    "raise3dn2dual",
+    "raise3dn2single"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 305,
+    "y": 305,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "IDEX",
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "raise3D_N2_dual",
+      "nozzles": []
+     },
+     {
+      "config": "Single",
+      "definition": "raise3D_N2_single",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "raise3d-n2plus",
+   "brand": "raise3d",
+   "model": "N2 Plus",
+   "aliases": [
+    "n2plusdual",
+    "n2plussingle",
+    "raise3dn2plusdual",
+    "raise3dn2plussingle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 305,
+    "y": 305,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 610,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "IDEX",
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "raise3D_N2_plus_dual",
+      "nozzles": []
+     },
+     {
+      "config": "Single",
+      "definition": "raise3D_N2_plus_single",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "raise3d-pro3",
+   "brand": "raise3d",
+   "model": "Pro3",
+   "aliases": [
+    "raise3dpro3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Raise3D-Pro3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Raise3D Pro3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Raise3D Pro3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Raise3D Pro3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Raise3D Pro3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Raise3D Pro3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "raise3d-pro3plus",
+   "brand": "raise3d",
+   "model": "Pro3 Plus",
+   "aliases": [
+    "raise3dpro3plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 605,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Raise3D-Pro3-Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Raise3D Pro3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Raise3D Pro3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Raise3D Generic PLA",
+         "filaments": {
+          "types": {
+           "ASA": "Raise3D Generic ASA",
+           "PETG": "Raise3D Generic PETG",
+           "PLA": "Raise3D Generic PLA",
+           "PVA": "Raise3D Generic PVA",
+           "TPU": "Raise3D Generic TPU"
+          },
+          "products": {
+           "raise3d generic asa": "Raise3D Generic ASA",
+           "raise3d generic petg": "Raise3D Generic PETG",
+           "raise3d generic pla": "Raise3D Generic PLA",
+           "raise3d generic pva": "Raise3D Generic PVA",
+           "raise3d generic tpu": "Raise3D Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Raise3D Pro3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Raise3D Pro3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Raise3D Pro3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Dual)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Left)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Raise3D Pro3 Plus 0.4 nozzle (Right)",
+         "defaultProcess": "0.20mm Standard @Raise3D Pro3Plus",
+         "processes": [
+          {
+           "name": "0.10mm Fine @Raise3D Pro3Plus",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @Raise3D Pro3Plus",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Raise3D Pro3Plus",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

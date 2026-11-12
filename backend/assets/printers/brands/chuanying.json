@@ -1,0 +1,667 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "chuanying",
+  "name": "Chuanying"
+ },
+ "printers": [
+  {
+   "id": "chuanying-x1",
+   "brand": "chuanying",
+   "model": "X1",
+   "aliases": [
+    "chuanyingx1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     -110,
+     -110
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Chuanying-X1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Generic PLA @Chuanying",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Chuanying X1 0.25 Nozzle",
+           "ASA": "Generic ASA @Chuanying X1 0.25 Nozzle",
+           "PETG": "Generic PETG @Chuanying X1 0.25 Nozzle",
+           "PLA": "Generic PLA @Chuanying X1 0.25 Nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Chuanying X1 0.25 Nozzle",
+           "generic asa": "Generic ASA @Chuanying X1 0.25 Nozzle",
+           "generic hs pla": "Generic HS PLA @Chuanying X1 0.25 Nozzle",
+           "generic petg": "Generic PETG @Chuanying X1 0.25 Nozzle",
+           "generic pla": "Generic PLA @Chuanying X1 0.25 Nozzle",
+           "generic pla-silk": "Generic PLA-Silk @Chuanying X1 0.25 Nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Chuanying",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Chuanying",
+           "ASA": "Generic ASA @Chuanying",
+           "HIPS": "Generic HIPS @Chuanying",
+           "PETG": "Generic PETG @Chuanying",
+           "PETG-CF": "Generic PETG-CF10 @Chuanying",
+           "PLA": "Generic PLA @Chuanying",
+           "PLA-CF": "Generic PLA-CF10 @Chuanying",
+           "PVA": "Generic PVA @Chuanying",
+           "TPU": "Generic TPU @Chuanying"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Chuanying",
+           "generic asa": "Generic ASA @Chuanying",
+           "generic hips": "Generic HIPS @Chuanying",
+           "generic hs pla": "Generic HS PLA @Chuanying",
+           "generic petg": "Generic PETG @Chuanying",
+           "generic petg-cf10": "Generic PETG-CF10 @Chuanying",
+           "generic pla": "Generic PLA @Chuanying",
+           "generic pla-cf10": "Generic PLA-CF10 @Chuanying",
+           "generic pla-silk": "Generic PLA-Silk @Chuanying",
+           "generic pva": "Generic PVA @Chuanying",
+           "generic tpu": "Generic TPU @Chuanying"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Chuanying",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Chuanying",
+           "ASA": "Generic ASA @Chuanying",
+           "HIPS": "Generic HIPS @Chuanying",
+           "PETG": "Generic PETG @Chuanying",
+           "PETG-CF": "Generic PETG-CF10 @Chuanying",
+           "PLA": "Generic PLA @Chuanying",
+           "PLA-CF": "Generic PLA-CF10 @Chuanying",
+           "PVA": "Generic PVA @Chuanying",
+           "TPU": "Generic TPU @Chuanying"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Chuanying",
+           "generic asa": "Generic ASA @Chuanying",
+           "generic hips": "Generic HIPS @Chuanying",
+           "generic hs pla": "Generic HS PLA @Chuanying",
+           "generic petg": "Generic PETG @Chuanying",
+           "generic petg-cf10": "Generic PETG-CF10 @Chuanying",
+           "generic pla": "Generic PLA @Chuanying",
+           "generic pla-cf10": "Generic PLA-CF10 @Chuanying",
+           "generic pla-silk": "Generic PLA-Silk @Chuanying",
+           "generic pva": "Generic PVA @Chuanying",
+           "generic tpu": "Generic TPU @Chuanying"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Chuanying",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Chuanying",
+           "ASA": "Generic ASA @Chuanying",
+           "HIPS": "Generic HIPS @Chuanying",
+           "PETG": "Generic PETG @Chuanying",
+           "PETG-CF": "Generic PETG-CF10 @Chuanying",
+           "PLA": "Generic PLA @Chuanying",
+           "PLA-CF": "Generic PLA-CF10 @Chuanying",
+           "PVA": "Generic PVA @Chuanying",
+           "TPU": "Generic TPU @Chuanying"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Chuanying",
+           "generic asa": "Generic ASA @Chuanying",
+           "generic hips": "Generic HIPS @Chuanying",
+           "generic hs pla": "Generic HS PLA @Chuanying",
+           "generic petg": "Generic PETG @Chuanying",
+           "generic petg-cf10": "Generic PETG-CF10 @Chuanying",
+           "generic pla": "Generic PLA @Chuanying",
+           "generic pla-cf10": "Generic PLA-CF10 @Chuanying",
+           "generic pla-silk": "Generic PLA-Silk @Chuanying",
+           "generic pva": "Generic PVA @Chuanying",
+           "generic tpu": "Generic TPU @Chuanying"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "ASA": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "PETG": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "PLA": "Chuanying PLA @Chuanying X1 0.25 Nozzle"
+          },
+          "products": {
+           "chuanying abs": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "chuanying asa": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "chuanying hs pla": "Chuanying HS PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying petg": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "chuanying pla": "Chuanying PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying pla-silk": "Chuanying PLA-SILK @Chuanying X1 0.25 Nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "ASA": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "PETG": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "PLA": "Chuanying PLA @Chuanying X1 0.25 Nozzle"
+          },
+          "products": {
+           "chuanying abs": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "chuanying asa": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "chuanying hs pla": "Chuanying HS PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying petg": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "chuanying pla": "Chuanying PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying pla-silk": "Chuanying PLA-SILK @Chuanying X1 0.25 Nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Chuanying X1",
+      "presets": {
+       "0.25": [
+        {
+         "name": "Chuanying X1 0.25 Nozzle",
+         "defaultProcess": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Chuanying X1 0.25 Nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "ASA": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "PETG": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "PLA": "Chuanying PLA @Chuanying X1 0.25 Nozzle"
+          },
+          "products": {
+           "chuanying abs": "Chuanying ABS @Chuanying X1 0.25 Nozzle",
+           "chuanying asa": "Chuanying ASA @Chuanying X1 0.25 Nozzle",
+           "chuanying hs pla": "Chuanying HS PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying petg": "Chuanying PETG @Chuanying X1 0.25 Nozzle",
+           "chuanying pla": "Chuanying PLA @Chuanying X1 0.25 Nozzle",
+           "chuanying pla-silk": "Chuanying PLA-SILK @Chuanying X1 0.25 Nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Chuanying X1 0.4 Nozzle",
+         "defaultProcess": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Chuanying X1 0.4 Nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Chuanying X1 0.6 Nozzle",
+         "defaultProcess": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Chuanying X1 0.6 Nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Chuanying X1 0.8 Nozzle",
+         "defaultProcess": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Chuanying X1 0.8 Nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Chuanying Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Chuanying Generic ABS",
+           "ASA": "Chuanying Generic ASA",
+           "HIPS": "Chuanying Generic HIPS",
+           "PETG": "Chuanying Generic PETG",
+           "PETG-CF": "Chuanying Generic PETG-CF10",
+           "PLA": "Chuanying Generic PLA",
+           "PLA-CF": "Chuanying Generic PLA-CF10",
+           "PVA": "Chuanying Generic PVA",
+           "TPU": "Chuanying Generic TPU"
+          },
+          "products": {
+           "chuanying generic abs": "Chuanying Generic ABS",
+           "chuanying generic asa": "Chuanying Generic ASA",
+           "chuanying generic hips": "Chuanying Generic HIPS",
+           "chuanying generic hs pla": "Chuanying Generic HS PLA",
+           "chuanying generic petg": "Chuanying Generic PETG",
+           "chuanying generic petg-cf10": "Chuanying Generic PETG-CF10",
+           "chuanying generic pla": "Chuanying Generic PLA",
+           "chuanying generic pla-cf10": "Chuanying Generic PLA-CF10",
+           "chuanying generic pla-silk": "Chuanying Generic PLA-Silk",
+           "chuanying generic pva": "Chuanying Generic PVA",
+           "chuanying generic tpu": "Chuanying Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

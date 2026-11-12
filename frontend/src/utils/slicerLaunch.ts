@@ -63,7 +63,8 @@ export function slicerLaunchUrl(
   // eufyMake Studio is a PrusaSlicer fork without its Printables-only check; its link is the one its site's own
   // "Open in slicer" button makes, the file named after the link's last segment or `name`.
   if (slicerId === "eufystudio3d") {
-    const name = filename ? `&name=${encodeURIComponent(filename)}` : "";
+    // It opens a 3MF only by a lowercase ".3mf" name, and does nothing with "Model.3MF".
+    const name = filename ? `&name=${encodeURIComponent(filename.replace(/\.3mf$/i, ".3mf"))}` : "";
     return `eufystudio3d://open/?file=${encodeURIComponent(fileUrl)}${name}`;
   }
   const hinted = filename ? withFilenameHint(slicerId, fileUrl, filename) : { fileUrl, extra: "" };

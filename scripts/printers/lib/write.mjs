@@ -1,0 +1,135 @@
+// The catalogue as backend/assets/printers reads it, in pieces the server loads as asked for:
+//   index.json        every printer's summary (brand, model, bed, height, nozzles, codes), for lists and fit checks
+//   brands/<id>.json  a brand's printers in full, each slicer's preset names among them
+//   names.json        every preset, model and definition name slicers use, as the printer (and nozzle) it is
+//   filaments/<slicer>.json  the filament presets a slicer installs for every printer, by type and by product
+//   covers/<id>.webp  pictures
+//   SOURCES.md        where it all came from, at which release, under which licence
+
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+export const CATALOGUE_VERSION = 1;
+
+const json = (value) => `${JSON.stringify(value, null, 1)}\n`;
+
+function summaryOf(p, hasCover) {
+  return {
+    id: p.id,
+    brand: p.brand,
+    model: p.model,
+    bed: p.bed,
+    ...(p.exclude ? { exclude: p.exclude } : {}),
+    ...(p.extruderBeds ? { extruderBeds: p.extruderBeds } : {}),
+    height: p.height,
+    nozzles: p.nozzles,
+    extruders: p.extruders,
+    ...(p.codes ? { codes: p.codes } : {}),
+    ...(hasCover ? { cover: true } : {}),
+  };
+}
+
+/** Lowercased names to [printer id, nozzle]; the first source in priority order keeps a name two printers share. */
+function namesOf(printers) {
+  const names = new Map();
+  let shared = 0;
+  const add = (name, id, nozzle = null) => {
+    const key = String(name ?? "")
+      .trim()
+      .toLowerCase();
+    if (!key) return;
+    const had = names.get(key);
+    if (had && had[0] !== id) shared++;
+    if (!had) names.set(key, nozzle ? [id, nozzle] : [id]);
+  };
+  for (const p of printers) {
+    for (const items of Object.values(p.slicers)) {
+      for (const item of items) {
+        for (const [nozzle, presets] of Object.entries(item.presets ?? {})) {
+          for (const preset of presets) {
+            add(preset.name, p.id, nozzle);
+            for (const old of preset.renamedFrom ?? []) add(old, p.id, nozzle);
+          }
+        }
+        if (item.model) add(item.model, p.id);
+        if (item.definition) add(item.definition, p.id);
+      }
+    }
+    add(`${p.brandName} ${p.model}`, p.id);
+  }
+  return { names: Object.fromEntries([...names].sort(([a], [b]) => a.localeCompare(b))), shared };
+}
+
+/** Each slicer's filaments for every printer (OrcaSlicer's filament library), in filaments/<slicer id>.json. */
+function writeFilaments(dir, filaments) {
+  mkdirSync(path.join(dir, "filaments"), { recursive: true });
+  const files = new Set();
+  for (const [id, choices] of Object.entries(filaments)) {
+    if (!choices || !Object.keys(choices.types).length) continue;
+    files.add(`${id}.json`);
+    writeFileSync(path.join(dir, "filaments", `${id}.json`), json({ version: CATALOGUE_VERSION, ...choices }));
+  }
+  for (const name of readdirSync(path.join(dir, "filaments"))) {
+    if (!files.has(name)) rmSync(path.join(dir, "filaments", name));
+  }
+}
+
+export function writeCatalogue(dir, { printers, sources, covers, filaments = {} }) {
+  writeFilaments(dir, filaments);
+  mkdirSync(path.join(dir, "brands"), { recursive: true });
+  const brands = new Map();
+  for (const p of printers) {
+    if (!brands.has(p.brand)) brands.set(p.brand, { id: p.brand, name: p.brandName, printers: [] });
+    brands.get(p.brand).printers.push(p);
+  }
+  writeFileSync(
+    path.join(dir, "index.json"),
+    json({
+      version: CATALOGUE_VERSION,
+      brands: [...brands.values()].map((b) => ({ id: b.id, name: b.name, printers: b.printers.length })),
+      printers: printers.map((p) => summaryOf(p, covers.has(p.id))),
+    }),
+  );
+  const brandFiles = new Set();
+  for (const b of brands.values()) {
+    const file = `${b.id}.json`;
+    brandFiles.add(file);
+    writeFileSync(
+      path.join(dir, "brands", file),
+      json({
+        version: CATALOGUE_VERSION,
+        brand: { id: b.id, name: b.name },
+        printers: b.printers.map(({ coverFrom: _from, brandName: _name, ...p }) => ({
+          ...p,
+          ...(covers.has(p.id) ? { cover: true } : {}),
+        })),
+      }),
+    );
+  }
+  for (const name of readdirSync(path.join(dir, "brands"))) {
+    if (!brandFiles.has(name)) rmSync(path.join(dir, "brands", name));
+  }
+  const { names, shared } = namesOf(printers);
+  writeFileSync(path.join(dir, "names.json"), json({ version: CATALOGUE_VERSION, names }));
+  writeFileSync(path.join(dir, "SOURCES.md"), sourcesMd(sources, printers));
+  return { brands: brands.size, names: Object.keys(names).length, sharedNames: shared };
+}
+
+function sourcesMd(sources, printers) {
+  const count = (id) => printers.filter((p) => p.sources.includes(id)).length;
+  const rows = sources.map(
+    (s) =>
+      `| ${s.name} | [${s.repo}](https://github.com/${s.repo}/tree/${s.commit}) | ${s.ref} | ${s.licence} | ${count(s.id)} |`,
+  );
+  return [
+    "# Where the printer catalogue comes from",
+    "",
+    "Generated by `npm run printers:update` (scripts/printers/) from the printer profiles these slicers ship. Each",
+    "is pinned to the release in the table; the pictures are their printer pictures, resized.",
+    "",
+    "| Slicer | Repository | Release | Licence | Printers |",
+    "| --- | --- | --- | --- | --- |",
+    ...rows,
+    "",
+  ].join("\n");
+}
