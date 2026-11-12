@@ -71,7 +71,8 @@ export type StoredConfig = {
   adaptSlicers?: string[];
   adaptPrinters?: { id: string; nozzle: string }[];
   adaptPlacement?: string;
-  adaptCarriedTo?: string;
+  /** What of Adapt 3MFs' settings has gone to each Thingport account, by `instanceUrl|email`. */
+  adaptCarriedTo?: Record<string, ("slicers" | "printers")[]>;
   adaptLastTarget?: string;
   adaptOpenSettings?: number;
   isAdmin?: boolean;
