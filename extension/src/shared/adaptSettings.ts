@@ -1,6 +1,7 @@
 // "Adapt 3MFs" as Grab keeps it for itself: the slicers the user opens models in, their printers, and where the
 // Download adapted button goes. Once connected, the slicers and printers are the Thingport instance's
-// (background/adaptSettings.ts) and these wait for a disconnect; the button's place stays Grab's either way.
+// (background/adaptSettings.ts): these stand in while the instance can't be reached, and these printers on an
+// instance from before printers. The button's place stays Grab's either way.
 
 import { SLICER_LABELS } from "./slicers";
 

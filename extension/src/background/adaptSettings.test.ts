@@ -127,6 +127,20 @@ describe("Adapt 3MFs' settings in the background", () => {
     expect(view.thingport).toMatchObject({ slicers: ["cura"], printers: [] });
   });
 
+  it("stop waiting for an instance that doesn't answer", async () => {
+    vi.useFakeTimers();
+    try {
+      Object.assign(store, CONNECTED);
+      instance.answers["GET /settings/slicer"] = () => new Promise(() => undefined);
+      instance.answers["GET /me/printers"] = { printers: [] };
+      const view = getAdaptView();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect((await view).thingport).toEqual({ error: "it didn't answer in time" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("say why when the instance couldn't be asked", async () => {
     Object.assign(store, CONNECTED);
     instance.answers["GET /settings/slicer"] = new TypeError("Failed to fetch");

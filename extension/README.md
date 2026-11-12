@@ -150,7 +150,7 @@ on your extruders. Hover the bulb on the button for what the copy keeps.
   printer for its nozzle, or to remove it). The list comes with the extension and draws each printer rather than
   showing a picture. **Button**: beside the site's own button, or in Grab's bubble (where a site's button can't be found,
   the bubble). **Sites**: where it works, with **Allow** for a site the extension doesn't run on until you let it. Under
-  the switch, the popup says which slicers and printers copies are made for, or offers to pick a slicer.
+  the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
 - **Connected:** your slicers and printers are your Thingport instance's, from its **Configuration → Slicer** and
   **Printers**, shown here and managed there (**Manage** opens them). The first time the extension connects to an
   account with no slicers or no printers yet, it gives the account the ones picked here. An instance from before

@@ -1,5 +1,5 @@
-// Adapt 3MFs in the popup. Its row under Offline features (Extra features once connected) says which slicers and
-// printers copies are made for, or asks for a slicer; its cog opens its settings over the popup: Slicer, Printers,
+// Adapt 3MFs in the popup. Its row under Offline features (Extra features once connected) shows the slicers and
+// printers picked, or asks for a slicer; its cog opens its settings over the popup: Slicer, Printers,
 // where the Download adapted button goes, and the sites it works on. Not connected, they're Grab's own; connected, the
 // slicers and printers are the Thingport instance's, managed there. Add printer lists the makers first, then a
 // maker's printers as tiles; typing searches every printer.
@@ -147,11 +147,17 @@ async function save(change: Partial<AdaptSettings>, errorEl: HTMLElement = els.a
   if (!view) return;
   // A read under way began before this change, so what it brings back is older.
   reads++;
+  // Another change made before this one's answer comes back is drawn already, and only its own answer counts.
+  const saving = ++saves;
   clearError(errorEl);
   const before = view.own;
   view = { ...view, own: { ...view.own, ...change } };
   renderAll();
-  const res = await send("SET_ADAPT_SETTINGS", change);
+  const res = await send("SET_ADAPT_SETTINGS", change).catch((err: unknown) => ({
+    ok: false as const,
+    error: err instanceof Error ? err.message : String(err),
+  }));
+  if (saving !== saves) return;
   if (res?.ok) {
     view = { ...view, own: res.data };
     renderAll();
@@ -575,6 +581,8 @@ async function loadSiteStates(): Promise<void> {
 
 // Reads begun, and changes saved, so far: a read that finishes after a newer one began, or after a change, is dropped.
 let reads = 0;
+// Changes saved so far: the answer to one that isn't the newest is dropped.
+let saves = 0;
 // Why the last read failed, shown in the settings while they're open.
 let readFailed: string | null = null;
 
@@ -589,6 +597,8 @@ export async function loadAdapt(): Promise<void> {
     if (isOpen(els.adaptView)) redraw(els.adaptSections, renderSettings);
     return;
   }
+  // The offline tab's alert, where it's this read's failure; another feature's stays.
+  if (readFailed && els.offlineError.textContent === readFailed) clearError(els.offlineError);
   readFailed = null;
   view = res.data;
   renderAll();

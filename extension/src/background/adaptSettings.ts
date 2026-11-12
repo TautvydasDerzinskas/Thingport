@@ -63,8 +63,17 @@ async function thingportPrinters(account?: ConfiguredConfig): Promise<ThingportP
   }));
 }
 
+// Long enough for an instance that's up; past it, Grab's own settings stand in, as for one out of reach.
+const INSTANCE_WAIT_MS = 5000;
+
 async function thingportAdapt(): Promise<ThingportAdapt> {
-  const [settings, printers] = await Promise.all([slicerSettings(), thingportPrinters()]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("it didn't answer in time")), INSTANCE_WAIT_MS);
+  });
+  const [settings, printers] = await Promise.race([Promise.all([slicerSettings(), thingportPrinters()]), late]).finally(
+    () => clearTimeout(timer),
+  );
   const slicerPrinters = Object.fromEntries(
     Object.entries(settings.printers ?? {}).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   );
