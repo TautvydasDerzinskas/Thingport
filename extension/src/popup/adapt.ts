@@ -247,6 +247,9 @@ function slicerSection(use: InUse): HTMLElement {
   return section("Slicer", TIPS.slicer, [grid]);
 }
 
+/** The settings' control with `key`, as they're drawn now. */
+const drawnItem = (key: string) => els.adaptSections.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`);
+
 function printerMenu(tile: HTMLElement, printer: ShownPrinter): void {
   const own = view?.own.printers ?? [];
   const nozzles = index?.byId.get(printer.id)?.nozzles ?? (printer.nozzle ? [printer.nozzle] : []);
@@ -262,13 +265,17 @@ function printerMenu(tile: HTMLElement, printer: ShownPrinter): void {
       label: "Remove",
       danger: true,
       select: () => {
-        // Its tile goes with it: focus goes to the next printer's, else the one before, else Add printer.
+        // Its tile goes with it, drawn away before the change is saved: focus goes to the next printer's, else the
+        // one before, else Add printer, straight away.
         const keys = own.map((mine) => `printer:${mine.id}`);
         const at = keys.indexOf(`printer:${printer.id}`);
         const next = keys[at + 1] ?? keys[at - 1] ?? "add-printer";
-        void save({ printers: own.filter((p) => p.id !== printer.id) }).then(() => {
-          const kept = els.adaptSections.querySelector<HTMLElement>(`[data-key="printer:${CSS.escape(printer.id)}"]`);
-          (kept ?? els.adaptSections.querySelector<HTMLElement>(`[data-key="${CSS.escape(next)}"]`))?.focus();
+        const saving = save({ printers: own.filter((p) => p.id !== printer.id) });
+        drawnItem(next)?.focus();
+        // Put back, as it couldn't be saved: focus goes back to it, unless the user has moved on meanwhile.
+        void saving.then(() => {
+          const restored = drawnItem(`printer:${printer.id}`);
+          if (restored && (document.activeElement as HTMLElement | null)?.dataset.key === next) restored.focus();
         });
       },
     },
