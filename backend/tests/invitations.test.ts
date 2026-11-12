@@ -266,6 +266,25 @@ describe("registering with an invitation", () => {
     expect((await request(app).get(`/api/invitations/${secondToken}`)).status).toBe(200);
   });
 
+  it("keeps the old link working when re-inviting fails to read the settings", async () => {
+    const invitee = email("reinvite-read-fails");
+    const firstToken = await invite(invitee);
+    const findSetting = prisma.setting.findUnique.bind(prisma.setting);
+    const failing = vi
+      .spyOn(prisma.setting, "findUnique")
+      .mockImplementation(((args: Parameters<typeof findSetting>[0]) =>
+        args.where.key === "smtp_settings"
+          ? Promise.reject(new Error("database blip"))
+          : findSetting(args)) as typeof prisma.setting.findUnique);
+    try {
+      const res = await request(app).post("/api/admin/invitations").set(auth(adminToken)).send({ email: invitee });
+      expect(res.status).toBe(500);
+    } finally {
+      failing.mockRestore();
+    }
+    expect((await request(app).get(`/api/invitations/${firstToken}`)).status).toBe(200);
+  });
+
   it("refuses an expired invitation", async () => {
     const invitee = email("expired");
     const token = await invite(invitee);

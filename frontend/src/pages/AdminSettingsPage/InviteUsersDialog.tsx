@@ -74,13 +74,14 @@ export default function InviteUsersDialog({ open, onClose, emailing }: Props) {
     setSent(null);
     try {
       const res = await adminApi.inviteUser(email.trim());
-      if (res.link) {
-        const made = { email: res.email, link: res.link, expiresAt: res.expires_at };
-        // A new link for an address retires its earlier one, so that row goes.
-        setLinks((list) => [made, ...list.filter((other) => other.email !== made.email)]);
-      } else {
-        setSent({ email: res.email, days: res.expires_in_days });
-      }
+      const { link } = res;
+      // Any new invitation retires the address's earlier link, even an emailed one (SMTP set up meanwhile), so
+      // that row goes.
+      setLinks((list) => {
+        const others = list.filter((other) => other.email !== res.email);
+        return link ? [{ email: res.email, link, expiresAt: res.expires_at }, ...others] : others;
+      });
+      if (!link) setSent({ email: res.email, days: res.expires_in_days });
       setEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("adminSettings.registrations.invite.failed"));

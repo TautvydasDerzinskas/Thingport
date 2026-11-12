@@ -38,14 +38,16 @@ export async function inviteUser(params: {
 
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + INVITATION_TTL_DAYS * 24 * 60 * 60 * 1000);
+  // Read before the upsert: a failed read then leaves a re-invited address's earlier link working.
+  const link = await invitationLink(email, token, params.origin);
+  const emailing = await isSmtpConfigured();
   const previous = await prisma.invitation.findUnique({ where: { email } });
   const invitation = await prisma.invitation.upsert({
     where: { email },
     create: { email, token, expiresAt, invitedById: params.invitedById },
     update: { token, expiresAt, invitedById: params.invitedById },
   });
-  const link = await invitationLink(email, token, params.origin);
-  if (!(await isSmtpConfigured())) return { invitation, link };
+  if (!emailing) return { invitation, link };
 
   try {
     await sendInvitationEmail(email, params.inviterName, link, INVITATION_TTL_DAYS);
