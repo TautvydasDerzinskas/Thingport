@@ -131,7 +131,9 @@ async function init(): Promise<void> {
       return;
     }
     mountAdaptedButton(page.site, url, page.targets, page.offer.lastKey, () => {
-      if (!isStale()) adaptHost?.(page);
+      if (isStale() || !adaptHost) return false;
+      adaptHost(page);
+      return true;
     });
   });
 

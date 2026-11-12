@@ -76,14 +76,15 @@ export function unmountAdaptedButton(): void {
 /**
  * Puts the button beside the site's own, keeping it there as the page re-renders. `targets` are the copies the site's
  * files get, at least one; `lastKey` the copy made last. `onNoAnchor` runs once if the site's button hasn't shown in
- * ANCHOR_WAIT_MS, to offer the copies somewhere else.
+ * ANCHOR_WAIT_MS, to offer the copies somewhere else, and says whether it did: then this button is dropped, so the
+ * site's button showing later doesn't bring a second offer.
  */
 export function mountAdaptedButton(
   site: AdaptSite,
   pageUrl: string,
   targets: AdaptTarget[],
   lastKey: string | null,
-  onNoAnchor: () => void,
+  onNoAnchor: () => boolean,
 ): void {
   unmountAdaptedButton();
   let current = pickTarget(targets, lastKey) ?? DEFAULT_TARGET;
@@ -329,7 +330,7 @@ export function mountAdaptedButton(
   syncTheme();
   place();
   const waited = setTimeout(() => {
-    if (!placed) onNoAnchor();
+    if (!placed && onNoAnchor()) unmountAdaptedButton();
   }, ANCHOR_WAIT_MS);
 
   mounted = {

@@ -228,8 +228,13 @@
 
   &:hover,
   &:focus-visible {
-    outline: none;
     background: var(--nd-row-hover);
+  }
+
+  // Inside the row, where neither the menu's edge nor the next row covers it.
+  &:focus-visible {
+    outline: 2px solid var(--nd-accent);
+    outline-offset: -2px;
   }
 }
 
