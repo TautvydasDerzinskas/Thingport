@@ -79,7 +79,8 @@ export type ShownPrinter = ArtPrinter & { id: string; brandName: string; model: 
 
 function printerParts(printer: ShownPrinter): HTMLElement[] {
   const art = el("span", "pt__art");
-  // Numbers only: nothing in it comes from outside Grab.
+  // Numbers only: printerArtSvg puts every value through arithmetic and rounding (a connected instance's too), so what
+  // reaches the markup is a number, or NaN.
   art.innerHTML = printerArtSvg(printer);
   return [art, el("span", "pt__brand", printer.brandName), el("span", "pt__model", printer.model)];
 }

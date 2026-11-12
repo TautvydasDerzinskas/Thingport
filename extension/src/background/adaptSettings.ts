@@ -4,9 +4,9 @@
 
 import { adaptSettingsOf, adaptUpdate, knownSlicers, type AdaptSettings } from "../shared/adaptSettings";
 import type { AdaptView, ThingportAdapt, ThingportPrinter } from "../shared/messages";
-import { STORAGE_KEYS } from "../shared/storage";
+import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { ApiError, apiCall } from "./api";
-import { getStoredConfig, isConfigured } from "./config";
+import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 
 /** `GET /settings/slicer`, as any version answers it: one `slicer` before there were several. */
 type SlicerSettings = {
@@ -29,8 +29,9 @@ type UserPrinterView = {
   nozzle: string;
 };
 
-async function slicerSettings(): Promise<SlicerSettings> {
-  return (await apiCall<SlicerSettings | null>("GET", "/settings/slicer")) ?? {};
+/** `account`: the connection to ask, rather than whichever is stored when the request goes. */
+async function slicerSettings(account?: ConfiguredConfig): Promise<SlicerSettings> {
+  return (await apiCall<SlicerSettings | null>("GET", "/settings/slicer", undefined, account)) ?? {};
 }
 
 function installedSlicers(settings: SlicerSettings): string[] {
@@ -38,10 +39,10 @@ function installedSlicers(settings: SlicerSettings): string[] {
 }
 
 /** The user's printers there; null on an instance from before printers. */
-async function thingportPrinters(): Promise<ThingportPrinter[] | null> {
+async function thingportPrinters(account?: ConfiguredConfig): Promise<ThingportPrinter[] | null> {
   let listed: { printers?: UserPrinterView[] } | null;
   try {
-    listed = await apiCall("GET", "/me/printers");
+    listed = await apiCall("GET", "/me/printers", undefined, account);
   } catch (err) {
     // No such route, or the web app answering for one it doesn't know.
     if ((err instanceof ApiError && err.status === 404) || err instanceof SyntaxError) return null;
@@ -84,39 +85,62 @@ export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<
   return adaptSettingsOf(await getStoredConfig());
 }
 
+type CarrySection = "slicers" | "printers";
+
+function carriedOf(config: StoredConfig): Record<string, CarrySection[]> {
+  const stored = config.adaptCarriedTo;
+  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+}
+
+/** The instance turned down one printer or its nozzle (it doesn't know it), rather than the request failing. */
+const printerRefused = (err: unknown) => err instanceof ApiError && (err.status === 404 || err.status === 400);
+
+/** Grab's own picks, to the account connected now. Every request goes to that account, should the connection change
+ *  meanwhile. Each part is marked as gone once it's settled, so a failure leaves only what's left to try on the next
+ *  connection, and none is sent twice: ones the user removed there since aren't brought back. */
 async function carry(): Promise<void> {
   const config = await getStoredConfig();
   if (!isConfigured(config)) return;
   const account = `${config.instanceUrl}|${config.email}`;
-  if (config.adaptCarriedTo === account) return;
+  const done = new Set(carriedOf(config)[account] ?? []);
+  const settled = async (section: CarrySection) => {
+    done.add(section);
+    const carried = carriedOf(await getStoredConfig());
+    await chrome.storage.local.set({ [STORAGE_KEYS.adaptCarriedTo]: { ...carried, [account]: [...done] } });
+  };
   const own = adaptSettingsOf(config);
   try {
-    if (own.slicers.length && !installedSlicers(await slicerSettings()).length) {
-      // `slicer` too, for an instance from before there were several.
-      await apiCall("PATCH", "/settings/slicer", { slicer: own.slicers[0], slicers: own.slicers });
-    }
-    if (own.printers.length && (await thingportPrinters())?.length === 0) {
-      for (const { id, nozzle } of own.printers) {
-        // One its catalogue doesn't know is left out.
-        await apiCall("PUT", `/me/printers/${encodeURIComponent(id)}`, { nozzle }).catch(() => undefined);
+    if (!done.has("slicers")) {
+      if (own.slicers.length && !installedSlicers(await slicerSettings(config)).length) {
+        // `slicer` too, for an instance from before there were several.
+        await apiCall("PATCH", "/settings/slicer", { slicer: own.slicers[0], slicers: own.slicers }, config);
       }
+      await settled("slicers");
+    }
+    if (!done.has("printers")) {
+      if (own.printers.length && (await thingportPrinters(config))?.length === 0) {
+        for (const { id, nozzle } of own.printers) {
+          // One it doesn't know is left out; anything else stops here, to be tried again.
+          await apiCall("PUT", `/me/printers/${encodeURIComponent(id)}`, { nozzle }, config).catch((err: unknown) => {
+            if (!printerRefused(err)) throw err;
+          });
+        }
+      }
+      await settled("printers");
     }
   } catch (err) {
-    console.warn("[adapt] Grab's slicers and printers didn't go to the instance:", err);
-  } finally {
-    await chrome.storage.local.set({ [STORAGE_KEYS.adaptCarriedTo]: account });
+    console.warn("[adapt] Grab's slicers and printers didn't all go to the instance; the rest goes next time:", err);
   }
 }
 
-let carrying: Promise<void> | null = null;
+let carrying: Promise<void> = Promise.resolve();
 
 /**
  * On connecting: Grab's own slicers go to the instance when it has none, and its printers when it has no printers.
- * Only the first time Grab connects to that account, so ones the user removed there later aren't brought back.
+ * Only the first time Grab connects to that account, so ones the user removed there later aren't brought back. One
+ * after another: a connection made while one is going waits for it, then goes to its own account.
  */
 export function carryAdaptPicks(): Promise<void> {
-  carrying ??= carry().finally(() => {
-    carrying = null;
-  });
+  carrying = carrying.then(carry).catch((err: unknown) => console.warn("[adapt] Couldn't read Grab's settings:", err));
   return carrying;
 }

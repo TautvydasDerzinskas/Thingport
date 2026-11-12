@@ -2,7 +2,14 @@
 // those. Back, or Escape, goes to what was there before and gives focus back to what opened the view; a view can
 // take Back for a step of its own first (Add printer's makers).
 
-type Opened = { view: HTMLElement; opener: HTMLElement | null; back?: () => boolean };
+type Options = {
+  /** Runs first on Back and Escape; returning true keeps the view open. */
+  back?: () => boolean;
+  /** Where focus goes back to when what opened the view is gone and nothing has been drawn in its place. */
+  fallback?: HTMLElement;
+};
+
+type Opened = Options & { view: HTMLElement; opener: HTMLElement | null };
 
 const stack: Opened[] = [];
 const main = (): HTMLElement[] =>
@@ -18,13 +25,12 @@ function enter(view: HTMLElement): void {
   view.classList.add("subview--in");
 }
 
-/** `back` runs first on Back and Escape; returning true keeps the view open. */
-export function openView(view: HTMLElement, opener: HTMLElement | null, back?: () => boolean): void {
+export function openView(view: HTMLElement, opener: HTMLElement | null, options: Options = {}): void {
   if (stack.at(-1)?.view === view) return;
   const below = stack.at(-1);
   if (below) below.view.hidden = true;
   else for (const el of main()) el.hidden = true;
-  stack.push({ view, opener, back });
+  stack.push({ view, opener, ...options });
   enter(view);
   window.scrollTo(0, 0);
   view.querySelector<HTMLElement>("[data-back]")?.focus();
@@ -37,7 +43,15 @@ export function closeView(): void {
   const below = stack.at(-1);
   if (below) enter(below.view);
   else for (const el of main()) el.hidden = false;
-  top.opener?.focus();
+  focusBack(top);
+}
+
+/** What opened the view, or what has been drawn in its place since (by its `data-key`), else the fallback. */
+function focusBack({ opener, fallback }: Opened): void {
+  if (opener?.isConnected) return opener.focus();
+  const key = opener?.dataset.key;
+  const redrawn = key ? document.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
+  (redrawn ?? fallback)?.focus();
 }
 
 export function isOpen(view: HTMLElement): boolean {
