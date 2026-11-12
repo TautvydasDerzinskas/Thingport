@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The instance as `apiCall` answers for it: by method and path, a value or an error.
+// The instance as `apiCall` answers for it: by method and path, a value, an error or a function giving either. `asked`
+// is the account each call was bound to, if any.
 const instance = vi.hoisted(() => ({
   calls: [] as { method: string; path: string; body?: unknown }[],
+  asked: [] as (string | null)[],
   answers: {} as Record<string, unknown>,
 }));
 
@@ -10,9 +12,11 @@ vi.mock("./api", async (importOriginal) => {
   const real = await importOriginal<typeof import("./api")>();
   return {
     ...real,
-    apiCall: async (method: string, path: string, body?: unknown) => {
+    apiCall: async (method: string, path: string, body?: unknown, account?: { email: string }) => {
       instance.calls.push({ method, path, ...(body === undefined ? {} : { body }) });
-      const answer = instance.answers[`${method} ${path}`];
+      instance.asked.push(account?.email ?? null);
+      let answer = instance.answers[`${method} ${path}`];
+      if (typeof answer === "function") answer = await (answer as () => unknown)();
       if (answer instanceof Error) throw answer;
       return answer ?? null;
     },
@@ -57,6 +61,7 @@ const P1S = {
 beforeEach(() => {
   for (const key of Object.keys(store)) delete store[key];
   instance.calls.length = 0;
+  instance.asked.length = 0;
   instance.answers = {};
 });
 
@@ -150,7 +155,7 @@ describe("Grab's slicers and printers on connecting", () => {
     instance.answers["GET /me/printers"] = { printers: [P1S] };
     await carryAdaptPicks();
     expect(instance.calls.filter(({ method }) => method !== "GET")).toEqual([]);
-    expect(store.adaptCarriedTo).toBe(`${CONNECTED.instanceUrl}|${CONNECTED.email}`);
+    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers", "printers"] });
   });
 
   it("send no printers to an instance from before printers, and skip one it doesn't know", async () => {
@@ -178,5 +183,74 @@ describe("Grab's slicers and printers on connecting", () => {
     instance.answers["GET /me/printers"] = { printers: [] };
     await carryAdaptPicks();
     expect(instance.calls.filter(({ method }) => method !== "GET")).toEqual([]);
+  });
+
+  it("go once to each account, however often Grab switches between them", async () => {
+    const OTHER = { ...CONNECTED, email: "other@example.com" };
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = { slicers: [] };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    await carryAdaptPicks();
+    Object.assign(store, OTHER);
+    await carryAdaptPicks();
+    expect(Object.keys(store.adaptCarriedTo as object)).toEqual([
+      `${CONNECTED.instanceUrl}|${CONNECTED.email}`,
+      `${OTHER.instanceUrl}|${OTHER.email}`,
+    ]);
+    // Back to the first, which has had the user remove what came: nothing goes again.
+    Object.assign(store, CONNECTED);
+    instance.calls.length = 0;
+    await carryAdaptPicks();
+    expect(instance.calls).toEqual([]);
+  });
+
+  it("try again only what didn't go, the next time", async () => {
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = { slicers: [] };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    instance.answers["PUT /me/printers/bambulab-h2d"] = new TypeError("Failed to fetch");
+    await carryAdaptPicks();
+    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers"] });
+
+    // The slicers that went aren't sent again, though the user has since removed them there.
+    instance.calls.length = 0;
+    delete instance.answers["PUT /me/printers/bambulab-h2d"];
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method !== "GET").map(({ path }) => path)).toEqual([
+      "/me/printers/bambulab-p1s",
+      "/me/printers/bambulab-h2d",
+    ]);
+    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers", "printers"] });
+  });
+
+  it("leave a failed instance to be tried again", async () => {
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = new ApiError("Bad gateway", 502);
+    await carryAdaptPicks();
+    expect(store.adaptCarriedTo).toBeUndefined();
+    instance.answers["GET /settings/slicer"] = { slicers: [] };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method === "PATCH")).toHaveLength(1);
+  });
+
+  it("go to the account they started for, should Grab connect to another meanwhile, which gets its own after", async () => {
+    const OTHER = { ...CONNECTED, email: "other@example.com" };
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = () => {
+      // Connecting to another account while the first one's carry is under way.
+      if (store.email === CONNECTED.email) {
+        Object.assign(store, OTHER);
+        void carryAdaptPicks();
+      }
+      return { slicers: [] };
+    };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    await carryAdaptPicks();
+    // The other account's, queued meanwhile; asking again waits for it, and sends nothing more.
+    await carryAdaptPicks();
+    const writes = instance.calls.flatMap((call, at) => (call.method === "GET" ? [] : [instance.asked[at]]));
+    expect(writes).toEqual([...Array<string>(3).fill(CONNECTED.email), ...Array<string>(3).fill(OTHER.email)]);
+    expect(Object.keys(store.adaptCarriedTo as object)).toHaveLength(2);
   });
 });

@@ -38,7 +38,7 @@ const TIPS = {
   slicer: "The slicers you open models in. A copy is made for one: they read 3MFs differently.",
   printers: "Your printers. A copy for one names that slicer's presets for it and lays its plates out on its bed.",
   button: "Where Download adapted goes on a model's page.",
-  sites: "The sites it works on. Those Grab doesn't run on until you allow it ask your browser first.",
+  sites: "The sites it works on. Some need your browser's permission first, which Allow asks for.",
 };
 
 const PLACE_LABELS: Record<AdaptPlacement, string> = {
@@ -146,6 +146,7 @@ function renderSetup(): void {
   if (!use.slicers.length) {
     const nudge = el("button", "text-btn adapt-setup__nudge", "Pick your slicer", icon(ICONS.chevron));
     nudge.type = "button";
+    nudge.dataset.key = "adapt-nudge";
     nudge.addEventListener("click", () => openSettings(nudge, { toSlicers: true }));
     els.adaptSetup.replaceChildren(nudge);
     return;
@@ -271,7 +272,8 @@ function placementSection(current: AdaptPlacement): HTMLElement {
     event.preventDefault();
     const next = ADAPT_PLACEMENTS[(ADAPT_PLACEMENTS.indexOf(current) + 1) % ADAPT_PLACEMENTS.length];
     void save({ placement: next });
-    group.querySelector<HTMLElement>(`[data-key="place:${next}"]`)?.focus();
+    // Saving has drawn the sections anew already, this group with them.
+    els.adaptSections.querySelector<HTMLElement>(`[data-key="place:${next}"]`)?.focus();
   });
   const note = el("p", "sv-note", "Where a site's own button can't be found, it goes in the bubble.");
   return section("Button", TIPS.button, [group, note]);
@@ -335,7 +337,8 @@ function openSettings(opener: HTMLElement, { toSlicers = false } = {}): void {
   els.adaptViewSwitch.checked = els.normalizeSwitch.checked;
   clearError(els.adaptError);
   renderSettings();
-  openView(els.adaptView, opener);
+  // A slicer picked through the nudge takes the nudge away: focus goes back to the cog then.
+  openView(els.adaptView, opener, { fallback: els.adaptSettingsBtn });
   if (toSlicers) els.adaptSections.querySelector<HTMLElement>(".st")?.focus();
 }
 
@@ -464,14 +467,16 @@ function openAddPrinter(opener: HTMLElement): void {
   clearError(els.addPrinterError);
   renderAddPrinter();
   // Back from a maker's printers goes to the makers first.
-  openView(els.addPrinterView, opener, () => {
-    if (!picking.maker) return false;
-    const maker = picking.maker;
-    picking = { ...picking, maker: null };
-    els.addPrinterSearch.value = "";
-    renderAddPrinter();
-    els.addPrinterBody.querySelector<HTMLElement>(`[data-key="maker:${CSS.escape(maker)}"]`)?.focus();
-    return true;
+  openView(els.addPrinterView, opener, {
+    back: () => {
+      if (!picking.maker) return false;
+      const maker = picking.maker;
+      picking = { ...picking, maker: null };
+      els.addPrinterSearch.value = "";
+      renderAddPrinter();
+      els.addPrinterBody.querySelector<HTMLElement>(`[data-key="maker:${CSS.escape(maker)}"]`)?.focus();
+      return true;
+    },
   });
   els.addPrinterSearch.focus();
 }
