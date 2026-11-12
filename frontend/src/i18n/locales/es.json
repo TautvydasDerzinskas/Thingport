@@ -1781,6 +1781,7 @@
         "closedHelp": "La página de inicio de sesión no tiene la opción de registro, y las cuentas nuevas solo pueden crearse desde una invitación.",
         "inviteButton": "Invitar usuarios",
         "inviteHelp": "Envía un enlace de registro por correo electrónico. Funciona para una sola dirección, una sola vez, durante 7 días.",
+        "inviteLinkHelp": "Te da un enlace de registro para que lo envíes tú. Funciona para una sola dirección, una sola vez, durante 7 días.",
         "failed": "No se pudo actualizar la configuración de registro.",
         "invite": {
           "title": "Invitar a un usuario",
@@ -1792,7 +1793,16 @@
           "sent_one": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} día.",
           "sent_other": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} días.",
           "failed": "No se pudo enviar la invitación",
-          "sent_many": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} días."
+          "sent_many": "Invitación enviada a {{email}}. El enlace funciona durante {{count}} días.",
+          "linkTitle": "Invitar a usuarios",
+          "linkDescription": "El correo electrónico no está configurado, así que cada enlace lo envías tú. Funciona solo para esa dirección, una sola vez, durante 7 días.",
+          "create": "Crear enlace",
+          "creating": "Creando...",
+          "worksUntil": "Válido hasta el {{date}}",
+          "copyLink": "Copiar enlace",
+          "copyLinkFor": "Copiar el enlace para {{email}}",
+          "copied": "Copiado",
+          "copyFailed": "No se pudo copiar aquí. El enlace está seleccionado: pulsa Ctrl+C o ⌘C."
         }
       },
       "previews": {

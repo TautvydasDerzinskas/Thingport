@@ -1796,6 +1796,7 @@
         "closedHelp": "Prisijungimo puslapyje nėra registracijos, o naujas paskyras galima sukurti tik gavus kvietimą.",
         "inviteButton": "Kviesti naudotojus",
         "inviteHelp": "El. paštu išsiunčia registracijos nuorodą. Ją vieną kartą gali panaudoti tik vienas adresas, 7 dienas.",
+        "inviteLinkHelp": "Pateikia registracijos nuorodą, kurią išsiųsite patys. Ją vieną kartą gali panaudoti tik vienas adresas, 7 dienas.",
         "failed": "Nepavyko atnaujinti registracijos nustatymų",
         "invite": {
           "title": "Pakviesti naudotoją",
@@ -1807,7 +1808,16 @@
           "sent_one": "Kvietimas išsiųstas adresu {{email}}. Nuoroda galios {{count}} dieną.",
           "sent_few": "Kvietimas išsiųstas adresu {{email}}. Nuoroda galios {{count}} dienas.",
           "sent_other": "Kvietimas išsiųstas adresu {{email}}. Nuoroda galios {{count}} dienų.",
-          "failed": "Nepavyko išsiųsti kvietimo"
+          "failed": "Nepavyko išsiųsti kvietimo",
+          "linkTitle": "Pakviesti naudotojus",
+          "linkDescription": "El. paštas nenustatytas, todėl kiekvieną nuorodą išsiunčiate patys. Ja vieną kartą, 7 dienas, gali pasinaudoti tik tas adresas.",
+          "create": "Sukurti nuorodą",
+          "creating": "Kuriama...",
+          "worksUntil": "Galioja iki {{date}}",
+          "copyLink": "Kopijuoti nuorodą",
+          "copyLinkFor": "Kopijuoti nuorodą adresui {{email}}",
+          "copied": "Nukopijuota",
+          "copyFailed": "Čia nepavyko nukopijuoti. Nuoroda pažymėta: spauskite Ctrl+C arba ⌘C."
         }
       },
       "previews": {

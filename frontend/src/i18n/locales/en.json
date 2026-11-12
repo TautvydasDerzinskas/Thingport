@@ -1727,6 +1727,7 @@
         "closedHelp": "The sign-in page has no Register option, and new accounts can only be created from an invitation.",
         "inviteButton": "Invite users",
         "inviteHelp": "Sends a registration link by email. It works for one address, once, for 7 days.",
+        "inviteLinkHelp": "Gives you a registration link to send. It works for one address, once, for 7 days.",
         "failed": "Failed to update registration settings",
         "invite": {
           "title": "Invite a user",
@@ -1737,7 +1738,16 @@
           "close": "Close",
           "sent_one": "Invitation sent to {{email}}. The link works for {{count}} day.",
           "sent_other": "Invitation sent to {{email}}. The link works for {{count}} days.",
-          "failed": "Failed to send the invitation"
+          "failed": "Failed to send the invitation",
+          "linkTitle": "Invite users",
+          "linkDescription": "Email isn't set up, so you send each link yourself. It works for that address only, once, for 7 days.",
+          "create": "Create link",
+          "creating": "Creating...",
+          "worksUntil": "Works until {{date}}",
+          "copyLink": "Copy link",
+          "copyLinkFor": "Copy the link for {{email}}",
+          "copied": "Copied",
+          "copyFailed": "Couldn't copy here. The link is selected: press Ctrl+C or ⌘C."
         }
       },
       "previews": {
