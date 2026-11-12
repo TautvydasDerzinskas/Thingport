@@ -93,7 +93,10 @@ export function useUserPrinters(onUnauthorized?: () => void) {
 
   const reload = useCallback(() => {
     setFailed(false);
+    // Without an answer to show, they're unknown again until this one comes back.
+    setLoaded(cached !== undefined);
     return reloadPrinters().catch((err: unknown) => {
+      setLoaded(true);
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setFailed(true);
       throw err;
