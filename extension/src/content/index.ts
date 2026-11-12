@@ -1,5 +1,5 @@
 // Content script entry point (MakerWorld, Thingiverse, Printables, and the optional sites in optionalSites.ts once
-// turned on). Network calls go through the background (see runtime.ts). MakerWorld's adapted download and its
+// turned on). Network calls go through the background (see runtime.ts). Download adapted (adapted/) and MakerWorld's
 // download resolution for the import button are wired in here, as the page's offline features and the button are
 // every provider's.
 
@@ -60,6 +60,10 @@ declare global {
 // Bumped on every re-init so stale in-flight checks don't mount an icon for the wrong URL.
 let initToken = 0;
 
+// How long Download adapted waits for the bubble to be ready for its copies: a Thingport instance that doesn't answer
+// mustn't hold them back, so past this they go beside the site's button.
+const BUBBLE_WAIT_MS = 6000;
+
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
 }
@@ -117,22 +121,27 @@ async function init(): Promise<void> {
 
   // Download adapted: beside the site's own button, or in the bubble where the settings say so and this page's bubble
   // can hold it (`adaptHost`, set below by the bubble that can); where none can, beside the site's button after all.
+  // Where the site's button never shows, in the bubble that can hold the copies, or else in one that only can when
+  // it must (`adaptFallback`: one that can't reach the instance, say).
   const adapting =
     classification.kind === "single" && stateRes.data.offlineFeatures.normalizeMakerworld
-      ? loadPageAdapt(classification.provider)
+      ? loadPageAdapt(classification.provider, url)
       : Promise.resolve(null);
   let adaptHost: ((page: PageAdapt) => void) | null = null;
+  let adaptFallback: ((page: PageAdapt) => void) | null = null;
   let bubbleSettled!: () => void;
   const settled = new Promise<void>((resolve) => (bubbleSettled = resolve));
-  void Promise.all([adapting, settled]).then(([page]) => {
+  const settledOrLate = Promise.race([settled, new Promise((resolve) => setTimeout(resolve, BUBBLE_WAIT_MS))]);
+  void Promise.all([adapting, settledOrLate]).then(([page]) => {
     if (!page || isStale()) return;
     if (page.offer.placement === "bubble" && adaptHost) {
       adaptHost(page);
       return;
     }
-    mountAdaptedButton(page.site, url, page.targets, page.offer.lastKey, () => {
-      if (isStale() || !adaptHost) return false;
-      adaptHost(page);
+    mountAdaptedButton(page, url, () => {
+      const offer = adaptHost ?? adaptFallback;
+      if (isStale() || !offer) return false;
+      offer(page);
       return true;
     });
   });
@@ -144,9 +153,14 @@ async function init(): Promise<void> {
       const page = await adapting;
       if (isStale()) return;
       const adaptBubble = (offered: PageAdapt) => {
+        closeSetupModal();
         unmountHost();
         const root = mountHost();
-        mountAdaptBubble(root, classification.provider, url, offered.site, offered.targets, () => openSetupModal(root));
+        mountAdaptBubble(root, classification.provider, url, offered, {
+          text: "Want it in your Thingport library as well? ",
+          action: "Set up Grab",
+          onClick: () => openSetupModal(root),
+        });
       };
       if (page?.offer.placement === "bubble") {
         adaptBubble(page);
@@ -171,22 +185,34 @@ async function init(): Promise<void> {
     if (isStale()) return;
     if (connectionRes?.ok && !connectionRes.data.connected) {
       const problem = connectionRes.data;
+      const signIn = (root: ShadowRoot) =>
+        openSetupModal(root, {
+          problem,
+          instanceUrl: stateRes.data.instanceUrl,
+          // A failed check isn't cached, so this signs in again.
+          onRetry: () => {
+            unmount();
+            void init();
+          },
+        });
       const root = mountHost();
       mountFab(root, {
         variant: "disconnected",
         label: "Thingport Grab can't sign in to your Thingport instance",
         title: "Thingport Grab can't sign in to your Thingport instance",
-        onClick: () =>
-          openSetupModal(root, {
-            problem,
-            instanceUrl: stateRes.data.instanceUrl,
-            // A failed check isn't cached, so this signs in again.
-            onRetry: () => {
-              unmount();
-              void init();
-            },
-          }),
+        onClick: () => signIn(root),
       });
+      // Only where the site's button never shows: the copies, with the way to sign in again under them.
+      adaptFallback = (page) => {
+        closeSetupModal();
+        unmountHost();
+        const adaptRoot = mountHost();
+        mountAdaptBubble(adaptRoot, classification.provider, url, page, {
+          text: "Thingport Grab can't sign in to your Thingport instance. ",
+          action: "Sign in again",
+          onClick: () => signIn(adaptRoot),
+        });
+      };
       reportTabIconState(false);
       return;
     }
@@ -195,6 +221,8 @@ async function init(): Promise<void> {
     const enabled = await providerEnabled(classification.provider);
     if (isStale()) return;
     if (!enabled) {
+      // Imports aren't, but the copies are this browser's own: where the site's button never shows, a bubble of them.
+      adaptFallback = (page) => mountAdaptBubble(mountHost(), classification.provider, url, page, null);
       reportTabIconState(false);
       return;
     }
@@ -243,7 +271,7 @@ async function init(): Promise<void> {
     const root = mountHost();
     const togglePanel = mountPanel(root, () => void loadPanel());
     // Under the import, as an extra: a quiet button that shows the copies when it's clicked.
-    adaptHost = (page) => setPanelExtra(adaptedReveal(page.site, url, page.targets));
+    adaptHost = (page) => setPanelExtra(adaptedReveal(page, url));
     mountFab(root, {
       // A plus while there's something to add to the library's model, a tick once there's nothing.
       variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",

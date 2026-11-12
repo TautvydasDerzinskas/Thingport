@@ -120,13 +120,17 @@
   }
 }
 
-.ad-error {
+.ad-error,
+.ad-note {
   margin-top: t.$space-2;
-  color: t.c("danger");
 
   &[hidden] {
     display: none;
   }
+}
+
+.ad-error {
+  color: t.c("danger");
 }
 
 .ad-foot {
@@ -177,7 +181,8 @@
     margin-top: 0;
   }
 
-  .ad-error {
+  .ad-error,
+  .ad-note {
     margin: 6px 4px 2px;
   }
 }
@@ -199,4 +204,13 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+// The file to adapt, where the model has several: above the copies, closer than a form's fields.
+.ad-file__label {
+  margin-top: t.$space-2;
+}
+
+.ad-file {
+  margin-bottom: 0;
 }

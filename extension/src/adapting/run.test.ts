@@ -73,6 +73,32 @@ describe("what Grab makes of a MakerWorld 3MF", () => {
     expect(same.bytes).toBe(input);
   });
 
+  it("reads a plain 3MF's colours, and gives PrusaSlicer a copy with them on its filaments", async () => {
+    const zip = new JSZip();
+    zip.file(
+      "3D/3dmodel.model",
+      `<?xml version="1.0"?>
+<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">
+ <resources>
+  <m:colorgroup id="5"><m:color color="#FF0000FF"/><m:color color="#00FF00FF"/></m:colorgroup>
+  <object id="1" type="model"><mesh>
+   <vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/><vertex x="1" y="1" z="0"/></vertices>
+   <triangles><triangle v1="0" v2="1" v3="2" pid="5" p1="0"/><triangle v1="1" v2="3" v3="2" pid="5" p1="1"/></triangles>
+  </mesh></object>
+ </resources>
+ <build><item objectid="1"/></build>
+</model>`,
+    );
+    const input = await zip.generateAsync({ type: "uint8array" });
+    const format = await formatOfZip(await JSZip.loadAsync(input));
+    expect(format).toMatchObject({ kind: "plain", filaments: 2, painted: false });
+    expect(planFor(format, "prusaslicer")).toEqual({ output: "prusa", from: "plain" });
+    // Before a slicer is picked, PrusaSlicer's copy.
+    expect(planFor(format, null)).toEqual({ output: "prusa", from: "plain" });
+    expect(planFor(format, "bambustudio")).toBeNull();
+    expect((await adaptFile(input, "prusaslicer")).output).toBe("prusa");
+  });
+
   it("makes a copy for a printer in Bambu Studio itself, naming that printer's presets from Grab's catalogue", async () => {
     const catalogue = printerCatalogue(async (file) =>
       JSON.parse(readFileSync(path.resolve(__dirname, "../../public/printers", file), "utf8")),

@@ -38,6 +38,8 @@ export async function adapt3mf(
 }
 
 export { classify3mf, FORMAT_VERSION, parseGenerator, storedFormat } from "./format";
+export { plainModelScanner } from "./plainScan";
+export type { PlainModelScanner } from "./plainScan";
 export type { PlainModelScan, ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format";
 export { COMPATIBLE_TAG, madeFor, planAdaptation, planKey, versionAtMost } from "./plan";
 export type { AdaptPlan, PrinterChoice } from "./plan";

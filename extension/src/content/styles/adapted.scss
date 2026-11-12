@@ -1,7 +1,8 @@
-// Download adapted beside the site's own open or download button (content/adapted/button.ts): outlined, so the site's
-// own stays the main action, in the site's colours and type, light or dark as the site shows itself (`data-dark`),
-// with its menu and its explanation in the same palette. Its own shadow root, so it sits in the page's layout
-// without sharing styles either way.
+// Download adapted on the site's page (content/adapted/button.ts): beside its own open or download button, outlined,
+// so the site's own stays the main action, and in a file's row of its own buttons (`data-row`), as one of them. In the
+// site's colours, corners and type (`data-site`), light or dark as it shows itself (`data-dark`), with the menus and
+// the explanation in the same palette. Each in its own shadow root, so it sits in the page's layout without sharing
+// styles either way.
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;
 @use "../../styles/printer-art" as art;
@@ -13,7 +14,6 @@
   @include t.themed;
   display: inline-flex;
   vertical-align: middle;
-  margin-left: t.$space-2;
 
   // MakerWorld's: its green, text a shade darker so it reads on white, its menu surfaces and type.
   --nd-accent: #00b800;
@@ -26,6 +26,9 @@
   --nd-row-hover: #f2f2f2;
   --nd-shadow: rgba(0, 0, 0, 0.14);
   --nd-font: "Open Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --nd-radius: 8px;
+  // The outline's thickness.
+  --nd-line: 2px;
 }
 
 :host([data-dark]) {
@@ -40,14 +43,98 @@
   --nd-shadow: rgba(0, 0, 0, 0.5);
 }
 
-// Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one.
-:host([data-below]) {
-  display: flex;
-  margin: t.$space-3 0 0;
+// Printables': its orange, text a shade darker so it reads on white, its near-square corners, thin outlines and type.
+:host([data-site="printables"]) {
+  --nd-accent: #fa6831;
+  --nd-text: #c4471a;
+  --nd-hover: rgba(250, 104, 49, 0.08);
+  --nd-surface: #ffffff;
+  --nd-border: #e0e0e0;
+  --nd-ink: #2a2a2a;
+  --nd-muted: #808080;
+  --nd-row-hover: #f5f5f5;
+  --nd-font: "Atlas Grotesk Web", "Atlas Grotesk Web Fallback", system-ui, "Segoe UI", Roboto, sans-serif;
+  --nd-radius: 2px;
+  --nd-line: 1px;
 }
 
-:host([data-gapped]) {
-  margin: 0;
+:host([data-site="printables"][data-dark]) {
+  --nd-accent: #eb6f40;
+  --nd-text: #ff8a5c;
+  --nd-hover: rgba(235, 111, 64, 0.14);
+  --nd-surface: #1c1e21;
+  --nd-border: #3f4143;
+  --nd-ink: #e0e0e0;
+  --nd-muted: #b3b3b3;
+  --nd-row-hover: #2a2d31;
+  --nd-shadow: rgba(0, 0, 0, 0.5);
+}
+
+// Creality Cloud's: its green, text a shade darker so it reads on white; its 4px corners and its system type, like its
+// own outlined Cloud Slice.
+:host([data-site="crealitycloud"]) {
+  --nd-accent: #1ac686;
+  --nd-text: #0e8a5c;
+  --nd-hover: rgba(26, 198, 134, 0.1);
+  --nd-surface: #ffffff;
+  --nd-border: #e5e5e5;
+  --nd-ink: #1f1f1f;
+  --nd-muted: #8a8a8a;
+  --nd-row-hover: #f5f5f5;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --nd-radius: 4px;
+  --nd-line: 1px;
+}
+
+:host([data-site="crealitycloud"][data-dark]) {
+  --nd-text: #3fe0a2;
+  --nd-hover: rgba(26, 198, 134, 0.14);
+  --nd-surface: #2b2e31;
+  --nd-border: #5c5f65;
+  --nd-ink: #f4f4f4;
+  --nd-muted: #a3a6ab;
+  --nd-row-hover: #35393c;
+  --nd-shadow: rgba(0, 0, 0, 0.5);
+}
+
+// Snapmaker Space's: its blue, Inter, 8px corners. It shows no dark theme.
+:host([data-site="snapmaker"]) {
+  --nd-accent: #0c63e2;
+  --nd-text: #0c63e2;
+  --nd-hover: rgba(12, 99, 226, 0.06);
+  --nd-surface: #ffffff;
+  --nd-border: #d9d9d9;
+  --nd-ink: #242424;
+  --nd-muted: #8f8f8f;
+  --nd-row-hover: #f5f6fa;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: Inter, "Inter Fallback", system-ui, "Segoe UI", sans-serif;
+  --nd-radius: 8px;
+  --nd-line: 1px;
+}
+
+// NexPrint's: its purple, Inter, 12px corners and 8px on its small buttons. It shows no dark theme in a browser.
+:host([data-site="nexprint"]) {
+  --nd-accent: #5416ff;
+  --nd-text: #4a12e0;
+  --nd-hover: rgba(84, 22, 255, 0.06);
+  --nd-surface: #ffffff;
+  --nd-border: rgba(0, 0, 0, 0.1);
+  --nd-ink: rgba(0, 0, 0, 0.85);
+  --nd-muted: rgba(0, 0, 0, 0.45);
+  --nd-row-hover: #eeeeee;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: Inter, "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nd-radius: 12px;
+  --nd-small-radius: 8px;
+  --nd-line: 1px;
+}
+
+// Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one. Its spacing is set on the host
+// itself (site.ts placeAfter), where a page's reset can't undo it.
+:host([data-below]) {
+  display: flex;
 }
 
 .nd-split {
@@ -66,7 +153,7 @@
   min-height: 48px;
   border: 0;
   background: transparent;
-  box-shadow: inset 0 0 0 2px var(--nd-accent);
+  box-shadow: inset 0 0 0 var(--nd-line) var(--nd-accent);
   color: var(--nd-text);
   font-family: var(--nd-font);
   cursor: pointer;
@@ -92,16 +179,16 @@
     flex: 1;
     gap: t.$space-2;
     padding: 4px 14px;
-    border-radius: 8px 0 0 8px;
+    border-radius: var(--nd-radius) 0 0 var(--nd-radius);
   }
 
   // The ▾ half, its inner edge over the main half's, so the line between them is as thick as the rest.
   &__more {
     flex: none;
     width: 48px;
-    margin-left: -2px;
+    margin-left: calc(-1 * var(--nd-line));
     padding: 0;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--nd-radius) var(--nd-radius) 0;
 
     svg {
       width: 22px;
@@ -125,14 +212,34 @@
     white-space: nowrap;
   }
 
+  // The copy, after the file where the model has several: the file's name gives way first.
   &__line {
+    display: flex;
     max-width: 100%;
-    overflow: hidden;
     font-size: 12px;
     font-weight: 600;
-    text-overflow: ellipsis;
     white-space: nowrap;
     opacity: 0.85;
+  }
+
+  &__file,
+  &__target {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__file {
+    flex: 0 1 auto;
+    min-width: 3em;
+  }
+
+  &__dot {
+    flex: none;
+    white-space: pre;
+  }
+
+  &__target {
+    flex: 0 1 auto;
   }
 
   &__logo,
@@ -175,6 +282,117 @@
   }
 }
 
+// ---- In a file's row ---------------------------------------------------------------------------------------------
+
+// The last of the row's stacked buttons (Printables': EasyPrint, Slice, Download), its top line over the one above's.
+:host([data-row]) {
+  display: block;
+  margin: calc(-1 * var(--nd-line)) 0 0;
+}
+
+.ndr {
+  @include m.isolated(flex);
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 3px 8px;
+  border: var(--nd-line) solid var(--nd-accent);
+  border-radius: 0 0 var(--nd-radius) var(--nd-radius);
+  background: transparent;
+  color: var(--nd-text);
+  font-family: var(--nd-font);
+  font-size: 12px;
+  line-height: 24px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--nd-hover);
+  }
+
+  &:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--nd-accent);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
+
+  &__logo,
+  &__end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__logo svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &__logo path {
+    fill: currentColor;
+  }
+
+  &__logo path[stroke] {
+    fill: none;
+    stroke: currentColor;
+  }
+
+  &__label {
+    flex: 1;
+    text-align: left;
+  }
+
+  &__end svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+}
+
+// Small, beside the site's own buttons for the file (NexPrint's Files list), rather than one of a stack.
+:host([data-row="pill"]) {
+  display: inline-flex;
+  margin: 0;
+}
+
+:host([data-row="pill"]) .ndr {
+  width: auto;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--nd-small-radius, var(--nd-radius));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+
+  .ndr__label {
+    flex: none;
+  }
+}
+
+// Printables lays a file's buttons side by side on a phone, centred.
+@media (max-width: 600px) {
+  :host([data-row=""]) {
+    margin: 0 0 0 calc(-1 * var(--nd-line));
+  }
+
+  :host([data-row=""]) .ndr {
+    justify-content: center;
+    border-radius: var(--nd-radius);
+
+    .ndr__label {
+      flex: none;
+    }
+  }
+}
+
 // ---- The menu ---------------------------------------------------------------------------------------------------
 
 .ndm {
@@ -182,9 +400,11 @@
   position: fixed;
   z-index: t.$z-top;
   max-width: calc(100vw - 16px);
+  // Its height is the room there is, set as it opens; a long list of files scrolls.
+  overflow-y: auto;
   padding: 4px;
   border: 1px solid var(--nd-border);
-  border-radius: 8px;
+  border-radius: calc(var(--nd-radius) + 2px);
   background: var(--nd-surface);
   box-shadow: 0 8px 24px var(--nd-shadow);
   color: var(--nd-ink);
@@ -221,7 +441,7 @@
   gap: 10px;
   width: 100%;
   padding: 7px 8px;
-  border-radius: 6px;
+  border-radius: var(--nd-radius);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -302,6 +522,21 @@
   font-weight: 500;
 }
 
+// A file has no picture, and its name is the one thing to read.
+.ndm__row--file .ndm__name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.ndm__label {
+  padding: 6px 8px 4px;
+  color: var(--nd-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .ndm__sep {
   height: 1px;
   margin: 4px 6px;
@@ -317,7 +552,7 @@
   max-width: 320px;
   padding: 10px 12px;
   border: 1px solid var(--nd-border);
-  border-radius: 8px;
+  border-radius: calc(var(--nd-radius) + 2px);
   background: var(--nd-surface);
   box-shadow: 0 8px 24px var(--nd-shadow);
   color: var(--nd-ink);

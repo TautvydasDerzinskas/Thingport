@@ -1,38 +1,52 @@
 // Download adapted in Grab's bubble: a row per copy (its printer or slicer, and what it's for), each downloading its
-// copy on a click and saying on the row how it's going. Not set up for imports, the bubble's panel is these rows; set
-// up, they open above a secondary "Download adapted" under the import, over the panel, as an extra beside it.
+// copy on a click and saying on the row how it's going, with the file to adapt picked above them where the model has
+// several 3MFs. Where the bubble can't import from the page, its panel is these rows; where it can, they open above a
+// secondary "Download adapted" under the import, over the panel, as an extra beside it.
 
-import { targetName, type AdaptTarget } from "../../shared/adaptTargets";
+import { targetName } from "../../shared/adaptTargets";
 import { send } from "../../shared/messages";
+import type { ProviderId } from "../../providers/index.generated";
 import { pageHeadHtml } from "../panels/modelHead";
 import { renderPanel, setPanelExtra, mountFab, mountPanel } from "../shell";
-import type { ProviderId } from "../../providers/index.generated";
-import { targetPicture } from "./button";
 import { downloadAdapted } from "./download";
-import { explanation } from "./offer";
-import type { AdaptSite } from "./site";
+import { explanation, savedNote } from "./offer";
+import { ICONS, element, shownName, sizeText, svg, targetPicture } from "./popover";
+import type { PageAdapt } from "./site";
 
-const DOWNLOAD_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
 const DONE_RESET_MS = 3000;
 
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) {
-  const el = document.createElement(tag);
-  el.className = className;
-  if (text !== undefined) el.textContent = text;
-  return el;
-}
+const downloadIcon = () => svg(ICONS.download);
 
-const downloadIcon = () =>
-  document.importNode(new DOMParser().parseFromString(DOWNLOAD_SVG, "image/svg+xml").documentElement, true);
+let picks = 0;
 
 /** A row per copy; `compact` for the rows under an import. */
-export function adaptedRows(site: AdaptSite, pageUrl: string, targets: AdaptTarget[], compact = false): HTMLElement {
+export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): HTMLElement {
+  const { site, files, targets } = page;
   const box = element("div", "ad");
+  // The one the page has picked, where it picks one.
+  let file = site.selected?.(files) ?? files[0];
+  if (files.length > 1) {
+    const id = `tg-ad-file-${++picks}`;
+    const label = element("label", "tg-label ad-file__label", "3MF file");
+    label.htmlFor = id;
+    const select = element("select", "tg-select ad-file");
+    select.id = id;
+    for (const [at, option] of files.entries()) {
+      const size = sizeText(option.size);
+      select.append(new Option(size ? `${shownName(option)} (${size})` : shownName(option), String(at)));
+    }
+    select.value = String(files.indexOf(file));
+    select.addEventListener("change", () => (file = files[Number(select.value)] ?? files[0]));
+    box.append(label, select);
+  }
   const list = element("div", `ad-list${compact ? " ad-list--compact" : ""}`);
   const error = element("div", "tg-hint ad-error");
   error.setAttribute("role", "alert");
   error.hidden = true;
+  // What's worth knowing about the copy saved last, until the next one.
+  const note = element("div", "tg-hint ad-note");
+  note.setAttribute("role", "status");
+  note.hidden = true;
   let busy = false;
   for (const target of targets) {
     const { name, sub } = targetName(target);
@@ -50,12 +64,18 @@ export function adaptedRows(site: AdaptSite, pageUrl: string, targets: AdaptTarg
       if (busy) return;
       busy = true;
       error.hidden = true;
-      for (const other of list.querySelectorAll("button")) other.disabled = true;
+      note.hidden = true;
+      for (const other of box.querySelectorAll<HTMLButtonElement | HTMLSelectElement>("button, select")) {
+        other.disabled = true;
+      }
       go.replaceChildren(element("span", "ad-item__spinner"));
       void send("SET_ADAPT_LAST", { key: target.key });
       try {
-        const saved = await downloadAdapted(site, pageUrl, target, (status) => (subEl.textContent = status));
-        subEl.textContent = saved.copy ? "Downloaded" : "Downloaded the file itself: your slicer opens it as it is";
+        const saved = await downloadAdapted(site, pageUrl, file, target, (status) => (subEl.textContent = status));
+        subEl.textContent = "Downloaded";
+        const said = savedNote(target, saved);
+        note.textContent = said ?? "";
+        note.hidden = !said;
         await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
       } catch (err) {
         error.textContent = err instanceof Error ? err.message : String(err);
@@ -64,29 +84,31 @@ export function adaptedRows(site: AdaptSite, pageUrl: string, targets: AdaptTarg
         busy = false;
         subEl.textContent = sub;
         go.replaceChildren(downloadIcon());
-        for (const other of list.querySelectorAll("button")) other.disabled = false;
+        for (const other of box.querySelectorAll<HTMLButtonElement | HTMLSelectElement>("button, select")) {
+          other.disabled = false;
+        }
       }
     });
     list.append(row);
   }
-  box.append(list, error);
+  box.append(list, note, error);
   return box;
 }
 
 /** Set up for imports: under the import, a button as big as its own, in the quieter secondary style, whose copies open
  *  above it over the panel rather than growing it. Escape, a click elsewhere or the panel scrolling closes them. */
-export function adaptedReveal(site: AdaptSite, pageUrl: string, targets: AdaptTarget[]): HTMLElement {
+export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
   const box = element("div", "ad-more");
   const toggle = element("button", "tg-btn tg-btn--secondary ad-reveal");
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", "false");
-  toggle.append(downloadIcon(), element("span", "", "Download adapted"));
+  toggle.append(svg(ICONS.download), element("span", "", "Download adapted"));
   const pop = element("div", "ad-pop");
   pop.id = "tg-adapted-copies";
   pop.setAttribute("role", "group");
   pop.setAttribute("aria-label", "Copies to download");
   pop.hidden = true;
-  pop.append(adaptedRows(site, pageUrl, targets, true));
+  pop.append(adaptedRows(page, pageUrl, true));
   toggle.setAttribute("aria-controls", pop.id);
 
   // Fixed, from the button's place in the window, so the panel's own scrolling can't clip it. A transformed ancestor
@@ -124,7 +146,7 @@ export function adaptedReveal(site: AdaptSite, pageUrl: string, targets: AdaptTa
     document.addEventListener("pointerdown", onOutside, true);
     window.addEventListener("resize", onMoved);
     panel()?.addEventListener("scroll", onMoved);
-    pop.querySelector<HTMLButtonElement>("button")?.focus();
+    pop.querySelector<HTMLElement>("select, button")?.focus();
   }
   toggle.addEventListener("click", () => (pop.hidden ? open() : close(true)));
   box.addEventListener("keydown", (event) => {
@@ -132,28 +154,38 @@ export function adaptedReveal(site: AdaptSite, pageUrl: string, targets: AdaptTa
     event.stopPropagation();
     close(true);
   });
+  // Tabbing out of them closes them too. Focus going nowhere (a click on the list's own padding) leaves them open.
+  box.addEventListener("focusout", (event) => {
+    const to = event.relatedTarget as Node | null;
+    if (to && !box.contains(to)) close(false);
+  });
   box.append(toggle, pop);
   return box;
 }
 
-/** Not set up for imports: the bubble opens Download adapted's own panel, with a way to set imports up under it. */
+/** A line under the copies, with the one thing to do about it: setting imports up, say. */
+export type AdaptFoot = { text: string; action: string; onClick: () => void };
+
+/** Where the bubble can't import from the page: it opens Download adapted's own panel, with `foot` under it. */
 export function mountAdaptBubble(
   root: ShadowRoot,
   provider: ProviderId,
   pageUrl: string,
-  site: AdaptSite,
-  targets: AdaptTarget[],
-  onSetUp: () => void,
+  page: PageAdapt,
+  foot: AdaptFoot | null,
 ): void {
   const toggle = mountPanel(root, () => {
     renderPanel(pageHeadHtml(provider, pageUrl, "Download adapted"));
-    const foot = element("div", "tg-hint ad-foot", "Want it in your Thingport library as well? ");
-    const setUp = element("button", "ad-link", "Set up Grab");
-    setUp.type = "button";
-    setUp.addEventListener("click", onSetUp);
-    foot.append(setUp);
     const body = element("div", "");
-    body.append(adaptedRows(site, pageUrl, targets), foot);
+    body.append(adaptedRows(page, pageUrl));
+    if (foot) {
+      const line = element("div", "tg-hint ad-foot", foot.text);
+      const action = element("button", "ad-link", foot.action);
+      action.type = "button";
+      action.addEventListener("click", foot.onClick);
+      line.append(action);
+      body.append(line);
+    }
     setPanelExtra(body);
   });
   mountFab(root, { variant: "adapt", label: "Download adapted copies of this model", onClick: toggle });
