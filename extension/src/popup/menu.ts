@@ -1,5 +1,5 @@
-// A small menu under a tile (a printer's nozzle and Remove): arrow keys move through it, Enter picks, and Escape, Tab
-// or a click elsewhere closes it, giving focus back to the tile.
+// A small menu under a tile (a printer's nozzle and Remove): arrow keys move through it and Enter picks. Escape closes
+// it and gives focus back to the tile; Tab or a click elsewhere closes it and leaves focus where it went.
 
 import { el, icon, ICONS } from "./adaptTiles";
 

@@ -113,6 +113,20 @@ describe("Adapt 3MFs' settings in the background", () => {
     expect(thingport).toMatchObject({ slicers: ["prusaslicer"], printers: null, slicerPrinters: {}, unadapted: [] });
   });
 
+  it("are one account's, should Grab connect to another while they're read", async () => {
+    const OTHER = { ...CONNECTED, instanceUrl: "http://other.lan", email: "other@example.com" };
+    Object.assign(store, CONNECTED);
+    instance.answers["GET /settings/slicer"] = () => {
+      const mine = store.email === CONNECTED.email;
+      if (mine) Object.assign(store, OTHER);
+      return { slicers: mine ? ["orcaslicer"] : ["cura"] };
+    };
+    instance.answers["GET /me/printers"] = () => ({ printers: store.email === OTHER.email ? [] : [P1S] });
+    const view = await getAdaptView();
+    expect(view.instanceUrl).toBe(OTHER.instanceUrl);
+    expect(view.thingport).toMatchObject({ slicers: ["cura"], printers: [] });
+  });
+
   it("say why when the instance couldn't be asked", async () => {
     Object.assign(store, CONNECTED);
     instance.answers["GET /settings/slicer"] = new TypeError("Failed to fetch");
