@@ -92,16 +92,22 @@ async function thingportAdapt(): Promise<ThingportAdapt> {
   return { slicers: installedSlicers(settings), printers, slicerPrinters, unadapted: knownSlicers(settings.unadapted) };
 }
 
+const sameAccount = (a: StoredConfig, b: StoredConfig) => a.instanceUrl === b.instanceUrl && a.email === b.email;
+
 export async function getAdaptView(): Promise<AdaptView> {
   const config = await getStoredConfig();
   const own = adaptSettingsOf(config);
   if (!isConfigured(config) || config.disabled) return { own, thingport: null, instanceUrl: "" };
   const { instanceUrl } = config;
+  let thingport: AdaptView["thingport"];
   try {
-    return { own, thingport: await thingportAdapt(), instanceUrl };
+    thingport = await thingportAdapt();
   } catch (err) {
-    return { own, thingport: { error: err instanceof Error ? err.message : String(err) }, instanceUrl };
+    thingport = { error: err instanceof Error ? err.message : String(err) };
   }
+  // Connected to another account meanwhile: what came back may be either's, so it's asked again.
+  if (!sameAccount(await getStoredConfig(), config)) return getAdaptView();
+  return { own, thingport, instanceUrl };
 }
 
 export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<AdaptSettings> {

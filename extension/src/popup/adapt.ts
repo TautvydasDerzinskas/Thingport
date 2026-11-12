@@ -121,6 +121,8 @@ function renderAll(): void {
 /** Shown at once, put back if it can't be saved. */
 async function save(change: Partial<AdaptSettings>, errorEl: HTMLElement = els.adaptError): Promise<void> {
   if (!view) return;
+  // A read under way began before this change, so what it brings back is older.
+  reads++;
   clearError(errorEl);
   const before = view.own;
   view = { ...view, own: { ...view.own, ...change } };
@@ -144,6 +146,14 @@ function renderSetup(): void {
     return;
   }
   const use = inUse(view);
+  if (!use.slicers.length && use.slicersFromThingport) {
+    // Connected, they're picked in Thingport.
+    const link = el("a", "text-btn adapt-setup__nudge", "Pick your slicer in Thingport", icon(ICONS.open));
+    link.href = `${view.instanceUrl}/?configuration=slicer`;
+    link.dataset.key = "adapt-nudge";
+    els.adaptSetup.replaceChildren(opensInTab(link));
+    return;
+  }
   if (!use.slicers.length) {
     const nudge = el("button", "text-btn adapt-setup__nudge", "Pick your slicer", icon(ICONS.chevron));
     nudge.type = "button";
@@ -224,7 +234,20 @@ function printerMenu(tile: HTMLElement, printer: ShownPrinter): void {
       select: () => void save({ printers: own.map((mine) => (mine.id === printer.id ? { ...mine, nozzle } : mine)) }),
     })),
     "separator",
-    { label: "Remove", danger: true, select: () => void save({ printers: own.filter((p) => p.id !== printer.id) }) },
+    {
+      label: "Remove",
+      danger: true,
+      select: () => {
+        // Its tile goes with it: focus goes to the next printer's, else the one before, else Add printer.
+        const keys = own.map((mine) => `printer:${mine.id}`);
+        const at = keys.indexOf(`printer:${printer.id}`);
+        const next = keys[at + 1] ?? keys[at - 1] ?? "add-printer";
+        void save({ printers: own.filter((p) => p.id !== printer.id) }).then(() => {
+          const kept = els.adaptSections.querySelector<HTMLElement>(`[data-key="printer:${CSS.escape(printer.id)}"]`);
+          (kept ?? els.adaptSections.querySelector<HTMLElement>(`[data-key="${CSS.escape(next)}"]`))?.focus();
+        });
+      },
+    },
   ]);
 }
 
@@ -321,11 +344,27 @@ function noteBlock(note: { text: string; retry: boolean }): HTMLElement {
   return block;
 }
 
+/** The last read failing, with a way to read again. */
+function readFailedBlock(message: string): HTMLElement {
+  const note = el("p", "sv-alert sv-alert--problem", `Couldn't read the settings: ${message}`);
+  const retry = el("button", "text-btn", "Try again");
+  retry.type = "button";
+  retry.dataset.key = "read-again";
+  retry.addEventListener("click", () => void loadAdapt());
+  note.append(" ", retry);
+  return note;
+}
+
 function renderSettings(): void {
-  if (!view) return;
+  const failed = readFailed ? [readFailedBlock(readFailed)] : [];
+  if (!view) {
+    els.adaptSections.replaceChildren(...failed);
+    return;
+  }
   const use = inUse(view);
   const note = noteOf(use);
   els.adaptSections.replaceChildren(
+    ...failed,
     ...(note ? [noteBlock(note)] : []),
     slicerSection(use),
     printerSection(use),
@@ -521,13 +560,23 @@ async function openIfAsked(): Promise<void> {
   openSettings(els.adaptSettingsBtn);
 }
 
+// Reads begun, and changes saved, so far: a read that finishes after a newer one began, or after a change, is dropped.
+let reads = 0;
+// Why the last read failed, shown in the settings while they're open.
+let readFailed: string | null = null;
+
 /** Reads the settings, and the instance's slicers and printers once connected, then draws what's showing. */
 export async function loadAdapt(): Promise<void> {
+  const read = ++reads;
   const [res] = await Promise.all([send("GET_ADAPT_SETTINGS"), loadIndex(), loadSiteStates()]);
+  if (read !== reads) return;
   if (!res?.ok) {
-    showError(res?.error ?? "Couldn't read Adapt 3MFs' settings", els.offlineError);
+    readFailed = res?.error ?? "Couldn't read Adapt 3MFs' settings";
+    showError(readFailed, els.offlineError);
+    if (isOpen(els.adaptView)) redraw(els.adaptSections, renderSettings);
     return;
   }
+  readFailed = null;
   view = res.data;
   renderAll();
   await openIfAsked();
