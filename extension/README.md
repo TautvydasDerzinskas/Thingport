@@ -158,7 +158,7 @@ for what a copy keeps.
   - **Button:** beside the site's own button, or in Grab's bubble.
   - **Sites:** where it works, with **Allow** for a site the extension doesn't run on until you let it.
 
-  Under the switch, the popup says which slicers and printers copies are made for, or offers to pick a slicer.
+  Under the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
 
 - **Connected:** your slicers and printers are your Thingport instance's, from its **Configuration → Slicer** and
   **Printers**. They're shown here and managed there (**Manage** opens them), and a slicer's own printer there is the
