@@ -83,8 +83,9 @@ export type ProviderManifest = {
     syncsNewOnly?: true;
     /** A model with no print profiles downloads by its link as a zip of its raw files, which an import unpacks. */
     rawFilesZip?: true;
-    /** Its 3MFs are Bambu Studio projects, which other slicers mis-import, so Grab offers them converted. */
-    bambuProjects?: true;
+    /** The kinds of 3MF its models come as, which Grab's Download adapted offers copies of for other slicers and
+     *  printers: "bambu" Bambu Studio projects, "prusa" PrusaSlicer projects, "plain" plain 3MFs with colours. */
+    adapted3mfs?: readonly ("bambu" | "prusa" | "plain")[];
   };
   /** The slicers whose users the sync dialog shows this site to first: its printer maker's own, by the ids in the
    *  app's slicer setting (frontend/src/constants/settingsOptions.ts). */

@@ -1,12 +1,12 @@
-// Download adapted's one job, wherever it's started (the page's button or the bubble's rows): download the model's
-// 3MF as the site's own button would, make the copy for the chosen slicer and printer in this tab, and save it. The
+// Download adapted's one job, wherever it's started (the page's buttons or the bubble's rows): download one of the
+// model's 3MFs as the site's own button would, make the copy for the chosen slicer and printer in this tab, and save it. The
 // file goes nowhere but the downloads folder.
 
 import { adaptBytes } from "../../adapting/adapt";
 import type { AdaptTarget } from "../../shared/adaptTargets";
 import { request } from "../../shared/messages";
 import { adaptingPhrases, rotatePhrases } from "../panels/funStatus";
-import type { AdaptSite } from "./site";
+import type { AdaptFile, AdaptSite } from "./site";
 
 // Converting holds the file, its unzipped model XML and the result in memory at once.
 export const MAX_BYTES = 50 * 1024 * 1024;
@@ -81,24 +81,31 @@ function saveFile(bytes: Uint8Array, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-/** What was saved: a copy, or the file itself where the slicer opens it as it is; `printerless` when Grab has no
- *  preset of the slicer for the printer, so the copy is the slicer's alone. */
-export type Saved = { copy: boolean; printerless: boolean };
+/** What was saved: a copy, or the file itself where the slicer opens it as it is. `printerless` when Grab has no
+ *  preset of the slicer for the printer, so the copy is the slicer's alone; `nozzle` the nozzle whose preset it names
+ *  when the slicer has none for the printer's own, which it takes the nearest of. */
+export type Saved = { copy: boolean; printerless: boolean; nozzle: string | null };
 
 export async function downloadAdapted(
   site: AdaptSite,
   pageUrl: string,
+  source: AdaptFile,
   target: AdaptTarget,
   progress: (text: string) => void,
 ): Promise<Saved> {
-  const file = await site.download(pageUrl, progress);
+  const file = await site.download(pageUrl, source, progress);
+  // Grab not having the printer's preset makes a copy for the slicer alone; not managing to look is a failure.
   const printer =
     target.printer && target.slicer
       ? await request("GET_PRINTER_RECIPE", {
           slicer: target.slicer,
           printerId: target.printer.id,
           nozzle: target.printer.nozzle,
-        }).catch(() => null)
+        }).catch((err: unknown) => {
+          throw new Error("Couldn't read Grab's printer list to make this copy. Try again in a moment.", {
+            cause: err,
+          });
+        })
       : null;
   const stop = rotatePhrases(adaptingPhrases, progress);
   let adapted: Awaited<ReturnType<typeof adaptBytes>>;
@@ -110,5 +117,10 @@ export async function downloadAdapted(
     });
   }
   saveFile(adapted.bytes, adapted.output ? copyFilename(file.filename, target) : file.filename);
-  return { copy: adapted.output !== null, printerless: Boolean(target.printer && !printer) };
+  const nozzle = printer?.choice.nozzle;
+  return {
+    copy: adapted.output !== null,
+    printerless: Boolean(target.printer && !printer),
+    nozzle: adapted.output && nozzle && nozzle !== target.printer?.nozzle ? nozzle : null,
+  };
 }

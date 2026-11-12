@@ -36,11 +36,12 @@ src/
                 (providerTab.ts), toolbar icon
   content/      content script -- the floating icon and the note under it, its panel flows
                 (panels/), the setup dialog, overlays, and the model's picture and name read off
-                the page (pageModel.ts); MakerWorld's page data, download-URL resolution, guided
-                collection import and Download adapted button are in providers/makerworld/
+                the page (pageModel.ts); MakerWorld's page data, download-URL resolution and guided
+                collection import are in providers/makerworld/; Download adapted is adapted/, with each
+                site's part in providers/<id>/adaptSite.ts
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   adapter/      the 3MF adapter, copied from the backend (*.generated.ts)
-  adapting/     what Grab makes of a MakerWorld 3MF with it, and the worker that runs it
+  adapting/     what Grab makes of a site's 3MF with it, and the worker that runs it
   printers/     the reader of the printer catalogue in public/printers/: the popup lists printers from it, a copy
                 for one takes its recipe from it
   providers/    each provider's own code in <id>/, beside the copies of its manifest and links

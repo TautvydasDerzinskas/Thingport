@@ -2,27 +2,14 @@
 // its label in any of the site's languages (its class names are build hashes), its theme is a class on <html>, and a
 // model's 3MF is the page's selected print profile, downloaded with the user's own MakerWorld sign-in.
 
-import { FORMAT_VERSION, type ThreeMfFormat } from "../../adapter/index.generated";
-import type { AdaptSite } from "../../content/adapted/site";
+import { placeAfter, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { MAX_BYTES, readBody, sourceFilename, tooBig } from "../../content/adapted/download";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 
-// What MakerWorld's files are, for deciding before one is downloaded: Bambu Studio projects from a recent version,
-// with its names for settings. The downloaded file itself decides what its copy is.
-export const MAKERWORLD_FORMAT: ThreeMfFormat = {
-  v: FORMAT_VERSION,
-  kind: "bambu",
-  app: "BambuStudio",
-  appVersion: "02.08.00.00",
-  orcaTag: null,
-  printer: null,
-  nozzle: null,
-  filaments: null,
-  plates: null,
-  dialect: "bambu",
-};
+// One file: whichever print profile the page has selected when it's downloaded.
+const SELECTED_PROFILE: AdaptFile = { id: "selected-profile", name: "The selected print profile", size: null };
 
 // MakerWorld's main action: usually the "Open in Bambu Studio" split button, whose menu holds "Download 3MF" and
 // "Download STL/CAD Files". The English patterns also catch app names the translated sets don't list.
@@ -71,10 +58,11 @@ function controlBox(label: HTMLElement): HTMLElement {
 export const MAKERWORLD_ADAPT: AdaptSite = {
   id: "makerworld",
   name: "MakerWorld",
-  format: MAKERWORLD_FORMAT,
   filesAre: "MakerWorld's files are Bambu Studio projects",
 
-  async download(pageUrl, progress) {
+  files: async () => [SELECTED_PROFILE],
+
+  async download(pageUrl, _file, progress) {
     const stop = rotatePhrases(gettingFilePhrases, progress);
     // The adapter reads the 3MF project, never the raw-files zip.
     const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stop);
@@ -100,15 +88,7 @@ export const MAKERWORLD_ADAPT: AdaptSite = {
     return label ? controlBox(label) : null;
   },
 
-  place(host, anchor) {
-    anchor.after(host);
-    // Beside it in a row, otherwise underneath at full width; a gap already spaces it.
-    const parent = getComputedStyle(anchor.parentElement!);
-    const inRow = /flex/.test(parent.display) && parent.flexDirection.startsWith("row");
-    const gap = inRow ? parent.columnGap : parent.rowGap;
-    host.toggleAttribute("data-below", !inRow);
-    host.toggleAttribute("data-gapped", Boolean(gap) && gap !== "normal" && gap !== "0px");
-  },
+  place: placeAfter,
 
   // MakerWorld sets its theme as a class on <html>, which the button's shadow root can't see.
   dark: () => document.documentElement.classList.contains("dark"),

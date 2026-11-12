@@ -8,6 +8,7 @@ import {
   adapt3mf,
   classify3mf,
   planAdaptation,
+  plainModelScanner,
   slicerProfile,
   type AdaptPlan,
   type PrinterChoice,
@@ -23,7 +24,22 @@ const HEAD_BYTES = 64 * 1024;
 
 export type AdaptOutcome = { bytes: Uint8Array; output: AdaptPlan["output"] | null };
 
-/** What kind of 3MF the zip is, read as the backend reads a stored one. */
+type Scanner = ReturnType<typeof plainModelScanner>;
+
+// A model file's text goes through the scanner in pieces this big, rather than as one string.
+const SCAN_SLICE = 1024 * 1024;
+
+async function scanEntry(file: JSZip.JSZipObject, scanner: Scanner): Promise<void> {
+  const bytes = await file.async("uint8array");
+  const decoder = new TextDecoder();
+  for (let at = 0; at < bytes.length; at += SCAN_SLICE) {
+    scanner.add(decoder.decode(bytes.subarray(at, at + SCAN_SLICE), { stream: true }));
+  }
+  scanner.add(decoder.decode());
+  scanner.endFile();
+}
+
+/** What kind of 3MF the zip is, read as the backend reads a stored one: a plain one's colours included. */
 export async function formatOfZip(zip: JSZip): Promise<ThreeMfFormat> {
   const entries = Object.keys(zip.files).filter((name) => !zip.files[name].dir);
   const named = (name: string) => entries.find((entry) => entry.toLowerCase() === name) ?? null;
@@ -33,26 +49,28 @@ export async function formatOfZip(zip: JSZip): Promise<ThreeMfFormat> {
   };
   const root = named("3d/3dmodel.model");
   const head = root ? (await zip.file(root)!.async("uint8array")).subarray(0, HEAD_BYTES) : null;
-  return classify3mf({
+  const files = {
     entries,
     modelHead: head ? new TextDecoder().decode(head) : null,
     projectSettings: await text("metadata/project_settings.config"),
     modelSettings: await text("metadata/model_settings.config"),
     prusaConfig: await text("metadata/slic3r_pe.config"),
-  });
+  };
+  const format = classify3mf(files);
+  if (format.kind !== "plain" || !root) return format;
+  const scanner = plainModelScanner();
+  for (const entry of entries.filter((name) => /\.model$/i.test(name))) await scanEntry(zip.file(entry)!, scanner);
+  return classify3mf({ ...files, plainModel: scanner.result() });
 }
 
 /** The copy for `slicer`, and `printer` where one is picked: null when the slicer opens the file as it is. Before a
- *  slicer is picked, or with one the adapter doesn't know, a Bambu project gets the copy PrusaSlicer and most others
- *  read. */
+ *  slicer is picked, or with one the adapter doesn't know, the copy PrusaSlicer gets, which most others read too. */
 export function planFor(
   format: ThreeMfFormat,
   slicer: string | null,
   printer: PrinterChoice | null = null,
 ): AdaptPlan | null {
-  const profile = slicerProfile(slicer);
-  if (profile) return planAdaptation(format, profile, printer);
-  return format.kind === "bambu" ? { output: "prusa" } : null;
+  return planAdaptation(format, slicerProfile(slicer) ?? slicerProfile("prusaslicer"), printer);
 }
 
 /** The adapted copy, or the file itself when `slicer` (and `printer`) need none. */

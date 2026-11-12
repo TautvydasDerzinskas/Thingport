@@ -1,281 +1,169 @@
-// Download adapted beside the site's own open or download button: an outlined button, so the site's own stays the
-// main action, that names under its label the copy a click makes (the last one made, else the first), with a ▾ for
-// the other copies and Grab's settings. Its own shadow root, so it sits in the page's layout without sharing styles
-// either way; the site (site.ts) says where it goes and which theme it shows.
+// Download adapted on the site's own page. Beside its main open or download button, an outlined button, so the
+// site's own stays the main action, naming under its label the copy a click makes (the last one made, else the first)
+// and, where the model has several 3MFs, which file; its ▾ picks another file or copy, or opens Grab's settings. Where
+// the site lists each file with buttons of its own (Printables' Files tab), every 3MF there gets a small "Adapted"
+// button too, whose menu downloads that file's copies. Each is in a shadow root of its own, so it sits in the page's
+// layout without sharing styles either way; the site (site.ts) says where they go and which theme they show.
 
-import { slicerMark } from "../../adapter/slicers/marks.generated";
 import { DEFAULT_TARGET, pickTarget, targetLine, targetName, type AdaptTarget } from "../../shared/adaptTargets";
 import { createIcon } from "../../shared/icon";
 import { send } from "../../shared/messages";
-import { printerArtSvg } from "../../shared/printerArt";
 import css from "../styles/adapted.scss?inline";
 import { downloadAdapted } from "./download";
-import { explanation } from "./offer";
-import type { AdaptSite } from "./site";
+import { explanation, savedNote } from "./offer";
+import { ICONS, element, placeFixed, shownName, sizeText, svg, targetPicture } from "./popover";
+import type { AdaptFile, PageAdapt } from "./site";
 
 const HOST_ID = "thingport-grab-adapted";
 const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
-const ERROR_SHOW_MS = 10000;
+const NOTE_SHOW_MS = 10000;
 // How long the site's own button may take to show before the copies are offered in Grab's bubble instead.
 const ANCHOR_WAIT_MS = 8000;
 
-const SVG = {
-  // Material Design "Lightbulb" (Apache 2.0), the web app's icon for the same option.
-  bulb: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7"/></svg>',
-  caret:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 10l5 5 5-5z"/></svg>',
-  check:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
-  gear: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+/** What the page's buttons share: the page, the file and copy picked, and whether a copy is being made. */
+type Shared = PageAdapt & {
+  pageUrl: string;
+  file: AdaptFile;
+  target: AdaptTarget;
+  busy: boolean;
+  /** Run whenever any of it changes. */
+  watchers: Set<() => void>;
 };
 
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
-  const el = document.createElement(tag);
-  el.className = className;
-  return el;
-}
+const changed = (shared: Shared) => shared.watchers.forEach((watch) => watch());
 
-/** Markup made in this file only, from numbers and fixed paths: parsed as SVG, never as page HTML. */
-function svg(markup: string): Element {
-  return document.importNode(new DOMParser().parseFromString(markup, "image/svg+xml").documentElement, true);
-}
-
-/** A copy's picture in a list: its printer drawn, or its slicer's mark on a white tile. */
-export function targetPicture(target: AdaptTarget, className: string): HTMLElement {
-  const box = element("span", className);
-  if (target.printer) {
-    box.append(
-      svg(
-        printerArtSvg(target.printer).replace('<svg class="pa"', '<svg xmlns="http://www.w3.org/2000/svg" class="pa"'),
-      ),
-    );
-    return box;
-  }
-  const mark = slicerMark(target.slicer ?? "prusaslicer");
-  box.classList.add(`${className}--mark`);
-  box.append(
-    svg(
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${mark.viewBox}" aria-hidden="true" focusable="false">${mark.paths
-        .map((p) => `<path d="${p.d}" fill="${p.fill}"/>`)
-        .join("")}</svg>`,
-    ),
-  );
-  return box;
-}
-
-type Mounted = { host: HTMLElement; stop: () => void };
-let mounted: Mounted | null = null;
-
-export function unmountAdaptedButton(): void {
-  mounted?.stop();
-  mounted?.host.remove();
-  mounted = null;
-}
-
-/**
- * Puts the button beside the site's own, keeping it there as the page re-renders. `targets` are the copies the site's
- * files get, at least one; `lastKey` the copy made last. `onNoAnchor` runs once if the site's button hasn't shown in
- * ANCHOR_WAIT_MS, to offer the copies somewhere else.
- */
-export function mountAdaptedButton(
-  site: AdaptSite,
-  pageUrl: string,
-  targets: AdaptTarget[],
-  lastKey: string | null,
-  onNoAnchor: () => void,
-): void {
-  unmountAdaptedButton();
-  let current = pickTarget(targets, lastKey) ?? DEFAULT_TARGET;
-
+function shadowHost(shared: Shared): { host: HTMLElement; root: ShadowRoot } {
   const host = document.createElement("span");
-  host.id = HOST_ID;
-  host.dataset.site = site.id;
+  host.dataset.site = shared.site.id;
   const root = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = css;
+  root.append(style);
+  return { host, root };
+}
 
-  const split = element("span", "nd-split");
-  const main = element("button", "nd nd__main");
-  main.type = "button";
-  main.setAttribute("aria-describedby", "tg-nd-info");
-  const logo = element("span", "nd__logo");
-  logo.append(createIcon());
-  const text = element("span", "nd__text");
-  const title = element("span", "nd__title");
-  title.textContent = LABEL;
-  const line = element("span", "nd__line");
-  text.append(title, line);
-  const info = element("span", "nd__info");
-  info.append(svg(SVG.bulb));
-  main.append(logo, text, info);
-  const more = element("button", "nd nd__more");
-  more.type = "button";
-  more.setAttribute("aria-label", "Choose the copy, or Grab's settings for them");
-  more.setAttribute("aria-haspopup", "menu");
-  more.setAttribute("aria-expanded", "false");
-  more.append(svg(SVG.caret));
-  split.append(main, more);
+// ---- The explanation, and what was saved or went wrong --------------------------------------------------------
 
-  const menu = element("div", "ndm");
-  menu.setAttribute("role", "menu");
-  menu.setAttribute("aria-label", "Copies to download");
-  menu.hidden = true;
+type Bubble = {
+  show(message: string, options?: { error?: boolean; hold?: number }): void;
+  hide(): void;
+  /** Showing something until its time is up, rather than for as long as it's pointed at. */
+  held(): boolean;
+};
+
+/** Fixed, so an ancestor's overflow can't clip it: under `near`, or above it where there's no room below (a
+ *  bottom-stuck action bar), from its left edge or, `alignEnd`, its right. */
+function bubbleFor(root: ShadowRoot, near: HTMLElement, id: string, alignEnd = false): Bubble {
   const bubble = element("div", "nd-bubble");
-  bubble.id = "tg-nd-info";
-  bubble.setAttribute("role", "tooltip");
+  bubble.id = id;
   bubble.hidden = true;
-  root.append(style, split, menu, bubble);
-
-  const show = () => {
-    line.textContent = targetLine(current);
-    main.setAttribute("aria-label", `${LABEL}: ${targetLine(current)}`);
-  };
-  show();
-
-  // ---- The explanation, and what was saved or went wrong ------------------------------------------------------
-  let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
-  let held = false;
-  const hideBubble = () => {
-    clearTimeout(bubbleTimer);
-    held = false;
+  root.append(bubble);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let holding = false;
+  const hide = () => {
+    clearTimeout(timer);
+    holding = false;
     bubble.hidden = true;
   };
-  const showBubble = (message: string, { error = false, note = false } = {}) => {
-    clearTimeout(bubbleTimer);
-    held = error || note;
-    bubble.textContent = message;
-    bubble.classList.toggle("nd-bubble--error", error);
-    bubble.hidden = false;
-    // Fixed, so an ancestor's overflow can't clip it.
-    const rect = split.getBoundingClientRect();
-    bubble.style.left = `${Math.min(Math.max(8, rect.left), window.innerWidth - bubble.offsetWidth - 8)}px`;
-    // Above when there's no room below, e.g. in a bottom-stuck action bar.
-    const below = rect.bottom + 8 + bubble.offsetHeight <= window.innerHeight;
-    bubble.style.top = `${below ? rect.bottom + 8 : Math.max(8, rect.top - 8 - bubble.offsetHeight)}px`;
-    if (held) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
+  return {
+    show(message, { error = false, hold = 0 } = {}) {
+      clearTimeout(timer);
+      holding = hold > 0;
+      bubble.textContent = message;
+      bubble.setAttribute("role", error ? "alert" : "tooltip");
+      bubble.classList.toggle("nd-bubble--error", error);
+      bubble.hidden = false;
+      const rect = near.getBoundingClientRect();
+      const from = alignEnd ? rect.right - bubble.offsetWidth : rect.left;
+      const below = rect.bottom + 8 + bubble.offsetHeight <= window.innerHeight;
+      placeFixed(
+        bubble,
+        Math.min(Math.max(8, from), window.innerWidth - bubble.offsetWidth - 8),
+        below ? rect.bottom + 8 : Math.max(8, rect.top - 8 - bubble.offsetHeight),
+      );
+      if (holding) timer = setTimeout(hide, hold);
+    },
+    hide,
+    held: () => holding,
   };
-  const showInfo = () => {
-    if (bubble.hidden) showBubble(explanation(site, current));
-  };
-  info.addEventListener("mouseenter", showInfo);
-  info.addEventListener("mouseleave", () => !held && hideBubble());
-  main.addEventListener("focus", () => main.matches(":focus-visible") && showInfo());
-  main.addEventListener("blur", () => !held && hideBubble());
+}
 
-  // ---- Downloading ----------------------------------------------------------------------------------------------
-  let busy = false;
-  const run = async (target: AdaptTarget) => {
-    if (busy) return;
-    busy = true;
-    closeMenu(false);
-    hideBubble();
-    main.disabled = true;
-    more.disabled = true;
-    info.replaceChildren(element("span", "nd__spinner"));
-    try {
-      const saved = await downloadAdapted(site, pageUrl, target, (status) => (title.textContent = status));
-      title.textContent = "Downloaded";
-      const name = target.printer ? `${target.printer.brandName} ${target.printer.model}` : null;
-      if (!saved.copy) showBubble("Your slicer opens this file as it is, so this is the file itself.", { note: true });
-      else if (saved.printerless && name) {
-        showBubble(`Grab has no ${targetName(target).sub} preset for the ${name}, so this copy keeps your own.`, {
-          note: true,
-        });
-      }
-      await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
-    } catch (err) {
-      showBubble(err instanceof Error ? err.message : String(err), { error: true });
-    } finally {
-      busy = false;
-      main.disabled = false;
-      more.disabled = false;
-      info.replaceChildren(svg(SVG.bulb));
-      title.textContent = LABEL;
-    }
-  };
-  main.addEventListener("click", () => void run(current));
+// ---- Menus ----------------------------------------------------------------------------------------------------
 
-  // ---- The menu -------------------------------------------------------------------------------------------------
-  const items = (): HTMLButtonElement[] => [...menu.querySelectorAll<HTMLButtonElement>("button")];
+type Menu = { open(): void; close(refocus: boolean): void; isOpen(): boolean; stop(): void };
+
+/** A menu `trigger` opens under `near` (above where there's no room), filled afresh each time. Arrow keys, Home and
+ *  End move through it, Escape closes it, and so does a click elsewhere. It follows `near` as the page scrolls, and
+ *  closes once that's out of the window. */
+function menuFor(
+  host: HTMLElement,
+  root: ShadowRoot,
+  trigger: HTMLButtonElement,
+  near: HTMLElement,
+  label: string,
+  fill: () => Node[],
+  alignEnd = true,
+): Menu {
+  const menu = element("div", "ndm");
+  menu.setAttribute("role", "menu");
+  menu.setAttribute("aria-label", label);
+  menu.hidden = true;
+  root.append(menu);
+  trigger.setAttribute("aria-haspopup", "menu");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const items = () => [...menu.querySelectorAll<HTMLButtonElement>("button")];
+  const position = () => {
+    const rect = near.getBoundingClientRect();
+    menu.style.minWidth = `${Math.max(rect.width, 240)}px`;
+    const room = { below: window.innerHeight - rect.bottom - 14, above: rect.top - 14 };
+    const down = room.below >= Math.min(menu.scrollHeight, 320) || room.below >= room.above;
+    menu.style.maxHeight = `${Math.max(120, down ? room.below : room.above)}px`;
+    const from = alignEnd ? rect.right - menu.offsetWidth : rect.left;
+    placeFixed(
+      menu,
+      Math.max(8, Math.min(from, window.innerWidth - menu.offsetWidth - 8)),
+      down ? rect.bottom + 6 : Math.max(8, rect.top - 6 - menu.offsetHeight),
+    );
+  };
   const onOutside = (event: Event) => {
-    if (!event.composedPath().includes(host)) closeMenu(false);
+    if (!event.composedPath().includes(host)) close(false);
   };
-  function closeMenu(refocus: boolean): void {
+  let frame = 0;
+  // Its own list scrolling, where it's long, isn't the page's.
+  const onScroll = (event: Event) => {
+    if (event.composedPath().includes(menu)) return;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      const rect = near.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) close(false);
+      else position();
+    });
+  };
+  function close(refocus: boolean): void {
     if (menu.hidden) return;
     menu.hidden = true;
-    more.setAttribute("aria-expanded", "false");
+    cancelAnimationFrame(frame);
+    trigger.setAttribute("aria-expanded", "false");
     document.removeEventListener("pointerdown", onOutside, true);
     window.removeEventListener("scroll", onScroll, true);
-    if (refocus) more.focus();
+    if (refocus) trigger.focus();
   }
-  const onScroll = () => closeMenu(false);
-  function fillMenu(): void {
-    const rows = targets.map((target) => {
-      const row = element("button", "ndm__row");
-      row.type = "button";
-      row.tabIndex = -1;
-      row.setAttribute("role", "menuitemradio");
-      row.setAttribute("aria-checked", String(target.key === current.key));
-      const { name, sub } = targetName(target);
-      const label = element("span", "ndm__text");
-      const nameEl = element("span", "ndm__name");
-      nameEl.textContent = name;
-      const subEl = element("span", "ndm__sub");
-      subEl.textContent = sub;
-      label.append(nameEl, subEl);
-      const tick = element("span", "ndm__tick");
-      tick.append(svg(SVG.check));
-      row.append(targetPicture(target, "ndm__art"), label, tick);
-      row.addEventListener("click", () => {
-        current = target;
-        show();
-        void send("SET_ADAPT_LAST", { key: target.key });
-        void run(target);
-      });
-      return row;
-    });
-    const settings = element("button", "ndm__row ndm__row--settings");
-    settings.type = "button";
-    settings.tabIndex = -1;
-    settings.setAttribute("role", "menuitem");
-    const gear = element("span", "ndm__art ndm__art--glyph");
-    gear.append(svg(SVG.gear));
-    const label = element("span", "ndm__text");
-    const nameEl = element("span", "ndm__name");
-    // Nothing picked yet: the one thing to do is pick a slicer.
-    nameEl.textContent =
-      targets.length === 1 && targets[0] === DEFAULT_TARGET ? "Pick your slicer…" : "Adapt settings…";
-    label.append(nameEl);
-    settings.append(gear, label);
-    settings.addEventListener("click", () => {
-      closeMenu(false);
-      void send("OPEN_ADAPT_SETTINGS");
-    });
-    const sep = element("div", "ndm__sep");
-    sep.setAttribute("role", "separator");
-    menu.replaceChildren(...rows, sep, settings);
-  }
-  function openMenu(): void {
-    hideBubble();
-    fillMenu();
+  function open(): void {
+    menu.replaceChildren(...fill());
     menu.hidden = false;
-    more.setAttribute("aria-expanded", "true");
-    // Fixed, under the button, inside the window.
-    const rect = split.getBoundingClientRect();
-    menu.style.minWidth = `${Math.max(rect.width, 240)}px`;
-    menu.style.left = `${Math.max(8, Math.min(rect.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8))}px`;
-    const below = rect.bottom + 6 + menu.offsetHeight <= window.innerHeight;
-    menu.style.top = `${below ? rect.bottom + 6 : Math.max(8, rect.top - 6 - menu.offsetHeight)}px`;
+    trigger.setAttribute("aria-expanded", "true");
+    position();
     document.addEventListener("pointerdown", onOutside, true);
     window.addEventListener("scroll", onScroll, true);
     (items().find((item) => item.getAttribute("aria-checked") === "true") ?? items()[0])?.focus();
   }
-  more.addEventListener("click", () => (menu.hidden ? openMenu() : closeMenu(true)));
-  more.addEventListener("keydown", (event) => {
+  trigger.addEventListener("click", () => (menu.hidden ? open() : close(true)));
+  trigger.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown" && menu.hidden) {
       event.preventDefault();
-      openMenu();
+      open();
     }
   });
   menu.addEventListener("keydown", (event) => {
@@ -286,30 +174,374 @@ export function mountAdaptedButton(
     else if (event.key === "ArrowUp") move(at - 1);
     else if (event.key === "Home") move(0);
     else if (event.key === "End") move(list.length - 1);
-    else if (event.key === "Escape") closeMenu(true);
-    else if (event.key === "Tab") closeMenu(false);
+    else if (event.key === "Escape") close(true);
+    else if (event.key === "Tab") close(false);
     else return;
     if (event.key !== "Tab") event.preventDefault();
   });
+  return { open, close, isOpen: () => !menu.hidden, stop: () => close(false) };
+}
 
-  // ---- Staying beside the site's button --------------------------------------------------------------------------
+function menuRow(className: string, role: string, checked?: boolean): HTMLButtonElement {
+  const row = element("button", `ndm__row ${className}`);
+  row.type = "button";
+  row.tabIndex = -1;
+  row.setAttribute("role", role);
+  if (checked !== undefined) row.setAttribute("aria-checked", String(checked));
+  return row;
+}
+
+function rowText(name: string, sub: string): HTMLElement {
+  const text = element("span", "ndm__text");
+  text.append(element("span", "ndm__name", name));
+  if (sub) text.append(element("span", "ndm__sub", sub));
+  return text;
+}
+
+function tick(): HTMLElement {
+  const box = element("span", "ndm__tick");
+  box.append(svg(ICONS.check));
+  return box;
+}
+
+/** A labelled part of a menu. */
+function menuGroup(id: string, label: string, rows: HTMLElement[]): HTMLElement {
+  const group = element("div", "ndm__group");
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-labelledby", id);
+  const heading = element("div", "ndm__label", label);
+  heading.id = id;
+  group.append(heading, ...rows);
+  return group;
+}
+
+function separator(): HTMLElement {
+  const sep = element("div", "ndm__sep");
+  sep.setAttribute("role", "separator");
+  return sep;
+}
+
+/** A row per copy, the picked one ticked: a click picks it, remembers it as the last one made, and makes it. */
+function copyRows(shared: Shared, make: (target: AdaptTarget) => void): HTMLElement[] {
+  return shared.targets.map((target) => {
+    const row = menuRow("", "menuitemradio", target.key === shared.target.key);
+    const { name, sub } = targetName(target);
+    row.title = explanation(shared.site, target);
+    row.append(targetPicture(target, "ndm__art"), rowText(name, sub), tick());
+    row.addEventListener("click", () => {
+      shared.target = target;
+      changed(shared);
+      void send("SET_ADAPT_LAST", { key: target.key });
+      make(target);
+    });
+    return row;
+  });
+}
+
+function settingsRow(shared: Shared, closeMenu: () => void): HTMLElement {
+  const row = menuRow("ndm__row--settings", "menuitem");
+  const gear = element("span", "ndm__art ndm__art--glyph");
+  gear.append(svg(ICONS.gear));
+  // Nothing picked yet: the one thing to do is pick a slicer.
+  const unpicked = shared.targets.length === 1 && shared.targets[0] === DEFAULT_TARGET;
+  row.append(gear, rowText(unpicked ? "Pick your slicer…" : "Adapt settings…", ""));
+  row.addEventListener("click", () => {
+    closeMenu();
+    void send("OPEN_ADAPT_SETTINGS");
+  });
+  return row;
+}
+
+// ---- Making a copy ----------------------------------------------------------------------------------------------
+
+type RunView = {
+  progress(text: string): void;
+  /** Saved, with what's worth saying about it, if anything. */
+  done(note: string | null): void;
+  failed(message: string): void;
+  /** Back to how it was, whether it worked or not. */
+  reset(): void;
+};
+
+/** Where focus goes back to once a copy is made: `returnTo`, where it was in the control (`hadFocus`, read before its
+ *  menu closed) and has been lost since, as the menu closed and the buttons waited, rather than put somewhere else. */
+type FocusReturn = { host: HTMLElement; returnTo: HTMLElement; hadFocus: boolean };
+
+const hasFocus = (host: HTMLElement) => document.activeElement === host;
+
+/** One copy at a time on the page: every button waits while one is being made. */
+async function makeCopy(
+  shared: Shared,
+  file: AdaptFile,
+  target: AdaptTarget,
+  view: RunView,
+  focus: FocusReturn,
+): Promise<void> {
+  shared.busy = true;
+  changed(shared);
+  try {
+    const saved = await downloadAdapted(shared.site, shared.pageUrl, file, target, view.progress);
+    view.done(savedNote(target, saved));
+    await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
+  } catch (err) {
+    view.failed(err instanceof Error ? err.message : String(err));
+  } finally {
+    shared.busy = false;
+    changed(shared);
+    view.reset();
+    const now = document.activeElement;
+    const lost = !now || now === document.body || (now === focus.host && !focus.host.shadowRoot?.activeElement);
+    if (focus.hadFocus && lost) focus.returnTo.focus();
+  }
+}
+
+// ---- Beside the site's own button ------------------------------------------------------------------------------
+
+type Control = { host: HTMLElement; stop(): void };
+
+function mainButton(shared: Shared): Control {
+  const { host, root } = shadowHost(shared);
+  host.id = HOST_ID;
+  // A site whose page picks the file itself (a print profile chosen on it) gets that one's copy, as it is when asked;
+  // elsewhere, the menu offers the files where there are several.
+  const { selected } = shared.site;
+  const several = !selected && shared.files.length > 1;
+  const current = () => (selected ? (selected(shared.files) ?? shared.files[0]) : shared.file);
+
+  const split = element("span", "nd-split");
+  const main = element("button", "nd nd__main");
+  main.type = "button";
+  main.setAttribute("aria-describedby", "tg-nd-info");
+  const logo = element("span", "nd__logo");
+  logo.append(createIcon());
+  const text = element("span", "nd__text");
+  const title = element("span", "nd__title", LABEL);
+  const line = element("span", "nd__line");
+  const fileLine = element("span", "nd__file");
+  const targetLineEl = element("span", "nd__target");
+  line.append(...(several ? [fileLine, element("span", "nd__dot", " · ")] : []), targetLineEl);
+  text.append(title, line);
+  const info = element("span", "nd__info");
+  info.append(svg(ICONS.bulb));
+  main.append(logo, text, info);
+  const more = element("button", "nd nd__more");
+  more.type = "button";
+  more.setAttribute(
+    "aria-label",
+    several
+      ? "Choose the file and the copy, or Grab's settings for them"
+      : "Choose the copy, or Grab's settings for it",
+  );
+  more.append(svg(ICONS.caret));
+  split.append(main, more);
+  root.append(split);
+  const bubble = bubbleFor(root, split, "tg-nd-info");
+
+  const show = () => {
+    fileLine.textContent = shownName(shared.file);
+    targetLineEl.textContent = targetLine(shared.target);
+    const what = several ? `${shownName(shared.file)}, ${targetLine(shared.target)}` : targetLine(shared.target);
+    main.setAttribute("aria-label", `${LABEL}: ${what}`);
+    main.disabled = shared.busy;
+    more.disabled = shared.busy;
+  };
+  shared.watchers.add(show);
+  show();
+
+  const showInfo = () => {
+    if (!bubble.held()) bubble.show(explanation(shared.site, shared.target));
+  };
+  info.addEventListener("mouseenter", showInfo);
+  info.addEventListener("mouseleave", () => !bubble.held() && bubble.hide());
+  main.addEventListener("focus", () => main.matches(":focus-visible") && showInfo());
+  main.addEventListener("blur", () => !bubble.held() && bubble.hide());
+
+  const make = (target: AdaptTarget, returnTo: HTMLElement) => {
+    if (shared.busy) return;
+    const hadFocus = hasFocus(host);
+    menu.close(false);
+    bubble.hide();
+    info.replaceChildren(element("span", "nd__spinner"));
+    void makeCopy(
+      shared,
+      current(),
+      target,
+      {
+        progress: (status) => (title.textContent = status),
+        done: (note) => {
+          title.textContent = "Downloaded";
+          info.replaceChildren(svg(ICONS.check));
+          if (note) bubble.show(note, { hold: NOTE_SHOW_MS });
+        },
+        failed: (message) => bubble.show(message, { error: true, hold: NOTE_SHOW_MS }),
+        reset: () => {
+          info.replaceChildren(svg(ICONS.bulb));
+          title.textContent = LABEL;
+        },
+      },
+      { host, returnTo, hadFocus },
+    );
+  };
+  main.addEventListener("click", () => make(shared.target, main));
+
+  const fileRows = () =>
+    shared.files.map((file) => {
+      const row = menuRow("ndm__row--file", "menuitemradio", file === shared.file);
+      row.append(rowText(shownName(file), sizeText(file.size)), tick());
+      // Picks the file and leaves the menu open, for the copy to be picked next.
+      row.addEventListener("click", () => {
+        shared.file = file;
+        changed(shared);
+        for (const other of row.parentElement!.querySelectorAll("[role=menuitemradio]")) {
+          other.setAttribute("aria-checked", String(other === row));
+        }
+      });
+      return row;
+    });
+  const copies = () => copyRows(shared, (target) => make(target, more));
+  const menu = menuFor(host, root, more, split, several ? "Files and copies to download" : "Copies to download", () => [
+    ...(several
+      ? [
+          menuGroup("tg-ndm-files", "3MF file", fileRows()),
+          separator(),
+          menuGroup("tg-ndm-copies", "Copy for", copies()),
+        ]
+      : selected
+        ? [menuGroup("tg-ndm-copies", `Copy of ${shownName(current())}`, copies())]
+        : copies()),
+    separator(),
+    settingsRow(shared, () => menu.close(false)),
+  ]);
+  more.addEventListener("click", () => bubble.hide());
+
+  return {
+    host,
+    stop: () => {
+      shared.watchers.delete(show);
+      menu.stop();
+      bubble.hide();
+    },
+  };
+}
+
+// ---- In a file's own row ---------------------------------------------------------------------------------------
+
+function rowButton(shared: Shared, file: AdaptFile): Control {
+  const { host, root } = shadowHost(shared);
+  host.dataset.row = "";
+  const button = element("button", "ndr");
+  button.type = "button";
+  button.setAttribute("aria-label", `Download ${shownName(file)} adapted`);
+  const logo = element("span", "ndr__logo");
+  logo.append(createIcon());
+  const end = element("span", "ndr__end");
+  end.append(svg(ICONS.caret));
+  button.append(logo, element("span", "ndr__label", "Adapted"), end);
+  root.append(button);
+  const bubble = bubbleFor(root, button, "tg-ndr-status", true);
+
+  const sync = () => (button.disabled = shared.busy);
+  shared.watchers.add(sync);
+  sync();
+
+  const make = (target: AdaptTarget) => {
+    if (shared.busy) return;
+    const hadFocus = hasFocus(host);
+    menu.close(false);
+    end.replaceChildren(element("span", "nd__spinner"));
+    void makeCopy(
+      shared,
+      file,
+      target,
+      {
+        progress: (status) => bubble.show(status),
+        done: (note) => {
+          end.replaceChildren(svg(ICONS.check));
+          bubble.show(note ?? "Downloaded", { hold: note ? NOTE_SHOW_MS : DONE_RESET_MS });
+        },
+        failed: (message) => bubble.show(message, { error: true, hold: NOTE_SHOW_MS }),
+        reset: () => end.replaceChildren(svg(ICONS.caret)),
+      },
+      { host, returnTo: button, hadFocus },
+    );
+  };
+  const menu = menuFor(host, root, button, button, `Adapted copies of ${shownName(file)}`, () => [
+    menuGroup("tg-ndr-copies", LABEL, copyRows(shared, make)),
+    separator(),
+    settingsRow(shared, () => menu.close(false)),
+  ]);
+  button.addEventListener("click", () => bubble.hide());
+
+  return {
+    host,
+    stop: () => {
+      shared.watchers.delete(sync);
+      menu.stop();
+      bubble.hide();
+    },
+  };
+}
+
+// ---- Keeping them in place as the page re-renders --------------------------------------------------------------
+
+let mounted: { stop: () => void } | null = null;
+
+export function unmountAdaptedButton(): void {
+  mounted?.stop();
+  mounted = null;
+}
+
+/**
+ * Puts the button beside the site's own, and one in each 3MF's row where the site lists them, keeping them there as
+ * the page re-renders. `onNoAnchor` runs once if the site's button hasn't shown in ANCHOR_WAIT_MS, to offer the
+ * copies somewhere else.
+ */
+export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor: () => void): void {
+  unmountAdaptedButton();
+  const { site } = page;
+  const shared: Shared = {
+    ...page,
+    pageUrl,
+    file: page.files[0],
+    target: pickTarget(page.targets, page.offer.lastKey) ?? DEFAULT_TARGET,
+    busy: false,
+    watchers: new Set(),
+  };
+  const main = mainButton(shared);
+  const rows = new Map<HTMLElement, Control>();
+  const theme = () => {
+    const dark = site.dark();
+    for (const control of [main, ...rows.values()]) control.host.toggleAttribute("data-dark", dark);
+  };
+
   let anchor: HTMLElement | null = null;
   let placed = false;
   const place = () => {
-    if (
-      host.isConnected &&
-      anchor?.isConnected &&
-      anchor.offsetParent !== null &&
-      host.previousElementSibling === anchor
-    )
-      return;
-    anchor = site.anchor();
-    if (!anchor) {
-      host.remove();
-      return;
+    if (!(main.host.isConnected && anchor?.isConnected && anchor.offsetParent !== null)) {
+      anchor = site.anchor();
+      if (anchor) {
+        site.place(main.host, anchor);
+        placed = true;
+      } else main.host.remove();
     }
-    site.place(host, anchor);
-    placed = true;
+    if (!site.fileRows || !site.placeInRow) return;
+    const shown = new Set<HTMLElement>();
+    for (const row of site.fileRows(page.files)) {
+      shown.add(row.anchor);
+      let control = rows.get(row.anchor);
+      if (!control) {
+        control = rowButton(shared, row.file);
+        control.host.toggleAttribute("data-dark", site.dark());
+        rows.set(row.anchor, control);
+      }
+      if (!control.host.isConnected) site.placeInRow(control.host, row.anchor);
+    }
+    for (const [rowAnchor, control] of rows) {
+      if (shown.has(rowAnchor)) continue;
+      control.stop();
+      control.host.remove();
+      rows.delete(rowAnchor);
+    }
   };
   let scheduled = false;
   const schedule = () => {
@@ -322,24 +554,27 @@ export function mountAdaptedButton(
   };
   const observer = new MutationObserver(schedule);
   observer.observe(document.body, { childList: true, subtree: true });
-  const syncTheme = () => host.toggleAttribute("data-dark", site.dark());
-  const themeObserver = new MutationObserver(syncTheme);
+  const themeObserver = new MutationObserver(theme);
   const watched = site.themeWatch();
   themeObserver.observe(watched.target, { attributes: true, attributeFilter: watched.attributeFilter });
-  syncTheme();
+  const system = matchMedia("(prefers-color-scheme: dark)");
+  system.addEventListener("change", theme);
+  theme();
   place();
   const waited = setTimeout(() => {
-    if (!placed) onNoAnchor();
+    if (!placed && !site.unavailable?.()) onNoAnchor();
   }, ANCHOR_WAIT_MS);
 
   mounted = {
-    host,
     stop: () => {
       observer.disconnect();
       themeObserver.disconnect();
+      system.removeEventListener("change", theme);
       clearTimeout(waited);
-      clearTimeout(bubbleTimer);
-      closeMenu(false);
+      for (const control of [main, ...rows.values()]) {
+        control.stop();
+        control.host.remove();
+      }
     },
   };
 }
