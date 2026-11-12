@@ -34,8 +34,11 @@ async function slicerSettings(account?: ConfiguredConfig): Promise<SlicerSetting
   return (await apiCall<SlicerSettings | null>("GET", "/settings/slicer", undefined, account)) ?? {};
 }
 
+/** The slicers the account has picked, Grab's ids or not. */
+const pickedSlicers = (settings: SlicerSettings) => settings.slicers ?? (settings.slicer ? [settings.slicer] : []);
+
 function installedSlicers(settings: SlicerSettings): string[] {
-  return knownSlicers(settings.slicers ?? (settings.slicer ? [settings.slicer] : []));
+  return knownSlicers(pickedSlicers(settings));
 }
 
 /** The user's printers there; null on an instance from before printers. */
@@ -86,8 +89,9 @@ export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<
 }
 
 type CarrySection = "slicers" | "printers";
+type Carried = { settled: CarrySection[]; printersSent?: string[] };
 
-function carriedOf(config: StoredConfig): Record<string, CarrySection[]> {
+function carriedOf(config: StoredConfig): Record<string, Carried> {
   const stored = config.adaptCarriedTo;
   return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
 }
@@ -95,38 +99,58 @@ function carriedOf(config: StoredConfig): Record<string, CarrySection[]> {
 /** The instance turned down one printer or its nozzle (it doesn't know it), rather than the request failing. */
 const printerRefused = (err: unknown) => err instanceof ApiError && (err.status === 404 || err.status === 400);
 
-/** Grab's own picks, to the account connected now. Every request goes to that account, should the connection change
- *  meanwhile. Each part is marked as gone once it's settled, so a failure leaves only what's left to try on the next
- *  connection, and none is sent twice: ones the user removed there since aren't brought back. */
+/**
+ * Grab's own picks, to the account connected now: its slicers where the account has picked none, and its printers
+ * where it had none when they first went. Every request goes to that account, should the connection change meanwhile.
+ * What has gone is written down as it goes, so a failure leaves only the rest to try on the next connection, and
+ * nothing is sent twice: what the user removed there since isn't brought back.
+ */
 async function carry(): Promise<void> {
   const config = await getStoredConfig();
   if (!isConfigured(config)) return;
   const account = `${config.instanceUrl}|${config.email}`;
-  const done = new Set(carriedOf(config)[account] ?? []);
-  const settled = async (section: CarrySection) => {
-    done.add(section);
-    const carried = carriedOf(await getStoredConfig());
-    await chrome.storage.local.set({ [STORAGE_KEYS.adaptCarriedTo]: { ...carried, [account]: [...done] } });
+  const stored = carriedOf(config)[account];
+  const carried: Carried = { settled: [...(stored?.settled ?? [])], printersSent: stored?.printersSent };
+  const save = async () => {
+    const all = carriedOf(await getStoredConfig());
+    await chrome.storage.local.set({ [STORAGE_KEYS.adaptCarriedTo]: { ...all, [account]: carried } });
+  };
+  const settle = async (section: CarrySection) => {
+    carried.settled.push(section);
+    await save();
   };
   const own = adaptSettingsOf(config);
   try {
-    if (!done.has("slicers")) {
-      if (own.slicers.length && !installedSlicers(await slicerSettings(config)).length) {
+    if (!carried.settled.includes("slicers")) {
+      // Slicers an older Grab doesn't know are still the user's picks.
+      if (own.slicers.length && !pickedSlicers(await slicerSettings(config)).length) {
         // `slicer` too, for an instance from before there were several.
         await apiCall("PATCH", "/settings/slicer", { slicer: own.slicers[0], slicers: own.slicers }, config);
       }
-      await settled("slicers");
+      await settle("slicers");
     }
-    if (!done.has("printers")) {
-      if (own.printers.length && (await thingportPrinters(config))?.length === 0) {
+    if (!carried.settled.includes("printers")) {
+      const there = await thingportPrinters(config);
+      // An instance from before printers: they go once it has them.
+      if (there === null) return;
+      // Begun on an earlier connection, when the account had none: the rest of them, as its own may be among them now.
+      if (own.printers.length && (carried.printersSent || !there.length)) {
+        const present = new Set(there.map((printer) => printer.id));
+        const sent = new Set(carried.printersSent ?? []);
+        carried.printersSent = [...sent];
+        await save();
         for (const { id, nozzle } of own.printers) {
+          if (present.has(id) || sent.has(id)) continue;
           // One it doesn't know is left out; anything else stops here, to be tried again.
           await apiCall("PUT", `/me/printers/${encodeURIComponent(id)}`, { nozzle }, config).catch((err: unknown) => {
             if (!printerRefused(err)) throw err;
           });
+          sent.add(id);
+          carried.printersSent = [...sent];
+          await save();
         }
       }
-      await settled("printers");
+      await settle("printers");
     }
   } catch (err) {
     console.warn("[adapt] Grab's slicers and printers didn't all go to the instance; the rest goes next time:", err);

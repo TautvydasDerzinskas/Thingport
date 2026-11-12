@@ -155,7 +155,17 @@ describe("Grab's slicers and printers on connecting", () => {
     instance.answers["GET /me/printers"] = { printers: [P1S] };
     await carryAdaptPicks();
     expect(instance.calls.filter(({ method }) => method !== "GET")).toEqual([]);
-    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers", "printers"] });
+    expect(store.adaptCarriedTo).toEqual({
+      [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: { settled: ["slicers", "printers"] },
+    });
+  });
+
+  it("leave an account's slicers alone, though this Grab doesn't know them", async () => {
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = { slicer: "newslicer", slicers: ["newslicer"] };
+    instance.answers["GET /me/printers"] = { printers: [P1S] };
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method !== "GET")).toEqual([]);
   });
 
   it("send no printers to an instance from before printers, and skip one it doesn't know", async () => {
@@ -205,22 +215,50 @@ describe("Grab's slicers and printers on connecting", () => {
   });
 
   it("try again only what didn't go, the next time", async () => {
+    const ACCOUNT = `${CONNECTED.instanceUrl}|${CONNECTED.email}`;
     Object.assign(store, CONNECTED, MINE);
     instance.answers["GET /settings/slicer"] = { slicers: [] };
     instance.answers["GET /me/printers"] = { printers: [] };
     instance.answers["PUT /me/printers/bambulab-h2d"] = new TypeError("Failed to fetch");
     await carryAdaptPicks();
-    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers"] });
+    expect(store.adaptCarriedTo).toEqual({ [ACCOUNT]: { settled: ["slicers"], printersSent: ["bambulab-p1s"] } });
 
-    // The slicers that went aren't sent again, though the user has since removed them there.
+    // The P1S that went is there now, and the slicers that went have since been removed: only the H2D goes.
     instance.calls.length = 0;
+    instance.answers["GET /me/printers"] = { printers: [P1S] };
     delete instance.answers["PUT /me/printers/bambulab-h2d"];
     await carryAdaptPicks();
     expect(instance.calls.filter(({ method }) => method !== "GET").map(({ path }) => path)).toEqual([
-      "/me/printers/bambulab-p1s",
       "/me/printers/bambulab-h2d",
     ]);
-    expect(store.adaptCarriedTo).toEqual({ [`${CONNECTED.instanceUrl}|${CONNECTED.email}`]: ["slicers", "printers"] });
+    expect(store.adaptCarriedTo).toEqual({
+      [ACCOUNT]: { settled: ["slicers", "printers"], printersSent: ["bambulab-p1s", "bambulab-h2d"] },
+    });
+  });
+
+  it("don't bring back a printer that went and was removed before the rest went", async () => {
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = { slicers: [] };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    instance.answers["PUT /me/printers/bambulab-h2d"] = new TypeError("Failed to fetch");
+    await carryAdaptPicks();
+    instance.calls.length = 0;
+    delete instance.answers["PUT /me/printers/bambulab-h2d"];
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method === "PUT").map(({ path }) => path)).toEqual([
+      "/me/printers/bambulab-h2d",
+    ]);
+  });
+
+  it("go to an instance from before printers once it has them", async () => {
+    Object.assign(store, CONNECTED, MINE);
+    instance.answers["GET /settings/slicer"] = { slicers: ["cura"] };
+    instance.answers["GET /me/printers"] = new ApiError("Not found", 404);
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method !== "GET")).toEqual([]);
+    instance.answers["GET /me/printers"] = { printers: [] };
+    await carryAdaptPicks();
+    expect(instance.calls.filter(({ method }) => method === "PUT")).toHaveLength(2);
   });
 
   it("leave a failed instance to be tried again", async () => {

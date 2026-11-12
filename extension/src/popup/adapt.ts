@@ -75,7 +75,8 @@ let index: Index | null = null;
 let brands = new Map<string, CatalogueBrand>();
 const siteOn = new Map<ProviderId, boolean>();
 // Add printer: the maker opened, if one is, and whether every maker is listed.
-let picking: { maker: string | null; allMakers: boolean } = { maker: null, allMakers: false };
+// The maker whose printers are shown, and what the makers' list was searched for when it was picked.
+let picking: { maker: string | null; allMakers: boolean; query: string } = { maker: null, allMakers: false, query: "" };
 
 /** What copies are made for now. Thingport's slicers and printers are managed there, so they're only shown here. */
 type InUse = {
@@ -409,7 +410,7 @@ function makerRow(brand: CatalogueBrand): HTMLButtonElement {
   row.dataset.key = `maker:${brand.id}`;
   row.setAttribute("aria-label", `${brand.name}, ${brand.printers} printer${brand.printers === 1 ? "" : "s"}`);
   row.addEventListener("click", () => {
-    picking = { ...picking, maker: brand.id };
+    picking = { ...picking, maker: brand.id, query: els.addPrinterSearch.value };
     els.addPrinterSearch.value = "";
     renderAddPrinter();
     els.addPrinterSearch.focus();
@@ -485,7 +486,7 @@ function renderAddPrinter(): void {
 }
 
 function openAddPrinter(opener: HTMLElement): void {
-  picking = { maker: null, allMakers: false };
+  picking = { maker: null, allMakers: false, query: "" };
   els.addPrinterSearch.value = "";
   clearError(els.addPrinterError);
   renderAddPrinter();
@@ -494,8 +495,9 @@ function openAddPrinter(opener: HTMLElement): void {
     back: () => {
       if (!picking.maker) return false;
       const maker = picking.maker;
-      picking = { ...picking, maker: null };
-      els.addPrinterSearch.value = "";
+      // Back to the list it was picked from, searched as it was, so the maker is in it again.
+      els.addPrinterSearch.value = picking.query;
+      picking = { ...picking, maker: null, query: "" };
       renderAddPrinter();
       els.addPrinterBody.querySelector<HTMLElement>(`[data-key="maker:${CSS.escape(maker)}"]`)?.focus();
       return true;
