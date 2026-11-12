@@ -1,25 +1,47 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { MyPrinters } from "../api/printers";
+import type { MyPrinters, PrinterSuggestion } from "../api/printers";
 
 const mine = vi.fn<() => Promise<MyPrinters>>();
 vi.mock("../api/printers", () => ({ printersApi: { mine: () => mine() } }));
 
 const answer = (bambu: boolean): MyPrinters => ({ printers: [], suggestions: [], bambu });
+const suggestion = (i: number): PrinterSuggestion => ({
+  printer: {
+    id: `brand-${i}`,
+    brand: "brand",
+    model: `Model ${i}`,
+    bed: null,
+    height: null,
+    nozzles: ["0.4"],
+    extruders: 1,
+  },
+  brandName: "Brand",
+  nozzle: "0.4",
+  sliced: i,
+  projects: 0,
+  declined: false,
+});
 // An answer told apart from others by its suggestions' count.
-const nth = (n: number): MyPrinters => ({ printers: [], suggestions: Array(n).fill(null), bambu: false });
+const nth = (n: number): MyPrinters => ({
+  printers: [],
+  suggestions: Array.from({ length: n }, (_, i) => suggestion(i)),
+  bambu: false,
+});
 
 /** What a component using the hook gets now: its first render reads the shared cache. */
 function seen(useUserPrinters: () => MyPrinters): MyPrinters {
-  let value: MyPrinters | null = null;
+  const rendered: MyPrinters[] = [];
   renderToStaticMarkup(
     createElement(() => {
-      value = useUserPrinters();
+      rendered.push(useUserPrinters());
       return null;
     }),
   );
-  return value!;
+  const [value] = rendered;
+  if (!value) throw new Error("The hook didn't render");
+  return value;
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));

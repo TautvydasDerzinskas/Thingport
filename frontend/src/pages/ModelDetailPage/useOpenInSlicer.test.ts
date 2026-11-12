@@ -11,12 +11,16 @@ vi.mock("../../api/prints", () => ({
   },
 }));
 
-const { adaptedTargetsFor, isAdaptedTarget, slicerHref } = await import("./useOpenInSlicer");
+const { adaptedTargetsFor, isAdaptedTarget, printersKnownFor, slicerHref } = await import("./useOpenInSlicer");
 
-const plate = {
+const plate: Plate = {
   id: "plate-1",
+  print_id: "print-1",
+  position: 0,
   url: "/print/1/plate/plate-1/file/model.3mf",
   filename: "model.3mf",
+  mime: "model/3mf",
+  size: 1024,
   format: {
     v: 1,
     kind: "bambu",
@@ -29,7 +33,7 @@ const plate = {
     plates: 1,
     dialect: "bambu",
   },
-} as unknown as Plate;
+};
 const file = { key: plate.id, url: plate.url, filename: "model.3mf", launchFilename: "model.3mf", index: 0, plate };
 
 function printer(id: string, preset: string | null): UserPrinter {
@@ -45,6 +49,14 @@ const h2d = printer("bambulab-h2d", "Bambu Lab H2D 0.4 nozzle");
 const unknown = printer("someone-else", null);
 
 describe("the copies a slicer gets", () => {
+  it("wait for the user's printers in a slicer that loads a printer's presets, and aren't offered if reading failed", () => {
+    expect(printersKnownFor("bambustudio", { loaded: false, failed: false })).toBe(false);
+    expect(printersKnownFor("bambustudio", { loaded: true, failed: true })).toBe(false);
+    expect(printersKnownFor("bambustudio", { loaded: true, failed: false })).toBe(true);
+    // PrusaSlicer's copy isn't made for a printer, so it needs none of them.
+    expect(printersKnownFor("prusaslicer", { loaded: false, failed: true })).toBe(true);
+  });
+
   it("ask which printer when none is remembered and one of them would change the file", () => {
     const [target] = adaptedTargetsFor([file], "bambustudio", [], [p1s, h2d], null);
     expect(target).toMatchObject({ key: "adapted-plate-1", ask: true, printer: null });

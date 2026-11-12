@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { type Plate, type Print, printsApi } from "../../api/prints";
 import type { UserPrinter } from "../../api/printers";
 import { planAdaptation, type AdaptPlan, type PrinterChoice } from "../../adapter/plan.generated";
@@ -77,6 +77,12 @@ export function modelFiles(print: Print): ModelFile[] {
   return out;
 }
 
+/** Whether the copies the user's printers decide can be offered in `slicerId` yet: in a slicer that loads a printer's
+ *  presets, once the printers are read, and not after a read that failed, which doesn't say there are none. */
+export function printersKnownFor(slicerId: string, printers: { loaded: boolean; failed: boolean }): boolean {
+  return !slicerProfile(slicerId)?.targetsPrinter || (printers.loaded && !printers.failed);
+}
+
 /** `bridged` are the slicers the user sends through the Bridge. */
 export function slicerHref(slicerId: string, file: ModelFile, bridged: readonly string[]): string {
   return slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(file.url), file.launchFilename, bridged);
@@ -145,7 +151,15 @@ export function useSlicerChoice() {
 export function useOpenInSlicer(print: Print) {
   const { slicerOption, slicerOptions, bridged } = useSlicerChoice();
   const { unadapted, printers: slicerPrinters } = useSlicerSettings();
-  const { printers, loaded: printersLoaded } = useUserPrinters();
+  const { printers, loaded: printersLoaded, failed: printersFailed, reload: reloadPrinters } = useUserPrinters();
+
+  // A read that failed is tried again when the user comes back to the window (opening another page tries it too).
+  useEffect(() => {
+    if (!printersFailed) return;
+    const retry = () => void reloadPrinters().catch(() => undefined);
+    window.addEventListener("focus", retry);
+    return () => window.removeEventListener("focus", retry);
+  }, [printersFailed, reloadPrinters]);
 
   const files = useMemo(() => modelFiles(print), [print]);
   const canOpen = Boolean(print.slicer_url) && files.length > 0;
@@ -163,10 +177,20 @@ export function useOpenInSlicer(print: Print) {
     // A non-removable prepared print means the plates themselves are the sliced files.
     if (print.prepared_print && !print.prepared_print.removable) return [];
     // Until the user's printers are known, a copy for a slicer that loads a printer's presets isn't the one to offer.
-    if (slicerProfile(slicerOption.id)?.targetsPrinter && !printersLoaded) return [];
+    if (!printersKnownFor(slicerOption.id, { loaded: printersLoaded, failed: printersFailed })) return [];
     const remembered = printers.find((p) => p.printer.id === slicerPrinters[slicerOption.id]) ?? null;
     return adaptedTargetsFor(files, slicerOption.id, bridged, printers, remembered);
-  }, [files, print.prepared_print, slicerOption, bridged, unadapted, slicerPrinters, printers, printersLoaded]);
+  }, [
+    files,
+    print.prepared_print,
+    slicerOption,
+    bridged,
+    unadapted,
+    slicerPrinters,
+    printers,
+    printersLoaded,
+    printersFailed,
+  ]);
 
   /** The adapted counterpart of `file`, if the current slicer opens it better as one. */
   const adaptedTargetFor = useCallback(
