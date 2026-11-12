@@ -21,10 +21,10 @@ function minutes(value: unknown): number | null {
   return n === null ? null : Math.round(n * 60);
 }
 
-/** A profile's "G" id, as the import tags its plate with it. */
+/** A profile's id ("G", or "C" on some models, and digits), as the import tags its plate with it. */
 function profileId(value: unknown): string | null {
   const id = text(value)?.toUpperCase();
-  return id && /^G\d+$/.test(id) ? id : null;
+  return id && /^[GC]\d+$/.test(id) ? id : null;
 }
 
 function plateFilaments(plate: Record<string, unknown>): ProfileFilament[] {
@@ -92,7 +92,7 @@ function platesOf(plates: Record<string, unknown>[]): ProfilePlateFacts[] {
   });
 }
 
-/** Each print profile ("setting") of a model, as its public details describe it, by its "G" id. A profile is the
+/** Each print profile ("setting") of a model, as its public details describe it, by its "G" (or "C") id. A profile is the
  *  designer's as the import has it: the site says so (`isCreator`), or its maker is the model's author. */
 export function nexprintProfileFactsFrom(data: Record<string, unknown>): ProviderProfileFactsById {
   const authorId = text(data.authorId);
