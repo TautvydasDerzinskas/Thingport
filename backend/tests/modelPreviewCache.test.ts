@@ -311,7 +311,7 @@ describe("modelPreviewCache -- memory safety", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v4.glb", ".v4.error", ".pending"]) {
+      for (const ext of [".v5.glb", ".v5.error", ".pending"]) {
         await fs.rm(path.join(path.dirname(modelPreviewGlbPath("x")), `${id}${ext}`), { force: true });
       }
     }
@@ -327,7 +327,7 @@ describe("modelPreviewCache -- memory safety", () => {
     const plateId = newPlateId("fanout");
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(false);
-    const errorPath = path.join(path.dirname(modelPreviewGlbPath("x")), `${plateId}.v4.error`);
+    const errorPath = path.join(path.dirname(modelPreviewGlbPath("x")), `${plateId}.v5.error`);
     expect(fsSync.readFileSync(errorPath, "utf-8")).toBe("permanent: too-complex");
   });
 
@@ -414,7 +414,7 @@ describe("modelPreviewCache -- multi-part objects sharing one part file", () => 
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v4.glb", ".v4.error", ".pending"])
+      for (const ext of [".v5.glb", ".v5.error", ".pending"])
         await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });
@@ -484,7 +484,7 @@ describe("modelPreviewState", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v4.glb", ".v4.error", ".pending"])
+      for (const ext of [".v5.glb", ".v5.error", ".pending"])
         await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });

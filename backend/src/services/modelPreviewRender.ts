@@ -64,23 +64,24 @@ function findPlateIdAttr(attrs: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/** 3MF's 3x4 affine transform: [m00 m01 m02 m10 m11 m12 m20 m21 m22 tx ty tz]. */
+/** 3MF's 3x4 affine transform: [m00 m01 m02 m10 m11 m12 m20 m21 m22 tx ty tz], which a point multiplies as a row
+ *  vector (3MF core spec): x' = x*m00 + y*m10 + z*m20 + tx. */
 function parseTransform3MF(str: string | null): number[] | null {
   if (!str) return null;
   const v = str.trim().split(/\s+/).map(Number);
   return v.length >= 12 ? v : null;
 }
 
-function applyAffineToVertices(vertices: Float32Array, t: number[]): Float32Array {
+export function applyAffineToVertices(vertices: Float32Array, t: number[]): Float32Array {
   const out = new Float32Array(vertices.length);
   const [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11] = t;
   for (let i = 0; i < vertices.length; i += 3) {
     const x = vertices[i];
     const y = vertices[i + 1];
     const z = vertices[i + 2];
-    out[i] = t0 * x + t1 * y + t2 * z + t9;
-    out[i + 1] = t3 * x + t4 * y + t5 * z + t10;
-    out[i + 2] = t6 * x + t7 * y + t8 * z + t11;
+    out[i] = x * t0 + y * t3 + z * t6 + t9;
+    out[i + 1] = x * t1 + y * t4 + z * t7 + t10;
+    out[i + 2] = x * t2 + y * t5 + z * t8 + t11;
   }
   return out;
 }

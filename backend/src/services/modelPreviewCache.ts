@@ -27,7 +27,7 @@ import { workerBootstrap } from "../utils/workerBootstrap";
 
 // Part of the cache filename, so bumping it regenerates older GLBs on next view. Failure markers
 // carry it too, so a file an older renderer refused gets another attempt.
-const PREVIEW_FORMAT_VERSION = 4;
+const PREVIEW_FORMAT_VERSION = 5;
 
 export function modelPreviewGlbPath(plateId: string): string {
   return path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.glb`);

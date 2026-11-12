@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { unzipSync, strFromU8 } from "fflate";
-import { readBaseMaterials, readTriangleMaterial } from "./bambuThreeMf";
+import * as THREE from "three";
+import { parseTransform3MF, readBaseMaterials, readTriangleMaterial } from "./bambuThreeMf";
 import { offToThreeMf } from "../sdk/threeMf";
 
 // Both readers only ever ask a node for an attribute or for its children by tag, so plain objects stand in for
@@ -27,6 +28,19 @@ const colorDocOf = (...groups: Stub[]) =>
   node({}, { "m:colorgroup": groups }) as unknown as Parameters<typeof readBaseMaterials>[0];
 
 const triangle = (attrs: Record<string, string>) => node(attrs) as unknown as Element;
+
+describe("parseTransform3MF", () => {
+  it("moves a point as a row vector, the way a 3MF writes a turn, the move last", () => {
+    // A quarter turn anticlockwise about Z, then 5 mm along x: x goes to y, and y to -x.
+    const matrix = parseTransform3MF("0 1 0 -1 0 0 0 0 1 5 0 0");
+    expect(new THREE.Vector3(1, 0, 0).applyMatrix4(matrix).toArray()).toEqual([5, 1, 0]);
+    expect(new THREE.Vector3(0, 1, 0).applyMatrix4(matrix).toArray()).toEqual([4, 0, 0]);
+  });
+
+  it("is no change without a transform", () => {
+    expect(parseTransform3MF(null).equals(new THREE.Matrix4())).toBe(true);
+  });
+});
 
 describe("readBaseMaterials", () => {
   it("flattens a group's colours and says where each one landed", () => {

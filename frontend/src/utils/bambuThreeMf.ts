@@ -123,23 +123,24 @@ function nextTick(): Promise<void> {
 const YIELD_EVERY_N_VERTICES = 20000;
 const YIELD_EVERY_N_TRIANGLES = 20000;
 
-function parseTransform3MF(transformStr: string | null): THREE.Matrix4 {
+export function parseTransform3MF(transformStr: string | null): THREE.Matrix4 {
   const matrix = new THREE.Matrix4();
   if (!transformStr) return matrix;
-  // 3x4 affine matrix, row-major; (m30, m31, m32) is the translation.
+  // "m00 m01 m02 m10 m11 m12 m20 m21 m22 m30 m31 m32", which a point multiplies as a row vector (3MF core spec):
+  // x' = x*m00 + y*m10 + z*m20 + m30. Three's set() takes the matrix a column vector multiplies, so it's transposed.
   const values = transformStr.trim().split(/\s+/).map(parseFloat);
   if (values.length >= 12) {
     matrix.set(
       values[0],
-      values[1],
-      values[2],
-      values[9],
       values[3],
-      values[4],
-      values[5],
-      values[10],
       values[6],
+      values[9],
+      values[1],
+      values[4],
       values[7],
+      values[10],
+      values[2],
+      values[5],
       values[8],
       values[11],
       0,

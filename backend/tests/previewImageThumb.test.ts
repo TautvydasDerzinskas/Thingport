@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -8,7 +8,10 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
+import { addPreviewImage, generateCardRender, previewImagePath } from "../src/services/previewImageService";
+import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
+import { resolvePlateFilePath } from "../src/services/printCreation";
+import { getPreviewMode, setPreviewMode } from "../src/services/settingsService";
 import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
@@ -30,6 +33,11 @@ function png(r: number) {
 // The stored JPEGs are re-encoded, so an image is recognised by its red channel.
 async function redOf(filePath: string) {
   return Math.round((await sharp(filePath).stats()).channels[0].mean);
+}
+// A red test picture has none; our own render's slate shading has plenty. Read from the file's bytes: sharp keeps a
+// picture it loaded by its path, so one written over since would read as before.
+async function greenOf(filePath: string) {
+  return Math.round((await sharp(await fs.readFile(filePath)).stats()).channels[1].mean);
 }
 
 async function uploadStl() {
@@ -122,6 +130,52 @@ describe("a 3D render saved before uploaded images land", () => {
     ]);
     expect(await redOf(previewImagePath(previews[0].id, await printAssetHome(print.id)))).toBeGreaterThan(180);
     expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
+  });
+});
+
+describe("our own thumb and cover, from an older render", () => {
+  // Each render is this test's own: an upload doesn't start one.
+  let previousPreviewMode: Awaited<ReturnType<typeof getPreviewMode>>;
+  beforeAll(async () => {
+    previousPreviewMode = await getPreviewMode();
+    await setPreviewMode("on-demand");
+  });
+  afterAll(async () => {
+    await setPreviewMode(previousPreviewMode);
+  });
+
+  it("are drawn again from a render drawn anew, and an uploaded thumb stays", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    // Looked up each time: the model's own folder is made with its first picture.
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    const forgetRender = async () => fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    // The model's first render, which gives it its thumb and cover.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(modelImageState(plate.id, await plateAssetHome(plate.id))).toBe("ready");
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    const [firstCover] = await prisma.previewImage.findMany({ where: { printId: print.id } });
+    expect(firstCover.generated).toBe(true);
+
+    // As an older renderer left it: our own thumb, but not this picture.
+    await saveThumbFromBytes(plate.id, await png(250));
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    await forgetRender();
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeGreaterThan(40);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    const covers = await prisma.previewImage.findMany({ where: { printId: print.id } });
+    expect(covers).toHaveLength(1);
+    expect(covers[0]).toMatchObject({ generated: true });
+    expect(covers[0].id).not.toBe(firstCover.id);
+
+    // An uploaded thumb isn't ours to draw again.
+    await saveThumbFromBytes(plate.id, await png(250));
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(false);
+    await forgetRender();
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeLessThan(20);
   });
 });
 
