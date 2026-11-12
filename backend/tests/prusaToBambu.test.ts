@@ -104,7 +104,7 @@ const MODEL_CONFIG = `<?xml version="1.0" encoding="UTF-8"?>
 
 /** A PrusaSlicer 2.9 project: a two-part object on the first bed, a pin on the second, painting on the first part. */
 async function prusaProject(
-  options: { paintingVersion?: string; paint?: string; config?: string; modelConfig?: string } = {},
+  options: { paintingVersion?: string; paint?: string; config?: string; modelConfig?: string; build?: string } = {},
 ): Promise<Uint8Array> {
   const zip = new JSZip();
   zip.file(
@@ -137,8 +137,11 @@ async function prusaProject(
   </object>
  </resources>
  <build>
-  <item objectid="1" transform="1 0 0 0 1 0 0 0 1 125 125 0" printable="1"/>
-  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 475 125 0" printable="1"/>
+  ${
+    options.build ??
+    `<item objectid="1" transform="1 0 0 0 1 0 0 0 1 125 125 0" printable="1"/>
+  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 475 125 0" printable="1"/>`
+  }
  </build>
 </model>`,
   );
@@ -345,13 +348,26 @@ describe("a PrusaSlicer project's copy for the Bambu family", () => {
     expect(objects["5"]).toMatchObject({ name: "Pin", extruder: 2 });
   });
 
-  it("puts each bed's objects on a plate of their own, where they were", async () => {
-    const { text } = await copyOf(await prusaProject(), plan);
+  it("puts each bed's objects on a plate of their own, laid out as the slicers lay out plates", async () => {
+    // A third bed, below the first in PrusaSlicer's grid: 2.9 sets beds a bed and 100 mm apart, the slicers plates a
+    // bed and a fifth apart, the next row towards -Y.
+    const build = `<item objectid="1" transform="1 0 0 0 1 0 0 0 1 125 125 0" printable="1"/>
+  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 475 125 0" printable="1"/>
+  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 125 475 0" printable="1"/>`;
+    const { text } = await copyOf(await prusaProject({ build }), plan);
     const plates = parsePlates(await text("Metadata/model_settings.config"));
-    expect(plates.map((plate) => plate.instances.map((i) => i.objectId))).toEqual([["3"], ["5"]]);
+    expect(plates.map((plate) => plate.instances.map((i) => i.objectId))).toEqual([["3"], ["5"], ["5"]]);
     const root = await text("3D/3dmodel.model");
-    expect(root).toMatch(/<item objectid="3" [^>]*transform="1 0 0 0 1 0 0 0 1 125 125 0"/);
-    expect(root).toMatch(/<item objectid="5" [^>]*transform="1 0 0 0 1 0 0 0 1 475 125 0"/);
+    const items = [...root.matchAll(/<item objectid="\d+" [^>]*transform="([^"]+)"/g)].map((m) =>
+      parseTransform(m[1]).slice(9, 11),
+    );
+    // The first bed's stay where they are; each other's go to the middle of its plate, the project's bed standing in
+    // for the slicer's.
+    expect(items).toEqual([
+      [125, 125],
+      [425, 125],
+      [125, -175],
+    ]);
   });
 
   it("writes PrusaSlicer 2.9.6's painting of the 17th filament on as Bambu's", async () => {

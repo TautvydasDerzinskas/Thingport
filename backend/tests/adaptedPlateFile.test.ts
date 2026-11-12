@@ -209,6 +209,44 @@ describe("a plate's 3MF format", () => {
     }
   });
 
+  it("counts the colours of the models a plain 3MF's objects come from, and whether every triangle is painted", async () => {
+    const triangle = (paint: string) =>
+      `<mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"${paint}/></triangles></mesh>`;
+    const plain = async (second: string) => {
+      const zip = new JSZip();
+      zip.file(
+        "3D/3dmodel.model",
+        `<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
+ <resources><object id="9" type="model"><components>
+  <component p:path="/3D/parts.model" objectid="1"/><component p:path="/3D/parts.model" objectid="2"/>
+ </components></object></resources>
+ <build><item objectid="9"/></build>
+</model>`,
+      );
+      zip.file(
+        // Not 3D/Objects, which makes it Bambu Studio's layout.
+        "3D/parts.model",
+        `<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02" xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">
+ <resources>
+  <m:colorgroup id="5"><m:color color="#FF0000"/><m:color color="#00FF00"/></m:colorgroup>
+  <object id="1" type="model" pid="5" pindex="0">${triangle(' slic3rpe:mmu_segmentation="4"')}</object>
+  <object id="2" type="model" pid="5" pindex="1">${triangle(second)}</object>
+ </resources>
+</model>`,
+      );
+      const file = path.join(os.tmpdir(), `adapt-parts-${Date.now()}-${Math.random()}.3mf`);
+      fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer" }));
+      try {
+        return await readThreeMfFormat(file);
+      } finally {
+        fs.rmSync(file, { force: true });
+      }
+    };
+    // One of two painted: the other's colour is still the colour group's.
+    expect(await plain("")).toMatchObject({ kind: "plain", filaments: 2, painted: false });
+    expect(await plain(' slic3rpe:mmu_segmentation="8"')).toMatchObject({ kind: "plain", filaments: 2, painted: true });
+  });
+
   it("finds its small files under names written with backslashes", async () => {
     const zip = new JSZip();
     zip.file("3D\\3dmodel.model", '<model><metadata name="Application">BambuStudio-02.08.02.61</metadata></model>');

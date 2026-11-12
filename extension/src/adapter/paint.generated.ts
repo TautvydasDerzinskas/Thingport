@@ -17,13 +17,18 @@ function hexToBitstream(hex: string): boolean[] {
   return bits;
 }
 
-/** Encodes a whole-triangle extruder state in Bambu's TriangleSelector paint format. */
+/** Encodes a whole-triangle extruder state in Bambu's TriangleSelector paint format: past state 17, a nibble 15 for
+ *  each 15 more, then the rest (TriangleSelector.cpp). */
 export function encodePaintState(state: number): string {
   if (!Number.isInteger(state) || state <= 0) return "";
   if (state <= 2) return (((state & 1) << 2) | (((state >> 1) & 1) << 3)).toString(16).toUpperCase();
-  return `${Math.min(state - 3, 15)
-    .toString(16)
-    .toUpperCase()}C`;
+  let rest = state - 3;
+  let hex = "C";
+  while (rest >= 15) {
+    hex = `F${hex}`;
+    rest -= 15;
+  }
+  return `${rest.toString(16).toUpperCase()}${hex}`;
 }
 
 /** The dominant extruder state of a TriangleSelector paint string; 0 means unpainted. */
@@ -42,7 +47,15 @@ export function decodePaintState(hex: string): number {
     const splitSides = read2();
     if (splitSides === 0) {
       const xx = read2();
-      return xx === 3 ? read4() + 3 : xx;
+      if (xx !== 3) return xx;
+      // Each nibble 15 is 15 more and another nibble.
+      let state = 3;
+      let nibble;
+      do {
+        nibble = read4();
+        state += nibble;
+      } while (nibble === 15 && pos < bits.length);
+      return state;
     }
     read2();
     const counts = new Map<number, number>();

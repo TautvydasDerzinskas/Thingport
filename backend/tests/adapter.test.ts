@@ -389,6 +389,13 @@ describe("paint state", () => {
     expect(encodePaintState(1)).toBe("4");
     expect(encodePaintState(3)).toBe("0C");
     expect(decodePaintState(encodePaintState(4))).toBe(4);
+    // Past 17, a nibble 15 for each 15 more before the last.
+    expect(encodePaintState(17)).toBe("EC");
+    expect(encodePaintState(18)).toBe("0FC");
+    expect(encodePaintState(33)).toBe("0FFC");
+    for (const state of [16, 17, 18, 19, 32, 33, 40]) expect(decodePaintState(encodePaintState(state))).toBe(state);
+    // A split triangle mostly on the 19th.
+    expect(decodePaintState("1FC1FC1")).toBe(19);
     expect(stateToMaterialIndex(1, 2, 5)).toBe(0);
     expect(stateToMaterialIndex(0, 2, 5)).toBe(1);
     expect(stateToMaterialIndex(5, 1, 5)).toBe(4);

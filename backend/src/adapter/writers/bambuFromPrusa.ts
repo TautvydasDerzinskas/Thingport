@@ -385,20 +385,23 @@ export async function writeBambuFromPrusa(
     maxExtruder = Math.max(maxExtruder, objectExtruder);
   }
 
-  // Beds as plates; for a printer, each moved from the middle of its bed to the middle of its plate on the printer's.
+  // Beds as plates, each bed's objects moved from the middle of it to the middle of their plate in the slicers' own grid
+  // of plates (printer.ts): on the printer's bed for a printer; without one, the slicer's isn't known and the
+  // project's own stands in for it.
   const bed = prusaBed(config);
   const items = pkg.model.buildItems.filter((item) => parentOf.has(item.objectid));
   const transforms = items.map((item) => parseTransform(item.transform));
   const beds = items.map((_, i) => (bed ? prusaBedOf(transforms[i][9], transforms[i][10], bed, grid) : 0));
   const used = [...new Set(beds)].toSorted((a, b) => a - b);
   const plateOfBed = new Map(used.map((index, plate) => [index, plate]));
-  if (target?.bed && bed) {
+  const toBed = target?.bed ?? bed;
+  if (toBed && bed) {
     const columns = plateColumns(used.length);
     const [fromX, fromY] = bedCentre(bed);
-    const [toX, toY] = bedCentre(target.bed);
+    const [toX, toY] = bedCentre(toBed);
     items.forEach((_, i) => {
       const [bx, by] = prusaBedOffset(beds[i], bed, grid);
-      const [px, py] = plateOrigin(plateOfBed.get(beds[i]) ?? 0, columns, target.bed as BedBox);
+      const [px, py] = plateOrigin(plateOfBed.get(beds[i]) ?? 0, columns, toBed);
       transforms[i][9] += px + toX - (bx + fromX);
       transforms[i][10] += py + toY - (by + fromY);
     });

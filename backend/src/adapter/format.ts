@@ -4,7 +4,7 @@
 import { asArray, firstValue, settingsDialectOf, type Settings, type SettingsDialect } from "./settings";
 
 /** Bumped when classification changes, so stored formats are read again. */
-export const FORMAT_VERSION = 2;
+export const FORMAT_VERSION = 3;
 
 /**
  * - bambu: Bambu Studio's layout (project_settings.config, model_settings.config, parts in 3D/Objects), which Orca
@@ -32,7 +32,7 @@ export type ThreeMfFormat = {
   plates: number | null;
   /** Whose names its settings use, where it matters. */
   dialect: SettingsDialect | null;
-  /** A plain 3MF's: whether its triangles are painted already, the way PrusaSlicer reads. */
+  /** A plain 3MF's: whether every one of its triangles is painted already, the way PrusaSlicer reads. */
   painted?: boolean | null;
 };
 

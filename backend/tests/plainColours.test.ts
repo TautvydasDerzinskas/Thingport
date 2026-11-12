@@ -153,7 +153,8 @@ describe("a plain 3MF's colours", () => {
 
   it("keep the filaments a file numbers them with itself", async () => {
     const zip = await JSZip.loadAsync(await plainZip());
-    // As Thingport's keyring generator writes it: the letters on the second filament, the base on the first.
+    // A file that numbers its filaments itself, as Thingport's keyring generator does: here the base on the third,
+    // the letters on the first.
     zip.file(
       "Metadata/model_settings.config",
       `<config><object id="4"><metadata key="extruder" value="1"/>

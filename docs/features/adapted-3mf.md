@@ -56,7 +56,7 @@ colours. Bambu Studio, OrcaSlicer and the slicers built on them read those; Prus
 none, and open such a file in one colour. When a file has several colours, their copy gives each colour an extruder:
 
 - PrusaSlicer and eufyMake Studio get each object and part on its colour's extruder, and a triangle of another
-  colour painted with its own. A file already painted the way PrusaSlicer reads opens as it is.
+  colour painted with its own. A file whose every triangle is painted the way PrusaSlicer reads opens as it is.
 - Cura gets each object and part on its colour's extruder, opened as UCP. Imported as models, only the parts of an
   object made of several keep theirs: Cura puts a whole object on the extruder you have selected as it adds it.
 

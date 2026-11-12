@@ -90,7 +90,7 @@ export function planAdaptation(
     };
   }
   // PrusaSlicer, eufyMake Studio and Cura read none of a plain 3MF's colours: a copy puts each on a filament of its
-  // own where there are several, unless PrusaSlicer's painting is there already.
+  // own where there are several, unless PrusaSlicer's painting covers every triangle already.
   if (format.kind === "plain") {
     if ((format.filaments ?? 0) < 2) return null;
     if (slicer.reads === "prusa" && !format.painted) return { output: "prusa", from: "plain" };
