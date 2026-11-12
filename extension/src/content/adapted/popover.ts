@@ -57,8 +57,8 @@ export function targetPicture(target: AdaptTarget, className: string): HTMLEleme
   return box;
 }
 
-/** A file's name as sites show it, without its extension. */
-export const shownName = (file: AdaptFile) => file.name.replace(/\.3mf$/i, "");
+/** A file as sites show it: its title, else its name without the extension. */
+export const shownName = (file: AdaptFile) => file.title || file.name.replace(/\.3mf$/i, "");
 
 const KB = 1024;
 

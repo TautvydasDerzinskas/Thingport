@@ -14,7 +14,6 @@
   @include t.themed;
   display: inline-flex;
   vertical-align: middle;
-  margin-left: t.$space-2;
 
   // MakerWorld's: its green, text a shade darker so it reads on white, its menu surfaces and type.
   --nd-accent: #00b800;
@@ -71,14 +70,71 @@
   --nd-shadow: rgba(0, 0, 0, 0.5);
 }
 
-// Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one.
-:host([data-below]) {
-  display: flex;
-  margin: t.$space-3 0 0;
+// Creality Cloud's: its green, text a shade darker so it reads on white; its 4px corners and its system type, like its
+// own outlined Cloud Slice.
+:host([data-site="crealitycloud"]) {
+  --nd-accent: #1ac686;
+  --nd-text: #0e8a5c;
+  --nd-hover: rgba(26, 198, 134, 0.1);
+  --nd-surface: #ffffff;
+  --nd-border: #e5e5e5;
+  --nd-ink: #1f1f1f;
+  --nd-muted: #8a8a8a;
+  --nd-row-hover: #f5f5f5;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --nd-radius: 4px;
+  --nd-line: 1px;
 }
 
-:host([data-gapped]) {
-  margin: 0;
+:host([data-site="crealitycloud"][data-dark]) {
+  --nd-text: #3fe0a2;
+  --nd-hover: rgba(26, 198, 134, 0.14);
+  --nd-surface: #2b2e31;
+  --nd-border: #5c5f65;
+  --nd-ink: #f4f4f4;
+  --nd-muted: #a3a6ab;
+  --nd-row-hover: #35393c;
+  --nd-shadow: rgba(0, 0, 0, 0.5);
+}
+
+// Snapmaker Space's: its blue, Inter, 8px corners. It shows no dark theme.
+:host([data-site="snapmaker"]) {
+  --nd-accent: #0c63e2;
+  --nd-text: #0c63e2;
+  --nd-hover: rgba(12, 99, 226, 0.06);
+  --nd-surface: #ffffff;
+  --nd-border: #d9d9d9;
+  --nd-ink: #242424;
+  --nd-muted: #8f8f8f;
+  --nd-row-hover: #f5f6fa;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: Inter, "Inter Fallback", system-ui, "Segoe UI", sans-serif;
+  --nd-radius: 8px;
+  --nd-line: 1px;
+}
+
+// NexPrint's: its purple, Inter, 12px corners and 8px on its small buttons. It shows no dark theme in a browser.
+:host([data-site="nexprint"]) {
+  --nd-accent: #5416ff;
+  --nd-text: #4a12e0;
+  --nd-hover: rgba(84, 22, 255, 0.06);
+  --nd-surface: #ffffff;
+  --nd-border: rgba(0, 0, 0, 0.1);
+  --nd-ink: rgba(0, 0, 0, 0.85);
+  --nd-muted: rgba(0, 0, 0, 0.45);
+  --nd-row-hover: #eeeeee;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: Inter, "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nd-radius: 12px;
+  --nd-small-radius: 8px;
+  --nd-line: 1px;
+}
+
+// Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one. Its spacing is set on the host
+// itself (site.ts placeAfter), where a page's reset can't undo it.
+:host([data-below]) {
+  display: flex;
 }
 
 .nd-split {
@@ -301,17 +357,37 @@
   }
 }
 
+// Small, beside the site's own buttons for the file (NexPrint's Files list), rather than one of a stack.
+:host([data-row="pill"]) {
+  display: inline-flex;
+  margin: 0;
+}
+
+:host([data-row="pill"]) .ndr {
+  width: auto;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--nd-small-radius, var(--nd-radius));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+
+  .ndr__label {
+    flex: none;
+  }
+}
+
 // Printables lays a file's buttons side by side on a phone, centred.
 @media (max-width: 600px) {
-  :host([data-row]) {
+  :host([data-row=""]) {
     margin: 0 0 0 calc(-1 * var(--nd-line));
   }
 
-  .ndr {
+  :host([data-row=""]) .ndr {
     justify-content: center;
     border-radius: var(--nd-radius);
 
-    &__label {
+    .ndr__label {
       flex: none;
     }
   }

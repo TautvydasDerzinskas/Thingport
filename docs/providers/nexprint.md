@@ -16,6 +16,8 @@ details and collections, private ones included, need nothing; its files go only 
   (`?printConfigId=` in the link, or picking the designer's or all profiles) adds more; a model without print profiles
   brings its model files instead.
 - Collections, private ones too. NexPrint lists no liked models anywhere, so there are no likes to import.
+- Its 3MFs are Elegoo Slicer projects; other slicers open them as [adapted 3MFs](../features/adapted-3mf.md), and Thingport
+  Grab downloads them adapted on NexPrint itself, once you allow it there.
 
 ## Setup
 
