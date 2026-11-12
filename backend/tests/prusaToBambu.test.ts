@@ -397,6 +397,25 @@ describe("a PrusaSlicer project's copy for the Bambu family", () => {
     ]);
   });
 
+  it("places a later instance by its own transform under its build item's, on a plate of its own if alone", async () => {
+    // The pin's later instance turned a quarter about Z and moved 5 mm along X, alone on a third bed.
+    const objects = `<object id="3" type="model"><components><component objectid="2" transform="0 1 0 -1 0 0 0 0 1 5 0 0"/></components></object>`;
+    const build = `<item objectid="1" transform="1 0 0 0 1 0 0 0 1 125 125 0" printable="1"/>
+  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 475 125 0" printable="1"/>
+  <item objectid="3" transform="1 0 0 0 1 0 0 0 1 125 475 0" printable="1"/>`;
+    const { text } = await copyOf(await prusaProject({ objects, build }), plan);
+    const plates = parsePlates(await text("Metadata/model_settings.config"));
+    expect(plates.map((plate) => plate.instances.map((i) => `${i.objectId}#${i.instanceId}`))).toEqual([
+      ["3#0"],
+      ["5#0"],
+      ["5#1"],
+    ]);
+    const root = await text("3D/3dmodel.model");
+    const transforms = [...root.matchAll(/<item objectid="\d+" [^>]*transform="([^"]+)"/g)].map((m) => m[1]);
+    // Turned, 5 mm further along X, then to the middle of the third plate as the test of beds above moves it.
+    expect(transforms.at(-1)).toBe("0 1 0 -1 0 0 0 0 1 130 -175 0");
+  });
+
   it("writes PrusaSlicer 2.9.6's painting of the 17th filament on as Bambu's", async () => {
     const { zip, text } = await copyOf(await prusaProject({ paintingVersion: "2", paint: "00EC" }), plan);
     expect((await partMeshes(zip, await text("3D/3dmodel.model")))["1"].triangles[0]).toContain('paint_color="EC"');
@@ -531,6 +550,31 @@ describe("a PrusaSlicer project's copy for a printer", () => {
     const matchedSettings = JSON.parse(await matched.text("Metadata/project_settings.config"));
     expect(matchedSettings.filament_settings_id).toEqual(["Generic PLA"]);
     expect(matchedSettings).not.toHaveProperty("nozzle_temperature");
+    // With both, each gets its value; the matched one's preset replaces its, as no filament's list of changes names it.
+    const mixed = CONFIG.replace('"Prusament PLA";"Prusament PETG"', '"Prusament PLA";"Prusament PEEK"')
+      .replace("filament_type = PLA;PETG", "filament_type = PLA;PEEK")
+      .concat("; temperature = 215,410\n");
+    const both = await copyOf(await prusaProject({ config: mixed }), plan, RECIPE);
+    const bothSettings = JSON.parse(await both.text("Metadata/project_settings.config"));
+    expect(bothSettings).toMatchObject({
+      filament_settings_id: ["Generic PLA", "Prusament PEEK"],
+      nozzle_temperature: ["215", "410"],
+    });
+    expect(bothSettings.different_settings_to_system.slice(1)).toEqual(["", "", ""]);
+  });
+
+  it("gives a filament named after another material's preset the preset of its own type", async () => {
+    // The second is PrusaSlicer's Generic PLA changed to PETG, under the same name.
+    const config = CONFIG.replace('"Prusament PLA";"Prusament PETG"', '"Generic PLA";"Generic PLA"');
+    const recipe: PrinterRecipe = {
+      ...RECIPE,
+      filaments: { types: RECIPE.filaments!.types, products: { "generic pla": "Generic PLA" } },
+    };
+    const { text } = await copyOf(await prusaProject({ config }), plan, recipe);
+    expect(JSON.parse(await text("Metadata/project_settings.config")).filament_settings_id).toEqual([
+      "Generic PLA",
+      "Generic PETG",
+    ]);
   });
 
   it("leaves a layer height above the printer's nozzle to the nearest process", async () => {

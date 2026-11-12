@@ -72,6 +72,32 @@ describe("a copy's presets", () => {
     // None of its type: not another material's preset, whose temperatures would replace the designer's.
     expect(pick("Bambu PA6-CF @BBL X1E", "PA6-CF")).toBeNull();
   });
+
+  it("gives a product the printer names for another material way to the preset of the designer's type", () => {
+    const recipe: PrinterRecipe = {
+      ...RECIPE,
+      filaments: {
+        types: { ...RECIPE.filaments!.types, "PETG-CF": "Generic PETG-CF" },
+        products: {
+          ...RECIPE.filaments!.products,
+          "generic pla": "Generic PLA",
+          "generic petg": "Generic PETG",
+          "generic petg-cf": "Generic PETG-CF",
+        },
+      },
+    };
+    const pick = (name: string, type: string) => chooseFilament(recipe, { name, inherits: "", type });
+    expect(pick("Generic PLA @BBL A1M", "PLA")).toBe("Generic PLA");
+    // A Generic PLA changed to PETG: the PLA preset would set its temperatures to PLA's.
+    expect(pick("Generic PLA @BBL A1M", "PETG")).toBe("Generic PETG");
+    // A kind of the same material keeps the product.
+    expect(pick("Generic PETG-CF @BBL X1C", "PETG")).toBe("Generic PETG-CF");
+    // So do a type the printer has no preset of, which may be the same material by another name, and no type.
+    expect(pick("Generic PETG @BBL X1C", "PET")).toBe("Generic PETG");
+    expect(pick("Generic PLA @BBL A1M", "")).toBe("Generic PLA");
+    // A product that's no type's preset has no type in the catalogue, so it keeps its match.
+    expect(pick("Bambu PLA Basic @BBL A1M", "PETG")).toBe("Bambu PLA Basic @BBL P1S 0.4 nozzle");
+  });
 });
 
 const DESIGNER = {
