@@ -83,7 +83,7 @@ export const PRINTABLES_ADAPT: AdaptSite = {
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, "Printables");
     const printId = parsePrintablesModelUrl(pageUrl)?.modelId;
     if (!printId) throw new Error("Couldn't tell which Printables model this page is.");
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases("Printables"), progress);
     const data = await graphql(LINK_MUTATION, {
       printId,
       source: "model_detail",

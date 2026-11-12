@@ -79,7 +79,8 @@ describe("Download adapted's copies of Printables' files", () => {
     expect(savedNote(target("prusaslicer"), asIs)).toBe("Downloaded the file itself: PrusaSlicer opens it as it is.");
     expect(savedNote(DEFAULT_TARGET, asIs)).toBe("Downloaded the file itself: PrusaSlicer opens it as it is.");
     expect(savedNote(target("bambustudio", P1S), { copy: true, printerless: true, nozzle: null })).toBe(
-      "Grab has no Bambu Studio preset for the Bambu Lab P1S, so this copy keeps your own.",
+      "Grab has no Bambu Studio preset for the Bambu Lab P1S, so this copy keeps the designer's printer. Pick yours " +
+        "in Bambu Studio before slicing.",
     );
     const wide = target("bambustudio", { ...P1S, nozzle: "0.6" });
     expect(savedNote(wide, { copy: true, printerless: false, nozzle: "0.4" })).toBe(

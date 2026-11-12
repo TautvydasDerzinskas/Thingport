@@ -83,8 +83,9 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
     // A paid model has none to offer until the user has bought it, as the page shows only a Purchase box then.
     if (unbought(group)) {
       const auth = signedIn();
-      const theirs = auth ? await cxy("/v3/model/modelGroupDetail", { id: alias }, auth) : null;
-      if (unbought(theirs?.result?.groupItem as Record<string, unknown> | undefined)) return [];
+      if (!auth) return [];
+      const theirs = await cxy("/v3/model/modelGroupDetail", { id: alias }, auth);
+      if (unbought(theirs.result?.groupItem as Record<string, unknown> | undefined)) return [];
     }
     const list = await cxy("/v3/model/3mfList", { page: 1, pageSize: 199, modelGroupId: groupId, filterType: 11 });
     const files = profileFiles(list.result);
@@ -98,7 +99,7 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
     const auth = signedIn();
     if (!auth) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const groupId = modelOf.get(file.id);
     const [link, detail] = await Promise.all([
       cxy("/v3/model/3mfDownload", { id: file.id }, auth),

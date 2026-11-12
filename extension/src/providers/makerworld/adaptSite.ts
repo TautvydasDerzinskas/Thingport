@@ -63,7 +63,7 @@ export const MAKERWORLD_ADAPT: AdaptSite = {
   files: async () => [SELECTED_PROFILE],
 
   async download(pageUrl, _file, progress) {
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases("MakerWorld"), progress);
     // The adapter reads the 3MF project, never the raw-files zip.
     const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stop);
     if (!resolved) {
