@@ -521,7 +521,8 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   let elsewhere = false;
   // Beside the site's button now: its going away starts the wait again.
   let beside = false;
-  // The wait for the site's button: from the start, and again whenever it goes away.
+  // The wait for the site's button, ANCHOR_WAIT_MS whole each time: from the start, until it's there, and again
+  // whenever it goes away.
   let waiting: ReturnType<typeof setTimeout> | undefined;
   const offerElsewhere = () => {
     waiting = undefined;
@@ -536,6 +537,8 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
       if (anchor) {
         site.place(main.host, anchor);
         beside = true;
+        clearTimeout(waiting);
+        waiting = undefined;
       } else {
         // Gone, alone or with what held both, maybe only while the page redraws: elsewhere, should it not come back in
         // time.
@@ -581,7 +584,7 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   system.addEventListener("change", theme);
   theme();
   place();
-  wait();
+  if (!beside) wait();
 
   mounted = {
     stop: () => {
