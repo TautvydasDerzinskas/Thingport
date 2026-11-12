@@ -41,7 +41,9 @@ export { classify3mf, FORMAT_VERSION, parseGenerator, storedFormat } from "./for
 export type { PlainModelScan, ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format";
 export { COMPATIBLE_TAG, madeFor, planAdaptation, planKey, versionAtMost } from "./plan";
 export type { AdaptPlan, PrinterChoice } from "./plan";
-export type { FilamentChoices, PrinterRecipe } from "./printer";
+export type { BedBox, FilamentChoices, PrinterRecipe } from "./printer";
+export { bedBox, printerPresetName, printerRecipe } from "./recipe";
+export type { Bed, PrinterPreset, ProcessPreset, RecipePrinter, SlicerEntry } from "./recipe";
 export { SLICER_PROFILES, slicerProfile } from "./slicers";
 export type { SlicerProfile } from "./slicers";
 export type { AdaptReport, WriteOptions, Written } from "./writers/types";

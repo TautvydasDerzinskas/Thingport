@@ -41,6 +41,7 @@ src/
     styles/     its SCSS, compiled into the bundle and injected into its shadow root
   adapter/      the 3MF adapter, copied from the backend (*.generated.ts)
   adapting/     what Grab makes of a MakerWorld 3MF with it, and the worker that runs it
+  printers/     the background's reader of the printer catalogue in public/printers/
   providers/    each provider's own code in <id>/, beside the copies of its manifest and links
                 (*.generated.ts), and the tables that wire them in (content, sessions, accounts,
                 background); Thingiverse's dark mode and hidden ads are thingiverse/index.ts, a
@@ -49,7 +50,8 @@ src/
                 by the card for the site the active tab is on, are sites.ts
   styles/       SCSS design tokens and mixins shared by the popup and the content UI
   assets/       the Thingport icon SVG (inlined into the bundles)
-public/         copied into every build as-is (the toolbar icon PNGs)
+public/         copied into every build as-is: the toolbar icon PNGs, and printers/, the printer catalogue
+                cut from the backend's (npm run printers:sync at the root)
 scripts/        build.ts, manifest.ts (per-browser manifest), zip.ts, screenshots.ts
 ```
 
@@ -69,6 +71,11 @@ preview:seasonal -- out.html` renders every edition, in the popup and on a page,
 Mozilla source zip can only hold this folder): change it there. `src/shared/slicers.ts` mirrors the web app's slicer
 names. The adapter runs in a worker, bundled into the content script as a string through the build's `?worker`
 imports; where a page's CSP blocks that worker, it runs on the page's main thread instead.
+
+`public/printers/` is the backend's printer catalogue cut down to what a copy for a printer needs, written by `npm run
+printers:sync` at the repository's root from `backend/assets/printers/`: never edit it here. Only the background reads
+it (`src/printers/catalogue.ts`), and makes a printer's recipe with the adapter's `printerRecipe`, as the server does;
+[docs/PRINTERS_DEVELOPMENT.md](../docs/PRINTERS_DEVELOPMENT.md#grabs-copy) says what's in it.
 
 Colors, spacing and type live in `src/styles/_tokens.scss`. Colors are CSS custom properties with a
 light and a dark palette (the dark one is Thingport's navy): the popup and the in-page UI both follow

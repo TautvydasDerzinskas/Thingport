@@ -32,5 +32,7 @@ jobs:
         run: npm run studio:check
       - name: The 3MF adapter's copies match backend/src/adapter
         run: npm run adapter:check
+      - name: Grab's printer catalogue matches backend/assets/printers
+        run: npm run printers:check
       - name: gofmt
         run: test -z "$(gofmt -l bridge)" || { gofmt -l bridge; exit 1; }
