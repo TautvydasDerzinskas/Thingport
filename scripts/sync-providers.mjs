@@ -392,7 +392,7 @@ function pageExtras(m) {
       sync: c.collections || c.likes,
       profiles: c.profiles,
       slicers: (m.slicers ?? []).map((id) => SLICER_NAMES[id]),
-      bambuProjects: c.bambuProjects ?? false,
+      adaptedCopies: Boolean(c.adapted3mfs?.length),
       trending: c.trending ? c.trending.kind : null,
       categories: c.categoryIds !== "none",
     },
@@ -426,8 +426,8 @@ export const PROVIDER_DOCS = ${JSON.stringify(pages, null, 2)};
  *    or "userOptional" (the manifest's). \`grab\` and \`flaresolverr\`: how much it leans on each, "required",
  *    "recommended", "optional" or "none". \`grabSite\`: "builtin", or "optional", which Grab's popup turns on once.
  *    \`collections\` and \`likes\`, and \`sync\`, true with either: a sync follows both. \`profiles\`: print profiles.
- *    \`slicers\`: the names of its printer maker's own, if any. \`bambuProjects\`: Bambu Studio 3MFs, which other
- *    slicers open adapted. \`trending\`: the dashboard's trending panel's list, "trending", "popular", "featured"
+ *    \`slicers\`: the names of its printer maker's own, if any. \`adaptedCopies\`: Grab offers its 3MFs adapted for other
+ *    slicers and printers. \`trending\`: the dashboard's trending panel's list, "trending", "popular", "featured"
  *    or "recommended", or null where it has none. \`categories\`: false where its models name none, so they come in
  *    uncategorized. */
 export const PROVIDER_PAGES = ${JSON.stringify(manifests.map(pageExtras), null, 2)};

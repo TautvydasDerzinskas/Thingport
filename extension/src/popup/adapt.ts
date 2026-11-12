@@ -65,7 +65,7 @@ const SEARCH_LIMIT = 60;
 
 // Where Download adapted works: the sites whose 3MFs Grab can adapt.
 const ADAPT_SITES: ProviderId[] = PROVIDER_IDS.filter(
-  (id) => (MANIFESTS[id].capabilities as { bambuProjects?: true }).bambuProjects,
+  (id) => (MANIFESTS[id].capabilities as { adapted3mfs?: readonly string[] }).adapted3mfs?.length,
 );
 
 const catalogue = printerCatalogue();

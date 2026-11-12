@@ -177,7 +177,12 @@ Rules of thumb:
   provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw
   files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab offers them converted for other slicers
-  (`bambuProjects`); the app reads what kind of 3MF each file is itself.
+  (`adapted3mfs`); the app reads what kind of 3MF each file is itself.
+- **Download adapted in Grab** (`adapted3mfs`): a site whose models come as 3MFs lists their kinds ("bambu",
+  "prusa", "plain"), and Grab's popup offers it under Adapt 3MFs' Sites. Grab then needs a site of its own for it
+  (`extension/src/content/adapted/site.ts`): how its model's 3MFs are listed and downloaded in the page with the
+  user's own sign-in, where its own open or download button is, and how its theme shows. MakerWorld's and
+  Printables' are in their `providers/<id>/adaptSite.ts`; a test holds the two lists to each other.
 - **MakerOnline** can't download server-side at all: the download call needs a Risk-Token that only the site's
   anti-bot script makes in a real page. It uses `customImport` with a `grabQueue`. The backend plans the files, Grab
   gets their links signed on a makeronline.com page, and imports started elsewhere wait in `GrabImport` until the
