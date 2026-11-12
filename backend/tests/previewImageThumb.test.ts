@@ -178,7 +178,7 @@ describe("our own thumb and cover", () => {
     expect(await greenOf(await thumb())).toBeLessThan(20);
   });
 
-  it("are drawn again on the render's next view where drawing them failed", async () => {
+  it("are drawn again when the render is next asked for, where drawing them failed", async () => {
     const print = await uploadStl();
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
     const src = resolvePlateFilePath(plate)!;
@@ -200,14 +200,76 @@ describe("our own thumb and cover", () => {
       failing.mockRestore();
     }
     expect(await greenOf(await thumb())).toBeLessThan(20);
-    // A view of the render, which doesn't draw it again.
+    // Asked for again, with the render drawn.
     await generateCardRender(plate.id, src, plate.filename);
     expect(await greenOf(await thumb())).toBeGreaterThan(40);
     expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
-    // Drawn from this render now, so the next view leaves it.
+    // Drawn from this render now, so asking again leaves it.
     const drawnAt = (await fs.stat(await thumb())).mtimeMs;
     await generateCardRender(plate.id, src, plate.filename);
     expect((await fs.stat(await thumb())).mtimeMs).toBe(drawnAt);
+  });
+
+  it("leave a thumb uploaded while they were being drawn", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    await generateCardRender(plate.id, src, plate.filename);
+    // The render drawn anew, and a picture uploaded once the redraw has looked at the thumb it would replace.
+    const render = modelImagePath(plate.id, await plateAssetHome(plate.id));
+    await fs.rm(render, { force: true });
+    const stat = fs.stat;
+    let uploaded = false;
+    const uploading = vi.spyOn(fs, "stat").mockImplementation((async (...args: Parameters<typeof fs.stat>) => {
+      const result = await stat(...args);
+      if (!uploaded && path.basename(String(args[0])) === path.basename(render)) {
+        uploaded = true;
+        await saveThumbFromBytes(plate.id, await png(250));
+      }
+      return result;
+    }) as typeof fs.stat);
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      uploading.mockRestore();
+    }
+    expect(uploaded).toBe(true);
+    expect(await greenOf(await thumb())).toBeLessThan(20);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(false);
+  });
+
+  it("put the cover drawn anew in place when the render is next asked for, where that failed", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const covers = () => prisma.previewImage.findMany({ where: { printId: print.id } });
+    await generateCardRender(plate.id, src, plate.filename);
+    const [older] = await covers();
+    // The render drawn anew while saving the cover drawn from it fails.
+    await fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    const thumbFile = path.basename(plateThumbPath(plate.id, await plateAssetHome(plate.id)));
+    const rename = fs.rename;
+    const failing = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      const name = path.basename(String(to));
+      if (!name.endsWith(".jpg") || name === thumbFile) return rename(from, to);
+      throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+    });
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      failing.mockRestore();
+    }
+    expect((await covers()).map((image) => image.id)).toEqual([older.id]);
+    // Asked for again, with the render drawn.
+    await generateCardRender(plate.id, src, plate.filename);
+    const [newer, ...rest] = await covers();
+    expect(rest).toHaveLength(0);
+    expect(newer.generated).toBe(true);
+    expect(newer.id).not.toBe(older.id);
+    // Newer than the render now, so asking again leaves it.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect((await covers()).map((image) => image.id)).toEqual([newer.id]);
   });
 
   it("lead the model with its first plate, whichever plate drew first", async () => {
