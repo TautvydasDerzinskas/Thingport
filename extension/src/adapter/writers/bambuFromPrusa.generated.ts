@@ -33,7 +33,7 @@ import {
   type Settings,
   type SettingsDialect,
 } from "../settings.generated";
-import { formatTransform, IDENTITY, parseTransform } from "../transform.generated";
+import { composeTransform, formatTransform, IDENTITY, parseTransform } from "../transform.generated";
 import { escapeXml, parseAttrs } from "../xml.generated";
 import { contentTypesXml, relsXml } from "./flatten.generated";
 import type { Written } from "./types.generated";
@@ -245,6 +245,53 @@ function withinNozzle(settings: Record<string, string>, recipe: PrinterRecipe | 
   return rest;
 }
 
+// A PrusaSlicer filament's own temperatures, fans and flow, by Bambu's names. For a filament the printer has no preset
+// of its type for, the slicer makes one of the file's values, so these are the designer's rather than its default
+// filament's.
+const FILAMENT_SETTINGS: [string, string[]][] = [
+  ["temperature", ["nozzle_temperature"]],
+  ["first_layer_temperature", ["nozzle_temperature_initial_layer"]],
+  ["bed_temperature", ["hot_plate_temp", "textured_plate_temp"]],
+  ["first_layer_bed_temperature", ["hot_plate_temp_initial_layer", "textured_plate_temp_initial_layer"]],
+  ["min_fan_speed", ["fan_min_speed"]],
+  ["max_fan_speed", ["fan_max_speed"]],
+  ["filament_max_volumetric_speed", ["filament_max_volumetric_speed"]],
+  ["extrusion_multiplier", ["filament_flow_ratio"]],
+  ["filament_diameter", ["filament_diameter"]],
+  ["filament_density", ["filament_density"]],
+];
+
+/** The project's filaments' own settings, a value for each of `count`: PrusaSlicer lists numbers with commas. */
+function filamentSettings(config: Record<string, string>, count: number): Settings {
+  const out: Settings = {};
+  for (const [key, bambuKeys] of FILAMENT_SETTINGS) {
+    const list = String(config[key] ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (!list.length) continue;
+    const values = Array.from({ length: count }, (_, i) => nthOrLast(list, i));
+    for (const bambuKey of bambuKeys) out[bambuKey] = values;
+  }
+  return out;
+}
+
+/** Each bed's wipe tower, by bed: PrusaSlicer 2.9 keeps them in a file of its own (3mf.cpp
+ *  WIPE_TOWER_INFORMATION_FILE), in each bed's own coordinates. */
+async function wipeTowersByBed(pkg: PrusaPackage): Promise<Map<number, [string, string]>> {
+  const towers = new Map<number, [string, string]>();
+  const file = pkg.filesByKey["metadata/prusa_slicer_wipe_tower_information.xml"];
+  if (!file) return towers;
+  const xml = await file.entry.async("string");
+  for (const m of xml.matchAll(/<wipe_tower_information\b([^>]*?)\/?>/gi)) {
+    const a = parseAttrs(m[1]);
+    const bed = Number.parseInt(a.bed_idx ?? "0", 10);
+    if (Number.isInteger(bed) && a.position_x !== undefined && a.position_y !== undefined)
+      towers.set(bed, [a.position_x, a.position_y]);
+  }
+  return towers;
+}
+
 /** A list's value for filament `i`, its last for one past its end. */
 const nthOrLast = (list: string[], i: number) => list[i] || list[list.length - 1] || "";
 
@@ -396,7 +443,20 @@ export async function writeBambuFromPrusa(
   // of plates (printer.ts): on the printer's bed for a printer; without one, the slicer's isn't known and the
   // project's own stands in for it.
   const bed = prusaBed(config);
-  const items = pkg.model.buildItems.filter((item) => parentOf.has(item.objectid));
+  // PrusaSlicer writes an object's later instances as objects of their own holding only its first
+  // (3mf.cpp _add_object_to_model_stream): each is one more instance of that object here, placed by its build item.
+  const aliasOf = new Map<string, { objectid: string; transform: string | null }>();
+  for (const source of pkg.model.objects) {
+    const [component] = source.components;
+    if (!source.hasMesh && source.components.length === 1 && !component.path && parentOf.has(component.objectid))
+      aliasOf.set(source.id, { objectid: component.objectid, transform: component.transform });
+  }
+  const items = pkg.model.buildItems.flatMap((item) => {
+    const alias = aliasOf.get(item.objectid);
+    if (!alias) return parentOf.has(item.objectid) ? [item] : [];
+    const transform = formatTransform(composeTransform(item.transform, alias.transform));
+    return [{ objectid: alias.objectid, transform, printable: item.printable, instanceId: item.instanceId }];
+  });
   const transforms = items.map((item) => parseTransform(item.transform));
   const beds = items.map((_, i) => (bed ? prusaBedOf(transforms[i][9], transforms[i][10], bed, grid) : 0));
   const used = [...new Set(beds)].toSorted((a, b) => a - b);
@@ -493,10 +553,11 @@ export async function writeBambuFromPrusa(
     const diff = Array.from({ length: filaments.count + 2 }, () => "");
     diff[0] = Object.keys(globals).join(";");
     // The same product for the printer, else its preset for that material. Without one, the designer's name stays: the
-    // slicer then builds a preset of the file's values rather than another material's.
-    const presets = filaments.names.map(
-      (name, i) => chooseFilament(target, { name, inherits: "", type: filaments.types[i] }) ?? name,
+    // slicer then builds a preset of the file's values, theirs below, rather than another material's.
+    const chosen = filaments.names.map((name, i) =>
+      chooseFilament(target, { name, inherits: "", type: filaments.types[i] }),
     );
+    const presets = chosen.map((preset, i) => preset ?? filaments.names[i]);
     const layerHeight = Number(config.layer_height);
     const process = chooseProcess(
       target,
@@ -517,17 +578,25 @@ export async function writeBambuFromPrusa(
       different_settings_to_system: diff,
       ...(target.bed && !target.bed.outline ? { printable_area: rectangle(target.bed) } : {}),
       ...(target.height ? { printable_height: String(target.height) } : {}),
+      ...(chosen.includes(null) ? filamentSettings(config, filaments.count) : {}),
     };
     // PrusaSlicer leaves its wipe tower on for one filament too, where it makes none.
     if (config.wipe_tower !== undefined && filaments.count > 1) {
       settings.enable_prime_tower = config.wipe_tower === "1" ? "1" : "0";
       diff[0] = [diff[0], "enable_prime_tower"].filter(Boolean).join(";");
     }
-    if (bed && target.bed && config.wipe_tower_x !== undefined && config.wipe_tower_y !== undefined) {
+    // Each plate's from its bed's, or before 2.9, the one place in the settings.
+    const saved = await wipeTowersByBed(pkg);
+    const legacy: [string, string] | null =
+      config.wipe_tower_x !== undefined && config.wipe_tower_y !== undefined
+        ? [config.wipe_tower_x, config.wipe_tower_y]
+        : null;
+    const placed = used.map((index) => saved.get(index) ?? legacy);
+    if (bed && target.bed && placed.every((tower) => tower !== null)) {
       const towers = moveWipeTowers(
         {
-          wipe_tower_x: used.map(() => config.wipe_tower_x),
-          wipe_tower_y: used.map(() => config.wipe_tower_y),
+          wipe_tower_x: placed.map((tower) => tower[0]),
+          wipe_tower_y: placed.map((tower) => tower[1]),
           prime_tower_width: config.wipe_tower_width,
           prime_tower_brim_width: config.wipe_tower_brim_width,
         },

@@ -104,7 +104,15 @@ const MODEL_CONFIG = `<?xml version="1.0" encoding="UTF-8"?>
 
 /** A PrusaSlicer 2.9 project: a two-part object on the first bed, a pin on the second, painting on the first part. */
 async function prusaProject(
-  options: { paintingVersion?: string; paint?: string; config?: string; modelConfig?: string; build?: string } = {},
+  options: {
+    paintingVersion?: string;
+    paint?: string;
+    config?: string;
+    modelConfig?: string;
+    build?: string;
+    objects?: string;
+    files?: Record<string, string>;
+  } = {},
 ): Promise<Uint8Array> {
   const zip = new JSZip();
   zip.file(
@@ -135,6 +143,7 @@ async function prusaProject(
     <triangles><triangle v1="0" v2="1" v3="2"/></triangles>
    </mesh>
   </object>
+  ${options.objects ?? ""}
  </resources>
  <build>
   ${
@@ -148,6 +157,7 @@ async function prusaProject(
   zip.file("Metadata/Slic3r_PE.config", options.config ?? CONFIG);
   zip.file("Metadata/Slic3r_PE_model.config", options.modelConfig ?? MODEL_CONFIG);
   zip.file("Metadata/thumbnail.png", "png");
+  for (const [name, text] of Object.entries(options.files ?? {})) zip.file(name, text);
   zip.file("[Content_Types].xml", '<?xml version="1.0"?><Types/>');
   zip.file("_rels/.rels", '<?xml version="1.0"?><Relationships/>');
   return zip.generateAsync({ type: "uint8array" });
@@ -370,6 +380,23 @@ describe("a PrusaSlicer project's copy for the Bambu family", () => {
     ]);
   });
 
+  it("keeps an object's later instances, which PrusaSlicer writes as objects holding its first", async () => {
+    const objects = `<object id="3" type="model"><components><component objectid="2"/></components></object>`;
+    const build = `<item objectid="1" transform="1 0 0 0 1 0 0 0 1 125 125 0" printable="1"/>
+  <item objectid="2" transform="1 0 0 0 1 0 0 0 1 475 125 0" printable="1"/>
+  <item objectid="3" transform="1 0 0 0 1 0 0 0 1 150 160 0" printable="1"/>`;
+    const { text } = await copyOf(await prusaProject({ objects, build }), plan);
+    const root = await text("3D/3dmodel.model");
+    // The pin twice, the second copy where its build item puts it.
+    expect([...root.matchAll(/<item objectid="(\d+)"/g)].map((m) => m[1])).toEqual(["3", "5", "5"]);
+    expect(root).toMatch(/<item objectid="5" [^>]*transform="1 0 0 0 1 0 0 0 1 150 160 0"/);
+    const plates = parsePlates(await text("Metadata/model_settings.config"));
+    expect(plates.map((plate) => plate.instances.map((i) => `${i.objectId}#${i.instanceId}`))).toEqual([
+      ["3#0", "5#1"],
+      ["5#0"],
+    ]);
+  });
+
   it("writes PrusaSlicer 2.9.6's painting of the 17th filament on as Bambu's", async () => {
     const { zip, text } = await copyOf(await prusaProject({ paintingVersion: "2", paint: "00EC" }), plan);
     expect((await partMeshes(zip, await text("3D/3dmodel.model")))["1"].triangles[0]).toContain('paint_color="EC"');
@@ -452,6 +479,58 @@ describe("a PrusaSlicer project's copy for a printer", () => {
     ]);
     expect(settings.filament_type).toEqual(["TPU"]);
     expect(settings.filament_settings_id).toEqual(["Generic TPU"]);
+  });
+
+  it("moves each bed's wipe tower, which PrusaSlicer 2.9 keeps in a file of its own", async () => {
+    const config = CONFIG.replace(/^; wipe_tower_[xy] = .*\n/gm, "");
+    const files = {
+      "Metadata/Prusa_Slicer_wipe_tower_information.xml": `<?xml version="1.0" encoding="utf-8"?>
+<wipe_tower_information bed_idx="0" position_x="150" position_y="160" rotation_deg="0"/>
+<wipe_tower_information bed_idx="1" position_x="60" position_y="70" rotation_deg="0"/>`,
+    };
+    const { text } = await copyOf(await prusaProject({ config, files }), plan, RECIPE);
+    const settings = JSON.parse(await text("Metadata/project_settings.config"));
+    // From the middle of a 250 mm bed to the middle of the P1S's 256.
+    expect(settings.wipe_tower_x).toEqual(["153", "63"]);
+    expect(settings.wipe_tower_y).toEqual(["163", "73"]);
+  });
+
+  it("gives a filament the printer has no preset for the designer's temperatures, fans and flow", async () => {
+    const config = CONFIG.replace(
+      /^; (extruder_colour|filament_colour|filament_settings_id|filament_type|nozzle_diameter) = .*\n/gm,
+      "",
+    ).concat(
+      [
+        '; filament_settings_id = "Prusament PEEK"',
+        "; filament_type = PEEK",
+        "; filament_colour = #222222",
+        "; nozzle_diameter = 0.4",
+        "; temperature = 410",
+        "; first_layer_temperature = 400",
+        "; bed_temperature = 120",
+        "; first_layer_bed_temperature = 125",
+        "; max_fan_speed = 30",
+        "",
+      ].join("\n"),
+    );
+    const { text } = await copyOf(await prusaProject({ config }), plan, RECIPE);
+    const settings = JSON.parse(await text("Metadata/project_settings.config"));
+    expect(settings).toMatchObject({
+      filament_settings_id: ["Prusament PEEK"],
+      nozzle_temperature: ["410"],
+      nozzle_temperature_initial_layer: ["400"],
+      textured_plate_temp: ["120"],
+      textured_plate_temp_initial_layer: ["125"],
+      fan_max_speed: ["30"],
+    });
+    // One the printer has a preset for takes that preset's.
+    const pla = config
+      .replace("Prusament PEEK", "Prusament PLA")
+      .replace("filament_type = PEEK", "filament_type = PLA");
+    const matched = await copyOf(await prusaProject({ config: pla }), plan, RECIPE);
+    const matchedSettings = JSON.parse(await matched.text("Metadata/project_settings.config"));
+    expect(matchedSettings.filament_settings_id).toEqual(["Generic PLA"]);
+    expect(matchedSettings).not.toHaveProperty("nozzle_temperature");
   });
 
   it("leaves a layer height above the printer's nozzle to the nearest process", async () => {

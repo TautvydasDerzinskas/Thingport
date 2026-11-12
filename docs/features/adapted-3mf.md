@@ -57,8 +57,9 @@ none, and open such a file in one colour. When a file has several colours, their
 
 - PrusaSlicer and eufyMake Studio get each object and part on its colour's extruder, and a triangle of another
   colour painted with its own. A file whose every triangle is painted the way PrusaSlicer reads opens as it is.
-- Cura gets each object and part on its colour's extruder, opened as UCP. Imported as models, only the parts of an
-  object made of several keep theirs: Cura puts a whole object on the extruder you have selected as it adds it.
+- Cura gets each object and part on its colour's extruder, opened as UCP. It reads no painting, so a mesh whose
+  triangles have colours of their own prints in one. Imported as models, only the parts of an object made of several
+  keep their extruders: Cura puts a whole object on the extruder you have selected as it adds it.
 
 Colours are numbered as they're first met, from the first object to the last, unless the file numbers them itself
 (Thingport's keyring and QR code tools do). A file in another unit than millimetres, such as metres, is converted.
