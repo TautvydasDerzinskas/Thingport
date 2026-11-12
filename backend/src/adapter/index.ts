@@ -7,30 +7,38 @@
 import type JSZip from "jszip";
 import type { AdaptPlan } from "./plan";
 import { readBambuPackage } from "./readers/bambuProject";
+import { readPlainPackage } from "./readers/plainProject";
+import { readPrusaPackage } from "./readers/prusaProject";
 import { writeBambu } from "./writers/bambu";
+import { writeBambuFromPrusa } from "./writers/bambuFromPrusa";
 import { writeCura } from "./writers/cura";
 import { writePrusa } from "./writers/prusa";
 import type { WriteOptions, Written } from "./writers/types";
 
 /** Bumped whenever a writer's output changes, so copies made by an older one are made again. */
-export const ADAPTER_VERSION = 3;
+export const ADAPTER_VERSION = 4;
 
 export const ADAPT_ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 
-/** The copy `plan` describes, of a Bambu layout 3MF, as a zip still to be generated. */
+/** The copy `plan` describes, of a Bambu layout 3MF, a PrusaSlicer project or a plain 3MF, as a zip still to be
+ *  generated. */
 export async function adapt3mf(
   input: Uint8Array | ArrayBuffer | JSZip,
   plan: AdaptPlan,
   options: WriteOptions = {},
 ): Promise<Written> {
-  const pkg = await readBambuPackage(input instanceof ArrayBuffer ? new Uint8Array(input) : input);
+  const bytes = input instanceof ArrayBuffer ? new Uint8Array(input) : input;
+  if (plan.output === "bambu" && plan.from === "prusa")
+    return writeBambuFromPrusa(await readPrusaPackage(bytes), plan, options.printer);
+  const pkg =
+    plan.output !== "bambu" && plan.from === "plain" ? await readPlainPackage(bytes) : await readBambuPackage(bytes);
   if (plan.output === "prusa") return writePrusa(pkg, options);
   if (plan.output === "cura") return writeCura(pkg, options);
   return writeBambu(pkg, plan, options.printer);
 }
 
 export { classify3mf, FORMAT_VERSION, parseGenerator, storedFormat } from "./format";
-export type { ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format";
+export type { PlainModelScan, ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format";
 export { COMPATIBLE_TAG, madeFor, planAdaptation, planKey, versionAtMost } from "./plan";
 export type { AdaptPlan, PrinterChoice } from "./plan";
 export type { FilamentChoices, PrinterRecipe } from "./printer";

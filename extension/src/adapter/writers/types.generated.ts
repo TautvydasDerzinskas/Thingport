@@ -18,6 +18,8 @@ export type WriteOptions = {
 
 export type AdaptReport = {
   output: "bambu" | "prusa" | "cura";
+  /** A copy written from a PrusaSlicer project. */
+  from?: "prusa";
   /** For a flattened copy, complete once the zip has been generated. */
   stats?: FlattenStats;
   /** The designer's settings the copy carries per object. */

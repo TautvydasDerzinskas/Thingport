@@ -3,14 +3,59 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Readable } from "node:stream";
+import { StringDecoder } from "node:string_decoder";
 import { Prisma, type Plate } from "@prisma/client";
 import { prisma } from "../db";
-import { classify3mf, storedFormat, type ThreeMfFormat } from "../adapter";
-import { listZipEntries, readZipEntry, readZipEntryHead } from "../utils/zipReader";
+import { classify3mf, storedFormat, type PlainModelScan, type ThreeMfFormat } from "../adapter";
+import { listZipEntries, readZipEntry, readZipEntryHead, walkZipEntries } from "../utils/zipReader";
 
 const SMALL_FILE_LIMIT = 16 * 1024 * 1024;
 // Far more than the Application and OrcaSlicer tags at the top of a model file take.
 const MODEL_HEAD_BYTES = 64 * 1024;
+
+// A plain 3MF's colours can be anywhere in its models, after meshes; past this much it's left uncounted.
+const PLAIN_SCAN_BYTES = 512 * 1024 * 1024;
+const COLOUR_RE = /<(?:[\w-]+:)?(?:color\b[^>]*?\bcolor|base\b[^>]*?\bdisplaycolor)\s*=\s*"#?([0-9a-f]{6})/gi;
+const TRIANGLE_RE = /<(?:[\w-]+:)?triangle\b[^>]*>/gi;
+const PAINT_RE = /\b(?:slic3rpe:mmu_segmentation|paint_color)\s*=\s*"[0-9a-f]/i;
+
+/** A plain 3MF's models read through once, the root's and those its objects come from: how many colours they define,
+ *  and whether every triangle is painted. Null for one too big to read through. */
+async function scanPlainModel(filePath: string): Promise<PlainModelScan | null> {
+  const colours = new Set<string>();
+  let triangles = 0;
+  let painted = 0;
+  let read = 0;
+  let tooBig = false;
+  await walkZipEntries(
+    filePath,
+    (entry) => /\.model$/i.test(entry.name),
+    async (_entry, stream) => {
+      const decoder = new StringDecoder("utf8");
+      // The text after a chunk's last whole tag, read with the next.
+      let carry = "";
+      for await (const chunk of stream as AsyncIterable<Buffer>) {
+        read += chunk.length;
+        if (read > PLAIN_SCAN_BYTES) {
+          tooBig = true;
+          (stream as Readable).destroy();
+          return;
+        }
+        const text = carry + decoder.write(chunk);
+        const end = text.lastIndexOf(">") + 1;
+        const whole = text.slice(0, end);
+        carry = text.slice(end);
+        for (const m of whole.matchAll(COLOUR_RE)) colours.add(m[1].toUpperCase());
+        for (const m of whole.matchAll(TRIANGLE_RE)) {
+          triangles++;
+          if (PAINT_RE.test(m[0])) painted++;
+        }
+      }
+    },
+  );
+  return tooBig ? null : { colours: colours.size, painted: triangles > 0 && painted === triangles };
+}
 
 export function isThreeMfFile(filename: string): boolean {
   return path.extname(filename).toLowerCase() === ".3mf";
@@ -38,13 +83,17 @@ export async function readThreeMfFormat(filePath: string): Promise<ThreeMfFormat
     read("metadata/model_settings.config"),
     read("metadata/slic3r_pe.config"),
   ]);
-  return classify3mf({
+  const files = {
     entries,
     modelHead: head ? head.toString("utf-8") : null,
     projectSettings,
     modelSettings,
     prusaConfig,
-  });
+  };
+  const format = classify3mf(files);
+  if (format.kind !== "plain" || !root) return format;
+  const plainModel = await scanPlainModel(filePath).catch(() => null);
+  return classify3mf({ ...files, plainModel });
 }
 
 /** The file a format was read from, as it was, kept beside it: one changed in place since (a file kept where it was

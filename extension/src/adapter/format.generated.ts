@@ -6,7 +6,7 @@
 import { asArray, firstValue, settingsDialectOf, type Settings, type SettingsDialect } from "./settings.generated";
 
 /** Bumped when classification changes, so stored formats are read again. */
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 3;
 
 /**
  * - bambu: Bambu Studio's layout (project_settings.config, model_settings.config, parts in 3D/Objects), which Orca
@@ -34,7 +34,12 @@ export type ThreeMfFormat = {
   plates: number | null;
   /** Whose names its settings use, where it matters. */
   dialect: SettingsDialect | null;
+  /** A plain 3MF's: whether every one of its triangles is painted already, the way PrusaSlicer reads. */
+  painted?: boolean | null;
 };
+
+/** What a plain 3MF's whole model says about its colours (services/threeMfFormat.ts reads it through). */
+export type PlainModelScan = { colours: number; painted: boolean };
 
 export type ThreeMfFiles = {
   /** Every entry's path in the zip. */
@@ -47,6 +52,8 @@ export type ThreeMfFiles = {
   modelSettings: string | null;
   /** Metadata/Slic3r_PE.config. */
   prusaConfig: string | null;
+  /** For a plain 3MF, its model read through; null when it wasn't. */
+  plainModel?: PlainModelScan | null;
 };
 
 const APPLICATION_RE = /<metadata\b[^>]*\bname\s*=\s*"Application"[^>]*>([^<]*)<\/metadata>/i;
@@ -130,7 +137,14 @@ export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
   }
 
   if (names.some((name) => name.startsWith("cura/"))) return { ...base, kind: "cura", ...empty };
-  return { ...base, kind: "plain", ...empty };
+  // The colours a plain 3MF gives its objects and triangles, for the slicers that read none.
+  const scan = files.plainModel;
+  return {
+    ...base,
+    kind: "plain",
+    ...empty,
+    ...(scan ? { filaments: scan.colours || null, painted: scan.painted } : {}),
+  };
 }
 
 /** The format as stored, its own fields only, or null for one an older classification wrote (read it again). */
@@ -149,5 +163,6 @@ export function storedFormat(value: unknown): ThreeMfFormat | null {
     filaments: f.filaments ?? null,
     plates: f.plates ?? null,
     dialect: f.dialect ?? null,
+    ...(f.painted !== undefined ? { painted: f.painted } : {}),
   };
 }

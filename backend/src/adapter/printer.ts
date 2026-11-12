@@ -108,21 +108,39 @@ function lookup(map: Record<string, string> | undefined, key: string): string | 
   return found ? map[found] : null;
 }
 
+/** A filament type's material: PETG of "PETG-CF" and "PETG HF", PLA of "PLA Silk". */
+const material = (type: string) => type.trim().split(/[\s-]/)[0].toUpperCase();
+
+/** The filament type `preset` is the printer's preset for, if it's one: the catalogue keeps no other preset's type. */
+function typeNamed(recipe: PrinterRecipe, preset: string): string | null {
+  for (const types of [recipe.filaments?.types, recipe.everyPrinter?.types]) {
+    const found = Object.entries(types ?? {}).find(([, name]) => name === preset);
+    if (found) return found[0];
+  }
+  return null;
+}
+
 /**
  * The filament preset for one of the designer's filaments: the same product made for this printer, else for every
- * printer, else the printer's preset for that filament type. Null when the slicer has none of that type for the
- * printer: the designer's own preset stays, because another material's would set what the designer's list of changes
- * doesn't name (its temperatures) to that material's.
+ * printer, else the printer's preset for that filament type. A product the printer names for another material gives
+ * way to that type's preset: the designer changed the type of a preset whose name they kept. Null when the slicer has
+ * none of that type for the printer: the designer's own preset stays, because another material's would set what the
+ * designer's list of changes doesn't name (its temperatures) to that material's.
  */
 export function chooseFilament(
   recipe: PrinterRecipe,
   designer: { name: string; inherits: string; type: string },
 ): string | null {
+  const ofType = lookup(recipe.filaments?.types, designer.type) ?? lookup(recipe.everyPrinter?.types, designer.type);
   for (const key of [filamentProduct(designer.name), filamentProduct(designer.inherits)]) {
     const name = lookup(recipe.filaments?.products, key) ?? lookup(recipe.everyPrinter?.products, key);
-    if (name) return name;
+    if (!name) continue;
+    const type = typeNamed(recipe, name);
+    // Only for a type the printer has a preset of: one it hasn't may be another slicer's name for the same material.
+    if (ofType && type && material(type) !== material(designer.type)) continue;
+    return name;
   }
-  return lookup(recipe.filaments?.types, designer.type) ?? lookup(recipe.everyPrinter?.types, designer.type);
+  return ofType;
 }
 
 /** The bounding box of `printable_area` ("XxY" points), or null without two distinct points. */
@@ -155,13 +173,15 @@ export function plateColumns(count: number): number {
 
 const plateStride = (size: number) => Math.trunc(size) * (1 + PLATE_GAP);
 
-function plateOrigin(index: number, columns: number, bed: BedBox): [number, number] {
+/** Where plate `index` of a grid `columns` wide starts, in the slicers' layout for `bed`. */
+export function plateOrigin(index: number, columns: number, bed: BedBox): [number, number] {
   const col = index % columns;
   const row = Math.floor(index / columns);
   return [col * plateStride(bed.maxX - bed.minX), -row * plateStride(bed.maxY - bed.minY)];
 }
 
-const centre = (bed: BedBox): [number, number] => [(bed.minX + bed.maxX) / 2, (bed.minY + bed.maxY) / 2];
+export const bedCentre = (bed: BedBox): [number, number] => [(bed.minX + bed.maxX) / 2, (bed.minY + bed.maxY) / 2];
+const centre = bedCentre;
 
 /**
  * How far each plate's objects move, keyed `<object id>:<instance>` as model_settings.config lists them: from the
@@ -272,9 +292,10 @@ const mm = (n: number) => String(Math.round(n * 1000) / 1000);
 
 // The slicers lay a project's settings over their own defaults, which have one filament in this colour
 // (PrintConfig.cpp), so a project without a colour list loads only its first filament.
-const SLICER_DEFAULT_COLOUR = "#F2754E";
+export const SLICER_DEFAULT_COLOUR = "#F2754E";
 
-function rectangle(bed: BedBox): string[] {
+/** The bed as `printable_area` writes it. */
+export function rectangle(bed: BedBox): string[] {
   return [
     `${mm(bed.minX)}x${mm(bed.minY)}`,
     `${mm(bed.maxX)}x${mm(bed.minY)}`,

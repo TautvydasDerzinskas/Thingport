@@ -7,6 +7,7 @@ import {
   adapt3mf,
   classify3mf,
   COMPATIBLE_TAG,
+  FORMAT_VERSION,
   parseGenerator,
   planAdaptation,
   planKey,
@@ -19,6 +20,7 @@ import { decodePaintState, encodePaintState, stateToMaterialIndex } from "../src
 import { parseModelSettings, parsePlates } from "../src/adapter/readers/bambuProject";
 import {
   curaObjectSettings,
+  curaPrintSettings,
   extractBambuSettings,
   normalizeProjectSettings,
   prusaObjectSettings,
@@ -279,7 +281,7 @@ function volumesOf(config: string): Record<string, string>[] {
 
 function format(overrides: Partial<ThreeMfFormat> = {}): ThreeMfFormat {
   return {
-    v: 1,
+    v: FORMAT_VERSION,
     kind: "bambu",
     app: "BambuStudio",
     appVersion: "02.08.02.61",
@@ -387,6 +389,13 @@ describe("paint state", () => {
     expect(encodePaintState(1)).toBe("4");
     expect(encodePaintState(3)).toBe("0C");
     expect(decodePaintState(encodePaintState(4))).toBe(4);
+    // Past 17, a nibble 15 for each 15 more before the last.
+    expect(encodePaintState(17)).toBe("EC");
+    expect(encodePaintState(18)).toBe("0FC");
+    expect(encodePaintState(33)).toBe("0FFC");
+    for (const state of [16, 17, 18, 19, 32, 33, 40]) expect(decodePaintState(encodePaintState(state))).toBe(state);
+    // A split triangle mostly on the 19th.
+    expect(decodePaintState("1FC1FC1")).toBe(19);
     expect(stateToMaterialIndex(1, 2, 5)).toBe(0);
     expect(stateToMaterialIndex(0, 2, 5)).toBe(1);
     expect(stateToMaterialIndex(5, 1, 5)).toBe(4);
@@ -515,7 +524,9 @@ describe("planAdaptation", () => {
   });
 
   it("makes nothing of other kinds of file, or for a slicer it doesn't know", () => {
-    for (const kind of ["prusa", "cura", "plain", "sliced"] as const) expect(plan("cura", format({ kind }))).toBeNull();
+    // A plain 3MF without colours, too.
+    for (const kind of ["prusa", "cura", "plain", "sliced"] as const)
+      expect(plan("cura", format({ kind, filaments: null }))).toBeNull();
     expect(plan("other")).toBeNull();
     expect(planAdaptation(null, slicerProfile("prusaslicer"))).toBeNull();
   });
@@ -597,6 +608,47 @@ describe("the Cura copy", () => {
     expect(extruders).toEqual(["2", "0"]);
     expect(xml).toMatch(/<metadata name="cura:wall_line_count">4<\/metadata>/);
     expect(xml).not.toMatch(/paint_color/);
+  });
+
+  it("is a project for any printer that puts the designer's print-wide settings on the user's own", async () => {
+    const { zip } = await generate(await makeBambuZip(), { output: "cura" });
+    expect(JSON.parse(await readOut(zip, "Cura/user-settings.json"))).toEqual({
+      global: { layer_height: 0.2, support_structure: "normal", support_type: "everywhere" },
+    });
+    // Cura's hidden base printer, which every Cura has: a UCP goes on the user's own, an older Cura makes a new one.
+    const stack = await readOut(zip, "Cura/thingport.global.cfg");
+    expect(stack).toContain("type = machine");
+    expect(stack).toContain("7 = fdmprinter");
+    expect(stack).toMatch(/0 = empty_user_changes\n1 = empty_quality_changes\n2 = empty_intent\n3 = empty_quality\n/);
+    expect(JSON.parse(await readOut(zip, "Cura/fdmprinter.def.json")).metadata.type).toBe("machine");
+    expect(await readOut(zip, "Cura/preferences.cfg")).toContain("version = 7");
+  });
+
+  it("takes the layer height, adhesion and the supports' kind for the whole print, each on Cura's stack for it", () => {
+    expect(
+      curaPrintSettings(
+        {
+          layer_height: "0.16",
+          brim_type: "outer_only",
+          brim_width: "6",
+          enable_support: "1",
+          support_type: "tree(auto)",
+          support_on_build_plate_only: "1",
+        },
+        2,
+      ),
+    ).toEqual({
+      global: { layer_height: 0.16, adhesion_type: "brim", support_structure: "tree", support_type: "buildplate" },
+      extruder_0: { brim_width: 6 },
+      extruder_1: { brim_width: 6 },
+    });
+    expect(curaPrintSettings({ raft_layers: "3", brim_type: "outer_only" }, 1)).toEqual({
+      global: { adhesion_type: "raft" },
+    });
+    // An automatic brim, no supports and no raft are the user's profile's to decide.
+    expect(curaPrintSettings({ brim_type: "auto_brim", enable_support: "0", raft_layers: "0" }, 1)).toEqual({
+      global: {},
+    });
   });
 });
 
