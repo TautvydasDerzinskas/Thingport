@@ -1,12 +1,13 @@
 // Toolbar popup (or a tab, when the browser won't open the popup). Connect: the setup form, which becomes Providers
-// once connected. Offline features (Extra features once connected): what works without an instance. History: recent
-// imports when connected, and recently viewed models either way.
+// once connected. Offline features (Extra features once connected): what works without an instance, Adapt 3MFs with
+// its settings among them (adapt.ts). History: recent imports when connected, and recently viewed models either way.
 
 import { fillIcons } from "../shared/icon";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { loadAdapt } from "./adapt";
 import { showAppearance } from "./appearance";
 import { confirmAction } from "./confirm";
 import { clearError, els, opensInTab, showError } from "./dom";
@@ -224,6 +225,8 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     input.checked = res.data.offlineFeatures[feature];
   }
   showAppearance(res.data.bubble);
+  // Its slicers and printers are the instance's once connected, so it's read again whenever this is.
+  void loadAdapt();
   if (!res.data.configured) {
     showSetupForm();
     return;

@@ -24,10 +24,14 @@ instance or account, so the new one has to be told.
   of your instance and the browser's number for the tab the extension opened there. It's deleted once the pairing
   finishes or is cancelled, or that tab is closed, and it can't finish a pairing more than 15 minutes old.
 - **A session token** your Thingport instance issues when the extension signs in, and when it expires.
-- **Your settings:** whether the extension is switched on, which Offline features are on (the MakerWorld Download
+- **Your settings:** whether the extension is switched on, which Offline features are on (Adapt 3MFs' Download
   adapted button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,
   and whether your instance gives everyone an import queue of their own, so the import panel knows whether to offer
   **Add to the queue**. Which optional sites you turned on is kept by your browser, as the access you granted.
+- **Adapt 3MFs' settings:** the slicers you picked in it, your printers (each by its id in the extension's own printer
+  list, with its nozzle), where its button goes, and for each Thingport instance and email address you connected
+  to, which of them it has given that account (see below), so each account is offered them once. The printer list
+  itself comes with the extension: nothing is downloaded for it.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
   it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
@@ -123,6 +127,12 @@ from the image servers of the sites you viewed them on, without saying which pag
 - A request for the slicer picked in your Thingport instance's Configuration, when a MakerWorld model page opens (and
   again when you click **Download adapted**, if it didn't answer in time): it decides whether the button is shown,
   which copy it makes, and the slicer its explanation names.
+- When you open the toolbar popup while connected: a request for your slicers and printers in your Thingport
+  instance's Configuration, which Adapt 3MFs then shows and uses in place of its own.
+- When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
+  that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once
+  per account, so ones you remove there aren't sent again; what couldn't go then (the instance didn't answer, or
+  doesn't keep printers yet) goes the next time you connect.
 - If you're logged into MakerWorld in this browser: your MakerWorld session cookie, when you import from MakerWorld or
   open the extension's panel on one of its model pages. MakerWorld requires it to download files. The extension also
   saves it to your Thingport account's MakerWorld setting, so imports made from Thingport's own web app work too.

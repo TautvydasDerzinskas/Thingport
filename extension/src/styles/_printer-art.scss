@@ -1,0 +1,48 @@
+// The printer outline (shared/printerArt.ts), in the theme's colours: the popup's printer tiles, and later the
+// Download adapted menu on pages.
+@use "tokens" as t;
+
+@mixin printer-art {
+  .pa {
+    display: block;
+    color: t.c("text-muted");
+  }
+
+  .pa__body {
+    fill: t.c("surface-raised");
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+
+  .pa__window {
+    fill: t.c("surface-sunken");
+    stroke: currentColor;
+    stroke-width: 1;
+    opacity: 0.8;
+  }
+
+  .pa__line {
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+  }
+
+  .pa__line--thin {
+    stroke-width: 1.2;
+  }
+
+  .pa__head {
+    fill: t.c("surface-raised");
+    stroke: currentColor;
+    stroke-width: 1.6;
+  }
+
+  .pa__nozzle,
+  .pa__foot {
+    fill: currentColor;
+  }
+
+  .pa__plate {
+    fill: t.c("accent");
+  }
+}
