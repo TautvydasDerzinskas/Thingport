@@ -8,8 +8,12 @@
 // most one ask is refused per window. Asks go one at a time, the longest-waiting pull request first: a refusal starts
 // a new wait, an accepted ask moves on to the next. Pull requests paused with `@coderabbitai pause` are left alone.
 //
-// Usage: node coderabbit-retry.mjs, with GH_TOKEN, GITHUB_API_URL and GITHUB_REPOSITORY set. DRY_RUN=true only says
-// what it would ask and when; MAX_MINUTES (default 75) is how long a run may wait for the allowance.
+// CodeRabbit doesn't answer commands from bot accounts (github-actions[bot] was ignored), so the asks are posted with
+// ASK_TOKEN, an ordinary account's token; an ask it leaves unanswered isn't repeated for that commit.
+//
+// Usage: node coderabbit-retry.mjs, with GH_TOKEN (reads), ASK_TOKEN (posts), GITHUB_API_URL and GITHUB_REPOSITORY
+// set. Without ASK_TOKEN, or with DRY_RUN=true, it only says what it would ask and when; MAX_MINUTES (default 75) is
+// how long a run may wait for the allowance.
 
 import { pathToFileURL } from "node:url";
 
@@ -137,7 +141,7 @@ export function pullState({ pull, checkRuns, headDate, comments, now, asker }) {
     return { waiting: false, reason: "its description has @coderabbitai ignore" };
   }
   const switches = comments.filter(
-    (c) => !byCodeRabbit(c) && c.user?.login !== asker && /^\s*@coderabbitai\s+(pause|resume)\b/i.test(c.body ?? ""),
+    (c) => !byCodeRabbit(c) && /^\s*@coderabbitai\s+(pause|resume)\b/i.test(c.body ?? ""),
   );
   const lastSwitch = switches.at(-1);
   if (lastSwitch && /pause/i.test(lastSwitch.body)) {
@@ -155,6 +159,10 @@ export function pullState({ pull, checkRuns, headDate, comments, now, asker }) {
     const outcome = reply && replyOutcome(reply.body);
     if (!reply && now - askedAt < ANSWER_GRACE_MS) {
       return { waiting: false, reason: `asked at ${lastAsk.created_at}, no answer yet` };
+    }
+    // Ignored rather than refused: asking again the same way would only be ignored again.
+    if (!reply && lastAsk.user?.login === asker) {
+      return { waiting: false, reason: `CodeRabbit didn't answer the ask at ${lastAsk.created_at}` };
     }
     if (outcome === "accepted" && now - askedAt < ACCEPTED_GRACE_MS) {
       return { waiting: false, reason: `CodeRabbit took the ask at ${reply.created_at}` };
@@ -195,6 +203,13 @@ function client({ apiUrl, repository, token }) {
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${options.method ?? "GET"} ${path}`);
     return res.json();
   }
+  async function user() {
+    const res = await fetch(`${apiUrl}/user`, {
+      headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} reading the asking account`);
+    return res.json();
+  }
   async function all(path, pick = (page) => page) {
     const items = [];
     for (let page = 1; ; page++) {
@@ -204,7 +219,7 @@ function client({ apiUrl, repository, token }) {
       if (batch.length < 100) return items;
     }
   }
-  return { request, all };
+  return { request, all, user };
 }
 
 async function survey(github, { asker, now }) {
@@ -250,15 +265,25 @@ async function awaitAnswer(github, number, askedAt, deadline) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-  const { GITHUB_API_URL = "https://api.github.com", GITHUB_REPOSITORY, GH_TOKEN, DRY_RUN, MAX_MINUTES } = process.env;
+  const {
+    GITHUB_API_URL = "https://api.github.com",
+    GITHUB_REPOSITORY,
+    GH_TOKEN,
+    ASK_TOKEN,
+    DRY_RUN,
+    MAX_MINUTES,
+  } = process.env;
   if (!GITHUB_REPOSITORY || !GH_TOKEN) {
     console.log("::error::GH_TOKEN and GITHUB_REPOSITORY are needed");
     process.exit(1);
   }
-  const dryRun = DRY_RUN === "true";
-  const asker = process.env.ASKER_LOGIN || "github-actions[bot]";
   const deadline = Date.now() + (Number(MAX_MINUTES) || 75) * MINUTE;
   const github = client({ apiUrl: GITHUB_API_URL, repository: GITHUB_REPOSITORY, token: GH_TOKEN });
+  const poster = ASK_TOKEN && client({ apiUrl: GITHUB_API_URL, repository: GITHUB_REPOSITORY, token: ASK_TOKEN });
+  const asker = poster ? (await poster.user()).login : null;
+  if (!poster) console.log("::warning::No ASK_TOKEN (the CODERABBIT_ASK_TOKEN secret), so nothing is posted.");
+  else console.log(`Asking as @${asker}.`);
+  const dryRun = DRY_RUN === "true" || !poster;
 
   for (let asks = 0; asks < 10;) {
     const now = Date.now();
@@ -280,7 +305,7 @@ async function main() {
     }
     const { number } = next.pull;
     if (dryRun) return console.log(`Would ask CodeRabbit to review #${number} now.`);
-    const ask = await github.request(`issues/${number}/comments`, {
+    const ask = await poster.request(`issues/${number}/comments`, {
       method: "POST",
       body: JSON.stringify({ body: ASK }),
     });
@@ -288,6 +313,11 @@ async function main() {
     console.log(`::notice::Asked CodeRabbit to review #${number}`);
     const { outcome, reply } = await awaitAnswer(github, number, time(ask.created_at), Date.now() + 3 * MINUTE);
     console.log(`#${number}: ${outcome}${outcome === "declined" ? ` (${declineReason(reply.body)})` : ""}`);
+    if (outcome === "none") {
+      console.log(
+        `::warning::CodeRabbit didn't answer @${asker}'s ask on #${number}; it isn't repeated for this commit`,
+      );
+    }
     // Refused: the next survey reads the refusal and waits it out. Accepted: on to the next pull request.
     if (outcome !== "refused" && outcome !== "accepted") return;
   }

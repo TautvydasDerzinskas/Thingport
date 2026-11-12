@@ -14,7 +14,7 @@ import {
 } from "./coderabbit-retry.mjs";
 
 const MINUTE = 60_000;
-const ASKER = "github-actions[bot]";
+const ASKER = "thingport-bot";
 
 // CodeRabbit's texts as it posted them on pull requests.
 const SUMMARY_LIMITED = `<!-- coderabbit-ai-generated:v1 -->
@@ -176,7 +176,11 @@ test("an ask in flight, accepted or declined isn't repeated", () => {
   const base = [comment(CODERABBIT, SUMMARY_LIMITED, -60, { updated: 0 })];
   const asked = [...base, comment(ASKER, ASK, 25)];
   assert.match(state({ comments: asked }).reason, /no answer yet/);
-  assert.equal(state({ comments: asked, now: at(40) }).waiting, true);
+  // Ignored: asking the same way again would be ignored again.
+  assert.match(state({ comments: asked, now: at(40) }).reason, /didn't answer the ask/);
+  // Someone else's ignored ask (github-actions[bot]'s, say) doesn't stop ours.
+  const ignored = [...base, comment("github-actions[bot]", ASK, 25)];
+  assert.equal(state({ comments: ignored, now: at(40) }).waiting, true);
   const accepted = [...asked, comment(CODERABBIT, ACCEPTED, 25)];
   assert.match(state({ comments: accepted }).reason, /took the ask/);
   assert.equal(state({ comments: accepted, now: at(60) }).waiting, true);

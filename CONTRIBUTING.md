@@ -92,7 +92,7 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
 CodeRabbit reviews pull requests into `develop`, and each push to them. When its review allowance runs out it
-skips the push, and `github-actions[bot]` asks it again (`@coderabbitai review`) once the wait it gave has passed,
+skips the push, and an account kept for it asks it again (`@coderabbitai review`) once the wait it gave has passed,
 so there's no need to ask yourself. Comment `@coderabbitai pause` to stop its reviews of your pull request, and
 `@coderabbitai resume` to start them again.
 
