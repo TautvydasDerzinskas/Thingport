@@ -19,6 +19,13 @@ export const STORAGE_KEYS = {
   // The popup's Bubble tab (see shared/bubble.ts); unset means today's white bubble, bottom right.
   bubbleStyle: "bubbleStyle",
   bubblePlace: "bubblePlace",
+  // Adapt 3MFs' own settings (see shared/adaptSettings.ts), used while not connected.
+  adaptSlicers: "adaptSlicers",
+  adaptPrinters: "adaptPrinters",
+  adaptPlacement: "adaptPlacement",
+  // The Thingport instance and account Grab's slicers and printers were last offered to on connecting, so they're
+  // offered once, not again after the user removed them there.
+  adaptCarriedTo: "adaptCarriedTo",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
   // Whether the instance gives everyone an import queue of their own, as its health check said at the last sign-in:
@@ -57,6 +64,10 @@ export type StoredConfig = {
   thingiverseHideAds?: boolean;
   bubbleStyle?: string;
   bubblePlace?: string;
+  adaptSlicers?: string[];
+  adaptPrinters?: { id: string; nozzle: string }[];
+  adaptPlacement?: string;
+  adaptCarriedTo?: string;
   isAdmin?: boolean;
   importQueue?: boolean;
   token?: string;
@@ -78,7 +89,7 @@ export type ProviderTabs = Partial<Record<number, ProviderId>>;
 
 /** What works without a Thingport instance, and whether each is on until the user says otherwise. */
 export const OFFLINE_FEATURE_DEFAULTS = {
-  // The "Download adapted" button on MakerWorld.
+  // Adapt 3MFs: the Download adapted button (its settings are in shared/adaptSettings.ts).
   normalizeMakerworld: true,
   // Restyles Thingiverse, which has no dark theme of its own, while the system theme is dark.
   thingiverseDark: true,

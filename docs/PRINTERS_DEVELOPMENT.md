@@ -52,7 +52,7 @@ Grab uses:
   share are written once and named by index.
 - `filaments/<slicer>.json`: those slicers' filaments for every printer.
 
-The background reads a brand's file only when a copy for one of its printers is made
+Grab's popup lists printers from the index; a brand's file is read only when a copy for one of its printers is made
 (`extension/src/printers/catalogue.ts`). Its test makes every printer's recipe from both copies and expects the same
 one. The commit hook runs the sync when the catalogue or the slicer profiles change, `printers:update` runs it too, and
 CI fails when the copy is out of date (`npm run printers:check`).

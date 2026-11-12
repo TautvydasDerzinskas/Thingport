@@ -23,6 +23,16 @@ async function errorDetail(res: Response, fallback: string): Promise<string> {
   return fallback;
 }
 
+/** The instance answered a call with an error status, its own message as the message. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 /** The instance turned the saved email/password down (401/403), as opposed to not answering. */
 export class LoginRejectedError extends Error {
   /** The instance's own message, without advice added for where it's shown. */
@@ -302,7 +312,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
 
   let res = await doFetch(await ensureToken(config));
   if (res.status === 401) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
-  if (!res.ok) throw new Error(await errorDetail(res, `Request failed (${res.status})`));
+  if (!res.ok) throw new ApiError(await errorDetail(res, `Request failed (${res.status})`), res.status);
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }

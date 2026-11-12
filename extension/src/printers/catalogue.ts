@@ -1,18 +1,18 @@
 // Grab's copy of the printer catalogue (public/printers, cut from the server's by scripts/sync-printers.mjs): every
 // printer, to list and draw, and what a copy for one needs in the slicers that load a printer's presets by name. The
-// background alone reads it, and a brand's file only when a copy for one of its printers is made. The recipe comes
-// from the adapter, as the server's does, so a copy names the same presets whichever made it.
+// popup reads the index, to list printers; a brand's file is read only when a copy for one of its printers is made.
+// The recipe comes from the adapter, as the server's does, so a copy names the same presets whichever made it.
 
+// The recipe module alone, not the adapter's index: the popup reads the catalogue too, and needs no 3MF writer.
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { FilamentChoices, PrinterRecipe } from "../adapter/printer.generated";
 import {
   printerRecipe,
-  type FilamentChoices,
-  type PrinterChoice,
   type PrinterPreset,
-  type PrinterRecipe,
   type ProcessPreset,
   type RecipePrinter,
   type SlicerEntry,
-} from "../adapter/index.generated";
+} from "../adapter/recipe.generated";
 
 /** The files' shape this Grab reads: GRAB_CATALOGUE_VERSION in scripts/sync-printers.mjs. */
 export const CATALOGUE_VERSION = 1;
