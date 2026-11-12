@@ -198,7 +198,10 @@ export const adminApi = {
     return res.json();
   },
 
-  inviteUser: async (email: string): Promise<{ email: string; expires_at: string; expires_in_days: number }> => {
+  /** `link` is null when the invitation went by email; without SMTP it's the link for the admin to send. */
+  inviteUser: async (
+    email: string,
+  ): Promise<{ email: string; expires_at: string; expires_in_days: number; link: string | null }> => {
     const res = await fetch(`${apiBase()}/admin/invitations`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),

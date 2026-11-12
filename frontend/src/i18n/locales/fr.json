@@ -1781,6 +1781,7 @@
         "closedHelp": "La page de connexion ne propose pas d’inscription, et les nouveaux comptes ne peuvent être créés qu’à partir d’une invitation.",
         "inviteButton": "Inviter des utilisateurs",
         "inviteHelp": "Envoie un lien d’inscription par e-mail. Il ne fonctionne que pour une seule adresse, une seule fois, pendant 7 jours.",
+        "inviteLinkHelp": "Vous donne un lien d’inscription à envoyer vous-même. Il ne fonctionne que pour une seule adresse, une seule fois, pendant 7 jours.",
         "failed": "Échec de la mise à jour des paramètres d’inscription.",
         "invite": {
           "title": "Inviter un utilisateur",
@@ -1792,7 +1793,16 @@
           "sent_one": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jour.",
           "sent_other": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jours.",
           "failed": "Échec de l’envoi de l’invitation",
-          "sent_many": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jours."
+          "sent_many": "Invitation envoyée à {{email}}. Le lien est valable {{count}} jours.",
+          "linkTitle": "Inviter des utilisateurs",
+          "linkDescription": "L’e-mail n’est pas configuré : c’est vous qui envoyez chaque lien. Il ne fonctionne que pour cette adresse, une seule fois, pendant 7 jours.",
+          "create": "Créer le lien",
+          "creating": "Création...",
+          "worksUntil": "Valable jusqu’au {{date}}",
+          "copyLink": "Copier le lien",
+          "copyLinkFor": "Copier le lien pour {{email}}",
+          "copied": "Copié",
+          "copyFailed": "Copie impossible ici. Le lien est sélectionné : appuyez sur Ctrl+C ou ⌘C."
         }
       },
       "previews": {

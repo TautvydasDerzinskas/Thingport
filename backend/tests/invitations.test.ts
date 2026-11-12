@@ -124,14 +124,22 @@ describe("inviting", () => {
     expect(sendInvitation).not.toHaveBeenCalled();
   });
 
-  it("refuses without SMTP", async () => {
+  it("gives the admin the link to send without SMTP, and sends nothing", async () => {
     await setAllowRegistrations(false);
+    const invitee = email("no-smtp");
     const res = await request(app)
       .post("/api/admin/invitations")
-      .set(auth(adminToken))
-      .send({ email: email("no-smtp") });
-    expect(res.status).toBe(400);
+      .set({ ...auth(adminToken), Origin: "https://thingport.example.test" })
+      .send({ email: invitee });
+    expect(res.status).toBe(200);
     expect(sendInvitation).not.toHaveBeenCalled();
+
+    const url = new URL(res.body.link);
+    expect(url.pathname).toBe("/register");
+    expect(url.searchParams.get("email")).toBe(invitee);
+    const token = url.searchParams.get("invite")!;
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+    expect((await request(app).get(`/api/invitations/${token}`)).body.email).toBe(invitee);
   });
 
   it("refuses an address that already has an account", async () => {
@@ -152,6 +160,8 @@ describe("inviting", () => {
       .send({ email: invitee });
     expect(res.status).toBe(200);
     expect(res.body.email).toBe(invitee.toLowerCase());
+    // Only the invitee gets the link, so the mailbox is proven.
+    expect(res.body.link).toBeNull();
 
     expect(sendInvitation).toHaveBeenCalledTimes(1);
     const [to, inviterName, link] = sendInvitation.mock.calls[0];
@@ -212,6 +222,22 @@ describe("registering with an invitation", () => {
       .send({ displayName: "Second Try", email: email("reuse"), password: "password123", invite_token: token });
     expect(again.status).toBe(400);
     expect((await request(app).get(`/api/invitations/${token}`)).status).toBe(404);
+  });
+
+  it("creates the account from a link made without SMTP", async () => {
+    await setAllowRegistrations(false);
+    const invitee = email("by-link");
+    const made = await request(app).post("/api/admin/invitations").set(auth(adminToken)).send({ email: invitee });
+    expect(made.status).toBe(200);
+    const token = new URL(made.body.link, "http://thingport.test").searchParams.get("invite")!;
+
+    const res = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Linked User", email: invitee, password: "password123", invite_token: token });
+    expect(res.status).toBe(200);
+    expect(res.body.token).toBeTruthy();
+    expect(sendVerification).not.toHaveBeenCalled();
+    expect(await prisma.invitation.findUnique({ where: { email: invitee } })).toBeNull();
   });
 
   it("refuses the token for a different email", async () => {

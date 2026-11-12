@@ -1,6 +1,7 @@
 // Invitations to register while registrations are closed. The single-use token, not the email,
-// authorizes registration, so nobody else can claim an invited address first. It also proves
-// mailbox ownership, so invitees skip email verification.
+// authorizes registration, so nobody else can claim an invited address first. Sent by email, it also
+// proves mailbox ownership, so invitees skip email verification. Without SMTP the admin is given the
+// link to send, and no account confirms its address anyway.
 
 import crypto from "node:crypto";
 import type { Invitation } from "@prisma/client";
@@ -17,19 +18,19 @@ export async function invitationLink(email: string, token: string, origin: strin
   return `${base}/register?email=${encodeURIComponent(email)}&invite=${encodeURIComponent(token)}`;
 }
 
-/** Replaces any existing invitation for the address. Requires closed registrations and SMTP. */
+/**
+ * Replaces any existing invitation for the address. Requires closed registrations. With SMTP the link goes by
+ * email and `link` is null; without it nothing is sent, and `link` is for the admin to pass on.
+ */
 export async function inviteUser(params: {
   email: string;
   invitedById: string;
   inviterName: string;
   origin: string | null;
-}): Promise<Invitation> {
+}): Promise<{ invitation: Invitation; link: string | null }> {
   const email = params.email.trim().toLowerCase();
   if (await getAllowRegistrations(true)) {
     throw new HttpError(400, "Registrations are open, so anyone can sign up without an invitation.");
-  }
-  if (!(await isSmtpConfigured())) {
-    throw new HttpError(400, "Set up SMTP (Connections > SMTP) to send invitations.");
   }
   if (await prisma.user.findUnique({ where: { email } })) {
     throw new HttpError(409, "An account with this email already exists");
@@ -43,14 +44,11 @@ export async function inviteUser(params: {
     create: { email, token, expiresAt, invitedById: params.invitedById },
     update: { token, expiresAt, invitedById: params.invitedById },
   });
+  const link = await invitationLink(email, token, params.origin);
+  if (!(await isSmtpConfigured())) return { invitation, link };
 
   try {
-    await sendInvitationEmail(
-      email,
-      params.inviterName,
-      await invitationLink(email, token, params.origin),
-      INVITATION_TTL_DAYS,
-    );
+    await sendInvitationEmail(email, params.inviterName, link, INVITATION_TTL_DAYS);
   } catch (err) {
     console.error("[invitations] Failed to send invitation email:", err);
     // Keep a re-invite's earlier, already delivered link working.
@@ -64,7 +62,7 @@ export async function inviteUser(params: {
     }
     throw new HttpError(500, "Failed to send the invitation email. Check the SMTP settings and try again.");
   }
-  return invitation;
+  return { invitation, link: null };
 }
 
 export async function findValidInvitation(token: string): Promise<Invitation | null> {
