@@ -1,0 +1,47 @@
+name: CodeRabbit retry
+
+# CodeRabbit refuses a review once its allowance is used up and never comes back to it, so this asks again
+# (`@coderabbitai review`, posted as github-actions[bot]) when the wait it gave has passed. It starts whenever a
+# CodeRabbit check finishes and waits out the time in the run; the hourly run catches anything missed.
+# See .github/scripts/coderabbit-retry.mjs.
+on:
+  check_run:
+    types: [completed]
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Only log what would be asked and when
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  checks: read
+  issues: read
+  pull-requests: write
+
+# The newest run has the newest view of CodeRabbit's notices, so it replaces one still waiting.
+concurrency:
+  group: coderabbit-retry
+  cancel-in-progress: true
+
+jobs:
+  retry:
+    if: github.event_name != 'check_run' || github.event.check_run.app.slug == 'coderabbitai'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node .github/scripts/coderabbit-retry.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          MAX_MINUTES: 75
