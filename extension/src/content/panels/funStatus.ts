@@ -80,8 +80,7 @@ export function loadingModelsPhrases(provider: Provider): string[] {
   ];
 }
 
-/** Short, for the "Download adapted" button: MakerWorld hands over the 3MF. */
-/** While a site is asked for a file: `site` is the one it comes from. */
+/** Short, for the "Download adapted" button while a site hands over the 3MF: `site` is the one asked. */
 export const gettingFilePhrases = (site: string) => ["Getting file…", "Finding the 3MF…", `Asking ${site}…`];
 
 /** Short, for the "Download adapted" button: the Bambu project becomes a copy for the slicer. */
