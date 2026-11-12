@@ -313,7 +313,7 @@ const PRUSA_OBJECT_SETTINGS: Record<string, [string, (value: unknown) => string 
   support_interface_top_layers: ["support_material_interface_layers", asInteger],
   tree_support_branch_angle: ["support_tree_angle", asNumber],
   tree_support_branch_diameter: ["support_tree_branch_diameter", asNumber],
-  tree_support_branch_distance: ["support_tree_branch_distance", asNumber],
+  // Not the branch distance: Bambu's is between its own tree's nodes, PrusaSlicer's between organic branches.
   raft_layers: ["raft_layers", asInteger],
   brim_type: ["brim_type", oneOf(PRUSA_BRIM)],
   brim_width: ["brim_width", asNumber],
@@ -403,4 +403,193 @@ const CURA_OBJECT_SETTINGS: Record<string, [string, (value: unknown) => string |
 /** The designer's settings as Cura per-object settings, keyed by Cura's names. */
 export function curaObjectSettings(settings: Settings): Record<string, string> {
   return objectSettings(settings, CURA_OBJECT_SETTINGS);
+}
+
+/** A UCP's user settings by stack ("global", "extruder_0"...), each value of the setting's own type. */
+export type CuraStackSettings = Record<string, Record<string, string | number | boolean>>;
+
+const EXPLICIT_BRIMS = new Set(["outer_only", "inner_only", "outer_and_inner"]);
+
+/**
+ * The designer's settings Cura takes only for a whole print, never per object, by the stack it keeps each on
+ * (fdmprinter.def.json: settable_per_extruder): the layer height, a raft or a brim and its width, and when supports are
+ * on, their kind and where they stand. What's off, an automatic brim among it, is left to the user's profile. A
+ * per-extruder setting goes on each of the `extruders` the copy uses; Cura skips one the printer hasn't.
+ */
+export function curaPrintSettings(settings: Settings, extruders: number): CuraStackSettings {
+  const global: Record<string, string | number | boolean> = {};
+  const perExtruder: Record<string, number> = {};
+  const layerHeight = Number(firstValue(settings.layer_height));
+  if (layerHeight > 0) global.layer_height = layerHeight;
+  const raft = Number(firstValue(settings.raft_layers));
+  const brim = String(firstValue(settings.brim_type) ?? "").trim();
+  if (raft > 0) global.adhesion_type = "raft";
+  else if (EXPLICIT_BRIMS.has(brim)) {
+    global.adhesion_type = "brim";
+    const width = Number(firstValue(settings.brim_width));
+    if (width > 0) perExtruder.brim_width = width;
+  }
+  if (asBool(firstValue(settings.enable_support)) === "1") {
+    global.support_structure = String(firstValue(settings.support_type) ?? "").startsWith("tree") ? "tree" : "normal";
+    global.support_type =
+      asBool(firstValue(settings.support_on_build_plate_only)) === "1" ? "buildplate" : "everywhere";
+  }
+  const out: CuraStackSettings = { global };
+  if (Object.keys(perExtruder).length)
+    for (let i = 0; i < Math.max(1, extruders); i++) out[`extruder_${i}`] = { ...perExtruder };
+  return out;
+}
+
+// The other way, for a copy of a PrusaSlicer project: its settings by Bambu Studio's names, which the Orca family
+// reads too (it takes `zig-zag` as its `rectilinear`, PrintConfig.cpp handle_legacy). Organic supports are named
+// apart, so `dialect` says whose.
+const BAMBU_FILL: Record<string, string> = {
+  rectilinear: "zig-zag",
+  alignedrectilinear: "alignedrectilinear",
+  monotonic: "monotonic",
+  monotoniclines: "monotonicline",
+  grid: "grid",
+  triangles: "triangles",
+  stars: "tri-hexagon",
+  cubic: "cubic",
+  line: "line",
+  concentric: "concentric",
+  honeycomb: "honeycomb",
+  "3dhoneycomb": "3dhoneycomb",
+  gyroid: "gyroid",
+  hilbertcurve: "hilbertcurve",
+  archimedeanchords: "archimedeanchords",
+  octagramspiral: "octagramspiral",
+  adaptivecubic: "adaptivecubic",
+  supportcubic: "supportcubic",
+  lightning: "lightning",
+  zigzag: "zigzag",
+};
+const BAMBU_SURFACE: Record<string, string> = {
+  rectilinear: "zig-zag",
+  monotonic: "monotonic",
+  monotoniclines: "monotonicline",
+  alignedrectilinear: "alignedrectilinear",
+  concentric: "concentric",
+  hilbertcurve: "hilbertcurve",
+  archimedeanchords: "archimedeanchords",
+  octagramspiral: "octagramspiral",
+};
+const BAMBU_SUPPORT: Record<string, string> = {
+  rectilinear: "rectilinear",
+  "rectilinear-grid": "rectilinear-grid",
+  honeycomb: "honeycomb",
+};
+const BAMBU_SUPPORT_INTERFACE: Record<string, string> = {
+  auto: "auto",
+  rectilinear: "rectilinear",
+  concentric: "concentric",
+};
+const BAMBU_BRIM: Record<string, string> = {
+  no_brim: "no_brim",
+  outer_only: "outer_only",
+  inner_only: "inner_only",
+  outer_and_inner: "outer_and_inner",
+};
+const BAMBU_SEAM: Record<string, string> = { aligned: "aligned", nearest: "nearest", rear: "back", random: "random" };
+const BAMBU_FUZZY: Record<string, string> = { none: "none", external: "external", all: "all" };
+const BAMBU_IRONING: Record<string, string> = { top: "top", topmost: "topmost", solid: "solid" };
+
+/** By PrusaSlicer key: the Bambu key and its value. Only the design's choices (walls, layers, infill, supports,
+ *  brim, ironing, seam), none that belong to a printer or a filament, which the user's own profile knows better. */
+const BAMBU_FROM_PRUSA: Record<string, [string, (value: unknown) => string | null]> = {
+  layer_height: ["layer_height", asNumber],
+  perimeters: ["wall_loops", asInteger],
+  top_solid_layers: ["top_shell_layers", asInteger],
+  bottom_solid_layers: ["bottom_shell_layers", asInteger],
+  top_solid_min_thickness: ["top_shell_thickness", asNumber],
+  bottom_solid_min_thickness: ["bottom_shell_thickness", asNumber],
+  fill_density: ["sparse_infill_density", asPercentOrNumber],
+  fill_pattern: ["sparse_infill_pattern", oneOf(BAMBU_FILL)],
+  top_fill_pattern: ["top_surface_pattern", oneOf(BAMBU_SURFACE)],
+  bottom_fill_pattern: ["bottom_surface_pattern", oneOf(BAMBU_SURFACE)],
+  fill_angle: ["infill_direction", asNumber],
+  infill_overlap: ["infill_wall_overlap", asPercentOrNumber],
+  support_material: ["enable_support", asBool],
+  support_material_threshold: ["support_threshold_angle", asInteger],
+  support_material_buildplate_only: ["support_on_build_plate_only", asBool],
+  // In mm only: PrusaSlicer's may be a share of the line width, which Bambu's isn't.
+  support_material_xy_spacing: ["support_object_xy_distance", asNumber],
+  support_material_contact_distance: ["support_top_z_distance", asNumber],
+  support_material_pattern: ["support_base_pattern", oneOf(BAMBU_SUPPORT)],
+  support_material_interface_pattern: ["support_interface_pattern", oneOf(BAMBU_SUPPORT_INTERFACE)],
+  support_material_interface_layers: ["support_interface_top_layers", asInteger],
+  raft_layers: ["raft_layers", asInteger],
+  brim_type: ["brim_type", oneOf(BAMBU_BRIM)],
+  brim_width: ["brim_width", asNumber],
+  thin_walls: ["detect_thin_wall", asBool],
+  perimeter_generator: ["wall_generator", oneOf(PRUSA_GENERATOR)],
+  ensure_vertical_shell_thickness: ["ensure_vertical_shell_thickness", oneOf(PRUSA_VERTICAL_SHELL)],
+  ironing_flowrate: ["ironing_flow", asPercentOrNumber],
+  ironing_spacing: ["ironing_spacing", asNumber],
+  seam_position: ["seam_position", oneOf(BAMBU_SEAM)],
+  fuzzy_skin: ["fuzzy_skin", oneOf(BAMBU_FUZZY)],
+  fuzzy_skin_thickness: ["fuzzy_skin_thickness", asNumber],
+  fuzzy_skin_point_dist: ["fuzzy_skin_point_distance", asNumber],
+};
+
+// The ones a part or a modifier takes (PrintRegionConfig), by Bambu key; the rest are the whole object's.
+const BAMBU_REGION_KEYS = new Set([
+  "wall_loops",
+  "top_shell_layers",
+  "bottom_shell_layers",
+  "top_shell_thickness",
+  "bottom_shell_thickness",
+  "sparse_infill_density",
+  "sparse_infill_pattern",
+  "top_surface_pattern",
+  "bottom_surface_pattern",
+  "infill_direction",
+  "infill_wall_overlap",
+  "detect_thin_wall",
+  "ensure_vertical_shell_thickness",
+  "ironing_type",
+  "ironing_flow",
+  "ironing_spacing",
+  "fuzzy_skin",
+  "fuzzy_skin_thickness",
+  "fuzzy_skin_point_distance",
+]);
+
+/**
+ * PrusaSlicer settings, of a project or of one object or part, by the names Bambu Studio (dialect "bambu") or the
+ * Orca family ("orca") gives them. Settings PrusaSlicer splits in two (supports' style and whether they're automatic,
+ * whether to iron and how) come out as one; a brim of no width is no brim.
+ */
+export function bambuSettingsFromPrusa(
+  prusa: Record<string, string>,
+  dialect: SettingsDialect,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, [bambuKey, convert]] of Object.entries(BAMBU_FROM_PRUSA)) {
+    if (!Object.hasOwn(prusa, key) || prusa[key] === "") continue;
+    const value = convert(prusa[key]);
+    if (value !== null) out[bambuKey] = value;
+  }
+  if (out.ensure_vertical_shell_thickness)
+    out.ensure_vertical_shell_thickness = verticalShellIn(dialect, out.ensure_vertical_shell_thickness);
+  if (out.brim_width === "0") out.brim_type = "no_brim";
+  const style = String(prusa.support_material_style ?? "").trim();
+  if (style || prusa.support_material_auto !== undefined) {
+    const tree = style === "organic" || style === "tree";
+    const auto = prusa.support_material_auto === undefined || asBool(prusa.support_material_auto) === "1";
+    out.support_type = `${tree ? "tree" : "normal"}(${auto ? "auto" : "manual"})`;
+    if (tree) out.support_style = dialect === "orca" ? "organic" : "tree_organic";
+    else if (style === "grid" || style === "snug") out.support_style = style;
+  }
+  if (prusa.ironing !== undefined) {
+    out.ironing_type =
+      asBool(prusa.ironing) === "1" ? (oneOf(BAMBU_IRONING)(prusa.ironing_type) ?? "top") : "no ironing";
+  }
+  return out;
+}
+
+/** The part's or modifier's share of `bambuSettingsFromPrusa`. */
+export function bambuRegionSettings(settings: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(settings).filter(([key]) => BAMBU_REGION_KEYS.has(key)));
 }

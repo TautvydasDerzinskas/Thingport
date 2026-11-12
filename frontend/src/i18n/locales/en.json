@@ -5126,9 +5126,13 @@
       "openAdaptedInSlicer": "Open adapted in {{slicer}}",
       "adaptedInfo": {
         "prusa": "A copy made for {{slicer}}: it goes into your own printer, filament and print settings, with the designer's layer height, walls, infill and supports set on each object and the painted colors on your extruders. The stored file isn't changed.",
-        "cura": "A copy made for {{slicer}}: multi-part objects keep their parts, each on its own extruder, and the designer's walls, top and bottom layers, infill and supports are set on each object. Cura doesn't read painted colors. The stored file isn't changed.",
+        "cura": "A copy made for {{slicer}}, a Cura project for any printer: opened as UCP, the designer's layer height, adhesion and kind of supports go onto your printer's settings, and every object keeps its extruder. Multi-part objects keep their parts, and the designer's walls, top and bottom layers, infill and supports are set on each object. Cura doesn't read painted colors. The stored file isn't changed.",
         "bambu": "A copy {{slicer}} opens as its own project: parts, plates, painting and the designer's settings as they are, with no questions about the file's version or settings it names differently. The stored file isn't changed.",
-        "bambuPrinter": "A copy {{slicer}} opens as its own project on your printer: the presets it has for that printer, with the designer's changes on top, and the plates moved onto its bed. Parts and painting stay as they are. The stored file isn't changed."
+        "bambuPrinter": "A copy {{slicer}} opens as its own project on your printer: the presets it has for that printer, with the designer's changes on top, and the plates moved onto its bed. Parts and painting stay as they are. The stored file isn't changed.",
+        "fromPrusa": "A copy {{slicer}} opens as its own project, made from this PrusaSlicer project: parts and painting kept, each bed a plate, the designer's layer height, walls, infill and supports set on each object, and your own printer, filament and print settings. The stored file isn't changed.",
+        "fromPrusaPrinter": "A copy {{slicer}} opens as its own project on your printer, made from this PrusaSlicer project: the presets it has for that printer with the designer's layer height, walls, infill and supports on top, the filament colors, and each of the designer's beds a plate on the printer's bed. Parts and painting stay as they are. The stored file isn't changed.",
+        "prusaPlain": "A copy made for {{slicer}}: an extruder for each of the file's colors, each object and part on its color's and the triangles of another color painted, in your own printer, filament and print settings. The stored file isn't changed.",
+        "curaPlain": "A copy made for {{slicer}}, a Cura project for any printer: opened as UCP, each object and part is on the extruder of its color; imported as models, only the parts of multi-part objects are. The stored file isn't changed."
       },
       "adaptPreparing": "Preparing adapted file…",
       "adaptPreparingShort": "Preparing adapted file…",

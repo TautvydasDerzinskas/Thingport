@@ -68,3 +68,55 @@ export function stateToMaterialIndex(state: number, defaultExtruder: number, col
   if (colorCount > 0) idx = Math.min(idx, colorCount - 1);
   return idx;
 }
+
+function bitsToHex(bits: boolean[]): string {
+  let hex = "";
+  for (let i = 0; i < bits.length; i += 4) {
+    let nibble = 0;
+    for (let b = 0; b < 4; b++) if (bits[i + b]) nibble |= 1 << b;
+    hex = nibble.toString(16).toUpperCase() + hex;
+  }
+  return hex;
+}
+
+/**
+ * A PrusaSlicer 2.9.6+ colour painting string (`slic3rpe:MmPaintingVersion` 2) as Bambu's. They encode states up to
+ * 16 alike; past that PrusaSlicer writes nibble 14 and a byte (state - 17), Bambu runs of nibble 15 (15 more each)
+ * and a last nibble (TriangleSelector.cpp in both).
+ */
+export function prusaPaintToBambu(hex: string): string {
+  const bits = hexToBitstream(hex);
+  if (!bits.length) return hex;
+  const out: boolean[] = [];
+  let pos = 0;
+  const read = (n: number) => {
+    let value = 0;
+    for (let i = 0; i < n; i++) if (bits[pos++]) value |= 1 << i;
+    return value;
+  };
+  const write = (value: number, n: number) => {
+    for (let i = 0; i < n; i++) out.push(((value >> i) & 1) === 1);
+  };
+  const node = (): void => {
+    if (pos >= bits.length) return;
+    const split = read(2);
+    write(split, 2);
+    if (split !== 0) {
+      write(read(2), 2);
+      for (let child = split; child >= 0; child--) node();
+      return;
+    }
+    const xx = read(2);
+    write(xx, 2);
+    if (xx !== 3) return;
+    const nibble = read(4);
+    let rest = (nibble === 14 ? 17 + read(8) : nibble + 3) - 3;
+    while (rest >= 15) {
+      write(15, 4);
+      rest -= 15;
+    }
+    write(rest, 4);
+  };
+  node();
+  return bitsToHex(out);
+}

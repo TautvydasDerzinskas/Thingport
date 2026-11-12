@@ -272,17 +272,17 @@ export async function readBambuPackage(input: Buffer | Uint8Array | JSZip): Prom
   };
 }
 
+/** A model file's objects, build items and metadata. */
+export function parseModelXml(xml: string): ParsedModel {
+  return { objects: extractObjects(xml), buildItems: extractBuildItems(xml), metadata: extractModelMetadata(xml) };
+}
+
 /** Every model file of the package, parsed, keyed by its lowercased path. */
 export async function readBambuModels(pkg: BambuPackage): Promise<Record<string, ParsedModel>> {
   const parsed: Record<string, ParsedModel> = {};
   for (const [key, rec] of Object.entries(pkg.filesByKey)) {
     if (!key.endsWith(".model")) continue;
-    const xml = await rec.entry.async("string");
-    parsed[key] = {
-      objects: extractObjects(xml),
-      buildItems: extractBuildItems(xml),
-      metadata: extractModelMetadata(xml),
-    };
+    parsed[key] = parseModelXml(await rec.entry.async("string"));
   }
   return parsed;
 }

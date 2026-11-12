@@ -157,13 +157,15 @@ export function plateColumns(count: number): number {
 
 const plateStride = (size: number) => Math.trunc(size) * (1 + PLATE_GAP);
 
-function plateOrigin(index: number, columns: number, bed: BedBox): [number, number] {
+/** Where plate `index` of a grid `columns` wide starts, in the slicers' layout for `bed`. */
+export function plateOrigin(index: number, columns: number, bed: BedBox): [number, number] {
   const col = index % columns;
   const row = Math.floor(index / columns);
   return [col * plateStride(bed.maxX - bed.minX), -row * plateStride(bed.maxY - bed.minY)];
 }
 
-const centre = (bed: BedBox): [number, number] => [(bed.minX + bed.maxX) / 2, (bed.minY + bed.maxY) / 2];
+export const bedCentre = (bed: BedBox): [number, number] => [(bed.minX + bed.maxX) / 2, (bed.minY + bed.maxY) / 2];
+const centre = bedCentre;
 
 /**
  * How far each plate's objects move, keyed `<object id>:<instance>` as model_settings.config lists them: from the
@@ -274,9 +276,10 @@ const mm = (n: number) => String(Math.round(n * 1000) / 1000);
 
 // The slicers lay a project's settings over their own defaults, which have one filament in this colour
 // (PrintConfig.cpp), so a project without a colour list loads only its first filament.
-const SLICER_DEFAULT_COLOUR = "#F2754E";
+export const SLICER_DEFAULT_COLOUR = "#F2754E";
 
-function rectangle(bed: BedBox): string[] {
+/** The bed as `printable_area` writes it. */
+export function rectangle(bed: BedBox): string[] {
   return [
     `${mm(bed.minX)}x${mm(bed.minY)}`,
     `${mm(bed.maxX)}x${mm(bed.minY)}`,

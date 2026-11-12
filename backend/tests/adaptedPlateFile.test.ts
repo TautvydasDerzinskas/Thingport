@@ -180,6 +180,35 @@ describe("a plate's 3MF format", () => {
     }
   });
 
+  it("reads a plain 3MF's colours from its whole model, wherever they are", async () => {
+    const vertices = Array.from({ length: 4000 }, (_, i) => `<vertex x="${i}" y="0" z="0"/>`).join("");
+    const zip = new JSZip();
+    zip.file(
+      "3D/3dmodel.model",
+      `<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">
+ <resources>
+  <m:colorgroup id="1"><m:color color="#FF0000FF"/></m:colorgroup>
+  <object id="2" type="model" pid="1" pindex="0"><mesh><vertices>${vertices}</vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object>
+  <m:colorgroup id="3"><m:color color="#00FF00FF"/><m:color color="#ff0000"/></m:colorgroup>
+  <basematerials id="5"><base name="Blue" displaycolor="#0000FF"/></basematerials>
+  <object id="4" type="model" pid="3" pindex="0"><mesh><vertices>${vertices}</vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object>
+ </resources>
+ <build><item objectid="2"/><item objectid="4"/></build>
+</model>`,
+    );
+    const file = path.join(os.tmpdir(), `adapt-plain-${Date.now()}.3mf`);
+    fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer" }));
+    try {
+      expect(await readThreeMfFormat(file)).toMatchObject({
+        kind: "plain",
+        filaments: 3,
+        painted: false,
+      });
+    } finally {
+      fs.rmSync(file, { force: true });
+    }
+  });
+
   it("finds its small files under names written with backslashes", async () => {
     const zip = new JSZip();
     zip.file("3D\\3dmodel.model", '<model><metadata name="Application">BambuStudio-02.08.02.61</metadata></model>');

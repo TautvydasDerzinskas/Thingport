@@ -28,9 +28,12 @@ export type AdaptPlan =
       dialect: SettingsDialect | null;
       /** The user's printer the copy names the presets of (printer.ts); absent, the designer's stays. */
       printer?: PrinterChoice;
+      /** A PrusaSlicer project written in Bambu's layout (writers/bambuFromPrusa.ts), rather than a Bambu one kept. */
+      from?: "prusa";
     }
-  | { output: "prusa" }
-  | { output: "cura" };
+  /** `from` "plain": a plain 3MF's colours as filaments (readers/plainProject.ts), rather than a Bambu project. */
+  | { output: "prusa"; from?: "plain" }
+  | { output: "cura"; from?: "plain" };
 
 function versionParts(version: string): number[] {
   return (version.match(/\d+/g) ?? []).map(Number);
@@ -71,7 +74,30 @@ export function planAdaptation(
   slicer: SlicerProfile | null | undefined,
   printer?: PrinterChoice | null,
 ): AdaptPlan | null {
-  if (!format || !slicer || format.kind !== "bambu") return null;
+  if (!format || !slicer) return null;
+  // The Bambu family opens a PrusaSlicer project with an old loader that keeps its parts but none of its settings,
+  // colours or beds; PrusaSlicer itself, and those built on it, open it as their own.
+  if (format.kind === "prusa") {
+    if (slicer.reads !== "bambu") return null;
+    const forPrusa = printer && slicer.targetsPrinter ? printer : null;
+    return {
+      output: "bambu",
+      from: "prusa",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: false,
+      dialect: slicer.dialect ?? null,
+      ...(forPrusa ? { printer: forPrusa } : {}),
+    };
+  }
+  // PrusaSlicer, eufyMake Studio and Cura read none of a plain 3MF's colours: a copy puts each on a filament of its
+  // own where there are several, unless PrusaSlicer's painting is there already.
+  if (format.kind === "plain") {
+    if ((format.filaments ?? 0) < 2) return null;
+    if (slicer.reads === "prusa" && !format.painted) return { output: "prusa", from: "plain" };
+    if (slicer.reads === "cura") return { output: "cura", from: "plain" };
+    return null;
+  }
+  if (format.kind !== "bambu") return null;
   if (slicer.reads === "prusa") return { output: "prusa" };
   if (slicer.reads === "cura") return { output: "cura" };
 
@@ -92,9 +118,10 @@ export function planAdaptation(
 /** A name for the copy a plan makes, the same for every slicer that gets the same copy. A copy for a printer is
  *  named for it and its recipe's stamp, as slicers name the same printer's presets differently. */
 export function planKey(plan: AdaptPlan): string {
-  if (plan.output !== "bambu") return plan.output;
+  if (plan.output !== "bambu") return plan.from === "plain" ? `${plan.output}-fromplain` : plan.output;
   return [
     "bambu",
+    plan.from === "prusa" ? "fromprusa" : "",
     plan.tag ? "tag" : "",
     plan.dropOrcaTag ? "noorca" : "",
     plan.dialect ?? "",

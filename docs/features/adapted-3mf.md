@@ -9,15 +9,19 @@ next to the regular **Open**. The copy is made on your Thingport instance, so it
 file isn't changed.
 
 Thingport reads what kind of 3MF each file is when it's stored. Copies are made of Bambu Studio projects, the kind
-Bambu Studio, OrcaSlicer and the slicers built on them save, whichever site the model is from. Any other 3MF, a
-PrusaSlicer project included, opens as it is.
+Bambu Studio, OrcaSlicer and the slicers built on them save, whichever site the model is from, of PrusaSlicer
+projects for those slicers (see [below](#prusaslicer-projects)), and of 3MFs in several colours for the slicers that
+read no 3MF colours (see [colours](#colours-in-other-3mfs)). Any other 3MF opens as it is.
 
-| Slicer                                                                        | The adapted copy                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| PrusaSlicer, eufyMake Studio                                                  | Joins your own printer, filament and print settings. The designer's layer height, walls, infill and supports are set on each object, and a part's own walls, top and bottom layers and infill on that part. Multi-part objects keep their parts, modifiers and negative and support volumes too, and the painted colours land on your extruders. |
-| Cura                                                                          | Multi-part objects keep their parts, each on its own extruder, and the designer's walls, top and bottom layers, infill and whether to print supports are set on each object. Modifiers, negative parts and support volumes become Cura's matching mesh types. Cura reads no painted colours.                                                     |
-| Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next | Opens as the slicer's own project, parts, plates, painting and the designer's settings, without its questions about the file's version. A setting it names differently is renamed, to the nearest of its choices where it has fewer.                                                                                                             |
-| Creality Print                                                                | Keeps the parts, plates, painting and the designer's settings, under the names Creality Print gives them. It still asks which of your printers to use, as it does for any project from another slicer.                                                                                                                                           |
+| Slicer                                                                        | The adapted copy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PrusaSlicer, eufyMake Studio                                                  | Joins your own printer, filament and print settings. The designer's layer height, walls, infill and supports are set on each object, and a part's own walls, top and bottom layers and infill on that part. Multi-part objects keep their parts, modifiers and negative and support volumes too, and the painted colours land on your extruders.                                                                                                                                                                                                                                                            |
+| Cura                                                                          | A Cura project for any printer (a UCP, Cura 5.7 and later). Opened as UCP, the designer's layer height, adhesion and kind of supports go onto your printer's settings, and every object keeps its extruder. Multi-part objects keep their parts, each on its own extruder, and the designer's walls, top and bottom layers, infill and whether to print supports are set on each object. Modifiers, negative parts and support volumes become Cura's matching mesh types. Imported as models, it's the same without the print settings, and only parts keep their extruders. Cura reads no painted colours. |
+| Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next | Opens as the slicer's own project, parts, plates, painting and the designer's settings, without its questions about the file's version. A setting it names differently is renamed, to the nearest of its choices where it has fewer.                                                                                                                                                                                                                                                                                                                                                                        |
+| Creality Print                                                                | Keeps the parts, plates, painting and the designer's settings, under the names Creality Print gives them. It still asks which of your printers to use, as it does for any project from another slicer.                                                                                                                                                                                                                                                                                                                                                                                                      |
+
+Cura older than 5.7 doesn't know a UCP and offers to open its copy as a project with a printer of its own: choose
+**Import models** there.
 
 A slicer that already opens a file as well as it can, such as Bambu Studio with a Bambu Studio project, gets the file
 itself. Prints, 3MFs with G-code in them, are never adapted.
@@ -26,6 +30,39 @@ If a copy can't be made, Thingport says so; use the regular **Open** instead.
 
 Each slicer's copies can be switched off: right-click the slicer under **Configuration → Slicer** and switch off
 **Open adapted**. Its files then open as they are.
+
+## PrusaSlicer projects
+
+Bambu Studio, OrcaSlicer and the slicers built on them open a PrusaSlicer or eufyMake Studio project with its parts
+and painting, but without the designer's settings, filament colours or beds, and won't open one painted with a 17th
+filament or later, which PrusaSlicer 2.9.6 writes in a newer way. Their copy is a project of their own instead:
+
+- Parts, modifiers and negative and support volumes stay what they are, and the painting is kept, seams and supports
+  too.
+- Each of PrusaSlicer's beds is a plate, its objects where they were.
+- The designer's layer height, walls, top and bottom layers, infill, and the supports, brim, raft, ironing and fuzzy
+  skin they switched on are set on each object, in the slicer's own names. What the designer set on an object or a
+  part is kept on it. The rest of a PrusaSlicer project is its printer's profile, so your own presets stay as they are.
+
+Made for your printer (below), the copy names your slicer's presets for it instead, with the designer's settings as
+changes to its process, the filament colours, and each bed a plate on your printer's bed. A PrusaSlicer project names
+no build plate, so the copy names Textured PEI Plate, the one Bambu Lab's printers start with; pick yours in the slicer
+if it's another.
+
+## Colours in other 3MFs
+
+A 3MF from a CAD app or a generator, Thingport's own tools among them, can give its objects, parts and triangles
+colours. Bambu Studio, OrcaSlicer and the slicers built on them read those; PrusaSlicer, eufyMake Studio and Cura read
+none, and open such a file in one colour. When a file has several colours, their copy gives each colour an extruder:
+
+- PrusaSlicer and eufyMake Studio get each object and part on its colour's extruder, and a triangle of another
+  colour painted with its own. A file already painted the way PrusaSlicer reads opens as it is.
+- Cura gets each object and part on its colour's extruder, opened as UCP. Imported as models, only the parts of an
+  object made of several keep theirs: Cura puts a whole object on the extruder you have selected as it adds it.
+
+Colours are numbered as they're first met, from the first object to the last, unless the file numbers them itself
+(Thingport's keyring and QR code tools do). A file in another unit than millimetres, such as metres, is converted.
+The copy joins your own printer, filament and print settings: load the filaments in the order of the extruders.
 
 ## Made for your printer
 
