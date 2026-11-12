@@ -240,7 +240,8 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -279,7 +280,33 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tronxy Generic ABS",
+           "ASA": "Tronxy Generic ASA",
+           "PA": "Tronxy Generic PA",
+           "PA-CF": "Tronxy Generic PA-CF",
+           "PC": "Tronxy Generic PC",
+           "PETG": "Tronxy Generic PETG",
+           "PLA": "Tronxy Generic PLA",
+           "PLA-CF": "Tronxy Generic PLA-CF",
+           "PVA": "Tronxy Generic PVA",
+           "TPU": "Tronxy Generic TPU"
+          },
+          "products": {
+           "tronxy generic abs": "Tronxy Generic ABS",
+           "tronxy generic asa": "Tronxy Generic ASA",
+           "tronxy generic pa": "Tronxy Generic PA",
+           "tronxy generic pa-cf": "Tronxy Generic PA-CF",
+           "tronxy generic pc": "Tronxy Generic PC",
+           "tronxy generic petg": "Tronxy Generic PETG",
+           "tronxy generic pla": "Tronxy Generic PLA",
+           "tronxy generic pla-cf": "Tronxy Generic PLA-CF",
+           "tronxy generic pva": "Tronxy Generic PVA",
+           "tronxy generic tpu": "Tronxy Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -318,7 +345,8 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -357,7 +385,8 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -396,7 +425,8 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -435,7 +465,34 @@
            "name": "0.28mm Extra Draft @Tronxy",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Tronxy",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tronxy",
+           "ASA": "Generic ASA @Tronxy",
+           "PA": "Generic PA @Tronxy",
+           "PA-CF": "Generic PA-CF @Tronxy",
+           "PC": "Generic PC @Tronxy",
+           "PETG": "Generic PETG @Tronxy",
+           "PLA": "Generic PLA @Tronxy",
+           "PLA-CF": "Generic PLA-CF @Tronxy",
+           "PVA": "Generic PVA @Tronxy",
+           "TPU": "Generic TPU @Tronxy"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tronxy",
+           "generic asa": "Generic ASA @Tronxy",
+           "generic pa": "Generic PA @Tronxy",
+           "generic pa-cf": "Generic PA-CF @Tronxy",
+           "generic pc": "Generic PC @Tronxy",
+           "generic petg": "Generic PETG @Tronxy",
+           "generic pla": "Generic PLA @Tronxy",
+           "generic pla-cf": "Generic PLA-CF @Tronxy",
+           "generic pva": "Generic PVA @Tronxy",
+           "generic tpu": "Generic TPU @Tronxy"
+          }
+         }
         }
        ]
       }

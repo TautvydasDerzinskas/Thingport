@@ -63,7 +63,18 @@
            "name": "1.80mm Vasemode",
            "layerHeight": 1.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
         }
        ],
        "5": [
@@ -75,7 +86,18 @@
            "name": "2.50mm Standard",
            "layerHeight": 2.5
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
         }
        ],
        "8": [
@@ -87,7 +109,18 @@
            "name": "4.00mm Standard",
            "layerHeight": 4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
         }
        ],
        "1.2": [
@@ -99,7 +132,18 @@
            "name": "0.60mm Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
         }
        ]
       }
@@ -122,7 +166,18 @@
            "name": "1.80mm Vasemode",
            "layerHeight": 1.8
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "5": [
@@ -134,7 +189,18 @@
            "name": "2.50mm Standard",
            "layerHeight": 2.5
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "8": [
@@ -146,7 +212,18 @@
            "name": "4.00mm Standard",
            "layerHeight": 4
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "1.2": [
@@ -158,7 +235,18 @@
            "name": "0.60mm Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -181,7 +269,18 @@
            "name": "1.80mm Vasemode",
            "layerHeight": 1.8
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "5": [
@@ -193,7 +292,18 @@
            "name": "2.50mm Standard",
            "layerHeight": 2.5
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "8": [
@@ -205,7 +315,18 @@
            "name": "4.00mm Standard",
            "layerHeight": 4
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ],
        "1.2": [
@@ -217,7 +338,18 @@
            "name": "0.60mm Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -240,7 +372,22 @@
            "name": "1.80mm Vasemode",
            "layerHeight": 1.8
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
         }
        ],
        "5": [
@@ -252,7 +399,22 @@
            "name": "2.50mm Standard",
            "layerHeight": 2.5
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
         }
        ],
        "8": [
@@ -264,7 +426,22 @@
            "name": "4.00mm Standard",
            "layerHeight": 4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
         }
        ],
        "1.2": [
@@ -276,7 +453,22 @@
            "name": "0.60mm Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
         }
        ]
       }

@@ -69,7 +69,18 @@
            "name": "0.30mm Draft @Construct 1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @C1",
+           "PLA": "Generic PLA @C1"
+          },
+          "products": {
+           "generic high flow petg": "Generic High Flow PETG @C1",
+           "generic petg": "Generic PETG @C1",
+           "generic pla": "Generic PLA @C1"
+          }
+         }
         }
        ]
       }
@@ -100,7 +111,18 @@
            "name": "0.30mm Draft @Construct 1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -131,7 +153,18 @@
            "name": "0.30mm Draft @Construct 1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -162,7 +195,18 @@
            "name": "0.30mm Draft @Construct 1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -193,7 +237,18 @@
            "name": "0.30mm Draft @Construct 1",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -266,7 +321,18 @@
            "name": "0.38mm Draft @Construct 1 XL",
            "layerHeight": 0.38
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @C1",
+           "PLA": "Generic PLA @C1"
+          },
+          "products": {
+           "generic high flow petg": "Generic High Flow PETG @C1",
+           "generic petg": "Generic PETG @C1",
+           "generic pla": "Generic PLA @C1"
+          }
+         }
         }
        ]
       }
@@ -297,7 +363,18 @@
            "name": "0.38mm Draft @Construct 1 XL",
            "layerHeight": 0.38
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -328,7 +405,18 @@
            "name": "0.38mm Draft @Construct 1 XL",
            "layerHeight": 0.38
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -359,7 +447,18 @@
            "name": "0.38mm Draft @Construct 1 XL",
            "layerHeight": 0.38
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -390,7 +489,18 @@
            "name": "0.38mm Draft @Construct 1 XL",
            "layerHeight": 0.38
           }
-         ]
+         ],
+         "filaments": {
+          "types": {
+           "PETG": "C1 Generic PETG",
+           "PLA": "C1 Generic PLA"
+          },
+          "products": {
+           "c1 generic high flow petg": "C1 Generic High Flow PETG",
+           "c1 generic petg": "C1 Generic PETG",
+           "c1 generic pla": "C1 Generic PLA"
+          }
+         }
         }
        ]
       }

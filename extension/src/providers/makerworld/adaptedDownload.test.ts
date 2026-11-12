@@ -20,6 +20,10 @@ describe("what Download adapted offers", () => {
   it("asks again when the instance didn't answer, rather than taking it as having no slicer", () => {
     expect(offerFor(null)).toEqual({ target: { known: false }, output: "prusa" });
   });
+
+  it("is nothing for a slicer whose adapted copies its user switched off", () => {
+    expect(offerFor({ slicer: "cura", adapted: false })).toBeNull();
+  });
 });
 
 describe("the instance's slicer", () => {
@@ -28,6 +32,10 @@ describe("the instance's slicer", () => {
     expect(await instanceSlicer()).toEqual({ slicer: "orcaslicer" });
     api.mockResolvedValueOnce({ slicer: null });
     expect(await instanceSlicer()).toEqual({ slicer: null });
+    api.mockResolvedValueOnce({ slicer: "cura", unadapted: ["cura"] });
+    expect(await instanceSlicer()).toEqual({ slicer: "cura", adapted: false });
+    api.mockResolvedValueOnce({ slicer: "cura", unadapted: ["orcaslicer"] });
+    expect(await instanceSlicer()).toEqual({ slicer: "cura" });
     api.mockRejectedValueOnce(new Error("offline"));
     expect(await instanceSlicer()).toBeNull();
 

@@ -86,7 +86,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -118,7 +119,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -161,7 +163,37 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -193,7 +225,37 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -236,7 +298,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -268,7 +331,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -311,7 +375,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -343,7 +408,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -386,7 +452,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -418,7 +485,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -512,7 +580,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -544,7 +613,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -587,7 +657,37 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -619,7 +719,37 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -662,7 +792,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -694,7 +825,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -737,7 +869,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -769,7 +902,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -812,7 +946,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -844,7 +979,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -932,7 +1068,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -964,7 +1101,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1007,7 +1145,37 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1039,7 +1207,37 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1082,7 +1280,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1114,7 +1313,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1157,7 +1357,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1189,7 +1390,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1232,7 +1434,8 @@
            "name": "0.28mm Extra Draft @FT 0.4 nozzle",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1264,7 +1467,8 @@
            "name": "0.42mm Extra Draft @FT 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

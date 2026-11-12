@@ -59,7 +59,16 @@
            "name": "0.20mm Standard @M3D Enabler D7500",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Enabler PLA @M3D",
+         "filaments": {
+          "types": {
+           "PLA": "Enabler PLA @M3D"
+          },
+          "products": {
+           "enabler pla": "Enabler PLA @M3D"
+          }
+         }
         }
        ]
       }
@@ -146,7 +155,16 @@
            "name": "Rapid Draft (0.28mm) @M3D Enabler D8500",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Enabler PLA @M3D",
+         "filaments": {
+          "types": {
+           "PLA": "Enabler PLA @M3D"
+          },
+          "products": {
+           "enabler pla": "Enabler PLA @M3D"
+          }
+         }
         }
        ]
       }

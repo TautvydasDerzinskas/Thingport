@@ -12,4 +12,5 @@ export const elegooslicer: SlicerProfile = {
   quietUpTo: { BambuStudio: "2.3.2" },
   orcaTagQuietUpTo: "2.4.2",
   dialect: "orca",
+  targetsPrinter: true,
 };

@@ -135,15 +135,16 @@ MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake 
 OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version. On a
 MakerWorld model page, the extension adds a **Download adapted** button under MakerWorld's own "Open in Bambu Studio"
 (or Download) button. Clicking it downloads the selected print profile's file and saves `<name>-adapted.3mf`, a copy
-made for the slicer your Thingport instance opens files in (picked in its Configuration), the same copy Thingport's
-**Open adapted** gives that slicer. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
+made for the slicer your Thingport instance opens files in (picked in its Configuration), the copy Thingport's
+**Open adapted** gives that slicer without a printer: it isn't made for your printer yet. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
 into your own printer, filament and print settings, with the designer's settings on each object and the painted colors
 on your extruders. Hover the bulb on the button for what the copy keeps.
 
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
   **Adapt MakerWorld 3MFs** switch is on, under **Offline features** (**Extra features** once connected). It isn't
-  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does. If the instance
-  doesn't say in time, the button is offered and asks it again when you click.
+  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does, or when you switched
+  that slicer's **Open adapted** off in your instance's Configuration. If the instance doesn't say in time, the button
+  is offered and asks it again when you click.
 - **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
   server. The file goes nowhere but your downloads folder.
 - **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over

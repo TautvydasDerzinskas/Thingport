@@ -85,7 +85,16 @@
            "name": "0.30mm Draft Fast @MM BoneKing",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "Generic PEEK @MM"
+          },
+          "products": {
+           "generic peek": "Generic PEEK @MM"
+          }
+         }
         }
        ]
       }
@@ -132,7 +141,28 @@
            "name": "0.30mm Draft Fast @MM BoneKing",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PEEK": "MM Generic PEEK",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic peek": "MM Generic PEEK",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -179,7 +209,16 @@
            "name": "0.30mm Draft Fast @MM BoneKing",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -226,7 +265,16 @@
            "name": "0.30mm Draft Fast @MM BoneKing",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -273,7 +321,16 @@
            "name": "0.30mm Draft Fast @MM BoneKing",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -354,7 +411,16 @@
            "name": "0.30mm Draft Fast @MM hj SK",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "Generic PEEK @MM"
+          },
+          "products": {
+           "generic peek": "Generic PEEK @MM"
+          }
+         }
         }
        ]
       }
@@ -393,7 +459,28 @@
            "name": "0.30mm Draft Fast @MM hj SK",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PEEK": "MM Generic PEEK",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic peek": "MM Generic PEEK",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -432,7 +519,16 @@
            "name": "0.30mm Draft Fast @MM hj SK",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -471,7 +567,16 @@
            "name": "0.30mm Draft Fast @MM hj SK",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -510,7 +615,16 @@
            "name": "0.30mm Draft Fast @MM hj SK",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
         }
        ]
       }
@@ -579,7 +693,8 @@
            "name": "0.30mm Draft @MM hqs hj",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -606,7 +721,26 @@
            "name": "0.30mm Draft @MM hqs hj",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -633,7 +767,8 @@
            "name": "0.30mm Draft @MM hqs hj",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -660,7 +795,8 @@
            "name": "0.30mm Draft @MM hqs hj",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -687,7 +823,8 @@
            "name": "0.30mm Draft @MM hqs hj",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -768,7 +905,8 @@
            "name": "0.30mm Draft Fast @MM hqs SF",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -803,7 +941,26 @@
            "name": "0.30mm Draft Fast @MM hqs SF",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -842,7 +999,8 @@
            "name": "0.30mm Draft Fast @MM hqs SF",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -877,7 +1035,8 @@
            "name": "0.30mm Draft Fast @MM hqs SF",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -912,7 +1071,8 @@
            "name": "0.30mm Draft Fast @MM hqs SF",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -981,7 +1141,8 @@
            "name": "0.30mm Draft @MM slb",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1008,7 +1169,22 @@
            "name": "0.30mm Draft @MM slb",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -1035,7 +1211,8 @@
            "name": "0.30mm Draft @MM slb",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1062,7 +1239,8 @@
            "name": "0.30mm Draft @MM slb",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1089,7 +1267,8 @@
            "name": "0.30mm Draft @MM slb",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

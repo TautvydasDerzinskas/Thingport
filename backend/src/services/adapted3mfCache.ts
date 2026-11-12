@@ -2,12 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { ADAPT_3MF_TIMEOUT_SECONDS, ADAPTED_3MFS, MODEL_PREVIEW_MAX_MEMORY_MB } from "../config";
-import { ADAPTER_VERSION, planKey, type AdaptPlan } from "../adapter";
+import { ADAPTER_VERSION, planKey, type AdaptPlan, type PrinterRecipe } from "../adapter";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { Adapt3mfWorkerInput, Adapt3mfWorkerResult } from "./adapt3mfWorker";
 
 // One copy per plate and plan (src/adapter/plan.ts), shared by every slicer that gets the same one. The adapter's
-// version is part of the name, so a new one makes its copies again on next request.
+// version is part of the name, so a new one makes its copies again on next request. A plan for a printer comes with
+// the catalogue's recipe for it, whose stamp is in the plan's name.
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "adapt3mfWorker");
 
@@ -84,14 +85,20 @@ async function keep(job: Job, file: string): Promise<boolean> {
   return false;
 }
 
-async function buildAdapted(job: Job, plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
+async function buildAdapted(
+  job: Job,
+  plateId: string,
+  srcPath: string,
+  plan: AdaptPlan,
+  printer: PrinterRecipe | null,
+): Promise<string | null> {
   if (job.cancelled) return null;
   const dest = adaptedPath(plateId, plan);
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
   await fs.mkdir(ADAPTED_3MFS, { recursive: true });
   const before = await sourceStamp(srcPath);
   try {
-    const result = await adaptInWorker({ srcPath, destPath: tmp, plan });
+    const result = await adaptInWorker({ srcPath, destPath: tmp, plan, printer });
     // Made from a file that has changed since (or gone): not a copy of what's there now, nor a reason to give up on it.
     if (job.cancelled || before === null || (await sourceStamp(srcPath)) !== before) return null;
     if (result.status === "ok") {
@@ -125,12 +132,17 @@ async function recentlyFailed(plateId: string, plan: AdaptPlan, srcMtimeMs: numb
   }
 }
 
-function startJob(plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
+function startJob(
+  plateId: string,
+  srcPath: string,
+  plan: AdaptPlan,
+  printer: PrinterRecipe | null,
+): Promise<string | null> {
   const key = copyName(plateId, plan);
   const running = inFlight.get(key);
   if (running) return running.result;
   const job: Job = { result: Promise.resolve(null), cancelled: false };
-  job.result = queue.then(() => buildAdapted(job, plateId, srcPath, plan));
+  job.result = queue.then(() => buildAdapted(job, plateId, srcPath, plan, printer));
   queue = job.result.catch(() => undefined);
   inFlight.set(key, job);
   void job.result.finally(() => inFlight.delete(key)).catch(() => undefined);
@@ -140,13 +152,18 @@ function startJob(plateId: string, srcPath: string, plan: AdaptPlan): Promise<st
 export type Adapt3mfStatus = "ready" | "preparing" | "failed";
 
 /** Starts making the copy in the background when there's no usable one yet. Never throws. */
-export async function adapt3mfStatus(plateId: string, srcPath: string, plan: AdaptPlan): Promise<Adapt3mfStatus> {
+export async function adapt3mfStatus(
+  plateId: string,
+  srcPath: string,
+  plan: AdaptPlan,
+  printer: PrinterRecipe | null = null,
+): Promise<Adapt3mfStatus> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
     if (await isFresh(adaptedPath(plateId, plan), mtimeMs)) return "ready";
     if (inFlight.has(copyName(plateId, plan))) return "preparing";
     if (await recentlyFailed(plateId, plan, mtimeMs)) return "failed";
-    void startJob(plateId, srcPath, plan).catch(() => undefined);
+    void startJob(plateId, srcPath, plan, printer).catch(() => undefined);
     return "preparing";
   } catch (err) {
     console.error(`Adapting the 3MF of plate ${plateId} failed:`, err);
@@ -155,12 +172,17 @@ export async function adapt3mfStatus(plateId: string, srcPath: string, plan: Ada
 }
 
 /** The copy's path, waiting for one if needed, or null to serve the original. Never throws. */
-export async function adapted3mfFor(plateId: string, srcPath: string, plan: AdaptPlan): Promise<string | null> {
+export async function adapted3mfFor(
+  plateId: string,
+  srcPath: string,
+  plan: AdaptPlan,
+  printer: PrinterRecipe | null = null,
+): Promise<string | null> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
     if (await isFresh(adaptedPath(plateId, plan), mtimeMs)) return adaptedPath(plateId, plan);
     if (!inFlight.has(copyName(plateId, plan)) && (await recentlyFailed(plateId, plan, mtimeMs))) return null;
-    return await startJob(plateId, srcPath, plan);
+    return await startJob(plateId, srcPath, plan, printer);
   } catch (err) {
     console.error(`Adapting the 3MF of plate ${plateId} failed:`, err);
     return null;

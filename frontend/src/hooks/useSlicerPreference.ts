@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi, type SlicerSettings } from "../api/settings";
 
-const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [] };
+const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {} };
 
 // Shared by every mounted instance so there's one request, and saves propagate to all of them.
 let cached: SlicerSettings | undefined; // undefined = not loaded yet

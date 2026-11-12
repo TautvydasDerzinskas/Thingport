@@ -1,7 +1,7 @@
 // The printer catalogue: every printer the slicers Thingport opens files in know, with its bed, height and nozzles,
-// and each slicer's own names for it (assets/printers, made by scripts/printers/update.mjs and committed, so it's
-// there offline). Read as asked for: the index once, a brand's full entries the first time one of them is wanted,
-// the names the first time one is looked up.
+// and each slicer's own names for it and for the process and filament presets it uses (assets/printers, made by
+// scripts/printers/update.mjs and committed, so it's there offline). Read as asked for: the index once, a brand's full
+// entries the first time one of them is wanted, the names the first time one is looked up.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -50,13 +50,21 @@ export type PrinterSummary = {
 
 export type ProcessPreset = { name: string; layerHeight: number | null };
 
-/** One of a slicer's printer presets for a nozzle, and the process presets it can use. */
+/** A slicer's filament presets for a printer: the one to name for each filament type ("PLA"), and for each product,
+ *  a preset's name without the printer it's tuned for, in lower case ("bambu pla basic"). */
+export type FilamentChoices = { types: Record<string, string>; products: Record<string, string> };
+
+/** One of a slicer's printer presets for a nozzle, and the process and filament presets it can use. */
 export type PrinterPreset = {
   name: string;
   defaultProcess?: string;
   processes: ProcessPreset[];
   /** Names the preset had before, which older files still use. */
   renamedFrom?: string[];
+  /** The filament the slicer starts it with. */
+  defaultFilament?: string;
+  /** The filaments made for it; the slicer's filaments for every printer (slicerFilaments) come after these. */
+  filaments?: FilamentChoices;
 };
 
 /** How a slicer knows a printer: its model and presets by nozzle (a "HF0.4" key for high-flow), or Cura's definition. */
@@ -92,6 +100,7 @@ type Index = { version: number; brands: Brand[]; printers: PrinterSummary[] };
 let index: { brands: Brand[]; printers: PrinterSummary[]; byId: Map<string, PrinterSummary> } | null = null;
 const brandFiles = new Map<string, Map<string, Printer>>();
 let names: Record<string, [string, string?]> | null = null;
+const slicerFilamentFiles = new Map<string, FilamentChoices | null>();
 
 function readJson<T>(file: string): T {
   return JSON.parse(fs.readFileSync(path.join(DIR, file), "utf8")) as T;
@@ -161,6 +170,17 @@ export function printerForName(
 export function printersForBambuCode(code: string | null | undefined): PrinterSummary[] {
   if (!code) return [];
   return loadIndex().printers.filter((p) => p.codes?.bambu === code);
+}
+
+/** The filaments a slicer installs for every printer (OrcaSlicer's filament library); null when it has none. */
+export function slicerFilaments(slicerId: string): FilamentChoices | null {
+  if (!/^[a-z0-9-]+$/.test(slicerId)) return null;
+  if (!slicerFilamentFiles.has(slicerId)) {
+    const file = path.join("filaments", `${slicerId}.json`);
+    const read = fs.existsSync(path.join(DIR, file)) ? readJson<FilamentChoices>(file) : null;
+    slicerFilamentFiles.set(slicerId, read ? { types: read.types, products: read.products } : null);
+  }
+  return slicerFilamentFiles.get(slicerId) ?? null;
 }
 
 /** The printer's picture, a small WebP, when the catalogue has one. */

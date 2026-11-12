@@ -78,7 +78,8 @@
            "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -109,7 +110,37 @@
            "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -140,7 +171,8 @@
            "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -171,7 +203,8 @@
            "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -202,7 +235,8 @@
            "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -413,7 +447,8 @@
            "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -444,7 +479,37 @@
            "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -475,7 +540,8 @@
            "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -506,7 +572,8 @@
            "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -537,7 +604,8 @@
            "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -675,7 +743,8 @@
            "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -706,7 +775,37 @@
            "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -737,7 +836,8 @@
            "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -768,7 +868,8 @@
            "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -799,7 +900,8 @@
            "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

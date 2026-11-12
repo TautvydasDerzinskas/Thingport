@@ -67,7 +67,16 @@
            "name": ".30mm Draft @Dremel 3D20 0.4",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D20 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D20 all"
+          }
+         }
         }
        ]
       }
@@ -94,7 +103,16 @@
            "name": ".30mm Draft @Dremel 3D20 0.4",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -121,7 +139,16 @@
            "name": ".30mm Draft @Dremel 3D20 0.4",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -148,7 +175,16 @@
            "name": ".30mm Draft @Dremel 3D20 0.4",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -175,7 +211,16 @@
            "name": ".30mm Draft @Dremel 3D20 0.4",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -254,7 +299,16 @@
            "name": ".34mm SuperDraft @Dremel 3D40 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D40 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D40 all"
+          }
+         }
         }
        ]
       }
@@ -289,7 +343,16 @@
            "name": ".34mm SuperDraft @Dremel 3D40 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -324,7 +387,16 @@
            "name": ".34mm SuperDraft @Dremel 3D40 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -359,7 +431,16 @@
            "name": ".34mm SuperDraft @Dremel 3D40 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -394,7 +475,16 @@
            "name": ".34mm SuperDraft @Dremel 3D40 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -473,7 +563,16 @@
            "name": ".34mm SuperDraft @Dremel 3D45 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D45 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D45 all"
+          }
+         }
         }
        ]
       }
@@ -508,7 +607,16 @@
            "name": ".34mm SuperDraft @Dremel 3D45 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -543,7 +651,16 @@
            "name": ".34mm SuperDraft @Dremel 3D45 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -578,7 +695,16 @@
            "name": ".34mm SuperDraft @Dremel 3D45 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -613,7 +739,16 @@
            "name": ".34mm SuperDraft @Dremel 3D45 0.4",
            "layerHeight": 0.34
           }
-         ]
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
         }
        ]
       }

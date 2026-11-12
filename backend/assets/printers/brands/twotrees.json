@@ -323,7 +323,18 @@
            "name": "0.28mm Extra Draft @SK1",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PLA": "Generic HS PLA @TwoTrees SK1",
+           "TPU": "Generic TPU 95A @TwoTrees SK1"
+          },
+          "products": {
+           "generic hs pla": "Generic HS PLA @TwoTrees SK1",
+           "generic tpu 95a": "Generic TPU 95A @TwoTrees SK1"
+          }
+         }
         }
        ]
       }
@@ -370,7 +381,25 @@
            "name": "0.28mm Extra Draft @SK1",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "TwoTrees Generic PETG @SK1",
+           "PLA": "TwoTrees Generic PLA @SK1",
+           "PLA-CF": "TwoTrees Generic PLA-CF @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1",
+           "twotrees generic petg": "TwoTrees Generic PETG @SK1",
+           "twotrees generic pla": "TwoTrees Generic PLA @SK1",
+           "twotrees generic pla matte": "TwoTrees Generic PLA Matte @SK1",
+           "twotrees generic pla silk": "TwoTrees Generic PLA Silk @SK1",
+           "twotrees generic pla-cf": "TwoTrees Generic PLA-CF @SK1"
+          }
+         }
         }
        ]
       }
@@ -417,7 +446,18 @@
            "name": "0.28mm Extra Draft @SK1",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
         }
        ]
       }
@@ -464,7 +504,18 @@
            "name": "0.28mm Extra Draft @SK1",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
         }
        ]
       }
@@ -511,7 +562,18 @@
            "name": "0.28mm Extra Draft @SK1",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
         }
        ]
       }
@@ -594,7 +656,8 @@
            "name": "0.28mm Extra Draft @TwoTrees",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -633,7 +696,34 @@
            "name": "0.28mm Extra Draft @TwoTrees",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "TwoTrees Generic ABS",
+           "ASA": "TwoTrees Generic ASA",
+           "PA": "TwoTrees Generic PA",
+           "PA-CF": "TwoTrees Generic PA-CF",
+           "PC": "TwoTrees Generic PC",
+           "PETG": "TwoTrees Generic PETG",
+           "PLA": "TwoTrees Generic PLA",
+           "PLA-CF": "TwoTrees Generic PLA-CF",
+           "PVA": "TwoTrees Generic PVA",
+           "TPU": "TwoTrees Generic TPU"
+          },
+          "products": {
+           "twotrees generic abs": "TwoTrees Generic ABS",
+           "twotrees generic asa": "TwoTrees Generic ASA",
+           "twotrees generic pa": "TwoTrees Generic PA",
+           "twotrees generic pa-cf": "TwoTrees Generic PA-CF",
+           "twotrees generic pc": "TwoTrees Generic PC",
+           "twotrees generic petg": "TwoTrees Generic PETG",
+           "twotrees generic pla": "TwoTrees Generic PLA",
+           "twotrees generic pla-cf": "TwoTrees Generic PLA-CF",
+           "twotrees generic pva": "TwoTrees Generic PVA",
+           "twotrees generic tpu": "TwoTrees Generic TPU"
+          }
+         }
         }
        ]
       }
@@ -672,7 +762,8 @@
            "name": "0.28mm Extra Draft @TwoTrees",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
         }
        ]
       }
@@ -711,7 +802,8 @@
            "name": "0.28mm Extra Draft @TwoTrees",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
         }
        ]
       }
@@ -750,7 +842,8 @@
            "name": "0.28mm Extra Draft @TwoTrees",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
         }
        ]
       }

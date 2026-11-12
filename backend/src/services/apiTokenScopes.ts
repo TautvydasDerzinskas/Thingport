@@ -139,6 +139,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
     paths: [
       "/print/:id/plate/:plateId/file/:filename",
       "/print/:id/plate/:plateId/adapted/:slicer/:filename",
+      "/print/:id/plate/:plateId/adapted/:slicer/:printer/:nozzle/:filename",
       "/plate/:id/preview.glb",
       "/print/:id/files",
       "/print/:id/files/:fileId",

@@ -132,7 +132,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -175,7 +176,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -218,7 +220,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -261,7 +264,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -304,7 +308,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -444,7 +473,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -480,7 +510,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -512,7 +543,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -540,7 +572,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -575,7 +608,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -611,7 +645,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -643,7 +678,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -671,7 +707,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -706,7 +743,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -742,7 +780,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -774,7 +813,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -802,7 +842,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -837,7 +878,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -873,7 +915,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -905,7 +948,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -933,7 +977,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -968,7 +1013,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -1004,7 +1074,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1036,7 +1131,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1064,7 +1184,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -1364,7 +1509,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1407,7 +1553,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1450,7 +1597,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1493,7 +1641,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1536,7 +1685,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -1674,7 +1848,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1710,7 +1885,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1742,7 +1918,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -1770,7 +1947,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1805,7 +1983,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1841,7 +2020,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -1873,7 +2053,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -1901,7 +2082,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -1936,7 +2118,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -1972,7 +2155,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -2004,7 +2188,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -2032,7 +2217,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2067,7 +2253,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -2103,7 +2290,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -2135,7 +2323,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -2163,7 +2352,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2198,7 +2388,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -2234,7 +2449,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -2266,7 +2506,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -2294,7 +2559,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -2594,7 +2884,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2637,7 +2928,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2680,7 +2972,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2723,7 +3016,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2766,7 +3060,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -2906,7 +3225,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2949,7 +3269,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -2992,7 +3313,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3035,7 +3357,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3078,7 +3401,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -3265,7 +3613,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3308,7 +3657,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3351,7 +3701,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3394,7 +3745,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3437,7 +3789,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -3577,7 +3954,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -3613,7 +3991,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -3645,7 +4024,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -3673,7 +4053,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3708,7 +4089,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -3744,7 +4126,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -3776,7 +4159,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -3804,7 +4188,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3839,7 +4224,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -3875,7 +4261,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -3907,7 +4294,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -3935,7 +4323,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -3970,7 +4359,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -4006,7 +4396,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -4038,7 +4429,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -4066,7 +4458,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4101,7 +4494,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -4137,7 +4555,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -4169,7 +4612,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -4197,7 +4665,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -4499,7 +4992,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4542,7 +5036,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4585,7 +5080,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4628,7 +5124,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -4671,7 +5168,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -5937,7 +6459,8 @@
            "name": "0.14mm Extra Draft @Geeetech M1 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -5965,7 +6488,8 @@
            "name": "0.25mm Draft @Geeetech M1",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -5985,7 +6509,8 @@
            "name": "0.36mm Draft @Geeetech M1 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6001,7 +6526,8 @@
            "name": "0.44mm Draft @Geeetech M1 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6032,7 +6558,8 @@
            "name": "0.14mm Extra Draft @Geeetech M1 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6060,7 +6587,8 @@
            "name": "0.25mm Draft @Geeetech M1",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6080,7 +6608,8 @@
            "name": "0.36mm Draft @Geeetech M1 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6096,7 +6625,8 @@
            "name": "0.44mm Draft @Geeetech M1 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6127,7 +6657,8 @@
            "name": "0.14mm Extra Draft @Geeetech M1 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6155,7 +6686,8 @@
            "name": "0.25mm Draft @Geeetech M1",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6175,7 +6707,8 @@
            "name": "0.36mm Draft @Geeetech M1 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6191,7 +6724,8 @@
            "name": "0.44mm Draft @Geeetech M1 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6222,7 +6756,8 @@
            "name": "0.14mm Extra Draft @Geeetech M1 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -6250,7 +6785,8 @@
            "name": "0.25mm Draft @Geeetech M1",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -6270,7 +6806,8 @@
            "name": "0.36mm Draft @Geeetech M1 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -6286,7 +6823,8 @@
            "name": "0.44mm Draft @Geeetech M1 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -6317,7 +6855,24 @@
            "name": "0.14mm Extra Draft @Geeetech M1 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -6345,7 +6900,24 @@
            "name": "0.25mm Draft @Geeetech M1",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -6365,7 +6937,24 @@
            "name": "0.36mm Draft @Geeetech M1 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -6381,7 +6970,24 @@
            "name": "0.44mm Draft @Geeetech M1 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -7452,7 +8058,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -7488,7 +8095,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -7520,7 +8128,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -7548,7 +8157,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -7583,7 +8193,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -7619,7 +8230,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -7651,7 +8263,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -7679,7 +8292,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -7714,7 +8328,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -7750,7 +8365,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -7782,7 +8398,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -7810,7 +8427,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -7845,7 +8463,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -7881,7 +8500,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -7913,7 +8533,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -7941,7 +8562,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -7976,7 +8598,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -8012,7 +8659,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -8044,7 +8716,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -8072,7 +8769,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -8374,7 +9096,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8417,7 +9140,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8460,7 +9184,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8503,7 +9228,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8546,7 +9272,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -8686,7 +9437,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -8722,7 +9474,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -8754,7 +9507,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -8782,7 +9536,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8817,7 +9572,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -8853,7 +9609,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -8885,7 +9642,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -8913,7 +9671,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -8948,7 +9707,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -8984,7 +9744,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9016,7 +9777,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9044,7 +9806,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9079,7 +9842,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9115,7 +9879,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9147,7 +9912,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9175,7 +9941,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9210,7 +9977,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -9246,7 +10038,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -9278,7 +10095,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -9306,7 +10148,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -9606,7 +10473,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9642,7 +10510,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9674,7 +10543,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9702,7 +10572,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9737,7 +10608,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9773,7 +10645,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9805,7 +10678,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9833,7 +10707,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9868,7 +10743,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -9904,7 +10780,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -9936,7 +10813,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -9964,7 +10842,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -9999,7 +10878,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10035,7 +10915,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10067,7 +10948,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10095,7 +10977,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10130,7 +11013,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -10166,7 +11074,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -10198,7 +11131,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -10226,7 +11184,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -10527,7 +11510,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10563,7 +11547,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10595,7 +11580,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10623,7 +11609,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10658,7 +11645,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10694,7 +11682,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10726,7 +11715,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10754,7 +11744,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10789,7 +11780,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10825,7 +11817,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10857,7 +11850,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -10885,7 +11879,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -10920,7 +11915,8 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -10956,7 +11952,8 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -10988,7 +11985,8 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11016,7 +12014,8 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11051,7 +12050,32 @@
            "name": "0.14mm Extra Draft @Geeetech common 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -11087,7 +12111,32 @@
            "name": "0.28mm Extra Draft @Geeetech common",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -11119,7 +12168,32 @@
            "name": "0.42mm Extra Draft @Geeetech common 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -11147,7 +12221,32 @@
            "name": "0.56mm Extra Draft @Geeetech common 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PA": "Generic PA @Geeetech",
+           "PC": "Generic PC @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "PVA": "Generic PVA @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic pa": "Generic PA @Geeetech",
+           "generic pc": "Generic PC @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic pva": "Generic PVA @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }
@@ -11447,7 +12546,8 @@
            "name": "0.14mm Extra Draft @Geeetech Thunder 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11475,7 +12575,8 @@
            "name": "0.25mm Draft @Geeetech Thunder",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11495,7 +12596,8 @@
            "name": "0.36mm Draft @Geeetech Thunder 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11511,7 +12613,8 @@
            "name": "0.44mm Draft @Geeetech Thunder 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11542,7 +12645,8 @@
            "name": "0.14mm Extra Draft @Geeetech Thunder 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11570,7 +12674,8 @@
            "name": "0.25mm Draft @Geeetech Thunder",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11590,7 +12695,8 @@
            "name": "0.36mm Draft @Geeetech Thunder 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11606,7 +12712,8 @@
            "name": "0.44mm Draft @Geeetech Thunder 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11637,7 +12744,8 @@
            "name": "0.14mm Extra Draft @Geeetech Thunder 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11665,7 +12773,8 @@
            "name": "0.25mm Draft @Geeetech Thunder",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11685,7 +12794,8 @@
            "name": "0.36mm Draft @Geeetech Thunder 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11701,7 +12811,8 @@
            "name": "0.44mm Draft @Geeetech Thunder 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11732,7 +12843,8 @@
            "name": "0.14mm Extra Draft @Geeetech Thunder 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -11760,7 +12872,8 @@
            "name": "0.25mm Draft @Geeetech Thunder",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -11780,7 +12893,8 @@
            "name": "0.36mm Draft @Geeetech Thunder 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -11796,7 +12910,8 @@
            "name": "0.44mm Draft @Geeetech Thunder 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -11827,7 +12942,26 @@
            "name": "0.14mm Extra Draft @Geeetech Thunder 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech_FastSpeed",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech_FastSpeed",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech_FastSpeed",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.4": [
@@ -11855,7 +12989,26 @@
            "name": "0.25mm Draft @Geeetech Thunder",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech_FastSpeed",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech_FastSpeed",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech_FastSpeed",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.6": [
@@ -11875,7 +13028,26 @@
            "name": "0.36mm Draft @Geeetech Thunder 0.6 nozzle",
            "layerHeight": 0.36
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech_FastSpeed",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech_FastSpeed",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech_FastSpeed",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ],
        "0.8": [
@@ -11891,7 +13063,26 @@
            "name": "0.44mm Draft @Geeetech Thunder 0.8 nozzle",
            "layerHeight": 0.44
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Geeetech_FastSpeed",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Geeetech",
+           "ASA": "Generic ASA @Geeetech",
+           "PETG": "Generic PETG @Geeetech",
+           "PLA": "Generic PLA @Geeetech_FastSpeed",
+           "PLA-CF": "Generic PLA-CF @Geeetech",
+           "TPU": "Generic TPU @Geeetech"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Geeetech",
+           "generic asa": "Generic ASA @Geeetech",
+           "generic petg": "Generic PETG @Geeetech",
+           "generic pla": "Generic PLA @Geeetech_FastSpeed",
+           "generic pla-cf": "Generic PLA-CF @Geeetech",
+           "generic tpu": "Generic TPU @Geeetech"
+          }
+         }
         }
        ]
       }

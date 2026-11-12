@@ -8,4 +8,5 @@ export const snapmakerOrca: SlicerProfile = {
   reads: "bambu",
   ownApps: ["BambuStudio", "Snapmaker_Orca"],
   dialect: "orca",
+  targetsPrinter: true,
 };

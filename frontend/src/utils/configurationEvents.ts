@@ -6,7 +6,7 @@ const CLOSED_EVENT = "thingport:configuration-closed";
 
 /** `?configuration=<tab>` on any page opens it at that tab, for a page without the top bar (the homepage view). */
 export const CONFIGURATION_PARAM = "configuration";
-const TABS: readonly ConfigurationTab[] = ["appearance", "providers", "slicer"];
+const TABS: readonly ConfigurationTab[] = ["appearance", "providers", "slicer", "printers"];
 
 /** The link that opens the app with Configuration at `tab`. */
 export function configurationLink(tab: ConfigurationTab): string {

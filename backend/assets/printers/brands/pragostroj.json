@@ -59,7 +59,19 @@
            "name": "0.5mm Draft @Pragostroj 1.0",
            "layerHeight": 0.5
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.4": [
@@ -71,7 +83,19 @@
            "name": "0.2mm Draft @Pragostroj 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.5": [
@@ -95,7 +119,23 @@
            "name": "0.25mm quality @Pragostroj 0.5 - 100mms",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PETG": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj petg": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -107,7 +147,19 @@
            "name": "0.3mm Draft @Pragostroj 0.6",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.8": [
@@ -123,7 +175,21 @@
            "name": "0.4mm PP Draft @Pragostroj 0.8",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          }
+         }
         }
        ],
        "1.2": [
@@ -135,7 +201,19 @@
            "name": "0.6mm Draft @Pragostroj 1.2",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "1.6": [
@@ -147,7 +225,19 @@
            "name": "0.8mm Draft @Pragostroj 1.6",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ]
       }
@@ -229,7 +319,19 @@
            "name": "0.5mm Draft @Pragostroj 1.0",
            "layerHeight": 0.5
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.4": [
@@ -241,7 +343,19 @@
            "name": "0.2mm Draft @Pragostroj 0.4",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.5": [
@@ -265,7 +379,23 @@
            "name": "0.25mm quality @Pragostroj 0.5 - 100mms",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PETG": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj petg": "Pragostroj PETG @Pragostroj 0.5 nozzle",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.5 nozzle"
+          }
+         }
         }
        ],
        "0.6": [
@@ -277,7 +407,19 @@
            "name": "0.3mm Draft @Pragostroj 0.6",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "0.8": [
@@ -293,7 +435,21 @@
            "name": "0.4mm PP Draft @Pragostroj 0.8",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj",
+           "PP": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj",
+           "pragostroj pp": "Pragostroj PP @Pragostroj 0.8 nozzle"
+          }
+         }
         }
        ],
        "1.2": [
@@ -305,7 +461,19 @@
            "name": "0.6mm Draft @Pragostroj 1.2",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ],
        "1.6": [
@@ -317,7 +485,19 @@
            "name": "0.8mm Draft @Pragostroj 1.6",
            "layerHeight": 0.8
           }
-         ]
+         ],
+         "defaultFilament": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "HIPS": "Pragostroj hips @Pragostroj",
+           "PLA": "Pragostroj PLAP @Pragostroj"
+          },
+          "products": {
+           "fillamentum pla concret grey": "Fillamentum PLA Concret Grey @Pragostroj 330 AWD 0.4 nozzle",
+           "pragostroj hips": "Pragostroj hips @Pragostroj",
+           "pragostroj plap": "Pragostroj PLAP @Pragostroj"
+          }
+         }
         }
        ]
       }

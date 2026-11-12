@@ -78,7 +78,22 @@
            "name": "0.15mm Standard @E3NG v1.2S",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.3": [
@@ -122,7 +137,22 @@
            "name": "0.20mm Standard @E3NG v1.2S",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.4": [
@@ -178,7 +208,24 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.5": [
@@ -222,7 +269,26 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.6": [
@@ -254,7 +320,26 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ]
       }
@@ -277,7 +362,22 @@
            "name": "0.15mm Standard @E3NG v1.2S",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.3": [
@@ -297,7 +397,22 @@
            "name": "0.20mm Standard @E3NG v1.2S",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.4": [
@@ -333,7 +448,24 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.5": [
@@ -365,7 +497,26 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ],
        "0.6": [
@@ -393,7 +544,26 @@
            "name": "0.25mm Standard @E3NG v1.2S",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @E3NG v1.2S",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @E3NG v1.2S",
+           "ASA": "Generic ASA @E3NG v1.2S",
+           "PC-CF": "Generic PCCF @E3NG v1.2S",
+           "PETG": "Generic PETG @E3NG v1.2S",
+           "PLA": "Generic PLA @E3NG v1.2S",
+           "TPU": "Generic TPU @E3NG v1.2S"
+          },
+          "products": {
+           "generic abs": "Generic ABS @E3NG v1.2S",
+           "generic asa": "Generic ASA @E3NG v1.2S",
+           "generic pccf": "Generic PCCF @E3NG v1.2S",
+           "generic petg": "Generic PETG @E3NG v1.2S",
+           "generic pla": "Generic PLA @E3NG v1.2S",
+           "generic tpu": "Generic TPU @E3NG v1.2S"
+          }
+         }
         }
        ]
       }
@@ -474,7 +644,22 @@
            "name": "0.15mm Standard @VIRTU E3",
            "layerHeight": 0.15
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3"
+          }
+         }
         }
        ],
        "0.3": [
@@ -518,7 +703,22 @@
            "name": "0.20mm Standard @VIRTU E3",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3"
+          }
+         }
         }
        ],
        "0.4": [
@@ -574,7 +774,24 @@
            "name": "0.25mm Standard @VIRTU E3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
         }
        ],
        "0.5": [
@@ -618,7 +835,26 @@
            "name": "0.25mm Standard @VIRTU E3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PC-CF": "Generic PCCF @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic pccf": "Generic PCCF @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
         }
        ],
        "0.6": [
@@ -650,7 +886,26 @@
            "name": "0.25mm Standard @VIRTU E3",
            "layerHeight": 0.25
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @VIRTU E3",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @VIRTU E3",
+           "ASA": "Generic ASA @VIRTU E3",
+           "PC-CF": "Generic PCCF @VIRTU E3",
+           "PETG": "Generic PETG @VIRTU E3",
+           "PLA": "Generic PLA @VIRTU E3",
+           "TPU": "Generic TPU @VIRTU E3"
+          },
+          "products": {
+           "generic abs": "Generic ABS @VIRTU E3",
+           "generic asa": "Generic ASA @VIRTU E3",
+           "generic pccf": "Generic PCCF @VIRTU E3",
+           "generic petg": "Generic PETG @VIRTU E3",
+           "generic pla": "Generic PLA @VIRTU E3",
+           "generic tpu": "Generic TPU @VIRTU E3"
+          }
+         }
         }
        ]
       }

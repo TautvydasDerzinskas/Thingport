@@ -4,18 +4,21 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
+import PrinterIcon from "../../printers/PrinterIcon";
 import AppearancePanel from "./AppearancePanel";
+import PrintersPanel from "./PrintersPanel";
 import ProvidersPanel from "./ProvidersPanel";
 import SlicerPanel from "./SlicerPanel";
 import SectionedDialog from "../../SectionedDialog";
 import { allProvidersOff, useDisabledProviders } from "../../../hooks/useProviders";
 
-export type ConfigurationTab = "appearance" | "providers" | "slicer";
+export type ConfigurationTab = "appearance" | "providers" | "slicer" | "printers";
 
 const TABS: { id: ConfigurationTab; icon: React.ReactNode }[] = [
   { id: "appearance", icon: <PaletteOutlinedIcon fontSize="small" /> },
   { id: "providers", icon: <HubOutlinedIcon fontSize="small" /> },
   { id: "slicer", icon: <LayersOutlinedIcon fontSize="small" /> },
+  { id: "printers", icon: <PrinterIcon fontSize="small" /> },
 ];
 
 type Props = {
@@ -60,7 +63,10 @@ export default function ConfigurationDialog({ open, onClose, theme, onThemeChang
         <AppearancePanel theme={theme} onThemeChange={onThemeChange} onUnauthorized={onUnauthorized} />
       )}
       {shown === "providers" && <ProvidersPanel isAdmin={isAdmin} onUnauthorized={onUnauthorized} />}
-      {shown === "slicer" && <SlicerPanel onNavigate={onClose} onUnauthorized={onUnauthorized} />}
+      {shown === "slicer" && (
+        <SlicerPanel onNavigate={onClose} onOpenPrinters={() => setTab("printers")} onUnauthorized={onUnauthorized} />
+      )}
+      {shown === "printers" && <PrintersPanel onUnauthorized={onUnauthorized} />}
     </SectionedDialog>
   );
 }

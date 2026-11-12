@@ -11,8 +11,24 @@ import type { SlicerProfile } from "./slicers/types.generated";
  *  version these slicers convert old projects up from (2.0), short of every one they warn about (2.3.1). */
 export const COMPATIBLE_TAG = "BambuStudio-02.01.00.00";
 
+/** The printer a copy is for (printer.ts): its printer catalogue id, its nozzle, and the slicer's printer preset for
+ *  the two. `stamp` changes with what the catalogue says about it for that slicer, and with it the copy's name. */
+export type PrinterChoice = { id: string; nozzle: string; preset: string; stamp?: string };
+
+/** Whether the project was made for this very printer preset, which then needs nothing changed for it. */
+export function madeFor(printerPreset: string | null | undefined, choice: PrinterChoice): boolean {
+  return Boolean(printerPreset) && String(printerPreset).trim().toLowerCase() === choice.preset.trim().toLowerCase();
+}
+
 export type AdaptPlan =
-  | { output: "bambu"; tag: string | null; dropOrcaTag: boolean; dialect: SettingsDialect | null }
+  | {
+      output: "bambu";
+      tag: string | null;
+      dropOrcaTag: boolean;
+      dialect: SettingsDialect | null;
+      /** The user's printer the copy names the presets of (printer.ts); absent, the designer's stays. */
+      printer?: PrinterChoice;
+    }
   | { output: "prusa" }
   | { output: "cura" };
 
@@ -47,26 +63,43 @@ function orcaTagQuiet(format: ThreeMfFormat, slicer: SlicerProfile): boolean {
   return !format.orcaTag || !slicer.orcaTagQuietUpTo || versionAtMost(format.orcaTag, slicer.orcaTagQuietUpTo);
 }
 
-/** The copy to open in `slicer` instead of the file, or null when the file itself is the best it gets. */
+/** The copy to open in `slicer` instead of the file, or null when the file itself is the best it gets. `printer` is
+ *  the user's printer for that slicer: a slicer that loads printer presets by name gets a copy naming its presets for
+ *  it, unless the project was made for that very preset. */
 export function planAdaptation(
   format: ThreeMfFormat | null | undefined,
   slicer: SlicerProfile | null | undefined,
+  printer?: PrinterChoice | null,
 ): AdaptPlan | null {
   if (!format || !slicer || format.kind !== "bambu") return null;
   if (slicer.reads === "prusa") return { output: "prusa" };
   if (slicer.reads === "cura") return { output: "cura" };
 
+  const forPrinter = printer && slicer.targetsPrinter && !madeFor(format.printer, printer) ? printer : null;
   const dropOrcaTag = !orcaTagQuiet(format, slicer);
   const retag = !slicer.asksForPrinter && (!ownedBy(format, slicer) || !quietFor(format, slicer) || dropOrcaTag);
   const dialect = slicer.dialect && format.dialect && format.dialect !== slicer.dialect ? slicer.dialect : null;
-  if (!retag && !dropOrcaTag && !dialect) return null;
-  return { output: "bambu", tag: retag ? COMPATIBLE_TAG : null, dropOrcaTag, dialect };
+  if (!retag && !dropOrcaTag && !dialect && !forPrinter) return null;
+  return {
+    output: "bambu",
+    tag: retag ? COMPATIBLE_TAG : null,
+    dropOrcaTag,
+    dialect,
+    ...(forPrinter ? { printer: forPrinter } : {}),
+  };
 }
 
-/** A name for the copy a plan makes, the same for every slicer that gets the same copy. */
+/** A name for the copy a plan makes, the same for every slicer that gets the same copy. A copy for a printer is
+ *  named for it and its recipe's stamp, as slicers name the same printer's presets differently. */
 export function planKey(plan: AdaptPlan): string {
   if (plan.output !== "bambu") return plan.output;
-  return ["bambu", plan.tag ? "tag" : "", plan.dropOrcaTag ? "noorca" : "", plan.dialect ?? ""]
+  return [
+    "bambu",
+    plan.tag ? "tag" : "",
+    plan.dropOrcaTag ? "noorca" : "",
+    plan.dialect ?? "",
+    plan.printer ? ["for", plan.printer.id, plan.printer.nozzle, plan.printer.stamp].filter(Boolean).join("-") : "",
+  ]
     .filter(Boolean)
     .join("-");
 }

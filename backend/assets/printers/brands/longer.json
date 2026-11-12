@@ -267,7 +267,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.2 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.4": [
@@ -299,7 +310,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.4 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.6": [
@@ -331,7 +353,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.6 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.8": [
@@ -363,7 +396,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.8 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ]
       }
@@ -402,7 +446,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.2 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.4": [
@@ -434,7 +489,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.4 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.6": [
@@ -466,7 +532,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.6 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ],
        "0.8": [
@@ -498,7 +575,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 (0.8 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
         }
        ]
       }
@@ -581,7 +669,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.2 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.4": [
@@ -613,7 +712,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.4 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.6": [
@@ -645,7 +755,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.6 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.8": [
@@ -677,7 +798,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.8 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ]
       }
@@ -716,7 +848,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.2 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.4": [
@@ -748,7 +891,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.4 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.6": [
@@ -780,7 +934,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.6 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ],
        "0.8": [
@@ -812,7 +977,18 @@
            "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.8 nozzle)",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
         }
        ]
       }

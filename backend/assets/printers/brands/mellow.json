@@ -67,7 +67,8 @@
            "name": "0.16mm Optimal @M1",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -103,7 +104,8 @@
            "name": "0.32mm Standard @M1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -143,7 +145,8 @@
            "name": "0.40mm Standard @M1",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -179,7 +182,8 @@
            "name": "0.56mm Standard @M1",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -206,7 +210,8 @@
            "name": "0.16mm Optimal @M1",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -242,7 +247,8 @@
            "name": "0.32mm Standard @M1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -282,7 +288,8 @@
            "name": "0.40mm Standard @M1",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -318,7 +325,8 @@
            "name": "0.56mm Standard @M1",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -345,7 +353,8 @@
            "name": "0.16mm Optimal @M1",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -381,7 +390,8 @@
            "name": "0.32mm Standard @M1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -421,7 +431,8 @@
            "name": "0.40mm Standard @M1",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -457,7 +468,8 @@
            "name": "0.56mm Standard @M1",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -484,7 +496,8 @@
            "name": "0.16mm Optimal @M1",
            "layerHeight": 0.16
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.4": [
@@ -520,7 +533,8 @@
            "name": "0.32mm Standard @M1",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.6": [
@@ -560,7 +574,8 @@
            "name": "0.40mm Standard @M1",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ],
        "0.8": [
@@ -596,7 +611,8 @@
            "name": "0.56mm Standard @M1",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }

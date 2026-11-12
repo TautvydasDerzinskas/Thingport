@@ -818,7 +818,44 @@
            "name": "0.10mm Standard @Thinker X400 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Eryone PLA @0.2 nozzle;Eryone ABS @0.2 nozzle;Eryone ASA @0.2 nozzle;Eryone PETG @0.2 nozzle;Eryone Silk PLA @0.2 nozzle;Eryone TPU @0.2 nozzle;Eryone ABS-CF @0.2 nozzle;Eryone ASA-CF @0.2 nozzle;Eryone PA @0.2 nozzle;Eryone PA-CF @0.2 nozzle;Eryone PA-GF @0.2 nozzle;Eryone PETG-CF @0.2 nozzle;Eryone PLA-CF @0.2 nozzle;Eryone PP @0.2 nozzle;Eryone PP-CF @0.2 nozzle;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS @0.2 nozzle",
+           "ABS-CF": "Eryone ABS-CF @0.2 nozzle",
+           "ASA": "Eryone ASA @0.2 nozzle",
+           "ASA-CF": "Eryone ASA-CF @0.2 nozzle",
+           "PA": "Eryone PA @0.2 nozzle",
+           "PA-CF": "Eryone PA-CF @0.2 nozzle",
+           "PA-GF": "Eryone PA-GF @0.2 nozzle",
+           "PETG": "Eryone PETG @0.2 nozzle",
+           "PETG-CF": "Eryone PETG-CF @0.2 nozzle",
+           "PLA": "Eryone PLA @0.2 nozzle",
+           "PLA Silk": "Eryone Silk PLA @0.2 nozzle",
+           "PLA-CF": "Eryone PLA-CF @0.2 nozzle",
+           "PP": "Eryone PP @0.2 nozzle",
+           "PP-CF": "Eryone PP-CF @0.2 nozzle",
+           "TPU": "Eryone TPU @0.2 nozzle"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS @0.2 nozzle",
+           "eryone abs-cf": "Eryone ABS-CF @0.2 nozzle",
+           "eryone asa": "Eryone ASA @0.2 nozzle",
+           "eryone asa-cf": "Eryone ASA-CF @0.2 nozzle",
+           "eryone pa": "Eryone PA @0.2 nozzle",
+           "eryone pa-cf": "Eryone PA-CF @0.2 nozzle",
+           "eryone pa-gf": "Eryone PA-GF @0.2 nozzle",
+           "eryone petg": "Eryone PETG @0.2 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF @0.2 nozzle",
+           "eryone pla": "Eryone PLA @0.2 nozzle",
+           "eryone pla-cf": "Eryone PLA-CF @0.2 nozzle",
+           "eryone pp": "Eryone PP @0.2 nozzle",
+           "eryone pp-cf": "Eryone PP-CF @0.2 nozzle",
+           "eryone silk pla": "Eryone Silk PLA @0.2 nozzle",
+           "eryone tpu": "Eryone TPU @0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -842,7 +879,57 @@
            "name": "0.24mm Standard @Thinker X400",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA Silk": "Eryone Silk PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone abs-gf": "Eryone ABS-GF @Thinker X400 0.4 nozzle",
+           "eryone abs+-hs": "Eryone ABS+-HS @Thinker X400 0.4 nozzle",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone asa-hs": "Eryone ASA-HS @Thinker X400 0.4 nozzle",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg hs": "Eryone PETG HS @Thinker X400 0.4 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone petg-galaxy": "Eryone petg-Galaxy @Thinker X400 0.4 nozzle",
+           "eryone petg-gf": "Eryone PETG-GF @Thinker X400 0.4 nozzle",
+           "eryone petg-lite": "Eryone PETG-Lite @Thinker X400 0.4 nozzle",
+           "eryone petg-matte": "Eryone PETG-Matte @Thinker X400 0.4 nozzle",
+           "eryone petg-translucent": "Eryone PETG-Translucent @Thinker X400 0.4 nozzle",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pla-matte": "Eryone PLA-Matte @Thinker X400 0.4 nozzle",
+           "eryone pla-matte hs": "Eryone PLA-Matte HS @Thinker X400 0.4 nozzle",
+           "eryone pla-ultra silk": "Eryone pla-Ultra Silk @Thinker X400 0.4 nozzle",
+           "eryone pla+hs": "Eryone PLA+HS @Thinker X400 0.4 nozzle",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
         }
        ]
       }
@@ -861,7 +948,44 @@
            "name": "0.10mm Standard @Thinker X400 0.2 nozzle",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Eryone PLA @0.2 nozzle;Eryone ABS @0.2 nozzle;Eryone ASA @0.2 nozzle;Eryone PETG @0.2 nozzle;Eryone Silk PLA @0.2 nozzle;Eryone TPU @0.2 nozzle;Eryone ABS-CF @0.2 nozzle;Eryone ASA-CF @0.2 nozzle;Eryone PA @0.2 nozzle;Eryone PA-CF @0.2 nozzle;Eryone PA-GF @0.2 nozzle;Eryone PETG-CF @0.2 nozzle;Eryone PLA-CF @0.2 nozzle;Eryone PP @0.2 nozzle;Eryone PP-CF @0.2 nozzle;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS @0.2 nozzle",
+           "ABS-CF": "Eryone ABS-CF @0.2 nozzle",
+           "ASA": "Eryone ASA @0.2 nozzle",
+           "ASA-CF": "Eryone ASA-CF @0.2 nozzle",
+           "PA": "Eryone PA @0.2 nozzle",
+           "PA-CF": "Eryone PA-CF @0.2 nozzle",
+           "PA-GF": "Eryone PA-GF @0.2 nozzle",
+           "PETG": "Eryone PETG @0.2 nozzle",
+           "PETG-CF": "Eryone PETG-CF @0.2 nozzle",
+           "PLA": "Eryone PLA @0.2 nozzle",
+           "PLA Silk": "Eryone Silk PLA @0.2 nozzle",
+           "PLA-CF": "Eryone PLA-CF @0.2 nozzle",
+           "PP": "Eryone PP @0.2 nozzle",
+           "PP-CF": "Eryone PP-CF @0.2 nozzle",
+           "TPU": "Eryone TPU @0.2 nozzle"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS @0.2 nozzle",
+           "eryone abs-cf": "Eryone ABS-CF @0.2 nozzle",
+           "eryone asa": "Eryone ASA @0.2 nozzle",
+           "eryone asa-cf": "Eryone ASA-CF @0.2 nozzle",
+           "eryone pa": "Eryone PA @0.2 nozzle",
+           "eryone pa-cf": "Eryone PA-CF @0.2 nozzle",
+           "eryone pa-gf": "Eryone PA-GF @0.2 nozzle",
+           "eryone petg": "Eryone PETG @0.2 nozzle",
+           "eryone petg-cf": "Eryone PETG-CF @0.2 nozzle",
+           "eryone pla": "Eryone PLA @0.2 nozzle",
+           "eryone pla-cf": "Eryone PLA-CF @0.2 nozzle",
+           "eryone pp": "Eryone PP @0.2 nozzle",
+           "eryone pp-cf": "Eryone PP-CF @0.2 nozzle",
+           "eryone silk pla": "Eryone Silk PLA @0.2 nozzle",
+           "eryone tpu": "Eryone TPU @0.2 nozzle"
+          }
+         }
         }
        ],
        "0.4": [
@@ -885,7 +1009,44 @@
            "name": "0.24mm Standard @Thinker X400",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA Silk": "Eryone Silk PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
         }
        ]
       }
@@ -916,7 +1077,44 @@
            "name": "0.24mm Standard @Thinker X400",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Eryone PLA;Eryone ABS;Eryone ASA;Eryone PETG;Eryone Silk PLA;Eryone TPU;Eryone ABS-CF;Eryone ASA-CF;Eryone PA;Eryone PA-CF;Eryone PA-GF;Eryone PETG-CF;Eryone PLA-CF;Eryone PP;Eryone PP-CF;",
+         "filaments": {
+          "types": {
+           "ABS": "Eryone ABS",
+           "ABS-CF": "Eryone ABS-CF",
+           "ASA": "Eryone ASA",
+           "ASA-CF": "Eryone ASA-CF",
+           "PA": "Eryone PA",
+           "PA-CF": "Eryone PA-CF",
+           "PA-GF": "Eryone PA-GF",
+           "PETG": "Eryone PETG",
+           "PETG-CF": "Eryone PETG-CF",
+           "PLA": "Eryone PLA",
+           "PLA-CF": "Eryone PLA-CF",
+           "PP": "Eryone PP",
+           "PP-CF": "Eryone PP-CF",
+           "Silk": "Eryone Silk PLA",
+           "TPU": "Eryone TPU"
+          },
+          "products": {
+           "eryone abs": "Eryone ABS",
+           "eryone abs-cf": "Eryone ABS-CF",
+           "eryone asa": "Eryone ASA",
+           "eryone asa-cf": "Eryone ASA-CF",
+           "eryone pa": "Eryone PA",
+           "eryone pa-cf": "Eryone PA-CF",
+           "eryone pa-gf": "Eryone PA-GF",
+           "eryone petg": "Eryone PETG",
+           "eryone petg-cf": "Eryone PETG-CF",
+           "eryone pla": "Eryone PLA",
+           "eryone pla-cf": "Eryone PLA-CF",
+           "eryone pp": "Eryone PP",
+           "eryone pp-cf": "Eryone PP-CF",
+           "eryone silk pla": "Eryone Silk PLA",
+           "eryone tpu": "Eryone TPU"
+          }
+         }
         }
        ]
       }
@@ -947,7 +1145,8 @@
            "name": "0.24mm Standard @Thinker X400",
            "layerHeight": 0.24
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System;Generic ABS @System;Generic ASA @System;Generic PETG @System;Generic PLA Silk @System;Generic TPU @System"
         }
        ]
       }

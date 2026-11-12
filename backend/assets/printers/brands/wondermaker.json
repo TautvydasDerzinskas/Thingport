@@ -95,7 +95,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -127,7 +150,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -155,7 +204,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -183,7 +258,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -218,7 +319,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -250,7 +374,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -278,7 +428,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -306,7 +482,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -341,7 +543,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -373,7 +598,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -401,7 +652,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -429,7 +706,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -509,7 +812,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -541,7 +867,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -569,7 +921,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -597,7 +975,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -632,7 +1036,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -664,7 +1091,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -692,7 +1145,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -720,7 +1199,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -755,7 +1260,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -787,7 +1315,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -815,7 +1369,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -843,7 +1423,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS",
+           "ASA": "WonderMaker ASA",
+           "PET-CF": "WonderMaker PET-CF",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS",
+           "wondermaker asa": "WonderMaker ASA",
+           "wondermaker pet-cf": "WonderMaker PET-CF",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -923,7 +1529,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -955,7 +1584,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -983,7 +1638,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1011,7 +1692,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -1046,7 +1753,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -1078,7 +1808,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1106,7 +1862,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1134,7 +1916,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }
@@ -1169,7 +1977,30 @@
            "name": "0.14mm Extra Draft @WonderMaker ZR Ultra 0.2 nozzle",
            "layerHeight": 0.14
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.4": [
@@ -1201,7 +2032,33 @@
            "name": "0.28mm Extra Draft @WonderMaker ZR Ultra",
            "layerHeight": 0.28
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.6": [
@@ -1229,7 +2086,33 @@
            "name": "0.42mm Extra Draft @WonderMaker ZR Ultra 0.6 nozzle",
            "layerHeight": 0.42
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ],
        "0.8": [
@@ -1257,7 +2140,33 @@
            "name": "0.56mm Extra Draft @WonderMaker ZR Ultra 0.8 nozzle",
            "layerHeight": 0.56
           }
-         ]
+         ],
+         "defaultFilament": "WonderMaker PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "ASA": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "PET-CF": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "PETG": "WonderMaker PETG Basic",
+           "PLA": "WonderMaker PLA Silk",
+           "PVA": "WonderMaker PVA",
+           "TPU": "WonderMaker TPU 95A"
+          },
+          "products": {
+           "wondermaker abs": "WonderMaker ABS @WonderMaker ZR Ultra S",
+           "wondermaker asa": "WonderMaker ASA @WonderMaker ZR Ultra S",
+           "wondermaker pet-cf": "WonderMaker PET-CF @WonderMaker ZR Ultra S",
+           "wondermaker petg basic": "WonderMaker PETG Basic",
+           "wondermaker pla basic": "WonderMaker PLA Basic",
+           "wondermaker pla marble": "WonderMaker PLA Marble",
+           "wondermaker pla matte": "WonderMaker PLA Matte",
+           "wondermaker pla metal": "WonderMaker PLA Metal",
+           "wondermaker pla silk": "WonderMaker PLA Silk",
+           "wondermaker pla wood": "WonderMaker PLA Wood",
+           "wondermaker pva": "WonderMaker PVA",
+           "wondermaker tpu 95a": "WonderMaker TPU 95A"
+          }
+         }
         }
        ]
       }

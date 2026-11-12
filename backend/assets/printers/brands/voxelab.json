@@ -64,7 +64,8 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -87,7 +88,20 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Voxelab Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Voxelab Generic ABS",
+           "PETG": "Voxelab Generic PETG",
+           "PLA": "Voxelab Generic PLA"
+          },
+          "products": {
+           "voxelab generic abs": "Voxelab Generic ABS",
+           "voxelab generic petg": "Voxelab Generic PETG",
+           "voxelab generic pla": "Voxelab Generic PLA"
+          }
+         }
         }
        ]
       }
@@ -110,7 +124,8 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -133,7 +148,8 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -156,7 +172,8 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @System"
         }
        ]
       }
@@ -179,7 +196,20 @@
            "name": "0.20mm Standard @Voxelab AquilaX2",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Generic PLA @Voxelab",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Voxelab",
+           "PETG": "Generic PETG @Voxelab",
+           "PLA": "Generic PLA @Voxelab"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Voxelab",
+           "generic petg": "Generic PETG @Voxelab",
+           "generic pla": "Generic PLA @Voxelab"
+          }
+         }
         }
        ]
       }

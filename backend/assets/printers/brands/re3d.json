@@ -65,7 +65,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -81,7 +94,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -108,7 +134,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -124,7 +163,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ]
       }
@@ -193,7 +245,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -209,7 +274,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -236,7 +314,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -252,7 +343,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ]
       }
@@ -313,7 +417,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
         }
        ],
        "1.75": [
@@ -325,7 +440,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
         }
        ]
       }
@@ -344,7 +470,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ],
        "1.75": [
@@ -356,7 +493,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ]
       }
@@ -417,7 +565,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
         }
        ],
        "1.75": [
@@ -429,7 +588,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
         }
        ]
       }
@@ -448,7 +618,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ],
        "1.75": [
@@ -460,7 +641,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ]
       }
@@ -529,7 +721,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
         }
        ],
        "0.8": [
@@ -545,7 +750,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
         }
        ]
       }
@@ -572,7 +790,20 @@
            "name": "0.32 Draft",
            "layerHeight": 0.32
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ],
        "0.8": [
@@ -588,7 +819,20 @@
            "name": "0.4 Standard",
            "layerHeight": 0.4
           }
-         ]
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
         }
        ]
       }
@@ -649,7 +893,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
         }
        ],
        "1.75": [
@@ -661,7 +916,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
         }
        ]
       }
@@ -680,7 +946,18 @@
            "name": "0.6 Standard",
            "layerHeight": 0.6
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ],
        "1.75": [
@@ -692,7 +969,18 @@
            "name": "1.0 Standard",
            "layerHeight": 1
           }
-         ]
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
         }
        ]
       }

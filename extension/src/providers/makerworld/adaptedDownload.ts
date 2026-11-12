@@ -222,8 +222,10 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
   root.append(style, button, bubble);
 
   // An error, or a note on what was saved: shown for a while, not only while hovered.
+  let held = false;
   const showBubble = (text: string, error = false, note = false) => {
     clearTimeout(bubbleTimer);
+    held = error || note;
     bubble.textContent = text;
     bubble.classList.toggle("tg-nd-bubble--error", error);
     bubble.hidden = false;
@@ -234,19 +236,24 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     // Above when there's no room below, e.g. in MakerWorld's bottom-stuck action bar.
     const below = rect.bottom + 8 + bubble.offsetHeight <= window.innerHeight;
     bubble.style.top = `${below ? rect.bottom + 8 : Math.max(8, rect.top - 8 - bubble.offsetHeight)}px`;
-    if (error || note) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
+    if (held) bubbleTimer = setTimeout(hideBubble, ERROR_SHOW_MS);
   };
   const hideBubble = () => {
     clearTimeout(bubbleTimer);
+    held = false;
     bubble.hidden = true;
   };
   const showInfo = () => {
     if (bubble.hidden) showBubble(explanation(target, output));
   };
   icon.addEventListener("mouseenter", showInfo);
-  icon.addEventListener("mouseleave", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
+  // An error or a note stays its while: moving away hides only the explanation.
+  icon.addEventListener("mouseleave", () => !held && hideBubble());
   button.addEventListener("focus", () => button.matches(":focus-visible") && showInfo());
-  button.addEventListener("blur", () => !bubble.classList.contains("tg-nd-bubble--error") && hideBubble());
+  button.addEventListener("blur", () => !held && hideBubble());
+
+  // Once the instance says its user wants that slicer's files as they are, the button stays off until it goes.
+  let switchedOff = false;
 
   button.addEventListener("click", async () => {
     hideBubble();
@@ -257,6 +264,13 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
       if (!target.known) {
         label.textContent = "Asking your instance…";
         const answer = await instanceSlicer(SLICER_RETRY_MS);
+        if (answer?.adapted === false) {
+          // Its user wants that slicer's files as they are: no copy, and no button once they've read why.
+          switchedOff = true;
+          showBubble("Open adapted is off for your slicer in Thingport, so there's no copy to download.", false, true);
+          setTimeout(() => host === el && unmountAdaptedDownload(), ERROR_SHOW_MS);
+          return;
+        }
         if (answer) {
           target = { known: true, slicer: answer.slicer };
           output = planFor(MAKERWORLD_FORMAT, answer.slicer)?.output ?? output;
@@ -275,7 +289,7 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     } catch (err) {
       showBubble(err instanceof Error ? err.message : String(err), true);
     } finally {
-      button.disabled = false;
+      button.disabled = switchedOff;
       icon.replaceChildren(bulbIcon());
       label.textContent = LABEL;
     }
@@ -388,21 +402,29 @@ export function unmountAdaptedDownload(): void {
 const SLICER_LOOKUP_MS = 5000;
 const SLICER_RETRY_MS = 15000;
 
-/** The instance's answer (its slicer, null for none picked), or null when it can't say in time. */
-export async function instanceSlicer(waitMs = SLICER_LOOKUP_MS): Promise<{ slicer: string | null } | null> {
-  const lookup = api<{ slicer: string | null }>("GET", "/settings/slicer")
-    .then((res) => ({ slicer: res.slicer }))
+/** The instance's answer (its slicer, null for none picked), or null when it can't say in time. `adapted` is false
+ *  when its user switched "Open adapted" off for that slicer; an instance from before the switch doesn't say. */
+export async function instanceSlicer(
+  waitMs = SLICER_LOOKUP_MS,
+): Promise<{ slicer: string | null; adapted?: false } | null> {
+  const lookup = api<{ slicer: string | null; unadapted?: string[] }>("GET", "/settings/slicer")
+    .then((res) => ({
+      slicer: res.slicer,
+      ...(res.slicer && res.unadapted?.includes(res.slicer) ? { adapted: false as const } : {}),
+    }))
     .catch(() => null);
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), waitMs));
   return Promise.race([lookup, timeout]);
 }
 
-/** What the button offers for the instance's answer: nothing when its slicer opens MakerWorld's files as they are,
- *  and a button that asks again when it didn't answer, rather than taking that as no slicer. */
+/** What the button offers for the instance's answer: nothing when its slicer opens MakerWorld's files as they are or
+ *  its user wants them as they are, and a button that asks again when it didn't answer, rather than taking that as no
+ *  slicer. */
 export function offerFor(
-  answer: { slicer: string | null } | null,
+  answer: { slicer: string | null; adapted?: false } | null,
 ): { target: Target; output: AdaptPlan["output"] } | null {
   if (!answer) return { target: { known: false }, output: "prusa" };
+  if (answer.adapted === false) return null;
   const plan = planFor(MAKERWORLD_FORMAT, answer.slicer);
   return plan ? { target: { known: true, slicer: answer.slicer }, output: plan.output } : null;
 }

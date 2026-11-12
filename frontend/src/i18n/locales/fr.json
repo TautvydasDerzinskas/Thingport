@@ -3064,7 +3064,8 @@
       "tabs": {
         "appearance": "Apparence",
         "providers": "Fournisseurs",
-        "slicer": "Slicer"
+        "slicer": "Slicer",
+        "printers": "Imprimantes"
       }
     },
     "providers": {
@@ -3090,7 +3091,12 @@
       "lastUsed": "Dernier utilisé",
       "deactivate": "Désactiver",
       "throughBridge": "Via Thingport Bridge",
-      "throughBridgeHelp": "Thingport Bridge télécharge le fichier et le transmet à {{slicer}}, pour quand {{slicer}} ne peut pas le télécharger lui-même depuis cette instance Thingport."
+      "throughBridgeHelp": "Thingport Bridge télécharge le fichier et le transmet à {{slicer}}, pour quand {{slicer}} ne peut pas le télécharger lui-même depuis cette instance Thingport.",
+      "openAdapted": "Ouvrir adapté",
+      "openAdaptedHelp": "{{slicer}} ouvre un modèle comme une copie faite pour lui, et pour votre imprimante s’il en prend une. Désactivé, il ouvre chaque fichier tel quel.",
+      "printer": "Imprimante",
+      "askPrinter": "Demander à l’ouverture d’un modèle",
+      "addPrinters": "Ajouter des imprimantes…"
     },
     "storageMoveProgress": {
       "label": "{{phrase}} {{done}} sur {{total}} modèles",
@@ -4432,6 +4438,59 @@
       "emptyLibrary": "Votre bibliothèque n'a pas encore de modèles.",
       "loadFailed": "Impossible de charger vos modèles.",
       "limit_many": "Jusqu'à {{count}}"
+    },
+    "printers": {
+      "subtitle": "Double-cliquez sur une imprimante pour l’ajouter ou la retirer ; clic droit pour sa buse et ses slicers.",
+      "failed": "Impossible d’enregistrer l’imprimante.",
+      "loadFailed": "Impossible de charger vos imprimantes.",
+      "yours": "la vôtre, buse de {{nozzle}} mm",
+      "suggested": "Suggérée",
+      "notYours": "Pas la vôtre",
+      "nozzleShort": "{{nozzle}} mm",
+      "suggestedSliced_one": "{{count}} de vos impressions a été tranchée pour elle",
+      "suggestedSliced_many": "{{count}} de vos impressions ont été tranchées pour elle",
+      "suggestedSliced_other": "{{count}} de vos impressions ont été tranchées pour elle",
+      "suggestedProjects_one": "{{count}} de vos projets est fait pour elle",
+      "suggestedProjects_many": "{{count}} de vos projets sont faits pour elle",
+      "suggestedProjects_other": "{{count}} de vos projets sont faits pour elle",
+      "empty": "Ajoutez les imprimantes sur lesquelles vous imprimez : les modèles s’ouvrent alors dans votre slicer préparés pour elles.",
+      "bambu": {
+        "region": "Votre compte Bambu Lab",
+        "question": "Trouver vos imprimantes dans votre compte Bambu Lab ?",
+        "find": "Les trouver",
+        "later": "Pas maintenant",
+        "found_one": "{{count}} imprimante ajoutée depuis votre compte Bambu Lab.",
+        "found_many": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
+        "found_other": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
+        "none": "Votre compte Bambu Lab n’a aucune imprimante que Thingport connaît.",
+        "expired": "Votre connexion à MakerWorld a expiré. Reconnectez-vous dans Fournisseurs.",
+        "signedOut": "Connectez-vous d’abord à MakerWorld dans Fournisseurs.",
+        "failed": "Bambu Lab n’a pas listé vos imprimantes. Réessayez plus tard."
+      },
+      "menu": {
+        "nozzle": "Buse",
+        "usedWith": "Utilisée avec",
+        "slicers_one": "{{count}} slicer",
+        "slicers_many": "{{count}} slicers",
+        "slicers_other": "{{count}} slicers",
+        "unused": "Aucun",
+        "noSlicers": "Aucun slicer acceptant une imprimante n’est activé",
+        "notIn": "Absente de {{slicer}}",
+        "remove": "Retirer",
+        "add": "Ajouter à mes imprimantes",
+        "notMine": "Pas la mienne",
+        "suggestAgain": "La suggérer à nouveau"
+      },
+      "add": {
+        "tile": "Ajouter",
+        "title": "Ajouter une imprimante",
+        "search": "Rechercher une imprimante",
+        "brands": "Marques",
+        "failed": "Impossible de charger les imprimantes.",
+        "none": "Aucune imprimante ne correspond à « {{query}} ».",
+        "added": "ajoutée",
+        "done": "Terminé"
+      }
     }
   },
   "common": {
@@ -5222,7 +5281,8 @@
       "adaptedInfo": {
         "prusa": "Une copie faite pour {{slicer}} : elle rejoint vos propres réglages d’imprimante, de filament et d’impression, avec la hauteur de couche, les parois, le remplissage et les supports du créateur réglés sur chaque objet, et les couleurs peintes sur vos extrudeurs. Le fichier stocké n’est pas modifié.",
         "cura": "Une copie faite pour {{slicer}} : les objets en plusieurs pièces gardent leurs pièces, chacune sur son extrudeur, et les parois, couches supérieures et inférieures, remplissage et supports du créateur sont réglés sur chaque objet. Cura ne lit pas les couleurs peintes. Le fichier stocké n’est pas modifié.",
-        "bambu": "Une copie que {{slicer}} ouvre comme son propre projet : pièces, plateaux, peinture et réglages du créateur tels quels, sans questions sur la version du fichier ni sur des réglages qu’il nomme autrement. Le fichier stocké n’est pas modifié."
+        "bambu": "Une copie que {{slicer}} ouvre comme son propre projet : pièces, plateaux, peinture et réglages du créateur tels quels, sans questions sur la version du fichier ni sur des réglages qu’il nomme autrement. Le fichier stocké n’est pas modifié.",
+        "bambuPrinter": "Une copie que {{slicer}} ouvre comme son propre projet sur votre imprimante : ses préréglages pour cette imprimante, avec les modifications du créateur par-dessus, et les plateaux déplacés sur son lit. Les pièces et la peinture restent telles quelles. Le fichier stocké n’est pas modifié."
       },
       "adaptPreparing": "Préparation du fichier adapté…",
       "adaptPreparingShort": "Préparation du fichier adapté…",
@@ -5342,7 +5402,17 @@
       "customize": "Personnaliser…",
       "scriptWithheld": "Script non partagé",
       "scriptWithheldHint": "Ce modèle a été créé à partir d'un script, mais son auteur a choisi de ne pas le partager : il n'y a donc rien à personnaliser ici. Lui seul peut changer cela.",
-      "internalPlateObjectCount_many": "{{count}} objets"
+      "internalPlateObjectCount_many": "{{count}} objets",
+      "askPrinter": {
+        "title": "Pour quelle imprimante ?",
+        "subtitle": "{{slicer}} reçoit une copie faite pour elle, avec les réglages du créateur.",
+        "notIn": "Absente de {{slicer}}",
+        "detail": "{{nozzle}} mm · {{x}} × {{y}}",
+        "nozzle": "{{nozzle}} mm",
+        "remember": "Retenir pour {{slicer}}",
+        "changeLater": "modifiable dans Configuration",
+        "open": "Ouvrir"
+      }
     },
     "customizer": {
       "title": "Personnalisation de {{model}}",

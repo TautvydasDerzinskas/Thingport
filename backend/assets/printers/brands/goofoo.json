@@ -275,7 +275,8 @@
            "name": "0.20mm Standard @Goofoo GP1",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ]
       }
@@ -790,7 +791,8 @@
            "name": "0.20mm Standard @Goofoo TurboM",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ]
       }
@@ -851,7 +853,8 @@
            "name": "0.10mm Standard @Goofoo Velo+",
            "layerHeight": 0.1
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ],
        "0.4": [
@@ -863,7 +866,8 @@
            "name": "0.20mm Standard @Goofoo Velo+",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ],
        "0.6": [
@@ -875,7 +879,8 @@
            "name": "0.30mm Standard @Goofoo Velo+",
            "layerHeight": 0.3
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ]
       }
@@ -934,7 +939,8 @@
            "name": "0.20mm Standard @Goofoo Velo+",
            "layerHeight": 0.2
           }
-         ]
+         ],
+         "defaultFilament": "Goofoo ABS @System"
         }
        ]
       }
