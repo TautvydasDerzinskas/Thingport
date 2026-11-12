@@ -519,6 +519,8 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   let anchor: HTMLElement | null = null;
   // Offered somewhere else, as the site's button didn't show in time.
   let elsewhere = false;
+  // Beside the site's button now: its going away starts the wait again.
+  let beside = false;
   // The wait for the site's button: from the start, and again whenever it goes away.
   let waiting: ReturnType<typeof setTimeout> | undefined;
   const offerElsewhere = () => {
@@ -531,10 +533,14 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   const place = () => {
     if (!elsewhere && !(main.host.isConnected && anchor?.isConnected && anchor.offsetParent !== null)) {
       anchor = site.anchor();
-      if (anchor) site.place(main.host, anchor);
-      else {
-        // Gone, maybe for a moment while the page redraws: elsewhere, should it not come back in time.
-        if (main.host.isConnected) wait();
+      if (anchor) {
+        site.place(main.host, anchor);
+        beside = true;
+      } else {
+        // Gone, alone or with what held both, maybe only while the page redraws: elsewhere, should it not come back in
+        // time.
+        if (beside) wait();
+        beside = false;
         main.host.remove();
       }
     }
