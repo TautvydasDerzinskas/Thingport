@@ -493,9 +493,10 @@ export function unmountAdaptedButton(): void {
 
 /**
  * Puts the button beside the site's own, and one in each 3MF's row where the site lists them, keeping them there as
- * the page re-renders. `onNoAnchor` runs once if the site's button hasn't shown in ANCHOR_WAIT_MS, to offer the
- * copies somewhere else, and says whether it did: then the button beside the site's isn't put there any more, so the
- * site's button showing later doesn't bring a second offer. The rows' buttons stay.
+ * the page re-renders. `onNoAnchor` runs where the site's button hasn't shown in ANCHOR_WAIT_MS, or went away and
+ * hasn't come back in that time, to offer the copies somewhere else, and says whether it did: then the button beside
+ * the site's isn't put there any more, so the site's button showing later doesn't bring a second offer. The rows'
+ * buttons stay.
  */
 export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor: () => boolean): void {
   unmountAdaptedButton();
@@ -516,16 +517,26 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   };
 
   let anchor: HTMLElement | null = null;
-  let placed = false;
   // Offered somewhere else, as the site's button didn't show in time.
   let elsewhere = false;
+  // The wait for the site's button: from the start, and again whenever it goes away.
+  let waiting: ReturnType<typeof setTimeout> | undefined;
+  const offerElsewhere = () => {
+    waiting = undefined;
+    if (!elsewhere && !main.host.isConnected && !site.unavailable?.() && onNoAnchor()) elsewhere = true;
+  };
+  const wait = () => {
+    waiting ??= setTimeout(offerElsewhere, ANCHOR_WAIT_MS);
+  };
   const place = () => {
     if (!elsewhere && !(main.host.isConnected && anchor?.isConnected && anchor.offsetParent !== null)) {
       anchor = site.anchor();
-      if (anchor) {
-        site.place(main.host, anchor);
-        placed = true;
-      } else main.host.remove();
+      if (anchor) site.place(main.host, anchor);
+      else {
+        // Gone, maybe for a moment while the page redraws: elsewhere, should it not come back in time.
+        if (main.host.isConnected) wait();
+        main.host.remove();
+      }
     }
     if (!site.fileRows || !site.placeInRow) return;
     const shown = new Set<HTMLElement>();
@@ -564,16 +575,14 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   system.addEventListener("change", theme);
   theme();
   place();
-  const waited = setTimeout(() => {
-    if (!placed && !site.unavailable?.() && onNoAnchor()) elsewhere = true;
-  }, ANCHOR_WAIT_MS);
+  wait();
 
   mounted = {
     stop: () => {
       observer.disconnect();
       themeObserver.disconnect();
       system.removeEventListener("change", theme);
-      clearTimeout(waited);
+      clearTimeout(waiting);
       for (const control of [main, ...rows.values()]) {
         control.stop();
         control.host.remove();

@@ -39,7 +39,7 @@ export function savedNote(target: AdaptTarget, saved: Saved): string | null {
   if (!saved.copy) return `Downloaded the file itself: ${slicer} opens it as it is.`;
   if (!target.printer) return null;
   if (saved.printerless)
-    return `Grab has no ${slicer} preset for the ${printerOf(target)}, so this copy keeps your own.`;
+    return `Grab has no ${slicer} preset for the ${printerOf(target)}, so this copy keeps the designer's printer. Pick yours in ${slicer} before slicing.`;
   if (saved.nozzle) {
     return (
       `${slicer} has no ${target.printer.nozzle} mm nozzle preset for the ${printerOf(target)}, so this copy names its ` +

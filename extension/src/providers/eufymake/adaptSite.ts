@@ -117,7 +117,7 @@ export const EUFYMAKE_ADAPT: AdaptSite = {
   async download(pageUrl, file, progress) {
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const modelId = parseEufymakeModelUrl(pageUrl)?.modelId;
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     let link: string | undefined;
     try {
       // Its links stop working a day after the model was read: a fresh one each time.

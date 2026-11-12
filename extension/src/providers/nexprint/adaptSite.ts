@@ -124,7 +124,7 @@ export const NEXPRINT_ADAPT: AdaptSite = {
     const sign = signing.get(file.id);
     if (!sign)
       throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const answer = await providerCredentialRequest(
       "nexprint-api",
       `${API}/model-library-server/common/presigned-download-url`,
@@ -178,7 +178,8 @@ export const NEXPRINT_ADAPT: AdaptSite = {
     anchor.prepend(host);
   },
 
-  // Light only in a browser: Elegoo Slicer's built-in browser sets a `dark` class on <html>.
-  dark: () => document.documentElement.classList.contains("dark"),
+  // Light only in a browser. Elegoo Slicer's built-in browser sets a `dark` class on <html>, but Grab doesn't run there,
+  // and the site's own stylesheet has next to nothing for it.
+  dark: () => false,
   themeWatch: () => ({ target: document.documentElement, attributeFilter: ["class"] }),
 };

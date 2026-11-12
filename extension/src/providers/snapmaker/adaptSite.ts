@@ -74,7 +74,7 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const modelId = parseSnapmakerModelUrl(pageUrl)?.modelId;
     if (!modelId) throw new Error(`Couldn't tell which ${NAME} model this page is.`);
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const answer = await providerCredentialRequest("snapmaker-api", `${API}/model/download/${modelId}`, {
       headers: {
         Accept: "application/json",

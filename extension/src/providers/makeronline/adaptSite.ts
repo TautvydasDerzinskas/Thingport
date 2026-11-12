@@ -123,7 +123,7 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
     const sign = signing.get(file.id);
     if (!sign)
       throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
-    const stop = rotatePhrases(gettingFilePhrases, progress);
+    const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const signed = await request("SIGN_MAKERONLINE_FILE", {
       key: sign.key,
       fileType: sign.fileType,
