@@ -157,7 +157,8 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
   **Download adapted** under the import shows them when clicked.
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
   **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected), on a model with a 3MF,
-  on a site the extension runs on (Creality Cloud, Snapmaker Space and NexPrint once you allow them). A
+  on a site the extension runs on (Creality Cloud, Snapmaker Space and NexPrint once you allow them). A paid model you
+  haven't bought, or one for a site's members, gets none, as the site offers no download of it either. A
   slicer that opens every kind of 3MF the site has as it is gets no copy unless one is made for a printer, and a file
   your slicer opens as it is downloads as it is. Connected, nor does a slicer whose **Open adapted** you switched off in
   your instance's Configuration get a copy.

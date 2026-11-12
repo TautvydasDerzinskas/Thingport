@@ -51,6 +51,17 @@ export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | nul
   return files.find((file) => file.id === id) ?? null;
 }
 
+/** A paid model the user hasn't bought, by its details: as asked without a sign-in, that's every paid one. */
+export const unbought = (group: Record<string, unknown> | null | undefined) =>
+  group?.isPay === true && group.isPurchased !== true;
+
+/** The sign-in the page keeps, as its own requests send it. */
+function signedIn(): { token: string; uid: string } | null {
+  const token = pageCookie("model_token");
+  const uid = pageCookie("model_user_id");
+  return token && uid ? { token, uid } : null;
+}
+
 // The model each listed profile is of: its file's name comes from the profile's details, which want both.
 const modelOf = new Map<string, string>();
 
@@ -66,8 +77,15 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
     const alias = parseCrealitycloudModelUrl(pageUrl)?.modelId;
     if (!alias) return [];
     const detail = await cxy("/v3/model/modelGroupDetail", { id: alias });
-    const groupId = (detail.result?.groupItem as Record<string, unknown> | undefined)?.id;
+    const group = detail.result?.groupItem as Record<string, unknown> | undefined;
+    const groupId = group?.id;
     if (groupId == null) return [];
+    // A paid model has none to offer until the user has bought it, as the page shows only a Purchase box then.
+    if (unbought(group)) {
+      const auth = signedIn();
+      const theirs = auth ? await cxy("/v3/model/modelGroupDetail", { id: alias }, auth) : null;
+      if (unbought(theirs?.result?.groupItem as Record<string, unknown> | undefined)) return [];
+    }
     const list = await cxy("/v3/model/3mfList", { page: 1, pageSize: 199, modelGroupId: groupId, filterType: 11 });
     const files = profileFiles(list.result);
     for (const file of files) modelOf.set(file.id, String(groupId));
@@ -77,14 +95,13 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
   selected: (files) => pickedProfile(location.href, files),
 
   async download(_pageUrl, file, progress) {
-    const token = pageCookie("model_token");
-    const uid = pageCookie("model_user_id");
-    if (!token || !uid) throw signInFirst(NAME);
+    const auth = signedIn();
+    if (!auth) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const stop = rotatePhrases(gettingFilePhrases, progress);
     const groupId = modelOf.get(file.id);
     const [link, detail] = await Promise.all([
-      cxy("/v3/model/3mfDownload", { id: file.id }, { token, uid }),
+      cxy("/v3/model/3mfDownload", { id: file.id }, auth),
       groupId ? cxy("/v3/model/3mfDetail", { modelGroupId: groupId, id: file.id }).catch(() => null) : null,
     ]).finally(stop);
     if (link.code === INVALID_TOKEN) throw signInFirst(NAME);
@@ -111,6 +128,9 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
 
   // A row of its own under that grid, in the column it's in.
   place: placeAfter,
+
+  // In place of its buttons, a Purchase box: a paid model, or one for its members.
+  unavailable: () => Boolean(document.querySelector(".model-detail-base-info-layout .model-info .to-vip-and-buy")),
 
   // A class on <html>, set before the page paints and following the system where the user picked that.
   dark: () => document.documentElement.classList.contains("dark"),

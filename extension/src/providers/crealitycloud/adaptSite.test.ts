@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickedProfile, profileFiles } from "./adaptSite";
+import { pickedProfile, profileFiles, unbought } from "./adaptSite";
 
 describe("a Creality Cloud model's print profiles", () => {
   const files = profileFiles({
@@ -28,5 +28,15 @@ describe("a Creality Cloud model's print profiles", () => {
     expect(pickedProfile(`${page}?profileId=686D66FF97FB0B32D54EF913`, files)?.id).toBe("686d66ff97fb0b32d54ef913");
     expect(pickedProfile(`${page}#profileId-686d66ff97fb0b32d54ef913`, files)?.id).toBe("686d66ff97fb0b32d54ef913");
     expect(pickedProfile(page, files)).toBeNull();
+  });
+});
+
+describe("a paid Creality Cloud model", () => {
+  it("has nothing to offer until it's bought", () => {
+    expect(unbought({ isPay: true, isPurchased: false })).toBe(true);
+    expect(unbought({ isPay: true })).toBe(true);
+    expect(unbought({ isPay: true, isPurchased: true })).toBe(false);
+    expect(unbought({ isPay: false, isPurchased: false })).toBe(false);
+    expect(unbought(undefined)).toBe(false);
   });
 });

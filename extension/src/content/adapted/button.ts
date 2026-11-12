@@ -562,7 +562,7 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   theme();
   place();
   const waited = setTimeout(() => {
-    if (!placed) onNoAnchor();
+    if (!placed && !site.unavailable?.()) onNoAnchor();
   }, ANCHOR_WAIT_MS);
 
   mounted = {

@@ -36,6 +36,9 @@ export type AdaptSite = {
   anchor(): HTMLElement | null;
   /** Puts the button's host beside `anchor`. */
   place(host: HTMLElement, anchor: HTMLElement): void;
+  /** Whether the page says the model can't be downloaded here yet (paid, or for members): then, with the site's own
+   *  button gone, the copies aren't offered elsewhere either. */
+  unavailable?(): boolean;
   /** Where the site lists each file with buttons of its own (Printables' Files tab): the button each of `files` shown
    *  now gets its own copy button under, which `placeInRow` puts there. A row's button is one of a stack of the
    *  site's, as Printables' are, unless `placeInRow` marks it `data-row="pill"`: a small one beside the site's. */
