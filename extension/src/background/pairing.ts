@@ -7,6 +7,7 @@ import type { LoginResult } from "../shared/api";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type PendingPairing } from "../shared/storage";
 import { fetchInstance, storeApprovedConnection } from "./api";
 import { getStoredConfig } from "./config";
+import { backgroundText } from "./localize";
 
 // Long enough to sign in through a provider on the way.
 const PAIRING_TTL_MS = 15 * 60 * 1000;
@@ -54,7 +55,7 @@ export async function startPairing(rawInstanceUrl: string): Promise<null> {
   page.searchParams.set("challenge", challenge);
   page.searchParams.set("name", browserName());
   const tab = await chrome.tabs.create({ url: page.href });
-  if (tab.id == null) throw new Error("Couldn't open Thingport in a new tab");
+  if (tab.id == null) throw new Error(await backgroundText("couldNotOpenThingportTab"));
   const pending: PendingPairing = { instanceUrl, verifier, tabId: tab.id, startedAt: Date.now() };
   await chrome.storage.local.set({ [STORAGE_KEYS.pendingPairing]: pending });
   return null;
@@ -65,7 +66,7 @@ async function errorDetail(res: Response): Promise<string> {
     const body = (await res.json()) as { detail?: string } | null;
     if (body?.detail) return body.detail;
   } catch {}
-  return `Thingport answered ${res.status}`;
+  return backgroundText("thingportAnswered", { status: res.status });
 }
 
 async function claim(pending: PendingPairing, code: string): Promise<void> {

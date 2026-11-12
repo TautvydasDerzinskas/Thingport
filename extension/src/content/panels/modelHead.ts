@@ -7,6 +7,7 @@ import { escapeHtml } from "../runtime";
 import { pageImage, pageTitle } from "../pageModel";
 import { modelKey } from "../../shared/urls";
 import { manifestOf } from "../../providers/index.generated";
+import { t } from "../../shared/i18n";
 
 /** The provider's logo, drawn as the popup's provider list draws it. */
 function providerMarkHtml(): string {
@@ -51,7 +52,7 @@ export function modelHeadHtml(eyebrow: string): string {
       </span>
       <span class="tg-head__text">
         <span class="tg-head__eyebrow">${escapeHtml(eyebrow)}</span>
-        <span class="tg-head__title">${escapeHtml(name ?? "This model")}</span>
+        <span class="tg-head__title">${escapeHtml(name ?? t("thisModel"))}</span>
       </span>
     </div>
   `;

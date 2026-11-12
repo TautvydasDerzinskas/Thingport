@@ -5,6 +5,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
+import type { Locale } from "./i18n";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
@@ -24,6 +25,8 @@ export type ExtensionState = {
   offlineFeatures: Record<OfflineFeature, boolean>;
   /** How the floating bubble on model pages looks and where it sits. */
   bubble: BubbleLook;
+  /** The configured catalog, or the browser language resolved to a supported catalog. */
+  locale: Locale;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -152,6 +155,8 @@ export type BackgroundMessages = {
   SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
   /** Changes the floating bubble's style, its place, or both. */
   SET_BUBBLE: { payload: Partial<BubbleLook>; result: null };
+  /** Changes the extension's runtime catalog. */
+  SET_LOCALE: { payload: { locale: Locale }; result: null };
   /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
   START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };

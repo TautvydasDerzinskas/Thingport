@@ -4,6 +4,7 @@
 
 import { send, type Connection } from "../shared/messages";
 import { fillIcons } from "../shared/icon";
+import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
 
 type Disconnected = Extract<Connection, { connected: false }>;
@@ -11,32 +12,29 @@ type Disconnected = Extract<Connection, { connected: false }>;
 function setupBodyHtml(): string {
   return `
       <div class="tg-hint">
-        To import from this page, Thingport Grab needs to know where your Thingport instance is, and
-        that instance needs to know this browser:
+        ${escapeHtml(t("setupIntro"))}
       </div>
       <ul class="tg-modal__list">
-        <li><strong>Instance URL</strong>, e.g. http://192.168.1.20 or https://thingport.example.com</li>
-        <li><strong>Pair</strong> -- Thingport opens in a tab and asks you to approve this browser</li>
+        <li><strong>${escapeHtml(t("setupInstanceUrl"))}</strong>, ${escapeHtml(t("setupInstanceUrlExample"))}</li>
+        <li><strong>${escapeHtml(t("setupPair"))}</strong> — ${escapeHtml(t("setupPairHint"))}</li>
       </ul>
       <div class="tg-hint">
-        Pairing keeps no password in the extension; the setup page still takes an email and password if
-        you'd rather. Either way it's stored only in this browser's extension storage and sent only to
-        your own instance. You can also open this any time from the Thingport Grab icon in your browser
-        toolbar.
+        ${escapeHtml(t("setupSecurityHint"))}
       </div>`;
 }
 
 function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): string {
-  const instance = `<strong>${escapeHtml(instanceUrl.replace(/^https?:\/\//i, ""))}</strong>`;
+  const instance = instanceUrl.replace(/^https?:\/\//i, "");
+  const message = (key: string): string => {
+    const marker = "__INSTANCE__";
+    return escapeHtml(t(key, { instance: marker })).replace(marker, `<strong>${escapeHtml(instance)}</strong>`);
+  };
   const cause =
     problem.reason === "credentials" && problem.byApproval
-      ? `${instance} no longer accepts this browser's Thingport Grab. It was probably removed from
-         your profile there -- pair again.`
+      ? message("setupApprovalRevoked")
       : problem.reason === "credentials"
-        ? `${instance} turned down the email and password saved in Thingport Grab. They were probably
-         changed in Thingport since -- sign in again with the current ones.`
-        : `${instance} didn't answer. It may not be running, or not be reachable from this network
-         right now. If it moved, update its URL.`;
+        ? message("setupCredentialsRejected")
+        : message("setupUnreachable");
   return `
       <div class="tg-hint">${cause}</div>
       <div class="tg-hint tg-modal__detail">${escapeHtml(problem.detail)}</div>`;
@@ -54,18 +52,18 @@ export function openSetupModal(
   backdrop.className = "tg-modal-backdrop";
   backdrop.innerHTML = `
     <div class="tg-modal" role="dialog" aria-modal="true" aria-labelledby="tg-setup-title">
-      <button class="tg-close" type="button" aria-label="Close">×</button>
+      <button class="tg-close" type="button" aria-label="${escapeHtml(t("close"))}">×</button>
       <div class="tg-modal__header">
         <span class="tg-modal__icon" data-icon></span>
         <div class="tg-title" id="tg-setup-title">
-          ${disconnected ? "Thingport Grab can't sign in" : "Connect Thingport Grab"}
+          ${escapeHtml(t(disconnected ? "setupSignInFailed" : "setupConnect"))}
         </div>
       </div>
       ${disconnected ? disconnectedBodyHtml(disconnected.problem, disconnected.instanceUrl) : setupBodyHtml()}
       <button class="tg-btn" type="button" data-action="open-setup">
-        ${disconnected ? "Edit connection" : "Open setup"}
+        ${escapeHtml(t(disconnected ? "editConnection" : "setupOpen"))}
       </button>
-      ${disconnected ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="retry">Try again</button>` : ""}
+      ${disconnected ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="retry">${escapeHtml(t("retry"))}</button>` : ""}
       <div class="tg-hint tg-modal__status" hidden></div>
     </div>
   `;
@@ -80,8 +78,8 @@ export function openSetupModal(
     if (res?.ok && res.data === "popup") return;
     statusEl.hidden = false;
     statusEl.textContent = res?.ok
-      ? "Setup opened in a new tab -- you'll be brought back here once it's saved."
-      : "Couldn't open setup automatically -- click the Thingport Grab icon in your browser toolbar (it may be under the Extensions menu).";
+      ? t("setupOpened")
+      : t("setupOpenFailed");
   });
 
   backdrop.querySelector("[data-action=retry]")?.addEventListener("click", () => {

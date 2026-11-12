@@ -16,6 +16,7 @@ import { apiCall } from "../../background/api";
 import { importSingle } from "../../background/importJobs";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
+import { backgroundText } from "../../background/localize";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
@@ -94,7 +95,7 @@ export async function abortJob(tabId: number): Promise<null> {
   const job = await getJob();
   if (!job || job.tabId !== tabId) return null;
   await setJob(null);
-  void sendRunSummary(job, "you stopped the import.");
+  void sendRunSummary(job, await backgroundText("guidedImportAborted"));
   await chrome.tabs.update(tabId, { url: job.originalUrl });
   return null;
 }
@@ -249,8 +250,7 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
       (await new Promise((resolve) => setTimeout(resolve, PROFILES_RETRY_MS)).then(() => readProfiles(tabId, job)));
     if (!ids) {
       throw new Error(
-        "Couldn't read this model's print profiles from its page. Start the import again to carry on: models " +
-          "already brought in are only checked for the profiles they lack.",
+        await backgroundText("couldNotReadMakerworldProfiles"),
       );
     }
     await stayAtStep(tabId, job);
@@ -360,7 +360,7 @@ export async function dropJobIfForTab(tabId: number): Promise<void> {
   const job = await getJob();
   if (!job || job.tabId !== tabId) return;
   await setJob(null);
-  await sendRunSummary(job, "the MakerWorld tab was closed.");
+  await sendRunSummary(job, await backgroundText("makerworldTabClosed"));
 }
 
 export const makerworldHandlers: Partial<Handlers<BackgroundMessages>> = {

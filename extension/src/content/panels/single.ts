@@ -1,3 +1,4 @@
+import { t } from "../../shared/i18n";
 // Every provider's model pages import directly but MakerWorld's, which go through /import/inspect first, like the web
 // app's useUploadImport.tsx. MakerOnline's files are signed on its own page first (see providers/makeronline/background.ts).
 // MakerWorld's downloads resolve in the page (providers/makerworld/downloadResolver.ts), at steps of the panel's import
@@ -62,7 +63,7 @@ function profilePickerHtml(options: ProfileOption[], picked: ProfileChoice = "ur
       `<option value="${value}"${value === picked ? " selected" : ""}>${escapeHtml(label)}</option>`,
   );
   return `
-    <label class="tg-label" for="tg-profiles">Print profiles</label>
+    <label class="tg-label" for="tg-profiles">${escapeHtml(t("printProfiles"))}</label>
     <select id="tg-profiles" class="tg-select">${rows.join("")}</select>
   `;
 }
@@ -74,9 +75,9 @@ async function profilesPickerHtml(): Promise<string> {
   const all = ids("all").length;
   if (all < 2) return "";
   const designer = ids("designer").length;
-  const options: ProfileOption[] = [{ value: "url", label: "Currently selected print profile" }];
-  if (designer > 1) options.push({ value: "designer", label: `All designer print profiles (${designer})` });
-  if (all > designer) options.push({ value: "all", label: `Designer & community print profiles (${all})` });
+  const options: ProfileOption[] = [{ value: "url", label: t("currentProfile") }];
+  if (designer > 1) options.push({ value: "designer", label: t("allDesignerProfiles", { count: designer }) });
+  if (all > designer) options.push({ value: "all", label: t("designerCommunityProfiles", { count: all }) });
   return profilePickerHtml(options);
 }
 
@@ -84,13 +85,13 @@ async function profilesPickerHtml(): Promise<string> {
  *  ones, the designer's and all of them, all of them picked otherwise. A choice the one before it covers is left out. */
 function missingProfilesPickerHtml(missing: MissingProfiles, selectedMissing: boolean): string {
   const options: ProfileOption[] = [];
-  if (selectedMissing) options.push({ value: "url", label: "Currently selected print profile" });
+  if (selectedMissing) options.push({ value: "url", label: t("currentProfile") });
   const designer = missing.designer.length;
   if (designer && designer < missing.all.length && designer > (selectedMissing ? 1 : 0)) {
-    options.push({ value: "missing-designer", label: `Missing designer print profiles (${designer})` });
+    options.push({ value: "missing-designer", label: t("missingDesignerProfiles", { count: designer }) });
   }
   if (missing.all.length > (selectedMissing ? 1 : 0)) {
-    options.push({ value: "missing", label: `All missing print profiles (${missing.all.length})` });
+    options.push({ value: "missing", label: t("allMissingProfiles", { count: missing.all.length }) });
   }
   return profilePickerHtml(options, selectedMissing ? "url" : "missing");
 }
@@ -106,7 +107,7 @@ function scopeOf(choice: ProfileChoice): ProfileScope {
 }
 
 function importHeading(): string {
-  return modelHeadHtml("Import to Thingport");
+  return modelHeadHtml(t("importToThingport"));
 }
 
 /** A card of its own above the panel, since it is about the model rather than about the import. */
@@ -137,7 +138,7 @@ function startScriptNote(): void {
  *  files: the queue would only hand the link back to it. */
 function queueButtonHtml(): string {
   return ctx().canQueue && manifestOf(ctx().classification.provider).helpers.grab !== "required"
-    ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="queue">Add to the queue</button>`
+    ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="queue">${escapeHtml(t("addToQueue"))}</button>`
     : "";
 }
 
@@ -197,7 +198,7 @@ export async function loadSingleItem(): Promise<void> {
     try {
       const inspect = await api<InspectResult>("POST", "/import/inspect", { url: ctx().url });
       ctx().title = inspect.title || null;
-      if (inspect.is_zip) zipFilename = inspect.filename ?? "This file";
+      if (inspect.is_zip) zipFilename = inspect.filename ?? t("thisFile");
     } catch (err) {
       renderPanel(errorHtml(err));
       return;
@@ -209,7 +210,7 @@ export async function loadSingleItem(): Promise<void> {
       ${importHeading()}
       ${await profilesPickerHtml()}
       ${await collectionPickerHtml()}
-      <button class="tg-btn" type="button" data-action="import">Import</button>
+      <button class="tg-btn" type="button" data-action="import">${escapeHtml(t("import"))}</button>
       ${queueButtonHtml()}
     `);
     wireCollectionPicker();
@@ -220,11 +221,11 @@ export async function loadSingleItem(): Promise<void> {
 
   renderPanel(`
     ${importHeading()}
-    <div class="tg-hint">${escapeHtml(zipFilename)} contains multiple files.</div>
+    <div class="tg-hint">${t("zipContainsMultipleFiles", { filename: escapeHtml(zipFilename) })}</div>
     ${await collectionPickerHtml()}
-    <button class="tg-btn" type="button" data-action="import-as-zip">Import as one model</button>
+    <button class="tg-btn" type="button" data-action="import-as-zip">${escapeHtml(t("importOneModel"))}</button>
     ${queueButtonHtml()}
-    <button class="tg-btn tg-btn--secondary" type="button" data-action="choose-files">Choose files…</button>
+    <button class="tg-btn tg-btn--secondary" type="button" data-action="choose-files">${escapeHtml(t("chooseFilesButton"))}</button>
   `);
   wireCollectionPicker();
   onPanelAction("import-as-zip", () => void runDirectImport());
@@ -236,42 +237,46 @@ export async function loadSingleItem(): Promise<void> {
 function addProfileHtml(profilesPicker: string, missing: MissingProfiles | null): string {
   const { library, url } = ctx();
   const profileName = currentMakerworldProfileTitle(url);
-  const profileLabel = profileName ? `the "${escapeHtml(profileName)}" profile` : "this print profile";
+  const profileLabel = profileName ? t("namedPrintProfile", { name: escapeHtml(profileName) }) : t("thisPrintProfile");
   // This profile is on the model, so what's on offer is the others.
   const lacking = library?.state === "imported" && missing?.all.length ? missing : null;
   const others = lacking?.all.length ?? 0;
   const hint = lacking
-    ? `You have ${lacking.total - others} of this model's ${lacking.total} print profiles. Add ${others === 1 ? "the missing one" : `the ${others} missing`} as more files on it?`
+    ? t(others === 1 ? "missingProfilesHint_one" : "missingProfilesHint_other", {
+        have: lacking.total - others,
+        total: lacking.total,
+        missing: others,
+      })
     : library?.state === "profile_missing"
-      ? `You already have this model. Add ${profileLabel} as another file on it?`
-      : `This model is in your library. Add ${profileLabel} if you don't have it yet -- if one of the model's files already is this profile, nothing is downloaded twice.`;
+      ? t("addProfileToExistingModel", { profile: profileLabel })
+      : t("existingModelProfileHint", { profile: profileLabel });
   return `
-    ${modelHeadHtml("In your library")}
+    ${modelHeadHtml(t("inLibrary"))}
     <div class="tg-hint">${hint}</div>
     ${profilesPicker}
-    <button class="tg-btn" type="button" data-action="import">${others > 1 ? "Add profiles" : "Add profile"}</button>
+    <button class="tg-btn" type="button" data-action="import">${escapeHtml(t(others > 1 ? "addProfiles" : "addProfile"))}</button>
     ${queueButtonHtml()}
     ${library?.gaps.length ? fillGapsButtonHtml("tg-btn--secondary") : ""}
-    <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open model in Thingport</a>
+    <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("openModelInThingport"))}</a>
   `;
 }
 
 const GAP_LABELS: Record<SourceGap, string> = {
-  title: "title",
-  description: "description",
-  tags: "tags",
-  creator: "creator name",
-  author: "linked author",
-  category: "category",
-  images: "preview images",
+  title: "gapTitle",
+  description: "gapDescription",
+  tags: "gapTags",
+  creator: "gapCreator",
+  author: "gapAuthor",
+  category: "gapCategory",
+  images: "gapImages",
 };
 
 function gapList(gaps: SourceGap[]): string {
-  return gaps.map((gap) => GAP_LABELS[gap] ?? gap).join(", ");
+  return gaps.map((gap) => t(GAP_LABELS[gap] ?? gap)).join(", ");
 }
 
 function fillGapsButtonHtml(variant = ""): string {
-  return `<button class="tg-btn ${variant}" type="button" data-action="fill-gaps">Fetch missing details</button>`;
+  return `<button class="tg-btn ${variant}" type="button" data-action="fill-gaps">${escapeHtml(t("fetchMissingDetails"))}</button>`;
 }
 
 function libraryModelLink(): string {
@@ -285,17 +290,17 @@ function libraryModelLink(): string {
 function completeHtml(): string {
   const { library } = ctx();
   const profiles = library?.printId ? (library.profiles ?? 0) : 0;
-  const what =
-    profiles > 1
-      ? `the model, its ${profiles} print profiles and its details`
-      : profiles === 1
-        ? "the model, its print profile and its details"
-        : "the model and its details";
-  const hint = library?.printId ? `Everything here is in your library: ${what}.` : "This model is in your library.";
+  const hint = library?.printId
+    ? profiles
+      ? profiles === 1
+        ? t("completeModelWithOneProfile")
+        : t("completeModelWithProfiles", { count: profiles })
+      : t("completeModel")
+    : t("modelInLibrary");
   return `
-    ${modelHeadHtml("In your library")}
+    ${modelHeadHtml(t("inLibrary"))}
     <div class="tg-hint">${hint}</div>
-    <a class="tg-btn" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open in Thingport</a>
+    <a class="tg-btn" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("openInThingport"))}</a>
   `;
 }
 
@@ -304,10 +309,10 @@ function fillGapsHtml(): string {
   const { library, classification } = ctx();
   const gaps = library?.gaps ?? [];
   return `
-    ${modelHeadHtml("In your library")}
-    <div class="tg-hint">This model is missing its ${escapeHtml(gapList(gaps))}. Fetch them from ${SITE_NAMES[classification.provider]}? Nothing you've already filled in is changed.</div>
+    ${modelHeadHtml(t("inLibrary"))}
+    <div class="tg-hint">${t("fillGapsHint", { gaps: escapeHtml(gapList(gaps)), site: SITE_NAMES[classification.provider] })}</div>
     ${fillGapsButtonHtml()}
-    <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">Open model in Thingport</a>
+    <a class="tg-btn tg-btn--secondary" href="${escapeHtml(libraryModelLink())}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("openModelInThingport"))}</a>
   `;
 }
 
@@ -321,15 +326,15 @@ async function runFillGaps(): Promise<void> {
   try {
     const result = await api<FillGapsResult>("POST", `/print/${library.printId}/fill-gaps`);
     library.gaps = [];
-    const remaining = result.remaining.length ? `${site} has nothing for the ${gapList(result.remaining)}.` : "";
+    const remaining = result.remaining.length ? t("sourceHasNoGaps", { site, gaps: gapList(result.remaining) }) : "";
     renderPanel(
       result.filled.length
         ? successHtml(
             libraryModelLink(),
-            `Fetched the ${gapList(result.filled)}. ${remaining}`.trim(),
-            "Details fetched",
+            `${t("detailsFetchedMessage", { gaps: gapList(result.filled) })} ${remaining}`.trim(),
+            t("detailsFetched"),
           )
-        : successHtml(libraryModelLink(), `${site} doesn't have these either.`, "Nothing to fetch"),
+        : successHtml(libraryModelLink(), t("sourceHasNoDetails", { site }), t("nothingToFetch")),
     );
   } catch (err) {
     renderPanel(errorHtml(err));
@@ -356,10 +361,10 @@ async function loadZipEntries(): Promise<void> {
     )
     .join("");
   renderPanel(`
-    <div class="tg-title">Choose files to import</div>
+    <div class="tg-title">${escapeHtml(t("chooseFiles"))}</div>
     <div class="tg-entries">${rows}</div>
     ${await collectionPickerHtml()}
-    <button class="tg-btn" type="button" data-action="import">Import selected</button>
+    <button class="tg-btn" type="button" data-action="import">${escapeHtml(t("importSelected"))}</button>
   `);
   wireCollectionPicker();
   onPanelAction("import", () => {
@@ -396,15 +401,9 @@ async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
     const print = await request("IMPORT_SINGLE", { url, entries: opts?.entries, collectionId, resolved, title });
     const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
     if (print?.import_outcome === "profile_added") {
-      renderPanel(successHtml(link, "Added this print profile's file to the model you already had.", "Profile added"));
+      renderPanel(successHtml(link, t("profileFileAdded"), t("profileAdded")));
     } else if (print?.import_outcome === "already_imported") {
-      renderPanel(
-        successHtml(
-          link,
-          "This print profile's file was already on the model -- nothing new was added.",
-          "Already in your library",
-        ),
-      );
+      renderPanel(successHtml(link, t("profileFileAlreadyAdded"), t("alreadyInLibrary")));
     } else {
       renderPanel(successHtml(link));
     }
@@ -423,11 +422,9 @@ async function runMakeronlineImport(scope: ProfileScope, collectionId: string | 
     const print = await request("IMPORT_MAKERONLINE_MODEL", { url, scope, collectionId, title: title ?? null });
     const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
     if (print?.import_outcome === "profile_added") {
-      renderPanel(successHtml(link, "Added the print profiles' files to the model you already had.", "Profile added"));
+      renderPanel(successHtml(link, t("profileFilesAdded"), t("profileAdded")));
     } else if (print?.import_outcome === "already_imported") {
-      renderPanel(
-        successHtml(link, "These files were already on the model -- nothing new was added.", "Already in your library"),
-      );
+      renderPanel(successHtml(link, t("profileFilesAlreadyAdded"), t("alreadyInLibrary")));
     } else {
       renderPanel(successHtml(link));
     }
@@ -445,7 +442,7 @@ async function runOwlcadImport(collectionId: string | null): Promise<void> {
     const print = await request("IMPORT_OWLCAD_MODEL", { url, collectionId, title: title ?? null });
     const link = print ? `${instanceUrl}/models/${print.id}` : `${instanceUrl}/models`;
     if (print?.import_outcome === "already_imported") {
-      renderPanel(successHtml(link, "This model was already in your library.", "Already in your library"));
+      renderPanel(successHtml(link, t("modelAlreadyInLibrary"), t("alreadyInLibrary")));
     } else {
       renderPanel(successHtml(link));
     }
@@ -484,14 +481,12 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   const makerworld = classification.provider === MANIFESTS.makerworld.id;
   const ids = (await profileIdsFor())?.(scope) ?? [];
   if (!ids.length) {
-    renderPanel(errorHtml(new Error("Couldn't read this model's print profiles. Reload the page and try again.")));
+    renderPanel(errorHtml(new Error(t("couldNotReadProfiles"))));
     return;
   }
   const wanted = withoutHeld(ids, library?.heldProfiles ?? []);
   if (!wanted.length) {
-    renderPanel(
-      successHtml(libraryModelLink(), "These print profiles are all on the model already.", "Already in your library"),
-    );
+    renderPanel(successHtml(libraryModelLink(), t("profilesAlreadyOnModel"), t("alreadyInLibrary")));
     return;
   }
 
@@ -501,7 +496,7 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   let lastError: unknown = null;
   let printId: string | null = null;
   for (const [index, instanceId] of wanted.entries()) {
-    renderPanel(statusHtml(`Importing print profile ${index + 1} of ${wanted.length}…`));
+    renderPanel(statusHtml(t("importingPrintProfile", { current: index + 1, total: wanted.length })));
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, PROFILE_GAP_MS));
     // Each profile is picked on the page, then downloaded with its own button: the one the page shows needn't be the
     // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
@@ -532,22 +527,24 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   }
 
   if (!printId) {
-    renderBlockedError(lastError ?? new Error("Import failed"), scope, collectionId);
+    renderBlockedError(lastError ?? new Error(t("importFailed")), scope, collectionId);
     return;
   }
-  const parts = [`${added} print profile${added === 1 ? "" : "s"} imported`];
-  if (already) parts.push(`${already} already on the model`);
-  if (failed) parts.push(`${failed} failed`);
+  const parts = [t("printProfilesImported", { count: added, suffix: added === 1 ? "" : "s" })];
+  if (already) parts.push(t("profilesAlreadyOnModelCount", { count: already }));
+  if (failed) parts.push(t("profilesFailed", { count: failed }));
   // Onto a model already in the library, as adding the page's own profile there says.
-  const addedTitle = library && added ? `Profile${added === 1 ? "" : "s"} added` : undefined;
+  const addedTitle = library && added ? t("profilesAdded", { suffix: added === 1 ? "" : "s" }) : undefined;
   // The last failure's reason (a CAPTCHA, the daily limit, the instance's refusal) says what to do about the rest.
   const reason =
-    failed && lastError ? ` Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}` : "";
+    failed && lastError
+      ? ` ${t("lastError", { error: lastError instanceof Error ? lastError.message : String(lastError) })}`
+      : "";
   renderPanel(
     successHtml(
       `${instanceUrl}/models/${printId}`,
       `${parts.join(", ")}.${reason}`,
-      failed ? "Partly imported" : addedTitle,
+      failed ? t("partlyImported") : addedTitle,
     ),
   );
 }
@@ -556,7 +553,7 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
  *  is resolved here: the instance does that when the link's turn comes. */
 async function runQueueImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
   const { url, instanceUrl, title, importQueue } = ctx();
-  renderPanel(statusHtml("Adding to the queue…"));
+  renderPanel(statusHtml(t("addingToQueue")));
   try {
     const result = await request("QUEUE_IMPORT", { url, collectionId, scope, title: title ?? null });
     renderPanel(queuedHtml(instanceUrl, result, importQueue));

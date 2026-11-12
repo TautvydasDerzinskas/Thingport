@@ -16,10 +16,11 @@ import { applySyncToggle, loadSyncState, readSyncToggle, syncChangeNote, syncTog
 import { printablesToken, readCollectionForPanel } from "../../providers/printables/content";
 import { pushPrintablesNow } from "../../providers/printables/content";
 import { CONTENT_MODULES, type ImportBlock } from "../../providers/content";
+import { t } from "../../shared/i18n";
 
 const SNAPMAKER_LISTS: { list: SnapmakerList; label: string }[] = [
-  { list: "likes", label: "Likes" },
-  { list: "bookmarks", label: "Bookmarks" },
+  { list: "likes", label: "snapmakerLikes" },
+  { list: "bookmarks", label: "snapmakerBookmarks" },
 ];
 
 /** Snapmaker shows likes and bookmarks on one page without changing its address, so the panel picks which. */
@@ -28,9 +29,9 @@ function snapmakerListSwitchHtml(): string {
   if (classification.provider !== MANIFESTS.snapmaker.id || classification.kind !== "batch") return "";
   const options = SNAPMAKER_LISTS.map(
     ({ list, label }) =>
-      `<button class="tg-segmented__option" type="button" data-action="list-${list}" aria-pressed="${classification.type === list}">${label}</button>`,
+      `<button class="tg-segmented__option" type="button" data-action="list-${list}" aria-pressed="${classification.type === list}">${escapeHtml(t(label))}</button>`,
   ).join("");
-  return `<div class="tg-segmented" role="group" aria-label="Which list">${options}</div>`;
+  return `<div class="tg-segmented" role="group" aria-label="${escapeHtml(t("snapmakerListLabel"))}">${options}</div>`;
 }
 
 function wireSnapmakerListSwitch(): void {
@@ -52,7 +53,7 @@ function wireSnapmakerListSwitch(): void {
 /** The page's list: the batch panel only opens on one. */
 function pageList() {
   const { classification } = ctx();
-  if (classification.kind !== "batch") throw new Error("This page isn't a list");
+  if (classification.kind !== "batch") throw new Error(t("notAListPage"));
   return classification;
 }
 
@@ -99,7 +100,7 @@ async function signedInPrintablesEntries(): Promise<BatchEntriesResult | null> {
     };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    throw new Error(`Couldn't read this collection from Printables as you: ${reason}. Reload the page to try again.`, {
+    throw new Error(t("couldNotReadPrintablesCollection", { reason }), {
       cause: err,
     });
   }
@@ -157,7 +158,7 @@ export async function loadBatchEntries(): Promise<void> {
     .map((entry) => {
       const block = blockOf(entry);
       const state = entry.already_imported ? " tg-entry--imported" : block ? " tg-entry--blocked" : "";
-      const badge = entry.already_imported ? "already imported" : block?.title;
+      const badge = entry.already_imported ? t("alreadyImported") : block?.title;
       return `
         <label class="tg-entry${state}"${block ? ` title="${escapeHtml(block.hint)}"` : ""}>
           <input type="checkbox" class="tg-entry__checkbox" value="${escapeHtml(entry.design_id)}" ${entry.already_imported || block ? "" : "checked"}${block ? " disabled" : ""} />
@@ -168,15 +169,15 @@ export async function loadBatchEntries(): Promise<void> {
     })
     .join("");
   const count = result.entries.length;
-  const found = `${count} model${count === 1 ? "" : "s"} found${result.truncated ? " (more available on the site)" : ""}`;
+  const found = `${t("modelsFound", { count, suffix: count === 1 ? "" : "s" })}${result.truncated ? t("moreModelsAvailable") : ""}`;
   renderPanel(`
     ${snapmakerListSwitchHtml()}
-    <div class="tg-title">${escapeHtml(result.title || "Import models")}</div>
-    <div class="tg-hint">${allImported && result.entries.length ? `${found}, all already in your library.` : found}</div>
+    <div class="tg-title">${escapeHtml(result.title || t("importModels"))}</div>
+    <div class="tg-hint">${allImported && result.entries.length ? t("allFoundModelsAlreadyInLibrary", { found }) : found}</div>
     ${blockedNotesHtml(result.entries.flatMap((entry) => blockOf(entry) ?? []))}
     <div class="tg-entries">${rows}</div>
     ${syncToggleHtml(sync)}
-    <button class="tg-btn" type="button" data-action="import">${allImported && sync ? "Save" : "Import selected"}</button>
+    <button class="tg-btn" type="button" data-action="import">${escapeHtml(allImported && sync ? t("save") : t("importSelected"))}</button>
   `);
   onPanelAction("import", () => void runBatchImport(result, sync));
   wireSnapmakerListSwitch();
@@ -188,7 +189,7 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
   if (!ids.length && !sync) return;
   const { url, instanceUrl } = ctx();
   const { start, idField } = endpoints();
-  renderPanel(statusHtml(ids.length ? "Starting import…" : "Saving…"));
+  renderPanel(statusHtml(ids.length ? t("startingImport") : t("saving")));
   try {
     // Sync first, so the import files into the synced collection.
     const { change, link } = await applySyncToggle(sync, wantSync, {
@@ -209,7 +210,9 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
       const collectionLink = target
         ? `${instanceUrl}/models/collections/${target.collection_id}`
         : `${instanceUrl}/models`;
-      renderPanel(successHtml(collectionLink, note ?? "Nothing new to import.", note ? "Saved" : "Nothing to import"));
+      renderPanel(
+        successHtml(collectionLink, note ?? t("nothingNewToImport"), note ? t("saved") : t("nothingToImport")),
+      );
       return;
     }
     if (manifestOf(ctx().classification.provider).helpers.grab === "required") {
@@ -218,13 +221,13 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
         url,
         [idField]: ids,
       });
-      renderPanel(statusHtml(`Importing ${ids.length} model${ids.length === 1 ? "" : "s"}…`));
+      renderPanel(statusHtml(t("importingSelectedModels", { count: ids.length })));
       const imported = await request("RUN_MAKERONLINE_WAITING");
       renderPanel(
         successHtml(
           `${instanceUrl}/models/collections/${collection_id}`,
-          `Imported ${imported} model${imported === 1 ? "" : "s"}.${note ? ` ${note}` : ""}`,
-          imported ? undefined : "Nothing imported",
+          `${t("importedModels", { count: imported })}${note ? ` ${note}` : ""}`,
+          imported ? undefined : t("nothingImported"),
         ),
       );
       return;
@@ -243,8 +246,8 @@ async function runBatchImport(result: PanelEntries, sync: SyncLookup | null): Pr
 
 /** A finished job isn't always a success: its links can all have failed. Undefined leaves the usual heading. */
 function doneTitle(job: ImportJob): string | undefined {
-  if (!job.imported && !job.already_in_library) return "Nothing imported";
-  return job.failed_count ? "Partly imported" : undefined;
+  if (!job.imported && !job.already_in_library) return t("nothingImported");
+  return job.failed_count ? t("partlyImported") : undefined;
 }
 
 async function pollJobWithProgress(jobId: string, instanceUrl: string, note: string | null = null): Promise<void> {
@@ -254,21 +257,31 @@ async function pollJobWithProgress(jobId: string, instanceUrl: string, note: str
     const job = await api<ImportJob>("GET", `/import/jobs/${jobId}`);
     if (!isPanelMounted()) return;
     if (job.status === "RUNNING") {
-      renderPanel(statusHtml(`Importing ${job.processed} of ${job.total}…`));
+      renderPanel(statusHtml(t("importProgress", { processed: job.processed, total: job.total })));
       await sleep(1000);
       continue;
     }
     if (job.status === "ERROR") {
-      renderPanel(errorHtml(new Error(job.error_message || "Import failed")));
+      renderPanel(errorHtml(new Error(job.error_message || t("importFailed"))));
       return;
     }
     if (job.status !== "DONE") {
-      renderPanel(pausedHtml(instanceUrl, job.total ? `Imported ${job.imported} of ${job.total} so far.` : null, note));
+      renderPanel(
+        pausedHtml(
+          instanceUrl,
+          job.total ? t("importedSoFar", { imported: job.imported, total: job.total }) : null,
+          note,
+        ),
+      );
       return;
     }
     const link = job.result_print_id ? `${instanceUrl}/models/${job.result_print_id}` : `${instanceUrl}/models`;
     renderPanel(
-      successHtml(link, `Imported ${job.imported} of ${job.total}.${note ? ` ${note}` : ""}`, doneTitle(job)),
+      successHtml(
+        link,
+        `${t("importedOfTotal", { imported: job.imported, total: job.total })}${note ? ` ${note}` : ""}`,
+        doneTitle(job),
+      ),
     );
     return;
   }

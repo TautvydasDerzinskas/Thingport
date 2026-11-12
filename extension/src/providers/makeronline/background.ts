@@ -12,6 +12,7 @@ import { recordRecentImport } from "../../background/recentImports";
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../index.generated";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
+import { backgroundText } from "../../background/localize";
 
 const SITE = MANIFESTS.makeronline.site;
 const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;
@@ -48,6 +49,7 @@ async function signInPage(
   gapMs: number,
   cookieName: string,
   allowedHosts: readonly string[],
+  messages: { notOnSite: string; requestFailed: string },
 ): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (window as unknown as { $nuxt?: { $ensureNeg?: () => Promise<Neg> } }).$nuxt;
@@ -74,7 +76,7 @@ async function signInPage(
     }
     try {
       if (location.protocol !== "https:" || location.port || !allowedHosts.includes(location.hostname)) {
-        throw new Error("Not on MakerOnline");
+        throw new Error(messages.notOnSite);
       }
       const res = await fetch(new URL("/api/file/download", location.origin).href, {
         method: "POST",
@@ -96,7 +98,7 @@ async function signInPage(
         data: body?.data ?? null,
       });
     } catch (err) {
-      answers.push({ code: null, message: err instanceof Error ? err.message : "Request failed", data: null });
+      answers.push({ code: null, message: err instanceof Error ? err.message : messages.requestFailed, data: null });
     }
   }
   return answers;
@@ -139,7 +141,9 @@ export async function resolveMakeronlineFiles(
   } catch (err) {
     // fetch rejects with a TypeError when the instance can't be reached; an answer it gave is about the model.
     if (err instanceof TypeError)
-      throw new RunStoppedError(`Couldn't reach Thingport (${err.message})`, { cause: err });
+      throw new RunStoppedError(await backgroundText("makeronlineCouldNotReachThingport", { detail: err.message }), {
+        cause: err,
+      });
     throw err;
   }
   return signRequests(tabId, plan.requests);
@@ -147,18 +151,21 @@ export async function resolveMakeronlineFiles(
 
 async function signRequests(tabId: number, requests: DownloadRequest[]): Promise<MakeronlineSignedFile[]> {
   let answers: SignAnswer[];
+  const messages = {
+    notOnSite: await backgroundText("makeronlineNotOnSite"),
+    requestFailed: await backgroundText("requestFailedGeneric"),
+  };
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
       world: "MAIN",
       func: signInPage,
-      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE, CREDENTIAL_HOSTS["makeronline-site"].exact],
+      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE, CREDENTIAL_HOSTS["makeronline-site"].exact, messages],
     });
     answers = (result?.result as SignAnswer[] | undefined) ?? [];
   } catch (err) {
     throw new RunStoppedError(
-      `Couldn't ask MakerOnline for the files on this page (${err instanceof Error ? err.message : String(err)}). ` +
-        "Reload it and try again; Firefox needs version 128 or newer for this.",
+      await backgroundText("makeronlineCouldNotAskFiles", { detail: err instanceof Error ? err.message : String(err) }),
       { cause: err },
     );
   }
@@ -166,15 +173,17 @@ async function signRequests(tabId: number, requests: DownloadRequest[]): Promise
   for (const [index, answer] of answers.entries()) {
     const request = requests[index];
     if (answer.code === CODE_CAPTCHA) {
-      throw new Error(
-        "MakerOnline wants a captcha before it hands over files. Download one file from a model page by hand, " +
-          "solve the puzzle, then try again.",
-      );
+      throw new Error(await backgroundText("makeronlineCaptcha"));
     }
-    if (answer.code === CODE_SIGNED_OUT) throw new Error("Sign in to MakerOnline in this browser, then try again.");
+    if (answer.code === CODE_SIGNED_OUT) throw new Error(await backgroundText("makeronlineSignIn"));
     const link = answer.code === CODE_OK ? signedUrl(answer.data) : null;
     if (!link)
-      throw new Error(`MakerOnline didn't hand over "${request.name}"${answer.message ? `: ${answer.message}` : ""}`);
+      throw new Error(
+        await backgroundText("makeronlineNoFile", {
+          name: request.name,
+          detail: answer.message ? `: ${answer.message}` : "",
+        }),
+      );
     files.push({ url: link, name: request.name, profile_id: request.profile_id });
   }
   return files;
@@ -231,7 +240,7 @@ async function runWaiting(tabId: number): Promise<number> {
     } catch (err) {
       // Not the model's fault: it waits for the next run as it is.
       if (err instanceof RunStoppedError) break;
-      const error = err instanceof Error ? err.message : "Couldn't get the files signed";
+      const error = err instanceof Error ? err.message : await backgroundText("makeronlineCouldNotSignFiles");
       await apiCall("POST", `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}/failed`, { error }).catch(
         () => undefined,
       );

@@ -15,6 +15,7 @@ import { recordRecentImport } from "../../background/recentImports";
 import { MANIFESTS } from "../index.generated";
 import type { BackgroundMessages, Handlers } from "../../shared/messages";
 import { owlcadEditorUrl, parseOwlcadModelUrl } from "./urls.generated";
+import { backgroundText } from "../../background/localize";
 
 const ID = MANIFESTS.owlcad.id;
 const SITE = MANIFESTS.owlcad.site;
@@ -30,7 +31,10 @@ type ExportResult = { file: string } | { error: string };
  *
  *  `ready()` only waits for the editor's session, which settles before the shared model has loaded, so the model's
  *  own arrival is what we wait for: a document with nodes in it. */
-async function exportInPage(timeoutMs: number): Promise<ExportResult> {
+async function exportInPage(
+  timeoutMs: number,
+  messages: { editorDidNotStart: string; noSharedModel: string; noExport: string },
+): Promise<ExportResult> {
   type Doc = { nodes?: unknown[] };
   type Agent = {
     ready(): Promise<void>;
@@ -45,7 +49,7 @@ async function exportInPage(timeoutMs: number): Promise<ExportResult> {
 
   while (!agent() && Date.now() < deadline) await sleep(200);
   const bridge = agent();
-  if (!bridge) return { error: "OwlCAD's editor didn't start in this tab." };
+  if (!bridge) return { error: messages.editorDidNotStart };
   try {
     await bridge.ready();
   } catch {
@@ -61,10 +65,10 @@ async function exportInPage(timeoutMs: number): Promise<ExportResult> {
     }
     await sleep(300);
   }
-  if (!doc.nodes?.length) return { error: "OwlCAD didn't open this model -- it may no longer be shared." };
+  if (!doc.nodes?.length) return { error: messages.noSharedModel };
   try {
     const out = await bridge.exportMesh("3mf");
-    if (!out?.base64) return { error: "OwlCAD's editor exported nothing." };
+    if (!out?.base64) return { error: messages.noExport };
     return { file: out.base64 };
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) };
@@ -74,11 +78,12 @@ async function exportInPage(timeoutMs: number): Promise<ExportResult> {
 /** The tab or the instance failed, not the model: every later one would fail the same way. */
 class RunStoppedError extends Error {}
 
-function onceLoaded(tabId: number): Promise<void> {
+async function onceLoaded(tabId: number): Promise<void> {
+  const tooSlow = await backgroundText("owlcadEditorSlow");
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       chrome.tabs.onUpdated.removeListener(listener);
-      reject(new RunStoppedError("OwlCAD's editor took too long to load."));
+      reject(new RunStoppedError(tooSlow));
     }, TAB_LOAD_TIMEOUT_MS);
     const listener = (changedId: number, info: { status?: string }) => {
       if (changedId !== tabId || info.status !== "complete") return;
@@ -98,25 +103,29 @@ async function exportModel(modelId: string): Promise<{ file: string }> {
   try {
     const tab = await chrome.tabs.create({ url: owlcadEditorUrl(modelId), active: false });
     tabId = tab.id;
-    if (tabId === undefined) throw new RunStoppedError("Couldn't open an OwlCAD tab.");
+    if (tabId === undefined) throw new RunStoppedError(await backgroundText("owlcadCouldNotOpenTab"));
     await onceLoaded(tabId);
+    const messages = {
+      editorDidNotStart: await backgroundText("owlcadEditorDidNotStart"),
+      noSharedModel: await backgroundText("owlcadNoSharedModel"),
+      noExport: await backgroundText("owlcadNoExport"),
+    };
     let result: ExportResult | undefined;
     try {
       const [frame] = await chrome.scripting.executeScript({
         target: { tabId },
         world: "MAIN",
         func: exportInPage,
-        args: [EXPORT_TIMEOUT_MS],
+        args: [EXPORT_TIMEOUT_MS, messages],
       });
       result = frame?.result as ExportResult | undefined;
     } catch (err) {
       throw new RunStoppedError(
-        `Couldn't reach OwlCAD's editor in that tab (${err instanceof Error ? err.message : String(err)}). ` +
-          "Firefox needs version 128 or newer for this.",
+        await backgroundText("owlcadEditorUnreachable", { detail: err instanceof Error ? err.message : String(err) }),
         { cause: err },
       );
     }
-    if (!result) throw new Error("OwlCAD's editor didn't answer.");
+    if (!result) throw new Error(await backgroundText("owlcadEditorNoAnswer"));
     if ("error" in result) throw new Error(result.error);
     return result;
   } finally {
@@ -174,7 +183,7 @@ async function runWaiting(): Promise<number> {
     } catch (err) {
       // Not the model's fault: it waits for the next run as it is.
       if (err instanceof RunStoppedError) break;
-      const error = err instanceof Error ? err.message : "Couldn't export the model";
+      const error = err instanceof Error ? err.message : await backgroundText("owlcadCouldNotExport");
       await apiCall("POST", `/import/${ID}/waiting/${item.id}/failed`, { error }).catch(() => undefined);
       continue;
     }
@@ -210,7 +219,7 @@ export async function importOwlcadModel(payload: {
   title: string | null;
 }): Promise<Print | null> {
   const parsed = parseOwlcadModelUrl(payload.url);
-  if (!parsed) throw new Error("That isn't an OwlCAD model link.");
+  if (!parsed) throw new Error(await backgroundText("owlcadNotModelLink"));
   const plan = await apiCall<{ needs_grab: boolean }>(
     "GET",
     `/import/${ID}/plan?url=${encodeURIComponent(payload.url)}`,

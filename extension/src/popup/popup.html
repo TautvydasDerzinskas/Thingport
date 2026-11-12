@@ -11,12 +11,20 @@
       <span class="header__icon" id="header-icon" data-icon></span>
       <div class="header__text">
         <h1 class="header__title">Thingport Grab</h1>
+        <select id="language-select" data-i18n-aria-label="language" aria-label="Language">
+          <option value="en">English</option>
+          <option value="ru">Русский</option>
+          <option value="uk">Українська</option>
+          <option value="be">Беларуская</option>
+        </select>
         <div class="instance" id="instance-row" hidden>
           <a class="instance__url" id="instance-link"></a>
           <button
             type="button"
             class="icon-btn"
             id="edit-instance-btn"
+            data-i18n-aria-label="editInstance"
+            data-i18n-title="editInstance"
             aria-label="Edit instance"
             title="Edit instance"
           >
@@ -37,6 +45,8 @@
             type="button"
             class="icon-btn icon-btn--danger"
             id="disconnect-btn"
+            data-i18n-aria-label="disconnectFromThingport"
+            data-i18n-title="disconnect"
             aria-label="Disconnect from Thingport"
             title="Disconnect"
           >
@@ -57,20 +67,44 @@
         </div>
       </div>
       <span class="tooltip" id="enabled-toggle" data-tooltip="Extension enabled" hidden>
-        <input type="checkbox" role="switch" class="switch" id="enabled-switch" aria-label="Extension enabled" />
+        <input
+          type="checkbox"
+          role="switch"
+          class="switch"
+          id="enabled-switch"
+          data-i18n-aria-label="extensionEnabled"
+          aria-label="Extension enabled"
+        />
       </span>
     </header>
 
-    <div class="tabs" role="tablist" aria-label="Sections" id="tabs">
-      <button type="button" class="tabs__tab" role="tab" id="tab-connect" aria-controls="panel-connect">Connect</button>
+    <div class="tabs" role="tablist" data-i18n-aria-label="sections" aria-label="Sections" id="tabs">
+      <button type="button" class="tabs__tab" role="tab" id="tab-connect" data-i18n="connect" aria-controls="panel-connect">Connect</button>
       <!-- Connected only (popup/index.ts): the bubble it styles is the one that imports. -->
-      <button type="button" class="tabs__tab" role="tab" id="tab-appearance" aria-controls="panel-appearance" hidden>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-appearance"
+        data-i18n="appearance"
+        aria-controls="panel-appearance"
+        hidden
+      >
         Appearance
       </button>
-      <button type="button" class="tabs__tab" role="tab" id="tab-offline" aria-controls="panel-offline">
+      <button type="button" class="tabs__tab" role="tab" id="tab-offline" data-i18n="offlineFeatures" aria-controls="panel-offline">
         Offline features
       </button>
-      <button type="button" class="tabs__tab" role="tab" id="tab-history" aria-controls="panel-history">History</button>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-history"
+        data-i18n="history"
+        aria-controls="panel-history"
+      >
+        History
+      </button>
       <span class="tabs__indicator" aria-hidden="true"></span>
     </div>
 
@@ -84,6 +118,8 @@
                 type="button"
                 class="text-btn"
                 id="sites-enable-all"
+                data-i18n="enableAll"
+                data-i18n-title="enableAllTitle"
                 title="Asks your browser for access to every site Grab can import from"
                 hidden
               >
@@ -95,19 +131,21 @@
               <div class="featured__head">
                 <span class="featured__logo" id="featured-logo"></span>
                 <span class="featured__name" id="featured-name"></span>
-                <span class="featured__here">this site</span>
+                <span class="featured__here" data-i18n="thisSite">this site</span>
                 <span class="featured__status" id="featured-status"></span>
               </div>
               <p class="featured__desc" id="featured-desc"></p>
             </div>
-            <ul class="sites" id="sites-list" aria-label="Providers"></ul>
+            <ul class="sites" id="sites-list" data-i18n-aria-label="providers" aria-label="Providers"></ul>
           </div>
           <div class="error" id="configured-error" role="alert"></div>
         </section>
 
         <form id="setup-form" class="form" hidden>
-          <p class="form__intro">Connect to your Thingport instance to import models with one click.</p>
-          <label class="form__label" for="instance-url">Thingport instance URL</label>
+          <p class="form__intro" data-i18n="connectionIntro">
+            Connect to your Thingport instance to import models with one click.
+          </p>
+          <label class="form__label" for="instance-url" data-i18n="instanceUrl">Thingport instance URL</label>
           <input
             class="form__input"
             type="url"
@@ -116,21 +154,24 @@
             required
           />
           <!-- The way in: Thingport approves this browser, so no password is kept here. -->
-          <button type="button" class="btn" id="pair-btn" disabled>Pair with Thingport</button>
-          <p class="note" id="pair-note">
+          <button type="button" class="btn" id="pair-btn" data-i18n="pairWithThingport" disabled>
+            Pair with Thingport
+          </button>
+          <p class="note" id="pair-note" data-i18n="pairNote">
             Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.
           </p>
-          <p class="note note--pending" id="pair-pending" hidden>
+          <p class="note note--pending" id="pair-pending" data-i18n="pairPending" hidden>
             Finish connecting in the Thingport tab that just opened.
           </p>
 
           <!-- The older way, for instances that can't pair and anyone who'd rather type a password. -->
           <div class="alt" id="credentials-toggle">
-            <span>or</span>
+            <span data-i18n="or">or</span>
             <button
               type="button"
               class="text-btn"
               id="credentials-btn"
+              data-i18n="enterCredentials"
               aria-expanded="false"
               aria-controls="credentials-block"
             >
@@ -138,26 +179,26 @@
             </button>
           </div>
           <div class="credentials" id="credentials-block" hidden>
-            <label class="form__label" for="email">Email</label>
+            <label class="form__label" for="email" data-i18n="email">Email</label>
             <input class="form__input" type="email" id="email" autocomplete="username" />
-            <label class="form__label" for="password">Password</label>
+            <label class="form__label" for="password" data-i18n="password">Password</label>
             <input class="form__input" type="password" id="password" autocomplete="current-password" />
-            <button type="submit" class="btn" id="save-btn">Save</button>
+            <button type="submit" class="btn" id="save-btn" data-i18n="save">Save</button>
           </div>
 
-          <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
+          <button type="button" class="btn btn--secondary" id="cancel-btn" data-i18n="cancel" hidden>Cancel</button>
           <p class="note" id="disconnected-note" hidden></p>
           <div class="error" id="error" role="alert"></div>
         </form>
       </div>
 
       <div class="tab-panel" role="tabpanel" id="panel-offline" aria-labelledby="tab-offline" hidden>
-        <p class="note" id="offline-note">These work without a Thingport instance.</p>
+        <p class="note" id="offline-note" data-i18n="offlineNote">These work without a Thingport instance.</p>
         <ul class="features">
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="normalize-switch">Adapt MakerWorld 3MFs</label>
-              <p class="feature__desc" id="normalize-desc">
+              <label class="feature__name" for="normalize-switch" data-i18n="adapt3mf">Adapt MakerWorld 3MFs</label>
+              <p class="feature__desc" id="normalize-desc" data-i18n="adapt3mfDescription">
                 Adds a Download adapted button to MakerWorld models: a copy for the slicer your Thingport instance opens
                 files in, or without one, the copy PrusaSlicer and the slicers like it read.
               </p>
@@ -172,8 +213,10 @@
           </li>
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="thingiverse-dark-switch">Thingiverse dark mode</label>
-              <p class="feature__desc" id="thingiverse-dark-desc">
+              <label class="feature__name" for="thingiverse-dark-switch" data-i18n="darkMode"
+                >Thingiverse dark mode</label
+              >
+              <p class="feature__desc" id="thingiverse-dark-desc" data-i18n="darkModeDescription">
                 A dark theme for Thingiverse, which doesn't have one, while your system theme is dark.
               </p>
             </div>
@@ -187,8 +230,8 @@
           </li>
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="thingiverse-ads-switch">Hide Thingiverse ads</label>
-              <p class="feature__desc" id="thingiverse-ads-desc">
+              <label class="feature__name" for="thingiverse-ads-switch" data-i18n="hideAds">Hide Thingiverse ads</label>
+              <p class="feature__desc" id="thingiverse-ads-desc" data-i18n="hideAdsDescription">
                 Hides the banners, ad cards and video ads on Thingiverse's pages.
               </p>
             </div>
@@ -207,11 +250,11 @@
       <!-- The floating bubble on model pages: its style and its corner (popup/appearance.ts). -->
       <div class="tab-panel" role="tabpanel" id="panel-appearance" aria-labelledby="tab-appearance" hidden>
         <div class="section">
-          <h2 class="section__title" id="bubble-style-title">Bubble style</h2>
+          <h2 class="section__title" id="bubble-style-title" data-i18n="bubbleStyle">Bubble style</h2>
           <div class="looks" id="bubble-styles" role="radiogroup" aria-labelledby="bubble-style-title"></div>
         </div>
         <div class="section">
-          <h2 class="section__title" id="bubble-place-title">Bubble location</h2>
+          <h2 class="section__title" id="bubble-place-title" data-i18n="bubbleLocation">Bubble location</h2>
           <div class="spots" id="bubble-places" role="radiogroup" aria-labelledby="bubble-place-title"></div>
           <p class="spots__caption" id="bubble-place-name" aria-hidden="true"></p>
         </div>
@@ -220,14 +263,20 @@
 
       <div class="tab-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" hidden>
         <div class="section" id="recent-section" hidden>
-          <h2 class="section__title">Recent imports</h2>
+          <h2 class="section__title" data-i18n="recentImports">Recent imports</h2>
           <div class="recent-grid" id="recent-grid"></div>
         </div>
         <div class="section">
           <div class="section__head">
-            <h2 class="section__title">Recently viewed</h2>
+            <h2 class="section__title" data-i18n="recentlyViewed">Recently viewed</h2>
             <span class="tooltip" data-tooltip="Clear" id="viewed-clear-wrap" hidden>
-              <button type="button" class="icon-btn" id="viewed-clear" aria-label="Clear recently viewed">
+              <button
+                type="button"
+                class="icon-btn"
+                id="viewed-clear"
+                data-i18n-aria-label="clearRecentlyViewed"
+                aria-label="Clear recently viewed"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -246,7 +295,7 @@
           </div>
           <div class="recent-grid" id="viewed-grid"></div>
           <div class="error" id="history-error" role="alert"></div>
-          <p class="note" id="viewed-empty" hidden>
+          <p class="note" id="viewed-empty" data-i18n="viewedEmpty" hidden>
             Models you open on MakerWorld, Printables, Thingiverse and the other sites Grab runs on show up here.
           </p>
         </div>
@@ -257,7 +306,9 @@
       <h2 class="dialog__title" id="confirm-title"></h2>
       <p class="dialog__text" id="confirm-text"></p>
       <div class="dialog__actions">
-        <button type="button" class="btn btn--secondary" id="confirm-cancel" autofocus>Cancel</button>
+        <button type="button" class="btn btn--secondary" id="confirm-cancel" data-i18n="cancel" autofocus>
+          Cancel
+        </button>
         <button type="button" class="btn btn--danger" id="confirm-ok"></button>
       </div>
     </dialog>

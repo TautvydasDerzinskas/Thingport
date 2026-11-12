@@ -1,3 +1,4 @@
+import { t } from "../shared/i18n";
 // The model sites Grab works on: the built-in ones always, the optional ones (optionalSites.ts) once enabled here.
 // Enabling asks the browser for that one site; registering Grab there follows in the background, from the browser's
 // permission event. They show in two columns, so fifteen of them don't push the popup past the height a browser gives
@@ -8,7 +9,7 @@ import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/option
 import { send } from "../shared/messages";
 import type { Provider } from "../shared/urls";
 import { clearError, els, opensInTab, showError } from "./dom";
-import { ABOUT, MANIFESTS, PROVIDER_IDS, type Logo } from "../providers/index.generated";
+import { MANIFESTS, PROVIDER_IDS, type Logo } from "../providers/index.generated";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -18,7 +19,13 @@ const COMING_SOON: readonly { id: OptionalSite["id"]; name: string }[] = [];
 // The same glyphs as the web app's: both take them from the providers' manifests.
 const logo = (id: Provider): Logo => MANIFESTS[id].brand.logo;
 
-type Site = { id: Provider; name: string; logo: Logo; optional?: OptionalSite; comingSoon?: boolean };
+type Site = {
+  id: Provider;
+  name: string;
+  logo: Logo;
+  optional?: OptionalSite;
+  comingSoon?: boolean;
+};
 
 export function providerName(provider: Provider): string {
   return MANIFESTS[provider]?.name ?? provider;
@@ -37,7 +44,12 @@ const SITES: Site[] = [
     logo: logo(id),
     optional: OPTIONAL_SITES.find((site) => site.id === id),
   })),
-  ...COMING_SOON.map((site) => ({ id: site.id, name: site.name, logo: logo(site.id), comingSoon: true })),
+  ...COMING_SOON.map((site) => ({
+    id: site.id,
+    name: site.name,
+    logo: logo(site.id),
+    comingSoon: true,
+  })),
 ];
 
 /** Every site that can be enabled, so the count doesn't promise what Grab can't do yet. */
@@ -74,8 +86,8 @@ function tick(site: Site, appeared = false): HTMLElement {
   const el = document.createElement("span");
   el.className = appeared ? "site__tick site__tick--new" : "site__tick";
   el.setAttribute("role", "img");
-  el.setAttribute("aria-label", `Enabled on ${site.name}`);
-  el.title = "Enabled";
+  el.setAttribute("aria-label", t("enabledOn", { site: site.name }));
+  el.title = t("enabled");
   el.append(
     svg("M5 12.5l4.5 4.5L19 7.5", {
       fill: "none",
@@ -94,7 +106,12 @@ function plus(): HTMLElement {
   el.className = "site__plus";
   el.setAttribute("aria-hidden", "true");
   el.append(
-    svg("M12 5v14M5 12h14", { fill: "none", stroke: "currentColor", "stroke-width": "2.5", "stroke-linecap": "round" }),
+    svg("M12 5v14M5 12h14", {
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": "2.5",
+      "stroke-linecap": "round",
+    }),
   );
   return el;
 }
@@ -112,7 +129,7 @@ function onEnable(btn: HTMLButtonElement, site: Site, optional: OptionalSite, do
         done();
         return;
       }
-      showError(`Thingport Grab needs your browser's permission to run on ${site.name}.`, els.configuredError);
+      showError(t("enablePermission", { site: site.name }), els.configuredError);
     } catch (err) {
       showError(err instanceof Error ? err.message : String(err), els.configuredError);
     }
@@ -124,13 +141,13 @@ function onEnable(btn: HTMLButtonElement, site: Site, optional: OptionalSite, do
 function comingSoonButton(site: Site): HTMLElement {
   const wrap = document.createElement("span");
   wrap.className = "site__soon";
-  wrap.title = "Coming soon";
+  wrap.title = t("comingSoon");
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "site__enable";
-  btn.textContent = "Enable";
+  btn.textContent = t("enable");
   btn.disabled = true;
-  btn.setAttribute("aria-label", `${site.name}: coming soon`);
+  btn.setAttribute("aria-label", t("comingSoonOn", { site: site.name }));
   wrap.append(btn);
   return wrap;
 }
@@ -150,8 +167,8 @@ function siteLink(site: Site): HTMLAnchorElement {
   const { site: url } = MANIFESTS[site.id];
   const link = document.createElement("a");
   link.href = url;
-  link.title = `Open ${new URL(url).hostname}`;
-  link.setAttribute("aria-label", `${site.name}, enabled: open its site`);
+  link.title = t("openSite", { site: new URL(url).hostname });
+  link.setAttribute("aria-label", t("openEnabledSite", { site: site.name }));
   return opensInTab(link);
 }
 
@@ -169,8 +186,8 @@ function siteRow(site: Site, appeared = false): HTMLLIElement {
     row.classList.add("site--off");
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.title = `Asks your browser for access to ${site.name}`;
-    btn.setAttribute("aria-label", `Enable on ${site.name}`);
+    btn.title = t("enableSite", { site: site.name });
+    btn.setAttribute("aria-label", t("enableOn", { site: site.name }));
     onEnable(btn, site, site.optional, () => row.replaceWith(siteRow(site, true)));
     row.append(fillRow(btn, site, plus()));
   }
@@ -178,7 +195,10 @@ function siteRow(site: Site, appeared = false): HTMLLIElement {
 }
 
 function renderHead(): void {
-  els.sitesCount.textContent = `${enabled.size} of ${LISTED.length} sites enabled`;
+  els.sitesCount.textContent = t("sitesEnabled", {
+    count: enabled.size,
+    total: LISTED.length,
+  });
   els.sitesEnableAll.hidden = enabled.size >= LISTED.length;
 }
 
@@ -193,7 +213,7 @@ function renderFeatured(site: Site | null): void {
   els.featured.style.setProperty("--site-accent-line", `${accent}59`);
   els.featuredLogo.replaceChildren(providerLogo(site.id));
   els.featuredName.textContent = site.name;
-  els.featuredDesc.textContent = ABOUT[site.id];
+  els.featuredDesc.textContent = t(`providerAbout.${site.id}`);
 
   // Enabled is the usual state here: the active provider is only known from a page of Grab's own on the site, and
   // that only runs where it's allowed to. Access taken back in the browser's settings leaves such a page behind in
@@ -205,8 +225,8 @@ function renderFeatured(site: Site | null): void {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "site__enable featured__enable";
-  btn.textContent = "Enable";
-  btn.setAttribute("aria-label", `Enable on ${site.name}`);
+  btn.textContent = t("enable");
+  btn.setAttribute("aria-label", t("enableOn", { site: site.name }));
   onEnable(btn, site, site.optional, () => els.featuredStatus.replaceChildren(tick(site, true)));
   els.featuredStatus.replaceChildren(btn);
 }
@@ -215,7 +235,10 @@ function renderFeatured(site: Site | null): void {
  *  (background/providerTab.ts). Null anywhere else, Grab's own tab included. */
 async function featuredSite(): Promise<Site | null> {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
     if (tab?.id == null) return null;
     const res = await send("GET_TAB_PROVIDER", { tabId: tab.id });
     const provider = res?.ok ? res.data : null;
@@ -236,7 +259,7 @@ els.sitesEnableAll.addEventListener("click", async () => {
       await loadSites();
       return;
     }
-    showError("Thingport Grab needs your browser's permission to run on these sites.", els.configuredError);
+    showError(t("enableAllPermission"), els.configuredError);
   } catch (err) {
     showError(err instanceof Error ? err.message : String(err), els.configuredError);
   }

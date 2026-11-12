@@ -7,6 +7,7 @@
 // What the field says at import time is what counts, so nothing is lost if the list is never opened.
 
 import type { Collection } from "../../shared/api";
+import { t } from "../../shared/i18n";
 import { api } from "../runtime";
 import { panelQuery } from "../shell";
 
@@ -41,7 +42,7 @@ export async function collectionPickerHtml(): Promise<string> {
     return ""; // import still works without the picker
   }
   return `
-    <label class="tg-label" for="tg-collection">Collection (optional)</label>
+    <label class="tg-label" for="tg-collection">${t("collectionOptional")}</label>
     <div class="tg-combo">
       <div class="tg-combo__field">
         <input
@@ -54,9 +55,9 @@ export async function collectionPickerHtml(): Promise<string> {
         aria-autocomplete="list"
         autocomplete="off"
         maxlength="200"
-        placeholder="Search, or type a new name"
+        placeholder="${t("searchCollection")}"
       />
-        <button type="button" class="tg-combo__toggle" aria-label="Show collections" tabindex="-1">
+        <button type="button" class="tg-combo__toggle" aria-label="${t("showCollections")}" tabindex="-1">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
@@ -74,10 +75,10 @@ function rowsFor(query: string): Row[] {
   const trimmed = query.trim();
   const needle = normalize(trimmed);
   const hits = loaded.filter((c) => !needle || normalize(c.name || "").includes(needle));
-  const rows: Row[] = [{ label: "No collection", value: "", kind: "none" }];
-  for (const c of hits) rows.push({ label: c.name || "Untitled", value: c.name || "", kind: "existing" });
+  const rows: Row[] = [{ label: t("noCollection"), value: "", kind: "none" }];
+  for (const c of hits) rows.push({ label: c.name || t("untitled"), value: c.name || "", kind: "existing" });
   // Only when it would make something new: an exact name already in the list is picked, not created again.
-  if (trimmed && !match(trimmed)) rows.push({ label: `Create “${trimmed}”`, value: trimmed, kind: "new" });
+  if (trimmed && !match(trimmed)) rows.push({ label: t("createCollection", { name: trimmed }), value: trimmed, kind: "new" });
   return rows;
 }
 
@@ -97,7 +98,7 @@ export function wireCollectionPicker(): void {
   function showNote(): void {
     const typed = input!.value.trim();
     const creating = Boolean(typed) && !match(typed);
-    note!.textContent = creating ? `“${typed}” will be created` : "";
+    note!.textContent = creating ? t("collectionWillBeCreated", { name: typed }) : "";
     note!.hidden = !creating;
   }
 

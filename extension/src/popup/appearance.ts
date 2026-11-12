@@ -11,23 +11,24 @@ import {
   type BubbleStyle,
 } from "../shared/bubble";
 import { createIcon } from "../shared/icon";
+import { t } from "../shared/i18n";
 import { send } from "../shared/messages";
 import { clearError, els, showError } from "./dom";
 
-const STYLE_NAMES: Record<BubbleStyle, string> = {
-  bubble: "Bubble",
-  pill: "Pill",
-  mini: "Mini",
-  brand: "Brand",
-  glass: "Glass",
-  edge: "Edge tab",
+const STYLE_KEYS: Record<BubbleStyle, string> = {
+  bubble: "bubble",
+  pill: "pill",
+  mini: "mini",
+  brand: "brand",
+  glass: "glass",
+  edge: "edgeTab",
 };
 
-const PLACE_NAMES: Record<BubblePlace, string> = {
-  "bottom-right": "Bottom right",
-  "bottom-left": "Bottom left",
-  "top-right": "Top right",
-  "top-left": "Top left",
+const PLACE_KEYS: Record<BubblePlace, string> = {
+  "bottom-right": "bottomRight",
+  "bottom-left": "bottomLeft",
+  "top-right": "topRight",
+  "top-left": "topLeft",
 };
 
 let current: BubbleLook = DEFAULT_BUBBLE;
@@ -59,15 +60,16 @@ function radio(className: string, label: string): HTMLButtonElement {
   return btn;
 }
 
-const defaultChip = (): HTMLSpanElement => span("chip", "Default");
+const defaultChip = (): HTMLSpanElement => span("chip", t("default"));
 
 function styleTile(style: BubbleStyle): HTMLButtonElement {
-  const btn = radio("look", STYLE_NAMES[style]);
+  const label = t(STYLE_KEYS[style]);
+  const btn = radio("look", label);
   btn.dataset.value = style;
   const swatch = span("look__swatch", pageSketch("look__page"), bubblePreview());
   swatch.dataset.style = style;
   swatch.setAttribute("aria-hidden", "true");
-  const name = span("look__name", STYLE_NAMES[style]);
+  const name = span("look__name", label);
   if (style === DEFAULT_BUBBLE.style) name.append(defaultChip());
   btn.append(swatch, name);
   btn.addEventListener("click", () => void choose({ style }));
@@ -75,9 +77,10 @@ function styleTile(style: BubbleStyle): HTMLButtonElement {
 }
 
 function placeSpot(place: BubblePlace): HTMLButtonElement {
-  const btn = radio(`spots__spot spots__spot--${place}`, PLACE_NAMES[place]);
+  const label = t(PLACE_KEYS[place]);
+  const btn = radio(`spots__spot spots__spot--${place}`, label);
   btn.dataset.value = place;
-  btn.setAttribute("aria-label", PLACE_NAMES[place]);
+  btn.setAttribute("aria-label", label);
   btn.append(span("spots__mark", createIcon()));
   btn.addEventListener("click", () => void choose({ place }));
   return btn;
@@ -115,7 +118,7 @@ function check(group: HTMLElement, value: string): void {
 function render(): void {
   check(els.bubbleStyles, current.style);
   check(els.bubblePlaces, current.place);
-  els.bubblePlaceName.replaceChildren(PLACE_NAMES[current.place]);
+  els.bubblePlaceName.replaceChildren(t(PLACE_KEYS[current.place]));
   if (current.place === DEFAULT_BUBBLE.place) els.bubblePlaceName.append(defaultChip());
 }
 
@@ -130,7 +133,7 @@ async function choose(pick: Partial<BubbleLook>): Promise<void> {
   if (res?.ok) return;
   current = before;
   render();
-  showError(res?.error ?? "Couldn't save", els.appearanceError);
+  showError(res?.error ?? t("saveFailed"), els.appearanceError);
 }
 
 /** The look stored, as the background said. */
@@ -139,8 +142,12 @@ export function showAppearance(look: BubbleLook): void {
   render();
 }
 
-els.bubbleStyles.append(...BUBBLE_STYLES.map(styleTile));
-els.bubblePlaces.append(pageSketch("spots__page"), ...BUBBLE_PLACES.map(placeSpot));
+export function refreshAppearance(): void {
+  els.bubbleStyles.replaceChildren(...BUBBLE_STYLES.map(styleTile));
+  els.bubblePlaces.replaceChildren(pageSketch("spots__page"), ...BUBBLE_PLACES.map(placeSpot));
+  render();
+}
+
 arrowKeys(els.bubbleStyles, (style) => void choose({ style: style as BubbleStyle }));
 arrowKeys(els.bubblePlaces, (place) => void choose({ place: place as BubblePlace }));
-render();
+refreshAppearance();

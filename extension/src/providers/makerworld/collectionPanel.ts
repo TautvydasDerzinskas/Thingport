@@ -5,6 +5,7 @@
 // the library too, for the profiles they lack.
 
 import type { ImportStatus, SyncLookup } from "../../shared/api";
+import { t } from "../../shared/i18n";
 import { request } from "../../shared/messages";
 import { makerworldModelUrl } from "./urls.generated";
 import { ctx } from "../../content/context";
@@ -87,11 +88,11 @@ async function scrollToEnd(
 
 // The first is the default. Longer waits let a big run go unattended under MakerWorld's rate limit.
 const STEP_DELAY_CHOICES = [
-  { ms: 5_000, label: "5 seconds" },
-  { ms: 30_000, label: "30 seconds" },
-  { ms: 60_000, label: "1 minute" },
-  { ms: 2 * 60_000, label: "2 minutes" },
-  { ms: 5 * 60_000, label: "5 minutes" },
+  { ms: 5_000, label: "collectionDelay5Seconds" },
+  { ms: 30_000, label: "collectionDelay30Seconds" },
+  { ms: 60_000, label: "collectionDelay1Minute" },
+  { ms: 2 * 60_000, label: "collectionDelay2Minutes" },
+  { ms: 5 * 60_000, label: "collectionDelay5Minutes" },
 ];
 const STEP_DELAY_STORAGE_KEY = "makerworldStepDelayMs";
 
@@ -111,16 +112,17 @@ async function rememberStepDelay(ms: number): Promise<void> {
 
 function stepDelayOptions(selectedMs: number): string {
   return STEP_DELAY_CHOICES.map(
-    ({ ms, label }) => `<option value="${ms}"${ms === selectedMs ? " selected" : ""}>${label}</option>`,
+    ({ ms, label }) =>
+      `<option value="${ms}"${ms === selectedMs ? " selected" : ""}>${escapeHtml(t(label))}</option>`,
   ).join("");
 }
 
 // As the model page's panel offers them. Beyond each model's own, every profile is a page visit and a download of its
 // own, after the same wait as a model.
 const PROFILE_SCOPE_CHOICES: { scope: MakerworldProfileScope; label: string }[] = [
-  { scope: "url", label: "Each model's default print profile" },
-  { scope: "designer", label: "All designer print profiles" },
-  { scope: "all", label: "Designer & community print profiles" },
+  { scope: "url", label: "collectionDefaultProfile" },
+  { scope: "designer", label: "collectionDesignerProfiles" },
+  { scope: "all", label: "collectionCommunityProfiles" },
 ];
 const PROFILE_SCOPE_STORAGE_KEY = "makerworldProfileScope";
 
@@ -141,13 +143,14 @@ async function rememberProfileScope(scope: MakerworldProfileScope): Promise<void
 
 function profileScopeOptions(selected: MakerworldProfileScope): string {
   return PROFILE_SCOPE_CHOICES.map(
-    ({ scope, label }) => `<option value="${scope}"${scope === selected ? " selected" : ""}>${label}</option>`,
+    ({ scope, label }) =>
+      `<option value="${scope}"${scope === selected ? " selected" : ""}>${escapeHtml(t(label))}</option>`,
   ).join("");
 }
 
 /** Beyond each model's own, every print profile waits as a model does. */
 function waitLabel(scope: MakerworldProfileScope): string {
-  return scope === "url" ? "Wait between models" : "Wait between models and print profiles";
+  return t(scope === "url" ? "collectionWaitBetweenModels" : "collectionWaitBetweenProfiles");
 }
 
 function readProfileScope(): MakerworldProfileScope {
@@ -202,12 +205,12 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
 
   if (!ids.length) {
     renderPanel(
-      errorHtml(new Error("Couldn't find any models on this page -- MakerWorld may have changed its page layout.")),
+      errorHtml(new Error(t("couldNotFindMakerworldModels"))),
     );
     return;
   }
 
-  renderPanel(statusHtml(`Checking ${ids.length} models against your library…`));
+  renderPanel(statusHtml(t("checkingModelsInLibrary", { count: ids.length })));
   let statuses: ModelStatus[];
   try {
     statuses = await checkLibrary(ids);
@@ -220,46 +223,44 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
   const sync = await syncState;
 
   const parts: string[] = [];
-  if (toImport.length) parts.push(`${toImport.length} new model${toImport.length === 1 ? "" : "s"} to import`);
+  if (toImport.length) parts.push(t("modelsToImport", { count: toImport.length }));
   if (alreadyImported.length) {
-    parts.push(toImport.length ? `${alreadyImported.length} already in your library` : "all already in your library");
+    parts.push(
+      toImport.length
+        ? t("modelsAlreadyInLibrary", { count: alreadyImported.length })
+        : t("allModelsAlreadyInLibrary"),
+    );
   }
   const target = sync?.sync
-    ? `Models go into "${escapeHtml(sync.sync.collection_name)}", the Thingport collection synced with this one. `
+    ? t("modelsGoIntoSyncedCollection", { collection: sync.sync.collection_name })
     : collectionTitle
-      ? `Models go into a Thingport collection named "${escapeHtml(collectionTitle)}" (created if it doesn't exist yet). `
+      ? t("modelsGoIntoCollection", { collection: collectionTitle })
       : "";
   // The models a run visits: the new ones, and with more than each one's own profile, those in the library too.
   const toVisit = (scope: MakerworldProfileScope) => (scope === "url" ? toImport : statuses);
   const startLabel = (scope: MakerworldProfileScope) =>
-    toVisit(scope).length ? "Start import" : sync ? "Save" : "Add to collection";
+    toVisit(scope).length ? t("startImport") : sync ? t("save") : t("addToCollection");
   const paceHint = (scope: MakerworldProfileScope) =>
     !toVisit(scope).length
       ? ""
       : scope === "url"
-        ? `Models are imported one page visit at a time, pacing itself to avoid MakerWorld's rate limiting -- this can
-          take a while for a large collection.`
-        : `${
-            alreadyImported.length
-              ? "Models already in your library are visited too, for the print profiles they lack. "
-              : ""
-          }Each print profile is a page visit of its own, after the same wait as a model, to avoid MakerWorld's rate
-          limiting -- so a run takes about one wait per model and per extra profile.`;
+        ? t("collectionImportPace")
+        : t(alreadyImported.length ? "collectionProfilesExistingPace" : "collectionProfilesPace");
   const scope = await rememberedProfileScope();
   renderPanel(`
-    <div class="tg-title">${escapeHtml(collectionTitle || "Import collection")}</div>
-    <div class="tg-hint">${parts.join(", ") || "No models found."}</div>
+    <div class="tg-title">${escapeHtml(collectionTitle || t("importCollection"))}</div>
+    <div class="tg-hint">${escapeHtml(parts.join(", ") || t("noModelsFound"))}</div>
     ${
       statuses.length
-        ? `<label class="tg-label" for="tg-profile-scope">Print profiles</label>
+        ? `<label class="tg-label" for="tg-profile-scope">${escapeHtml(t("printProfiles"))}</label>
            <select id="tg-profile-scope" class="tg-select">${profileScopeOptions(scope)}</select>
            <label class="tg-label" for="tg-step-delay" data-role="wait-label">${waitLabel(scope)}</label>
            <select id="tg-step-delay" class="tg-select">${stepDelayOptions(await rememberedStepDelay())}</select>`
         : ""
     }
     ${syncToggleHtml(sync)}
-    <button class="tg-btn" type="button" data-action="start">${startLabel(scope)}</button>
-    <div class="tg-hint tg-hint--spaced">${target}<span data-role="pace">${paceHint(scope)}</span></div>
+    <button class="tg-btn" type="button" data-action="start">${escapeHtml(startLabel(scope))}</button>
+    <div class="tg-hint tg-hint--spaced">${escapeHtml(target)}<span data-role="pace">${escapeHtml(paceHint(scope))}</span></div>
   `);
   panelQuery<HTMLSelectElement>("#tg-profile-scope")?.addEventListener("change", () => {
     const chosen = readProfileScope();
@@ -294,7 +295,7 @@ async function startGuidedImport(
   sync: { state: SyncLookup | null; wanted: boolean; knownIds: string[] },
 ): Promise<void> {
   const { url: originalUrl, instanceUrl } = ctx();
-  renderPanel(statusHtml("Preparing your collection…"));
+  renderPanel(statusHtml(t("preparingCollection")));
   let syncNote: string | null;
   let collectionId: string | null;
   try {
@@ -315,7 +316,7 @@ async function startGuidedImport(
   if (alreadyImported.length && collectionId) {
     renderPanel(
       statusHtml(
-        `Adding ${alreadyImported.length} existing model${alreadyImported.length === 1 ? "" : "s"} to your collection…`,
+        t("addingExistingModelsToCollection", { count: alreadyImported.length }),
       ),
     );
     const printIds = alreadyImported.flatMap((entry) => (entry.print_id ? [entry.print_id] : []));
@@ -333,13 +334,13 @@ async function startGuidedImport(
     renderPanel(
       successHtml(
         collectionId ? `${instanceUrl}/models/collections/${collectionId}` : `${instanceUrl}/models`,
-        `Nothing new to import -- already-imported models were added to your collection.${syncNote ? ` ${syncNote}` : ""}`,
+        `${t("nothingNewCollectionImport")}${syncNote ? ` ${syncNote}` : ""}`,
       ),
     );
     return;
   }
 
-  renderPanel(statusHtml("Starting guided import…"));
+  renderPanel(statusHtml(t("startingGuidedImport")));
   await request("START_MAKERWORLD_COLLECTION_JOB", {
     urls: visit.map((e) => e.url),
     collectionId,

@@ -6,6 +6,7 @@
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
 import { bubbleLookOf } from "../shared/bubble";
+import { setLocale, t } from "../shared/i18n";
 import { CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
 import { libraryStateOf, setContext, type LibraryState } from "./context";
@@ -30,7 +31,9 @@ import {
   SHARED_SCRIPT_NOTE_HTML,
   WITHHELD_SCRIPT_EXPLAINER,
   WITHHELD_SCRIPT_NOTE_HTML,
+  refreshScriptNoteTexts,
 } from "./scriptNote";
+import { refreshFunStatusPhrases } from "./panels/funStatus";
 import {
   mountFab,
   mountFabNote,
@@ -77,8 +80,16 @@ async function init(): Promise<void> {
   const isStale = () => myToken !== initToken;
 
   // A guided collection import takes over the whole page.
+  const statePromise = send("GET_STATE");
   const jobRes = await send("GET_MAKERWORLD_JOB");
   if (isStale()) return;
+  const stateRes = await statePromise;
+  if (isStale()) return;
+  if (stateRes?.ok) {
+    setLocale(stateRes.data.locale);
+    refreshScriptNoteTexts();
+    refreshFunStatusPhrases();
+  }
   if (jobRes?.ok && jobRes.data.job) {
     const job = jobRes.data.job;
     if (job.paused) mountPausedJobOverlay(mountHost(), job);
@@ -87,8 +98,6 @@ async function init(): Promise<void> {
     return;
   }
 
-  const stateRes = await send("GET_STATE");
-  if (isStale()) return;
   if (!stateRes?.ok || stateRes.data.disabled) {
     reportTabIconState(false);
     return;
@@ -120,8 +129,8 @@ async function init(): Promise<void> {
     const root = mountHost();
     mountFab(root, {
       variant: "inactive",
-      label: "Set up Thingport Grab to import this",
-      title: "Thingport Grab isn't set up yet",
+      label: t("importToThingport"),
+      title: t("fabNotSetUp"),
       onClick: () => openSetupModal(root),
     });
     reportTabIconState(false);
@@ -137,8 +146,8 @@ async function init(): Promise<void> {
     const root = mountHost();
     mountFab(root, {
       variant: "disconnected",
-      label: "Thingport Grab can't sign in to your Thingport instance",
-      title: "Thingport Grab can't sign in to your Thingport instance",
+      label: t("fabCannotSignIn"),
+      title: t("fabCannotSignIn"),
       onClick: () =>
         openSetupModal(root, {
           problem,
@@ -209,14 +218,14 @@ async function init(): Promise<void> {
     // A plus while there's something to add to the library's model, a tick once there's nothing.
     variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",
     label: !library
-      ? "Import to Thingport"
+      ? t("importToThingport")
       : library.state === "complete"
-        ? "Imported to Thingport: open it there"
+        ? t("fabImportedOpen")
         : missingProfiles
-          ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
+          ? t("fabAddMissingProfiles", { count: missingProfiles })
           : library.state === "imported"
-            ? "Fetch this model's missing details into Thingport"
-            : "Add this print profile to Thingport",
+            ? t("fabFetchMissingDetails")
+            : t("fabAddPrintProfile"),
     onClick: togglePanel,
   });
   reportTabIconState(true);
@@ -240,7 +249,7 @@ async function init(): Promise<void> {
   if (jobRes?.ok && jobRes.data.error) {
     const { message, imported, total } = jobRes.data.error;
     setPanelOpen(true);
-    renderPanel(errorHtml(new Error(`Guided import stopped after ${imported} of ${total} models: ${message}`)));
+    renderPanel(errorHtml(new Error(t("guidedImportStopped", { imported, total, message }))));
   }
 }
 

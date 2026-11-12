@@ -7,6 +7,7 @@ import { STORAGE_KEYS, apiUrl } from "../shared/storage";
 import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
+import { backgroundText } from "./localize";
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
@@ -70,7 +71,7 @@ export async function fetchInstance(url: string, init: RequestInit): Promise<Res
   await res.body?.cancel().catch(() => undefined);
   init.signal?.throwIfAborted();
   const origin = await httpsUpgradeOf(target, init.signal);
-  if (!origin) throw redirectError();
+  if (!origin) throw await redirectError();
   httpsUpgrades.set(target.origin, origin);
   return fetchUpgraded(target, origin, init);
 }
@@ -81,13 +82,13 @@ function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<
   // Assign the path as data: resolving a leading // as a relative URL would replace the verified host.
   upgraded.pathname = target.pathname;
   upgraded.search = target.search;
-  return fetchInstanceOnce(upgraded.href, init).catch((err: unknown) => {
+  return fetchInstanceOnce(upgraded.href, init).catch(async (err: unknown) => {
     init.signal?.throwIfAborted();
     // The next request asks the configured address again, in case the upgrade is gone.
     httpsUpgrades.delete(target.origin);
     // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
     if (err instanceof TypeError) {
-      throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);
+      throw new Error(await backgroundText("thingportRedirectsTo", { origin }));
     }
     throw err;
   });
@@ -97,11 +98,10 @@ async function fetchInstanceOnce(url: string, init: RequestInit): Promise<Respon
   const res = await fetch(url, { ...init, redirect: "manual" });
   if (!isRedirect(res)) return res;
   await res.body?.cancel().catch(() => undefined);
-  throw redirectError();
+  throw await redirectError();
 }
 
-const redirectError = () =>
-  new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
+const redirectError = async () => new Error(await backgroundText("thingportCredentialRedirect"));
 
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */
 function setConnectionBadge(connected: boolean): void {
@@ -161,7 +161,7 @@ export async function loginAndStoreToken(credentials: Credentials): Promise<stri
     },
   );
   if (!res.ok) {
-    const detail = await errorDetail(res, `Could not sign in to this Thingport instance (${res.status})`);
+    const detail = await errorDetail(res, await backgroundText("couldNotSignInToThingport", { status: res.status }));
     throw res.status === 401 || res.status === 403 ? new LoginRejectedError(detail) : new Error(detail);
   }
   const data = (await res.json()) as LoginResult;
@@ -215,17 +215,15 @@ export async function ensureToken(config: ConfiguredConfig, { forceRefresh = fal
     return config.token;
   }
   pendingLogin ??= loginAndStoreToken(config)
-    .catch((err: unknown) => {
+    .catch(async (err: unknown) => {
       void chrome.storage.local.remove(STORAGE_KEYS.loginVerifiedAt);
       setConnectionBadge(false);
       // A silent re-login has no form to show the error next to, so say where to fix it.
       if (err instanceof LoginRejectedError) {
         throw new LoginRejectedError(
-          config.connectionToken
-            ? `Thingport no longer accepts this browser's Thingport Grab (${err.message}). ` +
-                "Open the extension popup, click the instance and connect again."
-            : `Thingport rejected the email or password saved in Thingport Grab (${err.message}). ` +
-                "Open the extension popup, click the instance and sign in again.",
+          await backgroundText(config.connectionToken ? "reloginApprovalRejected" : "reloginCredentialsRejected", {
+            detail: err.message,
+          }),
           err.detail,
         );
       }
@@ -262,8 +260,8 @@ export async function checkConnection(): Promise<Connection> {
 
 export async function requireConfig(): Promise<ConfiguredConfig> {
   const config = await getStoredConfig();
-  if (!isConfigured(config)) throw new Error("Thingport Grab isn't configured yet -- open the extension popup first.");
-  if (config.disabled) throw new Error("Thingport Grab is disabled -- re-enable it from the extension popup.");
+  if (!isConfigured(config)) throw new Error(await backgroundText("grabNotConfigured"));
+  if (config.disabled) throw new Error(await backgroundText("grabDisabled"));
   return config;
 }
 
@@ -302,7 +300,7 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
 
   let res = await doFetch(await ensureToken(config));
   if (res.status === 401) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
-  if (!res.ok) throw new Error(await errorDetail(res, `Request failed (${res.status})`));
+  if (!res.ok) throw new Error(await errorDetail(res, await backgroundText("requestFailed", { status: res.status })));
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }

@@ -1,4 +1,5 @@
 import type { QueueImportResult } from "../../shared/api";
+import { getLocale, t } from "../../shared/i18n";
 import { escapeHtml } from "../runtime";
 
 export function statusHtml(text: string): string {
@@ -8,8 +9,8 @@ export function statusHtml(text: string): string {
 export function successHtml(
   link: string,
   note?: string | null,
-  title = "Imported!",
-  linkLabel = "Open in Thingport",
+  title = t("imported"),
+  linkLabel = t("openInThingport"),
 ): string {
   return `
     <div class="tg-title">${escapeHtml(title)}</div>
@@ -20,7 +21,7 @@ export function successHtml(
 
 export function errorHtml(err: unknown): string {
   const message = err instanceof Error ? err.message : String(err);
-  return `<div class="tg-title tg-title--error">Something went wrong</div><div class="tg-hint">${escapeHtml(message)}</div>`;
+  return `<div class="tg-title tg-title--error">${t("errorTitle")}</div><div class="tg-hint">${escapeHtml(message)}</div>`;
 }
 
 /** Every Thingport version answers at this address, and the web app keeps it for good. Only an older one sends anyone
@@ -30,18 +31,18 @@ function importQueueLink(instanceUrl: string): string {
 }
 
 function queuedNote(result: QueueImportResult, importQueue: boolean): string {
-  const waiting = `${result.waiting} link${result.waiting === 1 ? "" : "s"} waiting`;
+  const waiting = t(getLocale() === "en" && result.waiting === 1 ? "queueWaitingOne" : "queueWaiting", { count: result.waiting });
   // `started` is only ever true from an instance with a queue of one's own, whatever Grab last heard about it.
   if (!importQueue && !result.started) {
     return result.duplicate
-      ? `This link was already waiting in the queue (${waiting}).`
-      : `Paused until it's started from Administration > Import queue (${waiting}).`;
+      ? t("queueDuplicate", { waiting })
+      : t("queueAdminPaused", { waiting });
   }
-  if (!result.started) return `On hold in your import queue until you start it (${waiting}).`;
-  if (result.position === 1) return `Next up in your import queue (${waiting}).`;
+  if (!result.started) return t("queueHeld", { waiting });
+  if (result.position === 1) return t("queueNext", { waiting });
   return result.position
-    ? `#${result.position} in line in your import queue (${waiting}).`
-    : `In line in your import queue (${waiting}).`;
+    ? t("queuePosition", { position: result.position, waiting })
+    : t("queueInLine", { waiting });
 }
 
 /** "Add to the queue" went through. `importQueue`: the instance has a queue of one's own. */
@@ -49,8 +50,8 @@ export function queuedHtml(instanceUrl: string, result: QueueImportResult, impor
   return successHtml(
     importQueueLink(instanceUrl),
     queuedNote(result, importQueue),
-    result.duplicate ? "Already in the queue" : "Added to the queue",
-    "Open import queue",
+    t(result.duplicate ? "queueAlready" : "queueAdded"),
+    t("queueOpen"),
   );
 }
 
@@ -59,8 +60,8 @@ export function queuedHtml(instanceUrl: string, result: QueueImportResult, impor
 export function pausedHtml(instanceUrl: string, progress?: string | null, note?: string | null): string {
   return successHtml(
     importQueueLink(instanceUrl),
-    [progress, "It continues from the import queue once it's started there.", note].filter(Boolean).join(" "),
-    "Import paused",
-    "Open import queue",
+    [progress, t("queueContinues"), note].filter(Boolean).join(" "),
+    t("importPaused"),
+    t("queueOpen"),
   );
 }

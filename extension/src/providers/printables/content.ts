@@ -8,6 +8,7 @@ import type { PrintablesPush, PrintablesPushPlan } from "../../shared/messages";
 import { request } from "../../shared/messages";
 import { sleep } from "../../content/runtime";
 import { MANIFESTS } from "../index.generated";
+import { t } from "../../shared/i18n";
 
 const { graphql: GRAPHQL_URL, media: MEDIA_BASE } = MANIFESTS.printables.endpoints;
 const PAGE_SIZE = 30;
@@ -24,9 +25,9 @@ async function graphql(token: string, query: string, variables: Record<string, u
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) throw new Error(`Printables answered HTTP ${res.status}`);
+  if (!res.ok) throw new Error(t("printablesHttp", { status: res.status }));
   const body = (await res.json()) as { data?: unknown; errors?: unknown };
-  if (!body.data) throw new Error("Printables answered without data");
+  if (!body.data) throw new Error(t("printablesNoData"));
   return body.data;
 }
 
@@ -76,8 +77,8 @@ async function allPages(
 }
 
 /** A list cut short at the cap leaves its later models out of syncs, so say so where it can be seen. */
-function warnTruncated(label: string): void {
-  console.warn(`[Thingport Grab] Only the first ${MAX_PAGES * PAGE_SIZE} of your Printables ${label} were read.`);
+function warnTruncated(key: string, values: Record<string, string | number> = {}): void {
+  console.warn(`[Thingport Grab] ${t(key, { count: MAX_PAGES * PAGE_SIZE, ...values })}`);
 }
 
 const COLLECTIONS_QUERY = `query ($userId: ID!) {
@@ -115,24 +116,29 @@ export async function readCollectionForPanel(
   const entries = items.flatMap((item) => {
     const model = record(item.model);
     if (!model || model.id == null) return [];
-    return [{ id: String(model.id), title: typeof model.name === "string" ? model.name : `Model ${model.id}` }];
+    return [
+      {
+        id: String(model.id),
+        title: typeof model.name === "string" ? model.name : t("printablesModelFallback", { id: String(model.id) }),
+      },
+    ];
   });
   return { title: typeof name === "string" && name ? name : null, entries, truncated };
 }
 
 async function readCollections(token: string, me: Me): Promise<PrintablesPush["collections"]> {
   const listed = record(await graphql(token, COLLECTIONS_QUERY, { userId: me.id }))?.userCollections;
-  if (!Array.isArray(listed)) throw new Error("no collections in the answer");
+  if (!Array.isArray(listed)) throw new Error(t("printablesNoCollections"));
   return listed.flatMap((value) => {
     const c = record(value);
     if (!c || c.id == null) return [];
     const thumbnails = (Array.isArray(c.thumbnails11) ? c.thumbnails11 : [])
-      .flatMap((t) => mediaUrl(record(t)?.image) ?? [])
+      .flatMap((thumbnail) => mediaUrl(record(thumbnail)?.image) ?? [])
       .slice(0, CARD_THUMBNAILS);
     return [
       {
         id: String(c.id),
-        name: typeof c.name === "string" ? c.name : `Collection ${c.id}`,
+        name: typeof c.name === "string" ? c.name : t("printablesCollectionFallback", { id: String(c.id) }),
         model_count: typeof c.printsCount === "number" ? c.printsCount : 0,
         thumbnails,
         private: c.private === true,
@@ -143,7 +149,7 @@ async function readCollections(token: string, me: Me): Promise<PrintablesPush["c
 
 async function readLikes(token: string, me: Me): Promise<NonNullable<PrintablesPush["likes"]>> {
   const { items: liked, truncated } = await allPages(token, LIKES_QUERY, "moreLikedPrints2", { likedUserId: me.id });
-  if (truncated) warnTruncated("likes");
+  if (truncated) warnTruncated("printablesLikesTruncated");
   const ids = liked.flatMap((item) => (item.id != null ? [String(item.id)] : []));
   const thumbnails: string[] = [];
   for (const id of ids.slice(0, CARD_THUMBNAILS)) {
@@ -157,7 +163,7 @@ async function readLikes(token: string, me: Me): Promise<NonNullable<PrintablesP
 
 async function readCollectionModels(token: string, collectionId: string): Promise<string[]> {
   const { items, truncated } = await allPages(token, COLLECTION_MODELS_QUERY, "moreCollectionModels", { collectionId });
-  if (truncated) warnTruncated(`collection ${collectionId}'s models`);
+  if (truncated) warnTruncated("printablesCollectionModelsTruncated", { collection: collectionId });
   return items.flatMap((item) => {
     const id = record(item.model)?.id;
     return id != null ? [String(id)] : [];
@@ -171,19 +177,21 @@ async function part<T>(label: string, read: () => Promise<T>): Promise<T | undef
   try {
     return await read();
   } catch (err) {
-    console.warn(`[Thingport Grab] Couldn't read your Printables ${label}:`, err);
+    console.warn(`[Thingport Grab] ${t("couldNotReadPrintables", { label })}:`, err);
     return undefined;
   }
 }
 
 export async function readPrintables(token: string, me: Me, plan: PrintablesPushPlan): Promise<PrintablesPush> {
   const { wanted } = plan;
-  const collections = await part("collections", () => readCollections(token, me));
-  const likes = plan.likes ? await part("likes", () => readLikes(token, me)) : undefined;
+  const collections = await part(t("printablesCollections"), () => readCollections(token, me));
+  const likes = plan.likes ? await part(t("printablesLikes"), () => readLikes(token, me)) : undefined;
   const listings: Record<string, string[]> = {};
   // The instance asks for a few per visit, the stalest first (see wantedPrintablesListings).
   for (const collectionId of wanted.filter((key) => /^\d+$/.test(key))) {
-    const ids = await part(`collection ${collectionId}`, () => readCollectionModels(token, collectionId));
+    const ids = await part(t("printablesCollectionFallback", { id: collectionId }), () =>
+      readCollectionModels(token, collectionId),
+    );
     if (ids) listings[collectionId] = ids;
   }
   return { user: me, collections, likes, listings };

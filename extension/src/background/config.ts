@@ -7,6 +7,7 @@ import {
   type StoredConfig,
 } from "../shared/storage";
 import { bubbleLookOf, bubbleUpdate, type BubbleLook } from "../shared/bubble";
+import { localeOf, type Locale } from "../shared/i18n";
 import type { ExtensionState } from "../shared/messages";
 import { learnImportQueue, loginAndStoreToken } from "./api";
 
@@ -55,6 +56,7 @@ export async function getState(): Promise<ExtensionState> {
       ]),
     ) as Record<OfflineFeature, boolean>,
     bubble: bubbleLookOf(config),
+    locale: localeOf(config.locale),
   };
 }
 
@@ -91,5 +93,10 @@ export async function setOfflineFeature(feature: OfflineFeature, enabled: boolea
 /** Open model pages pick the change up from storage themselves (content/index.ts). */
 export async function setBubble(pick: Partial<BubbleLook>): Promise<null> {
   await chrome.storage.local.set(bubbleUpdate(pick));
+  return null;
+}
+
+export async function setLocale(locale: Locale): Promise<null> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.locale]: locale });
   return null;
 }

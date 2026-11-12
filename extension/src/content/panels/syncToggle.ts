@@ -7,6 +7,7 @@ import { ctx } from "../context";
 import { api, escapeHtml } from "../runtime";
 import { panelQuery } from "../shell";
 import { SITE_NAMES } from "./funStatus";
+import { t } from "../../shared/i18n";
 
 /** A Thingiverse user's Likes page, which a sync follows like a collection. */
 function isLikes(): boolean {
@@ -27,17 +28,16 @@ export async function loadSyncState(): Promise<SyncLookup | null> {
 /** Off by default; on when this collection is already synced. */
 export function syncToggleHtml(state: SyncLookup | null): string {
   if (!state) return "";
-  const provider = SITE_NAMES[ctx().classification.provider] ?? "the site";
-  const added = isLikes() ? "Models liked later" : `Models added to it on ${provider} later`;
+  const provider = SITE_NAMES[ctx().classification.provider] ?? t("theSite");
   const hint = state.sync
-    ? `Synced with "${escapeHtml(state.sync.collection_name)}" in Thingport. Untick to stop.`
-    : `${added} are imported into Thingport automatically, on a schedule you can change there. Models you leave out now stay out.`;
+    ? t("syncActive", { name: state.sync.collection_name })
+    : isLikes() ? t("syncLikesHint") : t("syncCollectionHint", { provider });
   return `
     <label class="tg-toggle">
       <input id="tg-sync" type="checkbox" ${state.sync ? "checked" : ""} />
       <span>
-        <span class="tg-toggle__label">${isLikes() ? "Keep these likes in sync" : "Keep this collection in sync"}</span>
-        <span class="tg-toggle__hint">${hint}</span>
+        <span class="tg-toggle__label">${escapeHtml(t(isLikes() ? "syncLikes" : "syncCollection"))}</span>
+        <span class="tg-toggle__hint">${escapeHtml(hint)}</span>
       </span>
     </label>
   `;
@@ -73,10 +73,9 @@ export async function applySyncToggle(
 
 /** One line for the panel's result, or null when sync didn't change. */
 export function syncChangeNote(change: SyncChange, link: SyncLink | null): string | null {
-  const source = isLikes() ? "liked" : "added to this collection";
   if (change === "enabled" && link) {
-    return `Sync is on: models ${source} from now on come into "${link.collection_name}" automatically.`;
+    return t(isLikes() ? "syncEnabledLikes" : "syncEnabledCollection", { name: link.collection_name });
   }
-  if (change === "disabled") return `Sync is off: models ${source} from now on won't be imported.`;
+  if (change === "disabled") return t(isLikes() ? "syncDisabledLikes" : "syncDisabledCollection");
   return null;
 }

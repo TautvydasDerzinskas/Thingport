@@ -25,9 +25,10 @@ function iconSet(variant: "color" | "dark"): Record<string, string> {
 export function buildManifest(target: Target, pkg: { version: string; description: string }): Record<string, unknown> {
   const manifest: Record<string, unknown> = {
     manifest_version: 3,
-    name: "Thingport Grab",
+    default_locale: "en",
+    name: "__MSG_extensionName__",
     version: pkg.version,
-    description: pkg.description,
+    description: "__MSG_extensionDescription__",
     icons: iconSet("color"),
     action: {
       default_popup: "popup.html",

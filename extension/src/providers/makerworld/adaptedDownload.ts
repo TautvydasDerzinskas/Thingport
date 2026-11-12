@@ -7,6 +7,7 @@
 import { FORMAT_VERSION, type AdaptPlan, type ThreeMfFormat } from "../../adapter/index.generated";
 import { planFor } from "../../adapting/run";
 import { createIcon } from "../../shared/icon";
+import { t } from "../../shared/i18n";
 import { SLICER_LABELS } from "../../shared/slicers";
 import { api } from "../../content/runtime";
 import css from "../../content/styles/adapted.scss?inline";
@@ -19,7 +20,6 @@ import { adaptMakerworld3mf } from "./adapt";
 const MAX_BYTES = 50 * 1024 * 1024;
 const MB = 1024 * 1024;
 const HOST_ID = "thingport-grab-adapted";
-const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const ERROR_SHOW_MS = 10000;
 
@@ -63,46 +63,26 @@ export type Target = { known: true; slicer: string | null } | { known: false };
 function explanation(target: Target, output: AdaptPlan["output"]): string {
   const slicer = target.known ? target.slicer : null;
   const name = slicer ? (SLICER_LABELS[slicer] ?? null) : null;
-  const made = "Made in your browser by Thingport Grab.";
   if (!target.known) {
-    return (
-      "Your Thingport instance didn't say in time which slicer it opens files in. Grab asks again when you click; " +
-      `if it still can't tell, this downloads the copy PrusaSlicer and the slicers like it read. ${made}`
-    );
+    return t("adaptedDownloadExplanationUnknown");
   }
   if (output === "bambu" && slicer === "crealityprintlink") {
-    return (
-      "This downloads a copy that keeps the parts, plates, painting and the designer's settings, under the names " +
-      `Creality Print gives them. It still asks which of your printers to use. ${made}`
-    );
+    return t("adaptedDownloadExplanationCreality");
   }
   if (output === "bambu") {
-    return (
-      `This downloads a copy ${name ?? "your slicer"} opens as its own project: parts, plates, painting and the ` +
-      "designer's settings, without questions about the file's version. A setting it names differently is renamed, " +
-      `to the nearest of its choices where it has fewer. ${made}`
-    );
+    return t("adaptedDownloadExplanationBambu", { slicer: name ?? t("yourSlicer") });
   }
   if (output === "cura") {
-    return (
-      "MakerWorld files are Bambu Studio projects, which Cura opens without their parts' filaments or the designer's " +
-      "settings. This downloads a copy whose multi-part objects keep their parts, each on its own extruder, with the " +
-      "designer's walls, top and bottom layers, infill and whether to print supports set on each object. Cura " +
-      `doesn't read painted colors. ${made}`
-    );
+    return t("adaptedDownloadExplanationCura");
   }
-  const slicers = name ? `${name} often opens` : "PrusaSlicer, Cura and other slicers often open";
-  return (
-    `MakerWorld files are Bambu Studio projects, which ${slicers} without their colors or print settings. This ` +
-    "downloads a copy that goes into your own printer, filament and print settings, with the designer's layer " +
-    `height, walls, infill and supports set on each object and the painted colors on your extruders. ${made}`
-  );
+  return t("adaptedDownloadExplanationOther", {
+    slicers: name ? t("adaptedDownloadKnownSlicer", { slicer: name }) : t("adaptedDownloadOtherSlicers"),
+  });
 }
 
 function tooBig(bytes: number): Error {
   return new Error(
-    `This file is ${Math.round(bytes / MB)} MB, too big to adapt in the browser (the limit is ${MAX_BYTES / MB} MB). ` +
-      "Use MakerWorld's regular Download instead.",
+    t("adaptedDownloadTooBig", { size: Math.round(bytes / MB), limit: MAX_BYTES / MB }),
   );
 }
 
@@ -125,7 +105,11 @@ async function readBody(
     }
     chunks.push(value);
     const got = (received / MB).toFixed(1);
-    onProgress(declared ? `Downloading ${got} of ${(declared / MB).toFixed(1)} MB…` : `Downloading ${got} MB…`);
+    onProgress(
+      declared
+        ? t("adaptedDownloadProgress", { received: got, total: (declared / MB).toFixed(1) })
+        : t("adaptedDownloadProgressUnknown", { received: got }),
+    );
   }
   return new Blob(chunks as BlobPart[]).arrayBuffer();
 }
@@ -171,11 +155,11 @@ async function downloadAdapted(
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
   if (!resolved) {
     throw new Error(
-      "Couldn't get this model's file from MakerWorld. Make sure you're signed in to MakerWorld, then try again.",
+      t("couldNotGetMakerworldFile"),
     );
   }
   const res = await fetch(resolved.downloadUrl);
-  if (!res.ok) throw new Error(`MakerWorld's file server refused the download (${res.status}). Try again in a moment.`);
+  if (!res.ok) throw new Error(t("makerworldFileServerRefused", { status: res.status }));
   const declared = Number(res.headers.get("Content-Length")) || null;
   if (declared && declared > MAX_BYTES) {
     void res.body?.cancel();
@@ -187,7 +171,7 @@ async function downloadAdapted(
   try {
     adapted = await adaptMakerworld3mf(input, slicer).finally(stopRotation);
   } catch (err) {
-    throw new Error("Couldn't adapt this file: it doesn't look like a 3MF project MakerWorld's Download gives.", {
+    throw new Error(t("couldNotAdaptMakerworldFile"), {
       cause: err,
     });
   }
@@ -211,7 +195,7 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
   const logo = element("span", "tg-nd__logo");
   logo.append(createIcon());
   const label = element("span", "tg-nd__label");
-  label.textContent = LABEL;
+  label.textContent = t("downloadAdapted");
   const icon = element("span", "tg-nd__info");
   icon.append(bulbIcon());
   button.append(logo, label, icon);
@@ -262,12 +246,12 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     try {
       let note: string | null = null;
       if (!target.known) {
-        label.textContent = "Asking your instance…";
+        label.textContent = t("askingInstance");
         const answer = await instanceSlicer(SLICER_RETRY_MS);
         if (answer?.adapted === false) {
           // Its user wants that slicer's files as they are: no copy, and no button once they've read why.
           switchedOff = true;
-          showBubble("Open adapted is off for your slicer in Thingport, so there's no copy to download.", false, true);
+          showBubble(t("adaptedDownloadOff"), false, true);
           setTimeout(() => host === el && unmountAdaptedDownload(), ERROR_SHOW_MS);
           return;
         }
@@ -275,13 +259,13 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
           target = { known: true, slicer: answer.slicer };
           output = planFor(MAKERWORLD_FORMAT, answer.slicer)?.output ?? output;
         } else {
-          note = "Your Thingport instance didn't answer, so this is the copy PrusaSlicer and the slicers like it read.";
+          note = t("adaptedDownloadNoAnswer");
         }
       }
       const slicer = target.known ? target.slicer : null;
       const saved = await downloadAdapted(pageUrl, slicer, (text) => (label.textContent = text));
-      if (!saved) note = "Your slicer opens MakerWorld's files as they are, so this is the file itself.";
-      label.textContent = "Downloaded";
+      if (!saved) note = t("adaptedDownloadOriginal");
+      label.textContent = t("downloaded");
       if (note) showBubble(note, false, true);
       await new Promise((resolve) => setTimeout(resolve, DONE_RESET_MS));
       // Not offered to a slicer that needs no copy, now that it's known; only this button, if the page moved on.
@@ -291,7 +275,7 @@ function buildHost(pageUrl: string, firstTarget: Target, firstOutput: AdaptPlan[
     } finally {
       button.disabled = switchedOff;
       icon.replaceChildren(bulbIcon());
-      label.textContent = LABEL;
+      label.textContent = t("downloadAdapted");
     }
   });
   return el;
