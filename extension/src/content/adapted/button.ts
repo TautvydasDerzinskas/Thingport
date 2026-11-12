@@ -302,7 +302,11 @@ type Control = { host: HTMLElement; stop(): void };
 function mainButton(shared: Shared): Control {
   const { host, root } = shadowHost(shared);
   host.id = HOST_ID;
-  const several = shared.files.length > 1;
+  // A site whose page picks the file itself (a print profile chosen on it) gets that one's copy, as it is when asked;
+  // elsewhere, the menu offers the files where there are several.
+  const { selected } = shared.site;
+  const several = !selected && shared.files.length > 1;
+  const current = () => (selected ? (selected(shared.files) ?? shared.files[0]) : shared.file);
 
   const split = element("span", "nd-split");
   const main = element("button", "nd nd__main");
@@ -360,7 +364,7 @@ function mainButton(shared: Shared): Control {
     info.replaceChildren(element("span", "nd__spinner"));
     void makeCopy(
       shared,
-      shared.file,
+      current(),
       target,
       {
         progress: (status) => (title.textContent = status),
@@ -394,18 +398,17 @@ function mainButton(shared: Shared): Control {
       });
       return row;
     });
+  const copies = () => copyRows(shared, (target) => make(target, more));
   const menu = menuFor(host, root, more, split, several ? "Files and copies to download" : "Copies to download", () => [
     ...(several
       ? [
           menuGroup("tg-ndm-files", "3MF file", fileRows()),
           separator(),
-          menuGroup(
-            "tg-ndm-copies",
-            "Copy for",
-            copyRows(shared, (target) => make(target, more)),
-          ),
+          menuGroup("tg-ndm-copies", "Copy for", copies()),
         ]
-      : copyRows(shared, (target) => make(target, more))),
+      : selected
+        ? [menuGroup("tg-ndm-copies", `Copy of ${shownName(current())}`, copies())]
+        : copies()),
     separator(),
     settingsRow(shared, () => menu.close(false)),
   ]);
@@ -559,7 +562,7 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
   theme();
   place();
   const waited = setTimeout(() => {
-    if (!placed) onNoAnchor();
+    if (!placed && !site.unavailable?.()) onNoAnchor();
   }, ANCHOR_WAIT_MS);
 
   mounted = {

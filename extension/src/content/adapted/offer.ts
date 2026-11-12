@@ -22,7 +22,7 @@ const printerOf = (target: AdaptTarget) => `${target.printer!.brandName} ${targe
 
 /** The copies a target's click makes of the kinds of 3MF the site has: none where the slicer opens them as they are. */
 export function outputsFor(site: AdaptSite, target: AdaptTarget): Output[] {
-  const outputs = siteFormats(site.id).map((format) => planFor(format, target.slicer, choiceOf(target))?.output);
+  const outputs = siteFormats(site).map((format) => planFor(format, target.slicer, choiceOf(target))?.output);
   return [...new Set(outputs.filter((output): output is Output => Boolean(output)))];
 }
 
@@ -51,7 +51,7 @@ export function savedNote(target: AdaptTarget, saved: Saved): string | null {
 
 /** What the copy keeps, for the button's explanation. */
 export function explanation(site: AdaptSite, target: AdaptTarget): string {
-  return siteFormats(site.id).length > 1 ? ofSeveral(site, target) : ofOne(site, target);
+  return siteFormats(site).length > 1 ? ofSeveral(site, target) : ofOne(site, target);
 }
 
 const PICK = " Pick your slicer in Grab's Adapt 3MFs settings for a copy made for it.";

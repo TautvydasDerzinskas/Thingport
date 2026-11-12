@@ -1,8 +1,10 @@
 // What a site's 3MFs are before one is downloaded, by the kinds its manifest lists (`adapted3mfs`): a typical file
-// of each kind, enough to say which slicers get a copy. The downloaded file itself decides what its copy is.
+// of each kind, enough to say which slicers get a copy, unless the site gives its own. The downloaded file itself
+// decides what its copy is.
 
 import { FORMAT_VERSION, type ThreeMfFormat } from "../../adapter/index.generated";
-import { MANIFESTS, type ProviderId } from "../../providers/index.generated";
+import { MANIFESTS } from "../../providers/index.generated";
+import type { AdaptSite } from "./site";
 
 type Kind = "bambu" | "prusa" | "plain";
 
@@ -23,7 +25,14 @@ const TYPICAL: Record<Kind, ThreeMfFormat> = {
   plain: { ...UNKNOWN, kind: "plain", app: null, appVersion: null, filaments: 2, dialect: null, painted: false },
 };
 
-export function siteFormats(provider: ProviderId): ThreeMfFormat[] {
-  const kinds = (MANIFESTS[provider].capabilities as { adapted3mfs?: readonly Kind[] }).adapted3mfs ?? [];
+export function siteFormats(site: AdaptSite): ThreeMfFormat[] {
+  if (site.formats) return site.formats;
+  const kinds = (MANIFESTS[site.id].capabilities as { adapted3mfs?: readonly Kind[] }).adapted3mfs ?? [];
   return kinds.map((kind) => TYPICAL[kind]);
+}
+
+/** A Bambu layout project written by another app, as a site's typical file: `app` and its `version`, the OrcaSlicer
+ *  tag beside it if it writes one, in OrcaSlicer's names for settings. */
+export function orcaFamilyFormat(app: string, version: string, orcaTag: string | null = null): ThreeMfFormat {
+  return { ...TYPICAL.bambu, app, appVersion: version, orcaTag, dialect: "orca" };
 }

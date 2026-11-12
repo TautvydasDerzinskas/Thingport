@@ -23,7 +23,8 @@ let picks = 0;
 export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): HTMLElement {
   const { site, files, targets } = page;
   const box = element("div", "ad");
-  let file = files[0];
+  // The one the page has picked, where it picks one.
+  let file = site.selected?.(files) ?? files[0];
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
     const label = element("label", "tg-label ad-file__label", "3MF file");
@@ -34,6 +35,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
       const size = sizeText(option.size);
       select.append(new Option(size ? `${shownName(option)} (${size})` : shownName(option), String(at)));
     }
+    select.value = String(files.indexOf(file));
     select.addEventListener("change", () => (file = files[Number(select.value)] ?? files[0]));
     box.append(label, select);
   }

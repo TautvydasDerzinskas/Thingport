@@ -40,6 +40,7 @@ export default {
     ownLists: "signIn",
     categoryIds: "number",
     trending: { kind: "recommended", moreUrl: "https://www.nexprint.com/", rank: 9 },
+    adapted3mfs: ["bambu"],
   },
   examples: {
     model: "https://www.nexprint.com/en/models/G1234567",

@@ -182,7 +182,10 @@ Rules of thumb:
   "prusa", "plain"), and Grab's popup offers it under Adapt 3MFs' Sites. Grab then needs a site of its own for it
   (`extension/src/content/adapted/site.ts`): how its model's 3MFs are listed and downloaded in the page with the
   user's own sign-in, where its own open or download button is, and how its theme shows. MakerWorld's and
-  Printables' are in their `providers/<id>/adaptSite.ts`; a test holds the two lists to each other.
+  Printables' and the others are in their `providers/<id>/adaptSite.ts`, and a test holds the two lists to each other.
+  Where the site's files come from one app (Creality Print, Snapmaker Orca, Elegoo Slicer), the site gives a typical
+  file of it (`formats`), so each slicer is offered a copy only where it needs one; where the page picks the print
+  profile, the site says which (`selected`).
 - **MakerOnline** can't download server-side at all: the download call needs a Risk-Token that only the site's
   anti-bot script makes in a real page. It uses `customImport` with a `grabQueue`. The backend plans the files, Grab
   gets their links signed on a makeronline.com page, and imports started elsewhere wait in `GrabImport` until the

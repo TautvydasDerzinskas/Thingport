@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { CREALITYCLOUD_ADAPT } from "../../providers/crealitycloud/adaptSite";
 import { MAKERWORLD_ADAPT } from "../../providers/makerworld/adaptSite";
+import { NEXPRINT_ADAPT } from "../../providers/nexprint/adaptSite";
 import { PRINTABLES_ADAPT } from "../../providers/printables/adaptSite";
+import { SNAPMAKER_ADAPT } from "../../providers/snapmaker/adaptSite";
 import { DEFAULT_TARGET, type AdaptTarget, type TargetPrinter } from "../../shared/adaptTargets";
 import { copiesFor, explanation, outputsFor, savedNote } from "./offer";
 
@@ -85,5 +88,36 @@ describe("Download adapted's copies of Printables' files", () => {
     );
     expect(savedNote(target("bambustudio", P1S), { copy: true, printerless: false, nozzle: null })).toBeNull();
     expect(savedNote(target("cura"), { copy: true, printerless: false, nozzle: null })).toBeNull();
+  });
+});
+
+/** The slicers among `slicers` a site's files get a copy for. */
+const offered = (site: Parameters<typeof outputsFor>[0], slicers: string[]) =>
+  slicers.filter((slicer) => outputsFor(site, target(slicer)).length > 0);
+
+describe("Download adapted's copies of the files of the sites whose own slicer wrote them", () => {
+  const slicers = ["crealityprintlink", "snapmaker-orca", "elegooslicer", "orcaslicer", "bambustudio", "prusaslicer"];
+
+  it("leave out the slicer that wrote them, and the ones that open its projects as they are", () => {
+    expect(offered(CREALITYCLOUD_ADAPT, slicers)).toEqual([
+      "snapmaker-orca",
+      "elegooslicer",
+      "orcaslicer",
+      "bambustudio",
+      "prusaslicer",
+    ]);
+    expect(offered(SNAPMAKER_ADAPT, slicers)).not.toContain("snapmaker-orca");
+    expect(offered(SNAPMAKER_ADAPT, slicers)).toContain("bambustudio");
+    // Elegoo Slicer 1.5.3 tags its projects for OrcaSlicer too.
+    expect(offered(NEXPRINT_ADAPT, slicers)).not.toContain("elegooslicer");
+    expect(offered(NEXPRINT_ADAPT, slicers)).not.toContain("orcaslicer");
+    expect(offered(NEXPRINT_ADAPT, slicers)).toContain("bambustudio");
+  });
+
+  it("say what the site's files are", () => {
+    expect(explanation(CREALITYCLOUD_ADAPT, target("prusaslicer"))).toMatch(
+      /^Creality Cloud's files are Creality Print/,
+    );
+    expect(explanation(NEXPRINT_ADAPT, target("cura"))).toMatch(/^NexPrint's files are Elegoo Slicer projects/);
   });
 });
