@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -8,7 +8,10 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
+import { addPreviewImage, generateCardRender, previewImagePath } from "../src/services/previewImageService";
+import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
+import { resolvePlateFilePath } from "../src/services/printCreation";
+import { getPreviewMode, setPreviewMode } from "../src/services/settingsService";
 import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
@@ -30,6 +33,11 @@ function png(r: number) {
 // The stored JPEGs are re-encoded, so an image is recognised by its red channel.
 async function redOf(filePath: string) {
   return Math.round((await sharp(filePath).stats()).channels[0].mean);
+}
+// A red test picture has none; our own render's slate shading has plenty. Read from the file's bytes: sharp keeps a
+// picture it loaded by its path, so one written over since would read as before.
+async function greenOf(filePath: string) {
+  return Math.round((await sharp(await fs.readFile(filePath)).stats()).channels[1].mean);
 }
 
 async function uploadStl() {
@@ -122,6 +130,175 @@ describe("a 3D render saved before uploaded images land", () => {
     ]);
     expect(await redOf(previewImagePath(previews[0].id, await printAssetHome(print.id)))).toBeGreaterThan(180);
     expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
+  });
+});
+
+describe("our own thumb and cover", () => {
+  // Each render is this test's own: an upload doesn't start one.
+  let previousPreviewMode: Awaited<ReturnType<typeof getPreviewMode>>;
+  beforeAll(async () => {
+    previousPreviewMode = await getPreviewMode();
+    await setPreviewMode("on-demand");
+  });
+  afterAll(async () => {
+    await setPreviewMode(previousPreviewMode);
+  });
+
+  it("are drawn again from a render drawn anew, and an uploaded thumb stays", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    // Looked up each time: the model's own folder is made with its first picture.
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    const forgetRender = async () => fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    // The model's first render, which gives it its thumb and cover.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(modelImageState(plate.id, await plateAssetHome(plate.id))).toBe("ready");
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    const [firstCover] = await prisma.previewImage.findMany({ where: { printId: print.id } });
+    expect(firstCover.generated).toBe(true);
+
+    // As an older renderer left it: our own thumb, but not this picture.
+    await saveThumbFromBytes(plate.id, await png(250));
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    await forgetRender();
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeGreaterThan(40);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    const covers = await prisma.previewImage.findMany({ where: { printId: print.id } });
+    expect(covers).toHaveLength(1);
+    expect(covers[0]).toMatchObject({ generated: true });
+    expect(covers[0].id).not.toBe(firstCover.id);
+
+    // An uploaded thumb isn't ours to draw again.
+    await saveThumbFromBytes(plate.id, await png(250));
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(false);
+    await forgetRender();
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeLessThan(20);
+  });
+
+  it("are drawn again when the render is next asked for, where drawing them failed", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    await generateCardRender(plate.id, src, plate.filename);
+    // As an older renderer left it, then the render drawn anew while saving the new thumb fails.
+    await saveThumbFromBytes(plate.id, await png(250));
+    await prisma.plate.update({ where: { id: plate.id }, data: { thumbGenerated: true } });
+    await fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    const thumbFile = path.basename(await thumb());
+    const rename = fs.rename;
+    const failing = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (path.basename(String(to)) !== thumbFile) return rename(from, to);
+      throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+    });
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      failing.mockRestore();
+    }
+    expect(await greenOf(await thumb())).toBeLessThan(20);
+    // Asked for again, with the render drawn.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect(await greenOf(await thumb())).toBeGreaterThan(40);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(true);
+    // Drawn from this render now, so asking again leaves it.
+    const drawnAt = (await fs.stat(await thumb())).mtimeMs;
+    await generateCardRender(plate.id, src, plate.filename);
+    expect((await fs.stat(await thumb())).mtimeMs).toBe(drawnAt);
+  });
+
+  it("leave a thumb uploaded while they were being drawn", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const thumb = async () => plateThumbPath(plate.id, await plateAssetHome(plate.id));
+    await generateCardRender(plate.id, src, plate.filename);
+    // The render drawn anew, and a picture uploaded once the redraw has looked at the thumb it would replace.
+    const render = modelImagePath(plate.id, await plateAssetHome(plate.id));
+    await fs.rm(render, { force: true });
+    const stat = fs.stat;
+    let uploaded = false;
+    const uploading = vi.spyOn(fs, "stat").mockImplementation((async (...args: Parameters<typeof fs.stat>) => {
+      const result = await stat(...args);
+      if (!uploaded && path.basename(String(args[0])) === path.basename(render)) {
+        uploaded = true;
+        await saveThumbFromBytes(plate.id, await png(250));
+      }
+      return result;
+    }) as typeof fs.stat);
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      uploading.mockRestore();
+    }
+    expect(uploaded).toBe(true);
+    expect(await greenOf(await thumb())).toBeLessThan(20);
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } })).thumbGenerated).toBe(false);
+  });
+
+  it("put the cover drawn anew in place when the render is next asked for, where that failed", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const src = resolvePlateFilePath(plate)!;
+    const covers = () => prisma.previewImage.findMany({ where: { printId: print.id } });
+    await generateCardRender(plate.id, src, plate.filename);
+    const [older] = await covers();
+    // The render drawn anew while saving the cover drawn from it fails.
+    await fs.rm(modelImagePath(plate.id, await plateAssetHome(plate.id)), { force: true });
+    const thumbFile = path.basename(plateThumbPath(plate.id, await plateAssetHome(plate.id)));
+    const rename = fs.rename;
+    const failing = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      const name = path.basename(String(to));
+      if (!name.endsWith(".jpg") || name === thumbFile) return rename(from, to);
+      throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+    });
+    try {
+      await generateCardRender(plate.id, src, plate.filename);
+    } finally {
+      failing.mockRestore();
+    }
+    expect((await covers()).map((image) => image.id)).toEqual([older.id]);
+    // Asked for again, with the render drawn.
+    await generateCardRender(plate.id, src, plate.filename);
+    const [newer, ...rest] = await covers();
+    expect(rest).toHaveLength(0);
+    expect(newer.generated).toBe(true);
+    expect(newer.id).not.toBe(older.id);
+    // Newer than the render now, so asking again leaves it.
+    await generateCardRender(plate.id, src, plate.filename);
+    expect((await covers()).map((image) => image.id)).toEqual([newer.id]);
+  });
+
+  it("lead the model with its first plate, whichever plate drew first", async () => {
+    const print = await uploadStl();
+    const first = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const second = await prisma.plate.create({
+      data: {
+        printId: print.id,
+        position: 1,
+        filename: "second.stl",
+        mime: "model/stl",
+        storagePath: `${first.storagePath}.second`,
+      },
+    });
+    const src = resolvePlateFilePath(first)!;
+    const covers = () => prisma.previewImage.findMany({ where: { printId: print.id } });
+    // The second plate draws first, and its render stands in meanwhile.
+    await generateCardRender(second.id, src, second.filename);
+    const [fromSecond] = await covers();
+    expect(fromSecond.generated).toBe(true);
+    await generateCardRender(first.id, src, first.filename);
+    const afterFirst = await covers();
+    expect(afterFirst).toHaveLength(1);
+    expect(afterFirst[0].generated).toBe(true);
+    expect(afterFirst[0].id).not.toBe(fromSecond.id);
+    // The second plate's next render leaves it.
+    await fs.rm(modelImagePath(second.id, await plateAssetHome(second.id)), { force: true });
+    await generateCardRender(second.id, src, second.filename);
+    expect((await covers()).map((image) => image.id)).toEqual([afterFirst[0].id]);
   });
 });
 

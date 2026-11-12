@@ -16,7 +16,13 @@ import {
 } from "./modelAssets";
 import { plainWriteMode, reuseMarker, shareStoredBytes, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
-import { ensureAssetHome, plateThumbExists, plateThumbReplaceable, saveThumbFromBytes } from "./printService";
+import {
+  ensureAssetHome,
+  plateThumbExists,
+  plateThumbPath,
+  plateThumbReplaceable,
+  saveThumbFromBytes,
+} from "./printService";
 import { Prisma, type PreviewImage } from "@prisma/client";
 
 /** `home` is the image's model's Print.assetsPath. */
@@ -114,14 +120,19 @@ export async function addPreviewImage(
   }
 }
 
-/** An existing image (e.g. an import's cover) always wins. */
-export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<void> {
+/** An existing image (e.g. an import's cover) always wins. True when this one became the cover. */
+export async function addGeneratedPreviewImageIfNone(printId: string, buffer: Buffer): Promise<boolean> {
   const count = await prisma.previewImage.count({ where: { printId } });
-  if (count > 0) return;
+  if (count > 0) return false;
   const added = await addPreviewImage(printId, buffer, { generated: true });
+  if (!added) return false;
   // Something landed while this render was being written -- another plate's, or a picture. Anywhere but the
   // front of the gallery means it wasn't first after all, and only the first render stands in for a picture.
-  if (added && added.position > 0) await removePreviewImage(printId, added.id).catch(() => undefined);
+  if (added.position > 0) {
+    await removePreviewImage(printId, added.id).catch(() => undefined);
+    return false;
+  }
+  return true;
 }
 
 /** Drops our own renders, so the images that replace them start at position 0. */
@@ -192,34 +203,68 @@ export async function reorderPreviewImages(printId: string, ids: string[]): Prom
 // slate, like the live viewer's model.
 const RENDER_THUMB_SHADE = [0.58, 0.64, 0.72, 1];
 
+/** Whether `file` was last written before `other`; false where either can't be read. */
+async function writtenBefore(file: string, other: string): Promise<boolean> {
+  try {
+    const [a, b] = await Promise.all([fs.stat(file), fs.stat(other)]);
+    return a.mtimeMs < b.mtimeMs;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Our own render stands in as the plate's thumb, and the model's cover, while it has no picture at all, so
- * mosaics and lists that show thumbs have one without the model being opened.
+ * mosaics and lists that show thumbs have one without the model being opened. A thumb of our own older than the
+ * render is drawn again from it: the render was drawn anew since, by a renderer that may draw differently (an older
+ * one turned rotated parts the wrong way), and a redraw that failed gets another go the next time the card render is
+ * asked for and found drawn. One from an import or an upload stays, also when it lands while the render is shaded.
  *
  * The thumb is always the one-colour render, tinted: a list of models reads as one set in whatever colour the
  * reader picked, and the Appearance panel's render colour goes on working. The cover is the picture in the
  * model's own colours where the file carried any -- that one is the model's page shown large, where the thing
  * as it would be printed is what someone is looking for.
+ *
+ * "covered" when this render became the cover too, "adopted" when it's the thumb only.
  */
-async function adoptRenderAsThumb(plateId: string, renderPath: string, colorPath: string | null): Promise<void> {
-  if (plateThumbExists(plateId, await plateAssetHome(plateId))) return;
-  const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
-  if (!plate) return;
+async function adoptRenderAsThumb(
+  plateId: string,
+  renderPath: string,
+  colorPath: string | null,
+): Promise<"covered" | "adopted" | "redrawn" | null> {
+  const plate = await prisma.plate.findUnique({
+    where: { id: plateId },
+    select: { printId: true, thumbGenerated: true },
+  });
+  if (!plate) return null;
+  const home = await plateAssetHome(plateId);
+  const had = plateThumbExists(plateId, home);
+  if (had && !(plate.thumbGenerated && (await writtenBefore(plateThumbPath(plateId, home), renderPath)))) return null;
   const buffer = await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
-  if (!(await saveThumbFromBytes(plateId, buffer))) return;
+  // An upload or an import may have put its picture in meanwhile, which stays.
+  if (!(await plateThumbReplaceable(plateId))) return null;
+  if (!(await saveThumbFromBytes(plateId, buffer))) return null;
   await prisma.plate.update({ where: { id: plateId }, data: { thumbGenerated: true } });
+  if (had) return "redrawn";
   const cover = colorPath ? await fs.readFile(colorPath).catch(() => buffer) : buffer;
-  await addGeneratedPreviewImageIfNone(plate.printId, cover);
+  return (await addGeneratedPreviewImageIfNone(plate.printId, cover)) ? "covered" : "adopted";
 }
 
 /**
- * Puts a newly drawn colour picture in place of the grey render that was standing in as the cover.
+ * Puts a newly drawn picture in place of the one of our own standing in as the cover: the one in the model's colours
+ * where it has any, for a model whose cover was made before Thingport could draw them or whose file gained them,
+ * else the render, which an older renderer may have drawn differently.
  *
- * For a model whose cover was made before Thingport could draw its colours, or one whose file gained them. Only
- * our own render is replaced (`generated`), and only right after a render, so a model's cover isn't taken apart
- * and rebuilt every time someone looks at it.
+ * Only our own picture is replaced (`generated`): right after a render (`drawn`), or later while it's older than the
+ * render, as a replacement that failed leaves it, so a model's cover isn't taken apart and rebuilt each time the
+ * render is asked for.
  */
-async function replaceRenderCoverWithColor(plateId: string, colorPath: string): Promise<void> {
+async function replaceGeneratedCover(
+  plateId: string,
+  renderPath: string,
+  colorPath: string | null,
+  drawn: boolean,
+): Promise<void> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
   if (!plate) return;
   // The model's first plate, whichever finished rendering first: with several, each would otherwise take the
@@ -232,20 +277,27 @@ async function replaceRenderCoverWithColor(plateId: string, colorPath: string): 
   if (first?.id !== plateId) return;
   const images = await prisma.previewImage.findMany({ where: { printId: plate.printId } });
   if (images.length !== 1 || !images[0].generated) return;
-  const added = await addPreviewImage(plate.printId, await fs.readFile(colorPath), { generated: true });
+  const current = previewImagePath(images[0].id, await plateAssetHome(plateId));
+  if (!drawn && !(await writtenBefore(current, renderPath))) return;
+  const cover = colorPath ? await fs.readFile(colorPath) : await renderThumbShade(renderPath, RENDER_THUMB_SHADE);
+  const added = await addPreviewImage(plate.printId, cover, { generated: true });
   if (added) await removePreviewImage(plate.printId, images[0].id);
 }
 
 /** Queues the model card's render. Never throws. */
 export function generateCardRender(plateId: string, srcPath: string, filename: string): Promise<void> {
   return generateModelImage(plateId, srcPath, filename, "render", async (renderPath, colorPath, drawn) => {
-    await adoptRenderAsThumb(plateId, renderPath, colorPath).catch((err) =>
-      console.error(`Render thumb failed for ${plateId}:`, err),
-    );
-    if (drawn && colorPath) {
-      await replaceRenderCoverWithColor(plateId, colorPath).catch((err) =>
-        console.error(`Colour cover failed for ${plateId}:`, err),
-      );
+    const thumb = await adoptRenderAsThumb(plateId, renderPath, colorPath).catch((err: unknown) => {
+      console.error(`Render thumb failed for ${plateId}:`, err);
+      return null;
+    });
+    // A cover just made from this render is this render already. One a later plate's render made first is the
+    // first plate's to take.
+    if (thumb === "covered") return;
+    try {
+      await replaceGeneratedCover(plateId, renderPath, colorPath, drawn);
+    } catch (err) {
+      console.error(`Cover failed for ${plateId}:`, err);
     }
   });
 }

@@ -132,6 +132,34 @@ describe("model picture cache", () => {
     expect(await modelImageState(plateId)).toBe("ready");
   });
 
+  it("runs a drawn picture's next step once at a time, and again once it's done, failed or not", async () => {
+    const plateId = await newPlateId("steps");
+    const src = await file("steps.stl", BOX_STL);
+    await generateModelImage(plateId, src, "steps.stl");
+    const steps: string[] = [];
+    let started!: () => void;
+    let finish!: () => void;
+    const begun = new Promise<void>((resolve) => (started = resolve));
+    const held = new Promise<void>((resolve) => (finish = resolve));
+    const first = generateModelImage(plateId, src, "steps.stl", "render", async (_render, _color, drawn) => {
+      steps.push(`first ${drawn}`);
+      started();
+      await held;
+      throw new Error("post-processing failed");
+    });
+    await begun;
+    // Asked for again while the first one's step runs.
+    await generateModelImage(plateId, src, "steps.stl", "render", async () => {
+      steps.push("meanwhile");
+    });
+    finish();
+    await first;
+    await generateModelImage(plateId, src, "steps.stl", "render", async (_render, _color, drawn) => {
+      steps.push(`after ${drawn}`);
+    });
+    expect(steps).toEqual(["first false", "after false"]);
+  });
+
   it("calls a 3MF layout it can't read unsupported, and doesn't try it again", async () => {
     const plateId = await newPlateId("elsewhere");
     const modelPath = await file("model.model", ONE_TRIANGLE_3MF_XML);

@@ -31,9 +31,9 @@ const LEGACY_DIRS: Record<AssetKind, string> = {
 };
 
 // Part of a render's name, so changing its look (modelPreviewCache's MODEL_IMAGE_KINDS) draws older ones again.
-export const RENDER_FILE_TAG = "render.v3";
+export const RENDER_FILE_TAG = "render.v4";
 // The same, for the picture drawn in a model's own colours rather than in one the app tints.
-export const COLOR_RENDER_FILE_TAG = "color.v1";
+export const COLOR_RENDER_FILE_TAG = "color.v2";
 
 const DESCRIPTION_EXTS: Record<string, string> = {
   "image/jpeg": ".jpg",

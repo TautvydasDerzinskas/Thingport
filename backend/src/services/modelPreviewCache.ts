@@ -27,7 +27,7 @@ import { workerBootstrap } from "../utils/workerBootstrap";
 
 // Part of the cache filename, so bumping it regenerates older GLBs on next view. Failure markers
 // carry it too, so a file an older renderer refused gets another attempt.
-const PREVIEW_FORMAT_VERSION = 4;
+const PREVIEW_FORMAT_VERSION = 5;
 
 export function modelPreviewGlbPath(plateId: string): string {
   return path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.glb`);
@@ -371,13 +371,18 @@ export async function generateModelImage(
   const home = await plateAssetHome(plateId).catch(() => null);
   const cachedPath = assetPath(home, file);
   if (fsSync.existsSync(cachedPath) || recentlyFailed(plateId, errorPath)) {
-    imagesInFlight.delete(key);
-    if (!fsSync.existsSync(cachedPath)) return;
-    // Still run onReady, so a step that failed after an earlier render gets another go.
+    if (!fsSync.existsSync(cachedPath)) {
+      imagesInFlight.delete(key);
+      return;
+    }
+    // Still run onReady, so a step that failed after an earlier render gets another go. Claimed meanwhile, as a
+    // drawing is, so a second call doesn't run it twice at once.
     try {
       await onReady?.(cachedPath, modelColorImagePath(plateId, home), false);
     } catch (err) {
       console.error(`Model picture post-processing failed for plate ${plateId}:`, err);
+    } finally {
+      imagesInFlight.delete(key);
     }
     return;
   }
