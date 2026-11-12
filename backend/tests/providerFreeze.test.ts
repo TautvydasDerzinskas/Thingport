@@ -171,7 +171,14 @@ describe("provider-module freeze", () => {
   });
 
   it("pins profile provider IDs", () => {
-    expect([...PROFILE_PROVIDERS]).toEqual(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
+    expect([...PROFILE_PROVIDERS]).toEqual([
+      "makerworld",
+      "snapmaker",
+      "makeronline",
+      "crealitycloud",
+      "nexprint",
+      "eufymake",
+    ]);
   });
 
   it("pins client-facing provider error codes", () => {

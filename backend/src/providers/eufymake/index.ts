@@ -11,18 +11,28 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
-import type { ProviderDetails, ProviderList, ProviderLists, ProviderTrending, SourcedImport } from "../types";
+import type {
+  ImportKit,
+  ProviderDetails,
+  ProviderList,
+  ProviderLists,
+  ProviderTrending,
+  SourcedImport,
+} from "../types";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import {
   EUFYMAKE_LIKES_NAME,
   EufymakeAuthError,
   type EufymakeModelResolution,
+  eufymakeModelUrl,
   fetchEufymakeFeatured,
   fetchEufymakeLikes,
   isEufymakeFileHost,
   isEufymakeLikesUrl,
+  parseEufymakeModelUrl,
   resolveEufymakeModel,
+  selectEufymakeProfiles,
 } from "./api";
 import { EUFYMAKE_CONNECT, getUserEufymakeAuth, markEufymakeSessionRejected } from "./session";
 
@@ -30,25 +40,65 @@ const SESSION_CODE = MANIFESTS.eufymake.errorCodes.session;
 const BLOCKED =
   "eufyMake blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
 
-/** A model is one print of its files, which come with its details as links signed for anyone, so nothing needs a
- *  sign-in. Where it lists its files only as one zip, the zip is unpacked. */
+/** One print file's 3MF, tagged with its print profile; null when the model has no such print file. */
+async function downloadProfile(
+  resolved: EufymakeModelResolution,
+  profileId: string,
+  kit: ImportKit,
+): Promise<NewPlateInput | null> {
+  const profile = resolved.profiles.find((p) => p.id === profileId);
+  if (!profile) return null;
+  const inputs = await kit.downloadSignedFile(profile, isEufymakeFileHost, BLOCKED);
+  if (!inputs?.length) throw new HttpError(400, "Couldn't download this print file from eufyMake. Try again later.");
+  // A print file is one 3MF; anything else it unpacked to is dropped.
+  await Promise.all(inputs.slice(1).map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+  return { ...inputs[0], sourceInstanceId: profileId };
+}
+
+/** A model is one print. Where it has print files (eufyMake's print profiles), an import brings the one the link
+ *  names, else the first, on a plate tagged with it; otherwise its model files. Both come with its details as links
+ *  signed for anyone, so nothing needs a sign-in. Where it lists its model files only as one zip, the zip is
+ *  unpacked. */
 export const eufymakeImport: SourcedImport<null, EufymakeModelResolution> = {
   requireAuth: async () => null,
   resolveModel: (modelId) => resolveEufymakeModel(modelId),
   mapError: async (_userId, err) => err,
   missingMessage: "This eufyMake model could not be found, or isn't public.",
   noFilesMessage: "This eufyMake model has no files Thingport can import.",
-  async downloadModel(_target, resolved, _auth, _requested, kit) {
+  async downloadModel(_target, resolved, _auth, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
-      for (const file of resolved.files) {
-        downloaded.push(...((await kit.downloadSignedFile(file, isEufymakeFileHost, BLOCKED)) ?? []));
+      const [profileId] = selectEufymakeProfiles(resolved, "url", requested);
+      const profile = profileId ? await downloadProfile(resolved, profileId, kit) : null;
+      if (profile) downloaded.push(profile);
+      else {
+        for (const file of resolved.files) {
+          downloaded.push(...((await kit.downloadSignedFile(file, isEufymakeFileHost, BLOCKED)) ?? []));
+        }
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;
     }
     return downloaded;
+  },
+  profiles: {
+    download: (_target, resolved, profileId, _auth, kit) => downloadProfile(resolved!, profileId, kit),
+    missingMessage: "This eufyMake model has no such print file.",
+    // Its print files are named by their designers.
+    namedAlike: false,
+    async listUrls(url, scope) {
+      const parsed = parseEufymakeModelUrl(url);
+      if (!parsed) throw new HttpError(400, "Not an eufyMake model link");
+      const resolved = await resolveEufymakeModel(parsed.modelId);
+      if (!resolved) throw new HttpError(404, eufymakeImport.missingMessage);
+      const profileIds = selectEufymakeProfiles(resolved, scope, parsed.requestedProfileId);
+      if (!profileIds.length) throw new HttpError(400, "This model has no print files to import");
+      return {
+        title: resolved.meta.title ?? null,
+        urls: profileIds.map((profileId) => eufymakeModelUrl(resolved.modelId, profileId)),
+      };
+    },
   },
 };
 
