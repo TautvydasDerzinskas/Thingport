@@ -124,11 +124,9 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- A request for the slicer picked in your Thingport instance's Configuration, when a MakerWorld model page opens (and
-  again when you click **Download adapted**, if it didn't answer in time): it decides whether the button is shown,
-  which copy it makes, and the slicer its explanation names.
-- When you open the toolbar popup while connected: a request for your slicers and printers in your Thingport
-  instance's Configuration, which Adapt 3MFs then shows and uses in place of its own.
+- When a MakerWorld model page opens, and when you open the toolbar popup: a request for your slicers and printers in
+  your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they decide whether **Download
+  adapted** is shown and which copies it makes.
 - When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
   that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once
   per account, so ones you remove there aren't sent again.
@@ -228,7 +226,8 @@ from the image servers of the sites you viewed them on, without saying which pag
   file is saved.
 - When you click **Download adapted** on a MakerWorld model page, the extension downloads that
   model's file from MakerWorld, as the page's own Download button would, converts it inside your
-  browser and saves the result to your downloads. The file isn't sent anywhere else.
+  browser for the slicer and printer you chose, using the printer list it carries, and saves the result to your
+  downloads. The file isn't sent anywhere else.
 - On a MakerWorld collection import, the extension moves your tab from one model page to the next,
   just as if you were clicking through them.
 - On Printables, once per open tab, the extension asks Printables' own API which account you're

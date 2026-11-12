@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
+import { printerCatalogue } from "../printers/catalogue";
 import { adaptFile, formatOfZip, planFor } from "./run";
 
 const MODEL_NS =
@@ -68,5 +71,20 @@ describe("what Grab makes of a MakerWorld 3MF", () => {
     const same = await adaptFile(input, "bambustudio");
     expect(same.output).toBeNull();
     expect(same.bytes).toBe(input);
+  });
+
+  it("makes a copy for a printer in Bambu Studio itself, naming that printer's presets from Grab's catalogue", async () => {
+    const catalogue = printerCatalogue(async (file) =>
+      JSON.parse(readFileSync(path.resolve(__dirname, "../../public/printers", file), "utf8")),
+    );
+    const printer = await catalogue.recipe("bambustudio", "bambulab-p1s", "0.4");
+    expect(printer?.choice.preset).toBe("Bambu Lab P1S 0.4 nozzle");
+    const copy = await adaptFile(await makerworldProject(), "bambustudio", printer);
+    expect(copy.output).toBe("bambu");
+    const settings = JSON.parse(
+      await (await JSZip.loadAsync(copy.bytes)).file("Metadata/project_settings.config")!.async("string"),
+    ) as Record<string, unknown>;
+    expect(settings.printer_settings_id).toBe("Bambu Lab P1S 0.4 nozzle");
+    expect(settings.print_compatible_printers).toEqual(["Bambu Lab P1S 0.4 nozzle"]);
   });
 });

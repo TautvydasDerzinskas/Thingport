@@ -2,11 +2,26 @@
 // instance's slicers and printers (its Configuration → Slicer and Printers) take their place. On connecting, Grab
 // offers its own to an instance that has none yet, once per account.
 
-import { adaptSettingsOf, adaptUpdate, knownSlicers, type AdaptSettings } from "../shared/adaptSettings";
-import type { AdaptView, ThingportAdapt, ThingportPrinter } from "../shared/messages";
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { PrinterRecipe } from "../adapter/printer.generated";
+import { printerCatalogue } from "../printers/catalogue";
+import {
+  adaptSettingsOf,
+  adaptUpdate,
+  knownSlicers,
+  type AdaptPrinter,
+  type AdaptSettings,
+} from "../shared/adaptSettings";
+import { adaptInUse, adaptTargets, type TargetPrinter } from "../shared/adaptTargets";
+import type { AdaptOffer, AdaptView, ThingportAdapt, ThingportPrinter } from "../shared/messages";
 import { STORAGE_KEYS } from "../shared/storage";
 import { ApiError, apiCall } from "./api";
 import { getStoredConfig, isConfigured } from "./config";
+
+// Long enough for an instance that's up; past it, Grab's own settings stand in, as for one out of reach.
+const INSTANCE_WAIT_MS = 5000;
+
+const catalogue = printerCatalogue();
 
 /** `GET /settings/slicer`, as any version answers it: one `slicer` before there were several. */
 type SlicerSettings = {
@@ -60,7 +75,13 @@ async function thingportPrinters(): Promise<ThingportPrinter[] | null> {
 }
 
 async function thingportAdapt(): Promise<ThingportAdapt> {
-  const [settings, printers] = await Promise.all([slicerSettings(), thingportPrinters()]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("it didn't answer in time")), INSTANCE_WAIT_MS);
+  });
+  const [settings, printers] = await Promise.race([Promise.all([slicerSettings(), thingportPrinters()]), late]).finally(
+    () => clearTimeout(timer),
+  );
   const slicerPrinters = Object.fromEntries(
     Object.entries(settings.printers ?? {}).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
   );
@@ -119,4 +140,52 @@ export function carryAdaptPicks(): Promise<void> {
     carrying = null;
   });
   return carrying;
+}
+
+/** Grab's own printers as the catalogue describes them; one it no longer has keeps its id for a name. */
+async function describeOwn(): Promise<(printer: AdaptPrinter) => TargetPrinter> {
+  const index = await catalogue.index().catch(() => null);
+  const brands = new Map(index?.brands.map((brand) => [brand.id, brand.name]) ?? []);
+  return ({ id, nozzle }) => {
+    const known = index?.byId.get(id);
+    if (!known) return { id, brandName: "", model: id, nozzle, bed: null, height: null, extruders: 1 };
+    const { model, bed, height, extruders } = known;
+    return { id, brandName: brands.get(known.brand) ?? known.brand, model, nozzle, bed, height, extruders };
+  };
+}
+
+export async function getAdaptOffer(): Promise<AdaptOffer> {
+  const [view, describe, stored] = await Promise.all([getAdaptView(), describeOwn(), getStoredConfig()]);
+  return {
+    targets: adaptTargets(adaptInUse(view, describe)),
+    placement: view.own.placement,
+    lastKey: stored.adaptLastTarget ?? null,
+    connected: view.thingport !== null,
+  };
+}
+
+export async function setAdaptLast(key: string): Promise<null> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.adaptLastTarget]: String(key) });
+  return null;
+}
+
+export function printerRecipeFor(
+  slicer: string,
+  printerId: string,
+  nozzle: string,
+): Promise<{ choice: PrinterChoice; recipe: PrinterRecipe } | null> {
+  return catalogue.recipe(slicer, printerId, nozzle);
+}
+
+/** The popup, opened at Adapt 3MFs' settings: it reads the flag as it opens. A tab says so in its address. */
+export async function openAdaptSettings(): Promise<"popup" | "tab"> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.adaptOpenSettings]: Date.now() });
+  try {
+    await chrome.action.openPopup();
+    return "popup";
+  } catch {
+    await chrome.storage.local.remove(STORAGE_KEYS.adaptOpenSettings);
+    await chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?view=adapt") });
+    return "tab";
+  }
 }

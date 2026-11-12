@@ -11,7 +11,8 @@ import {
   type AdaptPrinter,
   type AdaptSettings,
 } from "../shared/adaptSettings";
-import { send, type AdaptView, type ThingportPrinter } from "../shared/messages";
+import { adaptInUse, type AdaptInUse, type TargetPrinter } from "../shared/adaptTargets";
+import { send, type AdaptView } from "../shared/messages";
 import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
 import { SLICER_LABELS } from "../shared/slicers";
 import { STORAGE_KEYS } from "../shared/storage";
@@ -77,53 +78,28 @@ const siteOn = new Map<ProviderId, boolean>();
 // Add printer: the maker opened, if one is, and whether every maker is listed.
 let picking: { maker: string | null; allMakers: boolean } = { maker: null, allMakers: false };
 
-/** What copies are made for now. Thingport's slicers and printers are managed there, so they're only shown here. */
-type InUse = {
-  slicers: string[];
-  printers: ShownPrinter[];
-  slicersFromThingport: boolean;
-  printersFromThingport: boolean;
-  note: string | null;
-  retry: boolean;
-};
-
-function shownOwn(printers: AdaptPrinter[]): ShownPrinter[] {
-  return printers.map(({ id, nozzle }) => {
-    const known = index?.byId.get(id);
-    return known
-      ? { ...known, brandName: brands.get(known.brand)?.name ?? known.brand, nozzle }
-      : { id, brandName: "", model: id, nozzle, bed: null, height: null, extruders: 1 };
-  });
+function describeOwn({ id, nozzle }: AdaptPrinter): TargetPrinter {
+  const known = index?.byId.get(id);
+  return known
+    ? { ...known, brandName: brands.get(known.brand)?.name ?? known.brand, nozzle }
+    : { id, brandName: "", model: id, nozzle, bed: null, height: null, extruders: 1 };
 }
 
-const shownThingport = (printers: ThingportPrinter[]): ShownPrinter[] => printers.map((printer) => ({ ...printer }));
+/** What copies are made for now. Thingport's slicers and printers are managed there, so they're only shown here. */
+const inUse = (current: AdaptView): AdaptInUse => adaptInUse(current, describeOwn);
 
-function inUse(current: AdaptView): InUse {
-  const thingport = current.thingport;
-  const own = {
-    slicers: current.own.slicers,
-    printers: shownOwn(current.own.printers),
-    slicersFromThingport: false,
-    printersFromThingport: false,
-  };
-  if (thingport && "slicers" in thingport) {
-    return {
-      slicers: thingport.slicers,
-      slicersFromThingport: true,
-      printers: thingport.printers ? shownThingport(thingport.printers) : own.printers,
-      printersFromThingport: Boolean(thingport.printers),
-      note: thingport.printers ? null : "Your Thingport instance doesn't keep printers yet, so Grab uses its own.",
-      retry: false,
-    };
+/** Why the instance's slicers and printers aren't the ones shown, where they would be. */
+function noteOf(use: AdaptInUse): { text: string; retry: boolean } | null {
+  if (use.fallback === "no-printers") {
+    return { text: "Your Thingport instance doesn't keep printers yet, so Grab uses its own.", retry: false };
   }
-  if (thingport) {
+  if (use.fallback === "unreachable") {
     return {
-      ...own,
-      note: `Couldn't reach your Thingport instance (${thingport.error}), so Grab uses its own slicers and printers.`,
+      text: `Couldn't reach your Thingport instance (${use.error}), so Grab uses its own slicers and printers.`,
       retry: true,
     };
   }
-  return { ...own, note: null, retry: false };
+  return null;
 }
 
 /** Puts focus back where it was, by the `data-key` of what had it, after `container` is drawn again. */
@@ -212,7 +188,7 @@ function fromThingport(tab: "slicer" | "printers"): Node[] {
   return [el("span", "sv-from", "From Thingport"), opensInTab(link)];
 }
 
-function slicerSection(use: InUse): HTMLElement {
+function slicerSection(use: AdaptInUse): HTMLElement {
   if (use.slicersFromThingport) {
     const body = use.slicers.length
       ? [el("div", "st-grid", ...use.slicers.map((id) => slicerTile(id)))]
@@ -250,7 +226,7 @@ function printerMenu(tile: HTMLElement, printer: ShownPrinter): void {
   ]);
 }
 
-function printerSection(use: InUse): HTMLElement {
+function printerSection(use: AdaptInUse): HTMLElement {
   if (use.printersFromThingport) {
     const body = use.printers.length
       ? [el("div", "pt-grid", ...use.printers.map((printer) => printerTile(printer, { button: false })))]
@@ -331,22 +307,23 @@ function sitesSection(): HTMLElement {
   return section("Sites", TIPS.sites, [list]);
 }
 
-function noteBlock(use: InUse): HTMLElement {
-  const note = el("p", use.retry ? "sv-alert sv-alert--problem" : "sv-alert", use.note ?? "");
-  if (use.retry) {
+function noteBlock(note: { text: string; retry: boolean }): HTMLElement {
+  const block = el("p", note.retry ? "sv-alert sv-alert--problem" : "sv-alert", note.text);
+  if (note.retry) {
     const retry = el("button", "text-btn", "Try again");
     retry.type = "button";
     retry.addEventListener("click", () => void loadAdapt());
-    note.append(" ", retry);
+    block.append(" ", retry);
   }
-  return note;
+  return block;
 }
 
 function renderSettings(): void {
   if (!view) return;
   const use = inUse(view);
+  const note = noteOf(use);
   els.adaptSections.replaceChildren(
-    ...(use.note ? [noteBlock(use)] : []),
+    ...(note ? [noteBlock(note)] : []),
     slicerSection(use),
     printerSection(use),
     placementSection(view.own.placement),
@@ -520,6 +497,23 @@ async function loadSiteStates(): Promise<void> {
   }
 }
 
+// A page's "Adapt settings…" (content/adapted/button.ts) opens the popup at them: the background leaves a flag for
+// the popup it opens, and a tab says so in its address. Asked once, as the popup opens.
+const ASKED_WITHIN_MS = 15000;
+let askedChecked = false;
+
+async function openIfAsked(): Promise<void> {
+  if (askedChecked) return;
+  askedChecked = true;
+  const inTab = new URLSearchParams(location.search).get("view") === "adapt";
+  const stored = await chrome.storage.local.get(STORAGE_KEYS.adaptOpenSettings).catch(() => ({}));
+  const at = (stored as Record<string, unknown>)[STORAGE_KEYS.adaptOpenSettings];
+  if (at !== undefined) await chrome.storage.local.remove(STORAGE_KEYS.adaptOpenSettings).catch(() => undefined);
+  if (!inTab && !(typeof at === "number" && Date.now() - at < ASKED_WITHIN_MS)) return;
+  els.offlineTab.click();
+  openSettings(els.adaptSettingsBtn);
+}
+
 /** Reads the settings, and the instance's slicers and printers once connected, then draws what's showing. */
 export async function loadAdapt(): Promise<void> {
   const [res] = await Promise.all([send("GET_ADAPT_SETTINGS"), loadIndex(), loadSiteStates()]);
@@ -529,6 +523,7 @@ export async function loadAdapt(): Promise<void> {
   }
   view = res.data;
   renderAll();
+  await openIfAsked();
 }
 
 // Another window's popup; or, just after connecting, Grab's picks having gone to the instance (adaptCarriedTo is

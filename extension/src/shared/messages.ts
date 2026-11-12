@@ -1,7 +1,10 @@
 // Typed runtime messages between the content script/popup and the background. Replies use a
 // `{ ok, data } | { ok: false, error }` envelope: `send` returns it, `request` throws on error.
 
-import type { AdaptSettings } from "./adaptSettings";
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { PrinterRecipe } from "../adapter/printer.generated";
+import type { AdaptPlacement, AdaptSettings } from "./adaptSettings";
+import type { AdaptTarget } from "./adaptTargets";
 import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
@@ -57,6 +60,15 @@ export type AdaptView = {
   own: AdaptSettings;
   thingport: ThingportAdapt | { error: string } | null;
   instanceUrl: string;
+};
+
+/** What a model page offers: the copies Download adapted makes (shared/adaptTargets.ts), where its button goes, and
+ *  the copy last made, which the button makes again. */
+export type AdaptOffer = {
+  targets: AdaptTarget[];
+  placement: AdaptPlacement;
+  lastKey: string | null;
+  connected: boolean;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -189,6 +201,17 @@ export type BackgroundMessages = {
   GET_ADAPT_SETTINGS: { payload: void; result: AdaptView };
   /** Changes Grab's own Adapt 3MFs settings, and gives them back as stored. */
   SET_ADAPT_SETTINGS: { payload: Partial<AdaptSettings>; result: AdaptSettings };
+  /** On a model page: the copies Download adapted makes, and where its button goes. */
+  GET_ADAPT_OFFER: { payload: void; result: AdaptOffer };
+  /** The copy last made, which the button then makes by default. */
+  SET_ADAPT_LAST: { payload: { key: string }; result: null };
+  /** What a copy for a printer names in a slicer, from Grab's printer catalogue; null where it has nothing for them. */
+  GET_PRINTER_RECIPE: {
+    payload: { slicer: string; printerId: string; nozzle: string };
+    result: { choice: PrinterChoice; recipe: PrinterRecipe } | null;
+  };
+  /** Opens the popup at Adapt 3MFs' settings, or the same page in a tab where the browser won't open the popup. */
+  OPEN_ADAPT_SETTINGS: { payload: void; result: "popup" | "tab" };
   /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
   START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };
