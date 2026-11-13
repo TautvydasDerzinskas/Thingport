@@ -388,22 +388,29 @@ export async function createPrint(
 /** Undoes a half-created print, so a failure doesn't leave a model with only some of its files. */
 export async function discardPrint(printId: string): Promise<void> {
   try {
-    const plates = await prisma.plate.findMany({ where: { printId } });
-    const home = await printAssetHome(printId);
-    const assetOwners = await assetOwnerIds(printId);
-    await deleteAllPrintFiles(printId);
-    await prisma.print.delete({ where: { id: printId } });
-    for (const plate of plates) {
-      await removePlatePictures(plate.id, home);
-      if (plate.sourcePath) continue;
-      const managed = managedPlatePath(plate);
-      await fs.rm(managed, { force: true });
-      await pruneEmptyStorageDirs(path.dirname(managed));
-    }
-    await removeAssetHome(home, assetOwners);
+    await discardPrintOrThrow(printId);
   } catch (err) {
     console.error("Failed to discard half-created print", printId, err);
   }
+}
+
+/** The same, failing when the print couldn't be removed, for a caller that must know it's gone. One that isn't there
+ *  is gone already. */
+export async function discardPrintOrThrow(printId: string): Promise<void> {
+  if (!(await prisma.print.findUnique({ where: { id: printId }, select: { id: true } }))) return;
+  const plates = await prisma.plate.findMany({ where: { printId } });
+  const home = await printAssetHome(printId);
+  const assetOwners = await assetOwnerIds(printId);
+  await deleteAllPrintFiles(printId);
+  await prisma.print.delete({ where: { id: printId } });
+  for (const plate of plates) {
+    await removePlatePictures(plate.id, home);
+    if (plate.sourcePath) continue;
+    const managed = managedPlatePath(plate);
+    await fs.rm(managed, { force: true });
+    await pruneEmptyStorageDirs(path.dirname(managed));
+  }
+  await removeAssetHome(home, assetOwners);
 }
 
 export async function addPlatesToPrint(

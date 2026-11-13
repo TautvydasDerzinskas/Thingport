@@ -8,6 +8,8 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Synced collections](guides/synced-collections.md)**
 - **[Bring your existing library](guides/existing-library.md)**
 - **[Consume folder](guides/consume-folder.md)**
+- **[Move from another Thingport instance, any release since 1.0.0](guides/migrate.md)**
+- **[Move from Manyfold](guides/migrate-manyfold.md)**
 - **[3D previews](features/3d-previews.md)**
 - **[Multicolour models in their own colours](features/3d-previews.md)**
 - **[Print quality checks](features/print-quality.md)**

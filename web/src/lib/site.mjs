@@ -358,6 +358,24 @@ export const DOCS = [
       "Turn connected instances on, connect to another instance, answer requests and look after partners, step by step, a home instance behind its router included.",
   },
   {
+    slug: "guides/migrate",
+    source: "docs/guides/migrate.md",
+    group: "Administration",
+    title: "Move to another Thingport instance",
+    nav: "Migrate",
+    description:
+      "Bring another Thingport instance's people and libraries into this one: online with a 24-hour token, or from any release since 1.0.0 with a database dump and its storage folder.",
+  },
+  {
+    slug: "guides/migrate-manyfold",
+    source: "docs/guides/migrate-manyfold.md",
+    group: "Administration",
+    title: "Move from Manyfold",
+    nav: "Migrate from Manyfold",
+    description:
+      "Bring a Manyfold library's models, with their files, pictures, tags and licences, and its collections into Thingport, read with an API key made there.",
+  },
+  {
     slug: "guides/api-token",
     source: "docs/guides/api-token.md",
     group: "Integrations",
