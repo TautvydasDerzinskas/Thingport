@@ -32,10 +32,10 @@ export type AdaptSite = {
   /** The page's model's 3MFs, in the site's order: MakerWorld's selected print profile, every 3MF Printables lists. */
   files(pageUrl: string): Promise<AdaptFile[]>;
   /** Where the page picks one of them itself (a print profile chosen on it): which one now, null where it hasn't
-   *  picked one (the first, then), or "other" where it picked a file that isn't one of them, an STL say, which has no
-   *  copy. The button beside the site's own makes its copy of that one, asked again each time, rather than offering
-   *  the files to pick from. */
-  selected?(files: AdaptFile[]): AdaptFile | null | "other";
+   *  picked one (the first, then), "other" where it picked a file that isn't one of them, an STL say, which has no
+   *  copy, or "unread" where its pick can't be read yet. The button beside the site's own makes its copy of that one,
+   *  asked again each time, rather than offering the files to pick from. */
+  selected?(files: AdaptFile[]): AdaptFile | null | "other" | "unread";
   /** Downloads one of them as the site's own button would, saying how it's going through `progress`. */
   download(
     pageUrl: string,

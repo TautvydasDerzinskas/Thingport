@@ -83,8 +83,9 @@ describe("the MakerOnline file a page has picked, before its picks can be read",
   });
 
   it("is none of them on the files tab, or where the highlighted profile isn't one, rather than the first", () => {
-    expect(unreadPick(files, true, null)).toBe("other");
-    expect(unreadPick(files, true, "v2 updated")).toBe("other");
+    // Not known yet on the files tab, so the button asks to try again in a moment rather than for another file.
+    expect(unreadPick(files, true, null)).toBe("unread");
+    expect(unreadPick(files, true, "v2 updated")).toBe("unread");
     expect(unreadPick(files, false, "Not a 3MF")).toBe("other");
   });
 });

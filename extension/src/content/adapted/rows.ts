@@ -25,7 +25,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
   const box = element("div", "ad");
   // The one the page has picked, where it picks one of them.
   const picked = site.selected?.(files);
-  let file = picked && picked !== "other" ? picked : files[0];
+  let file = picked && typeof picked === "object" ? picked : files[0];
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
     const label = element("label", "tg-label ad-file__label", "3MF file");

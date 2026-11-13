@@ -19,6 +19,7 @@ const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const NOTE_SHOW_MS = 10000;
 const NOT_A_3MF = "Only a 3MF gets an adapted copy. Pick one of the model's 3MFs on the page, then try again.";
+const PICK_UNREAD = "Grab is still reading which file the page has picked. Try again in a moment.";
 // How long the site's own button may take to show before the copies are offered in Grab's bubble instead.
 const ANCHOR_WAIT_MS = 8000;
 
@@ -300,8 +301,13 @@ async function makeCopy(
 
 type Control = { host: HTMLElement; stop(): void };
 
-/** The menu's heading for the copies of the file the page picked, or of none, where that file has no copy. */
-const copyOf = (file: AdaptFile | null) => (file ? `Copy of ${shownName(file)}` : "Pick one of its 3MFs on the page");
+/** The menu's heading for the copies of the file the page picked, or what there is to do where none is made. */
+const copyOf = (file: AdaptFile | "other" | "unread") =>
+  file === "other"
+    ? "Pick one of its 3MFs on the page"
+    : file === "unread"
+      ? "Reading the file picked on the page…"
+      : `Copy of ${shownName(file)}`;
 
 function mainButton(shared: Shared): Control {
   const { host, root } = shadowHost(shared);
@@ -310,11 +316,11 @@ function mainButton(shared: Shared): Control {
   // elsewhere, the menu offers the files where there are several.
   const { selected } = shared.site;
   const several = !selected && shared.files.length > 1;
-  // None where the page picked a file with no copy: then nothing is downloaded, rather than another file's copy.
-  const current = (): AdaptFile | null => {
+  // Where the page picked a file with no copy, or its pick can't be read yet, nothing is downloaded, rather than
+  // another file's copy.
+  const current = (): AdaptFile | "other" | "unread" => {
     if (!selected) return shared.file;
-    const picked = selected(shared.files);
-    return picked === "other" ? null : (picked ?? shared.files[0]);
+    return selected(shared.files) ?? shared.files[0];
   };
 
   const split = element("span", "nd-split");
@@ -370,9 +376,9 @@ function mainButton(shared: Shared): Control {
     const hadFocus = hasFocus(host);
     menu.close(false);
     const file = current();
-    if (!file) {
+    if (typeof file === "string") {
       if (hadFocus) returnTo.focus();
-      bubble.show(NOT_A_3MF, { error: true, hold: NOTE_SHOW_MS });
+      bubble.show(file === "unread" ? PICK_UNREAD : NOT_A_3MF, { error: true, hold: NOTE_SHOW_MS });
       return;
     }
     bubble.hide();

@@ -76,14 +76,14 @@ export function pickedFile(files: AdaptFile[], picks: string | null, filesTab: b
 }
 
 /** The file picked while the page's picks can't be read yet: on the print profiles tab, the one it highlights, by
- *  `title`; on the files tab, which shows nothing to go by, "other", so that the first file isn't downloaded in place
+ *  `title`; on the files tab, which shows nothing to go by, "unread", so that the first file isn't downloaded in place
  *  of the one picked there. */
 export function unreadPick(
   files: AdaptFile[],
   filesTab: boolean,
   title: string | null | undefined,
-): AdaptFile | null | "other" {
-  if (filesTab) return "other";
+): AdaptFile | null | "other" | "unread" {
+  if (filesTab) return "unread";
   if (!title) return null;
   return files.find((file) => file.title === title) ?? "other";
 }
