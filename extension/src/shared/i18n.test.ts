@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { catalogs, detectLocale, localeOf, LOCALES, setLocale, t } from "./i18n";
 import { ABOUT, PROVIDER_IDS } from "../providers/index.generated";
 
+const TRANSLATED_LOCALES = LOCALES.filter((locale) => locale !== "en");
+
 const placeholders = (message: string) => [...message.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).toSorted();
 
 const contentKeys = [
@@ -218,7 +220,7 @@ describe("runtime localization", () => {
   });
 
   it("supplies translated content-dialog and status phrases without English fallback", () => {
-    for (const locale of ["ru", "uk", "be"] as const) {
+    for (const locale of TRANSLATED_LOCALES) {
       for (const key of contentKeys) {
         expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
         expect(placeholders(catalogs[locale][key])).toEqual(placeholders(catalogs.en[key]));
@@ -227,7 +229,7 @@ describe("runtime localization", () => {
   });
 
   it("supplies translated MakerWorld and provider blocks without English fallback", () => {
-    for (const locale of ["ru", "uk", "be"] as const) {
+    for (const locale of TRANSLATED_LOCALES) {
       for (const key of providerKeys) {
         expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
         expect(placeholders(catalogs[locale][key])).toEqual(placeholders(catalogs.en[key]));
@@ -236,7 +238,7 @@ describe("runtime localization", () => {
   });
 
   it("supplies translated background and provider errors without English fallback", () => {
-    for (const locale of ["ru", "uk", "be"] as const) {
+    for (const locale of TRANSLATED_LOCALES) {
       for (const key of backgroundKeys) {
         expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
         expect(placeholders(catalogs[locale][key])).toEqual(placeholders(catalogs.en[key]));
@@ -248,7 +250,7 @@ describe("runtime localization", () => {
     for (const provider of PROVIDER_IDS) {
       const key = `providerAbout.${provider}`;
       expect(catalogs.en[key]).toBe(ABOUT[provider]);
-      for (const locale of ["ru", "uk", "be"] as const) expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
+      for (const locale of TRANSLATED_LOCALES) expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
     }
   });
 
@@ -262,7 +264,7 @@ describe("runtime localization", () => {
       "yourThingportInstance",
       "comingSoon",
     ];
-    for (const locale of ["ru", "uk", "be"] as const) {
+    for (const locale of TRANSLATED_LOCALES) {
       for (const key of keys) expect(catalogs[locale][key]).not.toBe(catalogs.en[key]);
     }
   });
