@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TARGET, type TargetPrinter } from "../../shared/adaptTargets";
-import { MAX_BYTES, copyFilename, readBody, sourceFilename } from "./download";
+import { MAX_BYTES, copyFilename, fetchFile, possessive, readBody, sourceFilename, tooBig } from "./download";
 
 const printer = (model: string): TargetPrinter => ({
   id: "x",
@@ -50,5 +50,50 @@ describe("a copy's file", () => {
       /too big to adapt in the browser \(the limit is 50 MB\)\. Use MakerWorld's regular Download instead\./,
     );
     expect(said.at(-1)).toBe("Downloading 50.0 MB…");
+  });
+});
+
+/** The file server's one answer, to every request. */
+function served(body: string, init: ResponseInit = {}) {
+  const fetch = vi.fn(async () => new Response(body, init));
+  vi.stubGlobal("fetch", fetch);
+  return fetch;
+}
+const quiet = () => undefined;
+const plainTextNote = (res: Response) => /^text\/plain/i.test(res.headers.get("Content-Type") ?? "");
+
+describe("a site's file", () => {
+  afterEach(() => void vi.unstubAllGlobals());
+
+  it("is refused where the file server says no, or what came isn't the file", async () => {
+    served("nope", { status: 403 });
+    await expect(fetchFile("https://files.example/a", "Printables", quiet)).rejects.toThrow(
+      "Printables' file server refused the download (403).",
+    );
+    served("not this link", { headers: { "Content-Type": "text/plain" } });
+    await expect(
+      fetchFile("https://files.example/a", "Snapmaker Space", quiet, { refused: plainTextNote }),
+    ).rejects.toThrow("Snapmaker Space's file server refused the download (200).");
+  });
+
+  it("is refused past the size the browser can adapt, as soon as the server says its size", async () => {
+    served("x", { headers: { "Content-Length": String(MAX_BYTES + 1) } });
+    await expect(fetchFile("https://files.example/a", "MakerWorld", quiet)).rejects.toThrow("too big to adapt");
+  });
+
+  it("comes with the answer it came in, asked for as the site wants", async () => {
+    const fetch = served("PK", { headers: { "Content-Disposition": 'attachment; filename="plate.3mf"' } });
+    const { res, bytes } = await fetchFile("https://files.example/a", "NexPrint", quiet, {
+      init: { credentials: "omit" },
+    });
+    expect(new TextDecoder().decode(bytes)).toBe("PK");
+    expect(sourceFilename(res, "https://files.example/a")).toBe("plate.3mf");
+    expect(fetch).toHaveBeenCalledWith("https://files.example/a", { credentials: "omit" });
+  });
+
+  it("names a site's own as English does", () => {
+    expect(possessive("MakerWorld")).toBe("MakerWorld's");
+    expect(possessive("Printables")).toBe("Printables'");
+    expect(tooBig(60 * 1024 * 1024, "Printables").message).toContain("Use Printables' regular Download instead.");
   });
 });

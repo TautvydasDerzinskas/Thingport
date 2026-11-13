@@ -6,7 +6,7 @@
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
 import { bubbleLookOf } from "../shared/bubble";
-import { CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
+import { ADAPT_CHANGE_KEYS, CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
 import { libraryStateOf, setContext, type LibraryState } from "./context";
 import {
@@ -31,7 +31,7 @@ import { CONTENT_MODULES } from "../providers/content";
 import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api, isOwnNavigation } from "./runtime";
-import { closeSetupModal, openSetupModal } from "./setupModal";
+import { closeSetupModal, openSetupModal, whenSetupModalClosed } from "./setupModal";
 import {
   SHARED_SCRIPT_EXPLAINER,
   SHARED_SCRIPT_NOTE_HTML,
@@ -63,6 +63,11 @@ let initToken = 0;
 // How long Download adapted waits for the bubble to be ready for its copies: a Thingport instance that doesn't answer
 // mustn't hold them back, so past this they go beside the site's button.
 const BUBBLE_WAIT_MS = 6000;
+// Not set up, with the copies in the bubble: how long its icon waits for them, rather than showing without them first.
+const SETUP_ICON_WAIT_MS = 1000;
+// Adapt 3MFs' settings change a click at a time as they're picked: how long a page waits for the next before it
+// offers the copies anew.
+const ADAPT_SETTLE_MS = 400;
 
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
@@ -82,6 +87,25 @@ function unmount(): void {
   unmountAdaptedButton();
   unmountHost();
   setContext(null);
+}
+
+// Adapt 3MFs' settings changed, and the page hasn't offered the copies anew yet.
+let adaptChanged = false;
+let adaptSettle: ReturnType<typeof setTimeout> | undefined;
+
+function reinit(): void {
+  adaptChanged = false;
+  clearTimeout(adaptSettle);
+  unmount();
+  void init();
+}
+
+/** Offers the copies anew once the settings have settled, and in a hidden tab once it's shown: otherwise every open
+ *  page would start over at each click, hidden ones for nobody to see. */
+function reinitForAdapt(): void {
+  adaptChanged = true;
+  clearTimeout(adaptSettle);
+  if (!document.hidden) adaptSettle = setTimeout(reinit, ADAPT_SETTLE_MS);
 }
 
 async function init(): Promise<void> {
@@ -148,20 +172,28 @@ async function init(): Promise<void> {
 
   try {
     // Not set up: still show a grayed-out icon on importable pages so the extension is discoverable. Where Download
-    // adapted goes in the bubble, the bubble offers its copies, and setting imports up under them.
+    // adapted goes in the bubble, the bubble offers its copies with setting imports up under them: waited for a
+    // moment, else they take the icon's place when they come.
     if (!stateRes.data.configured) {
-      const page = await adapting;
+      const page =
+        stateRes.data.adaptPlacement === "bubble"
+          ? await Promise.race([
+              adapting,
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), SETUP_ICON_WAIT_MS)),
+            ])
+          : null;
       if (isStale()) return;
-      const adaptBubble = (offered: PageAdapt) => {
-        closeSetupModal();
-        unmountHost();
-        const root = mountHost();
-        mountAdaptBubble(root, classification.provider, url, offered, {
-          text: "Want it in your Thingport library as well? ",
-          action: "Set up Grab",
-          onClick: () => openSetupModal(root),
+      const adaptBubble = (offered: PageAdapt) =>
+        whenSetupModalClosed(() => {
+          if (isStale()) return;
+          unmountHost();
+          const root = mountHost();
+          mountAdaptBubble(root, classification.provider, url, offered, {
+            text: "Want it in your Thingport library as well? ",
+            action: "Set up Grab",
+            onClick: () => openSetupModal(root),
+          });
         });
-      };
       if (page?.offer.placement === "bubble") {
         adaptBubble(page);
         adaptHost = () => undefined;
@@ -179,8 +211,6 @@ async function init(): Promise<void> {
       return;
     }
 
-    // Before anything else asks the instance, so a stale password or a down instance shows as such
-    // rather than as every model looking new.
     // Until the instance answers, which may be never: the copies on their own where the site's button doesn't show,
     // as they're this browser's own. Where they were, what the answer brings takes their place and offers them again.
     let early: PageAdapt | null = null;
@@ -194,6 +224,8 @@ async function init(): Promise<void> {
       if (page) unmountHost();
       return page;
     };
+    // Before anything else asks the instance, so a stale password or a down instance shows as such
+    // rather than as every model looking new.
     const connectionRes = await send("CHECK_CONNECTION");
     if (isStale()) return;
     if (connectionRes?.ok && !connectionRes.data.connected) {
@@ -203,10 +235,7 @@ async function init(): Promise<void> {
           problem,
           instanceUrl: stateRes.data.instanceUrl,
           // A failed check isn't cached, so this signs in again.
-          onRetry: () => {
-            unmount();
-            void init();
-          },
+          onRetry: reinit,
         });
       const offered = replaceEarly();
       const root = mountHost();
@@ -217,16 +246,17 @@ async function init(): Promise<void> {
         onClick: () => signIn(root),
       });
       // Only where the site's button never shows: the copies, with the way to sign in again under them.
-      adaptFallback = (page) => {
-        closeSetupModal();
-        unmountHost();
-        const adaptRoot = mountHost();
-        mountAdaptBubble(adaptRoot, classification.provider, url, page, {
-          text: "Thingport Grab can't sign in to your Thingport instance. ",
-          action: "Sign in again",
-          onClick: () => signIn(adaptRoot),
+      adaptFallback = (page) =>
+        whenSetupModalClosed(() => {
+          if (isStale()) return;
+          unmountHost();
+          const adaptRoot = mountHost();
+          mountAdaptBubble(adaptRoot, classification.provider, url, page, {
+            text: "Thingport Grab can't sign in to your Thingport instance. ",
+            action: "Sign in again",
+            onClick: () => signIn(adaptRoot),
+          });
         });
-      };
       if (offered) adaptFallback(offered);
       reportTabIconState(false);
       return;
@@ -346,8 +376,7 @@ function installNavigationWatcher(): void {
     // Said again because the browser treats this as a navigation and drops what it knows about the tab, the note
     // the popup features the site from included (background/providerTab.ts).
     reportProviderSite();
-    unmount();
-    void init();
+    reinit();
   };
   window.addEventListener("popstate", onLocationChange);
   setInterval(onLocationChange, 1000);
@@ -365,9 +394,8 @@ if (!window.thingportGrabInjected) {
         () => undefined,
       );
     }
-    if (!CONFIG_CHANGE_KEYS.some((key) => key in changes)) return;
-    unmount();
-    void init();
+    if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) reinit();
+    else if (ADAPT_CHANGE_KEYS.some((key) => key in changes)) reinitForAdapt();
   });
 
   listen<ContentMessages>({
@@ -386,14 +414,15 @@ if (!window.thingportGrabInjected) {
         return null;
       }),
     MAKERWORLD_JOB_UPDATED: () => {
-      unmount();
-      void init();
+      reinit();
       return null;
     },
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) reportProviderSite();
+    if (document.hidden) return;
+    reportProviderSite();
+    if (adaptChanged) reinit();
   });
 
   installNavigationWatcher();

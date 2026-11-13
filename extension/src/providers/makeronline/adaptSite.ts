@@ -3,9 +3,16 @@
 // link is signed in the page itself, as its own Download does (background.ts), for the user signed in there. The
 // button goes under its Download, for the profile or file picked above it.
 
-import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
+import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
 import { orcaFamilyFormat } from "../../content/adapted/formats";
-import { pageCookie, placeAfter, signInFirst, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import {
+  pageCookie,
+  placeAfter,
+  signInFirst,
+  visible,
+  type AdaptFile,
+  type AdaptSite,
+} from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { request } from "../../shared/messages";
 import { MANIFESTS } from "../index.generated";
@@ -122,8 +129,6 @@ export function resetPickWatch(): void {
   watching = null;
 }
 
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
-
 export const MAKERONLINE_ADAPT: AdaptSite = {
   id: "makeronline",
   name: NAME,
@@ -171,15 +176,8 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
       name: file.name,
     }).finally(stop);
     // Its file host lets any page read a file, but not the name it's given: that's the file's own name.
-    const res = await fetch(signed, { credentials: "omit" });
-    if (!res.ok) throw new Error(`${NAME}'s file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, NAME);
-    }
-    const bytes = await readBody(res, declared, NAME, progress);
-    return { bytes, filename: file.name.replace(/[\\/:*?"<>|]+/g, "_") };
+    const { bytes } = await fetchFile(signed, NAME, progress, { init: { credentials: "omit" } });
+    return { bytes, filename: safeFilename(file.name) };
   },
 
   // Its Download, with "Open in Anycubic Slicer Next" beside it, under the list of the tab shown.

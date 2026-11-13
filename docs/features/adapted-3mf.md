@@ -109,6 +109,7 @@ The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool make
 Creality Cloud, Snapmaker Space, NexPrint, MakerOnline or eufyMake model in your browser with its **Download adapted**
 button, for your slicers and printers, with the printers' presets
 from the list it carries. Without an instance, you pick them in its popup (Adapt 3MFs' settings); connected, they're
-your Thingport instance's slicers and printers, and a slicer whose **Open adapted** is off gets none. Until a slicer is
+your Thingport instance's slicers and printers, as it last said them while it can't be reached, and a slicer whose
+**Open adapted** is off gets none. Until a slicer is
 picked, it makes the copy PrusaSlicer and the slicers like it read. The button sits beside the site's own, and on
 Printables' Files tab and NexPrint's Files list beside each 3MF's too, or in Grab's bubble.

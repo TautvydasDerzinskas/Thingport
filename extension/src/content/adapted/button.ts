@@ -5,12 +5,19 @@
 // button too, whose menu downloads that file's copies. Each is in a shadow root of its own, so it sits in the page's
 // layout without sharing styles either way; the site (site.ts) says where they go and which theme they show.
 
-import { DEFAULT_TARGET, pickTarget, targetLine, targetName, type AdaptTarget } from "../../shared/adaptTargets";
+import {
+  beforeSlicerPicked,
+  DEFAULT_TARGET,
+  pickTarget,
+  targetLine,
+  targetName,
+  type AdaptTarget,
+} from "../../shared/adaptTargets";
 import { createIcon } from "../../shared/icon";
 import { send } from "../../shared/messages";
 import css from "../styles/adapted.scss?inline";
 import { downloadAdapted } from "./download";
-import { explanation, savedNote } from "./offer";
+import { explanation, savedNote, unpickedReason } from "./offer";
 import { ICONS, element, placeFixed, shownName, sizeText, svg, targetPicture } from "./popover";
 import type { AdaptFile, PageAdapt } from "./site";
 
@@ -18,8 +25,6 @@ const HOST_ID = "thingport-grab-adapted";
 const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const NOTE_SHOW_MS = 10000;
-const NOT_A_3MF = "Only a 3MF gets an adapted copy. Pick one of the model's 3MFs on the page, then try again.";
-const PICK_UNREAD = "Grab is still reading which file the page has picked. Try again in a moment.";
 // How long the site's own button may take to show before the copies are offered in Grab's bubble instead.
 const ANCHOR_WAIT_MS = 8000;
 
@@ -245,8 +250,7 @@ function settingsRow(shared: Shared, closeMenu: () => void): HTMLElement {
   const gear = element("span", "ndm__art ndm__art--glyph");
   gear.append(svg(ICONS.gear));
   // Nothing picked yet: the one thing to do is pick a slicer.
-  const unpicked = shared.targets.length === 1 && shared.targets[0] === DEFAULT_TARGET;
-  row.append(gear, rowText(unpicked ? "Pick your slicer…" : "Adapt settings…", ""));
+  row.append(gear, rowText(beforeSlicerPicked(shared.targets) ? "Pick your slicer…" : "Adapt settings…", ""));
   row.addEventListener("click", () => {
     closeMenu();
     void send("OPEN_ADAPT_SETTINGS");
@@ -378,7 +382,7 @@ function mainButton(shared: Shared): Control {
     const file = current();
     if (typeof file === "string") {
       if (hadFocus) returnTo.focus();
-      bubble.show(file === "unread" ? PICK_UNREAD : NOT_A_3MF, { error: true, hold: NOTE_SHOW_MS });
+      bubble.show(unpickedReason(file), { error: true, hold: NOTE_SHOW_MS });
       return;
     }
     bubble.hide();
@@ -622,6 +626,7 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
         control.stop();
         control.host.remove();
       }
+      rows.clear();
     },
   };
 }

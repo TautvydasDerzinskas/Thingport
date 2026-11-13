@@ -9,9 +9,9 @@ import type { ProviderId } from "../../providers/index.generated";
 import { pageHeadHtml } from "../panels/modelHead";
 import { renderPanel, setPanelExtra, mountFab, mountPanel } from "../shell";
 import { downloadAdapted } from "./download";
-import { explanation, savedNote } from "./offer";
+import { explanation, savedNote, unpickedReason } from "./offer";
 import { ICONS, element, shownName, sizeText, svg, targetPicture } from "./popover";
-import type { PageAdapt } from "./site";
+import type { AdaptFile, PageAdapt } from "./site";
 
 const DONE_RESET_MS = 3000;
 
@@ -19,31 +19,55 @@ const downloadIcon = () => svg(ICONS.download);
 
 let picks = 0;
 
+/** The rows, and `follow`, which picks the file the page has picked now, unless one was picked here, and gives it, or
+ *  why there's no copy of the page's pick. */
+export type AdaptedRows = { box: HTMLElement; follow: () => AdaptFile | "other" | "unread" };
+
 /** A row per copy; `compact` for the rows under an import. */
-export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): HTMLElement {
+export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): AdaptedRows {
   const { site, files, targets } = page;
   const box = element("div", "ad");
-  // The one the page has picked, where it picks one of them.
-  const picked = site.selected?.(files);
-  let file = picked && typeof picked === "object" ? picked : files[0];
+  const error = element("div", "tg-hint ad-error");
+  error.setAttribute("role", "alert");
+  error.hidden = true;
+  let file = files[0];
+  let select: HTMLSelectElement | null = null;
+  // A file picked here, which the page's picks don't change.
+  let chosen = false;
+  // The one picked here, else the one the page has picked (the first where it picked none). Where the page picked a
+  // file with no copy, or its pick can't be read yet, the rows say so, and nothing is downloaded rather than another
+  // file's copy.
+  const follow = (): AdaptFile | "other" | "unread" => {
+    const now = chosen || !site.selected ? file : (site.selected(files) ?? files[0]);
+    error.hidden = typeof now !== "string";
+    if (typeof now === "string") {
+      error.textContent = unpickedReason(now);
+      return now;
+    }
+    file = now;
+    if (select) select.value = String(files.indexOf(file));
+    return file;
+  };
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
     const label = element("label", "tg-label ad-file__label", "3MF file");
     label.htmlFor = id;
-    const select = element("select", "tg-select ad-file");
+    select = element("select", "tg-select ad-file");
     select.id = id;
     for (const [at, option] of files.entries()) {
       const size = sizeText(option.size);
       select.append(new Option(size ? `${shownName(option)} (${size})` : shownName(option), String(at)));
     }
     select.value = String(files.indexOf(file));
-    select.addEventListener("change", () => (file = files[Number(select.value)] ?? files[0]));
+    select.addEventListener("change", () => {
+      chosen = true;
+      file = files[Number(select!.value)] ?? files[0];
+      error.hidden = true;
+    });
     box.append(label, select);
   }
+  follow();
   const list = element("div", `ad-list${compact ? " ad-list--compact" : ""}`);
-  const error = element("div", "tg-hint ad-error");
-  error.setAttribute("role", "alert");
-  error.hidden = true;
   // What's worth knowing about the copy saved last, until the next one.
   const note = element("div", "tg-hint ad-note");
   note.setAttribute("role", "status");
@@ -63,16 +87,18 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     row.setAttribute("aria-label", `Download adapted: ${name}, ${sub}`);
     row.addEventListener("click", async () => {
       if (busy) return;
-      busy = true;
-      error.hidden = true;
+      // The page's pick may have changed while these were open.
+      const picked = follow();
       note.hidden = true;
+      if (typeof picked === "string") return;
+      busy = true;
       for (const other of box.querySelectorAll<HTMLButtonElement | HTMLSelectElement>("button, select")) {
         other.disabled = true;
       }
       go.replaceChildren(element("span", "ad-item__spinner"));
       void send("SET_ADAPT_LAST", { key: target.key });
       try {
-        const saved = await downloadAdapted(site, pageUrl, file, target, (status) => (subEl.textContent = status));
+        const saved = await downloadAdapted(site, pageUrl, picked, target, (status) => (subEl.textContent = status));
         subEl.textContent = "Downloaded";
         const said = savedNote(target, saved);
         note.textContent = said ?? "";
@@ -93,7 +119,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     list.append(row);
   }
   box.append(list, note, error);
-  return box;
+  return { box, follow };
 }
 
 /** Set up for imports: under the import, a button as big as its own, in the quieter secondary style, whose copies open
@@ -109,7 +135,8 @@ export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
   pop.setAttribute("role", "group");
   pop.setAttribute("aria-label", "Copies to download");
   pop.hidden = true;
-  pop.append(adaptedRows(page, pageUrl, true));
+  const rows = adaptedRows(page, pageUrl, true);
+  pop.append(rows.box);
   toggle.setAttribute("aria-controls", pop.id);
 
   // Fixed, from the button's place in the window, so the panel's own scrolling can't clip it. A transformed ancestor
@@ -141,6 +168,7 @@ export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
     if (refocus) toggle.focus();
   }
   function open(): void {
+    rows.follow();
     pop.hidden = false;
     place();
     toggle.setAttribute("aria-expanded", "true");
@@ -175,10 +203,12 @@ export function mountAdaptBubble(
   page: PageAdapt,
   foot: AdaptFoot | null,
 ): void {
+  let rows: AdaptedRows | null = null;
   const toggle = mountPanel(root, () => {
     renderPanel(pageHeadHtml(provider, pageUrl, "Download adapted"));
     const body = element("div", "");
-    body.append(adaptedRows(page, pageUrl));
+    rows = adaptedRows(page, pageUrl);
+    body.append(rows.box);
     if (foot) {
       const line = element("div", "tg-hint ad-foot", foot.text);
       const action = element("button", "ad-link", foot.action);
@@ -189,5 +219,12 @@ export function mountAdaptBubble(
     }
     setPanelExtra(body);
   });
-  mountFab(root, { variant: "adapt", label: "Download adapted copies of this model", onClick: toggle });
+  mountFab(root, {
+    variant: "adapt",
+    label: "Download adapted copies of this model",
+    onClick: () => {
+      toggle();
+      rows?.follow();
+    },
+  });
 }

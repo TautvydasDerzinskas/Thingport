@@ -1,6 +1,7 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
 import type { ProviderId } from "../providers/index.generated";
+import type { ThingportAdapt } from "./messages";
 
 export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",
@@ -28,6 +29,8 @@ export const STORAGE_KEYS = {
   adaptCarriedTo: "adaptCarriedTo",
   // The copy Download adapted made last (an AdaptTarget's key), made again by its button.
   adaptLastTarget: "adaptLastTarget",
+  // What the connected account's instance last said its slicers and printers are, for while it can't answer.
+  adaptThingportLast: "adaptThingportLast",
   // Set by a page's "Adapt settings…" for the popup to open there; read and cleared when it opens.
   adaptOpenSettings: "adaptOpenSettings",
   // From the last login: admins get "Add to the queue" in the import panel.
@@ -75,6 +78,9 @@ export type StoredConfig = {
    *  the printers sent of a carry under way (background/adaptSettings.ts). */
   adaptCarriedTo?: Record<string, { settled: ("slicers" | "printers")[]; printersSent?: string[] }>;
   adaptLastTarget?: string;
+  /** What each Thingport account's instance said last of its slicers and printers, by `instanceUrl|email`
+   *  (background/adaptSettings.ts). */
+  adaptThingportLast?: Record<string, ThingportAdapt>;
   adaptOpenSettings?: number;
   isAdmin?: boolean;
   importQueue?: boolean;
@@ -131,12 +137,16 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.normalizeMakerworld,
-  // Adapt 3MFs' settings: open pages offer the copies anew. Not the copy last made, which only the button shows.
+  STORAGE_KEYS.isAdmin,
+  STORAGE_KEYS.importQueue,
+];
+
+/** Adapt 3MFs' settings: open pages offer the copies anew once they've settled, a hidden one once it's shown. Not the
+ *  copy last made, which only the button shows. */
+export const ADAPT_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.adaptSlicers,
   STORAGE_KEYS.adaptPrinters,
   STORAGE_KEYS.adaptPlacement,
-  STORAGE_KEYS.isAdmin,
-  STORAGE_KEYS.importQueue,
 ];
 
 export function normalizeInstanceUrl(raw: string | undefined | null): string {

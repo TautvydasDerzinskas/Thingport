@@ -3,8 +3,8 @@
 // user is, since a club's or a bought model's files need that. Its buttons are found by their test ids: the
 // sidebar's Download, and each file's own on the Files tab, where every 3MF gets a button of its own too.
 
-import { MAX_BYTES, readBody, sourceFilename, tooBig } from "../../content/adapted/download";
-import { placeAfter, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import { MAX_BYTES, fetchFile, sourceFilename, tooBig } from "../../content/adapted/download";
+import { placeAfter, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { MANIFESTS } from "../index.generated";
@@ -67,8 +67,6 @@ export function matchFileRows<T>(
   });
 }
 
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
-
 export const PRINTABLES_ADAPT: AdaptSite = {
   id: "printables",
   name: "Printables",
@@ -102,15 +100,7 @@ export const PRINTABLES_ADAPT: AdaptSite = {
           "an account that may download it, then try again.",
       );
     }
-    const res = await fetch(link);
-    if (!res.ok)
-      throw new Error(`Printables' file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, "Printables");
-    }
-    const bytes = await readBody(res, declared, "Printables", progress);
+    const { res, bytes } = await fetchFile(link, "Printables", progress);
     return { bytes, filename: sourceFilename(res, link) };
   },
 

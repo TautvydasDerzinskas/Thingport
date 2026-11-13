@@ -94,12 +94,37 @@ async function thingportAdapt(): Promise<ThingportAdapt> {
 
 const sameAccount = (a: StoredConfig, b: StoredConfig) => a.instanceUrl === b.instanceUrl && a.email === b.email;
 
+const accountOf = (config: ConfiguredConfig) => `${config.instanceUrl}|${config.email}`;
+
+/** A record kept by account, as stored: empty where nothing (or something else) is. */
+function byAccount<T>(stored: Record<string, T> | undefined): Record<string, T> {
+  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+}
+
+/** The instance's answer, kept for its account for when it can't give one: then what it said last to that account
+ *  stands in for it, saying why. */
+async function withLastAnswer(
+  config: ConfiguredConfig,
+  answer: ThingportAdapt | { error: string },
+): Promise<ThingportAdapt | { error: string }> {
+  const account = accountOf(config);
+  const said = byAccount((await getStoredConfig()).adaptThingportLast)[account] ?? null;
+  if ("error" in answer) return said ? { ...said, remembered: answer.error } : answer;
+  if (JSON.stringify(said) !== JSON.stringify(answer)) {
+    const all = byAccount((await getStoredConfig()).adaptThingportLast);
+    await chrome.storage.local
+      .set({ [STORAGE_KEYS.adaptThingportLast]: { ...all, [account]: answer } })
+      .catch(() => undefined);
+  }
+  return answer;
+}
+
 export async function getAdaptView(): Promise<AdaptView> {
   const config = await getStoredConfig();
   const own = adaptSettingsOf(config);
   if (!isConfigured(config) || config.disabled) return { own, thingport: null, instanceUrl: "" };
   const { instanceUrl } = config;
-  let thingport: AdaptView["thingport"];
+  let thingport: ThingportAdapt | { error: string };
   try {
     thingport = await thingportAdapt();
   } catch (err) {
@@ -107,7 +132,7 @@ export async function getAdaptView(): Promise<AdaptView> {
   }
   // Connected to another account meanwhile: what came back may be either's, so it's asked again.
   if (!sameAccount(await getStoredConfig(), config)) return getAdaptView();
-  return { own, thingport, instanceUrl };
+  return { own, thingport: await withLastAnswer(config, thingport), instanceUrl };
 }
 
 export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<AdaptSettings> {
@@ -118,10 +143,7 @@ export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<
 type CarrySection = "slicers" | "printers";
 type Carried = { settled: CarrySection[]; printersSent?: string[] };
 
-function carriedOf(config: StoredConfig): Record<string, Carried> {
-  const stored = config.adaptCarriedTo;
-  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
-}
+const carriedOf = (config: StoredConfig): Record<string, Carried> => byAccount(config.adaptCarriedTo);
 
 /** The instance turned down one printer or its nozzle (it doesn't know it), rather than the request failing. */
 const printerRefused = (err: unknown) => err instanceof ApiError && (err.status === 404 || err.status === 400);
@@ -135,7 +157,7 @@ const printerRefused = (err: unknown) => err instanceof ApiError && (err.status 
 async function carry(): Promise<void> {
   const config = await getStoredConfig();
   if (!isConfigured(config)) return;
-  const account = `${config.instanceUrl}|${config.email}`;
+  const account = accountOf(config);
   const stored = carriedOf(config)[account];
   const carried: Carried = { settled: [...(stored?.settled ?? [])], printersSent: stored?.printersSent };
   const save = async () => {

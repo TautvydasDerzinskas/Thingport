@@ -28,6 +28,8 @@ export type ExtensionState = {
   offlineFeatures: Record<OfflineFeature, boolean>;
   /** How the floating bubble on model pages looks and where it sits. */
   bubble: BubbleLook;
+  /** Where Download adapted's copies go: beside the site's own button, or in the bubble. */
+  adaptPlacement: AdaptPlacement;
 };
 
 /** One of the user's printers in their Thingport instance (Configuration → Printers there), as it describes it. */
@@ -51,11 +53,13 @@ export type ThingportAdapt = {
   slicerPrinters: Record<string, string>;
   /** The slicers whose files the user wants as they are. */
   unadapted: string[];
+  /** Set where the instance couldn't be asked now: this is what it said last, and this is why. */
+  remembered?: string;
 };
 
 /** What Adapt 3MFs goes by: Grab's own settings, and the instance's once connected (`thingport` is null while not
- *  connected; `error` says why an instance that couldn't be asked wasn't). `instanceUrl` is empty while not
- *  connected. */
+ *  connected; `error` says why an instance that couldn't be asked wasn't, where it has never answered). `instanceUrl`
+ *  is empty while not connected. */
 export type AdaptView = {
   own: AdaptSettings;
   thingport: ThingportAdapt | { error: string } | null;

@@ -12,10 +12,16 @@ import type { AdaptFile, AdaptSite } from "./site";
 export const MAX_BYTES = 50 * 1024 * 1024;
 const MB = 1024 * 1024;
 
+/** "MakerWorld's", "Printables'". */
+export const possessive = (name: string) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
+
+/** A name the downloads folder takes. */
+export const safeFilename = (name: string) => name.replace(/[\\/:*?"<>|]+/g, "_");
+
 export function tooBig(bytes: number, site: string): Error {
   return new Error(
     `This file is ${Math.round(bytes / MB)} MB, too big to adapt in the browser (the limit is ${MAX_BYTES / MB} MB). ` +
-      `Use ${site}'s regular Download instead.`,
+      `Use ${possessive(site)} regular Download instead.`,
   );
 }
 
@@ -45,6 +51,27 @@ export async function readBody(
   return new Blob(chunks as BlobPart[]).arrayBuffer();
 }
 
+/** A site's file from its file server: refused where the server says no, or `refused` says what came isn't the file,
+ *  and stopped past MAX_BYTES, saying how it's going through `progress`. */
+export async function fetchFile(
+  url: string,
+  site: string,
+  progress: (text: string) => void,
+  { init, refused }: { init?: RequestInit; refused?: (res: Response) => boolean } = {},
+): Promise<{ res: Response; bytes: ArrayBuffer }> {
+  const res = await fetch(url, init);
+  if (!res.ok || refused?.(res)) {
+    void res.body?.cancel();
+    throw new Error(`${possessive(site)} file server refused the download (${res.status}). Try again in a moment.`);
+  }
+  const declared = Number(res.headers.get("Content-Length")) || null;
+  if (declared && declared > MAX_BYTES) {
+    void res.body?.cancel();
+    throw tooBig(declared, site);
+  }
+  return { res, bytes: await readBody(res, declared, site, progress) };
+}
+
 /** From Content-Disposition, else the URL's last path segment. */
 export function sourceFilename(res: Response, url: string): string {
   const disposition = res.headers.get("Content-Disposition") ?? "";
@@ -56,7 +83,7 @@ export function sourceFilename(res: Response, url: string): string {
   } catch {
     name = plain ?? "";
   }
-  return name.replace(/[\\/:*?"<>|]+/g, "_").trim() || "model.3mf";
+  return safeFilename(name).trim() || "model.3mf";
 }
 
 /** `<name>-adapted.3mf`, and the printer's model after it for a copy made for one. */
@@ -112,9 +139,8 @@ export async function downloadAdapted(
   try {
     adapted = await adaptBytes(file.bytes, target.slicer, printer).finally(stop);
   } catch (err) {
-    throw new Error(`Couldn't adapt this file: it doesn't look like a 3MF project ${site.name}'s Download gives.`, {
-      cause: err,
-    });
+    const expected = `a 3MF project ${possessive(site.name)} Download gives`;
+    throw new Error(`Couldn't adapt this file: it doesn't look like ${expected}.`, { cause: err });
   }
   saveFile(adapted.bytes, adapted.output ? copyFilename(file.filename, target) : file.filename);
   const nozzle = printer?.choice.nozzle;
