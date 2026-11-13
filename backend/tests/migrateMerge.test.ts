@@ -213,4 +213,44 @@ describe("merging a working copy", () => {
     expect(await prisma.studioRevision.count({ where: { designId: design.id } })).toBe(1);
     await hereIdOf(hal.email);
   });
+
+  it("brings badges as they were seen there, never lowering one someone has here, and the days they came", async () => {
+    const ivy = await person("ivy", true);
+    const seen = new Date("2026-11-01T10:00:00Z");
+    await prisma.userAchievement.createMany({
+      data: [
+        { userId: ivy.hereId!, badge: "downloads", tier: 1 },
+        { userId: ivy.hereId!, badge: "imports", tier: 3 },
+      ],
+    });
+    await source.userAchievement.createMany({
+      data: [
+        { userId: ivy.sourceId, badge: "downloads", tier: 2, earnedAt: seen, seenAt: seen },
+        { userId: ivy.sourceId, badge: "imports", tier: 1, seenAt: seen },
+        { userId: ivy.sourceId, badge: "studio", tier: 0, earnedAt: seen, seenAt: null },
+      ],
+    });
+    const day = new Date("2026-11-10T00:00:00Z");
+    await prisma.userActiveDay.create({ data: { userId: ivy.hereId!, day } });
+    await source.userActiveDay.createMany({
+      data: [
+        { userId: ivy.sourceId, day },
+        { userId: ivy.sourceId, day: new Date("2026-11-11T00:00:00Z") },
+      ],
+    });
+    const badges = async () =>
+      (await prisma.userAchievement.findMany({ where: { userId: ivy.hereId! }, orderBy: { badge: "asc" } })).map(
+        ({ badge, tier, earnedAt, seenAt }) => ({ badge, tier, earnedAt, seenAt }),
+      );
+    await merge([ivy.sourceId]);
+    const after = await badges();
+    expect(after).toMatchObject([
+      { badge: "downloads", tier: 2, earnedAt: seen, seenAt: seen },
+      { badge: "imports", tier: 3 },
+      { badge: "studio", tier: 0, earnedAt: seen, seenAt: null },
+    ]);
+    expect(await prisma.userActiveDay.count({ where: { userId: ivy.hereId! } })).toBe(2);
+    await merge([ivy.sourceId]);
+    expect(await badges()).toEqual(after);
+  });
 });

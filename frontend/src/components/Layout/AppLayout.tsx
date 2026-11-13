@@ -24,6 +24,7 @@ import BackToTopButton from "./BackToTopButton";
 import { settleRetiredSettings } from "../../utils/settings";
 import { ConfirmProvider, useConfirm } from "../ConfirmProvider";
 import { ToastProvider, useToast } from "../ToastProvider";
+import AchievementWatcher from "../achievements/AchievementWatcher";
 import { ProviderAboutProvider } from "../providerAbout/ProviderAboutProvider";
 import { WhatsNewProvider } from "../whatsNew/WhatsNewProvider";
 import { PageHeaderContext, type PageHeader } from "./PageHeaderContext";
@@ -334,6 +335,8 @@ function AppLayoutShell({
               <ImportQueueDialog isAdmin={isAdmin} />
               {/* Comes up on its own when a look at the library finds models with no files left. */}
               <MissingFilesDialog />
+              {/* Tells the user about a badge they've just earned, while achievements are on. */}
+              <AchievementWatcher />
             </ModelRepairProvider>
           </StorageMoveProvider>
         </AiRunProvider>

@@ -104,6 +104,8 @@ export const MERGED_TABLES = new Set<Prisma.ModelName>([
   "UserPrinter",
   "UserIcon",
   "UserIdentity",
+  "UserAchievement",
+  "UserActiveDay",
   "Collection",
   "CollectionItem",
   "CollectionShare",
@@ -246,6 +248,7 @@ export class Merge {
     await this.mergeLinkedAuthors(sourceIds);
     await this.mergeSmallRows(sourceIds);
     await this.mergeActivity(sourceIds);
+    await this.mergeAchievements(sourceIds);
     await this.mergeIcons(sourceIds);
     if (this.options.secrets) await this.mergeSecrets();
     await this.mergeIdentities(sourceIds);
@@ -782,6 +785,29 @@ export class Merge {
           userId: this.users.get(row.userId)!,
           printId: row.printId ? (this.prints.get(row.printId) ?? row.printId) : null,
         })),
+        skipDuplicates: true,
+      });
+    }
+  }
+
+  /** Their badges, seen as they were there, at the higher tier for someone merged into an account here that has the
+   *  badge too, and the days they used the old instance, for Regular. */
+  private async mergeAchievements(sourceIds: string[]) {
+    const badges = await this.source.userAchievement.findMany({ where: { userId: { in: sourceIds } } });
+    for (const badge of badges) {
+      const userId = this.users.get(badge.userId)!;
+      const created = await prisma.userAchievement.createMany({ data: [{ ...badge, userId }], skipDuplicates: true });
+      if (created.count) continue;
+      // Only raises, as achievementService does.
+      await prisma.userAchievement.updateMany({
+        where: { userId, badge: badge.badge, tier: { lt: badge.tier } },
+        data: { tier: badge.tier, earnedAt: badge.earnedAt, seenAt: badge.seenAt },
+      });
+    }
+    const days = await this.source.userActiveDay.findMany({ where: { userId: { in: sourceIds } } });
+    if (days.length) {
+      await prisma.userActiveDay.createMany({
+        data: days.map((day) => ({ ...day, userId: this.users.get(day.userId)! })),
         skipDuplicates: true,
       });
     }

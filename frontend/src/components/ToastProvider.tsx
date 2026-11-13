@@ -15,6 +15,8 @@ export type ToastOptions = {
   action?: { label: string; onClick: () => void };
   /** How long it stays; an action needs longer than the usual 4s to reach. */
   autoHideMs?: number;
+  /** In place of the severity's icon, e.g. the badge an achievement toast is about. */
+  icon?: React.ReactNode;
 };
 
 type QueuedToast = ToastOptions & { key: number };
@@ -42,6 +44,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setQueue((prev) => [...prev, { ...options, key: nextKey++ }]);
   }, []);
 
+  // Moving remounts the toast. One already on its way out would come back closed and never finish leaving, which
+  // holds up the queue, so it's done with instead. Before the queue's turn: a toast sent as a window closes would
+  // otherwise be opened below and its content cleared here, leaving an empty toast.
+  React.useEffect(() => {
+    if (!open) setCurrent(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [host]);
+
   React.useEffect(() => {
     if (queue.length && !current) {
       setCurrent(queue[0]);
@@ -51,13 +61,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       setOpen(false);
     }
   }, [queue, current, open]);
-
-  // Moving remounts the toast. One already on its way out would come back closed and never finish leaving, which
-  // holds up the queue, so it's done with instead.
-  React.useEffect(() => {
-    if (!open) setCurrent(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [host]);
 
   const handleClose = (_event: unknown, reason?: string) => {
     if (reason === "clickaway") return;
@@ -110,6 +113,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               )
             }
             severity={current?.severity ?? "success"}
+            icon={current?.icon}
             variant="filled"
             sx={{ width: "100%" }}
           >

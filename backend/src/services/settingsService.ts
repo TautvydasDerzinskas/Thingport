@@ -135,6 +135,27 @@ export async function setSocialSettings(patch: Partial<SocialSettings>): Promise
   return getSocialSettings();
 }
 
+// Achievements (services/achievementService.ts): badges users earn, shown on their My models. Off until an admin turns
+// them on, and apart from social features: they work with those off.
+export type AchievementSettings = { enabled: boolean };
+const ACHIEVEMENTS_KEY = "achievements";
+
+export async function getAchievementSettings(): Promise<AchievementSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: ACHIEVEMENTS_KEY } });
+  const value = (row?.value ?? {}) as Partial<AchievementSettings>;
+  return { enabled: typeof value.enabled === "boolean" ? value.enabled : false };
+}
+
+export async function setAchievementSettings(settings: AchievementSettings): Promise<AchievementSettings> {
+  const value = { enabled: settings.enabled };
+  await prisma.setting.upsert({
+    where: { key: ACHIEVEMENTS_KEY },
+    create: { key: ACHIEVEMENTS_KEY, value },
+    update: { value },
+  });
+  return value;
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {

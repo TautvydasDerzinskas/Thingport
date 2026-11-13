@@ -13,6 +13,7 @@ export const NOTIFICATION_TYPES = [
   "chat",
   "federation",
   "share",
+  "achievement",
   "general",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

@@ -14,6 +14,8 @@ import { managedPrintFilePath } from "../services/printFileService";
 import { storedProfile } from "../services/printProfileService";
 import { plateThumbPath } from "../services/printService";
 import { coverOut, coverPath } from "../services/publicProfileService";
+import { achievementsOf } from "../services/achievementService";
+import { getAchievementSettings } from "../services/settingsService";
 import { sharedAtOf, sharedModelCounts, sharedModelsWhere, sharers } from "../services/socialService";
 import { FOLDER_MAX, folderLevels, folderPath } from "../utils/fileFolder";
 import { originOf } from "./addresses";
@@ -150,7 +152,7 @@ export async function person(userId: string): Promise<unknown | null> {
 
 async function people(runtime: Runtime, shared: { userId: string; at: Date }[]): Promise<Record<string, unknown>[]> {
   const userIds = shared.map((row) => row.userId);
-  const [users, collections, modelCount] = await Promise.all([
+  const [users, collections, modelCount, achievements] = await Promise.all([
     prisma.user.findMany({
       where: { id: { in: userIds } },
       select: {
@@ -174,6 +176,8 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
       _count: true,
     }),
     sharedModelCounts(userIds),
+    // Their badges, as their My models shows them here: only while achievements are on.
+    getAchievementSettings().then(({ enabled }) => (enabled ? achievementsOf(userIds) : null)),
   ]);
   const byId = new Map(users.map((user) => [user.id, user]));
   const collectionCount = new Map(collections.map((row) => [row.userId, row._count]));
@@ -206,6 +210,9 @@ async function people(runtime: Runtime, shared: { userId: string; at: Date }[]):
         "thingport:collectionCount": collectionCount.get(userId) ?? 0,
         "thingport:models": `${id}/models`,
         "thingport:collections": `${id}/collections`,
+        "thingport:achievements": achievements
+          ?.get(userId)
+          ?.map(({ id: badge, tier, expired }) => ({ id: badge, tier, ...(expired ? { expired } : {}) })),
       };
     }),
   );

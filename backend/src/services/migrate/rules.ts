@@ -28,6 +28,8 @@ export const MERGE_RULES = {
   UserPrinter: { part: "people" },
   UserIcon: { part: "people" },
   UserIdentity: { part: "people" },
+  UserAchievement: { part: "people" },
+  UserActiveDay: { part: "people" },
   Collection: { part: "collections" },
   CollectionItem: { part: "collections" },
   CollectionShare: { part: "collections" },

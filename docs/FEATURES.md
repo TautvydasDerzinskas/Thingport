@@ -17,7 +17,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[AI categorization and descriptions, on a local model or Claude](guides/ai.md)**
 - **[Organize, search and bulk-edit](features/organize-and-search.md)**
 - **[Dashboard](features/dashboard.md)**
-- **[Profile and activity](features/profile-and-activity.md)**
+- **[Profile, activity and achievements](features/profile-and-activity.md)**
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
 - **[Adapted 3MFs: a model opens in your slicer as if it had been made there, for your printer](features/adapted-3mf.md)**

@@ -395,7 +395,7 @@
             },
             "activity": {
               "title": "Actividad",
-              "description": "Tu mapa de actividad y tu historial."
+              "description": "Tu mapa de actividad y tu historial, y tus logros."
             },
             "collections": {
               "title": "Colecciones",
@@ -564,6 +564,13 @@
         "migrateDone_many": "Migración terminada: vinieron {{count}} de modelos",
         "migrateDone_other": "Migración terminada: vinieron {{count}} modelos",
         "migrateFailed": "Una migración se detuvo",
+        "achievementUnlocked": "Logro desbloqueado: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "{{count}} logro desbloqueado",
+        "achievementsUnlocked_many": "{{count}} logros desbloqueados",
+        "achievementsUnlocked_other": "{{count}} logros desbloqueados",
+        "achievementsCredited_one": "Hasta ahora has ganado {{count}} logro",
+        "achievementsCredited_many": "Hasta ahora has ganado {{count}} logros",
+        "achievementsCredited_other": "Hasta ahora has ganado {{count}} logros",
         "storageFreed": "Se liberaron {{size}} de almacenamiento"
       },
       "minutesAgo_many": "hace {{count}} minutos",
@@ -2317,6 +2324,7 @@
           "migration_export_created": "Token de migración creado",
           "migration_export_revoked": "Token de migración revocado",
           "migration_export_read": "Copiada por otra instancia",
+          "achievement_settings_changed": "Logros cambiados",
           "storage_cleanup_started": "Se empezó a liberar espacio",
           "photos_per_model_changed": "Cambió cuántas fotos se conservan por modelo"
         },
@@ -2352,6 +2360,8 @@
         "migrationPeople_many": "{{count}} de usuarios",
         "migrationPeople_other": "{{count}} usuarios",
         "migrationManyfold": "Desde Manyfold",
+        "achievementsOn": "Logros activados",
+        "achievementsOff": "Logros desactivados",
         "photosTrimmed_one": "Fotos de más, conservando {{count}}",
         "photosTrimmed_other": "Fotos de más, conservando {{count}}",
         "photosTrimmed_many": "Fotos de más, conservando {{count}}",
@@ -2990,6 +3000,18 @@
             "declineUserText": "Se le avisa a {{who}}. No se envía nada a {{host}}.",
             "declinedUser": "Solicitud de {{who}} rechazada"
           }
+        },
+        "achievements": {
+          "label": "Logros",
+          "summary": "Insignias por lo que hacen los usuarios, mostradas en su Mis modelos. Funcionan con las funciones sociales desactivadas.",
+          "infoTitle": "Logros",
+          "infoBadges": "Insignias por descargas, importaciones, cada sitio y herramienta, Estudio, colecciones sincronizadas y actividad, en niveles de bronce a holográfico.",
+          "infoProfile": "Se muestran bajo la biografía de cada usuario en Mis modelos, a todos los que pueden ver su perfil, incluidas las personas de instancias conectadas.",
+          "infoSecrets": "Algunas son secretas y se encuentran en la aplicación.",
+          "infoIndependent": "Tienen su propio interruptor: funcionan con las funciones sociales desactivadas.",
+          "infoOff": "Al activarlos, todos reciben lo que ya habían ganado. Al desactivarlos, se ocultan y se conservan.",
+          "saveFailed": "No se pudo guardar la configuración de logros.",
+          "loadFailed": "No se pudo cargar la configuración de logros."
         }
       },
       "migrate": {
@@ -4996,6 +5018,145 @@
         "none": "Ninguna impresora coincide con «{{query}}».",
         "added": "añadida",
         "done": "Hecho"
+      }
+    },
+    "achievements": {
+      "title": "Logros",
+      "help": "Insignias por lo que ha hecho en Thingport. Solo se muestran las obtenidas.",
+      "helpOwn": "Insignias por lo que haces en Thingport. Solo se muestran las que has obtenido, y las ve cualquiera que pueda ver tu perfil.",
+      "all": "Todos ({{value}})",
+      "more_one": "{{count}} logro más",
+      "more_many": "{{count}} logros más",
+      "more_other": "{{count}} logros más",
+      "empty": "Aún ninguno. Descarga, importa o crea un modelo para ganar el primero.",
+      "unlocked": "Logro desbloqueado",
+      "unlockedToast": "Logro desbloqueado: {{name}} · {{tier}}",
+      "unlockedMany_one": "{{count}} logro desbloqueado",
+      "unlockedMany_many": "{{count}} logros desbloqueados",
+      "unlockedMany_other": "{{count}} logros desbloqueados",
+      "view": "Ver",
+      "great": "¡Genial!",
+      "earnedOn": "Obtenido el {{date}}",
+      "next": "Siguiente: {{value}}",
+      "top": "Nivel máximo alcanzado",
+      "tiersEarned": "Niveles obtenidos",
+      "lapsed": "Caducado",
+      "lapsedHint": "Usa Thingport más de 20 de los últimos 30 días para recuperarlo.",
+      "tiers": {
+        "bronze": "Bronce",
+        "silver": "Plata",
+        "gold": "Oro",
+        "platinum": "Platino",
+        "diamond": "Diamante",
+        "holo": "Holográfico",
+        "secret": "Secreto"
+      },
+      "groups": {
+        "milestones": "Hitos",
+        "sites": "Sitios",
+        "tools": "Herramientas",
+        "making": "Estudio y sincronización",
+        "secrets": "Secretos"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Descargador",
+          "rule_one": "Descarga un modelo",
+          "rule_many": "Descarga modelos {{count}} veces",
+          "rule_other": "Descarga modelos {{count}} veces",
+          "stat_one": "{{count}} descarga",
+          "stat_many": "{{count}} descargas",
+          "stat_other": "{{count}} descargas"
+        },
+        "imports": {
+          "name": "Importador",
+          "rule_one": "Importa un modelo",
+          "rule_many": "Importa {{count}} modelos",
+          "rule_other": "Importa {{count}} modelos",
+          "stat_one": "{{count}} modelo importado",
+          "stat_many": "{{count}} modelos importados",
+          "stat_other": "{{count}} modelos importados"
+        },
+        "regular": {
+          "name": "Habitual",
+          "rule": "Usa Thingport más de 20 de los últimos 30 días",
+          "stat": "Activo {{count}} de los últimos 30 días"
+        },
+        "site": {
+          "name": "Importador de {{site}}",
+          "rule_one": "Importa un modelo de {{site}}",
+          "rule_many": "Importa {{count}} modelos de {{site}}",
+          "rule_other": "Importa {{count}} modelos de {{site}}",
+          "stat": "{{count}} de {{site}}"
+        },
+        "tool": {
+          "rule_one": "Guarda un modelo de {{tool}}",
+          "rule_many": "Guarda {{count}} modelos de {{tool}}",
+          "rule_other": "Guarda {{count}} modelos de {{tool}}",
+          "stat": "{{count}} guardados de {{tool}}"
+        },
+        "studio": {
+          "name": "Diseñador",
+          "rule_one": "Guarda un diseño de Estudio en tu biblioteca",
+          "rule_many": "Guarda {{count}} diseños de Estudio en tu biblioteca",
+          "rule_other": "Guarda {{count}} diseños de Estudio en tu biblioteca",
+          "stat_one": "{{count}} diseño guardado desde Estudio",
+          "stat_many": "{{count}} diseños guardados desde Estudio",
+          "stat_other": "{{count}} diseños guardados desde Estudio"
+        },
+        "synced": {
+          "name": "Sincronizado",
+          "rule_one": "Mantén una colección sincronizada",
+          "rule_many": "Mantén {{count}} colecciones sincronizadas",
+          "rule_other": "Mantén {{count}} colecciones sincronizadas",
+          "stat_one": "{{count}} colección sincronizada",
+          "stat_many": "{{count}} colecciones sincronizadas",
+          "stat_other": "{{count}} colecciones sincronizadas"
+        },
+        "syncSources": {
+          "name": "Muchas fuentes",
+          "rule": "Sincroniza colecciones desde {{count}} sitios distintos",
+          "stat": "Sincronizado desde {{count}} sitios"
+        },
+        "weatherGuest": {
+          "name": "Conoció al invitado",
+          "rule": "Un secreto. Lo encontraste.",
+          "stat": "Visto en la escena del tiempo"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Creador de llaveros",
+          "tool": "Generador de llaveros"
+        },
+        "qr-code-generator": {
+          "badge": "Codificador QR",
+          "tool": "Generador de códigos QR"
+        },
+        "gridfinity-drawer": {
+          "badge": "Constructor Gridfinity",
+          "tool": "Constructor de cajones Gridfinity"
+        },
+        "enclosure-generator": {
+          "badge": "Creador de cajas",
+          "tool": "Generador de carcasas"
+        },
+        "multiboard-planner": {
+          "badge": "Planificador Multiboard",
+          "tool": "Planificador Multiboard"
+        },
+        "skadis-planner": {
+          "badge": "Planificador Skadis",
+          "tool": "Planificador Skadis"
+        },
+        "openscad-customizer": {
+          "badge": "Ajustador de scripts",
+          "tool": "Personalizador de scripts"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "Ordenador de 3MF",
+          "tool": "Normalizador 3MF de MakerWorld"
+        }
       }
     }
   },

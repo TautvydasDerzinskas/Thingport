@@ -20,7 +20,7 @@ email, is merged into it: the account stays as it is, and their models, collecti
 
 | Comes                                                                                        | Stays with the old instance                    |
 | -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| People, with their passwords, profiles, avatars and dashboards                               | Sign-in sessions: everyone signs in here again |
+| People, with their passwords, profiles, avatars, dashboards and achievements                 | Sign-in sessions: everyone signs in here again |
 | Models, with their files, categories, creators, pictures and print profiles                  | API tokens and Thingport Grab connections      |
 | Collections and sidebar bookmarks                                                            | The audit log                                  |
 | Synced collections, with the models they've seen, so only new ones are imported              | The import history and queue                   |

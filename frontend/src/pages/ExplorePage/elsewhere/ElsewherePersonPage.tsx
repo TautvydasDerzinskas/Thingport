@@ -21,6 +21,8 @@ import { usePageHeader } from "../../../components/Layout/PageHeaderContext";
 import { CardSkeletons } from "../../../components/media/CardSkeleton";
 import { cardGridSx } from "../../../components/media/cardGrid";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../../components/profile/ProfileLayout";
+import AchievementsShowcase from "../../../components/achievements/AchievementsShowcase";
+import { knownAchievements } from "../../../constants/achievements";
 import { useToast } from "../../../components/ToastProvider";
 import UserAvatar from "../../../components/UserAvatar";
 import { useSocialStatus } from "../../../hooks/useSocialStatus";
@@ -286,6 +288,7 @@ export default function ElsewherePersonPage({ onUnauthorized }: { onUnauthorized
         bioMarkdown
         remote
         links={person.links}
+        achievements={person.achievements && <AchievementsShowcase items={knownAchievements(person.achievements)} />}
       >
         <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Tabs
