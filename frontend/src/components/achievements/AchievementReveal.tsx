@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import Typography from "@mui/material/Typography";
 import { achievementName, achievementRule, tierLabel, type ShownAchievement } from "../../constants/achievements";
+import { useToastHost } from "../ToastProvider";
 import AchievementBadge from "./AchievementBadge";
 
 // The moment a Diamond or Holographic badge is earned: rays turning behind it, a burst of sparks, the badge popping
@@ -36,6 +37,8 @@ type Props = { achievement: ShownAchievement | null; onClose: () => void };
 
 export default function AchievementReveal({ achievement, onClose }: Props) {
   const { t } = useTranslation(["app", "common"]);
+  // A toast already showing when it opens (anything's, the watcher holding its own) moves into it, within reach.
+  const toastHost = useToastHost(!!achievement);
   const def = achievement?.def;
   return (
     <Dialog
@@ -45,6 +48,7 @@ export default function AchievementReveal({ achievement, onClose }: Props) {
       slotProps={{
         // Scrolls on a short screen (a phone on its side); the rays are clipped by the box they turn in.
         paper: {
+          ref: toastHost,
           sx: { width: 380, maxWidth: "calc(100% - 32px)", overflowX: "hidden", overflowY: "auto", background: NIGHT },
         },
       }}

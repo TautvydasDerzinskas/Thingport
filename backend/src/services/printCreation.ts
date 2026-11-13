@@ -330,8 +330,6 @@ export async function createPrint(
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,
       remoteSource: meta.remoteSource ?? undefined,
-      createdWith: meta.createdWith?.kind ?? null,
-      createdWithRef: meta.createdWith?.ref ?? null,
       ...meta.licenseColumns,
     },
   });
@@ -366,13 +364,21 @@ export async function createPrint(
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);
+    // What made it goes on last, once nothing above can discard it: achievements count models by it, and a badge
+    // given for one that never finished would stay.
+    const made = meta.createdWith
+      ? await prisma.print.update({
+          where: { id: print.id },
+          data: { createdWith: meta.createdWith.kind, createdWithRef: meta.createdWith.ref },
+        })
+      : print;
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
     const quiet = importingQuietly();
     if (!print.categoryId && classify && !quiet) void enqueueAiCategorization(userId, print.id);
     if (describe && !quiet) enqueueAiDescription(userId, print.id);
-    return { print, plates };
+    return { print: made, plates };
   } catch (err) {
     await discardPrint(print.id);
     throw err;

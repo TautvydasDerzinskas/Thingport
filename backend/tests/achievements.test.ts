@@ -271,6 +271,26 @@ describe("earning", () => {
     expect(await badge(member, "tool:keyring-generator")).toMatchObject({ tier: 0, count: 1, next: 10 });
   });
 
+  it("gives nothing for a tool's model that failed while its files went in", async () => {
+    const maker = await register(`Maker${stamp}`);
+    // A check comes while the model is being made, which then fails and is discarded.
+    vi.spyOn(prisma.plate, "create").mockImplementation((async () => {
+      await checkAchievementsNow(maker.id);
+      throw new Error("No room left");
+    }) as never);
+    onTestFinished(() => {
+      vi.restoreAllMocks();
+    });
+    await request(app)
+      .post("/api/upload")
+      .set(auth(maker))
+      .field("origin", "created")
+      .field("created_with_tool", "keyring-generator")
+      .attach("files", Buffer.from(STL), "keyring.stl");
+    expect(await prisma.print.count({ where: { userId: maker.id } })).toBe(0);
+    expect(await prisma.userAchievement.count({ where: { userId: maker.id } })).toBe(0);
+  });
+
   it("counts Studio's models by what made them", async () => {
     await prisma.print.update({
       where: { id: await upload(member) },

@@ -19,9 +19,16 @@ import {
   materialOf,
   plateOf,
   tierLabel,
+  type AchievementDef,
 } from "./achievements";
 
 const LOCALES = { en, lt, es, fr, ru, uk, be };
+
+function defOf(id: string): AchievementDef {
+  const def = achievementDef(id);
+  if (!def) throw new Error(`No achievement ${id}`);
+  return def;
+}
 
 async function translator(language: keyof typeof LOCALES): Promise<TFunction> {
   const i18n = createInstance();
@@ -55,7 +62,7 @@ describe("achievements catalogue", () => {
   });
 
   it("strikes a ladder by its tier and a single badge in its own material", () => {
-    const downloads = achievementDef("downloads")!;
+    const downloads = defOf("downloads");
     expect([0, 1, 2, 3, 4, 5].map((tier) => materialOf(downloads, tier))).toEqual([
       "bronze",
       "silver",
@@ -66,9 +73,9 @@ describe("achievements catalogue", () => {
     ]);
     expect(plateOf(downloads, 0)).toBe("1");
     expect(plateOf(downloads, 5)).toBe("1K");
-    expect(materialOf(achievementDef("regular")!, 0)).toBe("gold");
-    expect(plateOf(achievementDef("regular")!, 0)).toBeUndefined();
-    expect(materialOf(achievementDef("secret:weather-scene/guest")!, 0)).toBe("secret");
+    expect(materialOf(defOf("regular"), 0)).toBe("gold");
+    expect(plateOf(defOf("regular"), 0)).toBeUndefined();
+    expect(materialOf(defOf("secret:weather-scene/guest"), 0)).toBe("secret");
   });
 
   it.each(Object.keys(LOCALES) as (keyof typeof LOCALES)[])("has every name, rule and stat in %s", async (language) => {

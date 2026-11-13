@@ -9,6 +9,7 @@ import { achievementsApi } from "../../api/achievements";
 import HelpTip from "../../components/HelpTip";
 import AchievementsAnimation from "../../components/adminAnimations/AchievementsAnimation";
 import { refreshSocialStatus } from "../../hooks/useSocialStatus";
+import { latestRequests } from "../../utils/latestRequests";
 import FeatureRow from "./FeatureRow";
 
 type Props = { onUnauthorized?: () => void };
@@ -21,21 +22,24 @@ export default function AchievementsRow({ onUnauthorized }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
+  // A save starting or ending makes the reads started before it out of date: one answering late would put back the
+  // switch from before the save.
+  const [reads] = React.useState(latestRequests);
 
-  const read = React.useCallback(
-    () =>
-      achievementsApi.getSettings().then(
-        (settings) => {
-          setEnabled(settings.enabled);
-          setLoadFailed(false);
-        },
-        (err: unknown) => {
-          if (err instanceof UnauthorizedError) onUnauthorized?.();
-          else setLoadFailed(true);
-        },
-      ),
-    [onUnauthorized],
-  );
+  const read = React.useCallback(() => {
+    const current = reads.next();
+    return achievementsApi.getSettings().then(
+      (settings) => {
+        if (!current()) return;
+        setEnabled(settings.enabled);
+        setLoadFailed(false);
+      },
+      (err: unknown) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else if (current()) setLoadFailed(true);
+      },
+    );
+  }, [onUnauthorized, reads]);
 
   const load = React.useCallback(() => {
     setLoadFailed(false);
@@ -46,12 +50,16 @@ export default function AchievementsRow({ onUnauthorized }: Props) {
 
   const save = async (next: boolean) => {
     const before = enabled;
+    reads.cancel();
     setEnabled(next);
     setBusy(true);
     setError(null);
     try {
-      setEnabled((await achievementsApi.updateSettings({ enabled: next })).enabled);
+      const saved = await achievementsApi.updateSettings({ enabled: next });
+      reads.cancel();
+      setEnabled(saved.enabled);
     } catch (err) {
+      reads.cancel();
       setEnabled(before);
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();

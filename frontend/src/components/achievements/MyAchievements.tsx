@@ -16,7 +16,8 @@ const AFTER_MS = 3000;
 export default function MyAchievements() {
   const [items, setItems] = useState<OwnAchievement[] | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  // Only the newest read is shown: an older one answering last would put back badges from before.
+  // An older read answering after a newer one would put back badges from before, so it's dropped; while the newer one
+  // hasn't answered, or if it fails, the older one is shown.
   const [requests] = useState(latestRequests);
 
   const load = useCallback(() => {

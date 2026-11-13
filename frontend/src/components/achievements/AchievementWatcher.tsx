@@ -46,6 +46,9 @@ export default function AchievementWatcher() {
   const navigate = useNavigate();
   const on = useSocialStatus()?.achievements ?? false;
   const [reveals, setReveals] = useState<ShownAchievement[]>([]);
+  // Badges to toast, held while a reveal is open: a toast behind it is out of a keyboard's reach and could be gone
+  // before it closes. All held are told in one toast.
+  const [toastLater, setToastLater] = useState<ShownAchievement[]>([]);
   const looking = useRef(false);
   // Switching achievements off drops what a look still under way finds.
   const [requests] = useState(latestRequests);
@@ -64,33 +67,42 @@ export default function AchievementWatcher() {
       announceAchievementsFound();
       const shown = knownAchievements(unseen);
       const revealed = shown.filter((item) => REVEALED.has(materialOf(item.def, item.tier)));
-      const toastNow = toastFor(shown.filter((item) => !revealed.includes(item)));
-      if (toastNow?.many) {
-        toast({
-          message: t("achievements.unlockedMany", { count: toastNow.count }),
-          icon: <AchievementBadge def={toastNow.first.def} tier={toastNow.first.tier} size={34} />,
-          action: { label: t("achievements.view"), onClick: () => navigate(myModels()) },
-          autoHideMs: 8000,
-        });
-      } else if (toastNow) {
-        const { item } = toastNow;
-        toast({
-          message: t("achievements.unlockedToast", {
-            name: achievementName(item.def, t),
-            tier: tierLabel(item.def, item.tier, t),
-          }),
-          icon: <AchievementBadge def={item.def} tier={item.tier} size={34} />,
-          action: { label: t("achievements.view"), onClick: () => navigate(myModels(item.id)) },
-          autoHideMs: 8000,
-        });
-      }
+      const toasted = shown.filter((item) => !revealed.includes(item));
       if (revealed.length) setReveals((before) => [...before, ...revealed]);
+      if (toasted.length) setToastLater((before) => [...before, ...toasted]);
     } catch {
       // Off, signed out or unreachable: the next look tries again.
     } finally {
       looking.current = false;
     }
-  }, [navigate, requests, t, toast]);
+  }, [requests]);
+
+  // With no reveal open, what's held is toasted.
+  useEffect(() => {
+    if (reveals.length) return;
+    const toastNow = toastFor(toastLater);
+    if (!toastNow) return;
+    setToastLater([]);
+    if (toastNow.many) {
+      toast({
+        message: t("achievements.unlockedMany", { count: toastNow.count }),
+        icon: <AchievementBadge def={toastNow.first.def} tier={toastNow.first.tier} size={34} />,
+        action: { label: t("achievements.view"), onClick: () => navigate(myModels()) },
+        autoHideMs: 8000,
+      });
+      return;
+    }
+    const { item } = toastNow;
+    toast({
+      message: t("achievements.unlockedToast", {
+        name: achievementName(item.def, t),
+        tier: tierLabel(item.def, item.tier, t),
+      }),
+      icon: <AchievementBadge def={item.def} tier={item.tier} size={34} />,
+      action: { label: t("achievements.view"), onClick: () => navigate(myModels(item.id)) },
+      autoHideMs: 8000,
+    });
+  }, [navigate, reveals.length, t, toast, toastLater]);
 
   useEffect(() => {
     if (!on) return;
@@ -118,11 +130,12 @@ export default function AchievementWatcher() {
     };
   }, [on, look]);
 
-  // Switched off: nothing more is shown, neither what a look under way finds nor the reveals still waiting.
+  // Switched off: nothing more is shown, neither what a look under way finds nor the reveals and toasts still waiting.
   useEffect(() => {
     if (on) return;
     requests.cancel();
     setReveals([]);
+    setToastLater([]);
   }, [on, requests]);
 
   return (
