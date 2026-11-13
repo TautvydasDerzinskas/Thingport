@@ -128,9 +128,15 @@ const limitedCheck = (minutes) => [
     output: { title: "Review rate limited" },
   },
 ];
+const PULL = {
+  number: 7,
+  body: "",
+  head: { sha: "c0ffee" },
+  base: { ref: "develop", repo: { default_branch: "develop" } },
+};
 const state = (overrides) =>
   pullState({
-    pull: { number: 7, body: "" },
+    pull: PULL,
     checkRuns: limitedCheck(0),
     headDate: at(-1),
     comments: [comment(CODERABBIT, SUMMARY_LIMITED, -60, { updated: 0 })],
@@ -158,9 +164,42 @@ test("a push during a limit gets no check, and waits on the summary's notice", (
   assert.equal(state({ checkRuns: [], headDate: at(1), comments }).waiting, true);
   // Just pushed: CodeRabbit may not have picked it up yet.
   assert.equal(state({ checkRuns: [], headDate: at(29), comments }).waiting, false);
-  // No notice: nothing says it was refused.
-  const reviewed = [comment(CODERABBIT, SUMMARY_DONE, -60)];
-  assert.equal(state({ checkRuns: [], headDate: at(1), comments: reviewed }).waiting, false);
+});
+
+test("a push CodeRabbit never picked up is asked for", () => {
+  const comments = [comment(CODERABBIT, SUMMARY_DONE, -60)];
+  const missed = state({ checkRuns: [], headDate: at(1), comments });
+  assert.equal(missed.waiting, true);
+  assert.equal(missed.since, at(1));
+  assert.equal(missed.notBefore, at(1));
+  assert.match(missed.why, /never picked up the push/);
+  // CodeRabbit usually starts within a minute or two.
+  assert.match(state({ checkRuns: [], headDate: at(20), comments }).reason, /no CodeRabbit check on its head yet/);
+  // It only reviews pull requests into the default branch on its own.
+  const stacked = { ...PULL, base: { ref: "feat/x", repo: { default_branch: "develop" } } };
+  assert.equal(state({ pull: stacked, checkRuns: [], headDate: at(1), comments }).waiting, false);
+  const review = { user: { login: CODERABBIT }, commit_id: "c0ffee" };
+  assert.match(state({ checkRuns: [], headDate: at(1), comments, reviews: [review] }).reason, /reviewed it/);
+  const older = { ...review, commit_id: "decaf" };
+  assert.equal(state({ checkRuns: [], headDate: at(1), comments, reviews: [older] }).waiting, true);
+  // A refusal of an ask since the push is waited out.
+  const refused = [...comments, comment(ASKER, ASK, 20), comment(CODERABBIT, REFUSED_WITH_TIME, 20)];
+  assert.equal(state({ checkRuns: [], headDate: at(1), comments: refused }).notBefore, at(24) + 30_000);
+  // So is an ask in flight.
+  const asked = [...comments, comment("someone", ASK, 25)];
+  assert.match(state({ checkRuns: [], headDate: at(1), comments: asked }).reason, /no answer yet/);
+});
+
+test("a review that never finished is asked for again", () => {
+  const running = (minutes) => [{ ...limitedCheck(minutes)[0], status: "in_progress", completed_at: null }];
+  const comments = [comment(CODERABBIT, SUMMARY_DONE, -60)];
+  assert.match(state({ checkRuns: running(0), comments }).reason, /reviewing it/);
+  const stuck = state({ checkRuns: running(-40), comments });
+  assert.equal(stuck.waiting, true);
+  assert.equal(stuck.since, at(-40));
+  assert.match(stuck.why, /never finished/);
+  const review = { user: { login: CODERABBIT }, commit_id: "c0ffee" };
+  assert.equal(state({ checkRuns: running(-40), comments, reviews: [review] }).waiting, false);
 });
 
 test("a pull request someone paused is left alone until resumed", () => {
