@@ -10,6 +10,8 @@ type MeshData = {
   vertices: number[];
   triangles: number[];
   extruder: number;
+  /** Its faces, or its object, named this colour, so a component placing it doesn't recolour it. */
+  ownColor?: boolean;
 };
 
 type ObjectData = {
@@ -72,8 +74,9 @@ function paintedExtruder(code: string | null): number | null {
   return state > 0 ? state - 1 : null;
 }
 
-/** One mesh per filament, keeping only the vertices each one actually uses. */
-function byExtruder(vertices: number[], triangles: number[], painted: number[]): MeshData[] {
+/** One mesh per filament, keeping only the vertices each one actually uses; -1 in `painted` is a triangle left
+ *  unpainted, in the object's `defaultExtruder`. */
+function byExtruder(vertices: number[], triangles: number[], painted: number[], defaultExtruder: number): MeshData[] {
   const parts = new Map<number, { triangles: number[]; remap: Map<number, number>; vertices: number[] }>();
   for (let face = 0; face < painted.length; face++) {
     const extruder = painted[face];
@@ -93,7 +96,72 @@ function byExtruder(vertices: number[], triangles: number[], painted: number[]):
       part.triangles.push(moved);
     }
   }
-  return [...parts].map(([extruder, part]) => ({ vertices: part.vertices, triangles: part.triangles, extruder }));
+  return [...parts].map(([slot, part]) => ({
+    vertices: part.vertices,
+    triangles: part.triangles,
+    extruder: slot < 0 ? defaultExtruder : slot,
+    ownColor: slot >= 0,
+  }));
+}
+
+/** A `<component>` without `p:path`: another object of the same model file, placed inside this one. */
+export type InternalComponentRef = { refId: string; transform: THREE.Matrix4 | null; extruder: number };
+
+// Real wrapper chains are one level deep; this is against files that reference themselves in a loop.
+const MAX_COMPONENT_DEPTH = 8;
+// As the server's preview refuses (modelPreviewRender.ts): a chain that copies a mesh past this many triangles isn't
+// drawn here either, rather than taking the tab's memory.
+const MAX_EXPANDED_TRIANGLES = 8_000_000;
+
+function transformVertices(vertices: number[], matrix: THREE.Matrix4): number[] {
+  const out: number[] = [];
+  const point = new THREE.Vector3();
+  for (let k = 0; k < vertices.length; k += 3) {
+    point.set(vertices[k], vertices[k + 1], vertices[k + 2]).applyMatrix4(matrix);
+    out.push(point.x, point.y, point.z);
+  }
+  return out;
+}
+
+/**
+ * Gives each object the meshes of the objects its components name in the same file, placed by each component's
+ * transform. Bambu Studio writes a project's object as a wrapper around one like that, and the build places the
+ * wrapper, so without this it draws nothing. Resolved once every object is read, as the file's order isn't
+ * guaranteed, and all of them before any is added to, so a nested one isn't counted twice. Mirrors the server's
+ * preview (modelPreviewRender.ts). Throws past MAX_EXPANDED_TRIANGLES.
+ */
+export function resolveInternalComponents(
+  objects: Map<string, { meshes: MeshData[] }>,
+  refsByObjectId: Map<string, InternalComponentRef[]>,
+): void {
+  let budget = MAX_EXPANDED_TRIANGLES;
+  const resolve = (objectId: string, depth: number): MeshData[] => {
+    const refs = refsByObjectId.get(objectId);
+    if (!refs || depth >= MAX_COMPONENT_DEPTH) return [];
+    const resolved: MeshData[] = [];
+    for (const ref of refs) {
+      const target = objects.get(ref.refId);
+      if (!target) continue;
+      for (const mesh of [...target.meshes, ...resolve(ref.refId, depth + 1)]) {
+        budget -= mesh.triangles.length / 3;
+        if (budget < 0) throw new Error("This 3MF places its parts too many times over to show");
+        resolved.push({
+          vertices: ref.transform ? transformVertices(mesh.vertices, ref.transform) : mesh.vertices,
+          triangles: mesh.triangles,
+          // A mesh whose faces named their colours keeps them; the component's filament is for the rest.
+          extruder: mesh.ownColor ? mesh.extruder : ref.extruder,
+          ownColor: mesh.ownColor,
+        });
+      }
+    }
+    return resolved;
+  };
+  const resolvedById = new Map<string, MeshData[]>();
+  for (const objectId of refsByObjectId.keys()) resolvedById.set(objectId, resolve(objectId, 0));
+  for (const [objectId, meshes] of resolvedById) {
+    const object = objects.get(objectId);
+    if (object) for (const mesh of meshes) object.meshes.push(mesh);
+  }
 }
 
 function bytesToDataUrl(bytes: Uint8Array, mime: string): Promise<string> {
@@ -257,7 +325,7 @@ async function parseMeshFromDoc(
       // paint_color first: where a slicer painted a model, that is the later word on its colours.
       const paint = paintedExtruder(t.getAttribute("paint_color")) ?? materialSlot?.(t) ?? null;
       if (paint !== null) {
-        painted ??= Array.from<number>({ length: triangleElements.length }).fill(defaultExtruder);
+        painted ??= Array.from<number>({ length: triangleElements.length }).fill(-1);
         painted[k] = paint;
       }
       if (k > 0 && k % YIELD_EVERY_N_TRIANGLES === 0) await nextTick();
@@ -266,7 +334,7 @@ async function parseMeshFromDoc(
     if (vertices.length > 0 && triangles.length > 0) {
       // A painted mesh becomes one mesh per filament, which is how the builder already colours them.
       for (const part of painted
-        ? byExtruder(vertices, triangles, painted)
+        ? byExtruder(vertices, triangles, painted, defaultExtruder)
         : [{ vertices, triangles, extruder: defaultExtruder }]) {
         meshes.push(part);
       }
@@ -511,6 +579,8 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
       }
     : null;
 
+  // Components naming another object of this file, by the object they're in; see resolveInternalComponents.
+  const internalRefsByObjectId = new Map<string, InternalComponentRef[]>();
   const objectElements = mainDoc.getElementsByTagName("object");
   for (let i = 0; i < objectElements.length; i++) {
     if (i > 0) await nextTick();
@@ -542,6 +612,7 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
       defaultExtruder,
       baseMaterials ? readTriangleMaterial(baseMaterials, objEl.getAttribute("pid")) : undefined,
     );
+    if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
 
     const componentElements = objEl.getElementsByTagName("component");
     for (let j = 0; j < componentElements.length; j++) {
@@ -551,12 +622,24 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
         compEl.getAttribute("p:path") ||
         compEl.getAttributeNS("http://schemas.microsoft.com/3dmanufacturing/production/2015/06", "path");
       const compObjectId = compEl.getAttribute("objectid");
-      if (!extPath) continue;
+      const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
+      const compExtruder = partKey ? (partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
+      if (!extPath) {
+        if (compObjectId) {
+          const transform = compEl.getAttribute("transform");
+          const refs = internalRefsByObjectId.get(objectId) ?? [];
+          refs.push({
+            refId: compObjectId,
+            transform: transform ? parseTransform3MF(transform) : null,
+            extruder: compExtruder,
+          });
+          internalRefsByObjectId.set(objectId, refs);
+        }
+        continue;
+      }
       const extDoc = loadModelFile(extPath);
       if (!extDoc) continue;
 
-      const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
-      const compExtruder = partKey ? (partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
       // A part file can hold every part of a multi-part object, so take only the one this component
       // names. Mirrors modelPreviewRender.ts's createPartFileResolver.
       const targetEl = compObjectId
@@ -568,22 +651,16 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
       const compTransform = parseTransform3MF(compTransformStr);
 
       for (const mesh of extMeshes) {
-        if (compTransformStr) {
-          const transformedVertices: number[] = [];
-          for (let k = 0; k < mesh.vertices.length; k += 3) {
-            const v = new THREE.Vector3(mesh.vertices[k], mesh.vertices[k + 1], mesh.vertices[k + 2]);
-            v.applyMatrix4(compTransform);
-            transformedVertices.push(v.x, v.y, v.z);
-          }
-          meshes.push({ vertices: transformedVertices, triangles: mesh.triangles, extruder: mesh.extruder });
-        } else {
-          meshes.push(mesh);
-        }
+        meshes.push(compTransformStr ? { ...mesh, vertices: transformVertices(mesh.vertices, compTransform) } : mesh);
       }
     }
 
-    if (meshes.length > 0) objects.set(objectId, { id: objectId, meshes, defaultExtruder, plateId: objectPlateId });
+    // A wrapper with no mesh of its own is kept, for its components to fill below.
+    if (meshes.length > 0 || internalRefsByObjectId.has(objectId)) {
+      objects.set(objectId, { id: objectId, meshes, defaultExtruder, plateId: objectPlateId });
+    }
   }
+  resolveInternalComponents(objects, internalRefsByObjectId);
 
   const buildElements = mainDoc.getElementsByTagName("build");
   if (buildElements.length > 0) {
