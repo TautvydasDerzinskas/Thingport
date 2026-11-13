@@ -2,12 +2,14 @@ import type { TFunction } from "i18next";
 import Box from "@mui/material/Box";
 import { alpha } from "@mui/material/styles";
 import DnsOutlinedIcon from "@mui/icons-material/DnsOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { MigrateApiError, type MigrateRun, type MigrateRunError } from "../../api/migrate";
 
 export const k = (key: string) => `adminSettings.migrate.${key}`;
 
-/** The tile a source leads with: a server for another Thingport instance. */
-export function SourceTile({ size = 40 }: { size?: number }) {
+/** The tile a source leads with: a server for another Thingport instance, a box of models for Manyfold. */
+export function SourceTile({ source = "thingport", size = 40 }: { source?: MigrateRun["source"]; size?: number }) {
+  const Icon = source === "manyfold" ? Inventory2OutlinedIcon : DnsOutlinedIcon;
   return (
     <Box
       aria-hidden
@@ -22,7 +24,7 @@ export function SourceTile({ size = 40 }: { size?: number }) {
         bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.18 : 0.1),
       }}
     >
-      <DnsOutlinedIcon fontSize={size >= 40 ? "medium" : "small"} />
+      <Icon fontSize={size >= 40 ? "medium" : "small"} />
     </Box>
   );
 }
@@ -57,6 +59,14 @@ const KNOWN_ERRORS = new Set([
   "online_old",
   "online_dump",
   "online_lost",
+  "manyfold_address",
+  "manyfold_unreachable",
+  "manyfold_not_manyfold",
+  "manyfold_slow_down",
+  "manyfold_key",
+  "manyfold_old",
+  "manyfold_lost",
+  "manyfold_error",
   "online_folder",
 ]);
 
@@ -99,6 +109,7 @@ export function formatBytes(bytes: number, locale = "en"): string {
 /** Where it came from, as its row and its dialog name it. */
 export function runTitle(t: TFunction, run: MigrateRun): string {
   const name = run.plan.address ? hostOf(run.plan.address) : (run.plan.dump?.name ?? run.plan.folder);
+  if (run.source === "manyfold") return t(k("manyfold.runTitle"), { name });
   if (run.plan.version) return t(k("runs.fromRelease"), { name, version: run.plan.version });
   return t(k("runs.from"), { name });
 }
@@ -106,7 +117,7 @@ export function runTitle(t: TFunction, run: MigrateRun): string {
 export const isActive = (run: MigrateRun) => run.status === "preparing" || run.status === "running";
 
 /** An address's host and port, as people name an instance. */
-function hostOf(address: string): string {
+export function hostOf(address: string): string {
   try {
     return new URL(address).host;
   } catch {

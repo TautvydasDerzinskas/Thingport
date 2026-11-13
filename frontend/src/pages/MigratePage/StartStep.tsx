@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Accordion from "@mui/material/Accordion";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -9,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import type { MigratePerson, MigrateReport, MigrateRun } from "../../api/migrate";
+import type { MigratePerson, MigrateReport, MigrateRun, ThingportRun } from "../../api/migrate";
 import ToneChip from "../../components/ToneChip";
 import type { Choices } from "./ComesStep";
 
@@ -18,7 +19,7 @@ type CountKey = { [K in keyof MigrateReport]: MigrateReport[K] extends number ? 
 import { errorDetails, errorText, k } from "./parts";
 
 type Props = {
-  run: MigrateRun;
+  run: ThingportRun;
   people: MigratePerson[];
   chosen: ReadonlySet<string>;
   choices: Choices;
@@ -30,47 +31,18 @@ export default function StartStep({ run, people, chosen, choices }: Props) {
 
   if (run.status === "running") {
     const step = run.progress?.step ?? "people";
-    const share = run.progress && run.progress.total > 0 ? (run.progress.done / run.progress.total) * 100 : null;
     return (
-      <Stack spacing={1.5} aria-live="polite">
-        <Typography variant="body2" fontWeight={600}>
-          {t(k(`start.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 })}
-        </Typography>
-        <LinearProgress
-          variant={share === null ? "indeterminate" : "determinate"}
-          value={share ?? undefined}
-          sx={{ borderRadius: 1 }}
-          aria-hidden
-        />
-        <Typography variant="caption" color="text.secondary">
-          {t(k("start.background"))}
-        </Typography>
-      </Stack>
+      <RunningView
+        run={run}
+        label={t(k(`start.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 })}
+      />
     );
   }
 
   if (run.status === "done" && run.report) return <Report report={run.report} />;
 
   if (run.status === "failed" && run.started_at) {
-    const details = errorDetails(run.error);
-    return (
-      <Stack spacing={2}>
-        <Alert severity="error">
-          <Typography variant="body2">{errorText(t, run.error)}</Typography>
-          {details && (
-            <Box component="pre" sx={{ mt: 1, mb: 0, fontSize: "0.75rem", whiteSpace: "pre-wrap" }}>
-              {details}
-            </Box>
-          )}
-          {run.can_resume && (
-            <Typography variant="body2" sx={{ mt: 0.5 }}>
-              {t(k("start.resumeHint"))}
-            </Typography>
-          )}
-        </Alert>
-        {run.report && <Report report={run.report} partial />}
-      </Stack>
-    );
+    return <StoppedView run={run}>{run.report && <Report report={run.report} partial />}</StoppedView>;
   }
 
   const coming = people.filter((person) => chosen.has(person.id));
@@ -148,6 +120,66 @@ function Report({ report, partial = false }: { report: MigrateReport; partial?: 
     const count = report[key];
     if (count) lines.push(t(k(label), { count }));
   }
+  return <ReportLines lines={lines} failures={report.failures} partial={partial} />;
+}
+
+/** How far a migration is while it runs: `label` says what it's doing. */
+export function RunningView({ run, label }: { run: MigrateRun; label: string }) {
+  const { t } = useTranslation("app");
+  const share = run.progress && run.progress.total > 0 ? (run.progress.done / run.progress.total) * 100 : null;
+  return (
+    <Stack spacing={1.5} aria-live="polite">
+      <Typography variant="body2" fontWeight={600}>
+        {label}
+      </Typography>
+      <LinearProgress
+        variant={share === null ? "indeterminate" : "determinate"}
+        value={share ?? undefined}
+        sx={{ borderRadius: 1 }}
+        aria-hidden
+      />
+      <Typography variant="caption" color="text.secondary">
+        {t(k("start.background"))}
+      </Typography>
+    </Stack>
+  );
+}
+
+/** Why a migration stopped part-way, then what had come by then (`children`). */
+export function StoppedView({ run, children }: { run: MigrateRun; children?: ReactNode }) {
+  const { t } = useTranslation("app");
+  const details = errorDetails(run.error);
+  return (
+    <Stack spacing={2}>
+      <Alert severity="error">
+        <Typography variant="body2">{errorText(t, run.error)}</Typography>
+        {details && (
+          <Box component="pre" sx={{ mt: 1, mb: 0, fontSize: "0.75rem", whiteSpace: "pre-wrap" }}>
+            {details}
+          </Box>
+        )}
+        {run.can_resume && (
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            {t(k("start.resumeHint"))}
+          </Typography>
+        )}
+      </Alert>
+      {children}
+    </Stack>
+  );
+}
+
+/** What a migration did, a line each, and what failed behind a fold. */
+export function ReportLines({
+  lines,
+  failures,
+  partial = false,
+}: {
+  lines: string[];
+  failures: MigrateReport["failures"];
+  partial?: boolean;
+}) {
+  const { t } = useTranslation("app");
   return (
     <Stack spacing={1.5}>
       {!partial && (
@@ -165,14 +197,14 @@ function Report({ report, partial = false }: { report: MigrateReport; partial?: 
           </Typography>
         ))}
       </Stack>
-      {report.failures.length > 0 && (
+      {failures.length > 0 && (
         <Accordion variant="outlined" disableGutters>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="body2">{t(k("report.failures"), { count: report.failures.length })}</Typography>
+            <Typography variant="body2">{t(k("report.failures"), { count: failures.length })}</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Stack spacing={0.75}>
-              {keyedFailures(report.failures).map((failure) => (
+              {keyedFailures(failures).map((failure) => (
                 <Typography key={failure.key} variant="caption" sx={{ overflowWrap: "anywhere" }}>
                   <strong>{failure.name}</strong>: {failure.error}
                 </Typography>

@@ -20,8 +20,10 @@ export type MigratePlan = {
   dump: { name: string; size: number } | null;
   /** The old instance's storage folder here; empty for one copied online. */
   folder: string;
-  /** The old instance's address, for one copied online. */
+  /** The old instance's address, for one copied online, or Manyfold's. */
   address?: string;
+  /** What a Manyfold has, and how many of its models earlier migrations brought. */
+  manyfold?: { models: number; collections: number; creators: number; before: number };
   /** What the check found, once it has. */
   version?: string | null;
   /** Its database changes, and those of this instance's it lacked, applied to its copy on the way. */

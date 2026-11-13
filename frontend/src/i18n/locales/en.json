@@ -2195,7 +2195,8 @@
         "chatsOn": "Chats turned on",
         "chatsOff": "Chats turned off",
         "migrationPeople_one": "{{count}} person",
-        "migrationPeople_other": "{{count}} people"
+        "migrationPeople_other": "{{count}} people",
+        "migrationManyfold": "From Manyfold"
       },
       "rendering": {
         "heading": "Rendering",
@@ -3066,6 +3067,14 @@
           "online_old": "The old instance can't be copied online: update it, or bring it over with a database dump.",
           "online_dump": "The old instance couldn't make its database dump.",
           "online_lost": "The old instance stopped answering. Start again once it's back.",
+          "manyfold_address": "Give Manyfold's address, starting with http:// or https://.",
+          "manyfold_unreachable": "This server can't reach Manyfold at {{address}}.",
+          "manyfold_not_manyfold": "That address doesn't answer as Manyfold does.",
+          "manyfold_slow_down": "Manyfold asks to wait a few minutes before signing in again.",
+          "manyfold_key": "Manyfold turned the API key down. Check its client ID and secret, and that it has the read scope.",
+          "manyfold_old": "This Manyfold is older than 0.149, which doesn't say where its files are. Update it, then migrate.",
+          "manyfold_lost": "Manyfold stopped answering.",
+          "manyfold_error": "Manyfold answered with an error ({{status}}).",
           "online_folder": "A folder on the old instance has more than {{limit}} files, more than can be copied online. Bring it over with a database dump and its storage folder."
         },
         "export": {
@@ -3085,6 +3094,73 @@
           "revoke": "Revoke",
           "replace": "Create a new one",
           "revokeConfirm": "Revoke the token? An instance copying this one with it stops."
+        },
+        "manyfold": {
+          "title": "From Manyfold",
+          "text": "Its models, with their files, pictures, tags and licences, and its collections, read with an API key made there. Each person's models go to whoever you pick here.",
+          "apiKey": "API key",
+          "anywhere": "LAN or remote",
+          "runTitle": "From Manyfold at {{name}}",
+          "dialogTitle": "Migrate from Manyfold",
+          "steps": {
+            "connect": "Connect",
+            "owners": "Owners"
+          },
+          "address": "Manyfold's address",
+          "addressHelp": "As this server reaches it, such as http://192.168.1.30:3214.",
+          "clientId": "Client ID",
+          "clientSecret": "Client secret",
+          "key": "An API key made on Manyfold, with the read scope.",
+          "keyHelp": "On Manyfold, signed in as an admin, open your user menu, then API keys, and create one with the read scope. It reads what its owner sees there, and changes nothing. It's kept until the migration finishes or is removed.",
+          "checked": "Manyfold at {{host}}",
+          "keyWorks": "The API key works.",
+          "staysBehind": "What stays on Manyfold",
+          "staysBehindHelp": "Comments, the sensitive flag, permissions and which files are presupported have nowhere to go here. A model without a 3D file Thingport takes stays too.",
+          "ownersIntro": "Models of anyone not added here go to you.",
+          "ownersHelp": "Manyfold doesn't list its people to an API key, so add each one by their username there, then pick whose library their models go to here.",
+          "username": "Manyfold username",
+          "add": "Add",
+          "goesTo": "Whose library {{username}}'s models go to",
+          "you": "You ({{name}})",
+          "remove": "Remove",
+          "removeOwner": "Remove {{username}}",
+          "noOwners": "No one added: every model goes to you.",
+          "noOwner": "{{username}} owns no models on Manyfold.",
+          "always": "Each model with a 3D file comes, with its files in their folders, its pictures, tags, licence, creator and notes.",
+          "collectionsHelp": "Each becomes a collection of whoever its models go to. One inside another is named after both, as in Minis / Dragons. One named like a collection of theirs here is merged into it.",
+          "allToYou": "They all go to you.",
+          "discardConfirm": "Discard this migration? Nothing has come over yet, and the API key is forgotten.",
+          "before_one": "{{count}} of its models came over in an earlier migration, and is skipped.",
+          "before_other": "{{count}} of its models came over in an earlier migration, and are skipped.",
+          "models_one": "{{count}} model",
+          "models_other": "{{count}} models",
+          "summary_one": "{{count}} model from Manyfold",
+          "summary_other": "{{count}} models from Manyfold",
+          "ownersSummary_one": "{{count}} person's models go to the library picked for them, the rest to you.",
+          "ownersSummary_other": "{{count}} people's models go to the libraries picked for them, the rest to you.",
+          "readyLine_one": "Checked: {{count}} model. Waiting for you to start it.",
+          "readyLine_other": "Checked: {{count}} models. Waiting for you to start it.",
+          "leftOut_one": "{{count}} without a 3D file left out",
+          "leftOut_other": "{{count}} without a 3D file left out",
+          "counts": {
+            "models_one": "model",
+            "models_other": "models",
+            "collections_one": "collection",
+            "collections_other": "collections",
+            "creators_one": "creator",
+            "creators_other": "creators"
+          },
+          "phases": {
+            "owners": "Finding each person's models: {{done}} of {{total}}",
+            "collections": "Reading collections: {{done}} of {{total}}",
+            "models": "Copying models: {{done}} of {{total}}"
+          },
+          "report": {
+            "noFiles_one": "{{count}} left out: it has no 3D file Thingport takes",
+            "noFiles_other": "{{count}} left out: they have no 3D file Thingport takes",
+            "missingFiles_one": "{{count}} file Manyfold didn't have",
+            "missingFiles_other": "{{count}} files Manyfold didn't have"
+          }
         }
       }
     },

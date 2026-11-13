@@ -11,6 +11,8 @@ It comes one of two ways:
 - **From a dump and its storage folder**, from any release since 1.0.0: a `pg_dump` of its database, and its storage
   folder readable on this server. See [steps 1 to 3](#1-stop-the-old-instances-backend).
 
+Coming from Manyfold instead? See [Move from Manyfold](migrate-manyfold.md).
+
 ## What comes, and what stays
 
 People come with their passwords, so they sign in as before. Someone who already has an account here, with the same

@@ -167,8 +167,8 @@ function sameIssuer(a: string, b: string): boolean {
   return plain(a) === plain(b);
 }
 
-/** An id the old database gives a model or design, which names a folder here: only a plain one, as ids are. */
-const PLAIN_ID = /^[A-Za-z0-9_-]{1,64}$/;
+/** An id a model or design came with, from either source, which names a folder here: only a plain one, as ids are. */
+export const PLAIN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** For a row whose own id another row here has already: which, ids being random, only a clash of one in billions
  *  could cause. */
