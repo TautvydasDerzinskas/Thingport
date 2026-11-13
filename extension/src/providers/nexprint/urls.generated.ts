@@ -19,14 +19,15 @@ function parseUrl(url: string): URL | null {
   }
 }
 
-/** A NexPrint id as Thingport keeps it, in upper case; null for anything else. */
-function outId(value: string | null | undefined, prefix: "G" | "U"): string | null {
+/** A NexPrint id as Thingport keeps it, in upper case: one of `prefixes` and digits; null for anything else. Models
+ *  and their print profiles have "G" ids, or "C" ones on some models; collections "G" ones and users "U" ones. */
+function outId(value: string | null | undefined, prefixes: "GC" | "G" | "U"): string | null {
   const text = value?.trim().toUpperCase();
-  return text && new RegExp(`^${prefix}\\d+$`).test(text) ? text : null;
+  return text && new RegExp(`^[${prefixes}]\\d+$`).test(text) ? text : null;
 }
 
 const LANG = String.raw`(?:[a-z]{2}(?:-[a-z]{2,4})?/)?`;
-const MODEL_PATH = new RegExp(String.raw`^/${LANG}models/(G\d+)/?$`, "i");
+const MODEL_PATH = new RegExp(String.raw`^/${LANG}models/([GC]\d+)/?$`, "i");
 const COLLECTION_PATH = new RegExp(String.raw`^/${LANG}collection/(G\d+)/?$`, "i");
 const USER_HOME_PATH = new RegExp(String.raw`^/${LANG}(U\d+)/home/?$`, "i");
 
@@ -36,10 +37,10 @@ export function parseNexprintModelUrl(url: string): { modelId: string; requested
   const parsed = parseUrl(url);
   const m = parsed?.pathname.match(MODEL_PATH);
   if (!m) return null;
-  const fromHash = parsed!.hash.match(/profileId-(G\d+)/i)?.[1];
+  const fromHash = parsed!.hash.match(/profileId-([GC]\d+)/i)?.[1];
   return {
     modelId: m[1].toUpperCase(),
-    requestedProfileId: outId(fromHash ?? parsed!.searchParams.get("printConfigId"), "G"),
+    requestedProfileId: outId(fromHash ?? parsed!.searchParams.get("printConfigId"), "GC"),
   };
 }
 

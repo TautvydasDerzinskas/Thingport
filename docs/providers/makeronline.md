@@ -22,7 +22,10 @@ MakerOnline's download call wants a token that only its own anti-bot script make
   them there and files them where they were meant to go. A model that fails three times is dropped, with a
   notification saying why.
 
-If MakerOnline asks for a captcha, download one file from a model page by hand and solve it, then reload.
+When MakerOnline wants a puzzle solved before it hands over a file, as it sometimes does, Grab shows the site's own
+puzzle on the page you're importing from, as its Download button does; solve it and the import goes on. Imports waiting
+for Grab can't show one, as nobody asked for them on that page: if one stops at a puzzle, import a model from its page,
+solve the puzzle there, then reload.
 
 Its print profiles are Anycubic Slicer Next projects; other slicers open them as
 [adapted 3MFs](../features/adapted-3mf.md), and Grab's **Download adapted**, under a model's Download, saves one made for

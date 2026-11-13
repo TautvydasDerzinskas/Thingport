@@ -20,7 +20,8 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** Who can create an account: closed registrations still admit the first account and invitees. Inviting needs SMTP. */
+/** Who can create an account: closed registrations still admit the first account and invitees. Invitations go by
+ *  email with SMTP, and are links for the admin to send without it. */
 export default function RegistrationsSection({ onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const [allow, setAllow] = React.useState(true);
@@ -69,7 +70,7 @@ export default function RegistrationsSection({ onUnauthorized }: Props) {
     }
   };
 
-  const canInvite = !allow && smtpConfigured;
+  const canInvite = !allow;
 
   return (
     <Stack spacing={3}>
@@ -114,7 +115,9 @@ export default function RegistrationsSection({ onUnauthorized }: Props) {
                     {t("adminSettings.registrations.inviteButton")}
                   </Button>
                   <Typography variant="caption" color="text.secondary">
-                    {t("adminSettings.registrations.inviteHelp")}
+                    {smtpConfigured
+                      ? t("adminSettings.registrations.inviteHelp")
+                      : t("adminSettings.registrations.inviteLinkHelp")}
                   </Typography>
                 </Stack>
               )}
@@ -127,7 +130,7 @@ export default function RegistrationsSection({ onUnauthorized }: Props) {
             )}
           </Stack>
         </Stack>
-        <InviteUsersDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
+        <InviteUsersDialog open={inviteOpen} onClose={() => setInviteOpen(false)} emailing={smtpConfigured} />
       </Paper>
     </Stack>
   );

@@ -260,8 +260,10 @@ from the image servers of the sites you viewed them on, without saying which pag
   model has.
 - On MakerOnline, once you've allowed it there: MakerOnline gives its files only to its own pages, so to import a model
   the extension asks MakerOnline's download service for each file's link from the page itself, the same way the page's
-  own Download button does, with your existing MakerOnline sign-in and the page's own security check. It also asks
-  MakerOnline's public model API which print profiles a model has.
+  own Download button does, with your existing MakerOnline sign-in and the page's own security check. Where
+  MakerOnline wants a puzzle solved first, the extension shows MakerOnline's own puzzle on that page, as its Download
+  button does, and sends MakerOnline the puzzle's answer with the next ask. It also asks MakerOnline's public model API
+  which print profiles a model has.
 - On Creality Cloud, once you've allowed it there: when you open the panel on a model page, the extension asks Creality
   Cloud's public model API which print profiles the model has, the same way the page does, without your sign-in.
 - On NexPrint, once you've allowed it there: when you open the panel on a model page, the extension asks NexPrint's

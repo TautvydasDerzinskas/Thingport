@@ -145,7 +145,8 @@ router.get(
   }),
 );
 
-// Re-inviting an address sends a fresh link and retires the old one.
+// Re-inviting an address makes a fresh link and retires the old one. `link` is null when it went by email, and
+// otherwise (no SMTP) the link for the admin to send.
 const inviteSchema = z.object({ email: z.string().trim().email("Enter a valid email address") });
 router.post(
   "/invitations",
@@ -153,14 +154,19 @@ router.post(
     const body = parseBody(inviteSchema, req.body);
     const admin = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!admin) throw new HttpError(401, "Invalid or expired token");
-    const invitation = await inviteUser({
+    const { invitation, link } = await inviteUser({
       email: body.email,
       invitedById: admin.id,
       inviterName: admin.displayName,
       origin: req.get("origin") ?? null,
     });
     void createLog({ userId: admin.id, action: "user_invited", details: { email: invitation.email } });
-    res.json({ email: invitation.email, expires_at: invitation.expiresAt, expires_in_days: INVITATION_TTL_DAYS });
+    res.json({
+      email: invitation.email,
+      expires_at: invitation.expiresAt,
+      expires_in_days: INVITATION_TTL_DAYS,
+      link,
+    });
   }),
 );
 
