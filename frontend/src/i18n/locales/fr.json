@@ -2232,7 +2232,10 @@
           "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs",
           "collection_sharing_changed": "Partage de collection modifié",
           "migration_prepared": "Migration préparée",
-          "migration_started": "Migration lancée"
+          "migration_started": "Migration lancée",
+          "migration_export_created": "Jeton de migration créé",
+          "migration_export_revoked": "Jeton de migration révoqué",
+          "migration_export_read": "Copiée par une autre instance"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2902,7 +2905,8 @@
           "title": "Depuis une autre instance Thingport",
           "text": "Ses utilisateurs, avec leurs mots de passe, bibliothèques, collections, conceptions du Studio et réglages, depuis n’importe quelle version à partir de 1.0.0. Quelqu’un qui a aussi un compte ici y est fusionné.",
           "dump": "Dump de base de données + stockage",
-          "start": "Commencer"
+          "start": "Commencer",
+          "online": "En ligne"
         },
         "runs": {
           "heading": "Migrations",
@@ -2940,7 +2944,8 @@
           "remove": "Retirer de la liste",
           "discardConfirm": "Abandonner cette migration ? Sa copie de travail de l’ancienne base de données est supprimée. Rien n’a encore été transféré.",
           "removeConfirm": "Retirer cette migration de la liste ? Ce qu’elle a apporté reste.",
-          "actions": "Actions de la migration"
+          "actions": "Actions de la migration",
+          "viaOnline": "en ligne"
         },
         "steps": {
           "source": "Source",
@@ -2964,14 +2969,22 @@
           "dumpPath": "Chemin du dump sur ce serveur",
           "folder": "Son dossier de stockage, tel que ce serveur le voit",
           "folderHelp": "Le dossier de stockage de l’ancienne instance, monté dans ce serveur ou copié dessus. Ses fichiers sont copiés, et le dossier n’est pas modifié.",
-          "untouched": "Elle est mise à jour vers la version de cette instance en chemin. L’ancienne instance n’est pas touchée."
+          "untouched": "Elle est mise à jour vers la version de cette instance en chemin. L’ancienne instance n’est pas touchée.",
+          "wayIn": "Comment elle vient",
+          "dumpWay": "Dump de base de données + stockage",
+          "onlineWay": "En ligne",
+          "address": "Son adresse",
+          "addressHelp": "Telle que ce serveur la joint, par exemple http://192.168.1.20 ou https://thingport.example.com.",
+          "token": "Jeton",
+          "tokenHelp": "Créé sur l’ancienne instance, dans Administration → Migrer. Il faut une version avec Migrer ; une plus ancienne vient avec un dump de base de données."
         },
         "check": {
           "steps": {
             "restoring": "Restauration de sa base de données",
             "checking": "Lecture de sa version",
             "upgrading": "Mise à jour vers la version de cette instance",
-            "files": "Recherche de ses fichiers"
+            "files": "Recherche de ses fichiers",
+            "downloading": "Téléchargement de sa base de données"
           },
           "failed": "Elle ne peut pas être migrée",
           "release": "Thingport {{version}}",
@@ -3174,7 +3187,31 @@
           "upload_failed": "Le téléversement s’est arrêté. Réessayez.",
           "no_people": "Choisissez qui transférer.",
           "not_ready": "Cette migration ne peut pas faire cela maintenant.",
-          "unexpected": "Un problème est survenu. Le journal du serveur en dit plus."
+          "unexpected": "Un problème est survenu. Le journal du serveur en dit plus.",
+          "online_address": "Indiquez l’adresse de l’ancienne instance, en commençant par http:// ou https://.",
+          "online_unreachable": "Ce serveur ne parvient pas à joindre {{address}}.",
+          "online_token": "L’ancienne instance a refusé le jeton. Créez-en un nouveau là-bas.",
+          "online_old": "L’ancienne instance ne peut pas être copiée en ligne : mettez-la à jour, ou transférez-la avec un dump de base de données.",
+          "online_dump": "L’ancienne instance n’a pas pu faire le dump de sa base de données.",
+          "online_lost": "L’ancienne instance ne répond plus. Relancez une fois qu’elle est revenue."
+        },
+        "export": {
+          "title": "Vous quittez cette instance ?",
+          "text": "Donnez à une autre instance Thingport un jeton à usage unique pour qu’elle copie celle-ci en ligne.",
+          "create": "Créer un jeton",
+          "manage": "Gérer",
+          "activeUntil": "Jeton actif jusqu’à {{time}}",
+          "dialogTitle": "Laisser une autre instance copier celle-ci",
+          "explain": "Avec ce jeton, l’instance à qui vous le donnez lit la base de données et les fichiers de cette instance pendant 24 heures ou jusqu’à ce que vous le révoquiez. Sur cette instance, ouvrez Administration → Migrer, lancez Depuis une autre instance Thingport, choisissez En ligne et indiquez l’adresse de cette instance et le jeton.",
+          "http": "Cette instance est jointe en HTTP simple, donc le jeton et ce qu’il lit circulent sans chiffrement. Utilisez-le sur un réseau de confiance.",
+          "copy": "Copier",
+          "copied": "Copié",
+          "copyNow": "Copiez-le maintenant : il n’est plus affiché ensuite.",
+          "until": "Il fonctionne jusqu’au {{time}}.",
+          "used": "Dernière lecture : {{time}}.",
+          "revoke": "Révoquer",
+          "replace": "En créer un nouveau",
+          "revokeConfirm": "Révoquer le jeton ? Une instance qui copie celle-ci avec lui s’arrêtera."
         }
       }
     },

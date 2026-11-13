@@ -2164,7 +2164,10 @@
           "federation_user_requested": "Asked to reach someone elsewhere",
           "collection_sharing_changed": "Collection sharing changed",
           "migration_prepared": "Migration prepared",
-          "migration_started": "Migration started"
+          "migration_started": "Migration started",
+          "migration_export_created": "Migration token created",
+          "migration_export_revoked": "Migration token revoked",
+          "migration_export_read": "Copied by another instance"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -2817,7 +2820,8 @@
           "title": "From another Thingport instance",
           "text": "Its people, with their passwords, libraries, collections, Studio designs and settings, from any release since 1.0.0. Someone with an account here too is merged into it.",
           "dump": "Database dump + storage",
-          "start": "Start"
+          "start": "Start",
+          "online": "Online"
         },
         "runs": {
           "heading": "Migrations",
@@ -2850,7 +2854,8 @@
           "remove": "Remove from the list",
           "discardConfirm": "Discard this migration? Its working copy of the old database is deleted. Nothing has come over yet.",
           "removeConfirm": "Take this migration off the list? What it brought stays.",
-          "actions": "Migration actions"
+          "actions": "Migration actions",
+          "viaOnline": "online"
         },
         "steps": {
           "source": "Source",
@@ -2874,14 +2879,22 @@
           "dumpPath": "The dump's path on this server",
           "folder": "Its storage folder, as this server sees it",
           "folderHelp": "The old instance's storage folder, mounted into this server or copied onto it. Its files are copied, and the folder isn't changed.",
-          "untouched": "It's brought up to this instance's release on the way. The old instance isn't touched."
+          "untouched": "It's brought up to this instance's release on the way. The old instance isn't touched.",
+          "wayIn": "How it comes",
+          "dumpWay": "Database dump + storage",
+          "onlineWay": "Online",
+          "address": "Its address",
+          "addressHelp": "As this server reaches it, such as http://192.168.1.20 or https://thingport.example.com.",
+          "token": "Token",
+          "tokenHelp": "Made on the old instance, under Administration → Migrate. It needs a release with Migrate; an older one comes over with a database dump."
         },
         "check": {
           "steps": {
             "restoring": "Restoring its database",
             "checking": "Reading its release",
             "upgrading": "Bringing it up to this instance's release",
-            "files": "Finding its files"
+            "files": "Finding its files",
+            "downloading": "Downloading its database"
           },
           "failed": "It can't be migrated",
           "release": "Thingport {{version}}",
@@ -3046,7 +3059,31 @@
           "upload_failed": "The upload stopped. Try again.",
           "no_people": "Pick someone to bring over.",
           "not_ready": "This migration can't do that now.",
-          "unexpected": "Something went wrong. The server's log says more."
+          "unexpected": "Something went wrong. The server's log says more.",
+          "online_address": "Give the old instance's address, starting with http:// or https://.",
+          "online_unreachable": "This server can't reach {{address}}.",
+          "online_token": "The old instance turned the token down. Create a new one there.",
+          "online_old": "The old instance can't be copied online: update it, or bring it over with a database dump.",
+          "online_dump": "The old instance couldn't make its database dump.",
+          "online_lost": "The old instance stopped answering. Start again once it's back."
+        },
+        "export": {
+          "title": "Moving away from this instance?",
+          "text": "Give another Thingport instance a one-time token to copy this one online.",
+          "create": "Create a token",
+          "manage": "Manage",
+          "activeUntil": "Token active until {{time}}",
+          "dialogTitle": "Let another instance copy this one",
+          "explain": "With this token, the instance you give it to reads this instance's database and files, for 24 hours or until you revoke it. On that instance, open Administration → Migrate, start From another Thingport instance, choose Online, and give this instance's address and the token.",
+          "http": "This instance is reached over plain HTTP, so the token and what it reads travel unencrypted. Use it on a network you trust.",
+          "copy": "Copy",
+          "copied": "Copied",
+          "copyNow": "Copy it now: it isn't shown again.",
+          "until": "It works until {{time}}.",
+          "used": "Last read {{time}}.",
+          "revoke": "Revoke",
+          "replace": "Create a new one",
+          "revokeConfirm": "Revoke the token? An instance copying this one with it stops."
         }
       }
     },

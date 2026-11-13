@@ -18,7 +18,10 @@ export type PlanPerson = {
 export type MigratePlan = {
   /** What it was given. */
   dump: { name: string; size: number } | null;
+  /** The old instance's storage folder here; empty for one copied online. */
   folder: string;
+  /** The old instance's address, for one copied online. */
+  address?: string;
   /** What the check found, once it has. */
   version?: string | null;
   /** Its database changes, and those of this instance's it lacked, applied to its copy on the way. */
@@ -167,7 +170,7 @@ export async function countMissingFiles(
   let missing = 0;
   let done = 0;
   const step = async (paths: string[]) => {
-    for (const relative of paths) if (!(await files.exists(relative))) missing += 1;
+    missing += (await files.missing(paths)).length;
     done += paths.length;
     onFiles(done, total);
   };

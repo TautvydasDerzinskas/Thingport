@@ -126,7 +126,7 @@ export default function MigrationRow({ run, onOpen, onStartAgain, onRemove }: Pr
             {runTitle(t, run)}
             <Typography component="span" variant="body2" color="text.secondary">
               {" · "}
-              {t(k("runs.viaDump"))}
+              {t(k(run.source === "thingport-online" ? "runs.viaOnline" : "runs.viaDump"))}
             </Typography>
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={NARROW_WRAP}>

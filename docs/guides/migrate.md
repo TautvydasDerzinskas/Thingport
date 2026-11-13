@@ -4,10 +4,12 @@
 two instances becoming one. The old instance can be on any release since 1.0.0. Its database is brought up to this
 instance's release on the way, so you don't upgrade it first, and nothing on it is changed.
 
-You need two things from the old instance:
+It comes one of two ways:
 
-- **A dump of its database**, made with `pg_dump` in its custom format.
-- **Its storage folder**, where its model files are, readable on this server.
+- **Online**, when the old instance runs a release with Migrate too: its admin makes a one-time token, and this instance
+  copies it over the network. See [online](#online-with-a-token).
+- **From a dump and its storage folder**, from any release since 1.0.0: a `pg_dump` of its database, and its storage
+  folder readable on this server. See [steps 1 to 3](#1-make-the-dump).
 
 ## What comes, and what stays
 
@@ -31,6 +33,20 @@ number after its name.
 A tool's own models (the ones a repository tool gives everyone) don't come: the tool gives them out here once it's
 installed. Install the old instance's tools here before you start, and what they keep for people comes too. The check
 lists the ones missing.
+
+## Online, with a token
+
+1. **On the old instance**, open **Administration → Migrate** and click **Create a token** under **Moving away from
+   this instance?** Copy the token: it's shown once. It works for 24 hours, until you revoke it, or until you make
+   another.
+2. **On this instance**, open **Administration → Migrate**, click **Start** on **From another Thingport instance**,
+   choose **Online**, and give the old instance's address as this server reaches it (such as `http://192.168.1.20`)
+   and the token.
+
+The rest is the same as below, from the Check step on: its database comes as a dump, made there on the fly, and its
+files are read one by one over the network. This server must be able to reach the old instance's address. Plain HTTP
+works, but then the token and everything it reads travel unencrypted, so use it on a network you trust. Revoke the
+token once the migration is done.
 
 ## 1. Make the dump
 
@@ -108,6 +124,10 @@ what came over already is skipped. Running the same dump again later brings noth
 | pg_restore isn't installed on this server          | The Thingport image has it. Running the backend outside Docker, install the PostgreSQL client tools.                                              |
 | None of its files are in that folder               | The path is wrong, or this server can't read it. Change it on the Check step.                                                                     |
 | Give a path inside /app/migrate                    | Mount the old instance's files there, as above, and give the paths below it.                                                                      |
+| This server can't reach the address                | The address is as this server sees it, not your browser. From Docker, `localhost` is the container itself.                                        |
+| The old instance turned the token down             | It expired (after 24 hours), was revoked, or another was made since. Make a new one there.                                                        |
+| The old instance can't be copied online            | It's on a release without Migrate. Update it, or use a dump and its storage folder.                                                               |
+| The old instance stopped answering                 | **Start again** once it's back: what came over already is skipped.                                                                                |
 | Too big to upload through the web server           | Put the dump on the server and give its path.                                                                                                     |
 
 The working copy is restored as a database role made for it, which can reach that copy and nothing else: an uploaded

@@ -2255,7 +2255,10 @@
           "federation_user_requested": "Paprašyta pasiekti ką nors kitur",
           "collection_sharing_changed": "Pakeistas kolekcijos bendrinimas",
           "migration_prepared": "Paruoštas perkėlimas",
-          "migration_started": "Pradėtas perkėlimas"
+          "migration_started": "Pradėtas perkėlimas",
+          "migration_export_created": "Sukurtas perkėlimo raktas",
+          "migration_export_revoked": "Atšauktas perkėlimo raktas",
+          "migration_export_read": "Nukopijuotas kito egzemplioriaus"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2940,7 +2943,8 @@
           "title": "Iš kito Thingport egzemplioriaus",
           "text": "Jo žmonės su slaptažodžiais, bibliotekomis, kolekcijomis, Studijos projektais ir nustatymais, iš bet kurios versijos nuo 1.0.0. Kas turi paskyrą ir čia, sujungiamas su ja.",
           "dump": "Duomenų bazės kopija + saugykla",
-          "start": "Pradėti"
+          "start": "Pradėti",
+          "online": "Internetu"
         },
         "runs": {
           "heading": "Perkėlimai",
@@ -2983,7 +2987,8 @@
           "remove": "Pašalinti iš sąrašo",
           "discardConfirm": "Atmesti šį perkėlimą? Darbinė senos duomenų bazės kopija bus ištrinta. Dar niekas neperkelta.",
           "removeConfirm": "Pašalinti šį perkėlimą iš sąrašo? Tai, ką jis perkėlė, lieka.",
-          "actions": "Perkėlimo veiksmai"
+          "actions": "Perkėlimo veiksmai",
+          "viaOnline": "internetu"
         },
         "steps": {
           "source": "Šaltinis",
@@ -3007,14 +3012,22 @@
           "dumpPath": "Kopijos kelias šiame serveryje",
           "folder": "Jo saugyklos aplankas, kaip jį mato šis serveris",
           "folderHelp": "Seno egzemplioriaus saugyklos aplankas, prijungtas prie šio serverio arba į jį nukopijuotas. Jo failai kopijuojami, o aplankas nekeičiamas.",
-          "untouched": "Pakeliui jis atnaujinamas iki šio egzemplioriaus versijos. Senas egzempliorius neliečiamas."
+          "untouched": "Pakeliui jis atnaujinamas iki šio egzemplioriaus versijos. Senas egzempliorius neliečiamas.",
+          "wayIn": "Kaip perkeliama",
+          "dumpWay": "Duomenų bazės kopija + saugykla",
+          "onlineWay": "Internetu",
+          "address": "Jo adresas",
+          "addressHelp": "Kaip jį pasiekia šis serveris, pvz., http://192.168.1.20 arba https://thingport.example.com.",
+          "token": "Raktas",
+          "tokenHelp": "Sukuriamas sename egzemplioriuje, skiltyje Administravimas → Perkėlimas. Tam reikia versijos su Perkėlimu; senesnė perkeliama su duomenų bazės kopija."
         },
         "check": {
           "steps": {
             "restoring": "Atkuriama jo duomenų bazė",
             "checking": "Nustatoma jo versija",
             "upgrading": "Atnaujinama iki šio egzemplioriaus versijos",
-            "files": "Ieškoma jo failų"
+            "files": "Ieškoma jo failų",
+            "downloading": "Atsisiunčiama jo duomenų bazė"
           },
           "failed": "Jo perkelti negalima",
           "release": "Thingport {{version}}",
@@ -3255,7 +3268,31 @@
           "upload_failed": "Įkėlimas nutrūko. Bandykite dar kartą.",
           "no_people": "Pasirinkite, ką perkelti.",
           "not_ready": "Šis perkėlimas dabar to padaryti negali.",
-          "unexpected": "Kažkas nepavyko. Daugiau pasakys serverio žurnalas."
+          "unexpected": "Kažkas nepavyko. Daugiau pasakys serverio žurnalas.",
+          "online_address": "Nurodykite seno egzemplioriaus adresą, prasidedantį http:// arba https://.",
+          "online_unreachable": "Šis serveris nepasiekia {{address}}.",
+          "online_token": "Senas egzempliorius atmetė raktą. Sukurkite ten naują.",
+          "online_old": "Seno egzemplioriaus negalima perkelti internetu: atnaujinkite jį arba perkelkite su duomenų bazės kopija.",
+          "online_dump": "Senas egzempliorius negalėjo padaryti savo duomenų bazės kopijos.",
+          "online_lost": "Senas egzempliorius nustojo atsakinėti. Pradėkite iš naujo, kai jis vėl veiks."
+        },
+        "export": {
+          "title": "Išsikraustote iš šio egzemplioriaus?",
+          "text": "Duokite kitam Thingport egzemplioriui vienkartinį raktą, kad jis nukopijuotų šį internetu.",
+          "create": "Sukurti raktą",
+          "manage": "Tvarkyti",
+          "activeUntil": "Raktas galioja iki {{time}}",
+          "dialogTitle": "Leisti kitam egzemplioriui nukopijuoti šį",
+          "explain": "Su šiuo raktu egzempliorius, kuriam jį duosite, 24 valandas arba kol jį atšauksite skaito šio egzemplioriaus duomenų bazę ir failus. Tame egzemplioriuje atverkite Administravimas → Perkėlimas, pradėkite Iš kito Thingport egzemplioriaus, pasirinkite Internetu ir nurodykite šio egzemplioriaus adresą bei raktą.",
+          "http": "Šis egzempliorius pasiekiamas paprastu HTTP, tad raktas ir tai, ką jis skaito, keliauja nešifruoti. Naudokite jį patikimame tinkle.",
+          "copy": "Kopijuoti",
+          "copied": "Nukopijuota",
+          "copyNow": "Nukopijuokite jį dabar: jis daugiau nebus rodomas.",
+          "until": "Galioja iki {{time}}.",
+          "used": "Paskutinį kartą skaitytas {{time}}.",
+          "revoke": "Atšaukti",
+          "replace": "Sukurti naują",
+          "revokeConfirm": "Atšaukti raktą? Su juo šį egzempliorių kopijuojantis egzempliorius sustos."
         }
       }
     },

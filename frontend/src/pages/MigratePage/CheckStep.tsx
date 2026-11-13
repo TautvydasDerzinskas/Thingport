@@ -13,9 +13,11 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import type { MigrateCounts, MigrateRun, MigrateStep } from "../../api/migrate";
 import HelpTip from "../../components/HelpTip";
-import { errorDetails, errorText, k } from "./parts";
+import { errorDetails, errorText, formatBytes, k } from "./parts";
 
 const PREPARING: MigrateStep[] = ["restoring", "checking", "upgrading", "files"];
+// Online, the old instance's dump comes first.
+const PREPARING_ONLINE: MigrateStep[] = ["downloading", ...PREPARING];
 const COUNTS: (keyof MigrateCounts)[] = [
   "people",
   "models",
@@ -41,11 +43,12 @@ export default function CheckStep({ run, onChangeFolder }: Props) {
   const [checking, setChecking] = React.useState(false);
 
   if (run.status === "preparing") {
-    const current = run.progress?.step ?? "restoring";
-    const at = PREPARING.indexOf(current);
+    const steps = run.source === "thingport-online" ? PREPARING_ONLINE : PREPARING;
+    const current = run.progress?.step ?? steps[0];
+    const at = steps.indexOf(current);
     return (
       <Stack spacing={1.25} aria-live="polite">
-        {PREPARING.map((step, index) => (
+        {steps.map((step, index) => (
           <Stack key={step} direction="row" spacing={1.25} alignItems="center" sx={{ opacity: index > at ? 0.45 : 1 }}>
             {index < at ? (
               <CheckCircleOutlineIcon color="success" fontSize="small" aria-hidden />
@@ -54,7 +57,14 @@ export default function CheckStep({ run, onChangeFolder }: Props) {
             ) : (
               <Box sx={{ width: 20 }} />
             )}
-            <Typography variant="body2">{t(k(`check.steps.${step}`))}</Typography>
+            <Typography variant="body2">
+              {t(k(`check.steps.${step}`))}
+              {step === "downloading" && index === at && (run.progress?.done ?? 0) > 0 && (
+                <Typography component="span" variant="body2" color="text.secondary">
+                  {` · ${formatBytes(run.progress!.done)}`}
+                </Typography>
+              )}
+            </Typography>
           </Stack>
         ))}
         {current === "files" && run.progress && run.progress.total > 0 && (
@@ -140,34 +150,36 @@ export default function CheckStep({ run, onChangeFolder }: Props) {
         </Box>
       )}
 
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-        <FolderOutlinedIcon fontSize="small" color="action" aria-hidden />
-        {editing ? (
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
-            <TextField
-              size="small"
-              fullWidth
-              label={t(k("source.folder"))}
-              value={folder}
-              onChange={(event) => setFolder(event.target.value)}
-              disabled={checking}
-              slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: "off" } }}
-            />
-            <Button onClick={() => void saveFolder()} disabled={checking || !folder.trim()} sx={{ flexShrink: 0 }}>
-              {checking ? <CircularProgress size={18} /> : t(k("check.checkAgain"))}
-            </Button>
-          </Stack>
-        ) : (
-          <>
-            <Typography variant="body2" sx={{ fontFamily: "monospace", overflowWrap: "anywhere", flex: 1 }}>
-              {plan.folder}
-            </Typography>
-            <Button size="small" onClick={() => setEditing(true)} sx={{ flexShrink: 0 }}>
-              {t(k("check.changeFolder"))}
-            </Button>
-          </>
-        )}
-      </Stack>
+      {run.source === "thingport" && (
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+          <FolderOutlinedIcon fontSize="small" color="action" aria-hidden />
+          {editing ? (
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
+              <TextField
+                size="small"
+                fullWidth
+                label={t(k("source.folder"))}
+                value={folder}
+                onChange={(event) => setFolder(event.target.value)}
+                disabled={checking}
+                slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: "off" } }}
+              />
+              <Button onClick={() => void saveFolder()} disabled={checking || !folder.trim()} sx={{ flexShrink: 0 }}>
+                {checking ? <CircularProgress size={18} /> : t(k("check.checkAgain"))}
+              </Button>
+            </Stack>
+          ) : (
+            <>
+              <Typography variant="body2" sx={{ fontFamily: "monospace", overflowWrap: "anywhere", flex: 1 }}>
+                {plan.folder}
+              </Typography>
+              <Button size="small" onClick={() => setEditing(true)} sx={{ flexShrink: 0 }}>
+                {t(k("check.changeFolder"))}
+              </Button>
+            </>
+          )}
+        </Stack>
+      )}
 
       {allMissing ? (
         <Alert severity="error">{t(k("check.allMissing"))}</Alert>

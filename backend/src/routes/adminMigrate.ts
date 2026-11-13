@@ -4,11 +4,13 @@ import path from "node:path";
 import { type NextFunction, type Request, type RequestHandler, type Response, Router } from "express";
 import multer from "multer";
 import { z } from "zod";
+import { createExportToken, exportTokenState, revokeExportToken } from "../services/migrate/export";
 import {
   changeFolder,
   getRun,
   listRuns,
   prepareFromDump,
+  prepareOnline,
   removeRun,
   startRun,
   UPLOADS,
@@ -49,6 +51,30 @@ router.get(
   }),
 );
 
+// Letting another instance copy this one online: a token, shown once, that lets it read this instance for a day.
+// Before /:id, which would take "export-token" for a migration's id.
+router.get(
+  "/export-token",
+  asyncHandler(async (_req, res) => {
+    res.json(await exportTokenState());
+  }),
+);
+
+router.post(
+  "/export-token",
+  asyncHandler(async (req, res) => {
+    res.json(await createExportToken(req.userId!));
+  }),
+);
+
+router.delete(
+  "/export-token",
+  asyncHandler(async (req, res) => {
+    await revokeExportToken(req.userId!);
+    res.status(204).end();
+  }),
+);
+
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
@@ -80,6 +106,16 @@ router.post(
     res
       .status(202)
       .json(await prepareFromDump(req.userId!, { file: given, name: path.basename(given), uploaded: false, folder }));
+  }),
+);
+
+const onlineSchema = z.object({ address: z.string().min(1).max(2048), token: z.string().max(256) });
+
+// From another Thingport instance online, with the token its admin made there.
+router.post(
+  "/thingport-online",
+  asyncHandler(async (req, res) => {
+    res.status(202).json(await prepareOnline(req.userId!, parseBody(onlineSchema, req.body)));
   }),
 );
 

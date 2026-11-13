@@ -2232,7 +2232,10 @@
           "federation_user_requested": "Pidió llegar a alguien de otra instancia",
           "collection_sharing_changed": "Uso compartido de colección cambiado",
           "migration_prepared": "Migración preparada",
-          "migration_started": "Migración iniciada"
+          "migration_started": "Migración iniciada",
+          "migration_export_created": "Token de migración creado",
+          "migration_export_revoked": "Token de migración revocado",
+          "migration_export_read": "Copiada por otra instancia"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2902,7 +2905,8 @@
           "title": "Desde otra instancia de Thingport",
           "text": "Sus usuarios, con sus contraseñas, bibliotecas, colecciones, diseños de Estudio y ajustes, desde cualquier versión a partir de 1.0.0. Quien también tenga una cuenta aquí se fusiona con ella.",
           "dump": "Volcado de la base de datos + almacenamiento",
-          "start": "Empezar"
+          "start": "Empezar",
+          "online": "En línea"
         },
         "runs": {
           "heading": "Migraciones",
@@ -2940,7 +2944,8 @@
           "remove": "Quitar de la lista",
           "discardConfirm": "¿Descartar esta migración? Se elimina su copia de trabajo de la base de datos antigua. Todavía no se ha traído nada.",
           "removeConfirm": "¿Quitar esta migración de la lista? Lo que trajo se queda.",
-          "actions": "Acciones de la migración"
+          "actions": "Acciones de la migración",
+          "viaOnline": "en línea"
         },
         "steps": {
           "source": "Origen",
@@ -2964,14 +2969,22 @@
           "dumpPath": "Ruta del volcado en este servidor",
           "folder": "Su carpeta de almacenamiento, tal como la ve este servidor",
           "folderHelp": "La carpeta de almacenamiento de la instancia antigua, montada en este servidor o copiada a él. Sus archivos se copian y la carpeta no se modifica.",
-          "untouched": "Por el camino se actualiza a la versión de esta instancia. La instancia antigua no se toca."
+          "untouched": "Por el camino se actualiza a la versión de esta instancia. La instancia antigua no se toca.",
+          "wayIn": "Cómo viene",
+          "dumpWay": "Volcado de la base de datos + almacenamiento",
+          "onlineWay": "En línea",
+          "address": "Su dirección",
+          "addressHelp": "Tal como la alcanza este servidor, por ejemplo http://192.168.1.20 o https://thingport.example.com.",
+          "token": "Token",
+          "tokenHelp": "Se crea en la instancia antigua, en Administración → Migrar. Necesita una versión con Migrar; una más antigua viene con un volcado de la base de datos."
         },
         "check": {
           "steps": {
             "restoring": "Restaurando su base de datos",
             "checking": "Leyendo su versión",
             "upgrading": "Actualizándola a la versión de esta instancia",
-            "files": "Buscando sus archivos"
+            "files": "Buscando sus archivos",
+            "downloading": "Descargando su base de datos"
           },
           "failed": "No se puede migrar",
           "release": "Thingport {{version}}",
@@ -3174,7 +3187,31 @@
           "upload_failed": "La subida se detuvo. Vuelve a intentarlo.",
           "no_people": "Elige a quién traer.",
           "not_ready": "Esta migración no puede hacer eso ahora.",
-          "unexpected": "Algo salió mal. El registro del servidor dice más."
+          "unexpected": "Algo salió mal. El registro del servidor dice más.",
+          "online_address": "Indica la dirección de la instancia antigua, empezando por http:// o https://.",
+          "online_unreachable": "Este servidor no puede alcanzar {{address}}.",
+          "online_token": "La instancia antigua rechazó el token. Crea uno nuevo allí.",
+          "online_old": "La instancia antigua no se puede copiar en línea: actualízala o tráela con un volcado de la base de datos.",
+          "online_dump": "La instancia antigua no pudo hacer el volcado de su base de datos.",
+          "online_lost": "La instancia antigua dejó de responder. Empieza de nuevo cuando vuelva."
+        },
+        "export": {
+          "title": "¿Te vas de esta instancia?",
+          "text": "Da a otra instancia de Thingport un token de un solo uso para que copie esta en línea.",
+          "create": "Crear un token",
+          "manage": "Gestionar",
+          "activeUntil": "Token activo hasta las {{time}}",
+          "dialogTitle": "Dejar que otra instancia copie esta",
+          "explain": "Con este token, la instancia a la que se lo des lee la base de datos y los archivos de esta instancia durante 24 horas o hasta que lo revoques. En esa instancia, abre Administración → Migrar, empieza Desde otra instancia de Thingport, elige En línea e indica la dirección de esta instancia y el token.",
+          "http": "A esta instancia se accede por HTTP sin cifrar, así que el token y lo que lee viajan sin cifrar. Úsalo en una red de confianza.",
+          "copy": "Copiar",
+          "copied": "Copiado",
+          "copyNow": "Cópialo ahora: no se vuelve a mostrar.",
+          "until": "Funciona hasta el {{time}}.",
+          "used": "Última lectura: {{time}}.",
+          "revoke": "Revocar",
+          "replace": "Crear uno nuevo",
+          "revokeConfirm": "¿Revocar el token? Una instancia que esté copiando esta con él se detendrá."
         }
       }
     },

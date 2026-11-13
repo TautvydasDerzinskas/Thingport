@@ -23,7 +23,7 @@ import CheckStep, { checkPassed } from "./CheckStep";
 import ComesStep, { DEFAULT_CHOICES, type Choices } from "./ComesStep";
 import { errorText, isActive, k, requestError } from "./parts";
 import PeopleStep from "./PeopleStep";
-import SourceStep, { sourceReady, type SourceInput } from "./SourceStep";
+import SourceStep, { EMPTY_SOURCE, sourceReady, type SourceInput } from "./SourceStep";
 import StartStep from "./StartStep";
 
 const STEPS = ["source", "check", "people", "comes", "start"] as const;
@@ -63,7 +63,7 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
   const phone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
   const [run, setRun] = React.useState<MigrateRun | null>(initial);
   const [step, setStep] = React.useState(() => stepFor(initial));
-  const [source, setSource] = React.useState<SourceInput>({ mode: "upload", file: null, dumpPath: "", folder: "" });
+  const [source, setSource] = React.useState<SourceInput>(EMPTY_SOURCE);
   const [uploading, setUploading] = React.useState<number | null>(null);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<MigrateRunError | null>(null);
@@ -111,9 +111,11 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
     setSending(true);
     try {
       const prepared =
-        source.mode === "upload" && source.file
-          ? await migrateApi.prepareWithUpload(source.file, source.folder.trim(), setUploading)
-          : await migrateApi.prepareWithPath(source.dumpPath.trim(), source.folder.trim());
+        source.way === "online"
+          ? await migrateApi.prepareOnline(source.address.trim(), source.token.trim())
+          : source.mode === "upload" && source.file
+            ? await migrateApi.prepareWithUpload(source.file, source.folder.trim(), setUploading)
+            : await migrateApi.prepareWithPath(source.dumpPath.trim(), source.folder.trim());
       setRun(prepared);
       setStep(1);
       onChanged();

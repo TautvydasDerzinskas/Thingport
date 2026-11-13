@@ -1490,6 +1490,9 @@ model MigrationRun {
   report      Json?
   /// Why it stopped, when it failed: { code, message }.
   error       Json?
+  /// For one copied online: the old instance's address and the token its admin made, { address, token }. Never sent
+  /// to the app; the token is dropped once the run is over.
+  remote      Json?
   /// The working copy of the old instance's database while it's kept, which a role of the same name owns.
   stagingDb   String?
   /// The admin who started it. No relation: the list keeps it after they're gone.

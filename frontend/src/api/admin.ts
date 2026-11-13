@@ -113,7 +113,10 @@ export type LogAction =
   | "federation_unblocked"
   | "federation_user_requested"
   | "migration_prepared"
-  | "migration_started";
+  | "migration_started"
+  | "migration_export_created"
+  | "migration_export_revoked"
+  | "migration_export_read";
 
 export type LogEntry = {
   id: string;

@@ -8,6 +8,8 @@ import { MigrateError } from "./errors";
 export interface SourceFiles {
   /** Whether the file is there. */
   exists(relative: string): Promise<boolean>;
+  /** Of `paths`, those that aren't there: asked in one go, for a source across the network. */
+  missing(paths: string[]): Promise<string[]>;
   /** Copies the file to `to`, an absolute path here; false when it isn't there. */
   copy(relative: string, to: string): Promise<boolean>;
   /** Copies every file under the folder to `to`, keeping their places; how many it copied. */
@@ -41,6 +43,11 @@ export async function folderSource(given: string): Promise<SourceFiles> {
 
   return {
     exists: async (relative) => (await resolve(relative)) !== null,
+    missing: async (paths) => {
+      const gone: string[] = [];
+      for (const relative of paths) if ((await resolve(relative)) === null) gone.push(relative);
+      return gone;
+    },
     copy: async (relative, to) => {
       const from = await resolve(relative);
       if (!from) return false;

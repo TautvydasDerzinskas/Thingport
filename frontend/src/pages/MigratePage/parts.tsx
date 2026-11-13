@@ -51,6 +51,12 @@ const KNOWN_ERRORS = new Set([
   "upload_failed",
   "no_people",
   "not_ready",
+  "online_address",
+  "online_unreachable",
+  "online_token",
+  "online_old",
+  "online_dump",
+  "online_lost",
 ]);
 
 /** The tools' own output, shown under the sentence for what failed. */
@@ -88,9 +94,18 @@ export function formatBytes(bytes: number): string {
 
 /** Where it came from, as its row and its dialog name it. */
 export function runTitle(t: TFunction, run: MigrateRun): string {
-  const name = run.plan.dump?.name ?? run.plan.folder;
+  const name = run.plan.address ? hostOf(run.plan.address) : (run.plan.dump?.name ?? run.plan.folder);
   if (run.plan.version) return t(k("runs.fromRelease"), { name, version: run.plan.version });
   return t(k("runs.from"), { name });
 }
 
 export const isActive = (run: MigrateRun) => run.status === "preparing" || run.status === "running";
+
+/** An address's host and port, as people name an instance. */
+function hostOf(address: string): string {
+  try {
+    return new URL(address).host;
+  } catch {
+    return address;
+  }
+}

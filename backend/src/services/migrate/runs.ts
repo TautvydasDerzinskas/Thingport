@@ -22,7 +22,8 @@ import {
   stagingName,
   upgradeStaging,
 } from "./postgres";
-import { checkDumpFile, checkFolder, folderSource } from "./sourceFiles";
+import { downloadDump, httpSource, normalizeAddress, type Remote, remoteInfo } from "./remote";
+import { checkDumpFile, checkFolder, folderSource, type SourceFiles } from "./sourceFiles";
 
 // Administration > Migrate's runs: one at a time, in the background, followed by the page. A run is prepared first --
 // the dump restored into a working copy, checked, brought up to this release and read -- and waits as "ready" for the
@@ -31,7 +32,7 @@ import { checkDumpFile, checkFolder, folderSource } from "./sourceFiles";
 const log = createLogger("migrate");
 
 export type RunStatus = "preparing" | "ready" | "running" | "done" | "failed";
-export type PrepareStep = "restoring" | "checking" | "upgrading" | "files";
+export type PrepareStep = "downloading" | "restoring" | "checking" | "upgrading" | "files";
 export type RunProgress = { step: PrepareStep | MergePhase; done: number; total: number };
 
 /** Where uploaded dumps wait while they're restored. */
@@ -142,7 +143,7 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
   };
   active = state;
   setMigrationBusy(true);
-  void prepare(state, name, input, folder, plan);
+  void prepare(state, name, { kind: "dump", file: input.file, uploaded: input.uploaded, folder }, plan);
   void createLog({
     userId: adminId,
     action: "migration_prepared",
@@ -152,18 +153,85 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
   return getRun(run.id);
 }
 
-async function prepare(
-  state: Active,
-  name: string,
-  input: DumpInput,
-  folder: string,
-  plan: MigratePlan,
-): Promise<void> {
-  let source: PrismaClient | null = null;
+/** Starts preparing a migration from another instance online, with the token its admin made there. */
+export async function prepareOnline(adminId: string, given: { address: string; token: string }): Promise<RunOut> {
+  let remote: Remote;
   try {
+    assertFree();
+    remote = { address: normalizeAddress(given.address), token: given.token.trim() };
+    if (!remote.token) {
+      throw new MigrateError("online_token", "The old instance turned the token down. Create a new one there.");
+    }
+    // Told at once: an address this server can't reach, a wrong token, or an instance without this.
+    await remoteInfo(remote);
+  } catch (err) {
+    throw asHttp(err);
+  }
+  const plan: MigratePlan = { dump: null, folder: "", address: remote.address };
+  const run = await prisma.migrationRun.create({
+    data: { source: "thingport-online", status: "preparing", plan, remote, createdById: adminId },
+  });
+  const name = stagingName(run.id);
+  await prisma.migrationRun.update({ where: { id: run.id }, data: { stagingDb: name } });
+  const state: Active = {
+    id: run.id,
+    progress: { step: "downloading", done: 0, total: 0 },
+    abort: new AbortController(),
+  };
+  active = state;
+  setMigrationBusy(true);
+  void prepare(state, name, { kind: "online", remote }, plan);
+  void createLog({
+    userId: adminId,
+    action: "migration_prepared",
+    targetId: run.id,
+    details: { address: remote.address },
+  });
+  return getRun(run.id);
+}
+
+/** Where a run's dump comes from: a file here, or the old instance online. */
+type WayIn = { kind: "dump"; file: string; uploaded: boolean; folder: string } | { kind: "online"; remote: Remote };
+
+/** The old instance's files, as the run reads them: from the folder here, or from the old instance online. */
+async function filesOf(run: Pick<MigrationRun, "source" | "plan" | "remote">): Promise<SourceFiles> {
+  if (run.source === "thingport-online") {
+    const remote = run.remote as Remote | null;
+    if (!remote?.token) {
+      throw new MigrateError("online_token", "The old instance turned the token down. Create a new one there.");
+    }
+    return httpSource(remote);
+  }
+  return folderSource((run.plan as MigratePlan).folder);
+}
+
+async function prepare(state: Active, name: string, way: WayIn, plan: MigratePlan): Promise<void> {
+  let source: PrismaClient | null = null;
+  // A dump that's this run's own to remove afterwards: an upload, or one downloaded.
+  let ownDump: string | null = way.kind === "dump" && way.uploaded ? way.file : null;
+  try {
+    let file: string;
+    if (way.kind === "online") {
+      file = path.join(UPLOADS, `${state.id}.dump`);
+      ownDump = file;
+      await downloadDump(
+        way.remote,
+        file,
+        (bytes) => {
+          state.progress = { step: "downloading", done: bytes, total: 0 };
+        },
+        state.abort.signal,
+      );
+      if ((await dumpFormat(file)) !== "custom") {
+        throw new MigrateError("online_dump", "The old instance's dump didn't come as a pg_dump archive.");
+      }
+    } else {
+      file = way.file;
+    }
+    state.progress = { step: "restoring", done: 0, total: 0 };
     await createStaging(name);
-    await restoreDump(input.file, name, state.abort.signal);
-    if (input.uploaded) await fs.rm(input.file, { force: true }).catch(() => undefined);
+    await restoreDump(file, name, state.abort.signal);
+    if (ownDump) await fs.rm(ownDump, { force: true }).catch(() => undefined);
     state.progress = { step: "checking", done: 0, total: 0 };
     source = stagingClient(name);
     const history = await readSourceHistory(source);
@@ -173,7 +241,8 @@ async function prepare(
     if (history.missing) await upgradeStaging(name, state.abort.signal);
     state.progress = { step: "files", done: 0, total: 0 };
     source = stagingClient(name);
-    const found = await readPlan(source, await folderSource(folder), (done, total) => {
+    const files = way.kind === "online" ? httpSource(way.remote) : await folderSource(way.folder);
+    const found = await readPlan(source, files, (done, total) => {
       state.progress = { step: "files", done, total };
     });
     if (state.abort.signal.aborted) throw new Error("discarded");
@@ -193,7 +262,7 @@ async function prepare(
     await source?.$disconnect().catch(() => undefined);
     source = null;
     await dropStaging(name).catch((dropErr) => log.warn("couldn't drop a working copy", { name, error: dropErr }));
-    if (input.uploaded) await fs.rm(input.file, { force: true }).catch(() => undefined);
+    if (ownDump) await fs.rm(ownDump, { force: true }).catch(() => undefined);
     if (state.abort.signal.aborted) {
       // The admin discarded it while it was being prepared.
       await prisma.migrationRun.deleteMany({ where: { id: state.id } });
@@ -201,7 +270,14 @@ async function prepare(
       log.warn("preparing a migration failed", { error: err });
       await prisma.migrationRun.update({
         where: { id: state.id },
-        data: { status: "failed", error: storedError(err), stagingDb: null, finishedAt: new Date() },
+        // The token isn't needed any more.
+        data: {
+          status: "failed",
+          error: storedError(err),
+          stagingDb: null,
+          finishedAt: new Date(),
+          ...(way.kind === "online" ? { remote: { address: way.remote.address } } : {}),
+        },
       });
     }
   } finally {
@@ -233,7 +309,7 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
   const state: Active = { id, progress: { step: "people", done: 0, total: 0 }, abort: new AbortController() };
   active = state;
   setMigrationBusy(true);
-  void execute(state, run.stagingDb, plan, chosen, adminId);
+  void execute(state, run.stagingDb, run, chosen, adminId);
   void createLog({
     userId: adminId,
     action: "migration_started",
@@ -243,11 +319,11 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
   return getRun(id);
 }
 
-async function execute(state: Active, name: string, plan: MigratePlan, options: MigrateOptions, adminId: string) {
+async function execute(state: Active, name: string, run: MigrationRun, options: MigrateOptions, adminId: string) {
   const source = stagingClient(name);
   let merge: Merge | null = null;
   try {
-    merge = new Merge(source, await folderSource(plan.folder), state.id, options, (progress) => {
+    merge = new Merge(source, await filesOf(run), state.id, options, (progress) => {
       state.progress = { step: progress.phase, done: progress.done, total: progress.total };
     });
     const report = await merge.run();
@@ -255,7 +331,14 @@ async function execute(state: Active, name: string, plan: MigratePlan, options: 
     await dropStaging(name).catch((err) => log.warn("couldn't drop a working copy", { name, error: err }));
     await prisma.migrationRun.update({
       where: { id: state.id },
-      data: { status: "done", report, stagingDb: null, finishedAt: new Date() },
+      // An online run's token isn't needed any more.
+      data: {
+        status: "done",
+        report,
+        stagingDb: null,
+        finishedAt: new Date(),
+        ...(run.remote ? { remote: { address: (run.remote as Remote).address } } : {}),
+      },
     });
     const people = options.people.length;
     await createNotification(adminId, {
@@ -297,8 +380,9 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
   assertFree();
   const run = await prisma.migrationRun.findUnique({ where: { id } });
   if (!run) throw new HttpError(404, "No such migration");
-  if (run.status !== "ready" || !run.stagingDb)
+  if (run.status !== "ready" || !run.stagingDb || run.source !== "thingport") {
     throw new HttpError(409, "This migration can't change now.", "not_ready");
+  }
   let folder: string;
   try {
     folder = await checkFolder(given);

@@ -30,7 +30,10 @@ export type MigrateCounts = {
 /** What a migration was given, and what its check found once it's ready. */
 export type MigratePlan = {
   dump: { name: string; size: number } | null;
+  /** The old instance's storage folder here; empty for one copied online. */
   folder: string;
+  /** The old instance's address, for one copied online. */
+  address?: string;
   /** The release the old instance last ran; null for one before 1.2.0, which didn't say. */
   version?: string | null;
   changes?: { applied: number; added: number };
@@ -78,13 +81,22 @@ export type MigrateReport = {
 };
 
 export type MigrateStep =
-  "restoring" | "checking" | "upgrading" | "files" | "people" | "models" | "collections" | "extras" | "filing";
+  | "downloading"
+  | "restoring"
+  | "checking"
+  | "upgrading"
+  | "files"
+  | "people"
+  | "models"
+  | "collections"
+  | "extras"
+  | "filing";
 
 export type MigrateRunError = { code: string; message: string; values?: Record<string, string | number> };
 
 export type MigrateRun = {
   id: string;
-  source: "thingport";
+  source: "thingport" | "thingport-online";
   status: "preparing" | "ready" | "running" | "done" | "failed";
   plan: MigratePlan;
   options: MigrateOptions | null;
@@ -98,6 +110,9 @@ export type MigrateRun = {
   started_at: string | null;
   finished_at: string | null;
 };
+
+/** Whether another instance can copy this one now, and when it last did. */
+export type ExportToken = { active: boolean; expires_at: string | null; used_at: string | null };
 
 /** The server's reason, by a code the page translates (adminSettings.migrate.errors.<code>). */
 export class MigrateApiError extends Error {
@@ -173,6 +188,23 @@ export const migrateApi = {
       { method: "POST", body: JSON.stringify({ dump_path: dumpPath, folder }) },
       "Couldn't read the dump",
     ),
+
+  /** From another Thingport instance online, with the token its admin made there. */
+  prepareOnline: (address: string, token: string): Promise<MigrateRun> =>
+    send(
+      "/thingport-online",
+      { method: "POST", body: JSON.stringify({ address, token }) },
+      "Couldn't reach the old instance",
+    ),
+
+  /** The token that lets another instance copy this one, while there is one. */
+  exportToken: (): Promise<ExportToken> => send("/export-token", { method: "GET" }, "Couldn't load the token"),
+
+  /** A new token, replacing any other: its value comes only now. */
+  createExportToken: (): Promise<{ token: string; expires_at: string }> =>
+    send("/export-token", { method: "POST" }, "Couldn't create a token"),
+
+  revokeExportToken: (): Promise<void> => send("/export-token", { method: "DELETE" }, "Couldn't revoke the token"),
 
   start: (id: string, options: MigrateOptions): Promise<MigrateRun> =>
     send(`/${encodeURIComponent(id)}/start`, { method: "POST", body: JSON.stringify(options) }, "Couldn't start it"),

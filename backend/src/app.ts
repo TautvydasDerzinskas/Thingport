@@ -43,6 +43,7 @@ import widgetRoutes from "./routes/widgets";
 import toolRoutes from "./routes/tools";
 import studioRoutes from "./routes/studio";
 import { toolLocks } from "./routes/toolLocks";
+import migrateExportRoutes from "./routes/migrateExport";
 import activityRoutes from "./routes/activity";
 import aiCategorizationRoutes from "./routes/aiCategorization";
 import aiDescriptionRoutes from "./routes/aiDescriptions";
@@ -63,6 +64,8 @@ export function createApp(): Express {
   app.use("/api/ap", apRoutes);
 
   app.use(pathToken);
+  // Another instance copying this one online, with a migration token: it reads its own body, after the token.
+  app.use("/api/migrate-export", migrateExportRoutes);
   // A widget's script, HTML and fetch body are larger than the default 100 kB; their own validation sets the limits.
   app.use("/api/widgets", express.json({ limit: "8mb" }));
   // A tool's script and the values it keeps.
