@@ -9,7 +9,8 @@ export type SignAnswer = { code: number | null; message: string | null; data: un
 /** Runs in the page itself (world: "MAIN"), where MakerOnline's script is, so it must stand on its own. Asks the
  *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
  *  from its anti-bot script. Where the site asks for a puzzle first and `puzzleMs` allows, it shows the site's own,
- *  as its Download does, and asks again with the answer; `puzzleMs` is how long the user has to solve it. */
+ *  as its Download does, and asks again with the answer; `puzzleMs` is how long the user has to solve it. Ends at the
+ *  first file it doesn't hand over, whose answer is the last one returned. */
 export async function signInPage(
   requests: DownloadRequest[],
   gapMs: number,
@@ -23,7 +24,8 @@ export async function signInPage(
       $nuxt?: { $ensureNeg?: () => Promise<Neg>; $initCaptcha?: (level: number) => Promise<unknown> };
     }
   ).$nuxt;
-  // Its answer when it wants a puzzle solved first, and how many it may show for one file.
+  // Its answer when it hands a file over, when it wants a puzzle solved first, and how many it may show for one file.
+  const OK = 0;
   const PUZZLE = 1003;
   const MAX_PUZZLES = 2;
   let neg: Neg | null = null;
@@ -105,6 +107,8 @@ export async function signInPage(
       answer = await ask(request, { validate, level });
     }
     answers.push(answer);
+    // The import stops at the first file it can't get, so the rest aren't asked for, nor puzzles shown for them.
+    if (answer.code !== OK) break;
   }
   return answers;
 }

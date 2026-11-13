@@ -100,4 +100,41 @@ describe("MakerOnline's download call, made in its page", () => {
     expect(asks).toHaveLength(3);
     expect(answer.code).toBe(1003);
   });
+
+  const SECOND: DownloadRequest = { ...REQUEST, name: "Ace overhead 3.3mf", profile_id: "8" };
+
+  it("asks for each file in turn", async () => {
+    page();
+    const asks = api(SIGNED);
+    const answers = await signInPage([REQUEST, SECOND], 0, "mo_access_token", HOSTS, 1000);
+    expect(answers.map((answer) => answer.code)).toEqual([0, 0]);
+    expect(asks).toHaveLength(2);
+  });
+
+  it("stops at a file whose puzzle wasn't solved, asking for no more files and showing no more puzzles", async () => {
+    const nuxt = page(() => new Promise(() => undefined));
+    const asks = api(PUZZLE, SIGNED);
+    const answers = await signInPage([REQUEST, SECOND], 0, "mo_access_token", HOSTS, 20);
+    expect(answers).toHaveLength(1);
+    expect(answers[0]).toMatchObject({ code: 1003, unsolved: true });
+    expect(nuxt.$initCaptcha).toHaveBeenCalledTimes(1);
+    expect(asks).toHaveLength(1);
+  });
+
+  it("stops at a file still wanting a puzzle after two", async () => {
+    const nuxt = page(async (level) => `solved-${level}`);
+    const asks = api(PUZZLE);
+    const answers = await signInPage([REQUEST, SECOND], 0, "mo_access_token", HOSTS, 1000);
+    expect(answers).toHaveLength(1);
+    expect(nuxt.$initCaptcha).toHaveBeenCalledTimes(2);
+    expect(asks).toHaveLength(3);
+  });
+
+  it("stops at a file it isn't handed, as when signed out", async () => {
+    page();
+    const asks = api({ code: -1, message: "Please sign in", data: null }, SIGNED);
+    const answers = await signInPage([REQUEST, SECOND], 0, "mo_access_token", HOSTS, 1000);
+    expect(answers).toEqual([{ code: -1, message: "Please sign in", data: null }]);
+    expect(asks).toHaveLength(1);
+  });
 });
