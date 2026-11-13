@@ -165,6 +165,34 @@
   --nd-line: 1px;
 }
 
+// QIDI Maker's: its blue, text a shade darker so it reads on white, Open Sans and the 6px corners of its own Open in
+// QIDI Studio. Its dark theme is near-black, with menus a step lighter.
+:host([data-site="qidimaker"]) {
+  --nd-accent: #4479fb;
+  --nd-text: #2f62e0;
+  --nd-hover: rgba(68, 121, 251, 0.08);
+  --nd-surface: #ffffff;
+  --nd-border: #f0f0f0;
+  --nd-ink: rgba(0, 0, 0, 0.88);
+  --nd-muted: rgba(0, 0, 0, 0.45);
+  --nd-row-hover: rgba(0, 0, 0, 0.04);
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --nd-radius: 6px;
+  --nd-line: 1px;
+}
+
+:host([data-site="qidimaker"][data-dark]) {
+  --nd-text: #7ea3ff;
+  --nd-hover: rgba(68, 121, 251, 0.14);
+  --nd-surface: #2e2e2e;
+  --nd-border: #424242;
+  --nd-ink: rgba(255, 255, 255, 0.85);
+  --nd-muted: rgba(255, 255, 255, 0.45);
+  --nd-row-hover: rgba(255, 255, 255, 0.08);
+  --nd-shadow: rgba(0, 0, 0, 0.5);
+}
+
 // Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one. Its spacing is set on the host
 // itself (site.ts placeAfter), where a page's reset can't undo it.
 :host([data-below]) {

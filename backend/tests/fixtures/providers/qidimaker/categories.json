@@ -1,0 +1,73 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "id": "1985611396065067009",
+      "classifyName": "3D Printer",
+      "classifyNameEn": null,
+      "classifySort": 1,
+      "classifyUrl": "https://public-cdn.qidimaker.com/model/sliceClassifyPicture/kpfdnmdf1q/1769051079784.png",
+      "sliceClassifyVOList": [
+        {
+          "id": "1985613162231930881",
+          "classifyName": "3D Printer Accessories",
+          "classifyPid": 1985611396065067009,
+          "classifySort": 0
+        },
+        {
+          "id": "1985613209887612930",
+          "classifyName": "3D Printer Parts",
+          "classifyPid": 1985611396065067009,
+          "classifySort": 0
+        },
+        {
+          "id": "2034573253480591361",
+          "classifyName": "Test Models",
+          "classifyPid": 1985611396065067009,
+          "classifySort": 1
+        }
+      ]
+    },
+    {
+      "id": "1985612058672824321",
+      "classifyName": "Art",
+      "classifyNameEn": null,
+      "classifySort": 2,
+      "classifyUrl": "https://public-cdn.qidimaker.com/model/sliceClassifyPicture/2rf0szw9zv/1769051096985.png",
+      "sliceClassifyVOList": [
+        {
+          "id": "1985613281576656898",
+          "classifyName": "2D Art",
+          "classifyPid": 1985612058672824321,
+          "classifySort": 0
+        },
+        {
+          "id": "1985613340498239489",
+          "classifyName": "Coin & Badges",
+          "classifyPid": 1985612058672824321,
+          "classifySort": 1
+        },
+        {
+          "id": "1985613385058525186",
+          "classifyName": "Sculptures",
+          "classifyPid": 1985612058672824321,
+          "classifySort": 2
+        },
+        {
+          "id": "2034573466425405442",
+          "classifyName": "Other Art Models",
+          "classifyPid": 1985612058672824321,
+          "classifySort": 3
+        },
+        {
+          "id": "2034573769094770690",
+          "classifyName": "Signs & Logos",
+          "classifyPid": 1985612058672824321,
+          "classifySort": 4
+        }
+      ]
+    }
+  ],
+  "timestamp": 1794600000000
+}

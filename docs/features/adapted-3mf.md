@@ -108,7 +108,7 @@ The [MakerWorld 3MF normalizer](../../tools/makerworld-3mf-normalizer) tool make
 ## Without Thingport
 
 [Thingport Grab](../../extension/README.md), the browser extension, makes the same copies of a MakerWorld, Printables,
-Creality Cloud, Snapmaker Space, NexPrint, MakerOnline or eufyMake model in your browser with its **Download adapted**
+Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake or QIDI Maker model in your browser with its **Download adapted**
 button, for your slicers and printers, with the printers' presets
 from the list it carries. Without an instance, you pick them in its popup (Adapt 3MFs' settings); connected, they're
 your Thingport instance's slicers and printers, as it last said them while it can't be reached, and a slicer whose

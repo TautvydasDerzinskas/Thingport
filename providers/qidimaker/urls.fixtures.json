@@ -1,0 +1,107 @@
+[
+  {
+    "url": "https://www.qidimaker.com/en/models/detail/2077275848848752642",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2077275848848752642"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/models/detail/2094485343639777281?profile_id=2094485346244440065",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2094485343639777281",
+      "requestedProfileId": "2094485346244440065"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/zh-TW/models/detail/2077275848848752642/",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2077275848848752642"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/models/detail/2077275848848752642",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2077275848848752642"
+    }
+  },
+  {
+    "url": "https://qidimaker.com/de/studio/models/detail/2094485343639777281?profile_id=2094485346244440065#profileId-2094487632165285889",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2094485343639777281",
+      "requestedProfileId": "2094487632165285889"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/models/detail/2077275848848752642?profile_id=abc",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2077275848848752642"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/collections/detail/2119450902810669058",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "list",
+      "externalId": "2119450902810669058",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/fr/studio/collections/detail/2119450902810669058?from=search",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "list",
+      "externalId": "2119450902810669058",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/my/collections/detail?type=1",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "list",
+      "externalId": "likes",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/my/collections/detail?type=2",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/my/models/2064972194007531521",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/models/profile?id=2077275848848752642&profile_id=2077275848987164673",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.notqidimaker.com/en/models/detail/2077275848848752642",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  }
+]

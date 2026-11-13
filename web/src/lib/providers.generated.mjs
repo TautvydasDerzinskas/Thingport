@@ -182,6 +182,15 @@ export const PROVIDER_DOCS = [
     description:
       "Import 3DExport's free 3D print models and the ones you bought, and your own or anyone's public collections, with your own sign-in.",
   },
+  {
+    slug: "providers/qidimaker",
+    source: "docs/providers/qidimaker.md",
+    group: "Providers",
+    title: "QIDI Maker",
+    nav: "QIDI Maker",
+    description:
+      "Import models from QIDI Maker with their QIDI Studio print profiles, anyone's public collections, and your own collections and likes with your sign-in.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -678,6 +687,29 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "qidimaker",
+    accent: "#4479FB",
+    highlight: {
+      title: "QIDI Studio profiles, for any printer",
+      text: "Each print profile is a QIDI Studio project and comes in as a plate of its own. On the model's page, Thingport Grab's Download adapted makes a copy of the picked profile for your slicer and printer.",
+      link: "features/adapted-3mf#without-thingport",
+    },
+    facts: {
+      signIn: "userOptional",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: true,
+      likes: true,
+      sync: true,
+      profiles: true,
+      slicers: ["QIDI Studio"],
+      adaptedCopies: true,
+      trending: "trending",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -958,6 +990,19 @@ export const PROVIDER_COMPARISON = {
         { yes: false },
         { yes: true },
         { yes: false },
+      ],
+    },
+    {
+      docsSlug: "qidimaker",
+      name: "QIDI Maker",
+      cells: [
+        { text: "Yours, for your collections and likes" },
+        { need: "recommended" },
+        { need: "none" },
+        { yes: true },
+        { yes: true },
+        { yes: true },
+        { yes: true },
       ],
     },
   ],

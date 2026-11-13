@@ -50,6 +50,7 @@ body:
         - PIXUP
         - Fab365
         - 3DExport
+        - QIDI Maker
         # /providers:bug-form
   - type: input
     id: backend_version

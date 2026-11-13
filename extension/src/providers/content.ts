@@ -14,6 +14,7 @@ import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
 import { loadEufymakeProfiles } from "./eufymake/content";
 import { loadNexprintProfiles } from "./nexprint/content";
+import { loadQidimakerProfileIds } from "./qidimaker/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
 
@@ -179,6 +180,17 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       return isUnboughtThreedexportModel(url)
         ? { title: "Paid model", hint: "Buy it on 3DExport first. Once it's yours, Thingport imports it." }
         : null;
+    },
+  },
+  // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and
+  // their private collections their own too, read with their sign-in. Its links name a print profile by ?profile_id=.
+  qidimaker: {
+    loadProfiles: loadQidimakerProfileIds,
+    profileUrl(url, profileId) {
+      const named = new URL(url);
+      named.hash = "";
+      named.searchParams.set("profile_id", profileId);
+      return named.toString();
     },
   },
 };

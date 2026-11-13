@@ -21,6 +21,7 @@ import { meshySession } from "./meshy/session";
 import { pixup3dSession } from "./pixup3d/session";
 import { fab365Session } from "./fab365/session";
 import { threedexportSession } from "./threedexport/session";
+import { qidimakerSession } from "./qidimaker/session";
 
 export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   myminifactory: myminifactorySession,
@@ -40,4 +41,5 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   pixup3d: pixup3dSession,
   fab365: fab365Session,
   threedexport: threedexportSession,
+  qidimaker: qidimakerSession,
 };

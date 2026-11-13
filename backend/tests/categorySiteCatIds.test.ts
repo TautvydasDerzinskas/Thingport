@@ -140,6 +140,23 @@ describe("PATCH /category/:id/meta -- multi-value category ids", () => {
     expect(res.body.thangs_cat_ids).toBe("Toys & Games/Puzzles;Art");
     expect(res.body.nexprint_cat_ids).toBe("1422473859022863");
   });
+
+  it("keeps QIDI Maker's 19-digit ids digit for digit, past what a number holds", async () => {
+    const categoryId = await createCategory("Long Ids Category");
+    const res = await request(app)
+      .patch(`/api/category/${categoryId}/meta`)
+      .set(auth())
+      .send({ qidimaker_cat_ids: "1985613162231930881;01985611396065067009;1985613162231930881" });
+    expect(res.status).toBe(200);
+    expect(res.body.qidimaker_cat_ids).toBe("1985613162231930881;1985611396065067009");
+    expect(await storedIds(categoryId, "qidimaker")).toEqual(["1985613162231930881", "1985611396065067009"]);
+
+    const tooLong = await request(app)
+      .patch(`/api/category/${categoryId}/meta`)
+      .set(auth())
+      .send({ qidimaker_cat_ids: "123456789012345678901" });
+    expect(tooLong.status).toBe(400);
+  });
 });
 
 describe("resolveCategoryIdByCategory -- the most specific site category wins", () => {

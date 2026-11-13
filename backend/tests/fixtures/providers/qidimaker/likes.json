@@ -1,0 +1,251 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "records": [
+      {
+        "id": "2066722423216062465",
+        "collectId": "2120835072389591042",
+        "userId": "10000000000000000010",
+        "classifyId": "1985618909007273986",
+        "tags": [],
+        "translatedTags": [],
+        "modelName": "Low Poly Dachshund Dog",
+        "translatedModelName": "Low Poly Dachshund Dog",
+        "modelDescription": "<h2 style=\"text-align: start;\">Low Poly Dachshund Dog 🐶</h2><p style=\"text-align: start;\">A cute low-poly dachshund designed specifically for clean, reliable 3D printing. The geometric faceted style g",
+        "translatedModelDescription": "<h2 style=\"text-align: start;\">Low Poly Dachshund Dog 🐶</h2><p style=\"text-align: start;\">A cute low-poly dachshund designed specifically for clean, reliable 3D printing. The geometric faceted style g",
+        "modelUrl": "https://public-cdn.qidimaker.com/community/models/stl/2066722423216062465/all_stls.zip",
+        "modelPrintConfiguration": "[Q2, X_PLUS4, X_MAX4, X_PLUS5]",
+        "modelUpvote": 5,
+        "modelCollect": 6,
+        "modelAssistance": null,
+        "modelDownloads": 18,
+        "modelPrint": 5,
+        "exclusive": null,
+        "publishTime": "2026-06-16 04:20:55",
+        "modelResource": "original",
+        "license": "CC0",
+        "secondaryCreationUrl": "",
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260616/olrxmvaf4h/2026-06-16_539171369ab388.png",
+        "modelPictureApp": "",
+        "adaptedShared": 0,
+        "commercialUse": 0,
+        "redistribute": 0,
+        "attributionShare": 0,
+        "updateTime": null,
+        "visibility": 0,
+        "status": 3,
+        "modelDisplay": null,
+        "displayOrder": null,
+        "recommend": null,
+        "failureReason": null,
+        "translatedFailureReason": null,
+        "uploadType": null,
+        "liked": false,
+        "collected": false,
+        "isSelf": false,
+        "reviewCount": 0,
+        "lookCount": null,
+        "modelConfigurationCount": null,
+        "sliceModelUserVO": {
+          "userId": "10000000000000000012",
+          "uuidName": "user_00000000012",
+          "nickname": "Maker 12",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-12.png",
+          "level": 10,
+          "fans": 48,
+          "likes": 278,
+          "modelNumber": 133,
+          "modelDisplayVo": []
+        },
+        "sliceClassifyListVO": {
+          "id": "1985618258235867137",
+          "classifyName": "Microscopic model",
+          "classifyNameEn": null,
+          "classifySort": 6,
+          "classifyUrl": null,
+          "sliceClassifyVOList": [
+            {
+              "id": "1985618909007273986",
+              "classifyName": "Animals",
+              "classifyPid": 1985618258235867137,
+              "classifySort": 0
+            }
+          ]
+        },
+        "sliceModelPictureUrlVO": []
+      },
+      {
+        "id": "2087143752360574978",
+        "collectId": "2120829621908320257",
+        "userId": "10000000000000000010",
+        "classifyId": "1985613162231930881",
+        "tags": [],
+        "translatedTags": ["tpu", "extruder"],
+        "modelName": "QiDi Q2 TPU fixer",
+        "translatedModelName": "QiDi Q2 TPU fastener",
+        "modelDescription": "<p>Spacer for stable TPU printing for the QiDi Q2.<br>In the stock setup, there is a 2.6–2.7 mm gap between the front wall of the feeder housing and the drive gears, where soft TPU filament can someti",
+        "translatedModelDescription": "<p>Spacer for stable TPU printing for the QiDi Q2.<br>In the stock setup, there is a 2.6–2.7 mm gap between the front wall of the feeder housing and the drive gears, where soft TPU filament can someti",
+        "modelUrl": "https://public-cdn.qidimaker.com/community/models/stl/2087143752360574978/all_stls.zip",
+        "modelPrintConfiguration": "[Q2, Q2C, X_PLUS4, X_MAX4, X_PLUS5]",
+        "modelUpvote": 50,
+        "modelCollect": 113,
+        "modelAssistance": null,
+        "modelDownloads": 95,
+        "modelPrint": 0,
+        "exclusive": null,
+        "publishTime": "2026-08-11 17:08:45",
+        "modelResource": "derivative",
+        "license": "CC0",
+        "secondaryCreationUrl": "https://www.printables.com/model/1491712-qidi-q2-tpu-fixer#preview.F3rj5",
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260811/eswdg3tn0e/2026-08-11_d482a4c96dc033.jpg",
+        "modelPictureApp": "https://maker-cdn.qidimaker.com/model/picture/20260811/4vn5jc6n5n/2026-08-11_7bf8e7717c01a0.jpg",
+        "adaptedShared": 0,
+        "commercialUse": 0,
+        "redistribute": 0,
+        "attributionShare": 0,
+        "updateTime": null,
+        "visibility": 0,
+        "status": 3,
+        "modelDisplay": null,
+        "displayOrder": null,
+        "recommend": null,
+        "failureReason": null,
+        "translatedFailureReason": null,
+        "uploadType": null,
+        "liked": false,
+        "collected": false,
+        "isSelf": false,
+        "reviewCount": 2,
+        "lookCount": null,
+        "modelConfigurationCount": null,
+        "sliceModelUserVO": {
+          "userId": "1000000000000000002",
+          "uuidName": "user_0000000002",
+          "nickname": "Maker 2",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-2.png",
+          "level": 13,
+          "fans": 73,
+          "likes": 517,
+          "modelNumber": 167,
+          "modelDisplayVo": []
+        },
+        "sliceClassifyListVO": {
+          "id": "1985611396065067009",
+          "classifyName": "3D Printer",
+          "classifyNameEn": null,
+          "classifySort": 1,
+          "classifyUrl": null,
+          "sliceClassifyVOList": [
+            {
+              "id": "1985613162231930881",
+              "classifyName": "3D Printer Accessories",
+              "classifyPid": 1985611396065067009,
+              "classifySort": 0
+            }
+          ]
+        },
+        "sliceModelPictureUrlVO": [
+          {
+            "associationId": "2087143752360574978",
+            "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260811/sm02kgzn82/2026-08-11_e7850303c8f1d1.png"
+          }
+        ]
+      },
+      {
+        "id": "2089830911530577921",
+        "collectId": "2120829094495563777",
+        "userId": "10000000000000000010",
+        "classifyId": "1985613162231930881",
+        "tags": [],
+        "translatedTags": ["BOX", "Qidi", "quidi box", "qidi tool box"],
+        "modelName": "QIDI Modular Tool Box – 3D Printable Organizer",
+        "translatedModelName": "QIDI Modular Tool Box – 3D Printable Organizer",
+        "modelDescription": "<p>Give your <strong>QIDI 3D printer</strong> a toolbox that looks as good as it works! 🚀 This <strong>3D printable tool box</strong> combines a sleek QIDI-inspired design with practical modular stora",
+        "translatedModelDescription": "<p>Give your <strong>QIDI 3D printer</strong> a toolbox that looks as good as it works! 🚀 This <strong>3D printable tool box</strong> combines a sleek QIDI-inspired design with practical modular stora",
+        "modelUrl": "",
+        "modelPrintConfiguration": "[Q2, Q2C, X_PLUS4, X_MAX4, X_PLUS5]",
+        "modelUpvote": 107,
+        "modelCollect": 207,
+        "modelAssistance": null,
+        "modelDownloads": 514,
+        "modelPrint": 47,
+        "exclusive": null,
+        "publishTime": "2026-08-19 16:20:59",
+        "modelResource": "original",
+        "license": "STANDARD",
+        "secondaryCreationUrl": "",
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260818/sajefp3bnm/2026-08-18_3650c857c03c8d.png",
+        "modelPictureApp": "",
+        "adaptedShared": 1,
+        "commercialUse": 1,
+        "redistribute": 1,
+        "attributionShare": 1,
+        "updateTime": null,
+        "visibility": 0,
+        "status": 3,
+        "modelDisplay": null,
+        "displayOrder": null,
+        "recommend": null,
+        "failureReason": null,
+        "translatedFailureReason": null,
+        "uploadType": null,
+        "liked": false,
+        "collected": false,
+        "isSelf": false,
+        "reviewCount": 0,
+        "lookCount": null,
+        "modelConfigurationCount": null,
+        "sliceModelUserVO": {
+          "userId": "10000000000000000013",
+          "uuidName": "user_00000000013",
+          "nickname": "Maker 13",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-13.png",
+          "level": 8,
+          "fans": 45,
+          "likes": 132,
+          "modelNumber": 5,
+          "modelDisplayVo": []
+        },
+        "sliceClassifyListVO": {
+          "id": "1985611396065067009",
+          "classifyName": "3D Printer",
+          "classifyNameEn": null,
+          "classifySort": 1,
+          "classifyUrl": null,
+          "sliceClassifyVOList": [
+            {
+              "id": "1985613162231930881",
+              "classifyName": "3D Printer Accessories",
+              "classifyPid": 1985611396065067009,
+              "classifySort": 0
+            }
+          ]
+        },
+        "sliceModelPictureUrlVO": [
+          {
+            "associationId": "2089830911530577921",
+            "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260818/0ajg3tu0ud/2026-08-18_8b23aa0562a9a1.png"
+          },
+          {
+            "associationId": "2089830911530577921",
+            "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260818/r9otn7r0sp/2026-08-18_f818b4fe998459.png"
+          },
+          {
+            "associationId": "2089830911530577921",
+            "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260818/tlszwljqdb/2026-08-18_877d5965ab40e5.png"
+          },
+          {
+            "associationId": "2089830911530577921",
+            "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260818/s4muxg8ukz/2026-08-18_a43c69c0cd8730.png"
+          }
+        ]
+      }
+    ],
+    "total": 3,
+    "size": 100,
+    "current": 1,
+    "pages": 1
+  },
+  "timestamp": 1794600000000
+}

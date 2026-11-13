@@ -8,6 +8,7 @@ import { MAKERONLINE_ADAPT } from "../../providers/makeronline/adaptSite";
 import { MAKERWORLD_ADAPT } from "../../providers/makerworld/adaptSite";
 import { NEXPRINT_ADAPT } from "../../providers/nexprint/adaptSite";
 import { PRINTABLES_ADAPT } from "../../providers/printables/adaptSite";
+import { QIDIMAKER_ADAPT } from "../../providers/qidimaker/adaptSite";
 import { SNAPMAKER_ADAPT } from "../../providers/snapmaker/adaptSite";
 import type { AdaptSite } from "./site";
 
@@ -19,4 +20,5 @@ export const ADAPT_SITES: Partial<Record<ProviderId, AdaptSite>> = {
   nexprint: NEXPRINT_ADAPT,
   makeronline: MAKERONLINE_ADAPT,
   eufymake: EUFYMAKE_ADAPT,
+  qidimaker: QIDIMAKER_ADAPT,
 };
