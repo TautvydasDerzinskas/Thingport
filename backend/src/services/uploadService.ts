@@ -154,11 +154,14 @@ async function addFilesTo(
 }
 
 /** Adds pictures to a model's gallery; the first that decodes becomes its cover in place of our render. Undecodable
- *  ones are skipped. Returns the added ones' ids. */
-export async function addUploadedPreviewImages(printId: string, buffers: Buffer[]): Promise<string[]> {
+ *  ones are skipped. Returns the added ones' ids. An async iterable is read one picture at a time. */
+export async function addUploadedPreviewImages(
+  printId: string,
+  buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
+): Promise<string[]> {
   const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
   const added: string[] = [];
-  for (const buffer of buffers) {
+  for await (const buffer of buffers) {
     const image = await addPreviewImage(printId, buffer, { keepExif: true });
     if (!image) continue;
     if (!added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);

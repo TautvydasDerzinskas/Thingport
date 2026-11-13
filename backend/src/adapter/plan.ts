@@ -99,7 +99,11 @@ export function planAdaptation(
   if (slicer.reads === "prusa") return { output: "prusa" };
   if (slicer.reads === "cura") return { output: "cura" };
 
-  const forPrinter = printer && slicer.targetsPrinter && !madeFor(format.printer, printer) ? printer : null;
+  // A slicer with a tag of its own opens another app's project on the printer selected in it, even one naming the
+  // user's printer, so only a project under its own tag is left as made for that printer.
+  const ownProject = !slicer.ownTag || format.app === slicer.ownTag.split("-")[0];
+  const forPrinter =
+    printer && slicer.targetsPrinter && !(ownProject && madeFor(format.printer, printer)) ? printer : null;
   const dropOrcaTag = !orcaTagQuiet(format, slicer);
   const retag = !slicer.asksForPrinter && (!ownedBy(format, slicer) || !quietFor(format, slicer) || dropOrcaTag);
   const dialect = slicer.dialect && format.dialect && format.dialect !== slicer.dialect ? slicer.dialect : null;

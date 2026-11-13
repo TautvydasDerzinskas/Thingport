@@ -26,7 +26,9 @@ ENV GIT_SHA=$GIT_SHA
 # "dev" for the :dev image built from develop, so the update checker compares against develop instead of main.
 ARG RELEASE_CHANNEL=stable
 ENV RELEASE_CHANNEL=$RELEASE_CHANNEL
-RUN apk add --no-cache openssl su-exec
+# pg_restore, for Administration > Migrate to restore another instance's database dump: the newest client reads the
+# dumps of every Postgres version before it.
+RUN apk add --no-cache openssl su-exec postgresql18-client
 WORKDIR /app
 
 COPY --from=dependencies /app/node_modules ./node_modules

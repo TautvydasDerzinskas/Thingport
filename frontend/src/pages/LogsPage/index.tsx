@@ -99,6 +99,11 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   federation_blocked: "error",
   federation_unblocked: "default",
   federation_user_requested: "info",
+  migration_prepared: "default",
+  migration_started: "warning",
+  migration_export_created: "warning",
+  migration_export_revoked: "default",
+  migration_export_read: "warning",
 };
 
 function isoDateOnly(d: Date): string {
@@ -228,6 +233,11 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.origin === "string" ? d.origin : "";
       case "federation_user_requested":
         return typeof d.handle === "string" ? d.handle : "";
+      case "migration_prepared":
+        return typeof d.dump === "string" ? d.dump : typeof d.address === "string" ? d.address : "";
+      case "migration_started":
+        if (d.source === "manyfold") return t("adminSettings.logs.migrationManyfold");
+        return typeof d.people === "number" ? t("adminSettings.logs.migrationPeople", { count: d.people }) : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",
