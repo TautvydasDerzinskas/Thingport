@@ -41,16 +41,16 @@ Fab365 and 3DExport.
   <img src="../../frontend/src/assets/screenshots/light/50_model_print_profiles.png" alt="A model's print profiles as picture tiles, the picked one with its print time, filament, plates, printer and settings" width="100%">
 </picture>
 
-- Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
-  the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the
-  model. Ones left out, or that failed, can be added later: while the model in your library lacks any of the page's
-  profiles, Thingport Grab shows its icon there and adds just those. Profiles the model has aren't downloaded again,
-  though a file from before Thingport kept track of profiles may be, once, to recognise which profile it is.
-  The model page shows them as profiles, above **Open**: each one's name, whether the designer or the community made
-  it (the designer's come first), its print time, filament by colour, plates, printer and settings, from the site and
-  from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A model imported
-  before Thingport kept these reads them the first time you open it. How they're shown, or whether to show them as
-  plain files instead, is in [Appearance](appearance.md).
+- Its model files, or on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint and eufyMake its print
+  profiles instead, where it has any: the one the link points to, all of the designer's, or the community's too. Each
+  profile becomes its own file on the model. Ones left out, or that failed, can be added later: while the model in your
+  library lacks any of the page's profiles, Thingport Grab shows its icon there and adds just those. Profiles the model
+  has aren't downloaded again, though a file from before Thingport kept track of profiles may be, once, to recognise
+  which profile it is. The model page shows them as profiles, above **Open**: each one's name, whether the designer or
+  the community made it (the designer's come first), its print time, filament by colour, plates, printer and settings,
+  from the site and from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A
+  model imported before Thingport kept these reads them the first time you open it. How they're shown, or whether to
+  show them as plain files instead, is in [Appearance](appearance.md).
 - The folders its files are in, where the designer sorted them into some: the folders on Printables and GrabCAD,
   PIXUP's file groups, MyMiniFactory's archives, Makerables' uploaded zips (each a folder named after it), the folders
   inside any zip a site hands over (Cults3D's, for one), or a model copied from a

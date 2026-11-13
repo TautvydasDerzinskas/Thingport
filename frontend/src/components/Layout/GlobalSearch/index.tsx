@@ -27,6 +27,7 @@ import CollectionsIcon from "@mui/icons-material/Collections";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import Diversity3OutlinedIcon from "@mui/icons-material/Diversity3Outlined";
 import SettingsBrightnessOutlinedIcon from "@mui/icons-material/SettingsBrightnessOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LinkIcon from "@mui/icons-material/Link";
@@ -47,7 +48,6 @@ import CableIcon from "@mui/icons-material/Cable";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
-import ShareIcon from "@mui/icons-material/Share";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PeopleIcon from "@mui/icons-material/People";
 import PublicIcon from "@mui/icons-material/Public";
@@ -155,7 +155,7 @@ const PAGE_ICONS: Record<PageId, ReactNode> = {
   adminTools: <HandymanOutlinedIcon />,
   adminAi: <AutoAwesomeIcon />,
   adminUsers: <PeopleIcon />,
-  adminSocial: <ShareIcon />,
+  adminSocial: <Diversity3OutlinedIcon />,
   adminLogs: <HistoryIcon />,
   adminConnections: <CableIcon />,
   adminCaptcha: <VerifiedUserIcon />,

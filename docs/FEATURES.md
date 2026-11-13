@@ -25,6 +25,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](features/downloads.md)**
 - **[Plain files on your disk](features/storage.md)**
+- **[See what takes the disk, and free up space](features/storage.md#disk-space)**
 - **[Repair models whose files are gone](features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](features/multi-user.md)**
 - **[Social: collections shared with the people you pick or with everyone, public models, Explore, profiles and chats](features/social.md)**

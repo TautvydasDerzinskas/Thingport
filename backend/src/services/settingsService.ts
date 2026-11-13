@@ -271,6 +271,29 @@ export async function setLicenseFiles(on: boolean): Promise<void> {
   });
 }
 
+// How many photos an import or a re-sync keeps from a model's page, the cover first; null keeps them all (as many as
+// an import takes at most). Photos a user uploads aren't limited.
+const PHOTOS_PER_MODEL_KEY = "photos_per_model";
+export const PHOTO_KEEP_OPTIONS = [1, 3, 5, 10] as const;
+export type PhotoKeep = (typeof PHOTO_KEEP_OPTIONS)[number];
+
+export async function getPhotosPerModel(): Promise<PhotoKeep | null> {
+  const row = await prisma.setting.findUnique({ where: { key: PHOTOS_PER_MODEL_KEY } });
+  return PHOTO_KEEP_OPTIONS.find((keep) => keep === row?.value) ?? null;
+}
+
+export async function setPhotosPerModel(keep: PhotoKeep | null): Promise<void> {
+  if (keep === null) {
+    await prisma.setting.deleteMany({ where: { key: PHOTOS_PER_MODEL_KEY } });
+    return;
+  }
+  await prisma.setting.upsert({
+    where: { key: PHOTOS_PER_MODEL_KEY },
+    create: { key: PHOTOS_PER_MODEL_KEY, value: keep },
+    update: { value: keep },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";

@@ -59,6 +59,8 @@ export type LogAction =
   | "file_reuse_changed"
   | "license_files_changed"
   | "file_reuse_backfill_started"
+  | "storage_cleanup_started"
+  | "photos_per_model_changed"
   | "custom_widgets_changed"
   | "tool_installed"
   | "tool_uninstalled"
@@ -134,7 +136,50 @@ export type StorageUsage = {
   picture_bytes: number;
   /** Slicer-ready 3MF copies and download bundles. */
   other_generated_bytes: number;
+  /** What's beside the model files, by kind; `other` is the rest of the disk (Studio, icons, avatars, ...). */
+  breakdown: Record<StorageKind, number>;
+  /** About what each clean-up would free; `photos` by how many each model keeps. */
+  freeable: { old: number; compress: number; slicer: number; photos: Record<PhotoKeep, number> };
 };
+
+export type StorageKind =
+  "previews" | "old" | "photos" | "thumbnails" | "description" | "slicer" | "tag_pictures" | "bundles" | "other";
+
+export const PHOTO_KEEP_OPTIONS = [1, 3, 5, 10] as const;
+export type PhotoKeep = (typeof PHOTO_KEEP_OPTIONS)[number];
+
+/** In the order they run. */
+export const CLEANUP_TASKS = ["old", "compress", "slicer", "photos"] as const;
+export type CleanupTaskKey = (typeof CLEANUP_TASKS)[number];
+
+export type StorageCleanupTask = {
+  key: CleanupTaskKey;
+  status: "queued" | "running" | "done" | "failed";
+  done: number;
+  total: number;
+  /** Files it couldn't do, left as they were. */
+  failed: number;
+  freed: number;
+};
+
+export type StorageCleanup = {
+  running: boolean;
+  started_at: string;
+  finished_at: string | null;
+  keep_photos: PhotoKeep | null;
+  tasks: StorageCleanupTask[];
+};
+
+/** Freeing space refused; `code` is the server's reason (e.g. "storage_moving"), for the page to say in its language. */
+export class StorageCleanupError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null,
+  ) {
+    super(message);
+    this.name = "StorageCleanupError";
+  }
+}
 
 export type StorageFolder = {
   name: string;
@@ -148,7 +193,8 @@ export type StorageFolder = {
 };
 
 /** "plate" is a model file, "file" a supporting or prepared one; the rest are the model's pictures. */
-export type StorageFileKind = "plate" | "file" | "license" | "image" | "description" | "thumb" | "render";
+export type StorageFileKind =
+  "plate" | "file" | "license" | "image" | "description" | "thumb" | "render" | "preview" | "slicer";
 
 export type StorageFile = {
   name: string;
@@ -197,6 +243,31 @@ export const adminApi = {
     const res = await fetch(`${apiBase()}/admin/storage`, { headers: authHeaders() });
     assertOk(res, "Failed to load storage usage");
     return res.json();
+  },
+
+  /** The clean-up running or last run since the server started; null for none. */
+  getStorageCleanup: async (): Promise<StorageCleanup | null> => {
+    const res = await fetch(`${apiBase()}/admin/storage/cleanup`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the clean-up");
+    return (await res.json()).cleanup;
+  },
+
+  /** Refused with a StorageCleanupError while one is running, or files are being moved or checked. */
+  startStorageCleanup: async (tasks: CleanupTaskKey[], keepPhotos: PhotoKeep | null): Promise<StorageCleanup> => {
+    const res = await fetch(`${apiBase()}/admin/storage/cleanup`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ tasks, keep_photos: keepPhotos }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { detail?: unknown; code?: unknown } | null;
+      throw new StorageCleanupError(
+        typeof body?.detail === "string" ? body.detail : "Couldn't start freeing space",
+        typeof body?.code === "string" ? body.code : null,
+      );
+    }
+    return (await res.json()).cleanup;
   },
 
   /** `link` is null when the invitation went by email; without SMTP it's the link for the admin to send. */
