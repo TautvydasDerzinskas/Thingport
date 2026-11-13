@@ -4,6 +4,7 @@ import {
   DEFAULT_TARGET,
   adaptInUse,
   adaptTargets,
+  beforeSlicerPicked,
   pickTarget,
   targetLine,
   targetName,
@@ -61,6 +62,9 @@ describe("who copies are made for", () => {
   it("is the copy PrusaSlicer and the like read until a slicer is picked", () => {
     const use = adaptInUse(view({ own: { slicers: [], printers: [], placement: "beside" } }), describeKnown);
     expect(adaptTargets(use)).toEqual([DEFAULT_TARGET]);
+    // As a page gets them: copied, by message.
+    expect(beforeSlicerPicked(structuredClone(adaptTargets(use)))).toBe(true);
+    expect(beforeSlicerPicked(adaptTargets(adaptInUse(view(), describeKnown)))).toBe(false);
   });
 
   it("is one copy per printer for a slicer that loads presets by name, one for any other slicer", () => {

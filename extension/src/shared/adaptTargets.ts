@@ -75,6 +75,10 @@ export function adaptTargets(use: AdaptInUse): AdaptTarget[] {
   return targets;
 }
 
+/** Whether the copies are the one there is before a slicer is picked. By key, as they arrive by message, as copies. */
+export const beforeSlicerPicked = (targets: readonly AdaptTarget[]) =>
+  targets.length === 1 && targets[0].key === DEFAULT_TARGET.key;
+
 /** The one the button makes: the last one used where it's still on offer, else the first. */
 export function pickTarget(targets: readonly AdaptTarget[], lastKey: string | null | undefined): AdaptTarget | null {
   return targets.find((target) => target.key === lastKey) ?? targets[0] ?? null;
