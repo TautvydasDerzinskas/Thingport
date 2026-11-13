@@ -1,7 +1,7 @@
 // Asks CodeRabbit again for the reviews its rate limit refused, and for pushes it never got to. Once the repository's
 // allowance is used up, CodeRabbit marks a pushed commit "Review rate limited", says when the next review is
-// available, and never comes back to it. Run by coderabbit-retry.yml whenever a CodeRabbit check finishes, and hourly
-// in case one was missed.
+// available, and never comes back to it. Run by coderabbit-retry.yml every five minutes and whenever a CodeRabbit
+// check finishes. A run asks for what's due and stops, never waiting out the allowance: a later run asks the rest.
 //
 // A pull request waits when CodeRabbit's newest check on its head says "Review rate limited" (or the head has no check
 // and the summary comment still carries the rate-limit notice: a push during a limit gets none). It also waits when
@@ -16,8 +16,7 @@
 // ASK_TOKEN, an ordinary account's token; an ask it leaves unanswered isn't repeated for that commit.
 //
 // Usage: node coderabbit-retry.mjs, with GH_TOKEN (reads), ASK_TOKEN (posts), GITHUB_API_URL and GITHUB_REPOSITORY
-// set. Without ASK_TOKEN, or with DRY_RUN=true, it only says what it would ask and when; MAX_MINUTES (default 75) is
-// how long a run may wait for the allowance.
+// set. Without ASK_TOKEN, or with DRY_RUN=true, it only says what it would ask and when.
 
 import { pathToFileURL } from "node:url";
 
@@ -38,7 +37,9 @@ const LONGEST_WAIT_MS = 2 * 60 * MINUTE;
 const NOTICE_HORIZON_MS = 3 * 60 * MINUTE;
 // The asks for one commit; past this CodeRabbit is left to the next push.
 export const MAX_ASKS_PER_COMMIT = 5;
+const MAX_ASKS_PER_RUN = 10;
 // CodeRabbit answers an ask within seconds, and a review it accepts shows up as a check within minutes.
+const ANSWER_WAIT_MS = 3 * MINUTE;
 const ANSWER_GRACE_MS = 10 * MINUTE;
 const ACCEPTED_GRACE_MS = 30 * MINUTE;
 // A push takes CodeRabbit a moment to pick up: a head without a check is only taken as skipped after this.
@@ -58,8 +59,10 @@ const issueNumber = (comment) => Number(comment.issue_url?.split("/").pop());
 const byCodeRabbit = (comment) => comment.user?.login === CODERABBIT;
 const isSummary = (comment) => byCodeRabbit(comment) && comment.body?.includes(SUMMARY_MARKER);
 const isReply = (comment) => byCodeRabbit(comment) && comment.body?.toLowerCase().includes(REPLY_MARKER);
-const isAsk = (comment) =>
-  !byCodeRabbit(comment) && /^\s*@coderabbitai\s+(full\s+)?review\s*$/i.test(comment.body ?? "");
+// The command on the first line: an ask carries the banner below it.
+const ASK_LINE = /^\s*@coderabbitai\s+(full\s+)?review[ \t]*(?:\r?\n|$)/i;
+const isAsk = (comment) => !byCodeRabbit(comment) && ASK_LINE.test(comment.body ?? "");
+const isFullAsk = (comment) => isAsk(comment) && Boolean(ASK_LINE.exec(comment.body)[1]);
 const rateLimited = (check) => /rate\s*limit/i.test(check.output?.title ?? "");
 const stuck = (check, now) => check.status !== "completed" && now - time(check.started_at) >= STUCK_REVIEW_MS;
 
@@ -200,7 +203,7 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
   const fallback = why ? since : since + UNKNOWN_WAIT_MS + MARGIN_MS;
   const notBefore = own.length ? Math.max(...own.map((n) => n.until)) : fallback;
   // A plain `review` after a refused `full review` is declined as "Already reviewed the last commit".
-  const full = comments.some((c) => isAsk(c) && /full/i.test(c.body) && time(c.created_at) > headDate);
+  const full = comments.some((c) => isFullAsk(c) && time(c.created_at) > headDate);
   return { waiting: true, since, notBefore, why: why ?? `refused at ${iso(since)}`, ask: full ? FULL_ASK : ASK };
 }
 
@@ -279,9 +282,10 @@ async function survey(github, { asker, now }) {
   return { states, waiting, hold };
 }
 
-async function awaitAnswer(github, number, askedAt, deadline) {
-  while (Date.now() < deadline) {
-    await sleep(10_000);
+async function awaitAnswer(github, number, askedAt, { clock, pause }) {
+  const deadline = clock() + ANSWER_WAIT_MS;
+  while (clock() < deadline) {
+    await pause(10_000);
     const recent = await github.all(`issues/${number}/comments?since=${iso(askedAt)}`);
     const reply = recent.find((c) => isReply(c) && time(c.created_at) >= askedAt);
     if (reply) return { outcome: replyOutcome(reply.body) ?? "unclear", reply };
@@ -291,63 +295,70 @@ async function awaitAnswer(github, number, askedAt, deadline) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** The "Thingport ♥ CodeRabbit" banner under each ask, in the reader's GitHub theme. */
+export function banner(repository) {
+  const src = (theme) =>
+    `https://raw.githubusercontent.com/${repository}/develop/.github/assets/coderabbit-banner-${theme}.png`;
+  return `<picture><source media="(prefers-color-scheme: dark)" srcset="${src("dark")}"><img src="${src("light")}" alt="Thingport ♥ CodeRabbit" width="640" height="64"></picture>`;
+}
+
+/**
+ * One run: asks for each pull request that's due, one at a time, and returns once the next isn't due yet. It never
+ * waits for the allowance; only for CodeRabbit's answer to an ask, which comes within seconds.
+ */
+export async function askDue({
+  github,
+  poster,
+  asker,
+  dryRun,
+  footer = "",
+  clock = Date.now,
+  pause = sleep,
+  log = console.log,
+}) {
+  for (let asks = 0; asks < MAX_ASKS_PER_RUN;) {
+    const now = clock();
+    const { states, waiting, hold } = await survey(github, { asker, now });
+    for (const state of states) {
+      const ready = state.waiting && iso(Math.max(hold, state.notBefore));
+      const when = state.waiting ? `${state.why}, to be asked from ${ready}` : state.reason;
+      log(`#${state.number}: ${when}`);
+    }
+    if (hold > now) log(`CodeRabbit's allowance is back at ${iso(hold)}`);
+    const next = nextAsk(waiting, hold, now);
+    if (!next.pull && !next.at) return log("Nothing to ask for.");
+    if (next.at) return log(`Next ask is due at ${iso(next.at)}; the first run after that asks.`);
+    const { number, ask: command } = next.pull;
+    if (dryRun) return log(`Would post "${command}" on #${number} now.`);
+    const ask = await poster.request(`issues/${number}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ body: footer ? `${command}\n\n${footer}` : command }),
+    });
+    asks++;
+    log(`::notice::Posted "${command}" on #${number}`);
+    const { outcome, reply } = await awaitAnswer(github, number, time(ask.created_at), { clock, pause });
+    log(`#${number}: ${outcome}${outcome === "declined" ? ` (${declineReason(reply.body)})` : ""}`);
+    if (outcome === "none") {
+      log(`::warning::CodeRabbit didn't answer @${asker}'s ask on #${number}; it isn't repeated for this commit`);
+    }
+    // Accepted: the allowance may cover another, so on to the next pull request. Refused: the refusal holds every ask
+    // back, and a later run reads it.
+    if (outcome !== "accepted") return;
+  }
+}
+
 async function main() {
-  const {
-    GITHUB_API_URL = "https://api.github.com",
-    GITHUB_REPOSITORY,
-    GH_TOKEN,
-    ASK_TOKEN,
-    DRY_RUN,
-    MAX_MINUTES,
-  } = process.env;
+  const { GITHUB_API_URL = "https://api.github.com", GITHUB_REPOSITORY, GH_TOKEN, ASK_TOKEN, DRY_RUN } = process.env;
   if (!GITHUB_REPOSITORY || !GH_TOKEN) {
     console.log("::error::GH_TOKEN and GITHUB_REPOSITORY are needed");
     process.exit(1);
   }
-  const deadline = Date.now() + (Number(MAX_MINUTES) || 75) * MINUTE;
   const github = client({ apiUrl: GITHUB_API_URL, repository: GITHUB_REPOSITORY, token: GH_TOKEN });
   const poster = ASK_TOKEN && client({ apiUrl: GITHUB_API_URL, repository: GITHUB_REPOSITORY, token: ASK_TOKEN });
   const asker = poster ? (await poster.user()).login : null;
   if (!poster) console.log("::warning::No ASK_TOKEN (the CODERABBIT_ASK_TOKEN secret), so nothing is posted.");
   else console.log(`Asking as @${asker}.`);
-  const dryRun = DRY_RUN === "true" || !poster;
-
-  for (let asks = 0; asks < 10;) {
-    const now = Date.now();
-    const { states, waiting, hold } = await survey(github, { asker, now });
-    for (const state of states) {
-      const ready = state.waiting && iso(Math.max(hold, state.notBefore));
-      const when = state.waiting ? `${state.why}, to be asked from ${ready}` : state.reason;
-      console.log(`#${state.number}: ${when}`);
-    }
-    if (hold > now) console.log(`CodeRabbit's allowance is back at ${iso(hold)}`);
-    const next = nextAsk(waiting, hold, now);
-    if (!next.pull && !next.at) return console.log("Nothing to ask for.");
-    if (next.at) {
-      if (dryRun) return console.log(`Would ask at ${iso(next.at)}.`);
-      if (next.at > deadline) return console.log(`Next ask is at ${iso(next.at)}, after this run; a later run asks.`);
-      console.log(`Waiting until ${iso(next.at)}.`);
-      await sleep(next.at - now);
-      continue;
-    }
-    const { number, ask: command } = next.pull;
-    if (dryRun) return console.log(`Would post "${command}" on #${number} now.`);
-    const ask = await poster.request(`issues/${number}/comments`, {
-      method: "POST",
-      body: JSON.stringify({ body: command }),
-    });
-    asks++;
-    console.log(`::notice::Posted "${command}" on #${number}`);
-    const { outcome, reply } = await awaitAnswer(github, number, time(ask.created_at), Date.now() + 3 * MINUTE);
-    console.log(`#${number}: ${outcome}${outcome === "declined" ? ` (${declineReason(reply.body)})` : ""}`);
-    if (outcome === "none") {
-      console.log(
-        `::warning::CodeRabbit didn't answer @${asker}'s ask on #${number}; it isn't repeated for this commit`,
-      );
-    }
-    // Refused: the next survey reads the refusal and waits it out. Accepted: on to the next pull request.
-    if (outcome !== "refused" && outcome !== "accepted") return;
-  }
+  await askDue({ github, poster, asker, dryRun: DRY_RUN === "true" || !poster, footer: banner(GITHUB_REPOSITORY) });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

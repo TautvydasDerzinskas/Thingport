@@ -6,6 +6,8 @@ import {
   CODERABBIT,
   FULL_ASK,
   MAX_ASKS_PER_COMMIT,
+  askDue,
+  banner,
   latestCheck,
   nextAsk,
   noticesFrom,
@@ -16,6 +18,7 @@ import {
 
 const MINUTE = 60_000;
 const ASKER = "thingport-bot";
+const BANNER = banner("o/r");
 
 // CodeRabbit's texts as it posted them on pull requests.
 const SUMMARY_LIMITED = `<!-- coderabbit-ai-generated:v1 -->
@@ -210,6 +213,19 @@ test("a refused full review is asked for again as one", () => {
   assert.equal(state({ comments: full }).ask, FULL_ASK);
   // One asked for an earlier commit doesn't carry over to a new one.
   assert.equal(state({ comments: full, headDate: at(-0.1) }).ask, ASK);
+  // Only the command says which: the banner below it doesn't.
+  const fullWithBanner = [
+    ...base,
+    comment(ASKER, `${FULL_ASK}\n\n${BANNER}`, -0.5),
+    comment(CODERABBIT, REFUSED, -0.4),
+  ];
+  assert.equal(state({ comments: fullWithBanner }).ask, FULL_ASK);
+  const plainWithBanner = [
+    ...base,
+    comment(ASKER, `${ASK}\n\nfull ${BANNER}`, -0.5),
+    comment(CODERABBIT, REFUSED, -0.4),
+  ];
+  assert.equal(state({ comments: plainWithBanner }).ask, ASK);
 });
 
 test("a pull request someone paused is left alone until resumed", () => {
@@ -238,6 +254,11 @@ test("an ask in flight, accepted or declined isn't repeated", () => {
   // A person's ask counts too, so CodeRabbit isn't asked twice.
   const theirs = [...base, comment("someone", "@coderabbitai full review", 28)];
   assert.match(state({ comments: theirs }).reason, /no answer yet/);
+  // So does one with the banner below the command, though not a command mentioned within a sentence.
+  const withBanner = [...base, comment(ASKER, `${ASK}\n\n${BANNER}`, 25)];
+  assert.match(state({ comments: withBanner }).reason, /no answer yet/);
+  const mention = [...base, comment("someone", "Should @coderabbitai review this?", 25)];
+  assert.equal(state({ comments: mention }).waiting, true);
 });
 
 test("a refusal without a time waits longer each time, and the asks for a commit are capped", () => {
@@ -284,4 +305,82 @@ test("asks the longest-waiting pull request once the allowance is back", () => {
   assert.equal(nextAsk(waiting, at(30), at(31)).pull.number, 9);
   assert.deepEqual(nextAsk([{ number: 9, since: at(2), notBefore: at(40) }], at(30), at(31)), { at: at(40) });
   assert.deepEqual(nextAsk([], 0, at(0)), {});
+});
+
+// A repository whose pull requests CodeRabbit refused at minute 0; it answers each ask with the pull request's answer.
+function fakeRun({ now, answers }) {
+  let clock = at(now);
+  const pulls = Object.keys(answers).map((number) => ({
+    ...PULL,
+    number: Number(number),
+    head: { sha: `sha${number}` },
+  }));
+  const comments = pulls.map((pull) => comment(CODERABBIT, SUMMARY_LIMITED, -60, { pr: pull.number, updated: 0 }));
+  const get = (path) => {
+    const [route, query] = path.split("?");
+    const since = new URLSearchParams(query).get("since");
+    const fresh = (list) => list.filter((c) => !since || Date.parse(c.updated_at) >= Date.parse(since));
+    const onPull = route.match(/^issues\/(\d+)\/comments$/)?.[1];
+    if (route === "pulls") return pulls;
+    if (/^commits\/sha\d+\/check-runs$/.test(route)) return { check_runs: limitedCheck(0) };
+    if (/^commits\/sha\d+$/.test(route)) return { commit: { committer: { date: isoAt(-1) } } };
+    if (onPull) return fresh(comments.filter((c) => c.issue_url.endsWith(`/${onPull}`)));
+    if (/^pulls\/\d+\/reviews$/.test(route)) return [];
+    if (route === "issues/comments") return fresh(comments);
+    throw new Error(`unexpected GET ${path}`);
+  };
+  const posted = [];
+  const bodies = [];
+  const minutes = () => (clock - at(0)) / MINUTE;
+  const poster = {
+    async request(path, { body }) {
+      const pr = Number(path.match(/^issues\/(\d+)\/comments$/)[1]);
+      const ask = comment(ASKER, JSON.parse(body).body, minutes(), { pr });
+      comments.push(ask, comment(CODERABBIT, answers[pr], minutes() + 0.1, { pr }));
+      posted.push(pr);
+      bodies.push(ask.body);
+      return ask;
+    },
+  };
+  let paused = 0;
+  const github = { all: async (path, pick = (page) => page) => pick(get(path)), request: async (path) => get(path) };
+  const run = () =>
+    askDue({
+      github,
+      poster,
+      asker: ASKER,
+      dryRun: false,
+      footer: BANNER,
+      clock: () => clock,
+      pause: async (ms) => {
+        paused += ms;
+        clock += ms;
+      },
+      log: () => {},
+    });
+  return { run, posted, bodies, paused: () => paused };
+}
+
+test("a run asks what's due and stops, leaving what isn't to a later run", async () => {
+  // The summary's 19 minutes haven't passed: nothing is asked, and the run doesn't wait for them.
+  const early = fakeRun({ now: 10, answers: { 7: ACCEPTED, 8: REFUSED } });
+  await early.run();
+  assert.deepEqual(early.posted, []);
+  assert.equal(early.paused(), 0);
+  // Once they have: an accepted ask moves on to the next pull request, a refusal ends the run. Each ask carries the
+  // banner under the command, and still counts as an ask, so #7 isn't asked again.
+  const due = fakeRun({ now: 30, answers: { 7: ACCEPTED, 8: REFUSED, 9: ACCEPTED } });
+  await due.run();
+  assert.deepEqual(due.posted, [7, 8]);
+  assert.equal(due.bodies[0], `${ASK}\n\n${BANNER}`);
+  assert.ok(due.paused() <= 2 * 10_000, "only waits for CodeRabbit's answers");
+});
+
+test("the banner follows the reader's GitHub theme", () => {
+  const html = banner("o/r");
+  assert.match(
+    html,
+    /^<picture><source media="\(prefers-color-scheme: dark\)" srcset="[^"]+\/o\/r\/develop\/[^"]+-dark\.png">/,
+  );
+  assert.match(html, /<img src="[^"]+\/o\/r\/develop\/[^"]+-light\.png" alt="Thingport ♥ CodeRabbit"/);
 });
