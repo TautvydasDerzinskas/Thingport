@@ -31,7 +31,7 @@ import { CONTENT_MODULES } from "../providers/content";
 import { trackViewedModel } from "./recentlyViewed";
 import { errorHtml } from "./panels/results";
 import { api, isOwnNavigation } from "./runtime";
-import { closeSetupModal, openSetupModal, setupModalOpen } from "./setupModal";
+import { closeSetupModal, openSetupModal, whenSetupModalClosed } from "./setupModal";
 import {
   SHARED_SCRIPT_EXPLAINER,
   SHARED_SCRIPT_NOTE_HTML,
@@ -183,17 +183,17 @@ async function init(): Promise<void> {
             ])
           : null;
       if (isStale()) return;
-      const adaptBubble = (offered: PageAdapt) => {
-        // The set-up dialog would go with the icon it was opened from.
-        if (setupModalOpen()) return;
-        unmountHost();
-        const root = mountHost();
-        mountAdaptBubble(root, classification.provider, url, offered, {
-          text: "Want it in your Thingport library as well? ",
-          action: "Set up Grab",
-          onClick: () => openSetupModal(root),
+      const adaptBubble = (offered: PageAdapt) =>
+        whenSetupModalClosed(() => {
+          if (isStale()) return;
+          unmountHost();
+          const root = mountHost();
+          mountAdaptBubble(root, classification.provider, url, offered, {
+            text: "Want it in your Thingport library as well? ",
+            action: "Set up Grab",
+            onClick: () => openSetupModal(root),
+          });
         });
-      };
       if (page?.offer.placement === "bubble") {
         adaptBubble(page);
         adaptHost = () => undefined;
@@ -246,16 +246,17 @@ async function init(): Promise<void> {
         onClick: () => signIn(root),
       });
       // Only where the site's button never shows: the copies, with the way to sign in again under them.
-      adaptFallback = (page) => {
-        closeSetupModal();
-        unmountHost();
-        const adaptRoot = mountHost();
-        mountAdaptBubble(adaptRoot, classification.provider, url, page, {
-          text: "Thingport Grab can't sign in to your Thingport instance. ",
-          action: "Sign in again",
-          onClick: () => signIn(adaptRoot),
+      adaptFallback = (page) =>
+        whenSetupModalClosed(() => {
+          if (isStale()) return;
+          unmountHost();
+          const adaptRoot = mountHost();
+          mountAdaptBubble(adaptRoot, classification.provider, url, page, {
+            text: "Thingport Grab can't sign in to your Thingport instance. ",
+            action: "Sign in again",
+            onClick: () => signIn(adaptRoot),
+          });
         });
-      };
       if (offered) adaptFallback(offered);
       reportTabIconState(false);
       return;
