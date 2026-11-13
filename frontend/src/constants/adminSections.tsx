@@ -1,6 +1,7 @@
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import CableIcon from "@mui/icons-material/Cable";
 import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomizeOutlined";
+import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import HistoryIcon from "@mui/icons-material/History";
 import PeopleIcon from "@mui/icons-material/People";
@@ -39,4 +40,9 @@ export const ADMIN_SECTIONS: AdminSection[] = [
   { path: "/admin-logs", icon: <HistoryIcon fontSize="small" />, labelKey: "adminSettings.logs.heading" },
   { path: "/admin-connections", icon: <CableIcon fontSize="small" />, labelKey: "adminSettings.connections.heading" },
   { path: "/admin-captcha", icon: <VerifiedUserIcon fontSize="small" />, labelKey: "adminSettings.captcha.heading" },
+  {
+    path: "/admin-migrate",
+    icon: <DriveFileMoveOutlinedIcon fontSize="small" />,
+    labelKey: "adminSettings.migrate.heading",
+  },
 ];

@@ -63,7 +63,9 @@ export type LogAction =
   | "federation_resumed"
   | "federation_disconnected"
   | "federation_blocked"
-  | "federation_unblocked";
+  | "federation_unblocked"
+  | "migration_prepared"
+  | "migration_started";
 
 /** Fire-and-forget: a logging failure must never break the action it records. */
 export async function createLog(params: {

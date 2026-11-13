@@ -368,7 +368,7 @@ export function samplePlateStoragePaths(template: string): [string, string] {
   return [first, second];
 }
 
-function normalizeName(name: string): string {
+export function normalizeName(name: string): string {
   return name.trim().toLowerCase();
 }
 

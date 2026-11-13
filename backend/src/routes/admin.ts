@@ -40,11 +40,14 @@ import {
   startQueueJob,
 } from "../services/importQueueService";
 import { toAdminImportJobOut, toAdminQueueJobOut, toImportJobItemOut } from "../dto";
+import migrateRouter from "./adminMigrate";
 
 // Mounted at /api/admin (app.ts), so these guards only see admin routes.
 const router = Router();
 router.use(requireAuth);
 router.use(requireAdmin);
+
+router.use("/migrate", migrateRouter);
 
 router.get(
   "/users",

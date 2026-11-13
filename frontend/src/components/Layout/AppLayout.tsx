@@ -159,6 +159,9 @@ function useRouteChrome() {
   } else if (path.startsWith("/admin-captcha")) {
     title = t("adminSettings.captcha.heading");
     onBack = () => navigate("/admin");
+  } else if (path.startsWith("/admin-migrate")) {
+    title = t("adminSettings.migrate.heading");
+    onBack = () => navigate("/admin");
   }
 
   return { title, subtitle, onBack };

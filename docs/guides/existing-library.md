@@ -12,6 +12,9 @@ all of them recreate your folders inside Thingport, so the structure you built s
 | [Upload a folder](upload-folders.md)     | A whole folder tree, up to a few thousand files                | **Add → Upload folder** in the browser |
 | [Consume folder](consume-folder.md)      | Large libraries, NAS shares, or anything you add on a schedule | Copy files into a folder on the server |
 
+Coming from another Thingport instance? [Migrate](migrate.md) brings its people, models and collections over as they
+are.
+
 The browser uploads ask you how to import things as you go. The consume folder asks nothing: you choose its rules once
 under **Administration → Storage → Consume Folder**, and it imports whatever lands in it, without a browser tab open.
 

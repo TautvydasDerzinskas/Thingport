@@ -14,6 +14,7 @@ import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
 import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
+import { recoverMigrations } from "./services/migrate/runs";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
@@ -58,6 +59,7 @@ async function boot(): Promise<void> {
       })
       .catch((err) => console.error("Failed to start connected instances:", err));
     announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
+    recoverMigrations().catch((err) => console.error("Failed to settle the migrations the last run left:", err));
     resumeStorageMove()
       .catch((err) => console.error("Failed to resume moving model files:", err))
       // After, so it sees a move that's carrying on and waits for it.

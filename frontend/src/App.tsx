@@ -44,6 +44,7 @@ import LogsPage from "./pages/LogsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import CaptchaPage from "./pages/CaptchaPage";
+import MigratePage from "./pages/MigratePage";
 import ExplorePage from "./pages/ExplorePage";
 import ExploreUserPage from "./pages/ExplorePage/ExploreUserPage";
 import ElsewhereCollectionPage from "./pages/ExplorePage/elsewhere/ElsewhereCollectionPage";
@@ -437,6 +438,10 @@ function AppShell({
         <Route
           path="/admin-captcha"
           element={isAdmin ? <CaptchaPage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/admin-migrate"
+          element={isAdmin ? <MigratePage onUnauthorized={onUnauthorized} /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

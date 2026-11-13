@@ -1472,3 +1472,31 @@ model FederationKv {
 
   @@index([expiresAt])
 }
+
+/// A migration into this instance from another one (services/migrate): prepared from what the admin gave, checked,
+/// then run. Kept once it's over, for the Migrate page's list.
+model MigrationRun {
+  id          String    @id @default(cuid())
+  /// Where it comes from: "thingport", another instance's database dump and the storage folder beside it.
+  source      String
+  /// preparing, ready (checked, waiting for the admin's choices), running, done or failed. One discarded is deleted.
+  status      String
+  /// What it was given and what the check found: the dump, the folder, the old instance's release, its counts, its
+  /// people and anything in the way (services/migrate/plan.ts MigratePlan).
+  plan        Json      @default("{}")
+  /// What the admin chose at the start: who comes, and what comes with them (services/migrate/merge.ts MigrateOptions).
+  options     Json?
+  /// What came over and what didn't (services/migrate/merge.ts MigrateReport).
+  report      Json?
+  /// Why it stopped, when it failed: { code, message }.
+  error       Json?
+  /// The working copy of the old instance's database while it's kept, which a role of the same name owns.
+  stagingDb   String?
+  /// The admin who started it. No relation: the list keeps it after they're gone.
+  createdById String?
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  finishedAt  DateTime?
+
+  @@index([createdAt])
+}
