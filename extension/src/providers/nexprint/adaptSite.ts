@@ -3,9 +3,16 @@
 // profile being the one picked on the page. The button goes under the site's Download, and each profile 3MF in its
 // Files list gets a small one beside its own.
 
-import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
+import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
 import { orcaFamilyFormat } from "../../content/adapted/formats";
-import { pageCookie, placeAfter, signInFirst, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import {
+  pageCookie,
+  placeAfter,
+  signInFirst,
+  visible,
+  type AdaptFile,
+  type AdaptSite,
+} from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { parseNexprintModelUrl } from "./urls.generated";
@@ -97,8 +104,6 @@ function layOut(): void {
   document.head.append(style);
 }
 
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
-
 export const NEXPRINT_ADAPT: AdaptSite = {
   id: "nexprint",
   name: NAME,
@@ -147,15 +152,8 @@ export const NEXPRINT_ADAPT: AdaptSite = {
       throw new Error(`${NAME} didn't give this file${answer.msg ? ` (${answer.msg})` : ""}. Try again in a moment.`);
     }
     // Its file host lets any page read a file, but not the name it's given: that's the profile's file name.
-    const res = await fetch(signed, { credentials: "omit" });
-    if (!res.ok) throw new Error(`${NAME}'s file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, NAME);
-    }
-    const bytes = await readBody(res, declared, NAME, progress);
-    return { bytes, filename: file.name.replace(/[\\/:*?"<>|]+/g, "_") };
+    const { bytes } = await fetchFile(signed, NAME, progress, { init: { credentials: "omit" } });
+    return { bytes, filename: safeFilename(file.name) };
   },
 
   // Its Download, in the footer under the profiles; the tab bar that sticks on scrolling has another.

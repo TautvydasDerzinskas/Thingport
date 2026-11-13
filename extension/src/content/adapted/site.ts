@@ -68,6 +68,9 @@ export function placeAfter(host: HTMLElement, el: HTMLElement, { spaced = false 
   host.style.margin = gapped ? "0" : inRow ? "0 0 0 8px" : "12px 0 0";
 }
 
+/** `el` where it's on the page and shown, else null. */
+export const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
+
 /** A cookie of the page's, as its own scripts read it: null when it isn't set (signed out, on sites that keep the
  *  sign-in in one). */
 export function pageCookie(name: string): string | null {

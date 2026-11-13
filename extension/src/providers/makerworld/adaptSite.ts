@@ -3,7 +3,7 @@
 // model's 3MF is the page's selected print profile, downloaded with the user's own MakerWorld sign-in.
 
 import { placeAfter, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
-import { MAX_BYTES, readBody, sourceFilename, tooBig } from "../../content/adapted/download";
+import { fetchFile, sourceFilename } from "../../content/adapted/download";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
@@ -71,15 +71,7 @@ export const MAKERWORLD_ADAPT: AdaptSite = {
         "Couldn't get this model's file from MakerWorld. Make sure you're signed in to MakerWorld, then try again.",
       );
     }
-    const res = await fetch(resolved.downloadUrl);
-    if (!res.ok)
-      throw new Error(`MakerWorld's file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, "MakerWorld");
-    }
-    const bytes = await readBody(res, declared, "MakerWorld", progress);
+    const { res, bytes } = await fetchFile(resolved.downloadUrl, "MakerWorld", progress);
     return { bytes, filename: sourceFilename(res, resolved.downloadUrl) };
   },
 

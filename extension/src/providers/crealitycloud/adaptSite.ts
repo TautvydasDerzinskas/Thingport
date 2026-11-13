@@ -3,9 +3,16 @@
 // there, and the profile is the one picked on the page. The button gets a row of its own under the site's Cloud Slice
 // and Download 3MF.
 
-import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
+import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
 import { orcaFamilyFormat } from "../../content/adapted/formats";
-import { pageCookie, placeAfter, signInFirst, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import {
+  pageCookie,
+  placeAfter,
+  signInFirst,
+  visible,
+  type AdaptFile,
+  type AdaptSite,
+} from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { CXY_HEADERS } from "./content";
@@ -65,8 +72,6 @@ function signedIn(): { token: string; uid: string } | null {
 // The model each listed profile is of: its file's name comes from the profile's details, which want both.
 const modelOf = new Map<string, string>();
 
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
-
 export const CREALITYCLOUD_ADAPT: AdaptSite = {
   id: "crealitycloud",
   name: NAME,
@@ -111,17 +116,10 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
       throw new Error(`${NAME} didn't give this file${link.msg ? ` (${link.msg})` : ""}. Try again in a moment.`);
     }
     // Its file host lets any page read a file, but not the name it's given: that comes from the profile's details.
-    const res = await fetch(url, { credentials: "omit" });
-    if (!res.ok) throw new Error(`${NAME}'s file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, NAME);
-    }
-    const bytes = await readBody(res, declared, NAME, progress);
+    const { bytes } = await fetchFile(url, NAME, progress, { init: { credentials: "omit" } });
     const named = detail?.result?.name;
     const filename = typeof named === "string" && /\.3mf$/i.test(named.trim()) ? named.trim() : file.name;
-    return { bytes, filename: filename.replace(/[\\/:*?"<>|]+/g, "_") };
+    return { bytes, filename: safeFilename(filename) };
   },
 
   // The grid of its Cloud Slice and Download 3MF; a model nobody has bought shows a Purchase box instead.

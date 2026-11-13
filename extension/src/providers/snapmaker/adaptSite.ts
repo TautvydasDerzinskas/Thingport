@@ -5,9 +5,16 @@
 // Its sign-in is renewed by the page and by Grab's background alone: a token it no longer takes means reloading the
 // page, never a refresh from here, as its refresh tokens work once (snapmaker-provider notes).
 
-import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
+import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
 import { orcaFamilyFormat } from "../../content/adapted/formats";
-import { pageCookie, placeAfter, signInFirst, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import {
+  pageCookie,
+  placeAfter,
+  signInFirst,
+  visible,
+  type AdaptFile,
+  type AdaptSite,
+} from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { MANIFESTS } from "../index.generated";
@@ -45,8 +52,6 @@ export function onSite(link: string): string | null {
   if (url.hostname === LINK_HOST) return `${SITE}${url.pathname}${url.search}`;
   return url.origin === SITE ? url.href : null;
 }
-
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
 
 export const SNAPMAKER_ADAPT: AdaptSite = {
   id: "snapmaker",
@@ -97,19 +102,11 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
     if (answer.code !== OK || !url) {
       throw new Error(`${NAME} didn't give this file${answer.msg ? ` (${answer.msg})` : ""}. Try again in a moment.`);
     }
-    const res = await fetch(url);
     // A link it doesn't take answers 200 with a short plain-text note rather than the file.
-    if (!res.ok || /^text\/plain/i.test(res.headers.get("Content-Type") ?? "")) {
-      void res.body?.cancel();
-      throw new Error(`${NAME}'s file server refused the download (${res.status}). Try again in a moment.`);
-    }
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, NAME);
-    }
-    const bytes = await readBody(res, declared, NAME, progress);
-    return { bytes, filename: file.name.replace(/[\\/:*?"<>|]+/g, "_") };
+    const { bytes } = await fetchFile(url, NAME, progress, {
+      refused: (res) => /^text\/plain/i.test(res.headers.get("Content-Type") ?? ""),
+    });
+    return { bytes, filename: safeFilename(file.name) };
   },
 
   // The wrapper of its split Download 3MF button (whose ▾ is the one menu button in the profiles' column), which also

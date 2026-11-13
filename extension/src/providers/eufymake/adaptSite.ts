@@ -3,8 +3,8 @@
 // links signed for a day that its file host lets the page read: no sign-in needed, as for Thingport's own imports.
 // The button goes under its Open in Slicer and Download, for the 3MF picked in its file list.
 
-import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
-import { placeAfter, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
+import { placeAfter, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { parseEufymakeModelUrl } from "./urls.generated";
 
@@ -91,8 +91,6 @@ async function readModel(modelId: string): Promise<Linked[]> {
   return modelFiles(body.data?.model);
 }
 
-const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
-
 export const EUFYMAKE_ADAPT: AdaptSite = {
   id: "eufymake",
   name: NAME,
@@ -126,15 +124,8 @@ export const EUFYMAKE_ADAPT: AdaptSite = {
     if (!link)
       throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
     // Its file host lets the page read a file, but gives no name: that's the file's own.
-    const res = await fetch(link, { credentials: "omit" });
-    if (!res.ok) throw new Error(`${NAME}'s file server refused the download (${res.status}). Try again in a moment.`);
-    const declared = Number(res.headers.get("Content-Length")) || null;
-    if (declared && declared > MAX_BYTES) {
-      void res.body?.cancel();
-      throw tooBig(declared, NAME);
-    }
-    const bytes = await readBody(res, declared, NAME, progress);
-    return { bytes, filename: file.name.replace(/[\\/:*?"<>|]+/g, "_") };
+    const { bytes } = await fetchFile(link, NAME, progress, { init: { credentials: "omit" } });
+    return { bytes, filename: safeFilename(file.name) };
   },
 
   // Its Open in Slicer and Download ("Make the same" on City Print and 3D Paint models), under the file list.
