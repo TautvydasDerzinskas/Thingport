@@ -52,6 +52,12 @@ export function savedNote(target: AdaptTarget, saved: Saved): string | null {
   return null;
 }
 
+/** Why nothing is downloaded for the page's own pick: a file that isn't a 3MF, or a pick that can't be read yet. */
+export const unpickedReason = (pick: "other" | "unread"): string =>
+  pick === "unread"
+    ? "Grab is still reading which file the page has picked. Try again in a moment."
+    : "Only a 3MF gets an adapted copy. Pick one of the model's 3MFs on the page, then try again.";
+
 /** What the copy keeps, for the button's explanation. */
 export function explanation(site: AdaptSite, target: AdaptTarget): string {
   return siteFormats(site).length > 1 ? ofSeveral(site, target) : ofOne(site, target);

@@ -9,9 +9,9 @@ import type { ProviderId } from "../../providers/index.generated";
 import { pageHeadHtml } from "../panels/modelHead";
 import { renderPanel, setPanelExtra, mountFab, mountPanel } from "../shell";
 import { downloadAdapted } from "./download";
-import { explanation, savedNote } from "./offer";
+import { explanation, savedNote, unpickedReason } from "./offer";
 import { ICONS, element, shownName, sizeText, svg, targetPicture } from "./popover";
-import type { PageAdapt } from "./site";
+import type { AdaptFile, PageAdapt } from "./site";
 
 const DONE_RESET_MS = 3000;
 
@@ -19,25 +19,34 @@ const downloadIcon = () => svg(ICONS.download);
 
 let picks = 0;
 
-/** The rows, and `follow`, which picks the file the page has picked now, unless one was picked here. */
-export type AdaptedRows = { box: HTMLElement; follow: () => void };
+/** The rows, and `follow`, which picks the file the page has picked now, unless one was picked here, and gives it, or
+ *  why there's no copy of the page's pick. */
+export type AdaptedRows = { box: HTMLElement; follow: () => AdaptFile | "other" | "unread" };
 
 /** A row per copy; `compact` for the rows under an import. */
 export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): AdaptedRows {
   const { site, files, targets } = page;
   const box = element("div", "ad");
-  // The one the page has picked, where it picks one of them.
-  const picked = site.selected?.(files);
-  let file = picked && typeof picked === "object" ? picked : files[0];
+  const error = element("div", "tg-hint ad-error");
+  error.setAttribute("role", "alert");
+  error.hidden = true;
+  let file = files[0];
   let select: HTMLSelectElement | null = null;
   // A file picked here, which the page's picks don't change.
   let chosen = false;
-  const follow = () => {
-    const now = chosen ? null : site.selected?.(files);
-    // Only a file it picked: not where it picked none, one with no copy, or one that can't be read yet.
-    if (!now || typeof now !== "object") return;
+  // The one picked here, else the one the page has picked (the first where it picked none). Where the page picked a
+  // file with no copy, or its pick can't be read yet, the rows say so, and nothing is downloaded rather than another
+  // file's copy.
+  const follow = (): AdaptFile | "other" | "unread" => {
+    const now = chosen || !site.selected ? file : (site.selected(files) ?? files[0]);
+    error.hidden = typeof now !== "string";
+    if (typeof now === "string") {
+      error.textContent = unpickedReason(now);
+      return now;
+    }
     file = now;
     if (select) select.value = String(files.indexOf(file));
+    return file;
   };
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
@@ -53,13 +62,12 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     select.addEventListener("change", () => {
       chosen = true;
       file = files[Number(select!.value)] ?? files[0];
+      error.hidden = true;
     });
     box.append(label, select);
   }
+  follow();
   const list = element("div", `ad-list${compact ? " ad-list--compact" : ""}`);
-  const error = element("div", "tg-hint ad-error");
-  error.setAttribute("role", "alert");
-  error.hidden = true;
   // What's worth knowing about the copy saved last, until the next one.
   const note = element("div", "tg-hint ad-note");
   note.setAttribute("role", "status");
@@ -79,18 +87,18 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     row.setAttribute("aria-label", `Download adapted: ${name}, ${sub}`);
     row.addEventListener("click", async () => {
       if (busy) return;
-      busy = true;
       // The page's pick may have changed while these were open.
-      follow();
-      error.hidden = true;
+      const picked = follow();
       note.hidden = true;
+      if (typeof picked === "string") return;
+      busy = true;
       for (const other of box.querySelectorAll<HTMLButtonElement | HTMLSelectElement>("button, select")) {
         other.disabled = true;
       }
       go.replaceChildren(element("span", "ad-item__spinner"));
       void send("SET_ADAPT_LAST", { key: target.key });
       try {
-        const saved = await downloadAdapted(site, pageUrl, file, target, (status) => (subEl.textContent = status));
+        const saved = await downloadAdapted(site, pageUrl, picked, target, (status) => (subEl.textContent = status));
         subEl.textContent = "Downloaded";
         const said = savedNote(target, saved);
         note.textContent = said ?? "";
