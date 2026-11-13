@@ -28,22 +28,25 @@ Protocol format:
 The `url` parameter should be a direct HTTP(s) download link. Thingport already includes the
 auth token in that URL.
 
-## Quick install (no shell commands)
+## Install
 
 Download the latest Bridge binary for your OS from the
 [`bridge-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/bridge-latest)
-(also linked from the in-app Download page) and run it once. Each build has its own version
-(`thingport-bridge --version`; changes in [CHANGELOG.md](CHANGELOG.md)). Running it registers the
-`thingport://` protocol handler and copies the binary into a stable location:
+(also linked from the in-app Download page). Each build has its own version
+(`thingport-bridge --version`; changes in [CHANGELOG.md](CHANGELOG.md)).
 
-- Windows: `%LOCALAPPDATA%\Thingport\Bridge\thingport-bridge.exe`
-- Linux: `~/.local/bin/thingport-bridge`
-- macOS: `~/Applications/Thingport Bridge.app`
+### Windows
 
-### Windows / Linux
+Download `thingport-bridge-windows-amd64-setup.exe`, run Setup, and follow the wizard. It installs
+Thingport Bridge for the current user in `%LOCALAPPDATA%\Programs\Thingport Bridge`, registers the
+`thingport://` protocol, and adds Thingport Bridge to **Settings → Apps → Installed apps**. Updating
+uses the same Setup application and keeps the existing settings, log, and downloaded models.
 
-Double-click the downloaded file (or run it with no arguments from a terminal). If your Linux
-file manager blocks execution, mark the file as executable first (`chmod +x`) and run it once.
+### Linux
+
+Download `thingport-bridge-linux-amd64`. If your file manager blocks execution, mark the file as
+executable first (`chmod +x`) and run it once. It installs the executable in
+`~/.local/bin/thingport-bridge` and registers the protocol handler for the current user.
 
 ### macOS
 
@@ -70,7 +73,8 @@ codesign --force -s - ~/Downloads/thingport-bridge-macos
 ## Update
 
 Download the new version and install it the same way, over the old one. There's nothing to remove first: installing
-replaces the old Bridge, and your `config.json` and log stay as they are.
+replaces the old Bridge, and your `config.json` and log stay as they are. On Windows, run the new Setup application;
+it upgrades the existing installation in place.
 
 On macOS, installing also quits the Bridge that's running, so the next link opens the new version. Bridge 1.0.1 and
 older don't do this. If you're installing one of those, run `killall thingport-bridge` first, or the old version
@@ -82,7 +86,7 @@ the file, and the instance checks `bridge/package.json` in this repository for t
 
 To see which version you have:
 
-- Windows (PowerShell): `& "$env:LOCALAPPDATA\Thingport\Bridge\thingport-bridge.exe" --version`
+- Windows (PowerShell): `& "$env:LOCALAPPDATA\Programs\Thingport Bridge\thingport-bridge.exe" --version`
 - macOS: `~/Applications/Thingport\ Bridge.app/Contents/MacOS/thingport-bridge --version`, or **Get Info** on the app
   in Finder (1.0.1 and older show 1.0 there)
 - Linux: `~/.local/bin/thingport-bridge --version`
@@ -93,12 +97,8 @@ version changed is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Uninstall
 
-Windows (PowerShell):
-
-```powershell
-Remove-Item -Recurse "$env:LOCALAPPDATA\Thingport\Bridge"
-Remove-Item -Recurse "HKCU:\Software\Classes\thingport"
-```
+Windows: open **Settings → Apps → Installed apps**, find **Thingport Bridge**, and choose
+**Uninstall**. The uninstaller removes the application and its `thingport://` registration.
 
 macOS:
 
@@ -128,11 +128,12 @@ You need Go installed (1.21+ recommended). macOS builds also need Xcode's comman
 (`xcode-select --install`) since the URL-open handling uses Cocoa via cgo, and can only be built
 on macOS itself.
 
-Windows (PowerShell):
+Windows (PowerShell; Go and Inno Setup 6 are required):
 
 ```powershell
 cd bridge
-go build -o dist\thingport-bridge.exe .\cmd\thingport-bridge
+go build -o dist\thingport-bridge-windows-amd64.exe .\cmd\thingport-bridge
+& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=dev" "installer\windows\thingport-bridge.iss"
 ```
 
 Linux (bash):
@@ -153,14 +154,7 @@ codesign --force -s - dist/thingport-bridge-macos # lipo invalidates each slice'
 # without this, arm64 Macs SIGKILL it on launch
 ```
 
-## Install (manual)
-
-Windows (PowerShell):
-
-```powershell
-cd bridge\scripts
-.\install-windows.ps1 -BridgePath "..\dist\thingport-bridge.exe"
-```
+## Install (manual on Linux)
 
 Linux (bash):
 
@@ -169,14 +163,8 @@ cd bridge/scripts
 ./install-linux.sh ../dist/thingport-bridge
 ```
 
-You can also run the binary directly: `thingport-bridge --install` (this is required, not just
-convenient, on macOS -- see above).
-
-If your shell blocks scripts, set the execution policy for the current user:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-```
+Linux can also install the binary directly with `thingport-bridge --install`. On macOS this flag is
+required rather than optional; see above. Windows installation is owned exclusively by Setup.
 
 ## Auto-start at login (optional)
 

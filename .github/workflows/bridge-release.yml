@@ -64,7 +64,7 @@ jobs:
       matrix:
         include:
           - target: windows-amd64
-            os: ubuntu-latest
+            os: windows-latest
           - target: linux-amd64
             os: ubuntu-latest
           # macOS URL-scheme handling needs cgo and Cocoa, so it can't be cross-compiled.
@@ -79,15 +79,68 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: bridge/go.mod
-      - name: Build
+      - name: Build Windows installer
+        if: matrix.target == 'windows-amd64'
+        working-directory: bridge
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.release.outputs.version || 'dev' }}
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          go build -ldflags "-X main.version=$env:VERSION" -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found at $iscc" }
+          & $iscc "/DMyAppVersion=$env:VERSION" "installer\windows\thingport-bridge.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Remove-Item dist/thingport-bridge-windows-amd64.exe
+      - name: Exercise Windows install, registration, update migration and uninstall
+        if: matrix.target == 'windows-amd64'
+        working-directory: bridge
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.release.outputs.version || 'dev' }}
+        run: |
+          $setup = (Resolve-Path "dist\thingport-bridge-windows-amd64-setup.exe").Path
+          $appDir = Join-Path $env:LOCALAPPDATA "Programs\Thingport Bridge"
+          $appExe = Join-Path $appDir "thingport-bridge.exe"
+          $legacyDir = Join-Path $env:LOCALAPPDATA "Thingport\Bridge"
+          New-Item -ItemType Directory -Force $legacyDir | Out-Null
+          Set-Content -Path (Join-Path $legacyDir "thingport-bridge.exe") -Value "legacy"
+
+          $install = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
+          if (-not (Test-Path $appExe)) { throw "Installed Bridge is missing" }
+          if (Test-Path (Join-Path $legacyDir "thingport-bridge.exe")) { throw "Legacy self-installed Bridge was not removed" }
+
+          $command = (Get-ItemProperty "HKCU:\Software\Classes\thingport\shell\open\command").'(default)'
+          $expectedCommand = '"' + $appExe + '" "%1"'
+          if ($command -ne $expectedCommand) { throw "Protocol command mismatch: $command" }
+
+          $installed = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "Thingport Bridge" }
+          if (@($installed).Count -ne 1) { throw "Expected one Installed Apps entry, got $(@($installed).Count)" }
+          if ($installed.DisplayVersion -ne $env:VERSION) { throw "Installed version mismatch: $($installed.DisplayVersion)" }
+
+          $actualVersion = (& $appExe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $actualVersion -ne $env:VERSION) { throw "Bridge version mismatch: $actualVersion" }
+
+          $uninstaller = Join-Path $appDir "unins000.exe"
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller exited with $($uninstall.ExitCode)" }
+          if (Test-Path $appExe) { throw "Bridge remained after uninstall" }
+          if (Test-Path "HKCU:\Software\Classes\thingport") { throw "Protocol registration remained after uninstall" }
+          $remaining = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "Thingport Bridge" }
+          if (@($remaining).Count -ne 0) { throw "Installed Apps entry remained after uninstall" }
+      - name: Build Linux and macOS binaries
+        if: matrix.target != 'windows-amd64'
         working-directory: bridge
         env:
           LDFLAGS: -X main.version=${{ needs.release.outputs.version || 'dev' }}
         run: |
           case "${{ matrix.target }}" in
-            windows-amd64)
-              CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
-              ;;
             linux-amd64)
               CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-linux-amd64 ./cmd/thingport-bridge
               ;;
@@ -136,7 +189,7 @@ jobs:
           Thingport Bridge $VERSION ([release notes](https://github.com/$GH_REPO/releases/tag/$TAG)). See
           \`bridge/README.md\` for the exact commands:
 
-          - **Windows**: \`thingport-bridge-windows-amd64.exe\` — run it once (double-click is fine) to install.
+          - **Windows**: \`thingport-bridge-windows-amd64-setup.exe\` — run Setup; Windows then lists Thingport Bridge under Installed apps.
           - **Linux**: \`thingport-bridge-linux-amd64\` — \`chmod +x\`, then run it once to install.
           - **macOS**: \`thingport-bridge-macos\` (universal) — \`chmod +x\`, remove the quarantine flag, then run with \`--install\`.
           EOF

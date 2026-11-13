@@ -2826,7 +2826,7 @@
         "startedNote": "Your download should start automatically. Follow these steps to finish installing:",
         "windows": {
           "heading": "Install on Windows",
-          "step1": "Double-click the downloaded .exe (or run it with no arguments from a terminal). It installs itself and registers the protocol automatically."
+          "step1": "Double-click the downloaded Setup .exe and follow the installer. Windows installs Thingport Bridge, registers the thingport:// protocol, and lists the app under Installed apps."
         },
         "linux": {
           "heading": "Install on Linux",

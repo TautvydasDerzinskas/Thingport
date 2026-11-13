@@ -2909,7 +2909,7 @@
         "startedNote": "Le téléchargement devrait démarrer automatiquement. Suivez ces étapes pour terminer l’installation :",
         "windows": {
           "heading": "Installer sous Windows",
-          "step1": "Double-cliquez sur le fichier .exe téléchargé (ou lancez-le sans argument depuis un terminal). Il s’installe seul et enregistre automatiquement le protocole."
+          "step1": "Double-cliquez sur le programme d’installation .exe téléchargé et suivez ses instructions. Windows installera Thingport Bridge, enregistrera le protocole thingport:// et ajoutera l’application à la liste des applications installées."
         },
         "linux": {
           "heading": "Installer sous Linux",

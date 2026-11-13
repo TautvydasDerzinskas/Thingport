@@ -41,8 +41,8 @@ var version = "dev"
 
 func main() {
 	if len(os.Args) < 2 {
-		// Windows/Linux pass the URL as argv[1], so no args means "install". macOS delivers it as an
-		// Apple Event instead, so install there needs --install.
+		// Windows/Linux pass protocol URLs as argv[1]. A launch without one is platform-specific:
+		// Windows points to Setup, Linux self-installs, and macOS waits for Apple Events.
 		runDefaultLaunch()
 		return
 	}

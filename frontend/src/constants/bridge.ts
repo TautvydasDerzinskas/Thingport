@@ -7,7 +7,7 @@ const BRIDGE_RELEASES_BASE = "https://github.com/TautvydasDerzinskas/Thingport/r
 export type BridgeDownload = { os: "windows" | "macos" | "linux"; label: string; asset: string };
 
 export const BRIDGE_DOWNLOADS: BridgeDownload[] = [
-  { os: "windows", label: "Windows", asset: "thingport-bridge-windows-amd64.exe" },
+  { os: "windows", label: "Windows", asset: "thingport-bridge-windows-amd64-setup.exe" },
   { os: "macos", label: "macOS", asset: "thingport-bridge-macos" },
   { os: "linux", label: "Linux", asset: "thingport-bridge-linux-amd64" },
 ];
@@ -18,7 +18,7 @@ export function bridgeDownloadUrl(asset: string): string {
 
 /** Prints the installed Bridge's version: in PowerShell on Windows, a terminal elsewhere (bridge/README.md#update). */
 export const BRIDGE_VERSION_COMMANDS: Record<BridgeDownload["os"], string> = {
-  windows: '& "$env:LOCALAPPDATA\\Thingport\\Bridge\\thingport-bridge.exe" --version',
+  windows: '& "$env:LOCALAPPDATA\\Programs\\Thingport Bridge\\thingport-bridge.exe" --version',
   macos: "~/Applications/Thingport\\ Bridge.app/Contents/MacOS/thingport-bridge --version",
   linux: "~/.local/bin/thingport-bridge --version",
 };

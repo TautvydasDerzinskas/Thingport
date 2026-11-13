@@ -2,74 +2,13 @@
 
 package main
 
-import (
-	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-)
+import "fmt"
 
 func installSelf() (string, error) {
-	exePath, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("resolve executable: %w", err)
-	}
-	exePath, err = filepath.EvalSymlinks(exePath)
-	if err != nil {
-		return "", fmt.Errorf("resolve executable: %w", err)
-	}
-
-	baseDir := os.Getenv("LOCALAPPDATA")
-	if baseDir == "" {
-		if cfgDir, err := os.UserConfigDir(); err == nil && cfgDir != "" {
-			baseDir = cfgDir
-		}
-	}
-	if baseDir == "" {
-		return "", fmt.Errorf("LOCALAPPDATA is not set")
-	}
-	targetDir := filepath.Join(baseDir, "Thingport", "Bridge")
-	targetExe := filepath.Join(targetDir, "thingport-bridge.exe")
-	if !samePath(exePath, targetExe) {
-		if err := replaceFile(exePath, targetExe, 0755); err != nil {
-			return "", fmt.Errorf("copy binary: %w", err)
-		}
-	}
-
-	if err := registerProtocol(scheme, "Thingport Bridge", targetExe); err != nil {
-		return "", err
-	}
-
-	return targetExe, nil
+	return "", fmt.Errorf("install Thingport Bridge with the Windows Setup application")
 }
 
 func runDefaultLaunch() {
-	runInstallAndReport()
-}
-
-func registerProtocol(protoScheme, label, targetExe string) error {
-	root := fmt.Sprintf(`HKCU\Software\Classes\%s`, protoScheme)
-	if err := regAdd(root, "/ve", "/t", "REG_SZ", "/d", "URL:"+label, "/f"); err != nil {
-		return err
-	}
-	if err := regAdd(root, "/v", "URL Protocol", "/t", "REG_SZ", "/d", "1", "/f"); err != nil {
-		return err
-	}
-	commandKey := root + `\shell\open\command`
-	command := fmt.Sprintf("\"%s\" \"%%1\"", targetExe)
-	if err := regAdd(commandKey, "/ve", "/t", "REG_SZ", "/d", command, "/f"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func regAdd(key string, args ...string) error {
-	cmdArgs := append([]string{"add", key}, args...)
-	cmd := exec.Command("reg", cmdArgs...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("registry update failed: %w", err)
-	}
-	return nil
+	fmt.Println("Thingport Bridge runs when a thingport:// link is opened.")
+	fmt.Println("Install or update it with the Thingport Bridge Setup application.")
 }

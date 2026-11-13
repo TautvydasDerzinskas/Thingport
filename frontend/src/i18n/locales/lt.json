@@ -2945,7 +2945,7 @@
         "startedNote": "Atsisiuntimas turėtų prasidėti automatiškai. Norėdami baigti diegimą, atlikite šiuos veiksmus:",
         "windows": {
           "heading": "Diegimas „Windows“",
-          "step1": "Dukart spustelėkite atsisiųstą .exe failą (arba paleiskite jį be argumentų iš terminalo). Jis pats įsidiegs ir automatiškai užregistruos protokolą."
+          "step1": "Dukart spustelėkite atsisiųstą .exe diegimo programą ir vykdykite jos nurodymus. „Windows“ įdiegs „Thingport Bridge“, užregistruos protokolą thingport:// ir įtrauks programą į įdiegtų programų sąrašą."
         },
         "linux": {
           "heading": "Diegimas „Linux“",

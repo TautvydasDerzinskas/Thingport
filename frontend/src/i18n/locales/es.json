@@ -2909,7 +2909,7 @@
         "startedNote": "La descarga debería iniciarse automáticamente. Sigue estos pasos para terminar la instalación:",
         "windows": {
           "heading": "Instalar en Windows",
-          "step1": "Haz doble clic en el .exe descargado (o ejecútalo sin argumentos desde una terminal). Se instala solo y registra el protocolo automáticamente."
+          "step1": "Haz doble clic en el instalador .exe descargado y sigue sus indicaciones. Windows instalará Thingport Bridge, registrará el protocolo thingport:// y añadirá la aplicación a la lista de aplicaciones instaladas."
         },
         "linux": {
           "heading": "Instalar en Linux",
