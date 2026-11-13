@@ -1,16 +1,17 @@
-// Asks CodeRabbit again for the reviews its rate limit refused, and for pushes it never got to. Once the repository's
-// allowance is used up, CodeRabbit marks a pushed commit "Review rate limited", says when the next review is
-// available, and never comes back to it. Run by coderabbit-retry.yml every five minutes and whenever a CodeRabbit
-// check finishes. A run asks for what's due and stops, never waiting out the allowance: a later run asks the rest.
+// Asks CodeRabbit for the reviews a pull request is owed. Run by coderabbit-retry.yml every 30 minutes: a run asks for
+// what's due and stops, leaving the rest to a later run.
 //
-// A pull request waits when CodeRabbit's newest check on its head says "Review rate limited" (or the head has no check
-// and the summary comment still carries the rate-limit notice: a push during a limit gets none). It also waits when
-// CodeRabbit left its head unreviewed: no check at all a while after the push (into the default branch, the only one
-// reviewed on its own), or a review that never finished, unless CodeRabbit posted a review of it anyway. Every notice
-// and refusal, on any pull request, says when the allowance is back, and the latest of those holds back every ask, so
-// at most one ask is refused per window. Asks go one at a time, the longest-waiting pull request first: a refusal
-// starts a new wait, an accepted ask moves on to the next. Pull requests paused with `@coderabbitai pause` are left
-// alone.
+// For each open pull request (drafts, paused ones and ones whose description says `@coderabbitai ignore` aside), the
+// newest thing since its head commit decides:
+//   - the commit itself, with no CodeRabbit review of it: `full review` if CodeRabbit never reviewed the pull request,
+//     else `review`. A head CodeRabbit reviewed without a word (its check "Finished", no review posted) gets a
+//     `full review`, as a plain one would be declined as "Already reviewed the last commit";
+//   - CodeRabbit refusing an ask under its rate limit: the same ask again once the wait it gave is over;
+//   - CodeRabbit declining as "Already reviewed the last commit", or finishing a plain review without a word:
+//     `full review`;
+//   - a review of the head, a full review taken, or an ask still unanswered: nothing.
+// Every notice and refusal, on any pull request, says when the allowance is back, and the latest holds back every ask,
+// so at most one is refused per window. Asks go one at a time, the longest-waiting pull request first.
 //
 // CodeRabbit doesn't answer commands from bot accounts (github-actions[bot] was ignored), so the asks are posted with
 // ASK_TOKEN, an ordinary account's token; an ask it leaves unanswered isn't repeated for that commit.
@@ -26,6 +27,8 @@ export const FULL_ASK = "@coderabbitai full review";
 const RATE_LIMIT_MARKER = "rate limited by coderabbit.ai";
 const SUMMARY_MARKER = "summarize by coderabbit.ai";
 const REPLY_MARKER = "auto-generated reply by coderabbit";
+// In the summary once CodeRabbit has reviewed the pull request.
+const WALKTHROUGH_MARKER = "walkthrough_start";
 
 const MINUTE = 60_000;
 // After the published time, so the ask doesn't land a moment before the allowance is back.
@@ -38,15 +41,14 @@ const NOTICE_HORIZON_MS = 3 * 60 * MINUTE;
 // The asks for one commit; past this CodeRabbit is left to the next push.
 export const MAX_ASKS_PER_COMMIT = 5;
 const MAX_ASKS_PER_RUN = 10;
-// CodeRabbit answers an ask within seconds, and a review it accepts shows up as a check within minutes.
+// CodeRabbit answers an ask within seconds.
 const ANSWER_WAIT_MS = 3 * MINUTE;
 const ANSWER_GRACE_MS = 10 * MINUTE;
-const ACCEPTED_GRACE_MS = 30 * MINUTE;
-// A push takes CodeRabbit a moment to pick up: a head without a check is only taken as skipped after this.
-const NEW_HEAD_GRACE_MS = 3 * MINUTE;
 // CodeRabbit starts on a push within a minute or two and finishes within minutes; past these it isn't coming.
 const MISSED_HEAD_MS = 15 * MINUTE;
 const STUCK_REVIEW_MS = 60 * MINUTE;
+// A review CodeRabbit has just finished may still be posting its comments.
+const SETTLE_MS = 3 * MINUTE;
 
 const time = (iso) => Date.parse(iso);
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -132,79 +134,120 @@ export function noticesFrom(comments, now) {
 
 /**
  * Whether a pull request is waiting for an ask. Returns { waiting: false, reason } or { waiting: true, since,
- * notBefore, why, ask }: since is when CodeRabbit refused its head, or left it unreviewed (the queue order), notBefore
- * the earliest time this pull request's own notices allow an ask, why says which for the log, and ask is the command.
+ * notBefore, why, ask, limited }: since orders the queue, notBefore is the earliest time this pull request's own
+ * notices allow an ask, why says which rule for the log, ask is the command, and limited says its head was rate
+ * limited, so its summary's notice holds back every ask.
  */
 export function pullState({ pull, checkRuns, headDate, comments, reviews = [], now, asker }) {
-  const check = latestCheck(checkRuns);
-  const summary = comments.find(isSummary);
-  let since;
-  let why;
-  if (check && check.status !== "completed") {
-    if (!stuck(check, now)) return { waiting: false, reason: "CodeRabbit is reviewing it" };
-    since = time(check.started_at);
-    why = `the review started at ${check.started_at} never finished`;
-  } else if (check && rateLimited(check)) {
-    since = time(check.completed_at);
-  } else if (check) {
-    return { waiting: false, reason: `CodeRabbit's check says "${check.output?.title ?? check.conclusion}"` };
-  } else if (summary?.body.includes(RATE_LIMIT_MARKER) && now - headDate >= NEW_HEAD_GRACE_MS) {
-    since = time(summary.updated_at);
-  } else if (now - headDate < MISSED_HEAD_MS) {
-    return { waiting: false, reason: "no CodeRabbit check on its head yet" };
-  } else if (pull.base?.ref !== pull.base?.repo?.default_branch) {
-    return { waiting: false, reason: "no CodeRabbit check, and it only reviews pull requests into the default branch" };
-  } else {
-    since = headDate;
-    why = `CodeRabbit never picked up the push of ${iso(headDate)}`;
-  }
-  if (why && reviews.some((review) => review.user?.login === CODERABBIT && review.commit_id === pull.head?.sha)) {
-    return { waiting: false, reason: "CodeRabbit reviewed it, though its check didn't say so" };
-  }
-
-  if (/@coderabbitai\s+ignore\b/i.test(pull.body ?? "")) {
-    return { waiting: false, reason: "its description has @coderabbitai ignore" };
-  }
-  const switches = comments.filter(
-    (c) => !byCodeRabbit(c) && /^\s*@coderabbitai\s+(pause|resume)\b/i.test(c.body ?? ""),
-  );
-  const lastSwitch = switches.at(-1);
+  const no = (reason) => ({ waiting: false, reason });
+  const wait = ({ since, notBefore = since, why, ask, limited = false }) => ({
+    waiting: true,
+    since,
+    notBefore,
+    why,
+    ask,
+    limited,
+  });
+  if (/@coderabbitai\s+ignore\b/i.test(pull.body ?? "")) return no("its description has @coderabbitai ignore");
+  const lastSwitch = comments
+    .filter((c) => !byCodeRabbit(c) && /^\s*@coderabbitai\s+(pause|resume)\b/i.test(c.body ?? ""))
+    .at(-1);
   if (lastSwitch && /pause/i.test(lastSwitch.body)) {
-    return { waiting: false, reason: `paused by @${lastSwitch.user.login} at ${lastSwitch.created_at}` };
+    return no(`paused by @${lastSwitch.user.login} at ${lastSwitch.created_at}`);
   }
-
+  const check = latestCheck(checkRuns);
+  if (check && check.status !== "completed" && !stuck(check, now)) return no("CodeRabbit is reviewing it");
   const ourAsks = comments.filter((c) => c.user?.login === asker && isAsk(c) && time(c.created_at) > headDate);
-  if (ourAsks.length >= MAX_ASKS_PER_COMMIT) {
-    return { waiting: false, reason: `asked ${ourAsks.length} times for this commit already` };
+  if (ourAsks.length >= MAX_ASKS_PER_COMMIT) return no(`asked ${ourAsks.length} times for this commit already`);
+
+  // What happened since the push, oldest first: asks, CodeRabbit's answers, and its reviews of the head.
+  const events = [];
+  for (const c of comments) {
+    if (time(c.created_at) <= headDate) continue;
+    if (isAsk(c)) events.push({ kind: "ask", at: time(c.created_at), comment: c });
+    else if (isReply(c)) events.push({ kind: "reply", at: time(c.created_at), comment: c });
   }
-  const lastAsk = comments.filter((c) => isAsk(c) && time(c.created_at) >= since).at(-1);
-  if (lastAsk) {
-    const askedAt = time(lastAsk.created_at);
-    const reply = comments.find((c) => isReply(c) && time(c.created_at) >= askedAt);
-    const outcome = reply && replyOutcome(reply.body);
-    if (!reply && now - askedAt < ANSWER_GRACE_MS) {
-      return { waiting: false, reason: `asked at ${lastAsk.created_at}, no answer yet` };
+  for (const r of reviews) {
+    if (r.user?.login === CODERABBIT && r.commit_id === pull.head?.sha) {
+      events.push({ kind: "review", at: time(r.submitted_at) });
     }
-    // Ignored rather than refused: asking again the same way would only be ignored again.
-    if (!reply && lastAsk.user?.login === asker) {
-      return { waiting: false, reason: `CodeRabbit didn't answer the ask at ${lastAsk.created_at}` };
-    }
-    if (outcome === "accepted" && now - askedAt < ACCEPTED_GRACE_MS) {
-      return { waiting: false, reason: `CodeRabbit took the ask at ${reply.created_at}` };
+  }
+  events.sort((a, b) => a.at - b.at);
+  // Someone else's ask that CodeRabbit ignored changes nothing; ours isn't repeated.
+  const ignored = (e, i) =>
+    e.kind === "ask" &&
+    e.comment.user?.login !== asker &&
+    now - e.at >= ANSWER_GRACE_MS &&
+    !events.slice(i + 1).some((n) => n.kind === "reply");
+  const last = events.filter((e, i) => !ignored(e, i)).at(-1);
+
+  if (last?.kind === "review") return no(`CodeRabbit reviewed it at ${iso(last.at)}`);
+  if (last?.kind === "ask") {
+    if (now - last.at < ANSWER_GRACE_MS) return no(`asked at ${last.comment.created_at}, no answer yet`);
+    return no(`CodeRabbit didn't answer the ask at ${last.comment.created_at}`);
+  }
+  if (last?.kind === "reply") {
+    const reply = last.comment;
+    const ask = comments.filter((c) => isAsk(c) && time(c.created_at) <= last.at).at(-1);
+    const full = Boolean(ask && isFullAsk(ask));
+    const outcome = replyOutcome(reply.body);
+    if (outcome === "refused") {
+      // A refusal often names no time, but the summary edited along with it does.
+      const notices = noticesFrom(comments, now).filter((n) => n.at >= last.at - 2 * MINUTE);
+      return wait({
+        since: last.at,
+        notBefore: notices.length ? Math.max(...notices.map((n) => n.until)) : last.at + UNKNOWN_WAIT_MS + MARGIN_MS,
+        why: `refused at ${iso(last.at)}`,
+        ask: full ? FULL_ASK : ASK,
+        limited: true,
+      });
     }
     if (outcome === "declined") {
-      return { waiting: false, reason: `CodeRabbit declined: ${declineReason(reply.body)}` };
+      if (/already\s+reviewed/i.test(plain(reply.body))) {
+        return wait({ since: last.at, why: "CodeRabbit had already reviewed the last commit", ask: FULL_ASK });
+      }
+      return no(`CodeRabbit declined: ${declineReason(reply.body)}`);
     }
+    if (outcome !== "accepted") return no(`CodeRabbit's answer at ${reply.created_at} isn't one this knows`);
+    if (full) return no(`CodeRabbit took the full review asked for at ${ask.created_at}`);
+    // A plain review it finished: with a review posted that would be the newest thing, so this one found nothing.
+    if (!/finished/i.test(plain(reply.body))) {
+      if (now - last.at < STUCK_REVIEW_MS) return no(`CodeRabbit took the ask at ${reply.created_at}`);
+      return wait({ since: last.at, why: `the review taken at ${reply.created_at} never finished`, ask: ASK });
+    }
+    const done = time(reply.updated_at);
+    if (now - done < SETTLE_MS) return no("CodeRabbit only just finished");
+    return wait({ since: done, why: "the review asked for found nothing to say", ask: FULL_ASK });
   }
 
-  // A refusal with no notice to go by (a summary not yet written) still gets the standard wait; an unreviewed head
-  // waits only for the refusals of asks made since.
-  const own = noticesFrom(comments, now).filter((notice) => notice.at >= since - 2 * MINUTE);
-  const fallback = why ? since : since + UNKNOWN_WAIT_MS + MARGIN_MS;
-  const notBefore = own.length ? Math.max(...own.map((n) => n.until)) : fallback;
-  // A plain `review` after a refused `full review` is declined as "Already reviewed the last commit".
-  const full = comments.some((c) => isFullAsk(c) && time(c.created_at) > headDate);
-  return { waiting: true, since, notBefore, why: why ?? `refused at ${iso(since)}`, ask: full ? FULL_ASK : ASK };
+  // Nothing since the push.
+  if (!check && now - headDate < MISSED_HEAD_MS) return no("no CodeRabbit check on its head yet");
+  if (check?.status === "completed" && now - time(check.completed_at) < SETTLE_MS) {
+    return no("CodeRabbit only just finished");
+  }
+  if (check?.conclusion === "success") {
+    const since = time(check.completed_at);
+    return wait({ since, why: "CodeRabbit reviewed the push without a word", ask: FULL_ASK });
+  }
+  const reviewedBefore =
+    reviews.some((r) => r.user?.login === CODERABBIT) ||
+    comments.some((c) => isSummary(c) && c.body.includes(WALKTHROUGH_MARKER));
+  const summary = comments.find(isSummary);
+  const limited = check ? rateLimited(check) : Boolean(summary?.body.includes(RATE_LIMIT_MARKER));
+  const own = limited ? noticesFrom(comments, now).filter((n) => n.kind === "summary" && n.at >= headDate) : [];
+  const notBefore = own.length
+    ? Math.max(...own.map((n) => n.until))
+    : limited
+      ? headDate + UNKNOWN_WAIT_MS + MARGIN_MS
+      : headDate;
+  const said = check ? `CodeRabbit's check on the push says "${check.output?.title ?? check.conclusion}"` : "";
+  return wait({
+    since: headDate,
+    notBefore,
+    why: said || `CodeRabbit never picked up the push of ${iso(headDate)}`,
+    ask: reviewedBefore ? ASK : FULL_ASK,
+    limited,
+  });
 }
 
 /** The next ask: { pull } to ask now, { at } to wait until, or {} when nothing waits. */
@@ -256,12 +299,6 @@ async function survey(github, { asker, now }) {
   const states = [];
   for (const pull of pulls) {
     const checkRuns = await github.all(`commits/${pull.head.sha}/check-runs?filter=all`, (page) => page.check_runs);
-    const check = latestCheck(checkRuns);
-    // Only heads CodeRabbit refused, never checked or never finished need their comments read.
-    if (check && !rateLimited(check) && !stuck(check, now)) {
-      states.push({ number: pull.number, waiting: false, reason: `CodeRabbit's check says "${check.output?.title}"` });
-      continue;
-    }
     const commit = await github.request(`commits/${pull.head.sha}`);
     const comments = await github.all(`issues/${pull.number}/comments`);
     const reviews = await github.all(`pulls/${pull.number}/reviews`);
@@ -271,12 +308,12 @@ async function survey(github, { asker, now }) {
   const waiting = states.filter((state) => state.waiting);
   let hold = 0;
   if (waiting.length) {
-    // A summary is edited in place and can keep an old notice after a review, so only a waiting pull request's
-    // summary counts; a refusal anywhere means the allowance is spent for all of them.
-    const numbers = new Set(waiting.map((state) => state.number));
+    // A summary is edited in place and can keep an old notice after a review, so only a rate-limited head's summary
+    // counts; a refusal anywhere means the allowance is spent for all of them.
+    const limited = new Set(waiting.filter((state) => state.limited).map((state) => state.number));
     const recent = await github.all(`issues/comments?since=${iso(now - NOTICE_HORIZON_MS)}`);
     for (const notice of noticesFrom(recent, now)) {
-      if (notice.kind === "refusal" || numbers.has(notice.pr)) hold = Math.max(hold, notice.until);
+      if (notice.kind === "refusal" || limited.has(notice.pr)) hold = Math.max(hold, notice.until);
     }
   }
   return { states, waiting, hold };
