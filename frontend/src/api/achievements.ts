@@ -57,7 +57,8 @@ export const achievementsApi = {
     return res.json();
   },
 
-  markSeen: async (badges: string[]): Promise<void> => {
+  /** These have been shown, each at the tier shown: one raised since stays unseen. */
+  markSeen: async (badges: { id: string; tier: number }[]): Promise<void> => {
     const res = await fetch(`${apiBase()}/me/achievements/seen`, json({ badges }));
     if (res.status === 401) throw new UnauthorizedError();
     if (res.status === 404) throw new AchievementsOffError();

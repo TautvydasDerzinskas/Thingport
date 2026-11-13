@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { achievementsApi, type OwnAchievement } from "../../api/achievements";
 import { knownAchievements } from "../../constants/achievements";
+import { latestRequests } from "../../utils/latestRequests";
 import AchievementsShowcase, { type ShowcaseOpen } from "./AchievementsShowcase";
 import { onAchievementCheck } from "./achievementEvents";
 
@@ -13,12 +14,20 @@ const AFTER_MS = 3000;
 export default function MyAchievements() {
   const [items, setItems] = useState<OwnAchievement[] | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Only the newest read is shown: an older one answering last would put back badges from before.
+  const [requests] = useState(latestRequests);
 
   const load = useCallback(() => {
-    achievementsApi.mine().then(setItems, () => {
-      // Off or unreachable: nothing to show until the next try.
-    });
-  }, []);
+    const current = requests.next();
+    achievementsApi.mine().then(
+      (mine) => {
+        if (current()) setItems(mine);
+      },
+      () => {
+        // Off or unreachable: nothing to show until the next try.
+      },
+    );
+  }, [requests]);
 
   useEffect(() => {
     load();
@@ -31,10 +40,11 @@ export default function MyAchievements() {
       timers.add(timer);
     });
     return () => {
+      requests.cancel();
       stop();
       timers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [load]);
+  }, [load, requests]);
 
   const badge = searchParams.get("achievement");
   const open: ShowcaseOpen = badge ? { badge } : searchParams.get("achievements") === "all" ? "all" : null;

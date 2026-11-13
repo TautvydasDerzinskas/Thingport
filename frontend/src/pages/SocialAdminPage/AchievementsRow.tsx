@@ -82,7 +82,8 @@ export default function AchievementsRow({ onUnauthorized }: Props) {
         }
         summary={t("adminSettings.social.achievements.summary")}
         checked={enabled === true}
-        disabled={enabled === null}
+        // One save at a time: a second, started while the first is under way, could be answered first.
+        disabled={enabled === null || busy}
         busy={busy}
         onChange={(checked) => void save(checked)}
         extra={

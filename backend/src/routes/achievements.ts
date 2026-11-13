@@ -56,14 +56,16 @@ router.get(
   }),
 );
 
-const badgeIds = z.array(z.string().min(1).max(100)).max(200);
+const shownBadges = z
+  .array(z.object({ id: z.string().min(1).max(100), tier: z.number().int().min(0).max(100) }))
+  .max(200);
 
-/** The app has shown these, as they are now. */
+/** The app has shown these, each at the tier it showed (`[{ id, tier }]`): a badge raised since stays unseen. */
 router.post(
   "/me/achievements/seen",
   asyncHandler(async (req, res) => {
     await assertOn();
-    const { badges } = parseBody(z.object({ badges: badgeIds }), req.body);
+    const { badges } = parseBody(z.object({ badges: shownBadges }), req.body);
     await markAchievementsSeen(req.userId!, badges);
     res.status(204).end();
   }),

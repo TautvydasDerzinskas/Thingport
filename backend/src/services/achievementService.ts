@@ -155,21 +155,45 @@ export async function evaluateAchievements(userId: string, { silent = false } = 
 // One check at a time a user, a moment after the last thing that asked for one.
 const waiting = new Map<string, ReturnType<typeof setTimeout>>();
 const running = new Map<string, Promise<void>>();
-// While turning achievements on credits everyone, checks are silent too: what someone did meanwhile is told with the
-// rest, rather than as a toast for each badge they had long ago.
-let crediting = false;
+// While turning achievements on credits everyone: who's been credited so far. A check for someone who hasn't been yet
+// credits them, in the same turn as their checks, so what they did meanwhile is told with the rest rather than as a
+// toast for each badge they had long ago, and a check for someone who has been is an ordinary one.
+let credited: Set<string> | null = null;
 
-async function check(userId: string): Promise<void> {
+/** Runs `task` for `userId` once what's already running for them is over. */
+async function inTurn(userId: string, what: string, task: () => Promise<void>): Promise<void> {
   const before = running.get(userId) ?? Promise.resolve();
-  const next = before
-    .then(async () => {
-      if (!(await getAchievementSettings()).enabled) return;
-      await evaluateAchievements(userId, { silent: crediting });
-    })
-    .catch((err: unknown) => console.error("[achievements] check failed", userId, err));
+  const next = before.then(task).catch((err: unknown) => console.error(`[achievements] ${what} failed`, userId, err));
   running.set(userId, next);
   await next;
   if (running.get(userId) === next) running.delete(userId);
+}
+
+/** Raises what `userId` had earned before achievements were on, seen at once, and says so in one notification. */
+async function creditOne(userId: string): Promise<void> {
+  const raised = await evaluateAchievements(userId, { silent: true });
+  if (!raised.length) return;
+  await createNotification(userId, {
+    type: "achievement",
+    title: `You've earned ${raised.length} achievements`,
+    message: { key: "achievementsCredited", values: { count: raised.length } },
+    internalPath: "/authors/self?achievements=all",
+  });
+}
+
+/** While everyone is being credited, credits `userId` unless they have been already; true when it did. */
+async function creditIfDue(userId: string): Promise<boolean> {
+  if (!credited || credited.has(userId)) return false;
+  credited.add(userId);
+  await creditOne(userId);
+  return true;
+}
+
+function check(userId: string): Promise<void> {
+  return inTurn(userId, "check", async () => {
+    if (!(await getAchievementSettings()).enabled) return;
+    if (!(await creditIfDue(userId))) await evaluateAchievements(userId);
+  });
 }
 
 /** Checks `userId`'s badges in a moment, while achievements are on. Fire-and-forget, like recordActivity: whatever
@@ -205,25 +229,16 @@ export function creditEveryone(): Promise<void> {
 }
 
 async function creditAll(): Promise<void> {
-  crediting = true;
+  credited = new Set();
   try {
     const users = await prisma.user.findMany({ select: { id: true } });
     for (const { id } of users) {
-      try {
-        const raised = await evaluateAchievements(id, { silent: true });
-        if (!raised.length) continue;
-        await createNotification(id, {
-          type: "achievement",
-          title: `You've earned ${raised.length} achievements`,
-          message: { key: "achievementsCredited", values: { count: raised.length } },
-          internalPath: "/authors/self?achievements=all",
-        });
-      } catch (err) {
-        console.error("[achievements] crediting failed", id, err);
-      }
+      await inTurn(id, "crediting", async () => {
+        await creditIfDue(id);
+      });
     }
   } finally {
-    crediting = false;
+    credited = null;
   }
 }
 
@@ -327,13 +342,19 @@ export async function unseenAchievements(userId: string): Promise<AchievementOut
   return ordered(rows).map((row) => out(row, days.get(userId) ?? 0));
 }
 
-/** Marks these of `userId`'s badges shown, at the tier they're at. */
-export async function markAchievementsSeen(userId: string, badges: string[]): Promise<void> {
-  if (!badges.length) return;
-  await prisma.userAchievement.updateMany({
-    where: { userId, badge: { in: badges }, seenAt: null },
-    data: { seenAt: new Date() },
-  });
+/** Marks these of `userId`'s badges shown, each at the tier the app showed: one raised since stays unseen, to be
+ *  shown in its turn. A badge's top tier stands for any past it, as `ordered` shows those. */
+export async function markAchievementsSeen(userId: string, shown: { id: string; tier: number }[]): Promise<void> {
+  const seenAt = new Date();
+  for (const { id, tier } of shown) {
+    const def = badgeDef(id);
+    if (!def) continue;
+    const top = def.thresholds.length - 1;
+    await prisma.userAchievement.updateMany({
+      where: { userId, badge: id, seenAt: null, tier: tier >= top ? { gte: tier } : tier },
+      data: { seenAt },
+    });
+  }
 }
 
 /** Gives `userId` a secret a widget or tool gave away: `secret` is `<its slug>/<key>`. False for one there isn't.

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -43,6 +43,15 @@ async function own(account: Account): Promise<Own[]> {
 }
 
 const badge = async (account: Account, id: string) => (await own(account)).find((item) => item.id === id);
+
+/** Waits for what something fire-and-forget writes, failing if it isn't there within `timeoutMs`. */
+async function eventually(condition: () => Promise<boolean>, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!(await condition())) {
+    if (Date.now() > deadline) throw new Error("Not there within the timeout");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+}
 
 async function downloads(account: Account, count: number) {
   await prisma.activity.createMany({
@@ -101,10 +110,17 @@ describe("achievements switch", () => {
       data: { sourceProvider: "makerworld", sourceExternalId: `${stamp}` },
     });
 
+    // Someone whose badges are checked while everyone is being credited: theirs are told with the rest.
+    const busy = await register("Busy");
+    await downloads(busy, 3);
+
     const res = await request(app).patch("/api/achievements/settings").set(auth(admin)).send({ enabled: true });
     expect(res.body).toEqual({ enabled: true });
     // Crediting runs in the background; this waits for it to be done.
-    await creditEveryone();
+    await Promise.all([creditEveryone(), checkAchievementsNow(busy.id)]);
+    const busyNotes = await prisma.notification.findMany({ where: { userId: busy.id, type: "achievement" } });
+    expect(busyNotes.map((note) => note.message)).toEqual([{ key: "achievementsCredited", values: { count: 1 } }]);
+    expect(await badge(busy, "downloads")).toMatchObject({ tier: 0, seen: true });
 
     const list = await own(member);
     expect(list.find((item) => item.id === "downloads")).toMatchObject({ tier: 0, count: 3, next: 10, seen: true });
@@ -137,10 +153,18 @@ describe("earning", () => {
     expect(unseen.body.map((item: { id: string }) => item.id)).toEqual(["downloads"]);
     expect(unseen.body[0]).not.toHaveProperty("count");
 
+    // Shown at the tier before, as when it was raised again after the app looked: that one hasn't been seen.
+    const stale = await request(app)
+      .post("/api/me/achievements/seen")
+      .set(auth(member))
+      .send({ badges: [{ id: "downloads", tier: 0 }] });
+    expect(stale.status).toBe(204);
+    expect(await badge(member, "downloads")).toMatchObject({ seen: false });
+
     const seen = await request(app)
       .post("/api/me/achievements/seen")
       .set(auth(member))
-      .send({ badges: ["downloads"] });
+      .send({ badges: [{ id: "downloads", tier: 1 }] });
     expect(seen.status).toBe(204);
     expect(await badge(member, "downloads")).toMatchObject({ seen: true });
   });
@@ -150,6 +174,8 @@ describe("earning", () => {
     const printId = await upload(member);
     await request(app).post(`/api/print/${printId}/download`).set(auth(member)).send({ kind: "slicer" });
     await request(app).post(`/api/print/${printId}/download`).set(auth(member));
+    await eventually(async () => (await badge(member, "downloads"))!.count === before + 1);
+    // And no more than that, the slicer's not counted however long it takes.
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect((await badge(member, "downloads"))!.count).toBe(before + 1);
   });
@@ -210,7 +236,13 @@ describe("earning", () => {
   });
 
   it("earns Regular on more than 20 of the last 30 days, and shows it lapsed after", async () => {
-    const today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+    // One clock for the days written here and the service's window, at noon: a day can't turn over meanwhile.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const today = Date.UTC(2026, 5, 15);
     const days = (count: number) =>
       Array.from({ length: count }, (_, n) => ({ userId: member.id, day: new Date(today - n * DAY_MS) }));
     await prisma.userActiveDay.deleteMany({ where: { userId: member.id } });
@@ -231,7 +263,7 @@ describe("earning", () => {
     const fresh = await register("Fresh");
     await request(app).get("/api/social").set(auth(fresh));
     await request(app).get("/api/social").set(auth(fresh));
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await eventually(async () => (await prisma.userActiveDay.count({ where: { userId: fresh.id } })) > 0);
     expect(await prisma.userActiveDay.count({ where: { userId: fresh.id } })).toBe(1);
   });
 });

@@ -43,13 +43,17 @@ export default function AchievementReveal({ achievement, onClose }: Props) {
       onClose={onClose}
       aria-labelledby="achievement-reveal-title"
       slotProps={{
-        paper: { sx: { width: 380, maxWidth: "calc(100% - 32px)", overflow: "hidden", background: NIGHT } },
+        // Scrolls on a short screen (a phone on its side); the rays are clipped by the box they turn in.
+        paper: {
+          sx: { width: 380, maxWidth: "calc(100% - 32px)", overflowX: "hidden", overflowY: "auto", background: NIGHT },
+        },
       }}
     >
       {achievement && def && (
         <Box
           sx={{
             position: "relative",
+            overflow: "hidden",
             px: 3,
             pt: 5,
             pb: 3,
