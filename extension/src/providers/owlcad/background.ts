@@ -81,17 +81,30 @@ class RunStoppedError extends Error {}
 async function onceLoaded(tabId: number): Promise<void> {
   const tooSlow = await backgroundText("owlcadEditorSlow");
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       chrome.tabs.onUpdated.removeListener(listener);
-      reject(new RunStoppedError(tooSlow));
+      if (error) reject(error);
+      else resolve();
+    };
+    const timer = setTimeout(() => {
+      finish(new RunStoppedError(tooSlow));
     }, TAB_LOAD_TIMEOUT_MS);
     const listener = (changedId: number, info: { status?: string }) => {
       if (changedId !== tabId || info.status !== "complete") return;
-      clearTimeout(timer);
-      chrome.tabs.onUpdated.removeListener(listener);
-      resolve();
+      finish();
     };
     chrome.tabs.onUpdated.addListener(listener);
+    // Browser events are not replayed, so cover a completion that happened before this listener existed.
+    void chrome.tabs.get(tabId).then(
+      (tab) => {
+        if (tab.status === "complete") finish();
+      },
+      () => undefined,
+    );
   });
 }
 

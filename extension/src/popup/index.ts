@@ -231,7 +231,7 @@ els.languageSelect.addEventListener("change", async () => {
   labelTabs(!els.configuredView.hidden);
   localizeDynamicContent();
   const res = await send("SET_LOCALE", { locale });
-  if (!res?.ok) showError(res?.error ?? t("saveFailed"));
+  if (!res?.ok) showError(res?.error ?? t("saveFailed"), els.configuredView.hidden ? els.error : els.configuredError);
 });
 
 syncLanguagePicker();

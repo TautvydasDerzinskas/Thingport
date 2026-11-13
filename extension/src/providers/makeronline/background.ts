@@ -126,6 +126,9 @@ function signedUrl(data: unknown): string | null {
  *  own. */
 class RunStoppedError extends Error {}
 
+/** Signing cannot succeed for this or any later waiting item until the page state changes. */
+class SigningBlockedError extends Error {}
+
 /** The files a link needs, signed in `tabId`, a makeronline.com tab. Throws with a reason the user can act on. */
 export async function resolveMakeronlineFiles(
   tabId: number,
@@ -173,9 +176,9 @@ async function signRequests(tabId: number, requests: DownloadRequest[]): Promise
   for (const [index, answer] of answers.entries()) {
     const request = requests[index];
     if (answer.code === CODE_CAPTCHA) {
-      throw new Error(await backgroundText("makeronlineCaptcha"));
+      throw new SigningBlockedError(await backgroundText("makeronlineCaptcha"));
     }
-    if (answer.code === CODE_SIGNED_OUT) throw new Error(await backgroundText("makeronlineSignIn"));
+    if (answer.code === CODE_SIGNED_OUT) throw new SigningBlockedError(await backgroundText("makeronlineSignIn"));
     const link = answer.code === CODE_OK ? signedUrl(answer.data) : null;
     if (!link)
       throw new Error(
@@ -244,8 +247,7 @@ async function runWaiting(tabId: number): Promise<number> {
       await apiCall("POST", `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}/failed`, { error }).catch(
         () => undefined,
       );
-      // A captcha or a lost sign-in fails every later one too.
-      if (/captcha|sign in/i.test(error)) break;
+      if (err instanceof SigningBlockedError) break;
       continue;
     }
     try {

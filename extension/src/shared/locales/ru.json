@@ -196,6 +196,7 @@
   "profilesAlreadyOnModelCount": "Уже на модели: {count}",
   "profilesFailed": "Не удалось импортировать: {count}",
   "profilesAdded": "Добавлено",
+  "startImport": "Начать импорт",
   "lastError": "Последняя ошибка: {error}",
   "partlyImported": "Импорт выполнен частично",
   "snapmakerLikes": "Отметки «Нравится»",

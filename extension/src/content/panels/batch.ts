@@ -169,7 +169,7 @@ export async function loadBatchEntries(): Promise<void> {
     })
     .join("");
   const count = result.entries.length;
-  const found = `${t("modelsFound", { count, suffix: count === 1 ? "" : "s" })}${result.truncated ? t("moreModelsAvailable") : ""}`;
+  const found = `${t("modelsFound", { count })}${result.truncated ? t("moreModelsAvailable") : ""}`;
   renderPanel(`
     ${snapmakerListSwitchHtml()}
     <div class="tg-title">${escapeHtml(result.title || t("importModels"))}</div>

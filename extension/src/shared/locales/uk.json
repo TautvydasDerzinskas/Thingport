@@ -196,6 +196,7 @@
   "profilesAlreadyOnModelCount": "Уже в моделі: {count}",
   "profilesFailed": "Не вдалося імпортувати: {count}",
   "profilesAdded": "Додано",
+  "startImport": "Почати імпорт",
   "lastError": "Остання помилка: {error}",
   "partlyImported": "Імпорт виконано частково",
   "snapmakerLikes": "Вподобання",

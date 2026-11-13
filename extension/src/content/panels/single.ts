@@ -519,7 +519,7 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
       failed++;
       lastError = err;
       // The backend's errors arrive as plain text.
-      if (err instanceof Error && /captcha|download limit/i.test(err.message)) {
+      if (isMakerworldBlockingError(err) || (err instanceof Error && /captcha|download limit/i.test(err.message))) {
         failed += wanted.length - index - 1;
         break;
       }
@@ -530,11 +530,11 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
     renderBlockedError(lastError ?? new Error(t("importFailed")), scope, collectionId);
     return;
   }
-  const parts = [t("printProfilesImported", { count: added, suffix: added === 1 ? "" : "s" })];
+  const parts = [t("printProfilesImported", { count: added })];
   if (already) parts.push(t("profilesAlreadyOnModelCount", { count: already }));
   if (failed) parts.push(t("profilesFailed", { count: failed }));
   // Onto a model already in the library, as adding the page's own profile there says.
-  const addedTitle = library && added ? t("profilesAdded", { suffix: added === 1 ? "" : "s" }) : undefined;
+  const addedTitle = library && added ? t("profilesAdded") : undefined;
   // The last failure's reason (a CAPTCHA, the daily limit, the instance's refusal) says what to do about the rest.
   const reason =
     failed && lastError
