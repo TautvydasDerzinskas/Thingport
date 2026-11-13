@@ -167,17 +167,26 @@ function runTool(
 ): Promise<ToolRun> {
   return new Promise((resolve, reject) => {
     const lines: string[] = [];
-    const keep = (chunk: Buffer) => {
-      for (const line of chunk.toString("utf8").split(/\r?\n/)) {
-        if (!line.trim()) continue;
-        onLine?.(line);
-        lines.push(line);
-        if (lines.length > TAIL_LINES) lines.shift();
-      }
+    const keep = (line: string) => {
+      if (!line.trim()) return;
+      onLine?.(line);
+      lines.push(line);
+      if (lines.length > TAIL_LINES) lines.shift();
+    };
+    // A chunk can end partway through a line: its rest comes with the next one.
+    const read = (stream: NodeJS.ReadableStream) => {
+      let rest = "";
+      stream.setEncoding("utf8");
+      stream.on("data", (text: string) => {
+        const parts = (rest + text).split(/\r?\n/);
+        rest = parts.pop() ?? "";
+        parts.forEach(keep);
+      });
+      stream.on("end", () => keep(rest));
     };
     const child = spawn(command, args, { env, signal, stdio: ["ignore", "pipe", "pipe"] });
-    child.stdout.on("data", keep);
-    child.stderr.on("data", keep);
+    read(child.stdout);
+    read(child.stderr);
     child.on("error", reject);
     child.on("close", (code) => resolve({ code, lines }));
   });
@@ -195,17 +204,28 @@ function baseEnv(): NodeJS.ProcessEnv {
 /** What pg_restore may fail to make without the copy missing anything a migration reads: an extension the role may
  *  not create, the public schema that's there already, comments and grants. Anything else, a table or its rows above
  *  all, stops the restore. */
-const HARMLESS = /^(EXTENSION|SCHEMA|COMMENT|ACL|DEFAULT ACL|EVENT TRIGGER|PUBLICATION|SUBSCRIPTION|SECURITY LABEL) /;
+const HARMLESS =
+  /^(EXTENSION|SCHEMA|COMMENT|ACL|DEFAULT ACL|EVENT TRIGGER|PUBLICATION|SUBSCRIPTION|SECURITY LABEL|STATISTICS DATA) /;
 
-/** Of pg_restore's lines, the errors that matter, each after the entry it was restoring. An error is told apart by the
- *  "from TOC entry <id>; <oid> <oid> <kind> ..." line before it; the archive's opening SETs (a newer pg_dump's setting
- *  an older server doesn't know) come "while INITIALIZING", before any entry. */
-export function restoreErrors(): { see: (line: string) => void; serious: string[] } {
+/** pg_restore's --verbose progress, "creating TABLE ...", bar the lines that say where an error was. */
+const PROGRESS = /^pg_restore: (?!(?:error|warning|detail|hint): |while |from TOC entry )/;
+
+/** Of pg_restore's lines, the errors that matter, each after the entry it was restoring, and the last of what it said
+ *  bar its progress. An error is told apart by the "from TOC entry <id>; <oid> <oid> <kind> ..." line before it; the
+ *  archive's opening SETs (a newer pg_dump's setting an older server doesn't know) come "while INITIALIZING", before
+ *  any entry. Since PostgreSQL 15, pg_restore prints both only with --verbose. */
+export function restoreErrors(): { see: (line: string) => void; serious: string[]; said: string[] } {
   let entry: string | null = null;
   const serious: string[] = [];
+  const said: string[] = [];
   return {
     serious,
+    said,
     see: (line) => {
+      if (!PROGRESS.test(line)) {
+        said.push(line);
+        if (said.length > TAIL_LINES) said.shift();
+      }
       const phase = /^pg_restore: while (\w+)/.exec(line);
       if (phase) entry = phase[1] === "INITIALIZING" ? "INITIALIZING" : null;
       const from = /^pg_restore: from TOC entry \d+; \d+ \d+ (.+)$/.exec(line);
@@ -240,6 +260,8 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
     PGCONNECT_TIMEOUT: "15",
   };
   const args = [
+    // For the lines that say which entry an error is in (restoreErrors).
+    "--verbose",
     "--no-owner",
     "--no-privileges",
     "--no-comments",
@@ -263,15 +285,12 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
   }
   if (result.code === 0) return [];
   // 1 with "errors ignored on restore" is pg_restore carrying on past them.
-  const carriedOn = result.code === 1 && result.lines.some((line) => /errors ignored on restore/i.test(line));
+  const carriedOn = result.code === 1 && errors.said.some((line) => /errors ignored on restore/i.test(line));
   if (carriedOn && errors.serious.length) {
     throw new MigrateError("restore_failed", errors.serious.slice(0, 8).join("\n"));
   }
-  if (carriedOn) return result.lines;
-  throw new MigrateError(
-    "restore_failed",
-    result.lines.slice(-8).join("\n") || `pg_restore exited with ${result.code}`,
-  );
+  if (carriedOn) return errors.said;
+  throw new MigrateError("restore_failed", errors.said.slice(-8).join("\n") || `pg_restore exited with ${result.code}`);
 }
 
 /** Brings the working copy up to this instance's release with its own database changes, as an upgrade would. */

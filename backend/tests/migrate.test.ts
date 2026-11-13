@@ -72,16 +72,19 @@ describe("restoring a dump", () => {
   it("stops at a table or its rows it couldn't restore, not at what the copy does without", () => {
     const errors = restoreErrors();
     const lines = [
+      "pg_restore: connecting to database for restore",
       "pg_restore: while INITIALIZING:",
       'pg_restore: error: could not execute query: ERROR:  unrecognized configuration parameter "transaction_timeout"',
       "Command was: SET transaction_timeout = 0;",
       "pg_restore: while PROCESSING TOC:",
+      'pg_restore: creating EXTENSION "pg_trgm"',
       "pg_restore: from TOC entry 2; 3079 1010499 EXTENSION pg_trgm (no owner)",
       'pg_restore: error: could not execute query: ERROR:  permission denied to create extension "pg_trgm"',
       "pg_restore: from TOC entry 3; 2615 2200 SCHEMA public postgres",
       'pg_restore: error: could not execute query: ERROR:  schema "public" already exists',
       "pg_restore: from TOC entry 210; 1259 1010580 TABLE Print thingport",
       'pg_restore: error: could not execute query: ERROR:  type "citext" does not exist',
+      'pg_restore: processing data for table "public.Print"',
       "pg_restore: from TOC entry 3688; 0 1010580 TABLE DATA Print thingport",
       'pg_restore: error: COPY failed for table "Print": ERROR:  relation "Print" does not exist',
       "pg_restore: warning: errors ignored on restore: 4",
@@ -91,6 +94,8 @@ describe("restoring a dump", () => {
       'TABLE Print thingport: could not execute query: ERROR:  type "citext" does not exist',
       'TABLE DATA Print thingport: COPY failed for table "Print": ERROR:  relation "Print" does not exist',
     ]);
+    // --verbose's progress is left out of what's said.
+    expect(errors.said).toEqual(lines.filter((line) => !/^pg_restore: (connecting|creating|processing)/.test(line)));
   });
 
   it.skipIf(!hasPgTools)("carries on past an extension it may not make, and stops at a table it lost", async () => {
