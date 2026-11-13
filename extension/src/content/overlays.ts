@@ -12,9 +12,9 @@ const JOB_STUCK_REVEAL_MS = 20000;
 
 function overlayHtml(title: string, countHtml: string, extra = ""): string {
   return `
-    <div class="tg-overlay__card">
+    <div class="tg-overlay__card" tabindex="-1">
       <span class="tg-overlay__icon" data-icon></span>
-      <div class="tg-overlay__title">${escapeHtml(title)}</div>
+      <div class="tg-overlay__title" id="tg-overlay-title">${escapeHtml(title)}</div>
       ${countHtml}
       ${extra}
     </div>
@@ -44,10 +44,41 @@ function wireAbort(overlay: HTMLElement): void {
   });
 }
 
+/** Keeps keyboard focus on a full-page blocking overlay; the docked CAPTCHA card deliberately does not use this. */
+function focusBlockingOverlay(overlay: HTMLElement, preferred?: HTMLElement): void {
+  const card = overlay.querySelector<HTMLElement>(".tg-overlay__card")!;
+  (preferred ?? card).focus();
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const buttons = [...overlay.querySelectorAll<HTMLButtonElement>("button:not([disabled])")].filter(
+      (button) => !button.hidden,
+    );
+    if (!buttons.length) {
+      event.preventDefault();
+      card.focus();
+      return;
+    }
+    const first = buttons[0];
+    const last = buttons.at(-1)!;
+    const root = overlay.getRootNode();
+    const active = root instanceof ShadowRoot ? root.activeElement : null;
+    if (!(active instanceof HTMLButtonElement) || !buttons.includes(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if ((event.shiftKey && active === first) || (!event.shiftKey && active === last)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
+  });
+}
+
 /** Counts down the wait between models, then asks the background to start this one. */
 export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "tg-overlay-title");
   overlay.innerHTML = overlayHtml(
     t("importingFromMakerWorld"),
     progressHtml(job),
@@ -58,6 +89,7 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   fillIcons(overlay);
   root.appendChild(overlay);
   wireAbort(overlay);
+  focusBlockingOverlay(overlay, overlay.querySelector<HTMLButtonElement>("[data-action=abort]")!);
 
   const nextBtn = overlay.querySelector<HTMLButtonElement>("[data-action=next]")!;
   nextBtn.addEventListener("click", () => {
@@ -98,6 +130,8 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
 export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay tg-overlay--docked";
+  overlay.setAttribute("role", "region");
+  overlay.setAttribute("aria-labelledby", "tg-overlay-title");
   overlay.innerHTML = overlayHtml(
     t("pausedCaptcha"),
     progressHtml(job),
@@ -121,12 +155,16 @@ export type ScanOverlay = { update(count: number, total?: number | null): void; 
 export function mountScanOverlay(root: ShadowRoot): ScanOverlay {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "tg-overlay-title");
   overlay.innerHTML = overlayHtml(
     t("scanCollection"),
-    `<div class="tg-overlay__count" data-role="count">${escapeHtml(t("foundSoFar", { count: 0 }))}</div>`,
+    `<div class="tg-overlay__count" data-role="count" role="status" aria-live="polite">${escapeHtml(t("foundSoFar", { count: 0 }))}</div>`,
   );
   fillIcons(overlay);
   root.appendChild(overlay);
+  focusBlockingOverlay(overlay);
   const countEl = overlay.querySelector<HTMLElement>('[data-role="count"]')!;
   return {
     update: (count, total) => {

@@ -294,7 +294,9 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   // Its slicers and printers are the instance's once connected, so it's read again whenever this is.
   void loadAdapt();
   if (!res.data.configured) {
-    showSetupForm();
+    showSetupForm(res.data.pairingInstanceUrl);
+    setPairing(res.data.pairing);
+    els.pairPending.hidden = !res.data.pairing;
     return;
   }
   showConfiguredView(res.data);
@@ -395,16 +397,32 @@ async function pairWithInstance(): Promise<void> {
     return;
   }
   setPairing(true);
-  // First, while this still counts as the user's gesture: it's what lets Grab read the approval tab.
-  const granted = await chrome.permissions.request({
+  // Start the durable write without awaiting it, then request permission while this still counts as the user's
+  // gesture. Chrome may dismiss this popup for its prompt; background storage/permission listeners continue it.
+  const rememberIntent = chrome.storage.local.set({
+    [STORAGE_KEYS.pairingIntent]: { instanceUrl, startedAt: Date.now() },
+  });
+  const permission = chrome.permissions.request({
     origins: instanceOrigins(origin),
   });
+  let granted: boolean;
+  try {
+    granted = await permission;
+    await rememberIntent;
+  } catch {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent).catch(() => undefined);
+    setPairing(false);
+    showError(t("openThingportFailed"));
+    return;
+  }
   if (!granted) {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     setPairing(false);
     showError(t("instancePermission"));
     return;
   }
-  const res = await send("START_PAIRING", { instanceUrl });
+  // Also resume here for already-granted access, where permissions.onAdded does not fire.
+  const res = await send("RESUME_PAIRING");
   if (!res?.ok) {
     setPairing(false);
     showError(res?.error ?? t("openThingportFailed"));

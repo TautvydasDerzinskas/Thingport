@@ -50,6 +50,8 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
+    pairing: Boolean(config.pendingPairing),
+    pairingInstanceUrl: config.pendingPairing?.instanceUrl || config.pairingIntent?.instanceUrl || "",
     offlineFeatures: Object.fromEntries(
       (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [
         feature,
@@ -78,7 +80,11 @@ export async function saveConfig({
   await loginAndStoreToken({ instanceUrl: normalized, email, password });
   await chrome.storage.local.set({ instanceUrl: normalized, email, password, disabled: false });
   // The password replaces a connection made by approval; that one stays listed in Thingport until removed there.
-  await chrome.storage.local.remove([STORAGE_KEYS.connectionToken, STORAGE_KEYS.pendingPairing]);
+  await chrome.storage.local.remove([
+    STORAGE_KEYS.connectionToken,
+    STORAGE_KEYS.pendingPairing,
+    STORAGE_KEYS.pairingIntent,
+  ]);
   return null;
 }
 

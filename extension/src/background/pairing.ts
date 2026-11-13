@@ -13,6 +13,9 @@ import { backgroundText } from "./localize";
 // Long enough to sign in through a provider on the way.
 const PAIRING_TTL_MS = 15 * 60 * 1000;
 
+let resuming: Promise<null> | null = null;
+const claimingTabs = new Set<number>();
+
 function base64url(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
@@ -55,11 +58,50 @@ export async function startPairing(rawInstanceUrl: string): Promise<null> {
   const page = new URL(`${instanceUrl}/connect-grab`);
   page.searchParams.set("challenge", challenge);
   page.searchParams.set("name", browserName());
-  const tab = await chrome.tabs.create({ url: page.href });
+  // The pending secret must be durable before the approval page can answer.
+  const tab = await chrome.tabs.create({ url: "about:blank", active: false });
   if (tab.id == null) throw new Error(await backgroundText("couldNotOpenThingportTab"));
   const pending: PendingPairing = { instanceUrl, verifier, tabId: tab.id, startedAt: Date.now() };
   await chrome.storage.local.set({ [STORAGE_KEYS.pendingPairing]: pending });
+  try {
+    await chrome.tabs.update(tab.id, { url: page.href, active: true });
+  } catch (error) {
+    await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
+    await chrome.tabs.remove(tab.id).catch(() => undefined);
+    throw error;
+  }
   return null;
+}
+
+/** Resumes after Chrome's permission prompt, even when that prompt destroyed the popup that started it. */
+export function resumePairingIntent(): Promise<null> {
+  resuming ??= (async () => {
+    const config = await getStoredConfig();
+    const intent = config.pairingIntent;
+    if (!intent) return null;
+    if (Date.now() - intent.startedAt > PAIRING_TTL_MS) {
+      await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+      return null;
+    }
+    if (config.pendingPairing) {
+      await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+      return null;
+    }
+    const origin = new URL(normalizeInstanceUrl(intent.instanceUrl)).origin;
+    if (!(await chrome.permissions.contains({ origins: [`${origin}/*`] }))) return null;
+    // Consume before opening the tab: permission and storage events can both ask to resume.
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+    try {
+      return await startPairing(intent.instanceUrl);
+    } catch (error) {
+      // Keep the address for a retry instead of dropping the user's input on another transient browser failure.
+      await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent });
+      throw error;
+    }
+  })().finally(() => {
+    resuming = null;
+  });
+  return resuming;
 }
 
 async function errorDetail(res: Response): Promise<string> {
@@ -84,6 +126,7 @@ async function claim(pending: PendingPairing, code: string): Promise<void> {
 /** Watches the approval tab: a code in its #fragment finishes the connection, a cancel drops it. */
 export async function onPairingTabUrl(tabId: number, url: string | undefined): Promise<void> {
   if (!url) return;
+  if (claimingTabs.has(tabId)) return;
   const { pendingPairing: pending } = await getStoredConfig();
   if (!pending || pending.tabId !== tabId) return;
   if (Date.now() - pending.startedAt > PAIRING_TTL_MS) {
@@ -104,8 +147,10 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
     return;
   }
   const code = fragment.get("grab_code");
-  if (!code) return;
-  // Taken first, so the same code isn't tried twice by two quick updates.
+  if (!code || claimingTabs.has(tabId)) return;
+  // Chrome can report the same fragment through both its URL and completed-load updates. Claim ownership before
+  // the first await so two handlers that already read the same pending value cannot both exchange the code.
+  claimingTabs.add(tabId);
   await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
   try {
     await claim(pending, code);
@@ -115,6 +160,8 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
     const error = new URL(`${pending.instanceUrl}/connect-grab`);
     error.searchParams.set("error", err instanceof Error ? err.message : String(err));
     await chrome.tabs.update(tabId, { url: error.href }).catch(() => undefined);
+  } finally {
+    claimingTabs.delete(tabId);
   }
 }
 
