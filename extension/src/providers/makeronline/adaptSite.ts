@@ -77,13 +77,36 @@ export function pickedFile(files: AdaptFile[], picks: string | null, filesTab: b
 
 const signing = new Map<string, Signing>();
 
-/** Asks the page to keep its picks where this can read them; again a little later while the page is still starting. */
-function watchPicks(tries = 3): void {
-  void request("WATCH_MAKERONLINE_PICK")
-    .catch(() => false)
-    .then((watching) => {
-      if (!watching && tries > 1) setTimeout(() => watchPicks(tries - 1), 1000);
-    });
+// How long to wait between asks while the page's store isn't there yet: a little longer each time, for about a minute
+// on a slow page. After that, the next look at the picks (selected) asks again.
+export const WATCH_DELAYS_MS = [1000, 1000, 2000, 2000, 4000, 4000, 8000, 8000, 15000, 15000];
+let watching: Promise<boolean> | null = null;
+let watched = false;
+
+/** Asks the page to keep its picks where this can read them; again a little later while the page is still starting
+ *  and still on the same model, so a slow page still gets its picks read. One round of asks at a time. */
+export function watchPicks(): Promise<boolean> {
+  if (watched) return Promise.resolve(true);
+  if (watching) return watching;
+  const page = location.href;
+  watching = (async () => {
+    for (let attempt = 0; ; attempt++) {
+      const ok = await request("WATCH_MAKERONLINE_PICK").catch(() => false);
+      if (ok) return (watched = true);
+      if (attempt >= WATCH_DELAYS_MS.length || location.href !== page) return false;
+      await new Promise((resolve) => setTimeout(resolve, WATCH_DELAYS_MS[attempt]));
+      if (location.href !== page) return false;
+    }
+  })().finally(() => {
+    watching = null;
+  });
+  return watching;
+}
+
+/** For tests: forgets that the page's picks are watched. */
+export function resetPickWatch(): void {
+  watched = false;
+  watching = null;
 }
 
 const visible = (el: HTMLElement | null) => (el && el.offsetParent !== null ? el : null);
@@ -105,7 +128,7 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
     const body = (await res.json()) as { code?: number; data?: Record<string, unknown> | null };
     const files = body.code === 0 ? moldFiles(body.data) : [];
     for (const { id, key, fileType, signId } of files) signing.set(id, { key, fileType, signId });
-    if (files.length) watchPicks();
+    if (files.length) void watchPicks();
     return files.map(({ key: _key, fileType: _fileType, signId: _signId, ...file }) => file);
   },
 
@@ -114,6 +137,9 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
     const picks = document.documentElement.getAttribute(MAKERONLINE_PICK);
     const filesTab = Boolean(document.querySelector(FILES_TAB));
     if (picks !== null) return pickedFile(files, picks, filesTab);
+    // Not read yet: ask the page again, in case it was still starting when it was last asked.
+    watched = false;
+    void watchPicks();
     const title = document.querySelector<HTMLImageElement>(`${PROFILES_TAB} .file-item.active .icon img`)?.alt?.trim();
     return (title && files.find((file) => file.title === title)) || null;
   },
