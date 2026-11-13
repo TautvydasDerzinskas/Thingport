@@ -23,6 +23,7 @@ import { pathToFileURL } from "node:url";
 
 export const CODERABBIT = "coderabbitai[bot]";
 export const ASK = "@coderabbitai review";
+export const FULL_ASK = "@coderabbitai full review";
 const RATE_LIMIT_MARKER = "rate limited by coderabbit.ai";
 const SUMMARY_MARKER = "summarize by coderabbit.ai";
 const REPLY_MARKER = "auto-generated reply by coderabbit";
@@ -128,8 +129,8 @@ export function noticesFrom(comments, now) {
 
 /**
  * Whether a pull request is waiting for an ask. Returns { waiting: false, reason } or { waiting: true, since,
- * notBefore, why }: since is when CodeRabbit refused its head, or left it unreviewed (the queue order), notBefore the
- * earliest time this pull request's own notices allow an ask, and why says which for the log.
+ * notBefore, why, ask }: since is when CodeRabbit refused its head, or left it unreviewed (the queue order), notBefore
+ * the earliest time this pull request's own notices allow an ask, why says which for the log, and ask is the command.
  */
 export function pullState({ pull, checkRuns, headDate, comments, reviews = [], now, asker }) {
   const check = latestCheck(checkRuns);
@@ -198,7 +199,9 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
   const own = noticesFrom(comments, now).filter((notice) => notice.at >= since - 2 * MINUTE);
   const fallback = why ? since : since + UNKNOWN_WAIT_MS + MARGIN_MS;
   const notBefore = own.length ? Math.max(...own.map((n) => n.until)) : fallback;
-  return { waiting: true, since, notBefore, why: why ?? `refused at ${iso(since)}` };
+  // A plain `review` after a refused `full review` is declined as "Already reviewed the last commit".
+  const full = comments.some((c) => isAsk(c) && /full/i.test(c.body) && time(c.created_at) > headDate);
+  return { waiting: true, since, notBefore, why: why ?? `refused at ${iso(since)}`, ask: full ? FULL_ASK : ASK };
 }
 
 /** The next ask: { pull } to ask now, { at } to wait until, or {} when nothing waits. */
@@ -327,14 +330,14 @@ async function main() {
       await sleep(next.at - now);
       continue;
     }
-    const { number } = next.pull;
-    if (dryRun) return console.log(`Would ask CodeRabbit to review #${number} now.`);
+    const { number, ask: command } = next.pull;
+    if (dryRun) return console.log(`Would post "${command}" on #${number} now.`);
     const ask = await poster.request(`issues/${number}/comments`, {
       method: "POST",
-      body: JSON.stringify({ body: ASK }),
+      body: JSON.stringify({ body: command }),
     });
     asks++;
-    console.log(`::notice::Asked CodeRabbit to review #${number}`);
+    console.log(`::notice::Posted "${command}" on #${number}`);
     const { outcome, reply } = await awaitAnswer(github, number, time(ask.created_at), Date.now() + 3 * MINUTE);
     console.log(`#${number}: ${outcome}${outcome === "declined" ? ` (${declineReason(reply.body)})` : ""}`);
     if (outcome === "none") {

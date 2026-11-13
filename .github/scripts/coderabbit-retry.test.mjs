@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   ASK,
   CODERABBIT,
+  FULL_ASK,
   MAX_ASKS_PER_COMMIT,
   latestCheck,
   nextAsk,
@@ -200,6 +201,15 @@ test("a review that never finished is asked for again", () => {
   assert.match(stuck.why, /never finished/);
   const review = { user: { login: CODERABBIT }, commit_id: "c0ffee" };
   assert.equal(state({ checkRuns: running(-40), comments, reviews: [review] }).waiting, false);
+});
+
+test("a refused full review is asked for again as one", () => {
+  const base = [comment(CODERABBIT, SUMMARY_LIMITED, -60, { updated: 0 })];
+  assert.equal(state().ask, ASK);
+  const full = [...base, comment("someone", FULL_ASK, -0.5), comment(CODERABBIT, REFUSED, -0.4)];
+  assert.equal(state({ comments: full }).ask, FULL_ASK);
+  // One asked for an earlier commit doesn't carry over to a new one.
+  assert.equal(state({ comments: full, headDate: at(-0.1) }).ask, ASK);
 });
 
 test("a pull request someone paused is left alone until resumed", () => {
