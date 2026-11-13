@@ -92,8 +92,9 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
 CodeRabbit reviews pull requests into `develop`, and each push to them. When its review allowance runs out it
-skips the push, and an account kept for it asks it again (`@coderabbitai review`) once the wait it gave has passed,
-so there's no need to ask yourself. Comment `@coderabbitai pause` to stop its reviews of your pull request, and
+skips the push, and an account kept for it asks it again (`@coderabbitai review`, or `full review` if that's what
+was refused) once the wait it gave has passed, so there's no need to ask yourself. That account also asks when CodeRabbit hasn't started on a push within 15
+minutes, or a review hasn't finished within an hour; the hourly check can take up to an hour to notice. Comment `@coderabbitai pause` to stop its reviews of your pull request, and
 `@coderabbitai resume` to start them again.
 
 ## Adding a provider
