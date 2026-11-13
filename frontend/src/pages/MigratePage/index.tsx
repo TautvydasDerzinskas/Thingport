@@ -13,12 +13,13 @@ import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
 import MoveUpOutlinedIcon from "@mui/icons-material/MoveUpOutlined";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { migrateApi, type ExportToken, type MigrateRun } from "../../api/migrate";
+import { manyfoldOptions, migrateApi, type ExportToken, type MigrateRun } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import ToneChip from "../../components/ToneChip";
 import { useToast } from "../../components/ToastProvider";
 import ExportTokenDialog from "./ExportTokenDialog";
+import ManyfoldMigrateDialog from "./ManyfoldMigrateDialog";
 import MigrationRow from "./MigrationRow";
 import { errorText, isActive, k, requestError, SourceTile } from "./parts";
 import ThingportMigrateDialog from "./ThingportMigrateDialog";
@@ -37,8 +38,8 @@ export default function MigratePage({ onUnauthorized }: Props) {
   /** Where on the server the old instance's files are read from. */
   const [root, setRoot] = React.useState("/app/migrate");
   const [loadFailed, setLoadFailed] = React.useState(false);
-  /** The dialog: a new migration, or one from the list. */
-  const [open, setOpen] = React.useState<{ run: MigrateRun | null } | null>(null);
+  /** The dialog: a new migration from a source, or one from the list. */
+  const [open, setOpen] = React.useState<{ run: MigrateRun | null; manyfold: boolean } | null>(null);
   /** The token letting another instance copy this one, and its dialog. */
   const [exportToken, setExportToken] = React.useState<ExportToken | null>(null);
   const [exporting, setExporting] = React.useState(false);
@@ -76,8 +77,9 @@ export default function MigratePage({ onUnauthorized }: Props) {
 
   const startAgain = async (run: MigrateRun) => {
     if (!run.options) return;
+    const manyfold = run.source === "manyfold" ? manyfoldOptions(run) : null;
     try {
-      await migrateApi.start(run.id, run.options);
+      await (manyfold ? migrateApi.startManyfold(run.id, manyfold) : migrateApi.start(run.id, run.options));
       await load();
     } catch (err) {
       fail(err);
@@ -106,6 +108,31 @@ export default function MigratePage({ onUnauthorized }: Props) {
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" } }}>
         <Paper variant="outlined" sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack direction="row" spacing={1.5} alignItems="center">
+            <SourceTile source="manyfold" />
+            <Typography variant="subtitle1" fontWeight={600}>
+              {t(k("manyfold.title"))}
+            </Typography>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {t(k("manyfold.text"))}
+          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip size="small" variant="outlined" label={t(k("manyfold.apiKey"))} />
+            <Chip size="small" variant="outlined" label={t(k("manyfold.anywhere"))} />
+          </Stack>
+          <Box sx={{ mt: "auto", pt: 0.5 }}>
+            <Button
+              variant="contained"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => setOpen({ run: null, manyfold: true })}
+              disabled={busy}
+            >
+              {t(k("thingport.start"))}
+            </Button>
+          </Box>
+        </Paper>
+        <Paper variant="outlined" sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
             <SourceTile />
             <Typography variant="subtitle1" fontWeight={600}>
               {t(k("thingport.title"))}
@@ -122,7 +149,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
             <Button
               variant="contained"
               endIcon={<ArrowForwardIcon />}
-              onClick={() => setOpen({ run: null })}
+              onClick={() => setOpen({ run: null, manyfold: false })}
               disabled={busy}
             >
               {t(k("thingport.start"))}
@@ -189,7 +216,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
                 <MigrationRow
                   key={run.id}
                   run={run}
-                  onOpen={(item) => setOpen({ run: item })}
+                  onOpen={(item) => setOpen({ run: item, manyfold: item.source === "manyfold" })}
                   onStartAgain={(item) => void startAgain(item)}
                   onRemove={(item) => void remove(item)}
                 />
@@ -207,7 +234,15 @@ export default function MigratePage({ onUnauthorized }: Props) {
           onUnauthorized={onUnauthorized}
         />
       )}
-      {open && (
+      {open?.manyfold && (
+        <ManyfoldMigrateDialog
+          initial={open.run}
+          onClose={() => setOpen(null)}
+          onChanged={() => void load()}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
+      {open && !open.manyfold && (
         <ThingportMigrateDialog
           initial={open.run}
           root={root}

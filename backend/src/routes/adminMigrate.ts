@@ -10,8 +10,11 @@ import {
   getRun,
   listRuns,
   prepareFromDump,
+  manyfoldOwner,
+  prepareManyfold,
   prepareOnline,
   removeRun,
+  startManyfold,
   startRun,
   UPLOADS,
 } from "../services/migrate/runs";
@@ -116,6 +119,44 @@ router.post(
   "/thingport-online",
   asyncHandler(async (req, res) => {
     res.status(202).json(await prepareOnline(req.userId!, parseBody(onlineSchema, req.body)));
+  }),
+);
+
+const manyfoldSchema = z.object({
+  address: z.string().min(1).max(2048),
+  clientId: z.string().min(1).max(512),
+  clientSecret: z.string().min(1).max(512),
+});
+
+// From Manyfold, with an API key made there: checked at once, and ready to start.
+router.post(
+  "/manyfold",
+  asyncHandler(async (req, res) => {
+    res.json(await prepareManyfold(req.userId!, parseBody(manyfoldSchema, req.body)));
+  }),
+);
+
+const ownerSchema = z.object({ username: z.string().min(1).max(256) });
+
+// How many models someone owns on that Manyfold, by their username there.
+router.post(
+  "/:id/manyfold-owner",
+  asyncHandler(async (req, res) => {
+    res.json(await manyfoldOwner(String(req.params.id), parseBody(ownerSchema, req.body).username));
+  }),
+);
+
+const manyfoldStartSchema = z.object({
+  owners: z.array(z.object({ username: z.string().min(1).max(256), userId: z.string().min(1).max(64) })).max(1000),
+  collections: z.boolean(),
+});
+
+router.post(
+  "/:id/start-manyfold",
+  asyncHandler(async (req, res) => {
+    res
+      .status(202)
+      .json(await startManyfold(String(req.params.id), req.userId!, parseBody(manyfoldStartSchema, req.body)));
   }),
 );
 

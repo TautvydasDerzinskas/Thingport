@@ -22,6 +22,15 @@ import {
   stagingName,
   upgradeStaging,
 } from "./postgres";
+import {
+  filePathOf,
+  type ManyfoldConnection,
+  ManyfoldClient,
+  manyfoldAddress,
+  type ManyfoldFile,
+  type ManyfoldModel,
+} from "./manyfold/api";
+import { ManyfoldImport, type ManyfoldOptions, type ManyfoldProgress } from "./manyfold/import";
 import { downloadDump, httpSource, normalizeAddress, type Remote, remoteInfo } from "./remote";
 import { checkDumpFile, checkFolder, folderSource, type SourceFiles } from "./sourceFiles";
 
@@ -33,7 +42,7 @@ const log = createLogger("migrate");
 
 export type RunStatus = "preparing" | "ready" | "running" | "done" | "failed";
 export type PrepareStep = "downloading" | "restoring" | "checking" | "upgrading" | "files";
-export type RunProgress = { step: PrepareStep | MergePhase; done: number; total: number };
+export type RunProgress = { step: PrepareStep | MergePhase | ManyfoldProgress["phase"]; done: number; total: number };
 
 /** Where uploaded dumps wait while they're restored. */
 export const UPLOADS = path.join(STORAGE, MIGRATE_FOLDER, "uploads");
@@ -67,7 +76,8 @@ function out(run: MigrationRun): RunOut {
     report: run.report ?? null,
     error: run.error ?? null,
     progress: active?.id === run.id ? { ...active.progress } : null,
-    can_resume: run.status === "failed" && Boolean(run.stagingDb) && Boolean(run.startedAt),
+    can_resume:
+      run.status === "failed" && Boolean(run.startedAt) && (Boolean(run.stagingDb) || run.source === "manyfold"),
     created_at: run.createdAt.toISOString(),
     started_at: run.startedAt?.toISOString() ?? null,
     finished_at: run.finishedAt?.toISOString() ?? null,
@@ -412,6 +422,203 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
   return getRun(id);
 }
 
+// --- Manyfold ---
+
+type ManyfoldRemote = ManyfoldConnection & { done?: string[] };
+
+/** Each migration's client, with the token it signed in with: Manyfold lets a key sign in only ten times in three
+ *  minutes, which looking up owners one by one would use up. */
+const manyfoldClients = new Map<string, ManyfoldClient>();
+
+function manyfoldClient(id: string, remote: ManyfoldConnection): ManyfoldClient {
+  let client = manyfoldClients.get(id);
+  if (!client) {
+    client = new ManyfoldClient(remote);
+    manyfoldClients.set(id, client);
+  }
+  return client;
+}
+
+/** The Manyfold models earlier migrations from the same address brought, so another one skips them. */
+async function broughtBefore(address: string): Promise<Set<string>> {
+  const runs = await prisma.migrationRun.findMany({ where: { source: "manyfold" }, select: { remote: true } });
+  const done = new Set<string>();
+  for (const run of runs) {
+    const remote = run.remote as ManyfoldRemote | null;
+    if (remote?.address === address) for (const id of remote.done ?? []) done.add(id);
+  }
+  return done;
+}
+
+/** Whether this Manyfold says where its files are, as 0.149 and newer do: its first few models' first file is
+ *  enough. One that doesn't would bring every file into one folder, under names it doesn't give. */
+async function assertManyfoldNewEnough(client: ManyfoldClient): Promise<void> {
+  for (const ref of (await client.firstModels()).slice(0, 3)) {
+    const model = await client.json<ManyfoldModel>(ref["@id"]);
+    const part = model.hasPart?.[0];
+    if (!part) continue;
+    const file = await client.json<ManyfoldFile>(part["@id"]);
+    if (filePathOf(file.contentUrl)) return;
+    throw new MigrateError("manyfold_old", "This Manyfold is older than 0.149. Update it, then migrate.");
+  }
+}
+
+/** A migration from Manyfold: its address and API key are tried, and what it has counted, before it's kept. */
+export async function prepareManyfold(
+  adminId: string,
+  given: { address: string; clientId: string; clientSecret: string },
+): Promise<RunOut> {
+  let connection: ManyfoldConnection;
+  let client: ManyfoldClient;
+  let counts: { models: number; collections: number; creators: number };
+  try {
+    assertFree();
+    connection = {
+      address: manyfoldAddress(given.address),
+      clientId: given.clientId.trim(),
+      clientSecret: given.clientSecret.trim(),
+    };
+    client = new ManyfoldClient(connection);
+    const [models, collections, creators] = await Promise.all([
+      client.count("/models"),
+      client.count("/collections"),
+      client.count("/creators"),
+    ]);
+    counts = { models, collections, creators };
+    await assertManyfoldNewEnough(client);
+  } catch (err) {
+    throw asHttp(err);
+  }
+  const before = await broughtBefore(connection.address);
+  const plan: MigratePlan = {
+    dump: null,
+    folder: "",
+    address: connection.address,
+    manyfold: { ...counts, before: before.size },
+  };
+  const run = await prisma.migrationRun.create({
+    data: { source: "manyfold", status: "ready", plan, remote: connection, createdById: adminId },
+  });
+  manyfoldClients.set(run.id, client);
+  void createLog({
+    userId: adminId,
+    action: "migration_prepared",
+    targetId: run.id,
+    details: { address: connection.address },
+  });
+  return getRun(run.id);
+}
+
+/** How many models someone owns on the Manyfold a migration reads, by their username there. */
+export async function manyfoldOwner(id: string, username: string): Promise<{ username: string; models: number }> {
+  const run = await prisma.migrationRun.findUnique({ where: { id } });
+  if (!run || run.source !== "manyfold") throw new HttpError(404, "No such migration");
+  const remote = run.remote as ManyfoldRemote | null;
+  if (!remote?.clientSecret) throw new HttpError(409, "This migration can't do that now.", "not_ready");
+  const name = username.trim();
+  try {
+    return { username: name, models: await manyfoldClient(id, remote).ownedCount(name) };
+  } catch (err) {
+    throw asHttp(err);
+  }
+}
+
+/** Starts a migration from Manyfold with the admin's choices; also starts one that stopped part-way again. */
+export async function startManyfold(id: string, adminId: string, options: ManyfoldOptions): Promise<RunOut> {
+  assertFree();
+  const run = await prisma.migrationRun.findUnique({ where: { id } });
+  if (!run || run.source !== "manyfold") throw new HttpError(404, "No such migration");
+  const remote = run.remote as ManyfoldRemote | null;
+  if (!remote?.clientSecret || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) {
+    throw new HttpError(409, "This migration can't be started.", "not_ready");
+  }
+  // Only people here: a username Manyfold's models go to names someone who exists.
+  const known = new Set(
+    (
+      await prisma.user.findMany({
+        where: { id: { in: options.owners.map((owner) => owner.userId) } },
+        select: { id: true },
+      })
+    ).map((user) => user.id),
+  );
+  const chosen: ManyfoldOptions = {
+    owners: options.owners.filter((owner) => owner.username.trim() && known.has(owner.userId)),
+    collections: options.collections,
+  };
+  await prisma.migrationRun.update({
+    where: { id },
+    data: { status: "running", options: chosen, error: Prisma.DbNull, startedAt: new Date(), finishedAt: null },
+  });
+  const state: Active = { id, progress: { step: "owners", done: 0, total: 0 }, abort: new AbortController() };
+  active = state;
+  setMigrationBusy(true);
+  void executeManyfold(state, remote, chosen, adminId);
+  void createLog({ userId: adminId, action: "migration_started", targetId: id, details: { source: "manyfold" } });
+  return getRun(id);
+}
+
+async function executeManyfold(state: Active, remote: ManyfoldRemote, options: ManyfoldOptions, adminId: string) {
+  let job: ManyfoldImport | null = null;
+  try {
+    const done = await broughtBefore(remote.address);
+    for (const earlier of remote.done ?? []) done.add(earlier);
+    job = new ManyfoldImport(
+      manyfoldClient(state.id, remote),
+      state.id,
+      options,
+      adminId,
+      done,
+      (progress) => {
+        state.progress = { step: progress.phase, done: progress.done, total: progress.total };
+      },
+      async () => {
+        await prisma.migrationRun.update({ where: { id: state.id }, data: { remote: { ...remote, done: [...done] } } });
+      },
+    );
+    const report = await job.run();
+    // The key isn't needed any more; what came is kept, so a later migration skips it.
+    manyfoldClients.delete(state.id);
+    await prisma.migrationRun.update({
+      where: { id: state.id },
+      data: {
+        status: "done",
+        report,
+        remote: { address: remote.address, done: [...job.done] },
+        finishedAt: new Date(),
+      },
+    });
+    await createNotification(adminId, {
+      type: "general",
+      title: "Migration finished",
+      message: { key: "migrateDone", values: { count: report.models.brought } },
+      body: `${report.models.brought} models came over from Manyfold.`,
+      internalPath: "/admin-migrate",
+    }).catch(() => undefined);
+  } catch (err) {
+    log.error("a migration from Manyfold failed", { error: err });
+    await prisma.migrationRun.update({
+      where: { id: state.id },
+      data: {
+        status: "failed",
+        error: storedError(err),
+        ...(job ? { report: job.report } : {}),
+        remote: { ...remote, done: [...(job?.done ?? remote.done ?? [])] },
+        finishedAt: new Date(),
+      },
+    });
+    await createNotification(adminId, {
+      type: "general",
+      title: "Migration stopped",
+      message: { key: "migrateFailed" },
+      body: "Open Administration > Migrate to see why, and start it again to finish.",
+      internalPath: "/admin-migrate",
+    }).catch(() => undefined);
+  } finally {
+    if (active === state) active = null;
+    setMigrationBusy(false);
+  }
+}
+
 /** Discards a migration that's being prepared or waiting, or takes one that's over off the list. Files a run that
  *  stopped part-way left in its folder go where they belong first. */
 export async function removeRun(id: string): Promise<void> {
@@ -425,6 +632,7 @@ export async function removeRun(id: string): Promise<void> {
   }
   if (run.stagingDb) await dropStaging(run.stagingDb);
   if (run.startedAt) await fileRunModels(id);
+  manyfoldClients.delete(id);
   await prisma.migrationRun.delete({ where: { id } });
 }
 

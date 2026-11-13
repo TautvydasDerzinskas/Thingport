@@ -16,7 +16,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReplayIcon from "@mui/icons-material/Replay";
-import type { MigrateRun } from "../../api/migrate";
+import type { TFunction } from "i18next";
+import { manyfoldReport, type MigrateRun } from "../../api/migrate";
 import ToneChip from "../../components/ToneChip";
 import { errorText, k, runTitle, SourceTile } from "./parts";
 
@@ -28,6 +29,62 @@ const NARROW_WRAP = {
 } as const;
 
 const TONES = { preparing: "info", ready: "info", running: "info", done: "success", failed: "error" } as const;
+
+/** What one from another Thingport instance is doing, or did, with its people. */
+function thingportLine(t: TFunction, run: MigrateRun, when: string): string {
+  const people = run.options?.people.length ?? run.plan.counts?.people ?? 0;
+  const merged = (run.plan.people ?? []).filter(
+    (person) => person.merge && (!run.options || run.options.people.includes(person.id)),
+  ).length;
+  const peopleLine = [t(k("runs.people"), { count: people }), merged ? t(k("runs.merged"), { count: merged }) : null]
+    .filter(Boolean)
+    .join(", ");
+  if (run.status === "preparing") return t(k(`check.steps.${run.progress?.step ?? "restoring"}`));
+  if (run.status === "running") {
+    const step = run.progress?.step ?? "people";
+    return [
+      t(k(`start.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 }),
+      peopleLine,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (run.status === "ready") {
+    return t(k("runs.readyLine"), { people: peopleLine, count: run.plan.counts?.models ?? 0 });
+  }
+  if (run.status === "done" && run.report) {
+    const left = run.report.models.noFiles;
+    return [
+      when,
+      t(k("runs.doneLine"), { count: run.report.models.brought, people: peopleLine }),
+      left ? t(k("runs.leftOut"), { count: left }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return [when, errorText(t, run.error)].filter(Boolean).join(" · ");
+}
+
+/** What one from Manyfold is doing, or did. */
+function manyfoldLine(t: TFunction, run: MigrateRun, when: string): string {
+  if (run.status === "running") {
+    const step = run.progress?.step ?? "owners";
+    return t(k(`manyfold.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 });
+  }
+  if (run.status === "ready") return t(k("manyfold.readyLine"), { count: run.plan.manyfold?.models ?? 0 });
+  const report = manyfoldReport(run);
+  if (run.status === "done" && report) {
+    const left = report.models.noFiles;
+    return [
+      when,
+      t(k("report.models"), { count: report.models.brought }),
+      left ? t(k("manyfold.leftOut"), { count: left }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return [when, errorText(t, run.error)].filter(Boolean).join(" · ");
+}
 
 type Props = {
   run: MigrateRun;
@@ -46,41 +103,12 @@ export default function MigrationRow({ run, onOpen, onStartAgain, onRemove }: Pr
     dateStyle: "medium",
     timeStyle: "short",
   });
-  const people = run.options?.people.length ?? run.plan.counts?.people ?? 0;
-  const merged = (run.plan.people ?? []).filter(
-    (person) => person.merge && (!run.options || run.options.people.includes(person.id)),
-  ).length;
-  const peopleLine = [t(k("runs.people"), { count: people }), merged ? t(k("runs.merged"), { count: merged }) : null]
-    .filter(Boolean)
-    .join(", ");
-
-  let line: string;
+  const manyfold = run.source === "manyfold";
   let progress: number | null = null;
-  if (run.status === "preparing") {
-    line = t(k(`check.steps.${run.progress?.step ?? "restoring"}`));
-  } else if (run.status === "running") {
-    const step = run.progress?.step ?? "people";
-    line = [
-      t(k(`start.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 }),
-      peopleLine,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    if (run.progress && run.progress.total > 0) progress = (run.progress.done / run.progress.total) * 100;
-  } else if (run.status === "ready") {
-    line = t(k("runs.readyLine"), { people: peopleLine, count: run.plan.counts?.models ?? 0 });
-  } else if (run.status === "done" && run.report) {
-    const left = run.report.models.noFiles;
-    line = [
-      when,
-      t(k("runs.doneLine"), { count: run.report.models.brought, people: peopleLine }),
-      left ? t(k("runs.leftOut"), { count: left }) : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-  } else {
-    line = [when, errorText(t, run.error)].filter(Boolean).join(" · ");
+  if (run.status === "running" && run.progress && run.progress.total > 0) {
+    progress = (run.progress.done / run.progress.total) * 100;
   }
+  const line = manyfold ? manyfoldLine(t, run, when) : thingportLine(t, run, when);
 
   const close = () => setMenu(null);
   const openMenu = (event: React.MouseEvent<HTMLElement>, atPointer = false) => {
@@ -120,14 +148,16 @@ export default function MigrationRow({ run, onOpen, onStartAgain, onRemove }: Pr
           "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main" },
         }}
       >
-        <SourceTile />
+        <SourceTile source={run.source} />
         <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" fontWeight={600} sx={NARROW_WRAP}>
             {runTitle(t, run)}
-            <Typography component="span" variant="body2" color="text.secondary">
-              {" · "}
-              {t(k(run.source === "thingport-online" ? "runs.viaOnline" : "runs.viaDump"))}
-            </Typography>
+            {!manyfold && (
+              <Typography component="span" variant="body2" color="text.secondary">
+                {" · "}
+                {t(k(run.source === "thingport-online" ? "runs.viaOnline" : "runs.viaDump"))}
+              </Typography>
+            )}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={NARROW_WRAP}>
             {line}

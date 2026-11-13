@@ -213,6 +213,7 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "migration_prepared":
         return typeof d.dump === "string" ? d.dump : typeof d.address === "string" ? d.address : "";
       case "migration_started":
+        if (d.source === "manyfold") return t("adminSettings.logs.migrationManyfold");
         return typeof d.people === "number" ? t("adminSettings.logs.migrationPeople", { count: d.people }) : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {

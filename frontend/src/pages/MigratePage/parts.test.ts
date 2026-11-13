@@ -1,8 +1,10 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import type { AdminUser } from "../../api/admin";
 import type { MigrateRun } from "../../api/migrate";
 import { checkPassed } from "./CheckStep";
-import { errorDetails, errorText, formatBytes } from "./parts";
+import { guessUser, manyfoldLines } from "./ManyfoldMigrateDialog";
+import { errorDetails, errorText, formatBytes, runTitle } from "./parts";
 
 // Answers with the key and its values, so a test sees which sentence would show.
 const t = ((key: string, values?: Record<string, unknown>) =>
@@ -51,5 +53,41 @@ describe("migrate page helpers", () => {
     expect(checkPassed(run({ plan: { counts: all, missingFiles: 4 } }))).toBe(false);
     expect(checkPassed(run({ status: "preparing" }))).toBe(false);
     expect(checkPassed(null)).toBe(false);
+  });
+
+  it("names a migration by where it came from", () => {
+    expect(runTitle(t, run({ plan: { dump: { name: "old.dump", size: 1 }, version: "1.2.0" } }))).toBe(
+      'adminSettings.migrate.runs.fromRelease {"name":"old.dump","version":"1.2.0"}',
+    );
+    expect(runTitle(t, run({ source: "manyfold", plan: { address: "http://192.168.1.30:3214" } }))).toBe(
+      'adminSettings.migrate.manyfold.runTitle {"name":"192.168.1.30:3214"}',
+    );
+  });
+
+  it("guesses who a Manyfold username is here, by name or by email, else the one asking", () => {
+    const users = [
+      { id: "u1", display_name: "Alex", email: "alex.k@example.com" },
+      { id: "u2", display_name: "Samantha", email: "sam@example.com" },
+    ] as AdminUser[];
+    expect(guessUser("alex", users, "me")).toBe("u1");
+    expect(guessUser("Sam", users, "me")).toBe("u2");
+    expect(guessUser("robin", users, "me")).toBe("me");
+  });
+
+  it("says what a migration from Manyfold did, leaving out what didn't happen", () => {
+    const report = {
+      models: { brought: 3, earlier: 2, noFiles: 1, alreadyHere: 0, failed: 0 },
+      files: { copied: 9, missing: 0 },
+      collections: { brought: 1, merged: 1 },
+      failures: [],
+    };
+    expect(manyfoldLines(t, report)).toEqual([
+      'adminSettings.migrate.report.models {"count":3}',
+      'adminSettings.migrate.report.modelsEarlier {"count":2}',
+      'adminSettings.migrate.manyfold.report.noFiles {"count":1}',
+      'adminSettings.migrate.report.collections {"count":2}',
+      'adminSettings.migrate.report.collectionsMerged {"count":1}',
+    ]);
+    expect(errorText(t, { code: "manyfold_key", message: "x" })).toBe("adminSettings.migrate.errors.manyfold_key");
   });
 });

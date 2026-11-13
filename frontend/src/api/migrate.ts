@@ -32,8 +32,10 @@ export type MigratePlan = {
   dump: { name: string; size: number } | null;
   /** The old instance's storage folder here; empty for one copied online. */
   folder: string;
-  /** The old instance's address, for one copied online. */
+  /** The old instance's address, for one copied online, or Manyfold's. */
   address?: string;
+  /** What a Manyfold has, and how many of its models earlier migrations brought. */
+  manyfold?: { models: number; collections: number; creators: number; before: number };
   /** The release the old instance last ran; null for one before 1.2.0, which didn't say. */
   version?: string | null;
   changes?: { applied: number; added: number };
@@ -81,6 +83,7 @@ export type MigrateReport = {
 };
 
 export type MigrateStep =
+  | "owners"
   | "downloading"
   | "restoring"
   | "checking"
@@ -96,10 +99,12 @@ export type MigrateRunError = { code: string; message: string; values?: Record<s
 
 export type MigrateRun = {
   id: string;
-  source: "thingport" | "thingport-online";
+  source: "thingport" | "thingport-online" | "manyfold";
   status: "preparing" | "ready" | "running" | "done" | "failed";
   plan: MigratePlan;
+  /** The admin's choices: ManyfoldOptions for one from Manyfold (manyfoldOptions() reads them). */
   options: MigrateOptions | null;
+  /** What it did: a ManyfoldReport for one from Manyfold (manyfoldReport() reads it). */
   report: MigrateReport | null;
   error: MigrateRunError | null;
   /** While it's preparing or running, how far it is. */
@@ -110,6 +115,19 @@ export type MigrateRun = {
   started_at: string | null;
   finished_at: string | null;
 };
+
+/** Who on Manyfold, by username, each person here's models are; everyone else's go to the admin. */
+export type ManyfoldOptions = { owners: { username: string; userId: string }[]; collections: boolean };
+
+export type ManyfoldReport = {
+  models: { brought: number; earlier: number; noFiles: number; alreadyHere: number; failed: number };
+  files: { copied: number; missing: number };
+  collections: { brought: number; merged: number };
+  failures: { kind: string; name: string; error: string }[];
+};
+
+export const manyfoldOptions = (run: MigrateRun) => run.options as unknown as ManyfoldOptions | null;
+export const manyfoldReport = (run: MigrateRun) => run.report as unknown as ManyfoldReport | null;
 
 /** Whether another instance can copy this one now, and when it last did. */
 export type ExportToken = { active: boolean; expires_at: string | null; used_at: string | null };
@@ -195,6 +213,29 @@ export const migrateApi = {
       "/thingport-online",
       { method: "POST", body: JSON.stringify({ address, token }) },
       "Couldn't reach the old instance",
+    ),
+
+  /** From Manyfold, with an API key made there: tried at once, and ready to start. */
+  prepareManyfold: (address: string, clientId: string, clientSecret: string): Promise<MigrateRun> =>
+    send(
+      "/manyfold",
+      { method: "POST", body: JSON.stringify({ address, clientId, clientSecret }) },
+      "Couldn't reach Manyfold",
+    ),
+
+  /** How many models someone owns there, by their Manyfold username. */
+  manyfoldOwner: (id: string, username: string): Promise<{ username: string; models: number }> =>
+    send(
+      `/${encodeURIComponent(id)}/manyfold-owner`,
+      { method: "POST", body: JSON.stringify({ username }) },
+      "Couldn't ask Manyfold",
+    ),
+
+  startManyfold: (id: string, options: ManyfoldOptions): Promise<MigrateRun> =>
+    send(
+      `/${encodeURIComponent(id)}/start-manyfold`,
+      { method: "POST", body: JSON.stringify(options) },
+      "Couldn't start it",
     ),
 
   /** The token that lets another instance copy this one, while there is one. */
