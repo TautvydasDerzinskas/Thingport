@@ -145,8 +145,13 @@ async function buildAdapted(
         return { home: chosen, dest: target };
       });
       if (!(await keep(job, dest))) return null;
-      await fs.rm(errorPath(plateId, plan), { force: true });
-      await removeOlderCopies(plateId, plan, home);
+      try {
+        await fs.rm(errorPath(plateId, plan), { force: true });
+        await removeOlderCopies(plateId, plan, home);
+      } catch (err) {
+        // The new copy is in place all the same; an older one left behind is Free up space's to remove.
+        console.warn(`Couldn't remove older 3MF copies of plate ${plateId} (${planKey(plan)}):`, err);
+      }
       return dest;
     }
     console.warn(`Adapting the 3MF of plate ${plateId} (${planKey(plan)}) failed; serving the original:`, result.error);
