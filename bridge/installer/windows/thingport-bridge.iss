@@ -62,7 +62,10 @@ begin
   if CurStep = ssPostInstall then
   begin
     LegacyDir := ExpandConstant('{localappdata}\Thingport\Bridge');
-    DeleteFile(LegacyDir + '\thingport-bridge.exe');
-    RemoveDir(LegacyDir);
+    if CompareText(LegacyDir, ExpandConstant('{app}')) <> 0 then
+    begin
+      DeleteFile(LegacyDir + '\thingport-bridge.exe');
+      RemoveDir(LegacyDir);
+    end;
   end;
 end;
