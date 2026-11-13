@@ -237,8 +237,9 @@ export function eufymakeMetaFromDetail(model: Record<string, unknown>): Eufymake
     const id = printFileId(info.info_id);
     const url = str(info.file_3mf_key);
     if (!id || !url) return [];
-    const name = str(info.print_name) ?? nameFromUrl(url, `${id}.3mf`);
-    return [{ id, name, url, title: name.replace(/\.3mf$/i, ""), coverUrl: str(info.cover_url) }];
+    // A print file is a 3MF whatever its designer named it, and a download without the extension is dropped.
+    const shown = (str(info.print_name) ?? nameFromUrl(url, `${id}.3mf`)).replace(/\.3mf$/i, "");
+    return [{ id, name: `${shown}.3mf`, url, title: shown, coverUrl: str(info.cover_url) }];
   });
   return {
     meta,

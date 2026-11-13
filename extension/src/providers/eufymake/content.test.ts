@@ -41,11 +41,7 @@ describe("an eufyMake model's print files, as Grab's panel offers them", () => {
   });
 
   it("leave out one without a whole-number id", async () => {
-    serves([
-      { info_id: "5a", file_3mf_key: FILE },
-      { info_id: null, file_3mf_key: FILE },
-      { file_3mf_key: FILE },
-    ]);
+    serves([{ info_id: "5a", file_3mf_key: FILE }, { info_id: null, file_3mf_key: FILE }, { file_3mf_key: FILE }]);
     expect((await loadEufymakeProfiles(MODEL_URL))?.("all")).toEqual([]);
   });
 });

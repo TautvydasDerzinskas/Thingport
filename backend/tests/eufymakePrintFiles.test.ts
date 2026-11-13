@@ -69,6 +69,14 @@ describe("an eufyMake model's print files", () => {
     expect(resolved.files.map((file) => file.name)).toEqual(["Bedscraper_v2.stl"]);
   });
 
+  it("are named as 3MFs though their designers left the extension off", () => {
+    const [unnamed] = eufymakeMetaFromDetail({
+      ...MODEL,
+      model_print_infos: [{ info_id: 549, print_name: "Ghost lampshade", file_3mf_key: `${CDN}ghost?sig` }],
+    })!.profiles;
+    expect(unnamed).toMatchObject({ name: "Ghost lampshade.3mf", title: "Ghost lampshade" });
+  });
+
   it("are none for a model without them", () => {
     expect(eufymakeMetaFromDetail({ ...MODEL, model_print_infos: null })!.profiles).toEqual([]);
   });

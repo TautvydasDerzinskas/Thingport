@@ -166,6 +166,19 @@ describe("eufyMake specifics", () => {
     expect(stub.calls.some((call) => call.url.pathname.endsWith(".zip"))).toBe(false);
   });
 
+  it("imports a print file whose designer left the extension off its name, as a 3MF", async () => {
+    const detail = withPrintFiles();
+    const [first] = detail.data.model.model_print_infos;
+    first.print_name = "Ghost lampshade";
+    ctx.install(async (call) =>
+      call.url.hostname === "aiot-wapi-eu.ankermake.com" ? json(detail) : handlerFor("ok")(call),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["Ghost lampshade.3mf"]);
+  });
+
   /** The import job, once it has finished. */
   async function finished(jobId: string) {
     for (let tries = 0; tries < 150; tries++) {
