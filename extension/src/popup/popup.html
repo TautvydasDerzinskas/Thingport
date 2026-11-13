@@ -10,16 +10,18 @@
     <header class="header">
       <span class="header__icon" id="header-icon" data-icon></span>
       <div class="header__text">
-        <h1 class="header__title">Thingport Grab</h1>
-        <select id="language-select" data-i18n-aria-label="language" aria-label="Language">
-          <option value="en">English</option>
-          <option value="ru">Русский</option>
-          <option value="uk">Українська</option>
-          <option value="be">Беларуская</option>
-          <option value="es">Español</option>
-          <option value="fr">Français</option>
-          <option value="lt">Lietuvių</option>
-        </select>
+        <div class="header__top">
+          <h1 class="header__title">Thingport Grab</h1>
+          <select class="language-select" id="language-select" data-i18n-aria-label="language" aria-label="Language">
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+            <option value="uk">Українська</option>
+            <option value="be">Беларуская</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="lt">Lietuvių</option>
+          </select>
+        </div>
         <div class="instance" id="instance-row" hidden>
           <a class="instance__url" id="instance-link"></a>
           <button
@@ -89,13 +91,13 @@
         class="tabs__tab"
         role="tab"
         id="tab-appearance"
-        data-i18n="appearance"
+        data-i18n="tabAppearance"
         aria-controls="panel-appearance"
         hidden
       >
         Appearance
       </button>
-      <button type="button" class="tabs__tab" role="tab" id="tab-offline" data-i18n="offlineFeatures" aria-controls="panel-offline">
+      <button type="button" class="tabs__tab" role="tab" id="tab-offline" data-i18n="tabOfflineFeatures" aria-controls="panel-offline">
         Offline features
       </button>
       <button

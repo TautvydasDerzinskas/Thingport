@@ -11,11 +11,15 @@
   border-bottom: 1px solid t.c("border");
 
   &__tab {
+    min-width: 0;
     padding: t.$space-2 t.$space-1;
+    overflow: hidden;
     border: 0;
     background: transparent;
     font: 600 t.$font-size-sm t.$font-stack;
     color: t.c("text-muted");
+    white-space: nowrap;
+    text-overflow: ellipsis;
     cursor: pointer;
     transition: color 0.15s ease;
     @include m.focus-ring;

@@ -63,11 +63,39 @@ body {
     min-width: 0;
   }
 
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-2;
+    min-width: 0;
+  }
+
   &__title {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
     line-height: 1.2;
+  }
+}
+
+.language-select {
+  flex: 0 1 112px;
+  min-width: 78px;
+  height: 28px;
+  padding: 3px 26px 3px 8px;
+  overflow: hidden;
+  border: 1px solid t.c("border");
+  border-radius: t.$radius-sm;
+  font: 600 t.$font-size-xs t.$font-stack;
+  text-overflow: ellipsis;
+  color: t.c("text");
+  background-color: t.c("surface-sunken");
+  cursor: pointer;
+  @include m.focus-ring;
+
+  &:hover {
+    border-color: t.c("text-muted");
   }
 }
 

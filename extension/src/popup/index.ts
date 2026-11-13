@@ -52,7 +52,7 @@ const shownTabs = (): Tab[] => (Object.keys(TABS) as Tab[]).filter((name) => !TA
 /** What the tabs hold changes once connected: the first two are named for it, and Appearance comes in. */
 function labelTabs(connected: boolean): void {
   els.connectTab.textContent = connected ? t("providers") : t("connect");
-  els.offlineTab.textContent = connected ? t("extraFeatures") : t("offlineFeatures");
+  els.offlineTab.textContent = connected ? t("tabExtraFeatures") : t("tabOfflineFeatures");
   els.offlineNote.hidden = connected;
   els.appearanceTab.hidden = !connected;
   const active = els.tabs.dataset.active as Tab | undefined;
