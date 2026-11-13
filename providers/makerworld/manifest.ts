@@ -53,7 +53,7 @@ export default {
     listImport: "grab",
     syncsNewOnly: true,
     rawFilesZip: true,
-    bambuProjects: true,
+    adapted3mfs: ["bambu"],
   },
   examples: {
     model: "https://makerworld.com/en/models/123456-example-model",

@@ -12,6 +12,7 @@ import { recordRecentImport } from "../../background/recentImports";
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../index.generated";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
+import { MAKERONLINE_PICK } from "./pick";
 import { type DownloadRequest, type SignAnswer, signInPage } from "./signInPage";
 
 const SITE = MANIFESTS.makeronline.site;
@@ -130,6 +131,62 @@ async function signRequests(
   return files;
 }
 
+/** For Download adapted: one 3MF's link, signed in the page as its own Download does, its puzzle shown there too, as
+ *  the user just clicked on that page. */
+export async function signMakeronlineFile(
+  tabId: number,
+  { key, fileType, id, name }: BackgroundMessages["SIGN_MAKERONLINE_FILE"]["payload"],
+): Promise<string> {
+  if (typeof key !== "string" || !key || (fileType !== 1 && fileType !== 2) || !Number.isSafeInteger(id)) {
+    throw new Error("That isn't one of this model's files on MakerOnline");
+  }
+  const payload = {
+    key,
+    file_type: fileType,
+    is_batch_down: 0,
+    ...(fileType === 2 ? { print_profile_id: id } : { mold_id: id }),
+  };
+  const [file] = await signRequests(
+    tabId,
+    [{ payload, name: String(name), profile_id: fileType === 2 ? String(id) : null }],
+    true,
+  );
+  return file.url;
+}
+
+/** Runs in the page itself (world: "MAIN"), so it must stand on its own. Keeps the print profile and model file the
+ *  page has picked on <html>, from its store, as they change: once per page, however often it's asked. False while
+ *  the store isn't there yet. */
+function watchPickInPage(attribute: string): boolean {
+  type Store = {
+    watch: (read: (state: unknown) => unknown, then: (value: unknown) => void, options: { immediate: boolean }) => void;
+  };
+  const page = window as unknown as { $nuxt?: { $store?: Store }; thingportPickWatched?: boolean };
+  const store = page.$nuxt?.$store;
+  if (typeof store?.watch !== "function") return false;
+  if (page.thingportPickWatched) return true;
+  page.thingportPickWatched = true;
+  store.watch(
+    (state) => {
+      const model = (state as { model?: { print_profile_id?: unknown; model_profile_id?: unknown } } | null)?.model;
+      return `${String(model?.print_profile_id ?? "")}|${String(model?.model_profile_id ?? "")}`;
+    },
+    (value) => document.documentElement.setAttribute(attribute, String(value)),
+    { immediate: true },
+  );
+  return true;
+}
+
+export async function watchMakeronlinePick(tabId: number): Promise<boolean> {
+  const [result] = await chrome.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: watchPickInPage,
+    args: [MAKERONLINE_PICK],
+  });
+  return result?.result === true;
+}
+
 type WaitingImport = { id: string; url: string; scope: string; collection_id: string | null };
 type TaskState = { status: "running" } | { status: "done"; result: Print } | { status: "error"; detail: string };
 
@@ -227,4 +284,6 @@ export async function importMakeronlineModel(
 export const makeronlineHandlers: Partial<Handlers<BackgroundMessages>> = {
   IMPORT_MAKERONLINE_MODEL: (payload, sender) => importMakeronlineModel(senderTabId(sender), payload),
   RUN_MAKERONLINE_WAITING: (_payload, sender) => runWaitingImports(senderTabId(sender)),
+  SIGN_MAKERONLINE_FILE: (payload, sender) => signMakeronlineFile(senderTabId(sender), payload),
+  WATCH_MAKERONLINE_PICK: (_payload, sender) => watchMakeronlinePick(senderTabId(sender)),
 };

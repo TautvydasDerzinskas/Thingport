@@ -2,7 +2,13 @@ import { CREDENTIAL_HOSTS, type CredentialDestination } from "../providers/_lib/
 
 type ProviderCredentialDestination = Extract<
   CredentialDestination,
-  "makerworld-extension" | "printables-api" | "snapmaker-id" | "thangs-site"
+  | "makerworld-extension"
+  | "printables-api"
+  | "snapmaker-id"
+  | "snapmaker-api"
+  | "thangs-site"
+  | "crealitycloud-api"
+  | "nexprint-api"
 >;
 
 /** Content and background scripts never forward a provider secret to another origin. */
