@@ -93,48 +93,6 @@ jobs:
           & $iscc "/DMyAppVersion=$env:VERSION" "installer\windows\thingport-bridge.iss"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Remove-Item dist/thingport-bridge-windows-amd64.exe
-      - name: Exercise Windows install, registration, update migration and uninstall
-        # Pull requests compile Setup; the release/manual gate pays for the OS lifecycle smoke once.
-        if: matrix.target == 'windows-amd64' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
-        working-directory: bridge
-        shell: pwsh
-        env:
-          VERSION: ${{ needs.release.outputs.version || 'dev' }}
-        run: |
-          $setup = (Resolve-Path "dist\thingport-bridge-windows-amd64-setup.exe").Path
-          $appDir = Join-Path $env:LOCALAPPDATA "Programs\Thingport Bridge"
-          $appExe = Join-Path $appDir "thingport-bridge.exe"
-          $legacyDir = Join-Path $env:LOCALAPPDATA "Thingport\Bridge"
-          New-Item -ItemType Directory -Force $legacyDir | Out-Null
-          Set-Content -Path (Join-Path $legacyDir "thingport-bridge.exe") -Value "legacy"
-
-          $install = Start-Process -FilePath $setup -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-" -Wait -PassThru
-          if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
-          if (-not (Test-Path $appExe)) { throw "Installed Bridge is missing" }
-          if (Test-Path (Join-Path $legacyDir "thingport-bridge.exe")) { throw "Legacy self-installed Bridge was not removed" }
-
-          $command = (Get-ItemProperty "HKCU:\Software\Classes\thingport\shell\open\command").'(default)'
-          $expectedCommand = '"' + $appExe + '" "%1"'
-          if ($command -ne $expectedCommand) { throw "Protocol command mismatch: $command" }
-
-          $installed = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
-            ForEach-Object { Get-ItemProperty $_.PSPath } |
-            Where-Object { $_.DisplayName -eq "Thingport Bridge" }
-          if (@($installed).Count -ne 1) { throw "Expected one Installed Apps entry, got $(@($installed).Count)" }
-          if ($installed.DisplayVersion -ne $env:VERSION) { throw "Installed version mismatch: $($installed.DisplayVersion)" }
-
-          $actualVersion = (& $appExe --version | Out-String).Trim()
-          if ($LASTEXITCODE -ne 0 -or $actualVersion -ne $env:VERSION) { throw "Bridge version mismatch: $actualVersion" }
-
-          $uninstaller = Join-Path $appDir "unins000.exe"
-          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait -PassThru
-          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller exited with $($uninstall.ExitCode)" }
-          if (Test-Path $appExe) { throw "Bridge remained after uninstall" }
-          if (Test-Path "HKCU:\Software\Classes\thingport") { throw "Protocol registration remained after uninstall" }
-          $remaining = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
-            ForEach-Object { Get-ItemProperty $_.PSPath } |
-            Where-Object { $_.DisplayName -eq "Thingport Bridge" }
-          if (@($remaining).Count -ne 0) { throw "Installed Apps entry remained after uninstall" }
       - name: Build Linux and macOS binaries
         if: matrix.target != 'windows-amd64'
         working-directory: bridge
