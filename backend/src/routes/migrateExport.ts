@@ -1,7 +1,14 @@
 import express, { type NextFunction, type Request, type Response, Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
-import { exportTokenOf, markExportRead, storageFile, storageFolder, streamDump } from "../services/migrate/export";
+import {
+  exportTokenOf,
+  FolderTooLargeError,
+  markExportRead,
+  storageFile,
+  storageFolder,
+  streamDump,
+} from "../services/migrate/export";
 import { getBackendVersion } from "../services/versionService";
 import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
@@ -61,11 +68,16 @@ router.post(
   }),
 );
 
-// The files under a folder of storage, relative to it.
+// The files under a folder of storage, relative to it: all of them, or a refusal saying there are too many.
 router.get(
   "/folder",
   asyncHandler(async (req, res) => {
-    res.json({ files: await storageFolder(typeof req.query.path === "string" ? req.query.path : "") });
+    try {
+      res.json({ files: await storageFolder(typeof req.query.path === "string" ? req.query.path : "") });
+    } catch (err) {
+      if (!(err instanceof FolderTooLargeError)) throw err;
+      res.status(413).json({ detail: err.message, code: "folder_too_large", limit: err.limit });
+    }
   }),
 );
 

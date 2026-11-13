@@ -3283,7 +3283,8 @@
           "manyfold_key": "Manyfold nepriėmė API rakto. Patikrinkite kliento ID ir slaptąjį raktą bei ar raktas turi read teisę.",
           "manyfold_old": "Šis Manyfold senesnis nei 0.149 ir nenurodo, kur yra jo failai. Atnaujinkite jį, tada perkelkite.",
           "manyfold_lost": "Manyfold nustojo atsakinėti.",
-          "manyfold_error": "Manyfold atsakė klaida ({{status}})."
+          "manyfold_error": "Manyfold atsakė klaida ({{status}}).",
+          "online_folder": "Senojo egzemplioriaus aplanke yra daugiau nei {{limit}} failų – tiek internetu nukopijuoti negalima. Perkelkite jį su duomenų bazės kopija ir saugyklos aplanku."
         },
         "export": {
           "title": "Išsikraustote iš šio egzemplioriaus?",

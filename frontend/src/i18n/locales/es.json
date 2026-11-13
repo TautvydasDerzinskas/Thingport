@@ -3202,7 +3202,8 @@
           "manyfold_key": "Manyfold rechazó la clave de API. Comprueba su ID y su secreto de cliente, y que tenga el ámbito read.",
           "manyfold_old": "Este Manyfold es anterior a 0.149, que no dice dónde están sus archivos. Actualízalo y luego migra.",
           "manyfold_lost": "Manyfold dejó de responder.",
-          "manyfold_error": "Manyfold respondió con un error ({{status}})."
+          "manyfold_error": "Manyfold respondió con un error ({{status}}).",
+          "online_folder": "Una carpeta de la instancia antigua tiene más de {{limit}} archivos, más de los que se pueden copiar en línea. Tráela con un volcado de la base de datos y su carpeta de almacenamiento."
         },
         "export": {
           "title": "¿Te vas de esta instancia?",

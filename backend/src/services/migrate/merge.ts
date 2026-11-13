@@ -21,6 +21,7 @@ import {
 import { availableModelName, normalizeName, pruneEmptyStorageDirs, relocatePrint } from "../printService";
 import { provisionEveryoneSoon } from "../toolsService";
 import { ensureUsername, isUsernameFree } from "../usernames";
+import { MigrateError } from "./errors";
 import { MERGE_RULES, SECRET_SETTING_KEYS, SETTING_KEYS } from "./rules";
 import type { SourceFiles } from "./sourceFiles";
 
@@ -83,6 +84,8 @@ export type MigrateReport = {
 };
 
 const MAX_FAILURES = 50;
+/** Errors that mean the old instance itself can't be read any more, not just one thing in it. */
+const SOURCE_GONE = new Set(["online_unreachable", "online_lost", "online_token", "online_old"]);
 
 /** Every table the merge writes: the ones MERGE_RULES says come. */
 export const MERGED_TABLES = new Set<Prisma.ModelName>([
@@ -268,7 +271,11 @@ export class Merge {
     this.onProgress({ ...this.progress });
   }
 
+  /** Notes what couldn't come over and goes on, unless the old instance itself is gone (online: unreachable, stopped
+   *  answering, or the token turned down). Then every item after it would fail too, so the run stops as failed and
+   *  keeps its working copy, to be started again once the old instance is back. */
   private fail(kind: string, name: string, err: unknown) {
+    if (err instanceof MigrateError && SOURCE_GONE.has(err.code)) throw err;
     log.warn("couldn't bring something over", { kind, name, error: err });
     if (this.report.failures.length < MAX_FAILURES) {
       this.report.failures.push({ kind, name, error: err instanceof Error ? err.message : String(err) });
@@ -417,8 +424,8 @@ export class Merge {
         try {
           await this.mergePrint(print, userId);
         } catch (err) {
-          this.report.models.failed += 1;
           this.fail("model", print.name, err);
+          this.report.models.failed += 1;
         }
         this.tick();
       }

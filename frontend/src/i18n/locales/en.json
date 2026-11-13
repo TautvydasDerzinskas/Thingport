@@ -3074,7 +3074,8 @@
           "manyfold_key": "Manyfold turned the API key down. Check its client ID and secret, and that it has the read scope.",
           "manyfold_old": "This Manyfold is older than 0.149, which doesn't say where its files are. Update it, then migrate.",
           "manyfold_lost": "Manyfold stopped answering.",
-          "manyfold_error": "Manyfold answered with an error ({{status}})."
+          "manyfold_error": "Manyfold answered with an error ({{status}}).",
+          "online_folder": "A folder on the old instance has more than {{limit}} files, more than can be copied online. Bring it over with a database dump and its storage folder."
         },
         "export": {
           "title": "Moving away from this instance?",

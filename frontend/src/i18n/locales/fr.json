@@ -3202,7 +3202,8 @@
           "manyfold_key": "Manyfold a refusé la clé d’API. Vérifiez son ID et son secret client, et qu’elle a la portée read.",
           "manyfold_old": "Ce Manyfold est antérieur à 0.149, qui n’indique pas où sont ses fichiers. Mettez-le à jour, puis migrez.",
           "manyfold_lost": "Manyfold ne répond plus.",
-          "manyfold_error": "Manyfold a répondu par une erreur ({{status}})."
+          "manyfold_error": "Manyfold a répondu par une erreur ({{status}}).",
+          "online_folder": "Un dossier de l'ancienne instance contient plus de {{limit}} fichiers, plus qu'on ne peut en copier en ligne. Importez-la avec une sauvegarde de la base de données et son dossier de stockage."
         },
         "export": {
           "title": "Vous quittez cette instance ?",

@@ -64,6 +64,11 @@ async function refusal(res: Response, remote: Remote): Promise<MigrateError> {
       "The old instance can't be copied online: update it, or bring it over with a database dump.",
     );
   }
+  if (body.code === "folder_too_large") {
+    return new MigrateError("online_folder", "A folder on the old instance has more files than can be copied online.", {
+      limit: Number((body as { limit?: unknown }).limit) || 0,
+    });
+  }
   if (body.code === "no_dump_tool" || body.code === "dump_failed" || body.code === "no_database") {
     return new MigrateError(
       "online_dump",
@@ -129,23 +134,27 @@ export async function downloadDump(
 }
 
 /** The old instance's files, read over the network by the paths its database gives them. A file it hasn't got is
- *  missing; one it can't send stops the migration, which can be started again once it can. */
-export function httpSource(remote: Remote): SourceFiles {
+ *  missing; one it can't send stops the migration, which can be started again once it can. Every request stops when
+ *  `signal` aborts, as when the run is discarded. */
+export function httpSource(remote: Remote, signal?: AbortSignal): SourceFiles {
   const file = (relative: string) => `/file?path=${encodeURIComponent(relative)}`;
   const copy = async (relative: string, to: string): Promise<boolean> => {
-    const res = await call(remote, file(relative));
+    signal?.throwIfAborted();
+    const res = await call(remote, file(relative), { signal });
     if (res.status === 404) return false;
     if (!res.ok) throw await refusal(res, remote);
     try {
       await save(res, to);
-    } catch {
+    } catch (err) {
+      if (signal?.aborted) throw err;
       throw new MigrateError("online_lost", "The old instance stopped answering.", { address: remote.address });
     }
     return true;
   };
   return {
     exists: async (relative) => {
-      const res = await call(remote, file(relative), { method: "HEAD" });
+      signal?.throwIfAborted();
+      const res = await call(remote, file(relative), { method: "HEAD", signal });
       if (res.status === 404) return false;
       if (!res.ok) throw await refusal(res, remote);
       return true;
@@ -153,8 +162,10 @@ export function httpSource(remote: Remote): SourceFiles {
     missing: async (paths) => {
       const missing: string[] = [];
       for (let start = 0; start < paths.length; start += MISSING_BATCH) {
+        signal?.throwIfAborted();
         const res = await call(remote, "/missing", {
           method: "POST",
+          signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paths: paths.slice(start, start + MISSING_BATCH) }),
         });
@@ -165,7 +176,8 @@ export function httpSource(remote: Remote): SourceFiles {
     },
     copy,
     copyFolder: async (relative, to) => {
-      const res = await call(remote, `/folder?path=${encodeURIComponent(relative)}`);
+      signal?.throwIfAborted();
+      const res = await call(remote, `/folder?path=${encodeURIComponent(relative)}`, { signal });
       if (!res.ok) throw await refusal(res, remote);
       const { files } = (await res.json()) as { files: string[] };
       let copied = 0;

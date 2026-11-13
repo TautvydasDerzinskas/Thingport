@@ -43,6 +43,12 @@ export default function MigratePage({ onUnauthorized }: Props) {
   /** The token letting another instance copy this one, and its dialog. */
   const [exportToken, setExportToken] = React.useState<ExportToken | null>(null);
   const [exporting, setExporting] = React.useState(false);
+  /** Set once the dialog has made or revoked a token: the first read, answering later, mustn't undo that. */
+  const tokenChanged = React.useRef(false);
+  const tokenChangedTo = React.useCallback((next: ExportToken) => {
+    tokenChanged.current = true;
+    setExportToken(next);
+  }, []);
 
   const load = React.useCallback(async () => {
     try {
@@ -58,9 +64,14 @@ export default function MigratePage({ onUnauthorized }: Props) {
 
   React.useEffect(() => {
     void load();
-    migrateApi.exportToken().then(setExportToken, (err) => {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-    });
+    migrateApi.exportToken().then(
+      (read) => {
+        if (!tokenChanged.current) setExportToken(read);
+      },
+      (err) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+      },
+    );
   }, [load, onUnauthorized]);
 
   const busy = Boolean(runs?.some(isActive));
@@ -229,7 +240,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
       {exporting && (
         <ExportTokenDialog
           state={exportToken}
-          onChanged={setExportToken}
+          onChanged={tokenChangedTo}
           onClose={() => setExporting(false)}
           onUnauthorized={onUnauthorized}
         />

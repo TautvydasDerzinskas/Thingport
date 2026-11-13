@@ -297,7 +297,7 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
     if (history.missing) await upgradeStaging(name, state.abort.signal);
     state.progress = { step: "files", done: 0, total: 0 };
     source = stagingClient(name);
-    const files = way.kind === "online" ? httpSource(way.remote) : await folderSource(way.folder);
+    const files = way.kind === "online" ? httpSource(way.remote, state.abort.signal) : await folderSource(way.folder);
     const found = await readPlan(source, files, (done, total) => {
       state.progress = { step: "files", done, total };
     });

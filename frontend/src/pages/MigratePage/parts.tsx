@@ -67,6 +67,7 @@ const KNOWN_ERRORS = new Set([
   "manyfold_old",
   "manyfold_lost",
   "manyfold_error",
+  "online_folder",
 ]);
 
 /** The tools' own output, shown under the sentence for what failed. */

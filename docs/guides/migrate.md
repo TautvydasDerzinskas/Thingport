@@ -9,7 +9,7 @@ It comes one of two ways:
 - **Online**, when the old instance runs a release with Migrate too: its admin makes a one-time token, and this instance
   copies it over the network. See [online](#online-with-a-token).
 - **From a dump and its storage folder**, from any release since 1.0.0: a `pg_dump` of its database, and its storage
-  folder readable on this server. See [steps 1 to 3](#1-make-the-dump).
+  folder readable on this server. See [steps 1 to 3](#1-stop-the-old-instances-backend).
 
 Coming from Manyfold instead? See [Move from Manyfold](migrate-manyfold.md).
 
@@ -45,10 +45,17 @@ lists the ones missing.
    choose **Online**, and give the old instance's address as this server reaches it (such as `http://192.168.1.20`)
    and the token.
 
-The rest is the same as below, from the Check step on: its database comes as a dump, made there on the fly, and its
-files are read one by one over the network. This server must be able to reach the old instance's address. Plain HTTP
-works, but then the token and everything it reads travel unencrypted, so use it on a network you trust. Revoke the
-token once the migration is done.
+The rest is the same as in [step 4](#4-run-the-migration), from the Check step on, except that **the old instance's
+backend keeps running** until the migration is done: it's what sends the dump and the files. Its database comes as a
+dump, made there on the fly when the Check step starts, and its files are read one by one over the network, at Check
+and again at Start.
+
+Since the dump is made first, nothing may change on the old instance from then until the migration is done: a model
+imported after the dump wouldn't come, and one deleted would be missing its files. Tell its people to stop using it,
+and start the migration when no import or synced collection is running there, but don't stop its backend.
+
+This server must be able to reach the old instance's address. Plain HTTP works, but then the token and everything it
+reads travel unencrypted, so use it on a network you trust. Revoke the token once the migration is done.
 
 ## 1. Stop the old instance's backend
 
@@ -124,7 +131,7 @@ Open **Administration → Migrate** and click **Start** on **From another Thingp
    its own owner.
 4. **What comes.** Models always come with their people. Switch off what shouldn't come with them. Instance settings
    and secrets are off unless you switch them on: they replace this instance's.
-5. **Start.** With the old instance's backend still stopped, as in step 1.
+5. **Start.** With the old instance's backend still stopped, as in step 1 (online, still running, but unused).
 
 You can close the dialog while it runs: the migration goes on in the background, and its row on the page says how far
 it is. You get a notification when it's done.
