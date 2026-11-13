@@ -165,6 +165,40 @@ describe("eufyMake specifics", () => {
     expect(plates.map((plate) => plate.filename)).toEqual(["ghost.stl"]);
     expect(stub.calls.some((call) => call.url.pathname.endsWith(".zip"))).toBe(false);
   });
+
+  /** The import job, once it has finished. */
+  async function finished(jobId: string) {
+    for (let tries = 0; tries < 150; tries++) {
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: jobId } });
+      if (job.status !== "RUNNING") return job;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error("The import didn't finish");
+  }
+
+  it.each(["designer", "all"])(
+    "imports a model's own files from a link wanting its %s print files, where it has none",
+    async (scope) => {
+      ctx.install(handlerFor("ok", "bare"));
+      const res = await ctx.post("/api/import/links", { urls: [MODEL_URL], scope });
+      expectStatus(res, 202);
+      expect(await finished(res.body.job_id)).toMatchObject({ status: "DONE", imported: 1, failedCount: 0 });
+      const [print] = await ctx.prints();
+      const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+      expect(plates.map((plate) => plate.filename)).toEqual(["ghost.stl"]);
+    },
+  );
+
+  it("fails a job for a model's print files where it has none, importing nothing", async () => {
+    ctx.install(handlerFor("ok", "bare"));
+    const res = await ctx.post("/api/import/eufymake/profiles", { url: MODEL_URL, scope: "all" });
+    expectStatus(res, 202);
+    expect(await finished(res.body.job_id)).toMatchObject({
+      status: "ERROR",
+      errorMessage: "This eufyMake model has no print profiles to import",
+    });
+    expect(await ctx.prints()).toHaveLength(0);
+  });
 });
 
 describe("eufyMake sign-in", () => {

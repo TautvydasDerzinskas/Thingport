@@ -93,7 +93,6 @@ export const eufymakeImport: SourcedImport<null, EufymakeModelResolution> = {
       const resolved = await resolveEufymakeModel(parsed.modelId);
       if (!resolved) throw new HttpError(404, eufymakeImport.missingMessage);
       const profileIds = selectEufymakeProfiles(resolved, scope, parsed.requestedProfileId);
-      if (!profileIds.length) throw new HttpError(400, "This model has no print files to import");
       return {
         title: resolved.meta.title ?? null,
         urls: profileIds.map((profileId) => eufymakeModelUrl(resolved.modelId, profileId)),

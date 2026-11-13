@@ -18,9 +18,12 @@ async function loadPrintFiles(modelId: string): Promise<string[] | null> {
     const model = body.code === 0 ? body.data?.model : null;
     if (!model) return null;
     const infos = Array.isArray(model.model_print_infos) ? (model.model_print_infos as Record<string, unknown>[]) : [];
+    // Read as the backend reads them (printFileId), so only print files it can import are offered.
     return infos.flatMap((info) => {
-      const id = info?.info_id == null ? "" : String(info.info_id);
-      return /^\d+$/.test(id) && typeof info.file_3mf_key === "string" ? [id] : [];
+      const raw = info?.info_id;
+      const id = typeof raw === "number" ? String(raw) : typeof raw === "string" ? raw.trim() : "";
+      const file = typeof info?.file_3mf_key === "string" ? info.file_3mf_key.trim() : "";
+      return /^\d+$/.test(id) && file ? [id] : [];
     });
   } catch {
     return null;
