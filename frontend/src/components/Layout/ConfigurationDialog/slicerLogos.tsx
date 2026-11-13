@@ -1,6 +1,6 @@
 // Each slicer's mark, drawn on a white tile. Bambu Studio, Anycubic and Elegoo use their makers'
-// Simple Icons glyphs (CC0); OrcaSlicer, PrusaSlicer, Cura, Creality Print, QIDI Studio, Snapmaker Orca and eufyMake
-// Studio come from each project's own app icon, without its background. "Other" is a generic layers glyph.
+// Simple Icons glyphs (CC0); QIDI Studio keeps its app-icon background, while OrcaSlicer, PrusaSlicer, Cura,
+// Creality Print, Snapmaker Orca and eufyMake Studio use app icons without backgrounds. "Other" is a generic layers glyph.
 type Logo = { viewBox: string; paths: { d: string; fill: string }[] };
 
 const LOGOS: Record<string, Logo> = {
