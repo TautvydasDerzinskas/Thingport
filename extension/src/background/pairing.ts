@@ -14,6 +14,7 @@ import { backgroundText } from "./localize";
 const PAIRING_TTL_MS = 15 * 60 * 1000;
 
 let resuming: Promise<null> | null = null;
+let rerunRequested = false;
 const claimingTabs = new Set<number>();
 
 function base64url(bytes: Uint8Array): string {
@@ -75,33 +76,47 @@ export async function startPairing(rawInstanceUrl: string): Promise<null> {
 
 /** Resumes after Chrome's permission prompt, even when that prompt destroyed the popup that started it. */
 export function resumePairingIntent(): Promise<null> {
-  resuming ??= (async () => {
-    const config = await getStoredConfig();
-    const intent = config.pairingIntent;
-    if (!intent) return null;
-    if (Date.now() - intent.startedAt > PAIRING_TTL_MS) {
-      await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
-      return null;
-    }
-    if (config.pendingPairing) {
-      await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
-      return null;
-    }
-    const origin = new URL(normalizeInstanceUrl(intent.instanceUrl)).origin;
-    if (!(await chrome.permissions.contains({ origins: [`${origin}/*`] }))) return null;
-    // Consume before opening the tab: permission and storage events can both ask to resume.
-    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
-    try {
-      return await startPairing(intent.instanceUrl);
-    } catch (error) {
-      // Keep the address for a retry instead of dropping the user's input on another transient browser failure.
-      await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent });
-      throw error;
-    }
+  if (resuming) {
+    // A permission event can arrive after the active attempt read the old permission state.
+    rerunRequested = true;
+    return resuming;
+  }
+  resuming = (async () => {
+    do {
+      rerunRequested = false;
+      await attemptPairingIntentResume();
+    } while (rerunRequested);
+    return null;
   })().finally(() => {
     resuming = null;
+    rerunRequested = false;
   });
   return resuming;
+}
+
+async function attemptPairingIntentResume(): Promise<null> {
+  const config = await getStoredConfig();
+  const intent = config.pairingIntent;
+  if (!intent) return null;
+  if (Date.now() - intent.startedAt > PAIRING_TTL_MS) {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+    return null;
+  }
+  if (config.pendingPairing) {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+    return null;
+  }
+  const origin = new URL(normalizeInstanceUrl(intent.instanceUrl)).origin;
+  if (!(await chrome.permissions.contains({ origins: [`${origin}/*`] }))) return null;
+  // Consume before opening the tab: permission and storage events can both ask to resume.
+  await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
+  try {
+    return await startPairing(intent.instanceUrl);
+  } catch (error) {
+    // Keep the address for a retry instead of dropping the user's input on another transient browser failure.
+    await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent });
+    throw error;
+  }
 }
 
 async function errorDetail(res: Response): Promise<string> {

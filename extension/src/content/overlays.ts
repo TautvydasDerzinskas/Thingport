@@ -153,6 +153,7 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
 export type ScanOverlay = { update(count: number, total?: number | null): void; remove(): void };
 
 export function mountScanOverlay(root: ShadowRoot): ScanOverlay {
+  const previousFocus = root.activeElement instanceof HTMLElement ? root.activeElement : null;
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay";
   overlay.setAttribute("role", "dialog");
@@ -170,6 +171,12 @@ export function mountScanOverlay(root: ShadowRoot): ScanOverlay {
     update: (count, total) => {
       countEl.textContent = total ? t("foundOfTotal", { count, total }) : t("foundSoFar", { count });
     },
-    remove: () => overlay.remove(),
+    remove: () => {
+      overlay.remove();
+      const fallback = root.querySelector<HTMLElement>(
+        "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])",
+      );
+      (previousFocus?.isConnected ? previousFocus : fallback)?.focus();
+    },
   };
 }

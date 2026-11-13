@@ -4,6 +4,8 @@ import { STORAGE_KEYS, type PairingIntent, type PendingPairing } from "../shared
 const store: Record<string, unknown> = {};
 const operations: string[] = [];
 let permissionGranted = false;
+let blockPermissionCheck = false;
+let releasePermissionCheck: (() => void) | null = null;
 let nextTabId = 40;
 let updateFails = false;
 const fetchUrls: string[] = [];
@@ -49,7 +51,11 @@ vi.stubGlobal("chrome", {
     },
   },
   permissions: {
-    contains: async () => permissionGranted,
+    contains: async () => {
+      const result = permissionGranted;
+      if (blockPermissionCheck) await new Promise<void>((resolve) => (releasePermissionCheck = resolve));
+      return result;
+    },
   },
   action: {
     setBadgeText: async () => undefined,
@@ -82,6 +88,8 @@ beforeEach(() => {
   operations.length = 0;
   fetchUrls.length = 0;
   permissionGranted = false;
+  blockPermissionCheck = false;
+  releasePermissionCheck = null;
   updateFails = false;
 });
 
@@ -111,6 +119,23 @@ describe("pairing permission continuity", () => {
       `set:${STORAGE_KEYS.pendingPairing}`,
       "update:/connect-grab:true",
     ]);
+  });
+
+  it("reruns when access is granted during the active permission check", async () => {
+    store[STORAGE_KEYS.pairingIntent] = intent();
+    blockPermissionCheck = true;
+
+    const first = resumePairingIntent();
+    await vi.waitFor(() => expect(releasePermissionCheck).not.toBeNull());
+    permissionGranted = true;
+    blockPermissionCheck = false;
+    const second = resumePairingIntent();
+    releasePermissionCheck!();
+    await Promise.all([first, second]);
+
+    expect(store[STORAGE_KEYS.pairingIntent]).toBeUndefined();
+    expect(store[STORAGE_KEYS.pendingPairing]).toMatchObject({ instanceUrl: "https://thingport.example.com" });
+    expect(operations.filter((operation) => operation === "create:about:blank:false")).toHaveLength(1);
   });
 
   it("does not replace an approval tab already in progress", async () => {

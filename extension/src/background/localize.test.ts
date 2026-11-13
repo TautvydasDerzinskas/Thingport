@@ -22,7 +22,13 @@ describe("background localization", () => {
 
   it("falls back to English when saved locale storage is missing or invalid", async () => {
     store.locale = "not-a-locale";
-    await expect(backgroundText("requestFailed", { status: 500 })).resolves.toBe("Request failed (500)");
+    const previousNavigator = globalThis.navigator;
+    vi.stubGlobal("navigator", { languages: ["en-US"] });
+    try {
+      await expect(backgroundText("requestFailed", { status: 500 })).resolves.toBe("Request failed (500)");
+    } finally {
+      vi.stubGlobal("navigator", previousNavigator);
+    }
   });
 
   it("uses the saved locale for an error that can outlive a page", async () => {
