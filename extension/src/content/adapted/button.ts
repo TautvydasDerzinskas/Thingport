@@ -18,6 +18,7 @@ const HOST_ID = "thingport-grab-adapted";
 const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const NOTE_SHOW_MS = 10000;
+const NOT_A_3MF = "Only a 3MF gets an adapted copy. Pick one of the model's 3MFs on the page, then try again.";
 // How long the site's own button may take to show before the copies are offered in Grab's bubble instead.
 const ANCHOR_WAIT_MS = 8000;
 
@@ -299,6 +300,9 @@ async function makeCopy(
 
 type Control = { host: HTMLElement; stop(): void };
 
+/** The menu's heading for the copies of the file the page picked, or of none, where that file has no copy. */
+const copyOf = (file: AdaptFile | null) => (file ? `Copy of ${shownName(file)}` : "Pick one of its 3MFs on the page");
+
 function mainButton(shared: Shared): Control {
   const { host, root } = shadowHost(shared);
   host.id = HOST_ID;
@@ -306,7 +310,12 @@ function mainButton(shared: Shared): Control {
   // elsewhere, the menu offers the files where there are several.
   const { selected } = shared.site;
   const several = !selected && shared.files.length > 1;
-  const current = () => (selected ? (selected(shared.files) ?? shared.files[0]) : shared.file);
+  // None where the page picked a file with no copy: then nothing is downloaded, rather than another file's copy.
+  const current = (): AdaptFile | null => {
+    if (!selected) return shared.file;
+    const picked = selected(shared.files);
+    return picked === "other" ? null : (picked ?? shared.files[0]);
+  };
 
   const split = element("span", "nd-split");
   const main = element("button", "nd nd__main");
@@ -360,11 +369,17 @@ function mainButton(shared: Shared): Control {
     if (shared.busy) return;
     const hadFocus = hasFocus(host);
     menu.close(false);
+    const file = current();
+    if (!file) {
+      if (hadFocus) returnTo.focus();
+      bubble.show(NOT_A_3MF, { error: true, hold: NOTE_SHOW_MS });
+      return;
+    }
     bubble.hide();
     info.replaceChildren(element("span", "nd__spinner"));
     void makeCopy(
       shared,
-      current(),
+      file,
       target,
       {
         progress: (status) => (title.textContent = status),
@@ -407,7 +422,7 @@ function mainButton(shared: Shared): Control {
           menuGroup("tg-ndm-copies", "Copy for", copies()),
         ]
       : selected
-        ? [menuGroup("tg-ndm-copies", `Copy of ${shownName(current())}`, copies())]
+        ? [menuGroup("tg-ndm-copies", copyOf(current()), copies())]
         : copies()),
     separator(),
     settingsRow(shared, () => menu.close(false)),

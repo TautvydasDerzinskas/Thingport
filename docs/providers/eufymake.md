@@ -2,7 +2,7 @@
 
 eufyMake's (Anker's) Make it Real, at [makeitreal.eufymake.com](https://makeitreal.eufymake.com): community models
 sorted into its own categories. Its models and their files need nothing; only your likes need your sign-in. It has no
-collections and no print profiles.
+collections, and Thingport imports a model's model files, not the print files some models have.
 
 | At a glance    |                                                                                        |
 | -------------- | -------------------------------------------------------------------------------------- |
@@ -22,6 +22,10 @@ there, or pick **eufyMake likes** in the sync dialog's Browse tab.
 
 eufyMake turns away more than a few requests a second; Thingport waits and tries again, and reports a rate limit when
 that isn't enough.
+
+Its print files are eufyMake Studio projects, and its models' own 3MFs mostly Bambu Studio ones; other slicers open them
+as [adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's Download once you
+allow Grab there, saves one made for yours, without your sign-in.
 
 ## Setup: your sign-in
 

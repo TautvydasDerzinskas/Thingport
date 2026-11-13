@@ -225,8 +225,8 @@ from the image servers of the sites you viewed them on, without saying which pag
   It may also click the page's own Download button and read the link from the download that
   starts; that download is cancelled and removed from your download history straight away, so no
   file is saved.
-- When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space or NexPrint
-  model page, the extension
+- When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint,
+  MakerOnline or eufyMake model page, the extension
   downloads that model's file from the site, as the page's own Download button would, converts it inside your
   browser for the slicer and printer you chose, using the printer list it carries, and saves the result to your
   downloads. The file isn't sent anywhere else.
@@ -238,6 +238,15 @@ from the image servers of the sites you viewed them on, without saying which pag
   on, the extension asks the site's own API which print profiles the model has, the same way the page does,
   without your sign-in. When you click **Download adapted** there, it asks the site for that profile's download
   link with the sign-in the page keeps for itself (its session cookie), as the page's own Download does.
+- On a MakerOnline model page you allowed the extension on, while Adapt 3MFs is on, the extension asks MakerOnline's
+  own API which print profiles and 3MFs the model has, the same way the page does, without your sign-in. It also has
+  the page note on itself which profile you pick, from the page's own state, so the button can follow it. When you
+  click **Download adapted** there, it has the page ask for that file's download link, with the sign-in the page keeps
+  (its session cookie) and the token MakerOnline's own anti-bot script makes, as the page's own Download does.
+- On an eufyMake model page you allowed the extension on, while Adapt 3MFs is on, the extension asks eufyMake's API
+  (aiot-wapi-eu.ankermake.com) which 3MFs the model has, the same way the page does, without your sign-in. When you
+  click **Download adapted** there, it asks again for a fresh link and downloads the file from eufyMake's file host,
+  also without your sign-in.
 - On a MakerWorld collection import, the extension moves your tab from one model page to the next,
   just as if you were clicking through them.
 - On Printables, once per open tab, the extension asks Printables' own API which account you're

@@ -2,7 +2,9 @@
 // the two to each other).
 
 import { CREALITYCLOUD_ADAPT } from "../../providers/crealitycloud/adaptSite";
+import { EUFYMAKE_ADAPT } from "../../providers/eufymake/adaptSite";
 import type { ProviderId } from "../../providers/index.generated";
+import { MAKERONLINE_ADAPT } from "../../providers/makeronline/adaptSite";
 import { MAKERWORLD_ADAPT } from "../../providers/makerworld/adaptSite";
 import { NEXPRINT_ADAPT } from "../../providers/nexprint/adaptSite";
 import { PRINTABLES_ADAPT } from "../../providers/printables/adaptSite";
@@ -15,4 +17,6 @@ export const ADAPT_SITES: Partial<Record<ProviderId, AdaptSite>> = {
   crealitycloud: CREALITYCLOUD_ADAPT,
   snapmaker: SNAPMAKER_ADAPT,
   nexprint: NEXPRINT_ADAPT,
+  makeronline: MAKERONLINE_ADAPT,
+  eufymake: EUFYMAKE_ADAPT,
 };
