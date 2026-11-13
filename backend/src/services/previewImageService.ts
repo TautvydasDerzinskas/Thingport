@@ -170,14 +170,13 @@ export async function removePreviewImageFile(printId: string, id: string): Promi
   await removeAsset(await printAssetHome(printId), galleryImageFile(id));
 }
 
-/** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions. */
+/** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions,
+ *  in one transaction: the first phase's order is backwards, and the photos clean-up mustn't read it. */
 async function renumberPreviewImages(ids: string[]): Promise<void> {
-  await prisma.$transaction(
-    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
-  );
-  await prisma.$transaction(
-    ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
-  );
+  await prisma.$transaction([
+    ...ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: -(idx + 1) } })),
+    ...ids.map((id, idx) => prisma.previewImage.update({ where: { id }, data: { position: idx } })),
+  ]);
 }
 
 /** Removes one of the model's gallery images; the next one up becomes the cover if it was. */

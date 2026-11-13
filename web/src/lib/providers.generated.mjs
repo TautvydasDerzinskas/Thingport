@@ -446,7 +446,7 @@ export const PROVIDER_PAGES = [
       collections: false,
       likes: true,
       sync: true,
-      profiles: false,
+      profiles: true,
       slicers: ["eufyMake Studio"],
       adaptedCopies: true,
       trending: "featured",
@@ -827,7 +827,7 @@ export const PROVIDER_COMPARISON = {
         { yes: false },
         { yes: true },
         { yes: true },
-        { yes: false },
+        { yes: true },
       ],
     },
     {

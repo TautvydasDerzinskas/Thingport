@@ -42,6 +42,9 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   file_reuse_changed: "info",
   license_files_changed: "info",
   file_reuse_backfill_started: "info",
+  // Can delete photos for good.
+  storage_cleanup_started: "warning",
+  photos_per_model_changed: "info",
   custom_widgets_changed: "warning",
   tool_installed: "info",
   // Takes the data it kept for everyone with it.
@@ -186,6 +189,21 @@ export default function LogsPage({ onUnauthorized }: Props) {
       case "chat_room_edited":
       case "chat_room_deleted":
         return typeof d.name === "string" ? d.name : "";
+      case "storage_cleanup_started":
+        return Array.isArray(d.tasks)
+          ? d.tasks
+              .filter((task): task is string => typeof task === "string")
+              .map((task) =>
+                task === "photos" && typeof d.keep_photos === "number"
+                  ? t("adminSettings.logs.photosTrimmed", { count: d.keep_photos })
+                  : t(`adminSettings.freeSpace.tasks.${task}.title`),
+              )
+              .join(" · ")
+          : "";
+      case "photos_per_model_changed":
+        return typeof d.keep === "number"
+          ? t("adminSettings.logs.photosKept", { count: d.keep })
+          : t("adminSettings.logs.photosKeptAll");
       case "license_files_changed":
         return typeof d.enabled === "boolean"
           ? t(d.enabled ? "adminSettings.logs.licenseFilesOn" : "adminSettings.logs.licenseFilesOff")

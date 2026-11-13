@@ -1,17 +1,18 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
-import { DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, STORAGE, THUMBS } from "../config";
+import { ADAPTED_3MFS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, STORAGE, THUMBS } from "../config";
 import { prisma } from "../db";
 
-// A model's pictures -- its gallery and description images, and each plate's thumbnail and render -- live in an
-// "Images" folder beside its files, at Print.assetsPath, so they move with the model. They used to share folders
-// keyed by id (THUMBS, PREVIEWS, ...), and a model with no assetsPath still has them there. Reads look in both, so
-// a model the storage move hasn't reached yet, or only part of, still finds every picture.
+// Everything Thingport makes for a model -- its gallery and description images, and each plate's thumbnail, render,
+// 3D preview and slicer copies -- lives in an "Images" folder beside its files, at Print.assetsPath, so it moves and
+// goes with the model. They used to share folders keyed by id (THUMBS, PREVIEWS, MODEL_PREVIEWS, ...), and a model
+// the storage move hasn't reached yet, or only part of, still has some there. Reads look in both.
 
 /** Print.assetsPath. */
 export type AssetHome = string | null | undefined;
-export type AssetKind = "image" | "description" | "thumb" | "render";
+/** "preview" is a plate's 3D preview (GLB), "slicer" a copy of its 3MF adapted for a slicer. */
+export type AssetKind = "image" | "description" | "thumb" | "render" | "preview" | "slicer";
 /** `legacyName` when the old shared folder named it differently. */
 export type AssetFile = { kind: AssetKind; name: string; legacyName?: string };
 
@@ -22,18 +23,25 @@ export const ASSET_SUBFOLDERS: Record<AssetKind, string> = {
   description: "Description",
   thumb: "Thumbnails",
   render: "Renders",
+  preview: "3D previews",
+  slicer: "Slicer copies",
 };
 const LEGACY_DIRS: Record<AssetKind, string> = {
   image: PREVIEWS,
   description: DESCRIPTION_IMAGES,
   thumb: THUMBS,
   render: MODEL_PREVIEWS,
+  preview: MODEL_PREVIEWS,
+  slicer: ADAPTED_3MFS,
 };
 
 // Part of a render's name, so changing its look (modelPreviewCache's MODEL_IMAGE_KINDS) draws older ones again.
 export const RENDER_FILE_TAG = "render.v4";
 // The same, for the picture drawn in a model's own colours rather than in one the app tints.
 export const COLOR_RENDER_FILE_TAG = "color.v2";
+// Part of a 3D preview's name, so bumping it draws older GLBs again on next view. Failure markers carry it too, so a
+// file an older renderer refused gets another attempt.
+export const PREVIEW_FORMAT_VERSION = 5;
 
 const DESCRIPTION_EXTS: Record<string, string> = {
   "image/jpeg": ".jpg",
@@ -62,6 +70,42 @@ export function isLegacyRender(name: string): boolean {
 
 export function plateRenderFile(plateId: string, tag = RENDER_FILE_TAG): AssetFile {
   return { kind: "render", name: `${plateId}.${tag}.png` };
+}
+
+export function plateGlbFile(plateId: string, version = PREVIEW_FORMAT_VERSION): AssetFile {
+  return { kind: "preview", name: `${plateId}.v${version}.glb` };
+}
+
+/** `name` is the copy's file name: the plate's id, what it was adapted for, and the adapter's version. */
+export function slicerCopyFile(name: string): AssetFile {
+  return { kind: "slicer", name };
+}
+
+/** "render.v4" to ["render", "render.v1", ..., "render.v3"]: the names an earlier look of it had. */
+function olderTags(tag: string): string[] {
+  const match = /^(.+)\.v(\d+)$/.exec(tag);
+  if (!match) return [];
+  return [match[1], ...Array.from({ length: Number(match[2]) - 1 }, (_, index) => `${match[1]}.v${index + 1}`)];
+}
+
+/** The plate's 3D previews and renders of an earlier format, which nothing shows any more. */
+export function olderPlateFiles(plateId: string): AssetFile[] {
+  return [
+    { kind: "preview", name: `${plateId}.glb` },
+    ...Array.from({ length: PREVIEW_FORMAT_VERSION - 1 }, (_, index) => plateGlbFile(plateId, index + 1)),
+    ...[...olderTags(RENDER_FILE_TAG), ...olderTags(COLOR_RENDER_FILE_TAG)].map((tag) => plateRenderFile(plateId, tag)),
+  ];
+}
+
+/** Whether a file named `name`, of this kind, is a 3D preview or render of an earlier format. */
+export function isSupersededAsset(kind: AssetKind, name: string): boolean {
+  if (kind === "preview") return name.endsWith(".glb") && !name.endsWith(`.v${PREVIEW_FORMAT_VERSION}.glb`);
+  if (kind === "render") {
+    return (
+      isLegacyRender(name) && ![RENDER_FILE_TAG, COLOR_RENDER_FILE_TAG].some((tag) => name.endsWith(`.${tag}.png`))
+    );
+  }
+  return false;
 }
 
 export function assetTarget(home: string, file: AssetFile): string {
@@ -101,6 +145,47 @@ export async function plateAssetHome(plateId: string): Promise<AssetHome> {
 export async function removeAsset(home: AssetHome, file: AssetFile): Promise<void> {
   if (home) await fs.rm(assetTarget(home, file), { force: true }).catch(() => undefined);
   await fs.rm(legacyAssetPath(file), { force: true }).catch(() => undefined);
+}
+
+/** Every file of this kind that's the plate's, of any version, in the model's folder and the old shared one (and
+ *  whatever else of the plate's is in that, such as its failure markers): named by its id, then a dot. Bytes freed. */
+export async function removePlateAssets(home: AssetHome, kind: AssetKind, plateId: string): Promise<number> {
+  const dirs = [LEGACY_DIRS[kind], ...(home ? [path.join(STORAGE, home, ASSET_SUBFOLDERS[kind])] : [])];
+  let freed = 0;
+  for (const dir of dirs) {
+    const names = await fs.readdir(dir).catch(() => [] as string[]);
+    for (const name of names.filter((entry) => entry.startsWith(`${plateId}.`))) {
+      freed += (await removeFile(path.join(dir, name))) ?? 0;
+    }
+  }
+  return freed;
+}
+
+/** A picture removed from its model's folder and the old shared one: the bytes freed, or null where it couldn't be. */
+export async function removeAssetFiles(home: AssetHome, file: AssetFile): Promise<number | null> {
+  let freed = 0;
+  for (const where of [...(home ? [assetTarget(home, file)] : []), legacyAssetPath(file)]) {
+    const gone = await removeFile(where);
+    if (gone === null) return null;
+    freed += gone;
+  }
+  return freed;
+}
+
+/** Its size, once it's gone; 0 when it wasn't there, null when it couldn't be removed. */
+export async function removeFile(file: string): Promise<number | null> {
+  let size: number;
+  try {
+    ({ size } = await fs.stat(file));
+  } catch (err) {
+    return (err as NodeJS.ErrnoException).code === "ENOENT" ? 0 : null;
+  }
+  try {
+    await fs.rm(file, { force: true });
+    return size;
+  } catch {
+    return null;
+  }
 }
 
 /** Moves one picture from the old shared folder into the model's; true when it moved. One already in the model's

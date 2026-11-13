@@ -12,6 +12,7 @@ import { isUnboughtThreedexportModel } from "./threedexport/content";
 import { meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
+import { loadEufymakeProfiles } from "./eufymake/content";
 import { loadNexprintProfiles } from "./nexprint/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
@@ -115,7 +116,7 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // Thangs counts every download against the account's daily ones, so one it would refuse isn't tried.
   thangs: { blockReason: thangsDownloadBlock },
   // Its only list, the likes, is the viewer's own page (/user/me/), which names no one else.
-  eufymake: {},
+  eufymake: { loadProfiles: loadEufymakeProfiles },
   // Its collections and anyone's likes are anyone's to read.
   pinshape: {},
   // Its only list, the liked products, is the user's own page (/like-product), which names no one else.

@@ -41,7 +41,7 @@ export default {
   capabilities: {
     collections: false,
     likes: true,
-    profiles: false,
+    profiles: true,
     paidModels: false,
     ownLists: "signIn",
     categoryIds: "number",

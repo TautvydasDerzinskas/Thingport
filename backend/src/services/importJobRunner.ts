@@ -205,6 +205,7 @@ async function runProfilesImportJob(
   const name = MANIFESTS[provider].name;
   try {
     const { title, urls } = await profileUrls(body.url, body.scope);
+    if (!urls.length) throw new HttpError(400, `This ${name} model has no print profiles to import`);
     await updateJob(jobId, { total: urls.length, sourceLabel: title });
     log.info(`${provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
     const progress = jobProgress(jobId);
@@ -585,8 +586,11 @@ async function importOneLink(
   const profileUrls = provider && profileUrlsOf(provider);
   if (profileUrls && URLS[provider!].parseModel(url) && body.scope && body.scope !== "url") {
     const { urls } = await profileUrls(url, body.scope, body);
-    const totals = await importProfileUrlsSequentially(userId, urls, { ...body, url });
-    return { ...totals, profiles: true, outcome: totals.imported ? "created" : "already_imported" };
+    // None for a model without profiles, which imports as a plain link: its own files.
+    if (urls.length) {
+      const totals = await importProfileUrlsSequentially(userId, urls, { ...body, url });
+      return { ...totals, profiles: true, outcome: totals.imported ? "created" : "already_imported" };
+    }
   }
   const result = await importPrintFromUrl(userId, url, { ...body, url });
   return {
