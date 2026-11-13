@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchFileRows, profileFiles } from "./adaptSite";
+import { matchFileRows, pickedProfile, profileFiles } from "./adaptSite";
 
 describe("a NexPrint model's print profiles", () => {
   const files = profileFiles({
@@ -57,5 +57,20 @@ describe("a NexPrint model's print profiles", () => {
       { item: "row fire", file: fire },
       { item: "row storm", file: storm },
     ]);
+  });
+});
+
+describe("the NexPrint profile picked", () => {
+  const files = [
+    { id: "G1", name: "one.3mf", size: null },
+    { id: "G2", name: "two.3mf", size: null },
+  ];
+  const page = "https://www.nexprint.com/en/models/G100";
+
+  it("is the one the page names as it's picked, before a Thingport link's", () => {
+    expect(pickedProfile(`${page}?printConfigId=g2#profileId-G1`, files)?.id).toBe("G2");
+    expect(pickedProfile(`${page}#profileId-G1`, files)?.id).toBe("G1");
+    expect(pickedProfile(`${page}?printConfigId=G9#profileId-G1`, files)?.id).toBe("G1");
+    expect(pickedProfile(page, files)).toBeNull();
   });
 });

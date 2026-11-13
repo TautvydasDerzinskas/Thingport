@@ -58,6 +58,14 @@ export function matchFileRows<T>(
   });
 }
 
+/** The profile the page shows: the `?printConfigId=` it writes as one is picked, else the `#profileId-` of a link
+ *  Thingport made, which the page doesn't change. */
+export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null {
+  const own = new URL(href).searchParams.get("printConfigId")?.trim().toUpperCase();
+  const linked = parseNexprintModelUrl(href)?.requestedProfileId;
+  return files.find((file) => file.id === own) ?? files.find((file) => file.id === linked) ?? null;
+}
+
 const signing = new Map<string, Signing>();
 
 /** The sign-in its own pages send: the cookie they write, else the copy they keep. */
@@ -111,11 +119,7 @@ export const NEXPRINT_ADAPT: AdaptSite = {
     return files.map(({ bizId: _bizId, fileId: _fileId, ...file }) => file);
   },
 
-  // `?printConfigId=G…`, which the page writes as profiles are picked.
-  selected: (files) => {
-    const id = parseNexprintModelUrl(location.href)?.requestedProfileId;
-    return files.find((file) => file.id === id) ?? null;
-  },
+  selected: (files) => pickedProfile(location.href, files),
 
   async download(_pageUrl, file, progress) {
     const auth = token();
