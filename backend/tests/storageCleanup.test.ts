@@ -398,6 +398,26 @@ describe("Free up space", () => {
     expect(left.map((image) => image.id)).toEqual([photos[0].id]);
   });
 
+  it("keeps a model's photo rows when it can't find the model's folder", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    // The look-up of the model's folder fails, as a dropped connection would.
+    const spy = vi
+      .spyOn(prisma.print, "findUnique")
+      .mockImplementation(((args: { where: { id?: string } }) =>
+        args.where.id === printId ? Promise.reject(new Error("connection lost")) : findUnique(args as never)) as never);
+    let run: Awaited<ReturnType<typeof runCleanup>>;
+    try {
+      run = await runCleanup(["photos"], 1);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(run.tasks.find((each) => each.key === "photos")!.status).toBe("failed");
+    for (const photo of photos) expect(fs.existsSync(fileOf(photo.id))).toBe(true);
+    const left = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    expect(left.map((image) => image.id)).toEqual(photos.map((photo) => photo.id));
+  });
+
   it("removes no file of a model whose rows it can't delete", async () => {
     const { printId, photos, fileOf } = await withPhotos(3);
     // The database refuses the deletion of this model's rows, as a dropped connection would.

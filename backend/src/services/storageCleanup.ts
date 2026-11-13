@@ -141,6 +141,8 @@ async function trimPhotos(task: CleanupTask, keep: PhotoKeep): Promise<void> {
     .filter(({ planned }) => planned > 0);
   task.total = byModel.reduce((sum, { planned }) => sum + planned, 0);
   for (const { printId, planned } of byModel) {
+    // Read before any row goes, so a failed read leaves the model's photos as they are.
+    const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
     const extra = await prisma.$transaction(async (tx) => {
       // Locked first and read in a second statement: one `ORDER BY … FOR UPDATE` sorts before it waits for a
       // reorder's locks, and so would hand back the order from before it, the new cover among the extra.
@@ -151,7 +153,6 @@ async function trimPhotos(task: CleanupTask, keep: PhotoKeep): Promise<void> {
       return going;
     });
     task.total += extra.length - planned;
-    const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
     for (const image of extra) {
       const freed = await removeAssetFiles(print?.assetsPath, galleryImageFile(image.id));
       if (freed === null) {
