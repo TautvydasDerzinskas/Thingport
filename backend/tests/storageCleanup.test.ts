@@ -338,6 +338,68 @@ describe("Free up space", () => {
     expect(fs.existsSync(fileOf(photos[2].id))).toBe(true);
     for (const photo of photos.slice(0, 2)) expect(fs.existsSync(fileOf(photo.id))).toBe(false);
   });
+
+  it("keeps the cover a reorder still under way makes of the last photo", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    const order = [photos[2].id, photos[0].id, photos[1].id];
+    let commit!: () => void;
+    let locked!: () => void;
+    const holding = new Promise<void>((resolve) => (locked = resolve));
+    // The reorder's two phases, held open with its rows locked until the clean-up waits for them.
+    const reorder = prisma.$transaction(async (tx) => {
+      for (const [phase, base] of [
+        [0, -1],
+        [1, 0],
+      ] as const) {
+        for (const [idx, id] of order.entries()) {
+          await tx.previewImage.update({ where: { id }, data: { position: phase === 0 ? base - idx : idx } });
+        }
+      }
+      locked();
+      await new Promise<void>((resolve) => (commit = resolve));
+    });
+    await holding;
+    expect(startStorageCleanup(null, ["photos"], 1)).not.toBeNull();
+    let waiting = false;
+    for (let i = 0; i < 200 && !waiting; i++) {
+      const [{ count }] = await prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT count(*) AS "count" FROM pg_locks WHERE NOT granted`;
+      waiting = count > 0n;
+      if (!waiting) await sleep(25);
+    }
+    commit();
+    await reorder;
+    await waitForCleanup();
+    expect(waiting).toBe(true);
+    const left = await prisma.previewImage.findMany({ where: { printId } });
+    expect(left.map((image) => image.id)).toEqual([photos[2].id]);
+    expect(fs.existsSync(fileOf(photos[2].id))).toBe(true);
+  });
+
+  it("drops the rows of photos it removed when their removal can't be saved", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    // The database refuses the first deletion of this model's rows, as a dropped connection would, once their files
+    // are gone; a sequence, as it counts outside the transaction that's rolled back.
+    await prisma.$executeRawUnsafe(`CREATE SEQUENCE cleanup_test_refusals`);
+    await prisma.$executeRawUnsafe(`CREATE FUNCTION cleanup_test_refuse() RETURNS trigger AS $$ BEGIN
+      IF OLD."printId" = '${printId}' AND nextval('cleanup_test_refusals') = 1 THEN RAISE EXCEPTION 'connection lost';
+      END IF; RETURN OLD; END $$ LANGUAGE plpgsql`);
+    await prisma.$executeRawUnsafe(`CREATE TRIGGER cleanup_test_refuse BEFORE DELETE ON "PreviewImage"
+      FOR EACH ROW EXECUTE FUNCTION cleanup_test_refuse()`);
+    let run: Awaited<ReturnType<typeof runCleanup>>;
+    try {
+      run = await runCleanup(["photos"], 1);
+    } finally {
+      await prisma.$executeRawUnsafe(`DROP TRIGGER cleanup_test_refuse ON "PreviewImage"`);
+      await prisma.$executeRawUnsafe(`DROP FUNCTION cleanup_test_refuse()`);
+      await prisma.$executeRawUnsafe(`DROP SEQUENCE cleanup_test_refusals`);
+    }
+    expect(run.tasks.find((each) => each.key === "photos")!.status).toBe("failed");
+    for (const photo of photos.slice(1)) expect(fs.existsSync(fileOf(photo.id))).toBe(false);
+    const left = await prisma.previewImage.findMany({ where: { printId } });
+    expect(left.map((image) => image.id)).toEqual([photos[0].id]);
+    expect(fs.existsSync(fileOf(photos[0].id))).toBe(true);
+  });
 });
 
 describe("A new 3D preview", () => {
@@ -367,13 +429,17 @@ describe("A new 3D preview", () => {
     let release!: () => void;
     const held = withStorageLock(() => new Promise<void>((resolve) => (release = resolve)));
     const drawing = generateModelPreviewGlb(plateId, fixture);
-    // Drawn and packed, and waiting to be put in place (or put in the folder already, were it not waiting).
-    for (let i = 0; i < 150 && !fs.existsSync(before) && !packed(); i++) await sleep(100);
-    await sleep(300);
     const moved = `${home}-moved`;
-    await prisma.print.update({ where: { id: printId }, data: { assetsPath: moved } });
-    release();
-    await held;
+    try {
+      // Drawn and packed, and waiting to be put in place (or put in the folder already, were it not waiting).
+      for (let i = 0; i < 150 && !fs.existsSync(before) && !packed(); i++) await sleep(100);
+      await sleep(300);
+      await prisma.print.update({ where: { id: printId }, data: { assetsPath: moved } });
+    } finally {
+      release();
+      await held;
+      await drawing.catch(() => undefined);
+    }
     await drawing;
     expect(fs.existsSync(assetTarget(moved, plateGlbFile(plateId)))).toBe(true);
     expect(fs.existsSync(before)).toBe(false);

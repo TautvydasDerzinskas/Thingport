@@ -129,8 +129,8 @@ async function compressPreviews(task: CleanupTask): Promise<void> {
 type Photo = { id: string; generated: boolean };
 
 /** Every photo past the first `keep` of each model, the cover always kept; imports keep as many from now on. Each
- *  model's are read again, locked, right before they go, so a photo a reorder has just moved to the front stays; a
- *  photo whose file couldn't be removed keeps its row, for another run to find. */
+ *  model's are locked, then read again in their order, right before they go, so a photo a reorder has just moved to
+ *  the front stays; a photo whose file couldn't be removed keeps its row, for another run to find. */
 async function trimPhotos(task: CleanupTask, keep: PhotoKeep): Promise<void> {
   await setPhotosPerModel(keep);
   const beyond = (images: Photo[]) => images.slice(keep).filter((image) => !image.generated);
@@ -139,27 +139,40 @@ async function trimPhotos(task: CleanupTask, keep: PhotoKeep): Promise<void> {
     .filter(({ planned }) => planned > 0);
   task.total = byModel.reduce((sum, { planned }) => sum + planned, 0);
   for (const { printId, planned } of byModel) {
-    await prisma.$transaction(
-      async (tx) => {
-        // Locked until they're gone: a reorder of these waits for that, then finds them gone.
-        const images = await tx.$queryRaw<Photo[]>`
-          SELECT "id", "generated" FROM "PreviewImage" WHERE "printId" = ${printId} ORDER BY "position" FOR UPDATE`;
-        const extra = beyond(images);
-        task.total += extra.length - planned;
-        const print = await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
-        const removed: string[] = [];
-        for (const { id } of extra) {
-          const freed = await removeAssetFiles(print?.assetsPath, galleryImageFile(id));
-          if (freed === null) task.failed += 1;
-          else {
-            task.freed += freed;
-            removed.push(id);
+    const removed: string[] = [];
+    try {
+      await prisma.$transaction(
+        async (tx) => {
+          // Locked until they're gone: a reorder of these waits for that, then finds them gone. Locked first and read
+          // in a second statement: one `ORDER BY … FOR UPDATE` sorts before it waits for a reorder's locks, and so
+          // would hand back the order from before it, the new cover among the extra.
+          await tx.$queryRaw`SELECT "id" FROM "PreviewImage" WHERE "printId" = ${printId} FOR UPDATE`;
+          const images = await tx.$queryRaw<Photo[]>`
+            SELECT "id", "generated" FROM "PreviewImage" WHERE "printId" = ${printId} ORDER BY "position"`;
+          const extra = beyond(images);
+          task.total += extra.length - planned;
+          const print = await tx.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+          for (const { id } of extra) {
+            const freed = await removeAssetFiles(print?.assetsPath, galleryImageFile(id));
+            if (freed === null) task.failed += 1;
+            else {
+              task.freed += freed;
+              removed.push(id);
+            }
+            task.done += 1;
           }
-          task.done += 1;
-        }
-        if (removed.length) await tx.previewImage.deleteMany({ where: { id: { in: removed } } });
-      },
-      { timeout: 60_000 },
-    );
+          if (removed.length) await tx.previewImage.deleteMany({ where: { id: { in: removed } } });
+        },
+        { timeout: 60_000 },
+      );
+    } catch (err) {
+      // Their files are gone whatever the database did: rows left behind would be photos that don't open.
+      if (removed.length) {
+        await prisma.previewImage.deleteMany({ where: { id: { in: removed } } }).catch((error: unknown) => {
+          log.error("couldn't remove the rows of photos already removed", { printId, error });
+        });
+      }
+      throw err;
+    }
   }
 }
