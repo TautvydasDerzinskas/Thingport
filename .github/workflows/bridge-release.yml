@@ -94,7 +94,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Remove-Item dist/thingport-bridge-windows-amd64.exe
       - name: Exercise Windows install, registration, update migration and uninstall
-        if: matrix.target == 'windows-amd64'
+        # Pull requests compile Setup; the release/manual gate pays for the OS lifecycle smoke once.
+        if: matrix.target == 'windows-amd64' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
         working-directory: bridge
         shell: pwsh
         env:
