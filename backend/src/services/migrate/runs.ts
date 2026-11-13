@@ -37,7 +37,9 @@ export type RunProgress = { step: PrepareStep | MergePhase; done: number; total:
 /** Where uploaded dumps wait while they're restored. */
 export const UPLOADS = path.join(STORAGE, MIGRATE_FOLDER, "uploads");
 
-type Active = { id: string; progress: RunProgress; abort: AbortController };
+/** The one slot's holder: a dump being prepared (which Discard stops), or a run being started or given another
+ *  folder (which Discard turns away until it is over: stopping one part-way would leave it going on regardless). */
+type Active = { id: string; kind: "prepare" | "start" | "folder"; progress: RunProgress; abort: AbortController };
 let active: Active | null = null;
 
 export type RunOut = {
@@ -77,12 +79,12 @@ const asHttp = (err: unknown) => (err instanceof MigrateError ? new MigrateHttpE
 
 /** Takes the one slot for a run, at once and before anything is awaited, so two requests can't both find it free;
  *  `release` gives it back. */
-function claim(id: string, step: RunProgress["step"]): Active {
+function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Active {
   if (active) throw new HttpError(409, "A migration is under way already.", "busy");
   if (currentStorageMove()?.running) {
     throw new HttpError(409, "Model files are being moved. Start the migration once that's done.", "storage_move");
   }
-  const state: Active = { id, progress: { step, done: 0, total: 0 }, abort: new AbortController() };
+  const state: Active = { id, kind, progress: { step, done: 0, total: 0 }, abort: new AbortController() };
   active = state;
   setMigrationBusy(true);
   return state;
@@ -125,7 +127,7 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
   let state: Active;
   try {
     // Its id once the run is made.
-    state = claim("", "restoring");
+    state = claim("", "prepare", "restoring");
   } catch (err) {
     await dropUpload();
     throw err;
@@ -241,7 +243,7 @@ async function prepare(
 
 /** Starts merging a prepared migration with the admin's choices; also starts one that failed part-way again. */
 export async function startRun(id: string, adminId: string, options: MigrateOptions): Promise<RunOut> {
-  const state = claim(id, "people");
+  const state = claim(id, "start", "people");
   let stagingDb: string;
   let plan: MigratePlan;
   let chosen: MigrateOptions;
@@ -327,7 +329,7 @@ async function execute(state: Active, name: string, plan: MigratePlan, options: 
 /** Gives a prepared migration another storage folder, and counts its files there again: for a folder given wrong,
  *  without restoring the dump again. */
 export async function changeFolder(id: string, given: string): Promise<RunOut> {
-  const state = claim(id, "files");
+  const state = claim(id, "folder", "files");
   let source: PrismaClient | null = null;
   try {
     const run = await prisma.migrationRun.findUnique({ where: { id } });
@@ -364,6 +366,9 @@ export async function removeRun(id: string): Promise<void> {
   const run = await prisma.migrationRun.findUnique({ where: { id } });
   if (!run) throw new HttpError(404, "No such migration");
   if (run.status === "running") throw new HttpError(409, "It's running. Wait for it to finish.", "running");
+  if (active?.id === id && active.kind !== "prepare") {
+    throw new HttpError(409, "A migration is under way already.", "busy");
+  }
   if (active?.id === id) {
     // Preparing: it stops, cleans up and goes.
     active.abort.abort();

@@ -10,9 +10,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { MERGED_TABLES, tablesThatCome } from "../src/services/migrate/merge";
+import { MERGED_TABLES, type MigrateOptions, tablesThatCome } from "../src/services/migrate/merge";
 import { dumpFormat, stagingName } from "../src/services/migrate/postgres";
 import { MERGE_RULES } from "../src/services/migrate/rules";
+import { changeFolder, removeRun, startRun } from "../src/services/migrate/runs";
 import { checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
 
 // A notification that takes its time when a test asks, as one to a slow database would.
@@ -479,4 +480,63 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     expect(failed.status).toBe("failed");
     expect(failed.error.code).toBe("source_newer");
   }, 120_000);
+});
+
+describe("discarding a migration while it's being started or given another folder", () => {
+  const options: MigrateOptions = {
+    people: ["someone"],
+    collections: false,
+    studio: false,
+    widgets: false,
+    tools: false,
+    syncs: false,
+    signIns: false,
+    settings: false,
+    secrets: false,
+  };
+  const readyRun = () =>
+    prisma.migrationRun.create({
+      data: {
+        source: "thingport",
+        status: "ready",
+        stagingDb: `thingport_migrate_missing_${crypto.randomBytes(4).toString("hex")}`,
+        plan: { people: [{ id: "someone" }] },
+      },
+    });
+
+  it("turns Discard away while Start is still claiming the run, so it can't start after it was discarded", async () => {
+    const run = await readyRun();
+    let letStart!: () => void;
+    const held = new Promise<void>((resolve) => (letStart = resolve));
+    const updateMany = prisma.migrationRun.updateMany.bind(prisma.migrationRun);
+    // Start holds the slot, the run still "ready", until Discard has had its answer.
+    const spy = vi.spyOn(prisma.migrationRun, "updateMany").mockImplementation((async (args: never) => {
+      await held;
+      return updateMany(args);
+    }) as never);
+    try {
+      const starting = startRun(run.id, "nobody", options);
+      await expect(removeRun(run.id)).rejects.toMatchObject({ status: 409, code: "busy" });
+      letStart();
+      await starting;
+    } finally {
+      spy.mockRestore();
+    }
+    for (let tries = 0; tries < 200; tries++) {
+      const now = await prisma.migrationRun.findUniqueOrThrow({ where: { id: run.id } });
+      if (now.status !== "running") break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect((await prisma.migrationRun.findUniqueOrThrow({ where: { id: run.id } })).status).toBe("failed");
+    await prisma.migrationRun.delete({ where: { id: run.id } });
+  });
+
+  it("turns Discard away while another folder is being checked", async () => {
+    const run = await readyRun();
+    const changing = changeFolder(run.id, "/nowhere").catch(() => undefined);
+    await expect(removeRun(run.id)).rejects.toMatchObject({ status: 409, code: "busy" });
+    await changing;
+    expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).not.toBeNull();
+    await prisma.migrationRun.delete({ where: { id: run.id } });
+  });
 });
