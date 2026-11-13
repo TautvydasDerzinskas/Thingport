@@ -81,7 +81,8 @@ A few have more to know:
    Pinshape, the collections you subscribed to as well). Or paste the link of any list the site lets Thingport read,
    yours or someone else's.
 4. Pick one and click **Sync**. The dialog opens the new source, where you can change how often it's checked, and for
-   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint which print profiles each new model brings.
+   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint and eufyMake which print profiles each new model
+   brings.
 
 The models already in the list are imported now, one at a time; MakerOnline's wait for Grab, as below. MakerWorld
 rate-limits bulk imports quickly, so there only models added from now on come in. Ones already in your library are
@@ -153,9 +154,9 @@ linked:
 - **Each source** has a section of its own, named after the provider's list. It shows the chain from that list to
   your collection, when it was last checked and when the next check is due, and a link to the list on the provider's
   site. **Sync now** checks it right away; **Stop syncing** unlinks that source alone. Below that, how often it's
-  checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud
-  and NexPrint it also sets which print profiles each new model brings: the default one, the designer's (the default),
-  or all of them, community ones included. Each source keeps its own settings.
+  checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud,
+  NexPrint and eufyMake it also sets which print profiles each new model brings: the default one, the designer's (the
+  default), or all of them, community ones included. Each source keeps its own settings.
 - **Overview**, once a collection follows two or more, lists them with how each is doing; click one to open it.
   **Sync all now** checks every one that can be checked, with a notification for each.
 - **Add source** links another list, as [above](#turn-sync-on-in-thingport).

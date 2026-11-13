@@ -156,12 +156,18 @@ export async function checkEufymakeAuth(
 
 export type EufymakeFile = { name: string; url: string };
 
+/** One of a model's print files: its print profiles, eufyMake Studio projects its designer made, by the site's id,
+ *  shown by its name and its picture. */
+export type EufymakeProfile = EufymakeFile & { id: string; title: string; coverUrl: string | null };
+
 export type EufymakeModelResolution = {
   meta: Partial<ImportedPageMetadata>;
   galleryImages: { url: string; filename: string }[];
   modelId: string;
   /** Its model files, or the zip of them where it lists none on their own. */
   files: EufymakeFile[];
+  /** Its print files, in the site's order. */
+  profiles: EufymakeProfile[];
 };
 
 function authorOf(user: unknown): ImportedAuthorInfo | null {
@@ -227,12 +233,42 @@ export function eufymakeMetaFromDetail(model: Record<string, unknown>): Eufymake
     name,
     url,
   }));
+  const profiles = records(model.model_print_infos).flatMap((info) => {
+    const id = printFileId(info.info_id);
+    const url = str(info.file_3mf_key);
+    if (!id || !url) return [];
+    // A print file is a 3MF whatever its designer named it, and a download without the extension is dropped.
+    const shown = (str(info.print_name) ?? nameFromUrl(url, `${id}.3mf`)).replace(/\.3mf$/i, "");
+    return [{ id, name: `${shown}.3mf`, url, title: shown, coverUrl: str(info.cover_url) }];
+  });
   return {
     meta,
     galleryImages: images.map((url, index) => ({ url, filename: nameFromUrl(url, `image-${index}.jpg`) })),
     modelId,
     files,
+    profiles,
   };
+}
+
+/** A print file's id, as links name it and its plate is tagged with: its digits. */
+export function printFileId(value: unknown): string | null {
+  const id = typeof value === "number" ? String(value) : str(value);
+  return id && /^\d+$/.test(id) ? id : null;
+}
+
+export type EufymakeProfileScope = "url" | "designer" | "all";
+
+/** The print files a scope picks: the one the link names, else the first, for one; all of them for the designer's,
+ *  as every print file is the designer's own. */
+export function selectEufymakeProfiles(
+  resolution: Pick<EufymakeModelResolution, "profiles">,
+  scope: EufymakeProfileScope,
+  requestedProfileId: string | null,
+): string[] {
+  const { profiles } = resolution;
+  if (scope !== "url") return profiles.map((profile) => profile.id);
+  const pick = (requestedProfileId && profiles.find((profile) => profile.id === requestedProfileId)) || profiles[0];
+  return pick ? [pick.id] : [];
 }
 
 /** The model's details as the site answers them, by its id. Null for a model that doesn't exist or isn't shown. */
