@@ -74,8 +74,9 @@ export function requestError(err: unknown): MigrateRunError {
   return { code: "unexpected", message: err instanceof Error ? err.message : String(err) };
 }
 
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
+/** A size as people read it in `locale`: "1,5 KB" in French. */
+export function formatBytes(bytes: number, locale = "en"): string {
+  if (bytes < 1024) return `${new Intl.NumberFormat(locale).format(bytes)} B`;
   const units = ["KB", "MB", "GB", "TB"];
   let value = bytes / 1024;
   let unit = 0;
@@ -83,7 +84,9 @@ export function formatBytes(bytes: number): string {
     value /= 1024;
     unit += 1;
   }
-  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+  const digits = value >= 10 ? 0 : 1;
+  const number = new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return `${number.format(value)} ${units[unit]}`;
 }
 
 /** Where it came from, as its row and its dialog name it. */
@@ -94,3 +97,31 @@ export function runTitle(t: TFunction, run: MigrateRun): string {
 }
 
 export const isActive = (run: MigrateRun) => run.status === "preparing" || run.status === "running";
+
+/** Asks for the run every `ms` until stopped, one request at a time: the next is asked once the last has answered.
+ *  What a request answers after `stop` is dropped, so an older answer never replaces what came since. */
+export function followRun(
+  get: () => Promise<MigrateRun>,
+  ms: number,
+  onRun: (run: MigrateRun) => void,
+  onError: (err: unknown) => void,
+): () => void {
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const next = () => {
+    timer = setTimeout(async () => {
+      try {
+        const run = await get();
+        if (!stopped) onRun(run);
+      } catch (err) {
+        if (!stopped) onError(err);
+      }
+      if (!stopped) next();
+    }, ms);
+  };
+  next();
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+  };
+}

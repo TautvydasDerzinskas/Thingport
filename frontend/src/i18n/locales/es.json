@@ -3032,7 +3032,7 @@
           }
         },
         "people": {
-          "intro": "Sus contraseñas vienen con ellos, así que inician sesión como antes.",
+          "intro": "Una cuenta nueva viene con su contraseña de antes, así que inician sesión como antes. Si se fusionan con una cuenta de aquí, conservan su contraseña.",
           "introHelp": "Quien tenga aquí el mismo correo electrónico se fusiona con esa cuenta: se queda como está y se le añade lo suyo. El propietario de la instancia antigua llega como administrador, ya que esta instancia conserva su propio propietario.",
           "everyone": "Todos",
           "person": "Usuario",
