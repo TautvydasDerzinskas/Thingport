@@ -16,7 +16,6 @@ export type { SlicerProfile } from "./types";
 export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.fromEntries(
   [
     bambustudio,
-    qidistudio,
     orcaslicer,
     prusaslicer,
     cura,
@@ -25,6 +24,7 @@ export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.f
     elegooslicer,
     snapmakerOrca,
     eufystudio3d,
+    qidistudio,
   ].map((profile) => [profile.id, profile]),
 );
 

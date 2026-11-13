@@ -81,7 +81,7 @@ export function planAdaptation(
     return {
       output: "bambu",
       from: "prusa",
-      tag: COMPATIBLE_TAG,
+      tag: (forPrusa && slicer.ownTag) || COMPATIBLE_TAG,
       dropOrcaTag: false,
       dialect: slicer.dialect ?? null,
       ...(forPrusa ? { printer: forPrusa } : {}),
@@ -106,7 +106,7 @@ export function planAdaptation(
   if (!retag && !dropOrcaTag && !dialect && !forPrinter) return null;
   return {
     output: "bambu",
-    tag: retag ? COMPATIBLE_TAG : null,
+    tag: (forPrinter && slicer.ownTag) || (retag ? COMPATIBLE_TAG : null),
     dropOrcaTag,
     dialect,
     ...(forPrinter ? { printer: forPrinter } : {}),
@@ -120,7 +120,7 @@ export function planKey(plan: AdaptPlan): string {
   return [
     "bambu",
     plan.from === "prusa" ? "fromprusa" : "",
-    plan.tag ? "tag" : "",
+    !plan.tag ? "" : plan.tag === COMPATIBLE_TAG ? "tag" : `tag-${plan.tag.split("-")[0].toLowerCase()}`,
     plan.dropOrcaTag ? "noorca" : "",
     plan.dialect ?? "",
     plan.printer ? ["for", plan.printer.id, plan.printer.nozzle, plan.printer.stamp].filter(Boolean).join("-") : "",

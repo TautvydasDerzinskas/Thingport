@@ -1,6 +1,6 @@
 // What a print profile's own 3MF says about it: the printer and settings it was made for, its plates, and -- when the
 // designer uploaded it sliced -- each plate's time and filament. Bambu Studio and the slicers built on it (OrcaSlicer,
-// Creality Print, Elegoo Slicer, Anycubic Slicer Next, Snapmaker Orca) all write the same Metadata files.
+// Creality Print, Elegoo Slicer, Anycubic Slicer Next, Snapmaker Orca, QIDI Studio) all write the same Metadata files.
 
 import { decodeHtmlEntities } from "../utils/htmlEntities";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";

@@ -474,7 +474,6 @@ describe("planAdaptation", () => {
   });
 
   it("translates its settings' names for the Orca family, and retags it where a version would be questioned", () => {
-    expect(plan("qidistudio")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: null });
     expect(plan("orcaslicer")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("snapmaker-orca")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("elegooslicer")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: "orca" });
@@ -484,6 +483,37 @@ describe("planAdaptation", () => {
       dropOrcaTag: false,
       dialect: "orca",
     });
+  });
+
+  it("leaves QIDI Studio a Bambu Studio project, which it puts on its own printer, and its own tag on a printer's copy", () => {
+    const q1 = { id: "qidi-q1pro", nozzle: "0.4", preset: "Q1 Pro 0.4 nozzle" };
+    const qidi = slicerProfile("qidistudio");
+    const ownTag = "QIDIStudio-02.01.00.00";
+    expect(plan("qidistudio")).toBeNull();
+    // Any other app's project would open without its settings.
+    const snapmaker = format({ app: "Snapmaker_Orca", appVersion: "2.4.1", dialect: "orca" });
+    expect(plan("qidistudio", snapmaker)).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: false,
+      dialect: "bambu",
+    });
+    expect(planAdaptation(format(), qidi, q1)).toEqual({
+      output: "bambu",
+      tag: ownTag,
+      dropOrcaTag: false,
+      dialect: null,
+      printer: q1,
+    });
+    expect(
+      planAdaptation(format({ app: "QIDIStudio", appVersion: "02.07.02.73", printer: q1.preset }), qidi, q1),
+    ).toBeNull();
+    const prusa = format({ kind: "prusa", app: "PrusaSlicer", appVersion: "2.9.7", dialect: null });
+    expect(planAdaptation(prusa, qidi)).toMatchObject({ from: "prusa", tag: COMPATIBLE_TAG });
+    expect(planAdaptation(prusa, qidi, q1)).toMatchObject({ from: "prusa", tag: ownTag, printer: q1 });
+    // Bambu Studio's copy for the same printer isn't QIDI Studio's.
+    expect(planKey(planAdaptation(format(), qidi, q1)!)).toBe("bambu-tag-qidistudio-for-qidi-q1pro-0.4");
+    expect(planKey(planAdaptation(format(), slicerProfile("bambustudio"), q1)!)).toBe("bambu-for-qidi-q1pro-0.4");
   });
 
   it("keeps another maker's project foreign to Creality Print, which asks for a printer", () => {

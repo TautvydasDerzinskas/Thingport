@@ -1,7 +1,7 @@
 // Each slicer's mark, for the apps that show the slicers: the web app and Thingport Grab, which both take this folder
 // already. Drawn on a white tile. Bambu Studio, Anycubic and Elegoo use their makers' Simple Icons glyphs (CC0);
 // OrcaSlicer, PrusaSlicer, Cura, Creality Print, Snapmaker Orca and eufyMake Studio come from each project's own app
-// icon, without its background. "Other" is a generic layers glyph.
+// icon, without its background, and QIDI Studio's keeps its blue one. "Other" is a generic layers glyph.
 
 export type SlicerMark = { viewBox: string; paths: { d: string; fill: string }[] };
 
@@ -104,6 +104,23 @@ export const SLICER_MARKS: Readonly<Record<string, SlicerMark>> = {
       {
         fill: "#3ADB67",
         d: "M10.7696 8.53498C10.6226 8.39142 10.3823 8.39142 10.2353 8.53498L7.50627 11.1996C7.35924 11.3432 7.35924 11.5778 7.50627 11.7213L10.2353 14.386C10.3823 14.5295 10.6226 14.5295 10.7696 14.386L13.4986 11.7213C13.6456 11.5778 13.6456 11.3432 13.4986 11.1996L10.7696 8.53498ZM9.38654 7.18505L4.61886 2.52982L2.02613 0H0V4.39611V19.7081H4.61707V8.90427L6.12143 10.3731C6.26845 10.5167 6.50872 10.5167 6.65575 10.3731L9.38475 7.70852C9.53357 7.56321 9.53357 7.33036 9.38654 7.18505ZM18.9738 0L16.3828 2.52982L11.6152 7.18505C11.4681 7.32861 11.4681 7.56321 11.6152 7.70677L14.3441 10.3714C14.4912 10.515 14.7315 10.515 14.8785 10.3714L16.3828 8.90252V19.7064H20.9999V4.39611V0H18.9738Z",
+      },
+    ],
+  },
+  qidistudio: {
+    viewBox: "0 0 256 256",
+    paths: [
+      {
+        fill: "#303AB2",
+        d: "M196 256H60C26.9 256 0 229.1 0 196V60C0 26.9 26.9 0 60 0h136c33.1 0 60 26.9 60 60v136c0 33.1-26.9 60-60 60Z",
+      },
+      {
+        fill: "#fff",
+        d: "M145 177.9v-34.5c0-2.3 1.2-4.5 3.2-5.6l41.3-23.8V93c0-4.6-2.5-8.9-6.5-11.2l-57.8-33.4c-4-2.3-8.9-2.3-13 0L54.5 81.8C50.5 84.1 48 88.4 48 93v66.7c0 4.6 2.5 8.9 6.5 11.2l57.8 33.4c4 2.3 8.9 2.3 13 0l19.7-11.4v-15Zm-19.8-62.7c-4 2.3-6.5 6.6-6.5 11.2v55.4c0 5-5.4 8.1-9.7 5.6l-44.8-25.9c-2-1.2-3.2-3.3-3.2-5.6V96.7c0-2.3 1.2-4.5 3.2-5.6l51.3-29.6c2-1.2 4.5-1.2 6.5 0l38.3 22.1c4.3 2.5 4.3 8.7 0 11.2l-35.1 20.4Z",
+      },
+      {
+        fill: "#fff",
+        d: "m198.3 108.9-8.8 5.1v49.6c0 2.3-1.2 4.4-3.2 5.5l-41.3 23.8v10c.1 4.8 5.2 7.9 9.5 5.7l5.4-3.1 44.9-26c2-1.2 3.2-3.3 3.2-5.6v-59.4c0-5-5.4-8.1-9.7-5.6Z",
       },
     ],
   },

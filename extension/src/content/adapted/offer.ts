@@ -19,6 +19,9 @@ const choiceOf = (target: AdaptTarget) =>
 
 const slicerName = (target: AdaptTarget) => (target.slicer ? (SLICER_LABELS[target.slicer] ?? target.slicer) : null);
 const printerOf = (target: AdaptTarget) => `${target.printer!.brandName} ${target.printer!.model}`.trim();
+/** A slicer that opens another app's project on the printer selected in it, which a copy only changes for a
+ *  printer of the user's (QIDI Studio). */
+const movesOntoItsPrinter = (target: AdaptTarget) => Boolean(slicerProfile(target.slicer)?.ownTag);
 
 /** The copies a target's click makes of the kinds of 3MF the site has: none where the slicer opens them as they are. */
 export function outputsFor(site: AdaptSite, target: AdaptTarget): Output[] {
@@ -36,7 +39,11 @@ export function copiesFor(site: AdaptSite, targets: readonly AdaptTarget[]): Ada
  *  in for the printer's own. */
 export function savedNote(target: AdaptTarget, saved: Saved): string | null {
   const slicer = slicerName(target) ?? "PrusaSlicer";
-  // The printer first: a file downloaded as it is keeps the designer's printer as well.
+  // The printer first: a file downloaded as it is keeps the designer's printer as well, unless the slicer moves it.
+  if (saved.printerless && target.printer && movesOntoItsPrinter(target)) {
+    const what = saved.copy ? "this copy" : "the file itself";
+    return `Grab has no ${slicer} preset for the ${printerOf(target)}, so ${slicer} puts ${what} on the printer selected in it. Pick yours there before slicing.`;
+  }
   if (saved.printerless && target.printer) {
     const what = saved.copy ? "this copy keeps" : `the file itself, which ${slicer} opens as it is, keeps`;
     return `Grab has no ${slicer} preset for the ${printerOf(target)}, so ${what} the designer's printer. Pick yours in ${slicer} before slicing.`;
@@ -82,6 +89,13 @@ function ofOne(site: AdaptSite, target: AdaptTarget): string {
       `Creality Print gives them. It still asks which of your printers to use. ${MADE}`
     );
   }
+  if (output === "bambu" && movesOntoItsPrinter(target)) {
+    return (
+      "This downloads a copy that keeps the parts, painting and the designer's settings, under the names " +
+      `${slicer} gives them. ${slicer} puts it on the printer selected in it, as it does any project from another ` +
+      `slicer. ${MADE}`
+    );
+  }
   if (output === "bambu") {
     return (
       `This downloads a copy ${slicer} opens as its own project: parts, plates, painting and the designer's ` +
@@ -116,6 +130,10 @@ function ofSeveral(site: AdaptSite, target: AdaptTarget): string {
       `a copy made for your ${printerOf(target)} with its ${target.printer.nozzle} mm nozzle in ${slicer}: it names ` +
       `${slicer}'s presets for that printer, keeps the designer's settings on top of them and lays the plates out on ` +
       "its bed";
+  } else if (reads === "bambu" && movesOntoItsPrinter(target)) {
+    copy =
+      "a copy that keeps the parts, painting and the designer's settings under the names " +
+      `${slicer} gives them, on the printer selected in ${slicer}`;
   } else if (reads === "bambu") {
     copy =
       `a copy ${slicer} opens as its own project, keeping the parts, plates, painting and the designer's settings ` +

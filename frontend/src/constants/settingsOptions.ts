@@ -5,7 +5,6 @@ export type SlicerOption = { id: string; label: string };
 // the Bridge instead (see utils/slicerLaunch.ts).
 export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "bambustudio", label: "Bambu Studio" },
-  { id: "qidistudio", label: "QIDI Studio" },
   { id: "orcaslicer", label: "OrcaSlicer" },
   { id: "prusaslicer", label: "PrusaSlicer" },
   { id: "cura", label: "Cura" },
@@ -14,6 +13,7 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "elegooslicer", label: "Elegoo Slicer" },
   { id: "snapmaker-orca", label: "Snapmaker Orca" },
   { id: "eufystudio3d", label: "eufyMake Studio" },
+  { id: "qidistudio", label: "QIDI Studio" },
   { id: "other", label: "Other / Manual" },
 ];
 

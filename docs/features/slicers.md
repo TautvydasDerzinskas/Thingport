@@ -11,7 +11,6 @@ model with several files, downloads them all as a zip. On a model that came with
 Supported slicers:
 
 - Bambu Studio
-- QIDI Studio
 - OrcaSlicer
 - PrusaSlicer
 - Cura
@@ -20,6 +19,7 @@ Supported slicers:
 - Elegoo Slicer
 - Snapmaker Orca
 - eufyMake Studio
+- QIDI Studio
 
 Switch on the ones you have installed under **Configuration → Slicer**, from the user menu: double-click a slicer, or
 right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the
@@ -27,7 +27,8 @@ button downloads the file instead, for when you'd rather open files yourself.
 
 ## Thingport Bridge
 
-Bambu Studio, QIDI Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own.
+Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own, and
+QIDI Studio asks each time whether to trust it.
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page. To
 [update it](../../bridge/README.md#update), install the new version over the old one; a notification tells you when

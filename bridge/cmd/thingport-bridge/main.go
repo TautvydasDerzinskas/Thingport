@@ -30,10 +30,11 @@ type Config struct {
 	Slicers     map[string]SlicerConfig `json:"slicers,omitempty"`
 }
 
-// For slicers Thingport hands off through the Bridge: bambustudio:// and prusaslicer:// only accept
-// allowlisted domains, QIDI Studio receives the downloaded file by path, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
-// a handler of their own come here only when the user sends them through the Bridge (Configuration >
-// Slicer in Thingport), for when one can't download from the instance itself.
+// For slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only accept
+// allowlisted domains, qidistudio:// asks whether to trust any other site on every link, and Cura's
+// cura:// registration is unreliable. OrcaSlicer and the others with a handler of their own come here
+// only when the user sends them through the Bridge (Configuration > Slicer in Thingport), for when one
+// can't download from the instance itself.
 const scheme = "thingport"
 
 // Release builds set it with -ldflags "-X main.version=...".
