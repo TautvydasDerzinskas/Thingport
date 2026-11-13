@@ -26,6 +26,8 @@ export type AdaptInUse = {
   fallback: "no-printers" | "unreachable" | null;
   /** What the instance said when it couldn't be reached. */
   error?: string;
+  /** Thingport's are what the instance said last, as it couldn't be asked now: why it couldn't. */
+  remembered?: string;
 };
 
 /** What copies are made for, Grab's own printers described by `describe` (the catalogue's summary of each). */
@@ -42,6 +44,7 @@ export function adaptInUse(view: AdaptView, describe: (printer: AdaptPrinter) =>
       slicerPrinters: thingport.slicerPrinters,
       unadapted: thingport.unadapted,
       fallback: thingport.printers ? null : "no-printers",
+      ...(thingport.remembered ? { remembered: thingport.remembered } : {}),
     };
   }
   const base = { ...none, slicers: view.own.slicers, printers: own };

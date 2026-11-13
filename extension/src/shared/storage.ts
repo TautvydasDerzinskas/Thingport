@@ -1,6 +1,7 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
 import type { ProviderId } from "../providers/index.generated";
+import type { ThingportAdapt } from "./messages";
 
 export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",
@@ -28,6 +29,8 @@ export const STORAGE_KEYS = {
   adaptCarriedTo: "adaptCarriedTo",
   // The copy Download adapted made last (an AdaptTarget's key), made again by its button.
   adaptLastTarget: "adaptLastTarget",
+  // What the connected account's instance last said its slicers and printers are, for while it can't answer.
+  adaptThingportLast: "adaptThingportLast",
   // Set by a page's "Adapt settings…" for the popup to open there; read and cleared when it opens.
   adaptOpenSettings: "adaptOpenSettings",
   // From the last login: admins get "Add to the queue" in the import panel.
@@ -75,6 +78,8 @@ export type StoredConfig = {
    *  the printers sent of a carry under way (background/adaptSettings.ts). */
   adaptCarriedTo?: Record<string, { settled: ("slicers" | "printers")[]; printersSent?: string[] }>;
   adaptLastTarget?: string;
+  /** By `instanceUrl|email`, the account it's of (background/adaptSettings.ts). */
+  adaptThingportLast?: { account: string; thingport: ThingportAdapt };
   adaptOpenSettings?: number;
   isAdmin?: boolean;
   importQueue?: boolean;

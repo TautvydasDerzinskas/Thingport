@@ -147,6 +147,20 @@ describe("Adapt 3MFs' settings in the background", () => {
     expect((await getAdaptView()).thingport).toEqual({ error: "Failed to fetch" });
   });
 
+  it("are what the instance said last while it can't answer, its own account's only", async () => {
+    Object.assign(store, CONNECTED);
+    instance.answers["GET /settings/slicer"] = { slicers: ["orcaslicer"], printers: { orcaslicer: "bambulab-p1s" } };
+    instance.answers["GET /me/printers"] = { printers: [{ ...P1S, printer: { ...P1S.printer, extruders: 1 } }] };
+    const said = (await getAdaptView()).thingport;
+    expect(said).toMatchObject({ slicers: ["orcaslicer"], slicerPrinters: { orcaslicer: "bambulab-p1s" } });
+
+    instance.answers["GET /me/printers"] = new ApiError("Internal error", 500);
+    expect((await getAdaptView()).thingport).toEqual({ ...said, remembered: "Internal error" });
+
+    Object.assign(store, { email: "other@example.com" });
+    expect((await getAdaptView()).thingport).toEqual({ error: "Internal error" });
+  });
+
   it("store a change cleaned, and give it back as stored", async () => {
     expect(await setAdaptSettings({ slicers: ["cura", "nope"], placement: "bubble" })).toEqual({
       slicers: ["cura"],

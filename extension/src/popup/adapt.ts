@@ -91,6 +91,12 @@ const inUse = (current: AdaptView): AdaptInUse => adaptInUse(current, describeOw
 
 /** Why the instance's slicers and printers aren't the ones shown, where they would be. */
 function noteOf(use: AdaptInUse): { text: string; retry: boolean } | null {
+  if (use.remembered) {
+    return {
+      text: `Couldn't reach your Thingport instance (${use.remembered}), so Grab goes by what it said last.`,
+      retry: true,
+    };
+  }
   if (use.fallback === "no-printers") {
     return { text: "Your Thingport instance doesn't keep printers yet, so Grab uses its own.", retry: false };
   }

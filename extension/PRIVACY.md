@@ -30,8 +30,10 @@ instance or account, so the new one has to be told.
   **Add to the queue**. Which optional sites you turned on is kept by your browser, as the access you granted.
 - **Adapt 3MFs' settings:** the slicers you picked in it, your printers (each by its id in the extension's own printer
   list, with its nozzle), where its button goes, and for each Thingport instance and email address you connected
-  to, which of them it has given that account (see below), so each account is offered them once. The printer list
-  itself comes with the extension: nothing is downloaded for it.
+  to, which of them it has given that account (see below), so each account is offered them once. Also the copy
+  **Download adapted** made last, which its button makes again, and the slicers and printers your Thingport instance
+  last listed for the account connected (their ids, names, nozzles and beds), so copies are still made for them while
+  the instance can't be reached. The printer list itself comes with the extension: nothing is downloaded for it.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
   it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
@@ -124,9 +126,9 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- When a MakerWorld model page opens, and when you open the toolbar popup: a request for your slicers and printers in
-  your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they decide whether **Download
-  adapted** is shown and which copies it makes.
+- When a model page opens on a site **Download adapted** works on, and when you open the toolbar popup: a request for
+  your slicers and printers in your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they
+  decide whether **Download adapted** is shown and which copies it makes.
 - When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
   that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once
   per account, so ones you remove there aren't sent again; what couldn't go then (the instance didn't answer, or

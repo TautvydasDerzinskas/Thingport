@@ -94,12 +94,31 @@ async function thingportAdapt(): Promise<ThingportAdapt> {
 
 const sameAccount = (a: StoredConfig, b: StoredConfig) => a.instanceUrl === b.instanceUrl && a.email === b.email;
 
+const accountOf = (config: ConfiguredConfig) => `${config.instanceUrl}|${config.email}`;
+
+/** The instance's answer, kept for when it can't give one: then what it said last stands in for it, saying why. */
+async function withLastAnswer(
+  config: ConfiguredConfig,
+  answer: ThingportAdapt | { error: string },
+): Promise<ThingportAdapt | { error: string }> {
+  const account = accountOf(config);
+  const last = (await getStoredConfig()).adaptThingportLast;
+  const said = last?.account === account ? last.thingport : null;
+  if ("error" in answer) return said ? { ...said, remembered: answer.error } : answer;
+  if (JSON.stringify(said) !== JSON.stringify(answer)) {
+    await chrome.storage.local
+      .set({ [STORAGE_KEYS.adaptThingportLast]: { account, thingport: answer } })
+      .catch(() => undefined);
+  }
+  return answer;
+}
+
 export async function getAdaptView(): Promise<AdaptView> {
   const config = await getStoredConfig();
   const own = adaptSettingsOf(config);
   if (!isConfigured(config) || config.disabled) return { own, thingport: null, instanceUrl: "" };
   const { instanceUrl } = config;
-  let thingport: AdaptView["thingport"];
+  let thingport: ThingportAdapt | { error: string };
   try {
     thingport = await thingportAdapt();
   } catch (err) {
@@ -107,7 +126,7 @@ export async function getAdaptView(): Promise<AdaptView> {
   }
   // Connected to another account meanwhile: what came back may be either's, so it's asked again.
   if (!sameAccount(await getStoredConfig(), config)) return getAdaptView();
-  return { own, thingport, instanceUrl };
+  return { own, thingport: await withLastAnswer(config, thingport), instanceUrl };
 }
 
 export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<AdaptSettings> {
@@ -135,7 +154,7 @@ const printerRefused = (err: unknown) => err instanceof ApiError && (err.status 
 async function carry(): Promise<void> {
   const config = await getStoredConfig();
   if (!isConfigured(config)) return;
-  const account = `${config.instanceUrl}|${config.email}`;
+  const account = accountOf(config);
   const stored = carriedOf(config)[account];
   const carried: Carried = { settled: [...(stored?.settled ?? [])], printersSent: stored?.printersSent };
   const save = async () => {
