@@ -249,9 +249,7 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
       (await readProfiles(tabId, job)) ??
       (await new Promise((resolve) => setTimeout(resolve, PROFILES_RETRY_MS)).then(() => readProfiles(tabId, job)));
     if (!ids) {
-      throw new Error(
-        await backgroundText("couldNotReadMakerworldProfiles"),
-      );
+      throw new Error(await backgroundText("couldNotReadMakerworldProfiles"));
     }
     await stayAtStep(tabId, job);
     if (!ids.length) {

@@ -31,18 +31,16 @@ function importQueueLink(instanceUrl: string): string {
 }
 
 function queuedNote(result: QueueImportResult, importQueue: boolean): string {
-  const waiting = t(getLocale() === "en" && result.waiting === 1 ? "queueWaitingOne" : "queueWaiting", { count: result.waiting });
+  const waiting = t(getLocale() === "en" && result.waiting === 1 ? "queueWaitingOne" : "queueWaiting", {
+    count: result.waiting,
+  });
   // `started` is only ever true from an instance with a queue of one's own, whatever Grab last heard about it.
   if (!importQueue && !result.started) {
-    return result.duplicate
-      ? t("queueDuplicate", { waiting })
-      : t("queueAdminPaused", { waiting });
+    return result.duplicate ? t("queueDuplicate", { waiting }) : t("queueAdminPaused", { waiting });
   }
   if (!result.started) return t("queueHeld", { waiting });
   if (result.position === 1) return t("queueNext", { waiting });
-  return result.position
-    ? t("queuePosition", { position: result.position, waiting })
-    : t("queueInLine", { waiting });
+  return result.position ? t("queuePosition", { position: result.position, waiting }) : t("queueInLine", { waiting });
 }
 
 /** "Add to the queue" went through. `importQueue`: the instance has a queue of one's own. */

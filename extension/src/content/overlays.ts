@@ -81,7 +81,10 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   waitEl.hidden = false;
   const tick = () => {
     const remaining = job.startAt - Date.now();
-    waitEl.textContent = t("nextIn", { next: job.profiles?.ids.length ? t("nextPrintProfile") : t("nextModel"), time: formatWait(remaining) });
+    waitEl.textContent = t("nextIn", {
+      next: job.profiles?.ids.length ? t("nextPrintProfile") : t("nextModel"),
+      time: formatWait(remaining),
+    });
     if (remaining > 0) return;
     clearInterval(timer);
     waitEl.hidden = true;

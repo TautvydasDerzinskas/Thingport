@@ -186,9 +186,7 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // imported once bought, so one their page offers to sell them isn't tried.
   threedexport: {
     async blockReason(url) {
-      return isUnboughtThreedexportModel(url)
-        ? { title: t("paidModel"), hint: t("buyOnThreedexport") }
-        : null;
+      return isUnboughtThreedexportModel(url) ? { title: t("paidModel"), hint: t("buyOnThreedexport") } : null;
     },
   },
 };

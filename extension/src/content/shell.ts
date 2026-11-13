@@ -39,13 +39,15 @@ export function setBubbleLook(next: BubbleLook): void {
 
 // The pill's word, by what clicking it does.
 function pillWord(variant: NonNullable<FabOptions["variant"]> | "import"): string {
-  return t({
-    import: "fabGrab",
-    "in-library": "fabInLibrary",
-    complete: "fabImported",
-    inactive: "fabSetUp",
-    disconnected: "fabSignIn",
-  }[variant]);
+  return t(
+    {
+      import: "fabGrab",
+      "in-library": "fabInLibrary",
+      complete: "fabImported",
+      inactive: "fabSetUp",
+      disconnected: "fabSignIn",
+    }[variant],
+  );
 }
 
 /** Its name, with the pill's word in front where it shows and the name doesn't already start with it: what's

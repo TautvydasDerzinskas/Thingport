@@ -31,7 +31,9 @@ export function syncToggleHtml(state: SyncLookup | null): string {
   const provider = SITE_NAMES[ctx().classification.provider] ?? t("theSite");
   const hint = state.sync
     ? t("syncActive", { name: state.sync.collection_name })
-    : isLikes() ? t("syncLikesHint") : t("syncCollectionHint", { provider });
+    : isLikes()
+      ? t("syncLikesHint")
+      : t("syncCollectionHint", { provider });
   return `
     <label class="tg-toggle">
       <input id="tg-sync" type="checkbox" ${state.sync ? "checked" : ""} />

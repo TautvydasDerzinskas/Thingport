@@ -81,9 +81,7 @@ function explanation(target: Target, output: AdaptPlan["output"]): string {
 }
 
 function tooBig(bytes: number): Error {
-  return new Error(
-    t("adaptedDownloadTooBig", { size: Math.round(bytes / MB), limit: MAX_BYTES / MB }),
-  );
+  return new Error(t("adaptedDownloadTooBig", { size: Math.round(bytes / MB), limit: MAX_BYTES / MB }));
 }
 
 async function readBody(
@@ -154,9 +152,7 @@ async function downloadAdapted(
   // The adapter reads the 3MF project, never the raw-files zip.
   const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stopRotation);
   if (!resolved) {
-    throw new Error(
-      t("couldNotGetMakerworldFile"),
-    );
+    throw new Error(t("couldNotGetMakerworldFile"));
   }
   const res = await fetch(resolved.downloadUrl);
   if (!res.ok) throw new Error(t("makerworldFileServerRefused", { status: res.status }));

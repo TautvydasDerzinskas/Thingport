@@ -112,8 +112,7 @@ async function rememberStepDelay(ms: number): Promise<void> {
 
 function stepDelayOptions(selectedMs: number): string {
   return STEP_DELAY_CHOICES.map(
-    ({ ms, label }) =>
-      `<option value="${ms}"${ms === selectedMs ? " selected" : ""}>${escapeHtml(t(label))}</option>`,
+    ({ ms, label }) => `<option value="${ms}"${ms === selectedMs ? " selected" : ""}>${escapeHtml(t(label))}</option>`,
   ).join("");
 }
 
@@ -204,9 +203,7 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
   scan.remove();
 
   if (!ids.length) {
-    renderPanel(
-      errorHtml(new Error(t("couldNotFindMakerworldModels"))),
-    );
+    renderPanel(errorHtml(new Error(t("couldNotFindMakerworldModels"))));
     return;
   }
 
@@ -226,9 +223,7 @@ export async function loadMakerworldGuidedCollection(): Promise<void> {
   if (toImport.length) parts.push(t("modelsToImport", { count: toImport.length }));
   if (alreadyImported.length) {
     parts.push(
-      toImport.length
-        ? t("modelsAlreadyInLibrary", { count: alreadyImported.length })
-        : t("allModelsAlreadyInLibrary"),
+      toImport.length ? t("modelsAlreadyInLibrary", { count: alreadyImported.length }) : t("allModelsAlreadyInLibrary"),
     );
   }
   const target = sync?.sync
@@ -314,11 +309,7 @@ async function startGuidedImport(
 
   // Filed here directly: they need no page visit to be, and get one only for profiles they lack.
   if (alreadyImported.length && collectionId) {
-    renderPanel(
-      statusHtml(
-        t("addingExistingModelsToCollection", { count: alreadyImported.length }),
-      ),
-    );
+    renderPanel(statusHtml(t("addingExistingModelsToCollection", { count: alreadyImported.length })));
     const printIds = alreadyImported.flatMap((entry) => (entry.print_id ? [entry.print_id] : []));
     try {
       await api("POST", `/collection/${collectionId}/items`, { print_ids: printIds });

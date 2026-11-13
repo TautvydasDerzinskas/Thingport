@@ -78,7 +78,8 @@ function rowsFor(query: string): Row[] {
   const rows: Row[] = [{ label: t("noCollection"), value: "", kind: "none" }];
   for (const c of hits) rows.push({ label: c.name || t("untitled"), value: c.name || "", kind: "existing" });
   // Only when it would make something new: an exact name already in the list is picked, not created again.
-  if (trimmed && !match(trimmed)) rows.push({ label: t("createCollection", { name: trimmed }), value: trimmed, kind: "new" });
+  if (trimmed && !match(trimmed))
+    rows.push({ label: t("createCollection", { name: trimmed }), value: trimmed, kind: "new" });
   return rows;
 }
 

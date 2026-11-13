@@ -77,9 +77,7 @@ export function openSetupModal(
     openBtn.disabled = false;
     if (res?.ok && res.data === "popup") return;
     statusEl.hidden = false;
-    statusEl.textContent = res?.ok
-      ? t("setupOpened")
-      : t("setupOpenFailed");
+    statusEl.textContent = res?.ok ? t("setupOpened") : t("setupOpenFailed");
   });
 
   backdrop.querySelector("[data-action=retry]")?.addEventListener("click", () => {
