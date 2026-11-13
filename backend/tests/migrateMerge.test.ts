@@ -128,6 +128,42 @@ describe("merging a working copy", () => {
     await hereIdOf(erin.email);
   });
 
+  it("brings no model whose file's id would name a file outside the run's folder", async () => {
+    const hana = await person("hana");
+    const escape = path.join(STORAGE, `escape${tag}.stl`);
+    fs.writeFileSync(escape, "keep");
+    const id = `pescape${tag}`;
+    await source.print.create({ data: { id, userId: hana.sourceId, name: "Escape", nameNormalized: "escape" } });
+    await source.plate.create({
+      data: {
+        id: `../../../escape${tag}`,
+        printId: id,
+        position: 0,
+        filename: "e.stl",
+        mime: "model/stl",
+        size: 1,
+        storagePath: `h${tag}.stl`,
+      },
+    });
+    const copied: string[] = [];
+    const files: SourceFiles = {
+      ...noFiles().files,
+      copy: async (_from, to) => {
+        copied.push(to);
+        return true;
+      },
+    };
+    const report = await merge([hana.sourceId], files);
+    expect(copied.filter((to) => !path.resolve(to).startsWith(path.join(STORAGE, MIGRATE_FOLDER) + path.sep))).toEqual(
+      [],
+    );
+    expect(fs.readFileSync(escape, "utf8")).toBe("keep");
+    expect(report.models.failed).toBe(1);
+    expect(await prisma.print.count({ where: { id } })).toBe(0);
+    fs.rmSync(escape, { force: true });
+    await hereIdOf(hana.email);
+  });
+
   it("signs nobody in through a provider here that only shares the old one's name", async () => {
     const frank = await person("frank", true);
     const gina = await person("gina", true);

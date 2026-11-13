@@ -444,7 +444,12 @@ export class Merge {
       return;
     }
 
+    // Its id and its files' and pictures' name the paths they're copied to, so none may climb out of the run's folder.
     if (!PLAIN_ID.test(print.id)) throw new Error("This model's id isn't one Thingport makes");
+    const children = [...print.plates, ...print.files, ...print.previewImages, ...print.descriptionImages];
+    if (!children.every(({ id }) => PLAIN_ID.test(id))) {
+      throw new Error("An id of this model's files or pictures isn't one Thingport makes");
+    }
     const temp = path.join(this.tempRoot, print.id);
     const copied = await this.copyModelFiles(print, temp);
     if (print.plates.length && !copied.plates.length) {
