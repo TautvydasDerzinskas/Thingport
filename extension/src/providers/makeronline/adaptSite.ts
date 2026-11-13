@@ -82,6 +82,19 @@ export function pickedFile(files: AdaptFile[], picks: string | null, filesTab: b
   return files.find((each) => each.id === id) ?? "other";
 }
 
+/** The file picked while the page's picks can't be read yet: on the print profiles tab, the one it highlights, by
+ *  `title`; on the files tab, which shows nothing to go by, "unread", so that the first file isn't downloaded in place
+ *  of the one picked there. */
+export function unreadPick(
+  files: AdaptFile[],
+  filesTab: boolean,
+  title: string | null | undefined,
+): AdaptFile | null | "other" | "unread" {
+  if (filesTab) return "unread";
+  if (!title) return null;
+  return files.find((file) => file.title === title) ?? "other";
+}
+
 const signing = new Map<string, Signing>();
 
 // How long to wait between asks while the page's store isn't there yet: a little longer each time, for about a minute
@@ -146,7 +159,7 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
     watched = false;
     void watchPicks();
     const title = document.querySelector<HTMLImageElement>(`${PROFILES_TAB} .file-item.active .icon img`)?.alt?.trim();
-    return (title && files.find((file) => file.title === title)) || null;
+    return unreadPick(files, filesTab, title);
   },
 
   async download(_pageUrl, file, progress) {

@@ -213,6 +213,19 @@ async function init(): Promise<void> {
 
     // Before anything else asks the instance, so a stale password or a down instance shows as such
     // rather than as every model looking new.
+    // Until the instance answers, which may be never: the copies on their own where the site's button doesn't show,
+    // as they're this browser's own. Where they were, what the answer brings takes their place and offers them again.
+    let early: PageAdapt | null = null;
+    adaptFallback = (page) => {
+      early = page;
+      mountAdaptBubble(mountHost(), classification.provider, url, page, null);
+    };
+    const replaceEarly = (): PageAdapt | null => {
+      const page = early;
+      early = null;
+      if (page) unmountHost();
+      return page;
+    };
     const connectionRes = await send("CHECK_CONNECTION");
     if (isStale()) return;
     if (connectionRes?.ok && !connectionRes.data.connected) {
@@ -224,6 +237,7 @@ async function init(): Promise<void> {
           // A failed check isn't cached, so this signs in again.
           onRetry: reinit,
         });
+      const offered = replaceEarly();
       const root = mountHost();
       mountFab(root, {
         variant: "disconnected",
@@ -242,6 +256,7 @@ async function init(): Promise<void> {
           onClick: () => signIn(adaptRoot),
         });
       };
+      if (offered) adaptFallback(offered);
       reportTabIconState(false);
       return;
     }
@@ -251,7 +266,9 @@ async function init(): Promise<void> {
     if (isStale()) return;
     if (!enabled) {
       // Imports aren't, but the copies are this browser's own: where the site's button never shows, a bubble of them.
+      const offered = replaceEarly();
       adaptFallback = (page) => mountAdaptBubble(mountHost(), classification.provider, url, page, null);
+      if (offered) adaptFallback(offered);
       reportTabIconState(false);
       return;
     }
@@ -297,10 +314,12 @@ async function init(): Promise<void> {
       canQueue: stateRes.data.canQueue,
       importQueue: stateRes.data.importQueue,
     });
+    const offered = replaceEarly();
     const root = mountHost();
     const togglePanel = mountPanel(root, () => void loadPanel());
     // Under the import, as an extra: a quiet button that shows the copies when it's clicked.
     adaptHost = (page) => setPanelExtra(adaptedReveal(page, url));
+    if (offered) adaptHost(offered);
     mountFab(root, {
       // A plus while there's something to add to the library's model, a tick once there's nothing.
       variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",

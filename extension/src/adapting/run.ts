@@ -26,20 +26,69 @@ export type AdaptOutcome = { bytes: Uint8Array; output: AdaptPlan["output"] | nu
 
 type Scanner = ReturnType<typeof plainModelScanner>;
 
-// A model file's text goes through the scanner in pieces this big, rather than as one string.
-const SCAN_SLICE = 1024 * 1024;
+// A plain 3MF's colours can be anywhere in its models, after meshes; past this much of them unzipped, as the server
+// reads them (services/threeMfFormat.ts), they're left uncounted.
+export const PLAIN_SCAN_BYTES = 512 * 1024 * 1024;
 
-function scanModel(bytes: Uint8Array, scanner: Scanner): void {
-  const decoder = new TextDecoder();
-  for (let at = 0; at < bytes.length; at += SCAN_SLICE) {
-    scanner.add(decoder.decode(bytes.subarray(at, at + SCAN_SLICE), { stream: true }));
-  }
-  scanner.add(decoder.decode());
-  scanner.endFile();
+// JSZip's own stream of an entry as it's unzipped, which its types leave out.
+type Streamable = { internalStream(type: "uint8array"): JSZip.JSZipStreamHelper<Uint8Array> };
+
+/** An entry as it's unzipped, a piece at a time, never held whole: `each` says whether to go on. Resolves once it's
+ *  read through or stopped. */
+function streamEntry(file: JSZip.JSZipObject, each: (chunk: Uint8Array) => boolean): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const stream = (file as unknown as Streamable).internalStream("uint8array");
+    let done = false;
+    const finish = (error?: unknown) => {
+      if (done) return;
+      done = true;
+      if (error) reject(error instanceof Error ? error : new Error(String(error)));
+      else resolve();
+    };
+    stream
+      .on("data", (chunk) => {
+        if (done || each(chunk)) return;
+        stream.pause();
+        finish();
+      })
+      .on("error", finish)
+      .on("end", () => finish())
+      .resume();
+  });
 }
 
-/** What kind of 3MF the zip is, read as the backend reads a stored one: a plain one's colours included. */
-export async function formatOfZip(zip: JSZip): Promise<ThreeMfFormat> {
+/** The first `bytes` of an entry, unzipping no more of it than that takes. */
+async function headOf(file: JSZip.JSZipObject, bytes: number): Promise<Uint8Array> {
+  const out = new Uint8Array(bytes);
+  let at = 0;
+  await streamEntry(file, (chunk) => {
+    const part = chunk.subarray(0, bytes - at);
+    out.set(part, at);
+    at += part.length;
+    return at < bytes;
+  });
+  return out.subarray(0, at);
+}
+
+/** A model file through the scanner as it's unzipped; false where `budget.left` ran out first. */
+async function scanEntry(file: JSZip.JSZipObject, scanner: Scanner, budget: { left: number }): Promise<boolean> {
+  const decoder = new TextDecoder();
+  let whole = true;
+  await streamEntry(file, (chunk) => {
+    budget.left -= chunk.length;
+    if (budget.left < 0) return (whole = false);
+    scanner.add(decoder.decode(chunk, { stream: true }));
+    return true;
+  });
+  if (!whole) return false;
+  scanner.add(decoder.decode());
+  scanner.endFile();
+  return true;
+}
+
+/** What kind of 3MF the zip is, read as the backend reads a stored one: a plain one's colours included, unless its
+ *  models unzip to more than `scanBytes`. */
+export async function formatOfZip(zip: JSZip, scanBytes = PLAIN_SCAN_BYTES): Promise<ThreeMfFormat> {
   const entries = Object.keys(zip.files).filter((name) => !zip.files[name].dir);
   const named = (name: string) => entries.find((entry) => entry.toLowerCase() === name) ?? null;
   const text = async (name: string) => {
@@ -47,21 +96,20 @@ export async function formatOfZip(zip: JSZip): Promise<ThreeMfFormat> {
     return entry ? zip.file(entry)!.async("string") : null;
   };
   const root = named("3d/3dmodel.model");
-  // Unzipped once: its head says what wrote it, and a plain 3MF's colours are read from all of it.
-  const rootBytes = root ? await zip.file(root)!.async("uint8array") : null;
+  const head = root ? await headOf(zip.file(root)!, HEAD_BYTES) : null;
   const files = {
     entries,
-    modelHead: rootBytes ? new TextDecoder().decode(rootBytes.subarray(0, HEAD_BYTES)) : null,
+    modelHead: head ? new TextDecoder().decode(head) : null,
     projectSettings: await text("metadata/project_settings.config"),
     modelSettings: await text("metadata/model_settings.config"),
     prusaConfig: await text("metadata/slic3r_pe.config"),
   };
   const format = classify3mf(files);
-  if (format.kind !== "plain" || !rootBytes) return format;
+  if (format.kind !== "plain" || !root) return format;
   const scanner = plainModelScanner();
-  scanModel(rootBytes, scanner);
-  for (const entry of entries.filter((name) => name !== root && /\.model$/i.test(name))) {
-    scanModel(await zip.file(entry)!.async("uint8array"), scanner);
+  const budget = { left: scanBytes };
+  for (const entry of entries.filter((name) => /\.model$/i.test(name))) {
+    if (!(await scanEntry(zip.file(entry)!, scanner, budget))) return classify3mf({ ...files, plainModel: null });
   }
   return classify3mf({ ...files, plainModel: scanner.result() });
 }

@@ -126,8 +126,9 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- When a model page opens on a site **Download adapted** works on, and when you open the toolbar popup: a request for
-  your slicers and printers in your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they
+- When a model page opens on a site **Download adapted** works on (MakerWorld, Printables, Creality Cloud, Snapmaker
+  Space, NexPrint, MakerOnline or eufyMake) with Adapt 3MFs on, and when you open the toolbar popup: a request for your
+  slicers and printers in your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they
   decide whether **Download adapted** is shown and which copies it makes.
 - When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
   that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once

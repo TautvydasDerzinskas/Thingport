@@ -68,9 +68,13 @@ describe("the NexPrint profile picked", () => {
   const page = "https://www.nexprint.com/en/models/G100";
 
   it("is the one the page names as it's picked, before a Thingport link's", () => {
-    expect(pickedProfile(`${page}?printConfigId=g2#profileId-G1`, files)?.id).toBe("G2");
-    expect(pickedProfile(`${page}#profileId-G1`, files)?.id).toBe("G1");
-    expect(pickedProfile(`${page}?printConfigId=G9#profileId-G1`, files)?.id).toBe("G1");
+    expect(pickedProfile(`${page}?printConfigId=g2#profileId-G1`, files)).toMatchObject({ id: "G2" });
+    expect(pickedProfile(`${page}#profileId-G1`, files)).toMatchObject({ id: "G1" });
     expect(pickedProfile(page, files)).toBeNull();
+  });
+
+  it("is none where the page names one with no 3MF here, not the older link's", () => {
+    expect(pickedProfile(`${page}?printConfigId=G9#profileId-G1`, files)).toBe("other");
+    expect(pickedProfile(`${page}#profileId-G9`, files)).toBe("other");
   });
 });

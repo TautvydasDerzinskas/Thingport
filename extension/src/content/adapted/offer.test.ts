@@ -82,6 +82,10 @@ describe("Download adapted's copies of Printables' files", () => {
       "Grab has no Bambu Studio preset for the Bambu Lab P1S, so this copy keeps the designer's printer. Pick yours " +
         "in Bambu Studio before slicing.",
     );
+    expect(savedNote(target("bambustudio", P1S), { copy: false, printerless: true, nozzle: null })).toBe(
+      "Grab has no Bambu Studio preset for the Bambu Lab P1S, so the file itself, which Bambu Studio opens as it is, " +
+        "keeps the designer's printer. Pick yours in Bambu Studio before slicing.",
+    );
     const wide = target("bambustudio", { ...P1S, nozzle: "0.6" });
     expect(savedNote(wide, { copy: true, printerless: false, nozzle: "0.4" })).toBe(
       "Bambu Studio has no 0.6 mm nozzle preset for the Bambu Lab P1S, so this copy names its 0.4 mm one. Set your " +

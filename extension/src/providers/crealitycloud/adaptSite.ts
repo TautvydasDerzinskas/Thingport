@@ -7,6 +7,7 @@ import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapte
 import { orcaFamilyFormat } from "../../content/adapted/formats";
 import {
   pageCookie,
+  pickById,
   placeAfter,
   signInFirst,
   visible,
@@ -52,10 +53,9 @@ export function profileFiles(result: Record<string, unknown> | null | undefined)
 }
 
 /** The profile the page shows: its own `?profileId=`, or the `#profileId-` of a link Thingport made. */
-export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null {
+export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null | "other" {
   const own = new URL(href).searchParams.get("profileId")?.toLowerCase();
-  const id = own ?? parseCrealitycloudModelUrl(href)?.requestedProfileId ?? null;
-  return files.find((file) => file.id === id) ?? null;
+  return pickById(files, own ?? parseCrealitycloudModelUrl(href)?.requestedProfileId?.toLowerCase());
 }
 
 /** A paid model the user hasn't bought, by its details: as asked without a sign-in, that's every paid one. */

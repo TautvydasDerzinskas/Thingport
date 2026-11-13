@@ -7,6 +7,7 @@ import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapte
 import { orcaFamilyFormat } from "../../content/adapted/formats";
 import {
   pageCookie,
+  pickById,
   placeAfter,
   signInFirst,
   visible,
@@ -66,11 +67,10 @@ export function matchFileRows<T>(
 }
 
 /** The profile the page shows: the `?printConfigId=` it writes as one is picked, else the `#profileId-` of a link
- *  Thingport made, which the page doesn't change. */
-export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null {
+ *  Thingport made, which the page doesn't change; "other" where that names one with no 3MF here. */
+export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null | "other" {
   const own = new URL(href).searchParams.get("printConfigId")?.trim().toUpperCase();
-  const linked = parseNexprintModelUrl(href)?.requestedProfileId;
-  return files.find((file) => file.id === own) ?? files.find((file) => file.id === linked) ?? null;
+  return pickById(files, own || parseNexprintModelUrl(href)?.requestedProfileId);
 }
 
 const signing = new Map<string, Signing>();

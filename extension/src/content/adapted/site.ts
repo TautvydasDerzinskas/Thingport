@@ -12,6 +12,14 @@ import type { AdaptOffer } from "../../shared/messages";
  *  print profile's name), and `size` in bytes. */
 export type AdaptFile = { id: string; name: string; title?: string; size: number | null };
 
+/** The file a page's own choice names, by its id, for `selected`: null where it names none (the first, then), "other"
+ *  where it names one that isn't among `files` (a profile the site won't give a file for), so that another isn't
+ *  downloaded in its place. */
+export function pickById(files: AdaptFile[], id: string | null | undefined): AdaptFile | null | "other" {
+  if (!id) return null;
+  return files.find((file) => file.id === id) ?? "other";
+}
+
 export type AdaptSite = {
   /** Its provider: the button takes the site's look by it (styles/adapted.scss). */
   id: ProviderId;
@@ -24,10 +32,10 @@ export type AdaptSite = {
   /** The page's model's 3MFs, in the site's order: MakerWorld's selected print profile, every 3MF Printables lists. */
   files(pageUrl: string): Promise<AdaptFile[]>;
   /** Where the page picks one of them itself (a print profile chosen on it): which one now, null where it hasn't
-   *  picked one (the first, then), or "other" where it picked a file that isn't one of them, an STL say, which has no
-   *  copy. The button beside the site's own makes its copy of that one, asked again each time, rather than offering
-   *  the files to pick from. */
-  selected?(files: AdaptFile[]): AdaptFile | null | "other";
+   *  picked one (the first, then), "other" where it picked a file that isn't one of them, an STL say, which has no
+   *  copy, or "unread" where its pick can't be read yet. The button beside the site's own makes its copy of that one,
+   *  asked again each time, rather than offering the files to pick from. */
+  selected?(files: AdaptFile[]): AdaptFile | null | "other" | "unread";
   /** Downloads one of them as the site's own button would, saying how it's going through `progress`. */
   download(
     pageUrl: string,

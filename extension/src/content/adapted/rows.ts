@@ -28,13 +28,14 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
   const box = element("div", "ad");
   // The one the page has picked, where it picks one of them.
   const picked = site.selected?.(files);
-  let file = picked && picked !== "other" ? picked : files[0];
+  let file = picked && typeof picked === "object" ? picked : files[0];
   let select: HTMLSelectElement | null = null;
   // A file picked here, which the page's picks don't change.
   let chosen = false;
   const follow = () => {
     const now = chosen ? null : site.selected?.(files);
-    if (!now || now === "other") return;
+    // Only a file it picked: not where it picked none, one with no copy, or one that can't be read yet.
+    if (!now || typeof now !== "object") return;
     file = now;
     if (select) select.value = String(files.indexOf(file));
   };

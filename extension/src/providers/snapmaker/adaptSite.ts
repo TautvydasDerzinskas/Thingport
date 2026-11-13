@@ -9,6 +9,7 @@ import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapte
 import { orcaFamilyFormat } from "../../content/adapted/formats";
 import {
   pageCookie,
+  pickById,
   placeAfter,
   signInFirst,
   visible,
@@ -70,7 +71,7 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
   // `#profileId-<id>`, which the page writes as profiles are picked.
   selected: (files) => {
     const id = parseSnapmakerModelUrl(location.href)?.requestedProfileId;
-    return files.find((file) => file.id === id) ?? null;
+    return pickById(files, id);
   },
 
   async download(pageUrl, file, progress) {
