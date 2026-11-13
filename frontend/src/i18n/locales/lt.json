@@ -3102,7 +3102,7 @@
           }
         },
         "people": {
-          "intro": "Jų slaptažodžiai perkeliami kartu, tad jie prisijungia kaip anksčiau.",
+          "intro": "Nauja paskyra perkeliama su senu slaptažodžiu, tad jie prisijungia kaip anksčiau. Sujungti su paskyra čia, jie išlaiko jos slaptažodį.",
           "introHelp": "Kas čia turi tą patį el. pašto adresą, sujungiamas su ta paskyra: ji lieka tokia, kokia yra, o jo turinys pridedamas prie jos. Seno egzemplioriaus savininkas tampa administratoriumi, nes šis egzempliorius pasilieka savo savininką.",
           "everyone": "Visi",
           "person": "Žmogus",

@@ -50,7 +50,7 @@ type Props = {
 
 /** The old instance's database dump, uploaded or already on the server, and its storage folder. */
 export default function SourceStep({ input, onChange, uploading, disabled, root }: Props) {
-  const { t } = useTranslation("app");
+  const { t, i18n } = useTranslation("app");
   const picker = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
   const set = (patch: Partial<SourceInput>) => onChange({ ...input, ...patch });
@@ -137,7 +137,7 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
               {input.file ? input.file.name : t(k("source.drop"))}
             </Typography>
             <Typography variant="caption" color="text.secondary" component="p">
-              {input.file ? formatBytes(input.file.size) : t(k("source.dropHelp"))}
+              {input.file ? formatBytes(input.file.size, i18n.language) : t(k("source.dropHelp"))}
             </Typography>
             {uploading !== null && (
               <Box sx={{ mt: 1.5, mx: "auto", maxWidth: 360 }}>

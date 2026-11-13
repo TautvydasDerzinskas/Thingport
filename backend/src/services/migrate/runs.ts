@@ -38,7 +38,9 @@ export type RunProgress = { step: PrepareStep | MergePhase; done: number; total:
 /** Where uploaded dumps wait while they're restored. */
 export const UPLOADS = path.join(STORAGE, MIGRATE_FOLDER, "uploads");
 
-type Active = { id: string; progress: RunProgress; abort: AbortController };
+/** The one slot's holder: a dump being prepared (which Discard stops), or a run being started or given another
+ *  folder (which Discard turns away until it is over: stopping one part-way would leave it going on regardless). */
+type Active = { id: string; kind: "prepare" | "start" | "folder"; progress: RunProgress; abort: AbortController };
 let active: Active | null = null;
 
 export type RunOut = {
@@ -76,11 +78,25 @@ function out(run: MigrationRun): RunOut {
 
 const asHttp = (err: unknown) => (err instanceof MigrateError ? new MigrateHttpError(err) : (err as Error));
 
-function assertFree() {
+/** Takes the one slot for a run, at once and before anything is awaited, so two requests can't both find it free;
+ *  `release` gives it back. */
+function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Active {
   if (active) throw new HttpError(409, "A migration is under way already.", "busy");
   if (currentStorageMove()?.running) {
     throw new HttpError(409, "Model files are being moved. Start the migration once that's done.", "storage_move");
   }
+  const state: Active = { id, kind, progress: { step, done: 0, total: 0 }, abort: new AbortController() };
+  active = state;
+  setMigrationBusy(true);
+  return state;
+}
+
+/** Gives the slot back, if it's still this run's. Called as soon as the run's status says it's over, so whoever sees
+ *  that can go on at once. */
+function release(state: Active): void {
+  if (active !== state) return;
+  active = null;
+  setMigrationBusy(false);
 }
 
 export async function listRuns(): Promise<RunOut[]> {
@@ -109,8 +125,15 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
   let folder: string;
   let size: number;
   let input: DumpInput;
+  let state: Active;
   try {
-    assertFree();
+    // Its id once the run is made.
+    state = claim("", "prepare", "restoring");
+  } catch (err) {
+    await dropUpload();
+    throw err;
+  }
+  try {
     // Told at once, before anything is made: a typo in the folder, or the wrong kind of file.
     folder = await checkFolder(given.folder);
     // A dump on the server is read from the migrate folder too.
@@ -127,22 +150,25 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
     }
     if (format === "unknown") throw new MigrateError("not_a_dump", "This file isn't a pg_dump archive.");
   } catch (err) {
+    release(state);
     await dropUpload();
     throw asHttp(err);
   }
   const plan: MigratePlan = { dump: { name: input.name, size }, folder };
-  const run = await prisma.migrationRun.create({
-    data: { source: "thingport", status: "preparing", plan, createdById: adminId },
-  });
-  const name = stagingName(run.id);
-  await prisma.migrationRun.update({ where: { id: run.id }, data: { stagingDb: name } });
-  const state: Active = {
-    id: run.id,
-    progress: { step: "restoring", done: 0, total: 0 },
-    abort: new AbortController(),
-  };
-  active = state;
-  setMigrationBusy(true);
+  let run: MigrationRun;
+  let name: string;
+  try {
+    run = await prisma.migrationRun.create({
+      data: { source: "thingport", status: "preparing", plan, createdById: adminId },
+    });
+    state.id = run.id;
+    name = stagingName(run.id);
+    await prisma.migrationRun.update({ where: { id: run.id }, data: { stagingDb: name } });
+  } catch (err) {
+    release(state);
+    await dropUpload();
+    throw err;
+  }
   void prepare(state, name, { kind: "dump", file: input.file, uploaded: input.uploaded, folder }, plan);
   void createLog({
     userId: adminId,
@@ -156,8 +182,14 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
 /** Starts preparing a migration from another instance online, with the token its admin made there. */
 export async function prepareOnline(adminId: string, given: { address: string; token: string }): Promise<RunOut> {
   let remote: Remote;
+  let state: Active;
   try {
-    assertFree();
+    // Its id once the run is made.
+    state = claim("", "prepare", "downloading");
+  } catch (err) {
+    throw asHttp(err);
+  }
+  try {
     remote = { address: normalizeAddress(given.address), token: given.token.trim() };
     if (!remote.token) {
       throw new MigrateError("online_token", "The old instance turned the token down. Create a new one there.");
@@ -165,21 +197,23 @@ export async function prepareOnline(adminId: string, given: { address: string; t
     // Told at once: an address this server can't reach, a wrong token, or an instance without this.
     await remoteInfo(remote);
   } catch (err) {
+    release(state);
     throw asHttp(err);
   }
   const plan: MigratePlan = { dump: null, folder: "", address: remote.address };
-  const run = await prisma.migrationRun.create({
-    data: { source: "thingport-online", status: "preparing", plan, remote, createdById: adminId },
-  });
-  const name = stagingName(run.id);
-  await prisma.migrationRun.update({ where: { id: run.id }, data: { stagingDb: name } });
-  const state: Active = {
-    id: run.id,
-    progress: { step: "downloading", done: 0, total: 0 },
-    abort: new AbortController(),
-  };
-  active = state;
-  setMigrationBusy(true);
+  let run: MigrationRun;
+  let name: string;
+  try {
+    run = await prisma.migrationRun.create({
+      data: { source: "thingport-online", status: "preparing", plan, remote, createdById: adminId },
+    });
+    state.id = run.id;
+    name = stagingName(run.id);
+    await prisma.migrationRun.update({ where: { id: run.id }, data: { stagingDb: name } });
+  } catch (err) {
+    release(state);
+    throw err;
+  }
   void prepare(state, name, { kind: "online", remote }, plan);
   void createLog({
     userId: adminId,
@@ -246,6 +280,8 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
       state.progress = { step: "files", done, total };
     });
     if (state.abort.signal.aborted) throw new Error("discarded");
+    await source.$disconnect();
+    source = null;
     await prisma.migrationRun.update({
       where: { id: state.id },
       data: {
@@ -258,6 +294,7 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
         },
       },
     });
+    release(state);
   } catch (err) {
     await source?.$disconnect().catch(() => undefined);
     source = null;
@@ -266,6 +303,7 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
     if (state.abort.signal.aborted) {
       // The admin discarded it while it was being prepared.
       await prisma.migrationRun.deleteMany({ where: { id: state.id } });
+      release(state);
     } else {
       log.warn("preparing a migration failed", { error: err });
       await prisma.migrationRun.update({
@@ -279,37 +317,42 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
           ...(way.kind === "online" ? { remote: { address: way.remote.address } } : {}),
         },
       });
+      release(state);
     }
   } finally {
     await source?.$disconnect().catch(() => undefined);
-    if (active === state) active = null;
-    setMigrationBusy(false);
+    release(state);
   }
 }
 
 /** Starts merging a prepared migration with the admin's choices; also starts one that failed part-way again. */
 export async function startRun(id: string, adminId: string, options: MigrateOptions): Promise<RunOut> {
-  assertFree();
-  const run = await prisma.migrationRun.findUnique({ where: { id } });
-  if (!run) throw new HttpError(404, "No such migration");
-  if (!run.stagingDb || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) {
-    throw new HttpError(409, "This migration can't be started.", "not_ready");
+  const state = claim(id, "start", "people");
+  let stagingDb: string;
+  let started: MigrationRun;
+  let chosen: MigrateOptions;
+  try {
+    const run = await prisma.migrationRun.findUnique({ where: { id } });
+    if (!run) throw new HttpError(404, "No such migration");
+    const notReady = new HttpError(409, "This migration can't be started.", "not_ready");
+    if (!run.stagingDb || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) throw notReady;
+    stagingDb = run.stagingDb;
+    started = run;
+    const plan = run.plan as MigratePlan;
+    const known = new Set((plan.people ?? []).map((person) => person.id));
+    chosen = { ...options, people: [...new Set(options.people)].filter((person) => known.has(person)) };
+    if (!chosen.people.length) throw new HttpError(400, "Pick someone to bring over.", "no_people");
+    // Only from the status it was read in: a run another process started meanwhile isn't started twice.
+    const { count } = await prisma.migrationRun.updateMany({
+      where: { id, status: run.status, stagingDb, ...(run.status === "failed" ? { startedAt: { not: null } } : {}) },
+      data: { status: "running", options: chosen, error: Prisma.DbNull, startedAt: new Date(), finishedAt: null },
+    });
+    if (count !== 1) throw notReady;
+  } catch (err) {
+    release(state);
+    throw err;
   }
-  const plan = run.plan as MigratePlan;
-  const known = new Set((plan.people ?? []).map((person) => person.id));
-  const chosen: MigrateOptions = {
-    ...options,
-    people: [...new Set(options.people)].filter((person) => known.has(person)),
-  };
-  if (!chosen.people.length) throw new HttpError(400, "Pick someone to bring over.", "no_people");
-  await prisma.migrationRun.update({
-    where: { id },
-    data: { status: "running", options: chosen, error: Prisma.DbNull, startedAt: new Date(), finishedAt: null },
-  });
-  const state: Active = { id, progress: { step: "people", done: 0, total: 0 }, abort: new AbortController() };
-  active = state;
-  setMigrationBusy(true);
-  void execute(state, run.stagingDb, run, chosen, adminId);
+  void execute(state, stagingDb, started, chosen, adminId);
   void createLog({
     userId: adminId,
     action: "migration_started",
@@ -340,6 +383,7 @@ async function execute(state: Active, name: string, run: MigrationRun, options: 
         ...(run.remote ? { remote: { address: (run.remote as Remote).address } } : {}),
       },
     });
+    release(state);
     const people = options.people.length;
     await createNotification(adminId, {
       type: "general",
@@ -361,6 +405,7 @@ async function execute(state: Active, name: string, run: MigrationRun, options: 
         finishedAt: new Date(),
       },
     });
+    release(state);
     await createNotification(adminId, {
       type: "general",
       title: "Migration stopped",
@@ -369,32 +414,29 @@ async function execute(state: Active, name: string, run: MigrationRun, options: 
       internalPath: "/admin-migrate",
     }).catch(() => undefined);
   } finally {
-    if (active === state) active = null;
-    setMigrationBusy(false);
+    release(state);
   }
 }
 
 /** Gives a prepared migration another storage folder, and counts its files there again: for a folder given wrong,
  *  without restoring the dump again. */
 export async function changeFolder(id: string, given: string): Promise<RunOut> {
-  assertFree();
-  const run = await prisma.migrationRun.findUnique({ where: { id } });
-  if (!run) throw new HttpError(404, "No such migration");
-  if (run.status !== "ready" || !run.stagingDb || run.source !== "thingport") {
-    throw new HttpError(409, "This migration can't change now.", "not_ready");
-  }
-  let folder: string;
+  const state = claim(id, "folder", "files");
+  let source: PrismaClient | null = null;
   try {
-    folder = await checkFolder(given);
-  } catch (err) {
-    throw asHttp(err);
-  }
-  const plan = run.plan as MigratePlan;
-  const state: Active = { id, progress: { step: "files", done: 0, total: 0 }, abort: new AbortController() };
-  active = state;
-  setMigrationBusy(true);
-  const source = stagingClient(run.stagingDb);
-  try {
+    const run = await prisma.migrationRun.findUnique({ where: { id } });
+    if (!run) throw new HttpError(404, "No such migration");
+    if (run.status !== "ready" || !run.stagingDb || run.source !== "thingport") {
+      throw new HttpError(409, "This migration can't change now.", "not_ready");
+    }
+    let folder: string;
+    try {
+      folder = await checkFolder(given);
+    } catch (err) {
+      throw asHttp(err);
+    }
+    const plan = run.plan as MigratePlan;
+    source = stagingClient(run.stagingDb);
     const missingFiles = await countMissingFiles(
       source,
       await folderSource(folder),
@@ -405,9 +447,8 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
     );
     await prisma.migrationRun.update({ where: { id }, data: { plan: { ...plan, folder, missingFiles } } });
   } finally {
-    await source.$disconnect().catch(() => undefined);
-    if (active === state) active = null;
-    setMigrationBusy(false);
+    await source?.$disconnect().catch(() => undefined);
+    release(state);
   }
   return getRun(id);
 }
@@ -418,6 +459,9 @@ export async function removeRun(id: string): Promise<void> {
   const run = await prisma.migrationRun.findUnique({ where: { id } });
   if (!run) throw new HttpError(404, "No such migration");
   if (run.status === "running") throw new HttpError(409, "It's running. Wait for it to finish.", "running");
+  if (active?.id === id && active.kind !== "prepare") {
+    throw new HttpError(409, "A migration is under way already.", "busy");
+  }
   if (active?.id === id) {
     // Preparing: it stops, cleans up and goes.
     active.abort.abort();

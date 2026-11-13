@@ -3045,7 +3045,7 @@
           }
         },
         "people": {
-          "intro": "Leurs mots de passe viennent avec eux, ils se connectent donc comme avant.",
+          "intro": "Un nouveau compte garde son ancien mot de passe, ils se connectent donc comme avant. Fusionnés avec un compte d'ici, ils gardent le mot de passe de celui-ci.",
           "introHelp": "Quelqu’un qui a la même adresse e-mail ici est fusionné avec ce compte : il reste tel quel, et ce qui lui appartient y est ajouté. Le propriétaire de l’ancienne instance arrive comme administrateur, car cette instance garde son propre propriétaire.",
           "everyone": "Tout le monde",
           "person": "Utilisateur",
