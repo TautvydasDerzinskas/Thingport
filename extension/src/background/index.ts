@@ -3,6 +3,15 @@
 
 import { listen, senderTabId, type BackgroundMessages } from "../shared/messages";
 import { LEGACY_SESSION_KEYS } from "../shared/storage";
+import {
+  carryAdaptPicks,
+  getAdaptOffer,
+  getAdaptView,
+  openAdaptSettings,
+  printerRecipeFor,
+  setAdaptLast,
+  setAdaptSettings,
+} from "./adaptSettings";
 import { apiCall, checkConnection, disconnect } from "./api";
 import { getState, saveConfig, setBubble, setDisabled, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
@@ -33,11 +42,21 @@ import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from
 
 listen<BackgroundMessages>({
   GET_STATE: () => getState(),
-  SAVE_CONFIG: (payload) => saveConfig(payload),
+  SAVE_CONFIG: async (payload) => {
+    await saveConfig(payload);
+    void carryAdaptPicks();
+    return null;
+  },
   SET_DISABLED: ({ disabled }) => setDisabled(disabled),
   DISCONNECT: () => disconnect(),
   SET_OFFLINE_FEATURE: ({ feature, enabled }) => setOfflineFeature(feature, enabled),
   SET_BUBBLE: (pick) => setBubble(pick),
+  GET_ADAPT_SETTINGS: () => getAdaptView(),
+  SET_ADAPT_SETTINGS: (change) => setAdaptSettings(change),
+  GET_ADAPT_OFFER: () => getAdaptOffer(),
+  SET_ADAPT_LAST: ({ key }) => setAdaptLast(key),
+  GET_PRINTER_RECIPE: ({ slicer, printerId, nozzle }) => printerRecipeFor(slicer, printerId, nozzle),
+  OPEN_ADAPT_SETTINGS: () => openAdaptSettings(),
   START_PAIRING: ({ instanceUrl }) => startPairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
   GET_SEASONAL_ICON: () => seasonalIcon(),

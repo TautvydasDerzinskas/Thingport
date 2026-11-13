@@ -23,6 +23,16 @@ async function errorDetail(res: Response, fallback: string): Promise<string> {
   return fallback;
 }
 
+/** The instance answered a call with an error status, its own message as the message. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 /** The instance turned the saved email/password down (401/403), as opposed to not answering. */
 export class LoginRejectedError extends Error {
   /** The instance's own message, without advice added for where it's shown. */
@@ -268,9 +278,16 @@ export async function requireConfig(): Promise<ConfiguredConfig> {
 }
 
 /** `path` is after `/api`. MakerWorld `/import*` calls get the live browser cookie attached unless
- *  the caller set one. */
-export async function apiCall<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const config = await requireConfig();
+ *  the caller set one. `account`: the connection to ask as, with the token it held when it was read, rather than
+ *  whichever is stored when the request goes. It's never signed in again, as that would store its token over another
+ *  account's, so an expired one fails. */
+export async function apiCall<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  account?: ConfiguredConfig,
+): Promise<T> {
+  const config = account ?? (await requireConfig());
 
   let finalBody = body as Record<string, unknown> | undefined;
   // The browser's own MakerWorld cookie, on any import of a MakerWorld link: the backend imports MakerWorld's models by
@@ -300,9 +317,10 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
       body: finalBody ? JSON.stringify(finalBody) : undefined,
     });
 
-  let res = await doFetch(await ensureToken(config));
-  if (res.status === 401) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
-  if (!res.ok) throw new Error(await errorDetail(res, `Request failed (${res.status})`));
+  if (account && !account.token) throw new ApiError("Not signed in to that Thingport account", 401);
+  let res = await doFetch(account ? account.token! : await ensureToken(config));
+  if (res.status === 401 && !account) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
+  if (!res.ok) throw new ApiError(await errorDetail(res, `Request failed (${res.status})`), res.status);
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }

@@ -91,10 +91,12 @@ reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
 
-CodeRabbit reviews pull requests into `develop`, and each push to them. When its review allowance runs out it
-skips the push, and an account kept for it asks it again (`@coderabbitai review`) once the wait it gave has passed,
-so there's no need to ask yourself. Comment `@coderabbitai pause` to stop its reviews of your pull request, and
-`@coderabbitai resume` to start them again.
+CodeRabbit reviews pull requests into `develop`, and each push to them. An account kept for it watches CodeRabbit's
+checks and the pushes, and asks for what a pull request is still owed once it's due, so there's no need to ask yourself:
+`@coderabbitai review` for a push it didn't review (`full review` if it never reviewed the pull request, stacked ones
+included), the same ask again once a rate limit's wait is over, and `full review` when a review had nothing to say or
+CodeRabbit answers "Already reviewed the last commit". Comment `@coderabbitai pause` to stop its reviews of your pull
+request, and `@coderabbitai resume` to start them again.
 
 ## Adding a provider
 

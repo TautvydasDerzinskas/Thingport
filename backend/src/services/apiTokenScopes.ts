@@ -62,8 +62,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "activity",
     title: "Activity",
-    description: "Your activity heatmap and feed.",
-    paths: ["/activity", "/activity/feed"],
+    description: "Your activity heatmap and feed, and your achievements.",
+    paths: ["/activity", "/activity/feed", "/me/achievements"],
   },
   {
     id: "collections",

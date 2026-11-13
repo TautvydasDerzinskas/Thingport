@@ -2,19 +2,25 @@
 
 eufyMake's (Anker's) Make it Real, at [makeitreal.eufymake.com](https://makeitreal.eufymake.com): community models
 sorted into its own categories. Its models and their files need nothing; only your likes need your sign-in. It has no
-collections and no print profiles.
+collections. Some of its models have print files, eufyMake Studio projects their designers made, which Thingport imports
+as print profiles.
 
-| At a glance    |                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------- |
-| Sign-in        | None to import; your own sign-in for your likes                                        |
-| Thingport Grab | Recommended -- it sends your sign-in as you visit makeitreal.eufymake.com              |
-| FlareSolverr   | Not used                                                                               |
-| Imports        | Models, with their category; your likes, [synced](../guides/synced-collections.md) too |
+| At a glance    |                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| Sign-in        | None to import; your own sign-in for your likes                                                               |
+| Thingport Grab | Recommended -- it sends your sign-in as you visit makeitreal.eufymake.com                                     |
+| FlareSolverr   | Not used                                                                                                      |
+| Imports        | Models with their print files, with their category; your likes, [synced](../guides/synced-collections.md) too |
 
 ## How it works
 
 Paste a model link (`https://makeitreal.eufymake.com/models/<id>/<name>/`) in Thingport, or import it from the model
-page with Grab. A model is one print of its model files; where it only offers them as a zip, the zip is unpacked.
+page with Grab. A model is one print:
+
+- **With print files** (eufyMake's print profiles), an import brings one of them: the first, unless the link names
+  another with Thingport's `#profileId-<id>`. The designer's or all of them can be picked as for other sites' print
+  profiles, and come to the same, as every print file there is its designer's own. Those left out can be added later.
+- **Without**, it brings the model files; where the model only offers them as a zip, the zip is unpacked.
 
 Your likes are on your own page, `https://makeitreal.eufymake.com/user/me/`. That page opens on your own models, and
 its **Liked** tab doesn't change the address, so Thingport takes the address as your likes: import or sync it from
@@ -22,6 +28,10 @@ there, or pick **eufyMake likes** in the sync dialog's Browse tab.
 
 eufyMake turns away more than a few requests a second; Thingport waits and tries again, and reports a rate limit when
 that isn't enough.
+
+Its print files are eufyMake Studio projects, and its models' own 3MFs mostly Bambu Studio ones; other slicers open them
+as [adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's Download once you
+allow Grab there, saves one made for yours, without your sign-in.
 
 ## Setup: your sign-in
 

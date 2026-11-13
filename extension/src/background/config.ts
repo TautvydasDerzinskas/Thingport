@@ -6,6 +6,7 @@ import {
   type OfflineFeature,
   type StoredConfig,
 } from "../shared/storage";
+import { adaptSettingsOf } from "../shared/adaptSettings";
 import { bubbleLookOf, bubbleUpdate, type BubbleLook } from "../shared/bubble";
 import type { ExtensionState } from "../shared/messages";
 import { learnImportQueue, loginAndStoreToken } from "./api";
@@ -55,6 +56,7 @@ export async function getState(): Promise<ExtensionState> {
       ]),
     ) as Record<OfflineFeature, boolean>,
     bubble: bubbleLookOf(config),
+    adaptPlacement: adaptSettingsOf(config).placement,
   };
 }
 

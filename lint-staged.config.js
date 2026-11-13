@@ -27,6 +27,12 @@ module.exports = {
     `npm run adapter:sync -- --staged ${files.map((file) => JSON.stringify(file)).join(" ")}`,
     "git add --all -- frontend/src/adapter/*.generated.ts extension/src/adapter/*.generated.ts",
   ],
+  // Grab's copy of the printer catalogue (scripts/sync-printers.mjs) is committed with the catalogue, and with the
+  // slicer profiles that say which slicers it's for.
+  "{backend/assets/printers/**,backend/src/adapter/slicers/**,scripts/sync-printers.mjs}": () => [
+    "npm run printers:sync",
+    "git add --all -- extension/public/printers",
+  ],
   "bridge/**/*.go": "gofmt -w",
   "backend/prisma/schema.prisma": () =>
     "npm --prefix backend exec -- prisma format --schema backend/prisma/schema.prisma",

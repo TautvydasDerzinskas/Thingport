@@ -17,11 +17,12 @@ describe("provider registry", () => {
     );
   });
 
-  it("keeps a profiles endpoint from before only for providers whose profiles import together", () => {
+  it("keeps its profiles endpoint from before for each provider that had one, whose profiles import together", () => {
     const legacy = (id: (typeof PROVIDER_IDS)[number]): ProviderManifest["legacy"] => MANIFESTS[id].legacy;
-    expect(PROVIDER_IDS.filter((id) => legacy(id)?.profiles)).toEqual(
-      PROVIDER_IDS.filter((id) => profilesImportJob(id)),
-    );
+    const kept = PROVIDER_IDS.filter((id) => legacy(id)?.profiles);
+    // Providers whose profiles came since (eufyMake) have none, as for any provider added since.
+    expect(kept).toEqual(["makerworld", "snapmaker", "crealitycloud", "nexprint"]);
+    expect(kept.filter((id) => !profilesImportJob(id))).toEqual([]);
   });
 
   it("names its own provider in the text of a sign-in that stopped a batch", () => {

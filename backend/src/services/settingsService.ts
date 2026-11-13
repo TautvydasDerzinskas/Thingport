@@ -135,6 +135,27 @@ export async function setSocialSettings(patch: Partial<SocialSettings>): Promise
   return getSocialSettings();
 }
 
+// Achievements (services/achievementService.ts): badges users earn, shown on their My models. Off until an admin turns
+// them on, and apart from social features: they work with those off.
+export type AchievementSettings = { enabled: boolean };
+const ACHIEVEMENTS_KEY = "achievements";
+
+export async function getAchievementSettings(): Promise<AchievementSettings> {
+  const row = await prisma.setting.findUnique({ where: { key: ACHIEVEMENTS_KEY } });
+  const value = (row?.value ?? {}) as Partial<AchievementSettings>;
+  return { enabled: typeof value.enabled === "boolean" ? value.enabled : false };
+}
+
+export async function setAchievementSettings(settings: AchievementSettings): Promise<AchievementSettings> {
+  const value = { enabled: settings.enabled };
+  await prisma.setting.upsert({
+    where: { key: ACHIEVEMENTS_KEY },
+    create: { key: ACHIEVEMENTS_KEY, value },
+    update: { value },
+  });
+  return value;
+}
+
 const ALLOW_REGISTRATIONS_KEY = "allow_registrations";
 
 export async function getAllowRegistrations(fallback: boolean): Promise<boolean> {
@@ -247,6 +268,29 @@ export async function setLicenseFiles(on: boolean): Promise<void> {
     where: { key: LICENSE_FILES_KEY },
     create: { key: LICENSE_FILES_KEY, value: on },
     update: { value: on },
+  });
+}
+
+// How many photos an import or a re-sync keeps from a model's page, the cover first; null keeps them all (as many as
+// an import takes at most). Photos a user uploads aren't limited.
+const PHOTOS_PER_MODEL_KEY = "photos_per_model";
+export const PHOTO_KEEP_OPTIONS = [1, 3, 5, 10] as const;
+export type PhotoKeep = (typeof PHOTO_KEEP_OPTIONS)[number];
+
+export async function getPhotosPerModel(): Promise<PhotoKeep | null> {
+  const row = await prisma.setting.findUnique({ where: { key: PHOTOS_PER_MODEL_KEY } });
+  return PHOTO_KEEP_OPTIONS.find((keep) => keep === row?.value) ?? null;
+}
+
+export async function setPhotosPerModel(keep: PhotoKeep | null): Promise<void> {
+  if (keep === null) {
+    await prisma.setting.deleteMany({ where: { key: PHOTOS_PER_MODEL_KEY } });
+    return;
+  }
+  await prisma.setting.upsert({
+    where: { key: PHOTOS_PER_MODEL_KEY },
+    create: { key: PHOTOS_PER_MODEL_KEY, value: keep },
+    update: { value: keep },
   });
 }
 

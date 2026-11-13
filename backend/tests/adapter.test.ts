@@ -1,8 +1,9 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   adapt3mf,
   classify3mf,
@@ -981,6 +982,34 @@ describe("adapted3mfFor", () => {
       expect(await readOut(await JSZip.loadAsync(fs.readFileSync(fresh!)), "3D/3dmodel.model")).toMatch(/Test Cube/);
       await deleteAdapted3mfs("plate-d");
     } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it("gives the new copy though an older one can't be removed, and leaves that one", async () => {
+    const { ADAPTED_3MFS } = await import("../src/config");
+    const { ADAPTER_VERSION } = await import("../src/adapter");
+    const { adapted3mfFor, deleteAdapted3mfs } = await import("../src/services/adapted3mfCache");
+    const plan: AdaptPlan = { output: "prusa" };
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-adapt-src-"));
+    const older = path.join(ADAPTED_3MFS, `plate-e.${planKey(plan)}.v${ADAPTER_VERSION - 1}.3mf`);
+    fs.mkdirSync(ADAPTED_3MFS, { recursive: true });
+    fs.writeFileSync(older, "older copy");
+    const realRm = fsPromises.rm;
+    const rm = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
+      if (String(target) === older) throw Object.assign(new Error("EBUSY: resource busy"), { code: "EBUSY" });
+      return realRm(target, options);
+    });
+    try {
+      const src = path.join(dir, "model.3mf");
+      fs.writeFileSync(src, await makeBambuZip());
+      const copy = await adapted3mfFor("plate-e", src, plan);
+      expect(copy).not.toBeNull();
+      expect(fs.existsSync(copy!)).toBe(true);
+      expect(fs.existsSync(older)).toBe(true);
+    } finally {
+      rm.mockRestore();
+      await deleteAdapted3mfs("plate-e");
       fs.rmSync(dir, { recursive: true, force: true });
     }
   }, 60_000);

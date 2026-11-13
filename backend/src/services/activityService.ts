@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { MODEL_SUMMARY_SELECT, toModelSummary } from "./dashboardService";
+import { scheduleAchievementCheck } from "./achievementService";
 
 // Kept in sync by hand with the frontend's ActivityKind.
 // In the order the timeline and its tooltips list them.
@@ -17,6 +18,8 @@ export async function recordActivity(
 ): Promise<void> {
   try {
     await prisma.activity.create({ data: { userId, kind, printId: printId ?? null, name: name ?? null } });
+    // Downloads, imports and models made (by a tool or in Studio, which come in as uploads) earn achievements.
+    if (kind === "download" || kind === "import" || kind === "upload") scheduleAchievementCheck(userId);
   } catch (err) {
     console.error("[activity] Failed to record:", err);
   }

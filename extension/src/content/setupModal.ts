@@ -42,7 +42,8 @@ function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): strin
       <div class="tg-hint tg-modal__detail">${escapeHtml(problem.detail)}</div>`;
 }
 
-let open: { backdrop: HTMLElement; onKeydown: (event: KeyboardEvent) => void } | null = null;
+let open: { backdrop: HTMLElement; onKeydown: (event: KeyboardEvent) => void; onClosed: (() => void) | null } | null =
+  null;
 
 /** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed. */
 export function openSetupModal(
@@ -90,17 +91,32 @@ export function openSetupModal(
   });
 
   const onKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") closeSetupModal();
+    if (event.key === "Escape") dismiss();
   };
   document.addEventListener("keydown", onKeydown, true);
-  backdrop.querySelector(".tg-close")!.addEventListener("click", closeSetupModal);
+  backdrop.querySelector(".tg-close")!.addEventListener("click", dismiss);
   backdrop.addEventListener("click", (event) => {
-    if (event.target === backdrop) closeSetupModal();
+    if (event.target === backdrop) dismiss();
   });
 
   root.appendChild(backdrop);
-  open = { backdrop, onKeydown };
+  open = { backdrop, onKeydown, onClosed: null };
   openBtn.focus();
+}
+
+/** Runs `show` now, or where the dialog is open, once it's closed: what it shows would take the place of the icon the
+ *  dialog was opened from, and the dialog with it. Only the latest waits, and none where the dialog goes because the
+ *  page starts over (closeSetupModal) rather than being closed. */
+export function whenSetupModalClosed(show: () => void): void {
+  if (open) open.onClosed = show;
+  else show();
+}
+
+/** Closed by the user: what waited for that comes now. */
+function dismiss(): void {
+  const onClosed = open?.onClosed;
+  closeSetupModal();
+  onClosed?.();
 }
 
 export function closeSetupModal(): void {

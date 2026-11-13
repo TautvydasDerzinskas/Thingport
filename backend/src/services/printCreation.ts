@@ -82,6 +82,8 @@ export type PrintMetaInput = {
   originalId?: string | null;
   /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
   remoteSource?: Prisma.InputJsonValue | null;
+  /** What made it, when Thingport did (Print.createdWith): one of the Tools, by slug, or a Studio design, by id. */
+  createdWith?: { kind: "tool" | "studio"; ref: string } | null;
   /** Its licence's columns (services/licenseService.ts): what an import read, or what a copy carries over. Absent on an
    *  import that didn't look, whose licence is then read once it has settled. */
   licenseColumns?: Partial<Pick<Prisma.PrintUncheckedCreateInput, "license" | "licenseAllows" | "licenseReadAt">>;
@@ -362,13 +364,21 @@ export async function createPrint(
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);
+    // What made it goes on last, once nothing above can discard it: achievements count models by it, and a badge
+    // given for one that never finished would stay.
+    const made = meta.createdWith
+      ? await prisma.print.update({
+          where: { id: print.id },
+          data: { createdWith: meta.createdWith.kind, createdWithRef: meta.createdWith.ref },
+        })
+      : print;
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
     const quiet = importingQuietly();
     if (!print.categoryId && classify && !quiet) void enqueueAiCategorization(userId, print.id);
     if (describe && !quiet) enqueueAiDescription(userId, print.id);
-    return { print, plates };
+    return { print: made, plates };
   } catch (err) {
     await discardPrint(print.id);
     throw err;

@@ -28,6 +28,7 @@ import importQueueRoutes from "./routes/importQueue";
 import providerRoutes, { providerBodyLimits } from "./providers/routes";
 import collectionsRoutes from "./routes/collections";
 import socialRoutes from "./routes/social";
+import achievementRoutes from "./routes/achievements";
 import chatRoutes from "./routes/chats";
 import federationRoutes, { federationProbeRoutes } from "./routes/federation";
 import apRoutes from "./federation/apRoutes";
@@ -126,6 +127,7 @@ export function createApp(): Express {
   app.use("/api", toolRoutes);
   app.use("/api", studioRoutes);
   app.use("/api", activityRoutes);
+  app.use("/api", achievementRoutes);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ detail: "Not found" });

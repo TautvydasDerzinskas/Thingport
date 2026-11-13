@@ -74,6 +74,8 @@ describe("social features switched off", () => {
       chats: false,
       federation: false,
       instance_host: null,
+      // Their own switch, which other files' tests change.
+      achievements: expect.any(Boolean),
     });
     expect((await request(app).get("/api/explore").set(auth(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/collection/${collectionId}`).set(auth(viewer))).status).toBe(404);
@@ -92,6 +94,8 @@ describe("social features switched off", () => {
       chats: false,
       federation: false,
       instance_host: null,
+      // Their own switch, which other files' tests change.
+      achievements: expect.any(Boolean),
     });
   });
 });
