@@ -156,6 +156,7 @@ import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
 import { makeronlineProfileFacts } from "./makeronline/profileFacts";
 import { crealitycloudProfileFacts } from "./crealitycloud/profileFacts";
 import { nexprintProfileFacts } from "./nexprint/profileFacts";
+import { eufymakeProfileFacts } from "./eufymake/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
 import type { ProviderProfileFactsById } from "../services/printProfileFacts";
@@ -446,6 +447,7 @@ export const PROVIDERS = {
     trending: eufymakeTrending,
     details: eufymakeDetails,
     license: readEufymakeLicense,
+    profileFacts: eufymakeProfileFacts,
   },
   pinshape: {
     starterCategories: pinshapeCategories,

@@ -15,7 +15,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[AI categorization and descriptions, on a local model or Claude](guides/ai.md)**
 - **[Organize, search and bulk-edit](features/organize-and-search.md)**
 - **[Dashboard](features/dashboard.md)**
-- **[Profile and activity](features/profile-and-activity.md)**
+- **[Profile, activity and achievements](features/profile-and-activity.md)**
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
 - **[Adapted 3MFs: a model opens in your slicer as if it had been made there, for your printer](features/adapted-3mf.md)**
@@ -25,6 +25,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](features/downloads.md)**
 - **[Plain files on your disk](features/storage.md)**
+- **[See what takes the disk, and free up space](features/storage.md#disk-space)**
 - **[Repair models whose files are gone](features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](features/multi-user.md)**
 - **[Social: collections shared with the people you pick or with everyone, public models, Explore, profiles and chats](features/social.md)**

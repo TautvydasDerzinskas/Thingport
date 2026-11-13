@@ -3,21 +3,55 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { ADAPT_3MF_TIMEOUT_SECONDS, ADAPTED_3MFS, MODEL_PREVIEW_MAX_MEMORY_MB } from "../config";
 import { ADAPTER_VERSION, planKey, type AdaptPlan, type PrinterRecipe } from "../adapter";
+import { prisma } from "../db";
+import { withStorageLock } from "../utils/storageLock";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { Adapt3mfWorkerInput, Adapt3mfWorkerResult } from "./adapt3mfWorker";
+import { assetPath, assetTarget, legacyAssetPath, plateAssetHome, slicerCopyFile, type AssetHome } from "./modelAssets";
+import { ensureAssetHome } from "./printService";
 
 // One copy per plate and plan (src/adapter/plan.ts), shared by every slicer that gets the same one. The adapter's
 // version is part of the name, so a new one makes its copies again on next request. A plan for a printer comes with
-// the catalogue's recipe for it, whose stamp is in the plan's name.
+// the catalogue's recipe for it, whose stamp is in the plan's name. Copies live in the model's folder with its
+// pictures (modelAssets.ts), older ones in the shared ADAPTED_3MFS until they're made again; the failure markers
+// stay there for good.
 
 const WORKER_BOOTSTRAP = workerBootstrap(__dirname, "adapt3mfWorker");
 
-function copyName(plateId: string, plan: AdaptPlan): string {
-  return `${plateId}.${planKey(plan)}.v${ADAPTER_VERSION}`;
+function copyName(plateId: string, plan: AdaptPlan, version = ADAPTER_VERSION): string {
+  return `${plateId}.${planKey(plan)}.v${version}`;
 }
 
-function adaptedPath(plateId: string, plan: AdaptPlan): string {
-  return path.join(ADAPTED_3MFS, `${copyName(plateId, plan)}.3mf`);
+/** Where the copy is, or would be; `home` is the model's Print.assetsPath. */
+function adaptedPath(plateId: string, plan: AdaptPlan, home: AssetHome): string {
+  return assetPath(home, slicerCopyFile(`${copyName(plateId, plan)}.3mf`));
+}
+
+async function copyHome(plateId: string): Promise<AssetHome> {
+  return plateAssetHome(plateId).catch(() => null);
+}
+
+/** Where a new copy goes: the model's folder, chosen once it's made as the model may have moved meanwhile, or the
+ *  shared one for a plate that can't be looked up. */
+async function newCopyHome(plateId: string): Promise<string | null> {
+  try {
+    const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+    return plate ? await ensureAssetHome(plate.printId) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The plan's copies made by an earlier adapter, and one of this version left in the shared folder. */
+async function removeOlderCopies(plateId: string, plan: AdaptPlan, home: string | null): Promise<void> {
+  const older = Array.from({ length: ADAPTER_VERSION - 1 }, (_, index) =>
+    slicerCopyFile(`${copyName(plateId, plan, index + 1)}.3mf`),
+  );
+  for (const file of older) {
+    if (home) await fs.rm(assetTarget(home, file), { force: true });
+    await fs.rm(legacyAssetPath(file), { force: true });
+  }
+  if (home) await fs.rm(legacyAssetPath(slicerCopyFile(`${copyName(plateId, plan)}.3mf`)), { force: true });
 }
 
 // Marks a source the adapter rejected, so each request doesn't redo the work to fail again.
@@ -93,8 +127,7 @@ async function buildAdapted(
   printer: PrinterRecipe | null,
 ): Promise<string | null> {
   if (job.cancelled) return null;
-  const dest = adaptedPath(plateId, plan);
-  const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  const tmp = path.join(ADAPTED_3MFS, `${copyName(plateId, plan)}.${process.pid}.${Date.now()}.tmp`);
   await fs.mkdir(ADAPTED_3MFS, { recursive: true });
   const before = await sourceStamp(srcPath);
   try {
@@ -102,9 +135,23 @@ async function buildAdapted(
     // Made from a file that has changed since (or gone): not a copy of what's there now, nor a reason to give up on it.
     if (job.cancelled || before === null || (await sourceStamp(srcPath)) !== before) return null;
     if (result.status === "ok") {
-      await fs.rename(tmp, dest);
+      // Under the lock a move of files takes, so the model can't move between choosing its folder and the rename.
+      const { home, dest } = await withStorageLock(async () => {
+        const chosen = await newCopyHome(plateId);
+        const file = slicerCopyFile(`${copyName(plateId, plan)}.3mf`);
+        const target = chosen ? assetTarget(chosen, file) : legacyAssetPath(file);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.rename(tmp, target);
+        return { home: chosen, dest: target };
+      });
       if (!(await keep(job, dest))) return null;
-      await fs.rm(errorPath(plateId, plan), { force: true });
+      try {
+        await fs.rm(errorPath(plateId, plan), { force: true });
+        await removeOlderCopies(plateId, plan, home);
+      } catch (err) {
+        // The new copy is in place all the same; an older one left behind is Free up space's to remove.
+        console.warn(`Couldn't remove older 3MF copies of plate ${plateId} (${planKey(plan)}):`, err);
+      }
       return dest;
     }
     console.warn(`Adapting the 3MF of plate ${plateId} (${planKey(plan)}) failed; serving the original:`, result.error);
@@ -160,7 +207,7 @@ export async function adapt3mfStatus(
 ): Promise<Adapt3mfStatus> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
-    if (await isFresh(adaptedPath(plateId, plan), mtimeMs)) return "ready";
+    if (await isFresh(adaptedPath(plateId, plan, await copyHome(plateId)), mtimeMs)) return "ready";
     if (inFlight.has(copyName(plateId, plan))) return "preparing";
     if (await recentlyFailed(plateId, plan, mtimeMs)) return "failed";
     void startJob(plateId, srcPath, plan, printer).catch(() => undefined);
@@ -180,7 +227,8 @@ export async function adapted3mfFor(
 ): Promise<string | null> {
   try {
     const { mtimeMs } = await fs.stat(srcPath);
-    if (await isFresh(adaptedPath(plateId, plan), mtimeMs)) return adaptedPath(plateId, plan);
+    const copy = adaptedPath(plateId, plan, await copyHome(plateId));
+    if (await isFresh(copy, mtimeMs)) return copy;
     if (!inFlight.has(copyName(plateId, plan)) && (await recentlyFailed(plateId, plan, mtimeMs))) return null;
     return await startJob(plateId, srcPath, plan, printer);
   } catch (err) {
@@ -189,7 +237,8 @@ export async function adapted3mfFor(
   }
 }
 
-/** Every copy of the plate's, whatever it was made for, and any still being made. */
+/** Every copy of the plate's in the shared folder, whatever it was made for, and any still being made. Those in the
+ *  model's folder go with its other pictures (printService's removePlatePictures). */
 export async function deleteAdapted3mfs(plateId: string): Promise<void> {
   const prefix = `${plateId}.`;
   for (const [key, job] of inFlight) if (key.startsWith(prefix)) job.cancelled = true;

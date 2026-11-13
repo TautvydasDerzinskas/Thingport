@@ -42,6 +42,7 @@ import { keepLoaded, useBackgroundReload } from "../../hooks/useBackgroundReload
 import { profileApi } from "../../api/profile";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
 import { useSocialStatus } from "../../hooks/useSocialStatus";
+import MyAchievements from "../../components/achievements/MyAchievements";
 import SortTabs from "../ModelsPage/SortTabs";
 import EditProfileDialog from "./EditProfileDialog";
 import HandleChip from "../../components/profile/HandleChip";
@@ -445,6 +446,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         // A user's bio is shown as the other users see it on Explore.
         bioMarkdown={isSelf}
         links={isSelf ? viewer?.links : undefined}
+        achievements={isSelf && social?.achievements ? <MyAchievements /> : undefined}
       >
         <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Typography variant="h6" fontWeight={700} sx={{ color: (muiTheme) => muiTheme.thingport.headingText }}>

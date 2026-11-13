@@ -375,6 +375,7 @@
   "makeronlineCouldNotReachThingport": "Nepavyko pasiekti Thingport ({detail})",
   "makeronlineCouldNotAskFiles": "Nepavyko paprašyti MakerOnline šio puslapio failų ({detail}). Perkraukite puslapį ir bandykite dar kartą; tam reikia Firefox 128 ar naujesnės versijos.",
   "makeronlineCaptcha": "MakerOnline nori CAPTCHA prieš perduodant failus. Atsisiųskite vieną failą iš modelio puslapio rankiniu būdu, išspręskite užduotį, tada bandykite dar kartą.",
+  "makeronlinePuzzleUnsolved": "MakerOnline pateiks failus atlikus patikrą. Bandykite dar kartą ir atlikite rodomą patikrą.",
   "makeronlineSignIn": "Prisijunkite prie MakerOnline šioje naršyklėje, tada bandykite dar kartą.",
   "makeronlineNoFile": "MakerOnline nepateikė „{name}“{detail}",
   "makeronlineCouldNotSignFiles": "Nepavyko gauti failų su parašais",

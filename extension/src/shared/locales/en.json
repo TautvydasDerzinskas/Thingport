@@ -378,6 +378,7 @@
   "makeronlineCouldNotReachThingport": "Couldn't reach Thingport ({detail})",
   "makeronlineCouldNotAskFiles": "Couldn't ask MakerOnline for the files on this page ({detail}). Reload it and try again; Firefox needs version 128 or newer for this.",
   "makeronlineCaptcha": "MakerOnline wants a CAPTCHA before it hands over files. Download one file from a model page by hand, solve the puzzle, then try again.",
+  "makeronlinePuzzleUnsolved": "MakerOnline provides the files after its puzzle is solved. Try again and solve the puzzle it shows.",
   "makeronlineSignIn": "Sign in to MakerOnline in this browser, then try again.",
   "makeronlineNoFile": "MakerOnline didn't hand over “{name}”{detail}",
   "makeronlineCouldNotSignFiles": "Couldn't get the files signed",

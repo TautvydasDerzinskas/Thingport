@@ -97,7 +97,8 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
     /** Whether its profile files come named alike, so they're named after their profiles. */
     namedAlike: boolean;
     /** The profiles a scope picks from the model a link is of, as links that each name one, for the batch that
-     *  imports them onto one print. */
+     *  imports them onto one print. None for a model without any: a queued link of it then imports as a plain one,
+     *  and a job for its profiles fails. */
     listUrls(url: string, scope: "designer" | "all"): Promise<{ title: string | null; urls: string[] }>;
   };
 };

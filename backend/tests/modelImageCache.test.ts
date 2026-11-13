@@ -208,7 +208,7 @@ describe("model picture cache", () => {
     // The first picture starts at once; the GLB, queued after the other two, still runs before them.
     const drawing = pictures.map(({ plateId, src }) => generateModelImage(plateId, src, "box.stl"));
     await generateModelPreviewGlb(glbPlate, fixture);
-    expect(fsSync.existsSync(modelPreviewGlbPath(glbPlate))).toBe(true);
+    expect(fsSync.existsSync(modelPreviewGlbPath(glbPlate, await plateAssetHome(glbPlate)))).toBe(true);
     expect(fsSync.existsSync(await modelImagePath(pictures[2].plateId))).toBe(false);
     await Promise.all(drawing);
     const states = await Promise.all(pictures.map(({ plateId }) => modelImageState(plateId)));

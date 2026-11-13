@@ -5,6 +5,7 @@ import { sharePeopleIn, type Collection, type SharePerson } from "./collections"
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
 import type { ProfileCoverValue } from "../constants/profileCovers";
+import type { Achievement } from "./achievements";
 
 /** Another of the instance's users, as social features show them: never their email. */
 export type UserCard = {
@@ -32,6 +33,8 @@ export type SocialStatus = {
   federation: boolean;
   /** What follows the @ in this instance's handles, while federation is on. */
   instance_host: string | null;
+  /** Achievements are on: badges on My models. Their own switch, apart from social features. */
+  achievements: boolean;
 };
 
 /** Administration > Users' social features card and its settings. `chats` counts only while `enabled` is on. */
@@ -108,6 +111,8 @@ export type RemotePersonPage = {
     bio: string | null;
     links: string[];
     joined_at: string | null;
+    /** Their badges as their instance said; null while achievements are off here. */
+    achievements: Achievement[] | null;
   } & ProfileCoverValue;
   /** The first page of them; the rest from `elsewhere.personCollections`. */
   collections: RemoteCollectionCard[];
@@ -162,6 +167,8 @@ export type ExploreUserPage = {
     links: string[];
     /** Whether their own models are shown: the Models tab. */
     models_public: boolean;
+    /** Their badges, as on their My models; null while achievements are off. */
+    achievements: Achievement[] | null;
   } & ProfileCoverValue;
   /** The first page of them; the rest from `userCollections`. */
   collections: Collection[];

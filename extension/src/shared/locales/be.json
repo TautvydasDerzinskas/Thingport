@@ -378,6 +378,7 @@
   "makeronlineCouldNotReachThingport": "Не ўдалося звязацца з Thingport ({detail})",
   "makeronlineCouldNotAskFiles": "Не ўдалося запытаць файлы ў MakerOnline на гэтай старонцы ({detail}). Перазагрузіце яе і паспрабуйце зноў; для гэтага Firefox патрэбны версіі 128 або навейшай.",
   "makeronlineCaptcha": "MakerOnline запытвае CAPTCHA перад выдачай файлаў. Уручную спампуйце адзін файл са старонкі мадэлі, вырашыце задачу і паспрабуйце зноў.",
+  "makeronlinePuzzleUnsolved": "MakerOnline аддасць файлы пасля праходжання праверкі. Паўтарыце спробу і прайдзіце паказаную праверку.",
   "makeronlineSignIn": "Увайдзіце ў MakerOnline у гэтым браўзеры і паспрабуйце зноў.",
   "makeronlineNoFile": "MakerOnline не перадаў «{name}»{detail}",
   "makeronlineCouldNotSignFiles": "Не ўдалося атрымаць падпісаныя спасылкі на файлы",

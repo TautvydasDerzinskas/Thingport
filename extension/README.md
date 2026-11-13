@@ -410,7 +410,7 @@ also be turned on in Thingport, from the collection's **Sync configuration**.
   Clicking it, or **... > Sync configuration**, opens the collection's sync configuration: when it
   was last checked and when the next sync is due, **Sync now** and **Stop syncing**, and under
   Settings how often it's checked and, on a site with print profiles (MakerWorld, Snapmaker Space, MakerOnline,
-  Creality Cloud, NexPrint), which print profiles each new model brings (the default one, all of the designer's, or
+  Creality Cloud, NexPrint, eufyMake), which print profiles each new model brings (the default one, all of the designer's, or
   all of them).
 - The link follows the provider's collection id, so renaming the Thingport collection, or the
   provider's, keeps it synced. A provider collection syncs with one Thingport collection at most,

@@ -1,3 +1,4 @@
+import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { authHeaders } from "../utils/auth";
 import { apiBase, UnauthorizedError } from "./client";
 import type { StudioCommandArgs, StudioCommandName } from "../studio/commands";
@@ -160,12 +161,16 @@ export const studioApi = {
     return res.json();
   },
   /** Saves the design to the library as a new model; `picture_id` is the picture to show it by. */
-  saveToLibrary: (id: string, body: { name?: string; picture_id?: string }) =>
-    request<{ model: { id: string; name: string; title: string | null } }>(
+  saveToLibrary: async (id: string, body: { name?: string; picture_id?: string }) => {
+    const saved = await request<{ model: { id: string; name: string; title: string | null } }>(
       `${design(id)}/save-to-library`,
       "POST",
       body,
-    ),
+    );
+    // A design saved to the library counts towards an achievement.
+    requestAchievementCheck();
+    return saved;
+  },
   picture: async (id: string, pictureId: string): Promise<Blob> => {
     const res = await fetch(`${apiBase()}${design(id)}/pictures/${encodeURIComponent(pictureId)}`, {
       headers: authHeaders(),

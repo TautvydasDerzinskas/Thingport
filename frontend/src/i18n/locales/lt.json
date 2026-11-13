@@ -396,7 +396,7 @@
             },
             "activity": {
               "title": "Veikla",
-              "description": "Jūsų veiklos žemėlapis ir srautas."
+              "description": "Jūsų veiklos žemėlapis ir srautas bei pasiekimai."
             },
             "collections": {
               "title": "Kolekcijos",
@@ -566,7 +566,17 @@
         "importRunFrom_few": "{{site}}: importuota {{done}} iš {{count}} modelių",
         "importRunFrom_many": "{{site}}: importuota {{done}} iš {{count}} modelio",
         "importRunFrom_other": "{{site}}: importuota {{done}} iš {{count}} modelių",
-        "bridgeUpdate": "Yra nauja Thingport Bridge versija {{version}}"
+        "bridgeUpdate": "Yra nauja Thingport Bridge versija {{version}}",
+        "achievementUnlocked": "Pasiekimas atrakintas: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "Atrakintas {{count}} pasiekimas",
+        "achievementsUnlocked_few": "Atrakinti {{count}} pasiekimai",
+        "achievementsUnlocked_many": "Atrakinta {{count}} pasiekimo",
+        "achievementsUnlocked_other": "Atrakinta {{count}} pasiekimų",
+        "achievementsCredited_one": "Iki šiol pelnėte {{count}} pasiekimą",
+        "achievementsCredited_few": "Iki šiol pelnėte {{count}} pasiekimus",
+        "achievementsCredited_many": "Iki šiol pelnėte {{count}} pasiekimo",
+        "achievementsCredited_other": "Iki šiol pelnėte {{count}} pasiekimų",
+        "storageFreed": "Saugykloje atlaisvinta {{size}}"
       }
     },
     "search": {
@@ -1501,7 +1511,87 @@
         "summary_one": "Iš viso diske {{total}}: {{models}} užima {{count}} modelis, {{pictures}} – paveikslėliai ir peržiūros",
         "summary_few": "Iš viso diske {{total}}: {{models}} užima {{count}} modeliai, {{pictures}} – paveikslėliai ir peržiūros",
         "summary_other": "Iš viso diske {{total}}: {{models}} užima {{count}} modelių, {{pictures}} – paveikslėliai ir peržiūros",
-        "totalHint": "Viskas Thingport saugyklos aplanke: modelių failai ({{models}}), paveikslėliai ir peržiūros (miniatiūros, galerijų ir aprašymų paveikslėliai, 3D peržiūros, žymų paveikslėliai: {{pictures}}) ir kiti sugeneruoti failai (pjaustyklėms paruoštos kopijos ir atsisiuntimų paketai: {{other}}). Matuojama ne dažniau kaip kas kelias minutes."
+        "totalHint": "Viskas Thingport saugyklos aplanke: modelių failai ({{models}}), paveikslėliai ir peržiūros (miniatiūros, galerijų ir aprašymų paveikslėliai, 3D peržiūros, žymų paveikslėliai: {{pictures}}) ir kiti sugeneruoti failai (pjaustyklėms paruoštos kopijos ir atsisiuntimų paketai: {{other}}). Matuojama ne dažniau kaip kas kelias minutes.",
+        "onDisk": "{{total}} diske",
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_other": "{{count}} modelių",
+        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
+        "chartLabel": "Saugyklos užimtumas pagal rūšį",
+        "failed": "Nepavyko išmatuoti saugyklos.",
+        "kinds": {
+          "models": "Modelių failai",
+          "previews": "3D peržiūros",
+          "old": "Senos 3D peržiūros",
+          "photos": "Nuotraukos",
+          "thumbnails": "Miniatiūros ir atvaizdai",
+          "description": "Aprašymo paveikslėliai",
+          "slicer": "Pjaustyklės kopijos",
+          "other": "Kita"
+        }
+      },
+      "photosPerModel": {
+        "label": "Nuotraukų vienam modeliui",
+        "help": "Kiek nuotraukų iš modelio puslapio paliekama importuojant ar sinchronizuojant iš naujo, pradedant viršeliu. „Visos“ palieka kiekvieną. Jau išsaugoti modeliai savo nuotraukas pasilieka, sumažinti jų skaičių galima per „Atlaisvinti vietos“. Jūsų įkeltos nuotraukos neribojamos.",
+        "all": "Visos",
+        "saveFailed": "Nepavyko išsaugoti, kiek nuotraukų palikti",
+        "loadFailed": "Nepavyko įkelti, kiek nuotraukų palikti."
+      },
+      "freeSpace": {
+        "open": "Atlaisvinti vietos",
+        "freeing": "Atlaisvinama vieta…",
+        "title": "Atlaisvinti vietos",
+        "tasks": {
+          "old": {
+            "title": "Senos 3D peržiūros",
+            "detail": "Ankstesnės versijos, kurios niekur nebėra rodomos",
+            "help": "Kaskart pasikeitus formatui, nauja 3D peržiūra ar atvaizdas sukuriami šalia senųjų, o ištrintų modelių peržiūros likdavo diske. Jų niekas nerodo, todėl tai, ką matote, nepasikeis."
+          },
+          "compress": {
+            "title": "Suspausti 3D peržiūras",
+            "detail": "Ta pati išvaizda, maždaug penktadalis dydžio",
+            "help": "Kiekviena 3D peržiūra suspaudžiama tinklelio glaudinimu, formos suapvalinamos iki kelių tūkstantųjų milimetro dalių – smulkiau, nei parodo peržiūra. Naujos peržiūros suspaudžiamos vos sukūrus. Per didelė suspausti peržiūra lieka tokia, kokia yra."
+          },
+          "slicer": {
+            "title": "Pjaustyklės kopijos",
+            "detail": "Sukuriamos iš naujo, kai modelis kitą kartą atidaromas pjaustyklėje",
+            "help": "3MF kopijos, pritaikytos pjaustyklei ar spausdintuvui. Jos sukuriamos iš naujo, kai modelis kitą kartą joje atidaromas, o tai užtrunka kelias sekundes."
+          },
+          "photos": {
+            "title": "Papildomos nuotraukos",
+            "detail": "Palikti tik pirmąsias kiekvieno modelio nuotraukas",
+            "help": "Ištrina kiekvieno modelio nuotraukas po pirmųjų kelių, viršelis visada paliekamas. Vėliau importuojant ir sinchronizuojant paliekama tiek pat („Nuotraukų vienam modeliui“)."
+          }
+        },
+        "cantUndo": "Negrįžtama",
+        "keep": "Palikti",
+        "keepLabel": "Kiek nuotraukų palikti kiekvienam modeliui",
+        "about": "~{{size}}",
+        "nothing": "Nėra ką atlaisvinti",
+        "frees": "Atlaisvins apie {{size}}",
+        "start": "Atlaisvinti {{size}}",
+        "confirmPhotosTitle": "Ištrinti papildomas nuotraukas?",
+        "confirmPhotosMessage_one": "Kiekvienam modeliui paliekama pirmoji nuotrauka – viršelis, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekama {{count}} nuotrauka.",
+        "confirmPhotosMessage_few": "Kiekvienam modeliui paliekamos pirmosios {{count}} nuotraukos su viršeliu, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekamos {{count}} nuotraukos.",
+        "confirmPhotosMessage_other": "Kiekvienam modeliui paliekama pirmųjų {{count}} nuotraukų su viršeliu, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekama {{count}} nuotraukų.",
+        "confirmPhotosAction": "Ištrinti nuotraukas",
+        "queued": "Laukia",
+        "freed": "Atlaisvinta {{size}}",
+        "filesDone": "{{done}} iš {{total}}",
+        "someFailed_one": "{{count}} failo nepavyko apdoroti",
+        "someFailed_few": "{{count}} failų nepavyko apdoroti",
+        "someFailed_other": "{{count}} failų nepavyko apdoroti",
+        "taskFailed": "Sustojo dėl klaidos",
+        "taskDone": "Atlikta",
+        "runningFooter": "Kol kas atlaisvinta {{size}} · uždarius šį langą darbas tęsiasi",
+        "finishedFooter": "Atlaisvinta {{size}}",
+        "done": "Baigti",
+        "startFailed": "Nepavyko pradėti atlaisvinti vietos",
+        "refused": {
+          "running": "Vieta jau atlaisvinama",
+          "moving": "Modelių failai perkeliami – bandykite dar kartą, kai tai bus baigta",
+          "checking": "Tikrinami vienodi failai – bandykite dar kartą, kai tai bus baigta"
+        }
       },
       "website": {
         "link": "Thingport svetainė ir dokumentacija",
@@ -2248,7 +2338,10 @@
           "federation_blocked": "Užblokuotas serveris",
           "federation_unblocked": "Atblokuotas serveris",
           "federation_user_requested": "Paprašyta pasiekti ką nors kitur",
-          "collection_sharing_changed": "Pakeistas kolekcijos bendrinimas"
+          "collection_sharing_changed": "Pakeistas kolekcijos bendrinimas",
+          "achievement_settings_changed": "Pakeisti pasiekimai",
+          "storage_cleanup_started": "Pradėta atlaisvinti vietą",
+          "photos_per_model_changed": "Pakeista, kiek nuotraukų paliekama vienam modeliui"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2280,7 +2373,16 @@
         "licenseFilesOn": "Įjungta",
         "licenseFilesOff": "Išjungta",
         "chatsOn": "Pokalbiai įjungti",
-        "chatsOff": "Pokalbiai išjungti"
+        "chatsOff": "Pokalbiai išjungti",
+        "achievementsOn": "Pasiekimai įjungti",
+        "achievementsOff": "Pasiekimai išjungti",
+        "photosTrimmed_one": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosTrimmed_few": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosTrimmed_other": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosKept_one": "{{count}} nuotrauka vienam modeliui",
+        "photosKept_few": "{{count}} nuotraukos vienam modeliui",
+        "photosKept_other": "{{count}} nuotraukų vienam modeliui",
+        "photosKeptAll": "Visos nuotraukos"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2371,7 +2473,9 @@
           "image": "Paveikslėlis",
           "description": "Aprašymo paveikslėlis",
           "thumb": "Miniatiūra",
-          "render": "Atvaizdas"
+          "render": "Atvaizdas",
+          "preview": "3D peržiūra",
+          "slicer": "Pjaustyklės kopija"
         },
         "location": {
           "source": "Šaltinyje",
@@ -2921,6 +3025,18 @@
             "declineUserText": "{{who}} bus pranešta. Į {{host}} nieko nesiunčiama.",
             "declinedUser": "{{who}} prašymas atmestas"
           }
+        },
+        "achievements": {
+          "label": "Pasiekimai",
+          "summary": "Ženkleliai už tai, ką nuveikia naudotojai, rodomi jų puslapyje „Mano modeliai“. Veikia ir išjungus socialines funkcijas.",
+          "infoTitle": "Pasiekimai",
+          "infoBadges": "Ženkleliai už atsisiuntimus, importus, kiekvieną svetainę ir įrankį, Studiją, sinchronizuojamas kolekcijas ir aktyvumą – lygiai nuo bronzos iki hologramos.",
+          "infoProfile": "Rodomi po kiekvieno naudotojo aprašymu puslapyje „Mano modeliai“ visiems, kas gali matyti jo profilį, ir sujungtų serverių žmonėms.",
+          "infoSecrets": "Keli yra paslaptys, randamos programėlėje.",
+          "infoIndependent": "Atskiras jungiklis: veikia ir išjungus socialines funkcijas.",
+          "infoOff": "Įjungus visi gauna tai, ką jau buvo pelnę. Išjungus jie paslepiami ir išsaugomi.",
+          "saveFailed": "Nepavyko išsaugoti pasiekimų nustatymo.",
+          "loadFailed": "Nepavyko įkelti pasiekimų nustatymo."
         }
       }
     },
@@ -4542,6 +4658,157 @@
         "none": "Nė vienas spausdintuvas neatitinka „{{query}}“.",
         "added": "pridėtas",
         "done": "Baigta"
+      }
+    },
+    "achievements": {
+      "title": "Pasiekimai",
+      "help": "Ženkleliai už tai, ką žmogus nuveikė Thingport. Rodomi tik pelnyti.",
+      "helpOwn": "Ženkleliai už tai, ką nuveikiate Thingport. Rodomi tik pelnyti, ir juos mato visi, kas gali matyti jūsų profilį.",
+      "all": "Visi {{value}}",
+      "more_one": "Dar {{count}} pasiekimas",
+      "more_few": "Dar {{count}} pasiekimai",
+      "more_many": "Dar {{count}} pasiekimo",
+      "more_other": "Dar {{count}} pasiekimų",
+      "empty": "Kol kas nėra. Atsisiųskite, importuokite ar sukurkite modelį ir pelnysite pirmąjį.",
+      "unlocked": "Pasiekimas atrakintas",
+      "unlockedToast": "Pasiekimas atrakintas: {{name}} · {{tier}}",
+      "unlockedMany_one": "Atrakintas {{count}} pasiekimas",
+      "unlockedMany_few": "Atrakinti {{count}} pasiekimai",
+      "unlockedMany_many": "Atrakinta {{count}} pasiekimo",
+      "unlockedMany_other": "Atrakinta {{count}} pasiekimų",
+      "view": "Peržiūrėti",
+      "great": "Puiku!",
+      "earnedOn": "Pelnyta {{date}}",
+      "next": "Kitas: {{value}}",
+      "top": "Pasiektas aukščiausias lygis",
+      "tiersEarned": "Pelnyti lygiai",
+      "lapsed": "Nebegalioja",
+      "lapsedHint": "Naudokite Thingport daugiau nei 20 iš paskutinių 30 dienų, ir jis sugrįš.",
+      "tiers": {
+        "bronze": "Bronza",
+        "silver": "Sidabras",
+        "gold": "Auksas",
+        "platinum": "Platina",
+        "diamond": "Deimantas",
+        "holo": "Holograma",
+        "secret": "Paslaptis"
+      },
+      "groups": {
+        "milestones": "Etapai",
+        "sites": "Svetainės",
+        "tools": "Įrankiai",
+        "making": "Studija ir sinchronizavimas",
+        "secrets": "Paslaptys"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Atsisiuntėjas",
+          "rule_one": "Atsisiųskite modelius {{count}} kartą",
+          "rule_few": "Atsisiųskite modelius {{count}} kartus",
+          "rule_many": "Atsisiųskite modelius {{count}} karto",
+          "rule_other": "Atsisiųskite modelius {{count}} kartų",
+          "stat_one": "{{count}} atsisiuntimas",
+          "stat_few": "{{count}} atsisiuntimai",
+          "stat_many": "{{count}} atsisiuntimo",
+          "stat_other": "{{count}} atsisiuntimų"
+        },
+        "imports": {
+          "name": "Importuotojas",
+          "rule_one": "Importuokite {{count}} modelį",
+          "rule_few": "Importuokite {{count}} modelius",
+          "rule_many": "Importuokite {{count}} modelio",
+          "rule_other": "Importuokite {{count}} modelių",
+          "stat_one": "Importuotas {{count}} modelis",
+          "stat_few": "Importuoti {{count}} modeliai",
+          "stat_many": "Importuota {{count}} modelio",
+          "stat_other": "Importuota {{count}} modelių"
+        },
+        "regular": {
+          "name": "Nuolatinis",
+          "rule": "Naudokite Thingport daugiau nei 20 iš paskutinių 30 dienų",
+          "stat": "Aktyvus {{count}} iš paskutinių 30 dienų"
+        },
+        "site": {
+          "name": "{{site}} importuotojas",
+          "rule_one": "Importuokite {{count}} modelį iš {{site}}",
+          "rule_few": "Importuokite {{count}} modelius iš {{site}}",
+          "rule_many": "Importuokite {{count}} modelio iš {{site}}",
+          "rule_other": "Importuokite {{count}} modelių iš {{site}}",
+          "stat": "{{count}} iš {{site}}"
+        },
+        "tool": {
+          "rule_one": "Išsaugokite {{count}} modelį iš „{{tool}}“",
+          "rule_few": "Išsaugokite {{count}} modelius iš „{{tool}}“",
+          "rule_many": "Išsaugokite {{count}} modelio iš „{{tool}}“",
+          "rule_other": "Išsaugokite {{count}} modelių iš „{{tool}}“",
+          "stat": "{{count}} išsaugota iš „{{tool}}“"
+        },
+        "studio": {
+          "name": "Dizaineris",
+          "rule_one": "Išsaugokite {{count}} Studijos projektą bibliotekoje",
+          "rule_few": "Išsaugokite {{count}} Studijos projektus bibliotekoje",
+          "rule_many": "Išsaugokite {{count}} Studijos projekto bibliotekoje",
+          "rule_other": "Išsaugokite {{count}} Studijos projektų bibliotekoje",
+          "stat_one": "{{count}} projektas išsaugotas iš Studijos",
+          "stat_few": "{{count}} projektai išsaugoti iš Studijos",
+          "stat_many": "{{count}} projekto išsaugota iš Studijos",
+          "stat_other": "{{count}} projektų išsaugota iš Studijos"
+        },
+        "synced": {
+          "name": "Sinchronizuota",
+          "rule_one": "Sinchronizuokite {{count}} kolekciją",
+          "rule_few": "Sinchronizuokite {{count}} kolekcijas",
+          "rule_many": "Sinchronizuokite {{count}} kolekcijos",
+          "rule_other": "Sinchronizuokite {{count}} kolekcijų",
+          "stat_one": "{{count}} kolekcija sinchronizuojama",
+          "stat_few": "{{count}} kolekcijos sinchronizuojamos",
+          "stat_many": "{{count}} kolekcijos sinchronizuojama",
+          "stat_other": "{{count}} kolekcijų sinchronizuojama"
+        },
+        "syncSources": {
+          "name": "Daug šaltinių",
+          "rule": "Sinchronizuokite kolekcijas iš {{count}} skirtingų svetainių",
+          "stat": "Sinchronizuojama iš {{count}} svetainių"
+        },
+        "weatherGuest": {
+          "name": "Sutiko svečią",
+          "rule": "Paslaptis. Jūs ją radote.",
+          "stat": "Pastebėtas orų scenoje"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Pakabukų meistras",
+          "tool": "Raktų pakabukų generatorius"
+        },
+        "qr-code-generator": {
+          "badge": "QR kodų meistras",
+          "tool": "QR kodų generatorius"
+        },
+        "gridfinity-drawer": {
+          "badge": "Gridfinity statytojas",
+          "tool": "Gridfinity stalčių kūrėjas"
+        },
+        "enclosure-generator": {
+          "badge": "Dėžučių meistras",
+          "tool": "Korpusų generatorius"
+        },
+        "multiboard-planner": {
+          "badge": "Multiboard planuotojas",
+          "tool": "Multiboard planuoklis"
+        },
+        "skadis-planner": {
+          "badge": "Skadis planuotojas",
+          "tool": "Skadis planuoklis"
+        },
+        "openscad-customizer": {
+          "badge": "Scenarijų derintojas",
+          "tool": "Scenarijų pritaikymas"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "3MF tvarkytojas",
+          "tool": "MakerWorld 3MF normalizatorius"
+        }
       }
     }
   },

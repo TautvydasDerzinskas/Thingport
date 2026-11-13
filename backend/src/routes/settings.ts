@@ -1,5 +1,6 @@
 import type { AiConnection, AiProviderKind, ReasoningEffort } from "@prisma/client";
 import { currentStorageMove, startStorageMove, type StorageMoveRun } from "../services/storageMoveService";
+import { currentStorageCleanup } from "../services/storageCleanup";
 import { syncAllLicenseFiles } from "../services/licenseFile";
 import {
   currentFileReuseBackfill,
@@ -58,6 +59,10 @@ import {
   getFileReuse,
   getLicenseFiles,
   setLicenseFiles,
+  getPhotosPerModel,
+  setPhotosPerModel,
+  PHOTO_KEEP_OPTIONS,
+  type PhotoKeep,
   setFileReuse,
   FILE_REUSE_MODES,
 } from "../services/settingsService";
@@ -380,6 +385,9 @@ router.post(
     if (currentFileReuseBackfill()?.running) {
       throw new HttpError(409, "Identical files are being checked; save again once that's done", "file_reuse_running");
     }
+    if (currentStorageCleanup()?.running) {
+      throw new HttpError(409, "Space is being freed; save again once that's done", "storage_cleanup_running");
+    }
     await setStorageTemplate(template);
     startStorageMove(req.userId!, template);
     res.json(await storageSettingsOut(template));
@@ -421,6 +429,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { mode } = parseBody(fileReuseSchema, req.body) as { mode: (typeof FILE_REUSE_MODES)[number] };
     const previous = await getFileReuse();
+    if (previous !== "reflink" && mode === "reflink" && currentStorageCleanup()?.running) {
+      throw new HttpError(409, "Space is being freed; turn this on once that's done", "storage_cleanup_running");
+    }
     await setFileReuse(mode);
     // Turned on: files stored while it was off, or before it covered them, are brought in line too.
     const started = previous !== "reflink" && mode === "reflink" ? startFileReuseBackfill(req.userId!) : null;
@@ -428,6 +439,32 @@ router.post(
     void createLog({ userId: req.userId!, action: "file_reuse_changed", details: { mode } });
     if (started)
       void createLog({ userId: req.userId!, action: "file_reuse_backfill_started", details: { by: "switch" } });
+  }),
+);
+
+// How many photos an import or a re-sync keeps from a model's page; null keeps them all.
+router.get(
+  "/settings/photos-per-model",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ keep: await getPhotosPerModel() });
+  }),
+);
+
+const photosPerModelSchema = z.object({
+  keep: z
+    .number()
+    .refine((value): value is PhotoKeep => (PHOTO_KEEP_OPTIONS as readonly number[]).includes(value))
+    .nullable(),
+});
+router.post(
+  "/settings/photos-per-model",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { keep } = parseBody(photosPerModelSchema, req.body) as { keep: PhotoKeep | null };
+    await setPhotosPerModel(keep);
+    res.json({ keep });
+    void createLog({ userId: req.userId!, action: "photos_per_model_changed", details: { keep } });
   }),
 );
 
@@ -469,6 +506,9 @@ router.post(
     }
     if (currentStorageMove()?.running) {
       throw new HttpError(409, "Model files are being moved; check again once that's done", "storage_moving");
+    }
+    if (currentStorageCleanup()?.running) {
+      throw new HttpError(409, "Space is being freed; check again once that's done", "storage_cleanup_running");
     }
     const started = startFileReuseBackfill(req.userId!);
     if (started)
