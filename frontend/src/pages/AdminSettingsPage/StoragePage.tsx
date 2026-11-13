@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -35,19 +35,28 @@ export default function StoragePage({ onUnauthorized }: Props) {
   // null is "All", so a setting that couldn't be read is undefined, with keepFailed.
   const [keep, setKeep] = useState<PhotoKeep | null | undefined>(undefined);
   const [keepFailed, setKeepFailed] = useState(false);
+  // Moves on when the photos setting is changed here: a read sent before then may answer with the old value.
+  const keepChanges = useRef(0);
+  const changeKeep = useCallback((next: PhotoKeep | null) => {
+    keepChanges.current++;
+    setKeep(next);
+  }, []);
 
   const load = useCallback(() => {
     adminApi.getStorageUsage().then(setUsage, (err: unknown) => {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       setUsage(null);
     });
+    const asked = keepChanges.current;
     settingsApi.getPhotosPerModel().then(
       (saved) => {
+        if (asked !== keepChanges.current) return;
         setKeep(saved);
         setKeepFailed(false);
       },
       (err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
+        if (asked !== keepChanges.current) return;
         setKeep(undefined);
         setKeepFailed(true);
       },
@@ -79,7 +88,7 @@ export default function StoragePage({ onUnauthorized }: Props) {
                 {t("adminSettings.storageBrowser.open")}
               </Button>
             </Stack>
-            <PhotosPerModelRow keep={keep} failed={keepFailed} onChange={setKeep} onUnauthorized={onUnauthorized} />
+            <PhotosPerModelRow keep={keep} failed={keepFailed} onChange={changeKeep} onUnauthorized={onUnauthorized} />
           </Stack>
         </Stack>
       </Paper>

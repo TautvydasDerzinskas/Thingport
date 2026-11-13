@@ -26,23 +26,32 @@ const ALL = "all";
 export default function PhotosPerModelRow({ keep, failed = false, onChange, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const toast = useToast();
-  const [saving, setSaving] = React.useState(false);
+  // The last pick; one made while another is saving is saved once that's done, so the last pick is what's kept.
+  const wanted = React.useRef<PhotoKeep | null>(null);
+  const saving = React.useRef(false);
 
   const select = async (value: string) => {
-    if (keep === undefined || saving) return;
+    if (keep === undefined) return;
     const next = value === ALL ? null : (Number(value) as PhotoKeep);
     if (next === keep) return;
-    const previous = keep;
+    wanted.current = next;
     onChange(next);
-    setSaving(true);
+    if (saving.current) return;
+    saving.current = true;
+    let saved = keep;
     try {
-      onChange(await settingsApi.updatePhotosPerModel(next));
+      let asked: PhotoKeep | null;
+      do {
+        asked = wanted.current;
+        saved = await settingsApi.updatePhotosPerModel(asked);
+      } while (asked !== wanted.current);
+      onChange(saved);
     } catch (err) {
-      onChange(previous);
+      onChange(saved);
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else toast({ message: t("adminSettings.photosPerModel.saveFailed"), severity: "error" });
     } finally {
-      setSaving(false);
+      saving.current = false;
     }
   };
 
