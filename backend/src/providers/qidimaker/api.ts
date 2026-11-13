@@ -148,18 +148,24 @@ async function post(path: string, body: unknown, token: string | null): Promise<
   }
 }
 
-/** One call's answer. A burst past its limit is waited out a few times, then a 429; a timestamp it turns down is sent
- *  again by its own clock, which every answer gives. */
-async function fetchApi(path: string, body: unknown, token: string | null): Promise<Answer> {
+/** One request, a burst past its limit waited out a few times, then a 429. */
+async function postWithinLimit(path: string, body: unknown, token: string | null): Promise<Answer> {
   let res = await post(path, body, token);
   for (let retry = 1; retry <= RATE_LIMIT_RETRIES && res.status === 429; retry++) {
     await sleep(RATE_LIMIT_WAIT_MS * retry);
     res = await post(path, body, token);
   }
   if (res.status === 429) throw new HttpError(429, "QIDI Maker rate-limited this request. Wait a bit and try again.");
+  return res;
+}
+
+/** One call's answer. A timestamp it turns down is sent again by its own clock, which every answer gives, and that
+ *  request waits out a limit as the first does. */
+async function fetchApi(path: string, body: unknown, token: string | null): Promise<Answer> {
+  let res = await postWithinLimit(path, body, token);
   if (res.code === CODE_STALE && res.timestamp !== null) {
     clockOffsetMs = res.timestamp - Date.now();
-    res = await post(path, body, token);
+    res = await postWithinLimit(path, body, token);
   }
   if (token && res.code !== null && AUTH_CODES.has(res.code)) throw new QidimakerAuthError();
   return res;

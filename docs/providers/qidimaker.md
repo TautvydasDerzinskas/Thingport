@@ -18,8 +18,9 @@ with Grab. A model is one print:
 
 - **With print profiles**, an import brings one of them: the one the link names with `?profile_id=<id>` (the page
   writes it into its address as you pick one), else the designer's first. The designer's or all of them can be picked
-  as for other sites' print profiles; those left out can be added later. Each comes in as a plate of its own, named
-  after the model, with the profile's print time, filament and plates beside it.
+  as for other sites' print profiles; those left out can be added later. Where the designer made none, the first,
+  someone else's, stands in for theirs. Each comes in as a plate of its own, named after the model, with the
+  profile's print time, filament and plates beside it.
 - **Without**, it brings the model's own files from the zip QIDI Maker makes of them. The site writes most of these
   zips without the index a zip reader needs -- its own **Download STL/CAD Files** gives the same broken file -- so
   Thingport puts the index back first. The files in it are named only by when they were uploaded, so they're named

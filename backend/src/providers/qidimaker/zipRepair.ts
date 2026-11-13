@@ -11,6 +11,8 @@ const CENTRAL = 0x02014b50;
 const END = 0x06054b50;
 const LOCAL_SIZE = 30;
 const DESCRIPTOR_SIZE = 16;
+// What may come right after an entry's descriptor.
+const FOLLOWERS = new Set([LOCAL, CENTRAL, END]);
 // Bit 3: the sizes and CRC come after the data, in a data descriptor.
 const SIZES_AFTER = 0x08;
 const CHUNK = 1 << 20;
@@ -46,19 +48,26 @@ async function hasEndRecord(file: fs.FileHandle, size: number): Promise<boolean>
   return false;
 }
 
-/** Where the descriptor after an entry's data starts: the first one whose compressed size is the distance from
- *  `dataStart`, as a run of the data that only looks like one isn't. Null when there's none before the end. */
+/** Where the descriptor after an entry's data starts: one whose compressed size is the distance from `dataStart`, and
+ *  that the next entry, the directory or the file's end follows, as a stored file's own bytes that only look like one
+ *  aren't. Failing that, the first whose size fits, for a zip with something else after its last entry. Null when
+ *  there's none before the end. */
 async function findDescriptor(file: fs.FileHandle, dataStart: number, size: number): Promise<number | null> {
+  let sizeFits: number | null = null;
   for (let from = dataStart; from < size; from += CHUNK) {
-    // The chunks overlap by a descriptor, so one across their edge is still read whole.
-    const chunk = await readAt(file, from, CHUNK + DESCRIPTOR_SIZE);
+    // The chunks overlap by a descriptor and the signature after it, so both are read whole across their edge.
+    const chunk = await readAt(file, from, CHUNK + DESCRIPTOR_SIZE + 4);
     const end = Math.min(chunk.length - DESCRIPTOR_SIZE, CHUNK - 1);
     for (let at = chunk.indexOf(DESCRIPTOR); at !== -1 && at <= end; at = chunk.indexOf(DESCRIPTOR, at + 1)) {
       const position = from + at;
-      if (chunk.readUInt32LE(at + 8) === position - dataStart) return position;
+      if (chunk.readUInt32LE(at + 8) !== position - dataStart) continue;
+      const after = at + DESCRIPTOR_SIZE;
+      if (position + DESCRIPTOR_SIZE === size) return position;
+      if (after + 4 <= chunk.length && FOLLOWERS.has(chunk.readUInt32LE(after))) return position;
+      sizeFits ??= position;
     }
   }
-  return null;
+  return sizeFits;
 }
 
 /** Every entry, by its local header, up to the first thing that isn't one; and where the last one ends. */

@@ -65,6 +65,31 @@ describe("QIDI Maker zip repair", () => {
     expect(await contents(zipPath)).toEqual(expected);
   });
 
+  it("isn't misled by a stored file whose own bytes look like a descriptor", async () => {
+    // A binary STL's header can be anything: here a descriptor's signature, a CRC, and sizes of nothing.
+    const header = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x07, 0x08, 1, 2, 3, 4]),
+      Buffer.alloc(8),
+      Buffer.alloc(64, 32),
+    ]);
+    const lookalike = {
+      "model_1_stl_files/part.stl": Buffer.concat([header, Buffer.from("facet ".repeat(500))]),
+      ...entries,
+    };
+    const zipPath = await file(withoutDirectory(await streamed(lookalike, "STORE")));
+    expect(await repairZipDirectory(zipPath)).toBe(true);
+    expect(await contents(zipPath)).toEqual(
+      Object.fromEntries(Object.entries(lookalike).map(([name, bytes]) => [name, bytes.toString("utf8")])),
+    );
+  });
+
+  it("keeps the last entry where a directory cut short too soon to tell follows it", async () => {
+    const broken = withoutDirectory(await streamed(entries));
+    const zipPath = await file(Buffer.concat([broken, Buffer.from([0x50, 0x4b, 0x01])]));
+    expect(await repairZipDirectory(zipPath)).toBe(true);
+    expect(await contents(zipPath)).toEqual(expected);
+  });
+
   it("drops an entry cut off before its end, keeping the ones before it", async () => {
     const broken = withoutDirectory(await streamed(entries));
     const zipPath = await file(broken.subarray(0, broken.length - 40));
