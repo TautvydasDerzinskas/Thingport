@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moldFiles, pickedFile } from "./adaptSite";
+import { moldFiles, pickedFile, unreadPick } from "./adaptSite";
 
 // Cut down from api/mold/detail?id=245396: one print profile, the model's own STLs and a Bambu Studio 3MF.
 const MOLD = {
@@ -71,5 +71,20 @@ describe("the MakerOnline file a page has picked", () => {
     expect(pickedFile(files, "|", false)).toBeNull();
     expect(pickedFile(files, "145663|", true)).toBeNull();
     expect(pickedFile(files, null, false)).toBeNull();
+  });
+});
+
+describe("the MakerOnline file a page has picked, before its picks can be read", () => {
+  const files = moldFiles(MOLD).map(({ key: _key, fileType: _fileType, signId: _signId, ...file }) => file);
+
+  it("is the highlighted print profile, by its name, on the print profiles tab", () => {
+    expect(unreadPick(files, false, "v2 updated")).toMatchObject({ id: "p145663" });
+    expect(unreadPick(files, false, null)).toBeNull();
+  });
+
+  it("is none of them on the files tab, or where the highlighted profile isn't one, rather than the first", () => {
+    expect(unreadPick(files, true, null)).toBe("other");
+    expect(unreadPick(files, true, "v2 updated")).toBe("other");
+    expect(unreadPick(files, false, "Not a 3MF")).toBe("other");
   });
 });

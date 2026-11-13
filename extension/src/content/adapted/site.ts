@@ -12,6 +12,14 @@ import type { AdaptOffer } from "../../shared/messages";
  *  print profile's name), and `size` in bytes. */
 export type AdaptFile = { id: string; name: string; title?: string; size: number | null };
 
+/** The file a page's own choice names, by its id, for `selected`: null where it names none (the first, then), "other"
+ *  where it names one that isn't among `files` (a profile the site won't give a file for), so that another isn't
+ *  downloaded in its place. */
+export function pickById(files: AdaptFile[], id: string | null | undefined): AdaptFile | null | "other" {
+  if (!id) return null;
+  return files.find((file) => file.id === id) ?? "other";
+}
+
 export type AdaptSite = {
   /** Its provider: the button takes the site's look by it (styles/adapted.scss). */
   id: ProviderId;

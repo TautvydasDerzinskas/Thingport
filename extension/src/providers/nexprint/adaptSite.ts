@@ -5,7 +5,14 @@
 
 import { MAX_BYTES, readBody, tooBig } from "../../content/adapted/download";
 import { orcaFamilyFormat } from "../../content/adapted/formats";
-import { pageCookie, placeAfter, signInFirst, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
+import {
+  pageCookie,
+  pickById,
+  placeAfter,
+  signInFirst,
+  type AdaptFile,
+  type AdaptSite,
+} from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { parseNexprintModelUrl } from "./urls.generated";
@@ -114,7 +121,7 @@ export const NEXPRINT_ADAPT: AdaptSite = {
   // `?printConfigId=G…`, which the page writes as profiles are picked.
   selected: (files) => {
     const id = parseNexprintModelUrl(location.href)?.requestedProfileId;
-    return files.find((file) => file.id === id) ?? null;
+    return pickById(files, id);
   },
 
   async download(_pageUrl, file, progress) {

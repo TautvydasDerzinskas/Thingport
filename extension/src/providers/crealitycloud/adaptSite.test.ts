@@ -25,9 +25,19 @@ describe("a Creality Cloud model's print profiles", () => {
 
   it("follow the one the page has picked, by its own address or a link Thingport made", () => {
     const page = "https://www.crealitycloud.com/model-detail/articulated-cute-crab";
-    expect(pickedProfile(`${page}?profileId=686D66FF97FB0B32D54EF913`, files)?.id).toBe("686d66ff97fb0b32d54ef913");
-    expect(pickedProfile(`${page}#profileId-686d66ff97fb0b32d54ef913`, files)?.id).toBe("686d66ff97fb0b32d54ef913");
+    expect(pickedProfile(`${page}?profileId=686D66FF97FB0B32D54EF913`, files)).toMatchObject({
+      id: "686d66ff97fb0b32d54ef913",
+    });
+    expect(pickedProfile(`${page}#profileId-686d66ff97fb0b32d54ef913`, files)).toMatchObject({
+      id: "686d66ff97fb0b32d54ef913",
+    });
     expect(pickedProfile(page, files)).toBeNull();
+  });
+
+  it("don't put another in place of a profile the page names but the site gives no file for", () => {
+    const page = "https://www.crealitycloud.com/model-detail/articulated-cute-crab";
+    expect(pickedProfile(`${page}?profileId=0123456789abcdef01234567`, files)).toBe("other");
+    expect(pickedProfile(`${page}#profileId-0123456789abcdef01234567`, files)).toBe("other");
   });
 });
 
