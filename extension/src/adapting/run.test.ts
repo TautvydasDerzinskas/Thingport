@@ -99,6 +99,22 @@ describe("what Grab makes of a MakerWorld 3MF", () => {
     expect((await adaptFile(input, "prusaslicer")).output).toBe("prusa");
   });
 
+  it("leaves a plain 3MF's colours uncounted where its models unzip to more than it reads, as the server does", async () => {
+    const zip = new JSZip();
+    const triangles = '<triangle v1="0" v2="1" v3="2" pid="5" p1="0"/>'.repeat(20000);
+    zip.file(
+      "3D/3dmodel.model",
+      `<model xmlns:m="m"><resources><m:colorgroup id="5"><m:color color="#FF0000FF"/></m:colorgroup></resources></model>`,
+    );
+    // An extra model, small zipped and much bigger unzipped, with colours of its own.
+    zip.file("3D/extra.model", `<model>${triangles}<m:color color="#00FF00FF"/></model>`, {
+      compression: "DEFLATE",
+    });
+    const read = await JSZip.loadAsync(await zip.generateAsync({ type: "uint8array" }));
+    expect(await formatOfZip(read)).toMatchObject({ kind: "plain", filaments: 2 });
+    expect(await formatOfZip(read, 64 * 1024)).toMatchObject({ kind: "plain", filaments: null });
+  });
+
   it("makes a copy for a printer in Bambu Studio itself, naming that printer's presets from Grab's catalogue", async () => {
     const catalogue = printerCatalogue(async (file) =>
       JSON.parse(readFileSync(path.resolve(__dirname, "../../public/printers", file), "utf8")),

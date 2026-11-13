@@ -16,25 +16,55 @@ export type PlainModelScanner = {
   result(): PlainModelScan;
 };
 
+const OPEN_TRIANGLE_RE = /^<(?:[\w-]+:)?triangle\b/i;
+
+/** The most of a tag kept from one piece for the next. A longer one (a comment that never ends, say) is read from its
+ *  start alone, so that it isn't searched again with every piece and kept whole. */
+export const MAX_CARRY = 64 * 1024;
+
 export function plainModelScanner(): PlainModelScanner {
   const colours = new Set<string>();
   let triangles = 0;
   let painted = 0;
   let carry = "";
+  // Inside a tag too long to keep: the rest of it, up to its `>`, is passed over.
+  let skipping = false;
+  const read = (whole: string) => {
+    for (const m of whole.matchAll(COLOUR_RE)) colours.add(m[1].toUpperCase());
+    for (const m of whole.matchAll(TRIANGLE_RE)) {
+      triangles++;
+      if (PAINT_RE.test(m[0])) painted++;
+    }
+  };
   return {
     add(text) {
+      if (skipping) {
+        const close = text.indexOf(">");
+        if (close < 0) return;
+        text = text.slice(close + 1);
+        skipping = false;
+      }
       const all = carry + text;
       const end = all.lastIndexOf(">") + 1;
-      const whole = all.slice(0, end);
+      read(all.slice(0, end));
       carry = all.slice(end);
-      for (const m of whole.matchAll(COLOUR_RE)) colours.add(m[1].toUpperCase());
-      for (const m of whole.matchAll(TRIANGLE_RE)) {
-        triangles++;
-        if (PAINT_RE.test(m[0])) painted++;
+      if (carry.length <= MAX_CARRY) return;
+      const open = carry.indexOf("<");
+      if (open >= 0) {
+        // What its start says: a triangle, painted or not, or a colour.
+        const tag = carry.slice(open);
+        for (const m of tag.matchAll(COLOUR_RE)) colours.add(m[1].toUpperCase());
+        if (OPEN_TRIANGLE_RE.test(tag)) {
+          triangles++;
+          if (PAINT_RE.test(tag)) painted++;
+        }
+        skipping = true;
       }
+      carry = "";
     },
     endFile() {
       carry = "";
+      skipping = false;
     },
     result: () => ({ colours: colours.size, painted: triangles > 0 && painted === triangles }),
   };
