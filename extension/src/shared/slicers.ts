@@ -10,4 +10,5 @@ export const SLICER_LABELS: Readonly<Record<string, string>> = {
   elegooslicer: "Elegoo Slicer",
   "snapmaker-orca": "Snapmaker Orca",
   eufystudio3d: "eufyMake Studio",
+  qidistudio: "QIDI Studio",
 };

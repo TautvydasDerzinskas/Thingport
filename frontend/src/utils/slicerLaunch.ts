@@ -5,7 +5,7 @@ const BRIDGE_SCHEME = "thingport";
 // registration is unreliable, so the Bridge downloads the file and launches them directly.
 // Anycubic Slicer Next registers OrcaSlicer's orcaslicer:// protocol, so with both installed only
 // one would get the link; the Bridge launches it by path instead.
-const BRIDGED_SLICERS = new Set(["bambustudio", "prusaslicer", "cura", "anycubicslicernext"]);
+const BRIDGED_SLICERS = new Set(["bambustudio", "qidistudio", "prusaslicer", "cura", "anycubicslicernext"]);
 
 // The rest download the link themselves. Each can go through the Bridge instead, for when it can't download from this
 // instance (a certificate it doesn't trust, say): the user picks which in the Slicer settings. The backend's

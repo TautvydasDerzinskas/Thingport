@@ -8,6 +8,7 @@ import { elegooslicer } from "./elegooslicer.generated";
 import { eufystudio3d } from "./eufystudio3d.generated";
 import { orcaslicer } from "./orcaslicer.generated";
 import { prusaslicer } from "./prusaslicer.generated";
+import { qidistudio } from "./qidistudio.generated";
 import { snapmakerOrca } from "./snapmakerOrca.generated";
 import type { SlicerProfile } from "./types.generated";
 
@@ -17,6 +18,7 @@ export type { SlicerProfile } from "./types.generated";
 export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.fromEntries(
   [
     bambustudio,
+    qidistudio,
     orcaslicer,
     prusaslicer,
     cura,

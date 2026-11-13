@@ -64,7 +64,7 @@ jobs:
       matrix:
         include:
           - target: windows-amd64
-            os: ubuntu-latest
+            os: windows-latest
           - target: linux-amd64
             os: ubuntu-latest
           # macOS URL-scheme handling needs cgo and Cocoa, so it can't be cross-compiled.
@@ -79,15 +79,27 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: bridge/go.mod
-      - name: Build
+      - name: Build Windows installer
+        if: matrix.target == 'windows-amd64'
+        working-directory: bridge
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.release.outputs.version || 'dev' }}
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          go build -ldflags "-X main.version=$env:VERSION" -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found at $iscc" }
+          & $iscc "/DMyAppVersion=$env:VERSION" "installer\windows\thingport-bridge.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Remove-Item dist/thingport-bridge-windows-amd64.exe
+      - name: Build Linux and macOS binaries
+        if: matrix.target != 'windows-amd64'
         working-directory: bridge
         env:
           LDFLAGS: -X main.version=${{ needs.release.outputs.version || 'dev' }}
         run: |
           case "${{ matrix.target }}" in
-            windows-amd64)
-              CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-windows-amd64.exe ./cmd/thingport-bridge
-              ;;
             linux-amd64)
               CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o dist/thingport-bridge-linux-amd64 ./cmd/thingport-bridge
               ;;
@@ -136,7 +148,7 @@ jobs:
           Thingport Bridge $VERSION ([release notes](https://github.com/$GH_REPO/releases/tag/$TAG)). See
           \`bridge/README.md\` for the exact commands:
 
-          - **Windows**: \`thingport-bridge-windows-amd64.exe\` — run it once (double-click is fine) to install.
+          - **Windows**: \`thingport-bridge-windows-amd64-setup.exe\` — run Setup; Windows then lists Thingport Bridge under Installed apps.
           - **Linux**: \`thingport-bridge-linux-amd64\` — \`chmod +x\`, then run it once to install.
           - **macOS**: \`thingport-bridge-macos\` (universal) — \`chmod +x\`, remove the quarantine flag, then run with \`--install\`.
           EOF

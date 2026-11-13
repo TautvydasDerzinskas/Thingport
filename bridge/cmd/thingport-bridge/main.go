@@ -30,8 +30,8 @@ type Config struct {
 	Slicers     map[string]SlicerConfig `json:"slicers,omitempty"`
 }
 
-// For slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only accept
-// allowlisted domains, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
+// For slicers Thingport hands off through the Bridge: bambustudio:// and prusaslicer:// only accept
+// allowlisted domains, QIDI Studio receives the downloaded file by path, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
 // a handler of their own come here only when the user sends them through the Bridge (Configuration >
 // Slicer in Thingport), for when one can't download from the instance itself.
 const scheme = "thingport"
@@ -41,8 +41,8 @@ var version = "dev"
 
 func main() {
 	if len(os.Args) < 2 {
-		// Windows/Linux pass the URL as argv[1], so no args means "install". macOS delivers it as an
-		// Apple Event instead, so install there needs --install.
+		// Windows/Linux pass protocol URLs as argv[1]. A launch without one is platform-specific:
+		// Windows points to Setup, Linux self-installs, and macOS waits for Apple Events.
 		runDefaultLaunch()
 		return
 	}
@@ -442,6 +442,7 @@ func windowsCandidates() map[string][]string {
 		// The installer ships bambu-studio.exe; BambuStudio.exe is kept in case a build names it that.
 		// "/" so the test runs on any OS; Windows accepts it.
 		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
+		"qidistudio":  {"QIDIStudio/qidi-studio.exe"},
 		"orcaslicer":  {"OrcaSlicer/orca-slicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
 		// The folder carries the version: Creality\Creality Print 7.3 for 6.x and 7.x, Creality Print 5.1
@@ -474,6 +475,7 @@ func windowsCandidates() map[string][]string {
 func linuxCandidates() map[string][]string {
 	return map[string][]string{
 		"bambustudio": {"bambu-studio", "BambuStudio"},
+		"qidistudio":  {"qidi-studio"},
 		// Flatpak app ids are the commands Flatpak exports; each of these has the home folder, where the
 		// downloads are. The old OrcaSlicer id is its GitHub builds' up to 2.3.1.
 		"orcaslicer":  {"orca-slicer", "OrcaSlicer", "com.orcaslicer.OrcaSlicer", "io.github.softfever.OrcaSlicer"},
@@ -490,6 +492,7 @@ func linuxCandidates() map[string][]string {
 func macCandidates() map[string][]string {
 	return map[string][]string{
 		"bambustudio":        {"/Applications/BambuStudio.app"},
+		"qidistudio":         {"/Applications/QIDIStudio.app"},
 		"orcaslicer":         {"/Applications/OrcaSlicer.app"},
 		"prusaslicer":        {"/Applications/PrusaSlicer.app", "/Applications/Original Prusa Drivers/PrusaSlicer.app"},
 		"cura":               {"/Applications/UltiMaker Cura.app", "/Applications/Ultimaker Cura.app"},
