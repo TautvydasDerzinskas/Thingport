@@ -41,7 +41,8 @@ import { useToast } from "../../components/ToastProvider";
 import { formatFileSize } from "../../utils/fileSize";
 
 type Props = {
-  usage: StorageUsage;
+  /** null where storage couldn't be measured: then there's nothing to free from here, only a run's progress to show. */
+  usage: StorageUsage | null;
   /** The clean-up running or last run, as the page follows it. */
   cleanup: StorageCleanup | null;
   /** The saved "Photos kept per model", which the photos clean-up starts from. */
@@ -94,10 +95,11 @@ export default function FreeUpSpaceDialog({ usage, cleanup, keepSetting, onStart
   const [keep, setKeep] = React.useState<PhotoKeep>(keepSetting ?? 3);
   const [starting, setStarting] = React.useState(false);
 
-  const frees = (key: CleanupTaskKey): number => (key === "photos" ? usage.freeable.photos[keep] : usage.freeable[key]);
+  const frees = (key: CleanupTaskKey): number =>
+    !usage ? 0 : key === "photos" ? usage.freeable.photos[keep] : usage.freeable[key];
   // Whether there's anything to free at all: for photos, keeping only one, so the switch stays usable to pick fewer.
   const available = (key: CleanupTaskKey): boolean =>
-    (key === "photos" ? usage.freeable.photos[PHOTO_KEEP_OPTIONS[0]] : usage.freeable[key]) > 0;
+    !!usage && (key === "photos" ? usage.freeable.photos[PHOTO_KEEP_OPTIONS[0]] : usage.freeable[key]) > 0;
   const [selected, setSelected] = React.useState<Record<CleanupTaskKey, boolean>>(
     () => Object.fromEntries(CLEANUP_TASKS.map((key) => [key, DEFAULT_ON[key]])) as Record<CleanupTaskKey, boolean>,
   );

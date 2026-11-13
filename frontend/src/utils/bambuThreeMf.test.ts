@@ -166,8 +166,8 @@ describe("resolveInternalComponents", () => {
       ["2", { meshes: [] as ReturnType<typeof mesh>[] }],
     ]);
     resolveInternalComponents(objects, new Map([["2", [{ refId: "1", transform: moveX(5), extruder: 0 }]]]));
-    expect(objects.get("2")!.meshes.map((placed) => placed.vertices)).toEqual([[5, 0, 0, 15, 0, 0, 5, 10, 0]]);
-    expect(objects.get("1")!.meshes[0].vertices).toEqual([0, 0, 0, 10, 0, 0, 0, 10, 0]);
+    expect(objects.get("2")?.meshes.map((placed) => placed.vertices)).toEqual([[5, 0, 0, 15, 0, 0, 5, 10, 0]]);
+    expect(objects.get("1")?.meshes[0].vertices).toEqual([0, 0, 0, 10, 0, 0, 0, 10, 0]);
   });
 
   it("keeps a painted mesh's colours, and gives the rest the component's filament", () => {
@@ -176,7 +176,7 @@ describe("resolveInternalComponents", () => {
       ["2", { meshes: [] as ReturnType<typeof mesh>[] }],
     ]);
     resolveInternalComponents(objects, new Map([["2", [{ refId: "1", transform: null, extruder: 3 }]]]));
-    expect(objects.get("2")!.meshes.map((placed) => placed.extruder)).toEqual([2, 3]);
+    expect(objects.get("2")?.meshes.map((placed) => placed.extruder)).toEqual([2, 3]);
   });
 
   it("follows a wrapper of a wrapper once, and stops a file that references itself", () => {
@@ -194,9 +194,9 @@ describe("resolveInternalComponents", () => {
         ["4", [{ refId: "4", transform: null, extruder: 1 }]],
       ]),
     );
-    expect(objects.get("3")!.meshes.map((placed) => placed.vertices[0])).toEqual([2]);
+    expect(objects.get("3")?.meshes.map((placed) => placed.vertices[0])).toEqual([2]);
     // Its own mesh, then a copy per level of the loop until the depth limit.
-    expect(objects.get("4")!.meshes).toHaveLength(9);
+    expect(objects.get("4")?.meshes).toHaveLength(9);
   });
 
   it("refuses a chain that copies its meshes past what the browser can hold", () => {
@@ -211,5 +211,12 @@ describe("resolveInternalComponents", () => {
     ]);
     const refs = Array.from({ length: 10 }, () => ({ refId: "1", transform: null, extruder: 0 }));
     expect(() => resolveInternalComponents(objects, new Map([["2", refs]]))).toThrow(/too many times over/);
+  });
+
+  it("refuses objects of nothing but components naming each other, which spend no triangles however often", () => {
+    // Five components each, to the depth limit: hundreds of thousands of steps, and not one mesh.
+    const objects = new Map([["1", { meshes: [] as ReturnType<typeof mesh>[] }]]);
+    const refs = Array.from({ length: 5 }, () => ({ refId: "1", transform: null, extruder: 0 }));
+    expect(() => resolveInternalComponents(objects, new Map([["1", refs]]))).toThrow(/too many times over/);
   });
 });

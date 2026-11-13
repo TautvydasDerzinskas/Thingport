@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { alpha } from "@mui/material/styles";
+import { alpha, getContrastRatio } from "@mui/material/styles";
 
 export type BarSegment = {
   key: string;
@@ -32,15 +32,9 @@ export function segmentFill(segment: Pick<BarSegment, "color" | "hatched">): str
     : segment.color;
 }
 
-/** White or near-black, whichever reads on `color`. */
-function inkOn(color: string): string {
-  const hex = color.replace("#", "");
-  if (hex.length !== 6) return "#ffffff";
-  const [r, g, b] = [0, 2, 4].map((at) => {
-    const channel = parseInt(hex.slice(at, at + 2), 16) / 255;
-    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#1f1f1f" : "#ffffff";
+/** White or black, whichever contrasts more with `color`: one of them reaches 4.5:1 on any colour, as text needs. */
+export function inkOn(color: string, common: { white: string; black: string }): string {
+  return getContrastRatio(common.black, color) > getContrastRatio(common.white, color) ? common.black : common.white;
 }
 
 /**
@@ -106,7 +100,7 @@ export default function SegmentedBar({ segments, label, height = 24 }: Props) {
                   variant="caption"
                   aria-hidden
                   sx={{
-                    color: inkOn(segment.color),
+                    color: (theme) => inkOn(segment.color, theme.palette.common),
                     fontWeight: 600,
                     lineHeight: 1,
                     whiteSpace: "nowrap",

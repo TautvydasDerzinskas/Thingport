@@ -296,13 +296,14 @@ export function plateThumbUrl(plateId: string, home: AssetHome): string | null {
 }
 
 function previewGlbUrl(plate: Plate, home: AssetHome): string | null {
+  const url = `/plate/${plate.id}/preview.glb`;
   if (!modelPreviewGlbExists(plate.id, home)) {
     // Hand out the URL even with no cache yet: requesting it is what triggers generation.
-    return plate.filename.toLowerCase().endsWith(".3mf") ? `/plate/${plate.id}/preview.glb` : null;
+    return plate.filename.toLowerCase().endsWith(".3mf") ? url : null;
   }
-  // Packing it smaller changes it in place, so the version follows the file.
-  const mtime = fs.statSync(modelPreviewGlbPath(plate.id, home)).mtimeMs;
-  return `/plate/${plate.id}/preview.glb?v=${mtime}`;
+  // Packing it smaller changes it in place, so the version follows the file; one gone since (moved with its model,
+  // say) is handed out unversioned, as before it was drawn.
+  return versionedUrl(modelPreviewGlbPath(plate.id, home), url) ?? url;
 }
 
 /** The plate's grey render for the browser to tint; unversioned until it exists, as asking for it queues it. */

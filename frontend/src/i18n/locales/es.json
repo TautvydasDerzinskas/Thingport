@@ -1513,7 +1513,8 @@
         "label": "Fotos por modelo",
         "help": "Cuántas fotos de la página del modelo se guardan al importarlo o volver a sincronizarlo, empezando por la portada. «Todas» guarda cada una. Los modelos ya guardados conservan las suyas; Liberar espacio puede recortarlas. Las fotos que subes tú no tienen límite.",
         "all": "Todas",
-        "saveFailed": "No se pudo guardar cuántas fotos conservar"
+        "saveFailed": "No se pudo guardar cuántas fotos conservar",
+        "loadFailed": "No se pudo cargar cuántas fotos conservar."
       },
       "freeSpace": {
         "open": "Liberar espacio",

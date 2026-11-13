@@ -1,6 +1,8 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
 import { Accessor, Document, NodeIO } from "@gltf-transform/core";
@@ -8,9 +10,14 @@ import { createApp } from "../src/app";
 import { ADAPTED_3MFS, MODEL_PREVIEWS, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
+import { assetTarget, plateGlbFile } from "../src/services/modelAssets";
+import { generateModelPreviewGlb } from "../src/services/modelPreviewCache";
+import { reorderPreviewImages } from "../src/services/previewImageService";
 import { currentStorageCleanup, startStorageCleanup } from "../src/services/storageCleanup";
 import { takeInventory } from "../src/services/storageInventory";
 import { getPhotosPerModel, setPhotosPerModel } from "../src/services/settingsService";
+import { withStorageLock } from "../src/utils/storageLock";
+import { writeZip } from "../src/utils/zipWriter";
 
 const app = createApp();
 const stamp = Date.now();
@@ -60,6 +67,54 @@ function write(file: string, contents: string | Uint8Array): string {
 async function waitForCleanup(): Promise<void> {
   for (let i = 0; i < 300 && currentStorageCleanup()?.running; i++) await new Promise((r) => setTimeout(r, 100));
   expect(currentStorageCleanup()?.running).toBe(false);
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The run's notification, once it's written: the run says it's over just before. One from before `since` isn't it. */
+async function freedNotice(since: Date) {
+  for (let i = 0; i < 50; i++) {
+    const told = await prisma.notification.findFirst({
+      where: { userId, createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+    });
+    if ((told?.message as { key?: string } | null)?.key === "storageFreed") return told;
+    await sleep(100);
+  }
+  return null;
+}
+
+/** A model with `count` photos of its own, in their order, and where they're kept. */
+async function withPhotos(count: number) {
+  const { printId, plateId, home } = await uploadStl();
+  for (let i = 0; i < count; i++) {
+    const added = await request(app)
+      .post(`/api/print/${printId}/preview-images`)
+      .set(auth())
+      .attach("files", await png(200 - i * 40), "photo.png");
+    expect(added.status).toBe(200);
+  }
+  const photos = (await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } })).filter(
+    (image) => !image.generated,
+  );
+  expect(photos).toHaveLength(count);
+  const fileOf = (id: string) => path.join(STORAGE, home, `${id}.jpg`);
+  return { printId, plateId, home, photos, fileOf };
+}
+
+/** fs.rm refuses `stuck`, as a file held open or on a read-only disk would; the rest go as usual. */
+function refuseToRemove(stuck: string) {
+  const rm = fsPromises.rm;
+  return vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
+    if (String(target) === stuck) throw Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" });
+    return rm(target, options);
+  });
+}
+
+async function runCleanup(keys: Parameters<typeof startStorageCleanup>[1], keep: 1 | 2 | 3 | null) {
+  expect(startStorageCleanup(null, keys, keep)).not.toBeNull();
+  await waitForCleanup();
+  return currentStorageCleanup()!;
 }
 
 beforeAll(async () => {
@@ -167,6 +222,7 @@ describe("Free up space", () => {
     expect(usage.body.breakdown.old).toBeGreaterThan(0);
     expect(usage.body.freeable.photos["1"]).toBeGreaterThanOrEqual(beyondFirst);
 
+    const since = new Date(Date.now() - 1000);
     const started = await request(app)
       .post("/api/admin/storage/cleanup")
       .set(auth())
@@ -193,8 +249,7 @@ describe("Free up space", () => {
     for (const image of own.slice(1)) expect(fs.existsSync(folder(`${image.id}.jpg`))).toBe(false);
     // Imports keep as many from now on.
     expect(await getPhotosPerModel()).toBe(1);
-    const told = await prisma.notification.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } });
-    expect((told?.message as { key?: string } | null)?.key).toBe("storageFreed");
+    expect(await freedNotice(since)).not.toBeNull();
 
     // A plate's previews and copies are its own, and go with the model.
     const listing = await request(app)
@@ -223,5 +278,105 @@ describe("Free up space", () => {
     expect(startStorageCleanup(null, ["old"], null)).not.toBeNull();
     expect(startStorageCleanup(null, ["slicer"], null)).toBeNull();
     await waitForCleanup();
+  });
+
+  it("counts an older version it couldn't remove as failed, and leaves it", async () => {
+    const { plateId, home } = await uploadStl();
+    const older = write(path.join(STORAGE, home, "3D previews", `${plateId}.v4.glb`), "older");
+    const spy = refuseToRemove(older);
+    try {
+      const run = await runCleanup(["old"], null);
+      expect(run.tasks[0]).toMatchObject({ key: "old", status: "done", failed: 1 });
+    } finally {
+      spy.mockRestore();
+    }
+    expect(fs.existsSync(older)).toBe(true);
+    fs.rmSync(older);
+  });
+
+  it("keeps a photo whose file it couldn't remove, row and all, for another run", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    const removable = fs.statSync(fileOf(photos[1].id)).size;
+    const spy = refuseToRemove(fileOf(photos[2].id));
+    let run: Awaited<ReturnType<typeof runCleanup>>;
+    try {
+      run = await runCleanup(["photos"], 1);
+    } finally {
+      spy.mockRestore();
+    }
+    const task = run.tasks.find((each) => each.key === "photos")!;
+    expect(task).toMatchObject({ status: "done", failed: 1 });
+    // Freed is what went, the stuck photo not counted; other models' photos may have gone too.
+    expect(task.freed).toBeGreaterThanOrEqual(removable);
+    expect(fs.existsSync(fileOf(photos[1].id))).toBe(false);
+    expect(fs.existsSync(fileOf(photos[2].id))).toBe(true);
+    const left = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    expect(left.map((image) => image.id)).toEqual([photos[0].id, photos[2].id]);
+  });
+
+  it("looks at each model's photos again before removing any, so one moved to the front meanwhile stays", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    const findMany = prisma.previewImage.findMany.bind(prisma.previewImage);
+    let moved = false;
+    const spy = vi.spyOn(prisma.previewImage, "findMany").mockImplementation((async (args: never) => {
+      const rows = await findMany(args);
+      // Right after the clean-up has read every model's photos: the last one is made the cover.
+      if (!moved && currentStorageCleanup()?.tasks.find((task) => task.key === "photos")?.status === "running") {
+        moved = true;
+        await reorderPreviewImages(printId, [photos[2].id, photos[0].id, photos[1].id]);
+      }
+      return rows;
+    }) as never);
+    try {
+      await runCleanup(["photos"], 1);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(moved).toBe(true);
+    const left = await prisma.previewImage.findMany({ where: { printId } });
+    expect(left.map((image) => image.id)).toEqual([photos[2].id]);
+    expect(fs.existsSync(fileOf(photos[2].id))).toBe(true);
+    for (const photo of photos.slice(0, 2)) expect(fs.existsSync(fileOf(photo.id))).toBe(false);
+  });
+});
+
+describe("A new 3D preview", () => {
+  /** A 3MF of one triangle, drawn in a moment. */
+  async function oneTriangle(): Promise<string> {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-cleanup-3mf-"));
+    const model = write(
+      path.join(dir, "3dmodel.model"),
+      `<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter">
+ <resources><object id="1" type="model"><mesh><vertices><vertex x="0" y="0" z="0" /><vertex x="10" y="0" z="0" /><vertex x="0" y="10" z="0" /></vertices><triangles><triangle v1="0" v2="1" v3="2" /></triangles></mesh></object></resources>
+ <build><item objectid="1" /></build>
+</model>`,
+    );
+    const file = path.join(dir, "tiny.3mf");
+    await writeZip(file, [{ arcname: "3D/3dmodel.model", filePath: model }]);
+    return file;
+  }
+
+  it("goes into the model's folder as it is once drawn, though the model moved while it was drawn", async () => {
+    const { printId, plateId, home } = await uploadStl();
+    const fixture = await oneTriangle();
+    const before = assetTarget(home, plateGlbFile(plateId));
+    const packed = () =>
+      fs.readdirSync(MODEL_PREVIEWS).some((name) => name.startsWith(`${plateId}.`) && name.endsWith(".packed.tmp"));
+    // Held as a move of the model's files holds it.
+    let release!: () => void;
+    const held = withStorageLock(() => new Promise<void>((resolve) => (release = resolve)));
+    const drawing = generateModelPreviewGlb(plateId, fixture);
+    // Drawn and packed, and waiting to be put in place (or put in the folder already, were it not waiting).
+    for (let i = 0; i < 150 && !fs.existsSync(before) && !packed(); i++) await sleep(100);
+    await sleep(300);
+    const moved = `${home}-moved`;
+    await prisma.print.update({ where: { id: printId }, data: { assetsPath: moved } });
+    release();
+    await held;
+    await drawing;
+    expect(fs.existsSync(assetTarget(moved, plateGlbFile(plateId)))).toBe(true);
+    expect(fs.existsSync(before)).toBe(false);
+    await request(app).delete(`/api/print/${printId}`).set(auth());
   });
 });

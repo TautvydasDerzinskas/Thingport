@@ -155,20 +155,36 @@ export async function removePlateAssets(home: AssetHome, kind: AssetKind, plateI
   for (const dir of dirs) {
     const names = await fs.readdir(dir).catch(() => [] as string[]);
     for (const name of names.filter((entry) => entry.startsWith(`${plateId}.`))) {
-      freed += await removeFile(path.join(dir, name));
+      freed += (await removeFile(path.join(dir, name))) ?? 0;
     }
   }
   return freed;
 }
 
-/** Its size, once it's gone; 0 when it wasn't there or stays. */
-export async function removeFile(file: string): Promise<number> {
+/** A picture removed from its model's folder and the old shared one: the bytes freed, or null where it couldn't be. */
+export async function removeAssetFiles(home: AssetHome, file: AssetFile): Promise<number | null> {
+  let freed = 0;
+  for (const where of [...(home ? [assetTarget(home, file)] : []), legacyAssetPath(file)]) {
+    const gone = await removeFile(where);
+    if (gone === null) return null;
+    freed += gone;
+  }
+  return freed;
+}
+
+/** Its size, once it's gone; 0 when it wasn't there, null when it couldn't be removed. */
+export async function removeFile(file: string): Promise<number | null> {
+  let size: number;
   try {
-    const { size } = await fs.stat(file);
+    ({ size } = await fs.stat(file));
+  } catch (err) {
+    return (err as NodeJS.ErrnoException).code === "ENOENT" ? 0 : null;
+  }
+  try {
     await fs.rm(file, { force: true });
     return size;
   } catch {
-    return 0;
+    return null;
   }
 }
 

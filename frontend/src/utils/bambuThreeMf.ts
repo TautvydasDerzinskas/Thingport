@@ -109,6 +109,10 @@ export type InternalComponentRef = { refId: string; transform: THREE.Matrix4 | n
 
 // Real wrapper chains are one level deep; this is against files that reference themselves in a loop.
 const MAX_COMPONENT_DEPTH = 8;
+// Components followed, with a mesh or not: ones naming meshless objects spend no triangles, so without this a few of
+// them naming one another in a loop multiply into billions of steps within the depth.
+const MAX_COMPONENT_VISITS = 100_000;
+const TOO_MANY_PLACED = "This 3MF places its parts too many times over to show";
 // As the server's preview refuses (modelPreviewRender.ts): a chain that copies a mesh past this many triangles isn't
 // drawn here either, rather than taking the tab's memory.
 const MAX_EXPANDED_TRIANGLES = 8_000_000;
@@ -128,23 +132,25 @@ function transformVertices(vertices: number[], matrix: THREE.Matrix4): number[] 
  * transform. Bambu Studio writes a project's object as a wrapper around one like that, and the build places the
  * wrapper, so without this it draws nothing. Resolved once every object is read, as the file's order isn't
  * guaranteed, and all of them before any is added to, so a nested one isn't counted twice. Mirrors the server's
- * preview (modelPreviewRender.ts). Throws past MAX_EXPANDED_TRIANGLES.
+ * preview (modelPreviewRender.ts). Throws past MAX_EXPANDED_TRIANGLES, or MAX_COMPONENT_VISITS components followed.
  */
 export function resolveInternalComponents(
   objects: Map<string, { meshes: MeshData[] }>,
   refsByObjectId: Map<string, InternalComponentRef[]>,
 ): void {
   let budget = MAX_EXPANDED_TRIANGLES;
+  let visits = MAX_COMPONENT_VISITS;
   const resolve = (objectId: string, depth: number): MeshData[] => {
     const refs = refsByObjectId.get(objectId);
     if (!refs || depth >= MAX_COMPONENT_DEPTH) return [];
     const resolved: MeshData[] = [];
     for (const ref of refs) {
+      if (--visits < 0) throw new Error(TOO_MANY_PLACED);
       const target = objects.get(ref.refId);
       if (!target) continue;
       for (const mesh of [...target.meshes, ...resolve(ref.refId, depth + 1)]) {
         budget -= mesh.triangles.length / 3;
-        if (budget < 0) throw new Error("This 3MF places its parts too many times over to show");
+        if (budget < 0) throw new Error(TOO_MANY_PLACED);
         resolved.push({
           vertices: ref.transform ? transformVertices(mesh.vertices, ref.transform) : mesh.vertices,
           triangles: mesh.triangles,

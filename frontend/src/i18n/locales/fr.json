@@ -1513,7 +1513,8 @@
         "label": "Photos par modèle",
         "help": "Combien de photos de la page du modèle sont gardées à l’import ou à une nouvelle synchronisation, la couverture en premier. « Toutes » les garde toutes. Les modèles déjà enregistrés gardent les leurs ; Libérer de l’espace peut les réduire. Les photos que vous envoyez ne sont pas limitées.",
         "all": "Toutes",
-        "saveFailed": "Impossible d’enregistrer le nombre de photos à garder"
+        "saveFailed": "Impossible d’enregistrer le nombre de photos à garder",
+        "loadFailed": "Impossible de charger le nombre de photos à garder."
       },
       "freeSpace": {
         "open": "Libérer de l’espace",

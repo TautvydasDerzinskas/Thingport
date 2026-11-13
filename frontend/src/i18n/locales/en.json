@@ -1462,7 +1462,8 @@
         "label": "Photos kept per model",
         "help": "How many photos an import or a re-sync keeps from a model's page, the cover first. All keeps every one. Models already stored keep theirs; Free up space can trim them. Photos you upload aren't limited.",
         "all": "All",
-        "saveFailed": "Couldn't save how many photos to keep"
+        "saveFailed": "Couldn't save how many photos to keep",
+        "loadFailed": "Couldn't load how many photos to keep."
       },
       "freeSpace": {
         "open": "Free up space",

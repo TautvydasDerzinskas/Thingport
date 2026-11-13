@@ -248,6 +248,12 @@ async function removeOlderPreviews(plateId: string, home: string | null): Promis
   }
 }
 
+/** Whether a packed preview came out smaller than the one it was packed from: a tiny one can grow. */
+async function isSmaller(packed: string, drawn: string): Promise<boolean> {
+  const [after, before] = await Promise.all([fs.stat(packed), fs.stat(drawn)]);
+  return after.size < before.size;
+}
+
 /** Packs a GLB smaller into `dest` in a worker of its own, after the render's has gone; false when it couldn't. */
 async function packInWorker(src: string, dest: string): Promise<boolean> {
   const outcome = await renderInWorker({ kind: "compress", srcPath: src, destPath: dest });
@@ -275,12 +281,16 @@ async function runGeneration(plateId: string, srcPath: string): Promise<void> {
     switch (outcome.status) {
       case "ok": {
         // Packed smaller before anyone downloads it, which takes a fraction of the drawing; one that can't be
-        // packed (too big for the memory limit, say) is served as drawn.
-        const ready = (await packInWorker(tmp, packedTmp)) ? packedTmp : tmp;
-        const home = await newPreviewHome(plateId);
-        const dest = home ? assetTarget(home, plateGlbFile(plateId)) : legacyAssetPath(plateGlbFile(plateId));
-        await fs.mkdir(path.dirname(dest), { recursive: true });
-        await fs.rename(ready, dest);
+        // packed (too big for the memory limit, say), or that packing doesn't make smaller, is served as drawn.
+        const ready = (await packInWorker(tmp, packedTmp)) && (await isSmaller(packedTmp, tmp)) ? packedTmp : tmp;
+        // Under the lock a move of files takes, so the model can't move between choosing its folder and the rename.
+        const home = await withStorageLock(async () => {
+          const chosen = await newPreviewHome(plateId);
+          const dest = chosen ? assetTarget(chosen, plateGlbFile(plateId)) : legacyAssetPath(plateGlbFile(plateId));
+          await fs.mkdir(path.dirname(dest), { recursive: true });
+          await fs.rename(ready, dest);
+          return chosen;
+        });
         await fs.rm(errorPath, { force: true });
         await removeOlderPreviews(plateId, home);
         break;
@@ -316,8 +326,9 @@ export type CompressOutcome =
 
 /**
  * Packs a 3D preview drawn before previews were packed (glbCompression.ts) in the render worker, after the renders
- * already waiting, and puts it back where it was. One already packed, gone, or replaced while it was being packed is left as it is, as is one the
- * worker couldn't pack (too big for its memory limit, say): it still shows, only larger. Never throws.
+ * already waiting, and puts it back where it was. One already packed, gone, or replaced while it was being packed is left
+ * as it is, as is one packing wouldn't make smaller, or that the worker couldn't pack (too big for its memory limit,
+ * say): that one still shows, only larger. Never throws.
  */
 export function compressPreviewGlb(file: string): Promise<CompressOutcome> {
   return new Promise((resolve) => {
@@ -328,6 +339,7 @@ export function compressPreviewGlb(file: string): Promise<CompressOutcome> {
         if (!before || (await readGlbSummary(file))?.compressed !== false) return resolve({ status: "skipped" });
         if (!(await packInWorker(file, tmp))) return resolve({ status: "failed" });
         const after = (await fs.stat(tmp)).size;
+        if (after >= before.size) return resolve({ status: "skipped" });
         // Under the lock a move of files takes, so the model can't move between the check and the rename.
         const replaced = await withStorageLock(async () => {
           // Drawn again, moved or deleted while it was packed: what's there now isn't what was packed.

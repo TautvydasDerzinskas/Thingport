@@ -32,17 +32,26 @@ export default function StoragePage({ onUnauthorized }: Props) {
   const [freeing, setFreeing] = useState(false);
   // undefined while loading; null when it couldn't be measured.
   const [usage, setUsage] = useState<StorageUsage | null | undefined>(undefined);
+  // null is "All", so a setting that couldn't be read is undefined, with keepFailed.
   const [keep, setKeep] = useState<PhotoKeep | null | undefined>(undefined);
+  const [keepFailed, setKeepFailed] = useState(false);
 
   const load = useCallback(() => {
     adminApi.getStorageUsage().then(setUsage, (err: unknown) => {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       setUsage(null);
     });
-    settingsApi.getPhotosPerModel().then(setKeep, (err: unknown) => {
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      setKeep(null);
-    });
+    settingsApi.getPhotosPerModel().then(
+      (saved) => {
+        setKeep(saved);
+        setKeepFailed(false);
+      },
+      (err: unknown) => {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        setKeep(undefined);
+        setKeepFailed(true);
+      },
+    );
   }, [onUnauthorized]);
   useEffect(load, [load]);
   // A clean-up that ends changes both: what's on disk, and the photos setting when it trimmed them.
@@ -70,7 +79,7 @@ export default function StoragePage({ onUnauthorized }: Props) {
                 {t("adminSettings.storageBrowser.open")}
               </Button>
             </Stack>
-            <PhotosPerModelRow keep={keep} onChange={setKeep} onUnauthorized={onUnauthorized} />
+            <PhotosPerModelRow keep={keep} failed={keepFailed} onChange={setKeep} onUnauthorized={onUnauthorized} />
           </Stack>
         </Stack>
       </Paper>
@@ -79,9 +88,10 @@ export default function StoragePage({ onUnauthorized }: Props) {
       <LicenseFilesSection onUnauthorized={onUnauthorized} />
       <ConsumeSection onUnauthorized={onUnauthorized} />
       {browsing && <StorageBrowserDialog onClose={() => setBrowsing(false)} onUnauthorized={onUnauthorized} />}
-      {freeing && usage && (
+      {/* A run to follow opens it without a measurement too, as its progress needs none. */}
+      {freeing && (usage || cleanup) && (
         <FreeUpSpaceDialog
-          usage={usage}
+          usage={usage ?? null}
           cleanup={cleanup}
           keepSetting={keep ?? null}
           onStart={start}

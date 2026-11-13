@@ -1525,7 +1525,8 @@
         "label": "Nuotraukų vienam modeliui",
         "help": "Kiek nuotraukų iš modelio puslapio paliekama importuojant ar sinchronizuojant iš naujo, pradedant viršeliu. „Visos“ palieka kiekvieną. Jau išsaugoti modeliai savo nuotraukas pasilieka, sumažinti jų skaičių galima per „Atlaisvinti vietos“. Jūsų įkeltos nuotraukos neribojamos.",
         "all": "Visos",
-        "saveFailed": "Nepavyko išsaugoti, kiek nuotraukų palikti"
+        "saveFailed": "Nepavyko išsaugoti, kiek nuotraukų palikti",
+        "loadFailed": "Nepavyko įkelti, kiek nuotraukų palikti."
       },
       "freeSpace": {
         "open": "Atlaisvinti vietos",

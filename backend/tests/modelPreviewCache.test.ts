@@ -1,12 +1,17 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import * as THREE from "three";
+import type { Plate } from "@prisma/client";
+import { toPlateOut } from "../src/dto";
 import { writeZip } from "../src/utils/zipWriter";
+import { Accessor, Document, NodeIO } from "@gltf-transform/core";
 import {
+  compressPreviewGlb,
   generateModelPreviewGlb,
+  isPreviewCompressed,
   modelPreviewGlbExists,
   modelPreviewGlbPath,
   modelPreviewState,
@@ -202,8 +207,6 @@ describe("modelPreviewCache", () => {
     await generateModelPreviewGlb(plateId, fixturePath);
     expect(modelPreviewGlbExists(plateId)).toBe(true);
     expect(fsSync.existsSync(older)).toBe(false);
-    // Packed smaller once drawn, before the call returns.
-    expect(extensionsUsed(modelPreviewGlbPath(plateId))).toContain("EXT_meshopt_compression");
 
     const loader = await gltfLoader();
     const buf = fsSync.readFileSync(modelPreviewGlbPath(plateId));
@@ -551,5 +554,81 @@ describe("modelPreviewState", () => {
     expect(modelPreviewState(plateId)).toBe("generating");
     await run;
     expect(modelPreviewState(plateId)).toBe("ready");
+  });
+});
+
+describe("modelPreviewCache -- packing", () => {
+  // Packing adds tables of its own, so a preview of a few triangles comes out bigger: one triangle, 0.5 KB to 1 KB.
+  const ids: string[] = [];
+  afterAll(async () => {
+    for (const plateId of ids) await fs.rm(modelPreviewGlbPath(plateId), { force: true });
+  });
+
+  it("packs a new preview smaller once drawn, before the call returns", async () => {
+    const vertices: string[] = [];
+    const triangles: string[] = [];
+    for (let i = 0; i < 500; i++) {
+      vertices.push(
+        `<vertex x="${i}" y="0" z="0" /><vertex x="${i + 1}" y="0" z="0" /><vertex x="${i}" y="1" z="${i % 7}" />`,
+      );
+      triangles.push(`<triangle v1="${3 * i}" v2="${3 * i + 1}" v3="${3 * i + 2}" />`);
+    }
+    const mesh = `<mesh><vertices>${vertices.join("")}</vertices><triangles>${triangles.join("")}</triangles></mesh>`;
+    const fixture = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "thingport-pack-")), "strip.3mf");
+    await buildModelOnly3mf(fixture, singleItemModelXml(`<object id="1" type="model">${mesh}</object>`, "1"));
+    const plateId = `test-strip-${Date.now()}`;
+    ids.push(plateId);
+    await generateModelPreviewGlb(plateId, fixture);
+    expect(extensionsUsed(modelPreviewGlbPath(plateId))).toContain("EXT_meshopt_compression");
+  });
+
+  it("keeps a new preview as drawn where packing would make it bigger", async () => {
+    const fixture = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "thingport-pack-")), "tiny.3mf");
+    await buildModelOnly3mf(
+      fixture,
+      singleItemModelXml(`<object id="1" type="model">${ONE_TRIANGLE_MESH}</object>`, "1"),
+    );
+    const plateId = `test-tiny-${Date.now()}`;
+    ids.push(plateId);
+    await generateModelPreviewGlb(plateId, fixture);
+    const file = modelPreviewGlbPath(plateId);
+    expect(await isPreviewCompressed(file, await fs.stat(file))).toBe(false);
+  });
+
+  it("leaves an older preview as it is where packing would make it bigger", async () => {
+    const plateId = `test-tiny-old-${Date.now()}`;
+    ids.push(plateId);
+    const doc = new Document();
+    const positions = new Float32Array([0, 0, 0, 10, 0, 0, 0, 10, 0]);
+    const accessor = doc.createAccessor().setType(Accessor.Type.VEC3).setArray(positions).setBuffer(doc.createBuffer());
+    const primitive = doc.createPrimitive().setAttribute("POSITION", accessor);
+    doc.createScene().addChild(doc.createNode("preview").setMesh(doc.createMesh().addPrimitive(primitive)));
+    const plain = await new NodeIO().writeBinary(doc);
+    const file = modelPreviewGlbPath(plateId);
+    await fs.writeFile(file, plain);
+
+    expect(await compressPreviewGlb(file)).toEqual({ status: "skipped" });
+    expect(new Uint8Array(await fs.readFile(file))).toEqual(plain);
+  });
+});
+
+describe("a plate's 3D preview link", () => {
+  it("is handed out unversioned where the preview goes between finding it and reading its time", async () => {
+    const plateId = `test-link-${Date.now()}`;
+    const file = modelPreviewGlbPath(plateId);
+    await fs.writeFile(file, "glb");
+    // Moved with its model, say, just after it was found.
+    const statSync = fsSync.statSync;
+    const spy = vi.spyOn(fsSync, "statSync").mockImplementation(((target: fsSync.PathLike, options?: never) => {
+      if (String(target) === file) throw Object.assign(new Error("ENOENT: no such file"), { code: "ENOENT" });
+      return statSync(target, options);
+    }) as typeof fsSync.statSync);
+    try {
+      const plate = { id: plateId, filename: "part.3mf", position: 0, mime: "model/3mf", size: 3 } as Plate;
+      expect(toPlateOut("print", plate, null).preview_glb_url).toBe(`/plate/${plateId}/preview.glb`);
+    } finally {
+      spy.mockRestore();
+      await fs.rm(file, { force: true });
+    }
   });
 });

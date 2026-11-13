@@ -12,8 +12,10 @@ import Segmented from "../../components/controls/Segmented";
 import { useToast } from "../../components/ToastProvider";
 
 type Props = {
-  /** undefined while it loads. */
+  /** undefined while it loads, or where it couldn't be read. */
   keep: PhotoKeep | null | undefined;
+  /** It couldn't be read: no setting is shown as saved, so none can be picked as if it changed one. */
+  failed?: boolean;
   onChange: (keep: PhotoKeep | null) => void;
   onUnauthorized?: () => void;
 };
@@ -21,7 +23,7 @@ type Props = {
 const ALL = "all";
 
 /** How many photos an import or a re-sync keeps from a model's page: all of them unless an admin picks fewer. */
-export default function PhotosPerModelRow({ keep, onChange, onUnauthorized }: Props) {
+export default function PhotosPerModelRow({ keep, failed = false, onChange, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const toast = useToast();
   const [saving, setSaving] = React.useState(false);
@@ -52,7 +54,11 @@ export default function PhotosPerModelRow({ keep, onChange, onUnauthorized }: Pr
           <HelpTip text={t("adminSettings.photosPerModel.help")} />
         </Typography>
       </Box>
-      {keep === undefined ? (
+      {failed ? (
+        <Typography variant="body2" color="text.secondary">
+          {t("adminSettings.photosPerModel.loadFailed")}
+        </Typography>
+      ) : keep === undefined ? (
         <Skeleton variant="rounded" width={220} height={36} />
       ) : (
         <Segmented

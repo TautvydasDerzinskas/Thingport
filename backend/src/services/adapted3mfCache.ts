@@ -4,6 +4,7 @@ import { Worker } from "node:worker_threads";
 import { ADAPT_3MF_TIMEOUT_SECONDS, ADAPTED_3MFS, MODEL_PREVIEW_MAX_MEMORY_MB } from "../config";
 import { ADAPTER_VERSION, planKey, type AdaptPlan, type PrinterRecipe } from "../adapter";
 import { prisma } from "../db";
+import { withStorageLock } from "../utils/storageLock";
 import { workerBootstrap } from "../utils/workerBootstrap";
 import type { Adapt3mfWorkerInput, Adapt3mfWorkerResult } from "./adapt3mfWorker";
 import { assetPath, assetTarget, legacyAssetPath, plateAssetHome, slicerCopyFile, type AssetHome } from "./modelAssets";
@@ -134,11 +135,15 @@ async function buildAdapted(
     // Made from a file that has changed since (or gone): not a copy of what's there now, nor a reason to give up on it.
     if (job.cancelled || before === null || (await sourceStamp(srcPath)) !== before) return null;
     if (result.status === "ok") {
-      const home = await newCopyHome(plateId);
-      const file = slicerCopyFile(`${copyName(plateId, plan)}.3mf`);
-      const dest = home ? assetTarget(home, file) : legacyAssetPath(file);
-      await fs.mkdir(path.dirname(dest), { recursive: true });
-      await fs.rename(tmp, dest);
+      // Under the lock a move of files takes, so the model can't move between choosing its folder and the rename.
+      const { home, dest } = await withStorageLock(async () => {
+        const chosen = await newCopyHome(plateId);
+        const file = slicerCopyFile(`${copyName(plateId, plan)}.3mf`);
+        const target = chosen ? assetTarget(chosen, file) : legacyAssetPath(file);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.rename(tmp, target);
+        return { home: chosen, dest: target };
+      });
       if (!(await keep(job, dest))) return null;
       await fs.rm(errorPath(plateId, plan), { force: true });
       await removeOlderCopies(plateId, plan, home);
