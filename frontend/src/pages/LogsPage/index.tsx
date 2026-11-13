@@ -82,6 +82,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   grab_connected: "info",
   grab_disconnected: "default",
   social_settings_changed: "warning",
+  achievement_settings_changed: "warning",
   chat_room_created: "info",
   chat_room_edited: "default",
   chat_room_deleted: "error",
@@ -182,6 +183,10 @@ export default function LogsPage({ onUnauthorized }: Props) {
         ]
           .filter(Boolean)
           .join(" · ");
+      case "achievement_settings_changed":
+        return typeof d.enabled === "boolean"
+          ? t(d.enabled ? "adminSettings.logs.achievementsOn" : "adminSettings.logs.achievementsOff")
+          : "";
       case "chat_room_created":
       case "chat_room_edited":
       case "chat_room_deleted":

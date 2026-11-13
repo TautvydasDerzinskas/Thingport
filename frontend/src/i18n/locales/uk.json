@@ -1085,7 +1085,7 @@
             },
             "activity": {
               "title": "Активність",
-              "description": "Теплова карта та стрічка вашої активності."
+              "description": "Ваша карта активності та стрічка, а також досягнення."
             },
             "collections": {
               "title": "Колекції",
@@ -1252,7 +1252,16 @@
         "importRunFrom_few": "{{site}}: імпортовано {{done}} з {{count}} моделей",
         "importRunFrom_many": "{{site}}: імпортовано {{done}} з {{count}} моделей",
         "importRunFrom_other": "{{site}}: імпортовано {{done}} з {{count}} моделі",
-        "bridgeUpdate": "Доступна версія Thingport Bridge {{version}}"
+        "bridgeUpdate": "Доступна версія Thingport Bridge {{version}}",
+        "achievementUnlocked": "Досягнення отримано: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "Отримано {{count}} досягнення",
+        "achievementsUnlocked_few": "Отримано {{count}} досягнення",
+        "achievementsUnlocked_many": "Отримано {{count}} досягнень",
+        "achievementsUnlocked_other": "Отримано {{count}} досягнення",
+        "achievementsCredited_one": "У вас уже {{count}} досягнення",
+        "achievementsCredited_few": "У вас уже {{count}} досягнення",
+        "achievementsCredited_many": "У вас уже {{count}} досягнень",
+        "achievementsCredited_other": "У вас уже {{count}} досягнення"
       }
     },
     "search": {
@@ -3463,6 +3472,18 @@
             "declineUserText": "{{who}} повідомлять. До {{host}} нічого не надсилатиметься.",
             "declinedUser": "Запит {{who}} відхилено"
           }
+        },
+        "achievements": {
+          "label": "Досягнення",
+          "summary": "Значки за те, що роблять користувачі, на їхній сторінці «Мої моделі». Працюють і з вимкненими соціальними функціями.",
+          "infoTitle": "Досягнення",
+          "infoBadges": "Значки за завантаження, імпорт, кожен сайт та інструмент, Studio, синхронізовані колекції й активність — рівні від бронзи до голограми.",
+          "infoProfile": "Показуються під описом кожного користувача на сторінці «Мої моделі» всім, хто може бачити його профіль, зокрема людям з підключених примірників.",
+          "infoSecrets": "Кілька з них — секрети, які знаходять у застосунку.",
+          "infoIndependent": "Власний перемикач: працюють і з вимкненими соціальними функціями.",
+          "infoOff": "Після ввімкнення кожен отримує те, що вже заробив. Після вимкнення вони приховуються й зберігаються.",
+          "saveFailed": "Не вдалося зберегти налаштування досягнень.",
+          "loadFailed": "Не вдалося завантажити налаштування досягнень."
         }
       },
       "providers": {
@@ -3871,7 +3892,8 @@
           "federation_blocked": "Екземпляр заблоковано",
           "federation_unblocked": "Екземпляр розблоковано",
           "federation_user_requested": "Запитано звернення до користувача іншого екземпляра",
-          "collection_sharing_changed": "Змінено спільний доступ до колекції"
+          "collection_sharing_changed": "Змінено спільний доступ до колекції",
+          "achievement_settings_changed": "Змінено досягнення"
         },
         "authorsLinked": "Пов’язано моделей з авторами: {{count}}",
         "descriptionsRefetched": "{{email}} — оновлено описів: {{updated}} з {{total}}",
@@ -3901,7 +3923,9 @@
         "federationOn": "Увімкнено",
         "federationOff": "Вимкнено",
         "chatsOn": "Чати ввімкнено",
-        "chatsOff": "Чати вимкнено"
+        "chatsOff": "Чати вимкнено",
+        "achievementsOn": "Досягнення ввімкнено",
+        "achievementsOff": "Досягнення вимкнено"
       },
       "rendering": {
         "heading": "Рендеринг",
@@ -4609,6 +4633,157 @@
         "none": "Немає принтерів за запитом «{{query}}».",
         "added": "додано",
         "done": "Готово"
+      }
+    },
+    "achievements": {
+      "title": "Досягнення",
+      "help": "Значки за те, що людина зробила в Thingport. Показуються лише отримані.",
+      "helpOwn": "Значки за те, що ви робите в Thingport. Показуються лише отримані, і їх бачать усі, хто може бачити ваш профіль.",
+      "all": "Усі ({{value}})",
+      "more_one": "Ще {{count}} досягнення",
+      "more_few": "Ще {{count}} досягнення",
+      "more_many": "Ще {{count}} досягнень",
+      "more_other": "Ще {{count}} досягнення",
+      "empty": "Поки немає. Завантажте, імпортуйте або створіть модель, щоб отримати перше.",
+      "unlocked": "Досягнення отримано",
+      "unlockedToast": "Досягнення отримано: {{name}} · {{tier}}",
+      "unlockedMany_one": "Отримано {{count}} досягнення",
+      "unlockedMany_few": "Отримано {{count}} досягнення",
+      "unlockedMany_many": "Отримано {{count}} досягнень",
+      "unlockedMany_other": "Отримано {{count}} досягнення",
+      "view": "Відкрити",
+      "great": "Чудово!",
+      "earnedOn": "Отримано {{date}}",
+      "next": "Наступний: {{value}}",
+      "top": "Досягнуто найвищого рівня",
+      "tiersEarned": "Отримані рівні",
+      "lapsed": "Минуло",
+      "lapsedHint": "Користуйтеся Thingport понад 20 з останніх 30 днів, щоб повернути його.",
+      "tiers": {
+        "bronze": "Бронза",
+        "silver": "Срібло",
+        "gold": "Золото",
+        "platinum": "Платина",
+        "diamond": "Діамант",
+        "holo": "Голограма",
+        "secret": "Секрет"
+      },
+      "groups": {
+        "milestones": "Віхи",
+        "sites": "Сайти",
+        "tools": "Інструменти",
+        "making": "Studio та синхронізація",
+        "secrets": "Секрети"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Завантажувач",
+          "rule_one": "Завантажте моделі {{count}} раз",
+          "rule_few": "Завантажте моделі {{count}} рази",
+          "rule_many": "Завантажте моделі {{count}} разів",
+          "rule_other": "Завантажте моделі {{count}} рази",
+          "stat_one": "{{count}} завантаження",
+          "stat_few": "{{count}} завантаження",
+          "stat_many": "{{count}} завантажень",
+          "stat_other": "{{count}} завантаження"
+        },
+        "imports": {
+          "name": "Імпортер",
+          "rule_one": "Імпортуйте {{count}} модель",
+          "rule_few": "Імпортуйте {{count}} моделі",
+          "rule_many": "Імпортуйте {{count}} моделей",
+          "rule_other": "Імпортуйте {{count}} моделі",
+          "stat_one": "Імпортовано {{count}} модель",
+          "stat_few": "Імпортовано {{count}} моделі",
+          "stat_many": "Імпортовано {{count}} моделей",
+          "stat_other": "Імпортовано {{count}} моделі"
+        },
+        "regular": {
+          "name": "Завсідник",
+          "rule": "Користуйтеся Thingport понад 20 з останніх 30 днів",
+          "stat": "Активність {{count}} з останніх 30 днів"
+        },
+        "site": {
+          "name": "Імпортер {{site}}",
+          "rule_one": "Імпортуйте {{count}} модель з {{site}}",
+          "rule_few": "Імпортуйте {{count}} моделі з {{site}}",
+          "rule_many": "Імпортуйте {{count}} моделей з {{site}}",
+          "rule_other": "Імпортуйте {{count}} моделі з {{site}}",
+          "stat": "{{count}} з {{site}}"
+        },
+        "tool": {
+          "rule_one": "Збережіть {{count}} модель з «{{tool}}»",
+          "rule_few": "Збережіть {{count}} моделі з «{{tool}}»",
+          "rule_many": "Збережіть {{count}} моделей з «{{tool}}»",
+          "rule_other": "Збережіть {{count}} моделі з «{{tool}}»",
+          "stat": "{{count}} збережено з «{{tool}}»"
+        },
+        "studio": {
+          "name": "Дизайнер",
+          "rule_one": "Збережіть {{count}} проєкт Studio до бібліотеки",
+          "rule_few": "Збережіть {{count}} проєкти Studio до бібліотеки",
+          "rule_many": "Збережіть {{count}} проєктів Studio до бібліотеки",
+          "rule_other": "Збережіть {{count}} проєкту Studio до бібліотеки",
+          "stat_one": "{{count}} проєкт збережено зі Studio",
+          "stat_few": "{{count}} проєкти збережено зі Studio",
+          "stat_many": "{{count}} проєктів збережено зі Studio",
+          "stat_other": "{{count}} проєкту збережено зі Studio"
+        },
+        "synced": {
+          "name": "Синхронно",
+          "rule_one": "Синхронізуйте {{count}} колекцію",
+          "rule_few": "Синхронізуйте {{count}} колекції",
+          "rule_many": "Синхронізуйте {{count}} колекцій",
+          "rule_other": "Синхронізуйте {{count}} колекції",
+          "stat_one": "{{count}} колекція синхронізується",
+          "stat_few": "{{count}} колекції синхронізуються",
+          "stat_many": "{{count}} колекцій синхронізується",
+          "stat_other": "{{count}} колекції синхронізується"
+        },
+        "syncSources": {
+          "name": "Багато джерел",
+          "rule": "Синхронізуйте колекції з {{count}} різних сайтів",
+          "stat": "Синхронізація з {{count}} сайтів"
+        },
+        "weatherGuest": {
+          "name": "Зустрів гостя",
+          "rule": "Секрет. Ви його знайшли.",
+          "stat": "Помічено в погодній сцені"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Майстер брелоків",
+          "tool": "Генератор брелоків"
+        },
+        "qr-code-generator": {
+          "badge": "Майстер QR",
+          "tool": "Генератор QR-кодів"
+        },
+        "gridfinity-drawer": {
+          "badge": "Будівник Gridfinity",
+          "tool": "Конструктор шухляд Gridfinity"
+        },
+        "enclosure-generator": {
+          "badge": "Майстер коробок",
+          "tool": "Генератор корпусів"
+        },
+        "multiboard-planner": {
+          "badge": "Планувальник Multiboard",
+          "tool": "Планувальник Multiboard"
+        },
+        "skadis-planner": {
+          "badge": "Планувальник Skadis",
+          "tool": "Планувальник Skadis"
+        },
+        "openscad-customizer": {
+          "badge": "Налаштовувач скриптів",
+          "tool": "Налаштування скриптів"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "Охайник 3MF",
+          "tool": "Нормалізатор 3MF для MakerWorld"
+        }
       }
     }
   },

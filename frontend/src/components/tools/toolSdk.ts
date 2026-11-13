@@ -13,6 +13,7 @@ import type {
 } from "../../sdk/types";
 import { buildUserLibrary, toCollection as toSdkCollection } from "../../sdk/userLibrary";
 import { apiAsUser, downloadFile } from "../../sdk/widgetSdk";
+import { buildAchievements } from "../../sdk/achievements";
 
 // The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
 // the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
@@ -86,7 +87,9 @@ export function buildToolSdk({
     return tool.id;
   };
 
-  const { models, collections } = buildUserLibrary({ openModel: ui.openModel });
+  // A saved tool's models say they're its: what made them (Print.createdWith), which its achievement counts.
+  const slug = tool.id ? tool.slug : null;
+  const { models, collections } = buildUserLibrary({ openModel: ui.openModel, createdWithTool: slug ?? undefined });
 
   const storage: SdkStorage = {
     get: async (key: string) => (tool.id ? toolsApi.storageGet(tool.id, key) : draftData.get(key)),
@@ -136,6 +139,7 @@ export function buildToolSdk({
     api: apiAsUser,
     download: downloadFile,
     ui,
+    achievements: buildAchievements(slug),
     close: ui.close,
   };
 }

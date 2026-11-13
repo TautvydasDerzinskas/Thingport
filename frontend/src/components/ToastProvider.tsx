@@ -15,6 +15,8 @@ export type ToastOptions = {
   action?: { label: string; onClick: () => void };
   /** How long it stays; an action needs longer than the usual 4s to reach. */
   autoHideMs?: number;
+  /** In place of the severity's icon, e.g. the badge an achievement toast is about. */
+  icon?: React.ReactNode;
 };
 
 type QueuedToast = ToastOptions & { key: number };
@@ -110,6 +112,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               )
             }
             severity={current?.severity ?? "success"}
+            icon={current?.icon}
             variant="filled"
             sx={{ width: "100%" }}
           >

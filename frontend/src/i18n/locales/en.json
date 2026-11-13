@@ -393,7 +393,7 @@
             },
             "activity": {
               "title": "Activity",
-              "description": "Your activity heatmap and feed."
+              "description": "Your activity heatmap and feed, and your achievements."
             },
             "collections": {
               "title": "Collections",
@@ -554,7 +554,12 @@
         "importRun_other": "Imported {{done}} of {{count}} models",
         "importRunFrom_one": "Imported {{done}} of {{count}} model from {{site}}",
         "importRunFrom_other": "Imported {{done}} of {{count}} models from {{site}}",
-        "bridgeUpdate": "Thingport Bridge {{version}} is available"
+        "bridgeUpdate": "Thingport Bridge {{version}} is available",
+        "achievementUnlocked": "Achievement unlocked: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "{{count}} achievement unlocked",
+        "achievementsUnlocked_other": "{{count}} achievements unlocked",
+        "achievementsCredited_one": "You've earned {{count}} achievement so far",
+        "achievementsCredited_other": "You've earned {{count}} achievements so far"
       }
     },
     "search": {
@@ -2159,7 +2164,8 @@
           "federation_blocked": "Blocked an instance",
           "federation_unblocked": "Unblocked an instance",
           "federation_user_requested": "Asked to reach someone elsewhere",
-          "collection_sharing_changed": "Collection sharing changed"
+          "collection_sharing_changed": "Collection sharing changed",
+          "achievement_settings_changed": "Achievements changed"
         },
         "authorsLinked": "{{count}} model(s) linked",
         "descriptionsRefetched": "{{email}} — {{updated}} of {{total}} description(s) changed",
@@ -2185,7 +2191,9 @@
         "licenseFilesOn": "Turned on",
         "licenseFilesOff": "Turned off",
         "chatsOn": "Chats turned on",
-        "chatsOff": "Chats turned off"
+        "chatsOff": "Chats turned off",
+        "achievementsOn": "Achievements on",
+        "achievementsOff": "Achievements off"
       },
       "rendering": {
         "heading": "Rendering",
@@ -2802,6 +2810,18 @@
             "declineUserText": "{{who}} is told. Nothing is sent to {{host}}.",
             "declinedUser": "Declined {{who}}'s request"
           }
+        },
+        "achievements": {
+          "label": "Achievements",
+          "summary": "Badges for what users do, shown on their My models. Works with social features off.",
+          "infoTitle": "Achievements",
+          "infoBadges": "Badges for downloads, imports, each site and tool, Studio, synced collections and being active, in tiers from bronze to holographic.",
+          "infoProfile": "Shown under each user's bio on My models, to everyone who can see their profile, people on connected instances included.",
+          "infoSecrets": "A few are secrets, found in the app.",
+          "infoIndependent": "Their own switch: they work with social features off.",
+          "infoOff": "Turned on, everyone gets what they'd earned already. Turned off, they're hidden and kept.",
+          "saveFailed": "Couldn't save the achievements setting.",
+          "loadFailed": "Couldn't load the achievements setting."
         }
       }
     },
@@ -4353,6 +4373,133 @@
         "none": "No printer matches “{{query}}”.",
         "added": "added",
         "done": "Done"
+      }
+    },
+    "achievements": {
+      "title": "Achievements",
+      "help": "Badges for what they've done in Thingport. Only the ones earned are shown.",
+      "helpOwn": "Badges for what you do in Thingport. Only the ones you've earned are shown, and everyone who can see your profile sees them.",
+      "all": "All {{value}}",
+      "more_one": "{{count}} more achievement",
+      "more_other": "{{count}} more achievements",
+      "empty": "None yet. Download, import or make a model to earn your first.",
+      "unlocked": "Achievement unlocked",
+      "unlockedToast": "Achievement unlocked: {{name}} · {{tier}}",
+      "unlockedMany_one": "{{count}} achievement unlocked",
+      "unlockedMany_other": "{{count}} achievements unlocked",
+      "view": "View",
+      "great": "Nice!",
+      "earnedOn": "Earned {{date}}",
+      "next": "Next: {{value}}",
+      "top": "Top tier reached",
+      "tiersEarned": "Tiers earned",
+      "lapsed": "Lapsed",
+      "lapsedHint": "Use Thingport on more than 20 of the last 30 days to bring it back.",
+      "tiers": {
+        "bronze": "Bronze",
+        "silver": "Silver",
+        "gold": "Gold",
+        "platinum": "Platinum",
+        "diamond": "Diamond",
+        "holo": "Holographic",
+        "secret": "Secret"
+      },
+      "groups": {
+        "milestones": "Milestones",
+        "sites": "Sites",
+        "tools": "Tools",
+        "making": "Studio & sync",
+        "secrets": "Secrets"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Downloader",
+          "rule_one": "Download a model",
+          "rule_other": "Download models {{count}} times",
+          "stat_one": "{{count}} download",
+          "stat_other": "{{count}} downloads"
+        },
+        "imports": {
+          "name": "Importer",
+          "rule_one": "Import a model",
+          "rule_other": "Import {{count}} models",
+          "stat_one": "{{count}} model imported",
+          "stat_other": "{{count}} models imported"
+        },
+        "regular": {
+          "name": "Regular",
+          "rule": "Use Thingport on more than 20 of the last 30 days",
+          "stat": "Active on {{count}} of the last 30 days"
+        },
+        "site": {
+          "name": "{{site}} importer",
+          "rule_one": "Import a model from {{site}}",
+          "rule_other": "Import {{count}} models from {{site}}",
+          "stat": "{{count}} from {{site}}"
+        },
+        "tool": {
+          "rule_one": "Save a model from {{tool}}",
+          "rule_other": "Save {{count}} models from {{tool}}",
+          "stat": "{{count}} saved from {{tool}}"
+        },
+        "studio": {
+          "name": "Designer",
+          "rule_one": "Save a Studio design to your library",
+          "rule_other": "Save {{count}} Studio designs to your library",
+          "stat_one": "{{count}} design saved from Studio",
+          "stat_other": "{{count}} designs saved from Studio"
+        },
+        "synced": {
+          "name": "In sync",
+          "rule_one": "Keep a collection in sync",
+          "rule_other": "Keep {{count}} collections in sync",
+          "stat_one": "{{count}} collection kept in sync",
+          "stat_other": "{{count}} collections kept in sync"
+        },
+        "syncSources": {
+          "name": "Many sources",
+          "rule": "Keep collections in sync from {{count}} different sites",
+          "stat": "Synced from {{count}} sites"
+        },
+        "weatherGuest": {
+          "name": "Met the guest",
+          "rule": "A secret. You found it.",
+          "stat": "Spotted on the weather scene"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Keyring maker",
+          "tool": "Keyring generator"
+        },
+        "qr-code-generator": {
+          "badge": "QR coder",
+          "tool": "QR code generator"
+        },
+        "gridfinity-drawer": {
+          "badge": "Gridfinity builder",
+          "tool": "Gridfinity drawer builder"
+        },
+        "enclosure-generator": {
+          "badge": "Box maker",
+          "tool": "Enclosure generator"
+        },
+        "multiboard-planner": {
+          "badge": "Multiboard planner",
+          "tool": "Multiboard planner"
+        },
+        "skadis-planner": {
+          "badge": "Skadis planner",
+          "tool": "Skadis planner"
+        },
+        "openscad-customizer": {
+          "badge": "Script tinkerer",
+          "tool": "Script customizer"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "3MF tidier",
+          "tool": "MakerWorld 3MF normalizer"
+        }
       }
     }
   },

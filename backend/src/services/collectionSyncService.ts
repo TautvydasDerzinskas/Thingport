@@ -20,6 +20,7 @@ export { providerName };
 import { addPrintsToCollection, findOrCreateCollectionByName, isSystemCollectionId } from "./collectionService";
 import { createLog } from "./auditLog";
 import { createNotification } from "./notificationService";
+import { scheduleAchievementCheck } from "./achievementService";
 import type { SyncIntervalHours } from "./collectionSyncSchedule";
 import { toCollectionSyncOut, type CollectionSyncOut, type SyncProfileScope } from "../dto";
 
@@ -262,7 +263,7 @@ async function createSync(
   { knownIds, title, alongside }: { knownIds: string[]; title: string | null; alongside: boolean },
 ): Promise<{ takenBy: string } | { link: SyncLinkOut } | { created: CollectionSync & { collection: Collection } }> {
   try {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Holds the collection while it's checked and linked, so two sources racing for one new name can't both land
       // in it: the second sees the first's link and takes "Things (MakerWorld)".
       await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collection.id} FOR UPDATE`;
@@ -285,6 +286,9 @@ async function createSync(
       });
       return { created };
     });
+    // Collections kept in sync earn an achievement.
+    if ("created" in result) scheduleAchievementCheck(userId);
+    return result;
   } catch (err) {
     // Another request won the unique index for this same source: that's the link asked for.
     const raced = await findSyncForSource(userId, source);

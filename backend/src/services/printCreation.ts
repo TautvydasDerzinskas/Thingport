@@ -82,6 +82,8 @@ export type PrintMetaInput = {
   originalId?: string | null;
   /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
   remoteSource?: Prisma.InputJsonValue | null;
+  /** What made it, when Thingport did (Print.createdWith): one of the Tools, by slug, or a Studio design, by id. */
+  createdWith?: { kind: "tool" | "studio"; ref: string } | null;
   /** Its licence's columns (services/licenseService.ts): what an import read, or what a copy carries over. Absent on an
    *  import that didn't look, whose licence is then read once it has settled. */
   licenseColumns?: Partial<Pick<Prisma.PrintUncheckedCreateInput, "license" | "licenseAllows" | "licenseReadAt">>;
@@ -328,6 +330,8 @@ export async function createPrint(
       copiedFromId: meta.copiedFromId ?? null,
       originalId: meta.originalId ?? null,
       remoteSource: meta.remoteSource ?? undefined,
+      createdWith: meta.createdWith?.kind ?? null,
+      createdWithRef: meta.createdWith?.ref ?? null,
       ...meta.licenseColumns,
     },
   });

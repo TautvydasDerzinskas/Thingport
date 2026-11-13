@@ -99,6 +99,7 @@ export type LogAction =
   | "grab_connected"
   | "grab_disconnected"
   | "social_settings_changed"
+  | "achievement_settings_changed"
   | "chat_room_created"
   | "chat_room_edited"
   | "chat_room_deleted"

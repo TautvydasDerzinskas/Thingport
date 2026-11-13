@@ -395,7 +395,7 @@
             },
             "activity": {
               "title": "Activité",
-              "description": "Votre carte d'activité et votre fil."
+              "description": "Votre carte et votre fil d’activité, et vos succès."
             },
             "collections": {
               "title": "Collections",
@@ -559,7 +559,14 @@
         "importRunFrom_one": "{{done}} sur {{count}} modèle importé depuis {{site}}",
         "importRunFrom_many": "{{done}} sur {{count}} de modèles importés depuis {{site}}",
         "importRunFrom_other": "{{done}} sur {{count}} modèles importés depuis {{site}}",
-        "bridgeUpdate": "Thingport Bridge {{version}} est disponible"
+        "bridgeUpdate": "Thingport Bridge {{version}} est disponible",
+        "achievementUnlocked": "Succès débloqué : {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "{{count}} succès débloqué",
+        "achievementsUnlocked_many": "{{count}} succès débloqués",
+        "achievementsUnlocked_other": "{{count}} succès débloqués",
+        "achievementsCredited_one": "Vous avez obtenu {{count}} succès jusqu’ici",
+        "achievementsCredited_many": "Vous avez obtenu {{count}} succès jusqu’ici",
+        "achievementsCredited_other": "Vous avez obtenu {{count}} succès jusqu’ici"
       },
       "minutesAgo_many": "il y a {{count}} minutes",
       "hoursAgo_many": "il y a {{count}} heures",
@@ -2226,7 +2233,8 @@
           "federation_blocked": "Instance bloquée",
           "federation_unblocked": "Instance débloquée",
           "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs",
-          "collection_sharing_changed": "Partage de collection modifié"
+          "collection_sharing_changed": "Partage de collection modifié",
+          "achievement_settings_changed": "Succès modifiés"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2255,7 +2263,9 @@
         "chatsOn": "Discussions activées",
         "chatsOff": "Discussions désactivées",
         "tagDeleted_many": "{{name}} — retirée de {{count}} modèles",
-        "userDeleted_many": "{{email}} — avec {{count}} modèles"
+        "userDeleted_many": "{{email}} — avec {{count}} modèles",
+        "achievementsOn": "Succès activés",
+        "achievementsOff": "Succès désactivés"
       },
       "rendering": {
         "heading": "Rendu",
@@ -2885,6 +2895,18 @@
             "declineUserText": "{{who}} est prévenu. Rien n'est envoyé à {{host}}.",
             "declinedUser": "Demande de {{who}} refusée"
           }
+        },
+        "achievements": {
+          "label": "Succès",
+          "summary": "Des badges pour ce que font les utilisateurs, affichés sur leur page Mes modèles. Fonctionnent avec les fonctions sociales désactivées.",
+          "infoTitle": "Succès",
+          "infoBadges": "Des badges pour les téléchargements, les imports, chaque site et outil, Studio, les collections synchronisées et l’activité, en niveaux du bronze à l’holographique.",
+          "infoProfile": "Affichés sous la bio de chaque utilisateur sur Mes modèles, pour tous ceux qui peuvent voir son profil, y compris les personnes des instances connectées.",
+          "infoSecrets": "Quelques-uns sont secrets, à trouver dans l’application.",
+          "infoIndependent": "Leur propre interrupteur : ils fonctionnent avec les fonctions sociales désactivées.",
+          "infoOff": "Activés, chacun reçoit ce qu’il avait déjà obtenu. Désactivés, ils sont masqués et conservés.",
+          "saveFailed": "Impossible d’enregistrer le réglage des succès.",
+          "loadFailed": "Impossible de charger le réglage des succès."
         }
       }
     },
@@ -4500,6 +4522,145 @@
         "none": "Aucune imprimante ne correspond à « {{query}} ».",
         "added": "ajoutée",
         "done": "Terminé"
+      }
+    },
+    "achievements": {
+      "title": "Succès",
+      "help": "Des badges pour ce que cette personne a fait dans Thingport. Seuls ceux obtenus sont affichés.",
+      "helpOwn": "Des badges pour ce que vous faites dans Thingport. Seuls ceux que vous avez obtenus sont affichés, et toute personne qui peut voir votre profil les voit.",
+      "all": "Tous ({{value}})",
+      "more_one": "{{count}} succès de plus",
+      "more_many": "{{count}} succès de plus",
+      "more_other": "{{count}} succès de plus",
+      "empty": "Aucun pour l’instant. Téléchargez, importez ou créez un modèle pour obtenir le premier.",
+      "unlocked": "Succès débloqué",
+      "unlockedToast": "Succès débloqué : {{name}} · {{tier}}",
+      "unlockedMany_one": "{{count}} succès débloqué",
+      "unlockedMany_many": "{{count}} succès débloqués",
+      "unlockedMany_other": "{{count}} succès débloqués",
+      "view": "Voir",
+      "great": "Super !",
+      "earnedOn": "Obtenu le {{date}}",
+      "next": "Suivant : {{value}}",
+      "top": "Niveau maximal atteint",
+      "tiersEarned": "Niveaux obtenus",
+      "lapsed": "Expiré",
+      "lapsedHint": "Utilisez Thingport plus de 20 des 30 derniers jours pour le récupérer.",
+      "tiers": {
+        "bronze": "Bronze",
+        "silver": "Argent",
+        "gold": "Or",
+        "platinum": "Platine",
+        "diamond": "Diamant",
+        "holo": "Holographique",
+        "secret": "Secret"
+      },
+      "groups": {
+        "milestones": "Étapes",
+        "sites": "Sites",
+        "tools": "Outils",
+        "making": "Studio et synchronisation",
+        "secrets": "Secrets"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Téléchargeur",
+          "rule_one": "Téléchargez un modèle",
+          "rule_many": "Téléchargez des modèles {{count}} fois",
+          "rule_other": "Téléchargez des modèles {{count}} fois",
+          "stat_one": "{{count}} téléchargement",
+          "stat_many": "{{count}} téléchargements",
+          "stat_other": "{{count}} téléchargements"
+        },
+        "imports": {
+          "name": "Importateur",
+          "rule_one": "Importez un modèle",
+          "rule_many": "Importez {{count}} modèles",
+          "rule_other": "Importez {{count}} modèles",
+          "stat_one": "{{count}} modèle importé",
+          "stat_many": "{{count}} modèles importés",
+          "stat_other": "{{count}} modèles importés"
+        },
+        "regular": {
+          "name": "Habitué",
+          "rule": "Utilisez Thingport plus de 20 des 30 derniers jours",
+          "stat": "Actif {{count}} des 30 derniers jours"
+        },
+        "site": {
+          "name": "Importateur {{site}}",
+          "rule_one": "Importez un modèle depuis {{site}}",
+          "rule_many": "Importez {{count}} modèles depuis {{site}}",
+          "rule_other": "Importez {{count}} modèles depuis {{site}}",
+          "stat": "{{count}} depuis {{site}}"
+        },
+        "tool": {
+          "rule_one": "Enregistrez un modèle depuis {{tool}}",
+          "rule_many": "Enregistrez {{count}} modèles depuis {{tool}}",
+          "rule_other": "Enregistrez {{count}} modèles depuis {{tool}}",
+          "stat": "{{count}} enregistrés depuis {{tool}}"
+        },
+        "studio": {
+          "name": "Designer",
+          "rule_one": "Enregistrez une création Studio dans votre bibliothèque",
+          "rule_many": "Enregistrez {{count}} créations Studio dans votre bibliothèque",
+          "rule_other": "Enregistrez {{count}} créations Studio dans votre bibliothèque",
+          "stat_one": "{{count}} création enregistrée depuis Studio",
+          "stat_many": "{{count}} créations enregistrées depuis Studio",
+          "stat_other": "{{count}} créations enregistrées depuis Studio"
+        },
+        "synced": {
+          "name": "Synchronisé",
+          "rule_one": "Gardez une collection synchronisée",
+          "rule_many": "Gardez {{count}} collections synchronisées",
+          "rule_other": "Gardez {{count}} collections synchronisées",
+          "stat_one": "{{count}} collection synchronisée",
+          "stat_many": "{{count}} collections synchronisées",
+          "stat_other": "{{count}} collections synchronisées"
+        },
+        "syncSources": {
+          "name": "Sources multiples",
+          "rule": "Synchronisez des collections depuis {{count}} sites différents",
+          "stat": "Synchronisé depuis {{count}} sites"
+        },
+        "weatherGuest": {
+          "name": "A rencontré l’invité",
+          "rule": "Un secret. Vous l’avez trouvé.",
+          "stat": "Aperçu dans la scène météo"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Créateur de porte-clés",
+          "tool": "Générateur de porte-clés"
+        },
+        "qr-code-generator": {
+          "badge": "Codeur QR",
+          "tool": "Générateur de QR codes"
+        },
+        "gridfinity-drawer": {
+          "badge": "Bâtisseur Gridfinity",
+          "tool": "Créateur de tiroirs Gridfinity"
+        },
+        "enclosure-generator": {
+          "badge": "Créateur de boîtes",
+          "tool": "Générateur de boîtiers"
+        },
+        "multiboard-planner": {
+          "badge": "Planificateur Multiboard",
+          "tool": "Planificateur Multiboard"
+        },
+        "skadis-planner": {
+          "badge": "Planificateur Skadis",
+          "tool": "Planificateur Skadis"
+        },
+        "openscad-customizer": {
+          "badge": "Bricoleur de scripts",
+          "tool": "Personnalisateur de scripts"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "Rangeur de 3MF",
+          "tool": "Normaliseur 3MF MakerWorld"
+        }
       }
     }
   },

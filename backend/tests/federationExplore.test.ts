@@ -34,7 +34,13 @@ import { fileKey } from "../src/federation/remoteFiles";
 import { readCollections, readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
-import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
+import {
+  getAchievementSettings,
+  getSocialSettings,
+  setAchievementSettings,
+  setSocialSettings,
+} from "../src/services/settingsService";
+import { remotePerson } from "../src/federation/remoteExplore";
 
 const app = createApp();
 const ORIGIN = "http://192.0.2.60:8000";
@@ -233,6 +239,38 @@ describe("what partners are shown", () => {
     // A drawn avatar is versioned by what's drawn.
     const icon = ((await personDoc(owner.id)) as { icon?: { url: string } }).icon?.url;
     expect(icon ?? "").not.toMatch(/\?v=svg$/);
+  });
+
+  it("gives a person's achievements while they're on, and shows a partner's person's here only while they're on", async () => {
+    const saved = await getAchievementSettings();
+    const mine = `${ORIGIN}/api/ap/actors/${owner.id}`;
+    const achievementsIn = async () =>
+      ((await directory()) as { orderedItems: Record<string, unknown>[] }).orderedItems.find(
+        (item) => item.id === mine,
+      )?.["thingport:achievements"];
+    await prisma.userAchievement.create({ data: { userId: owner.id, badge: "downloads", tier: 2 } });
+    try {
+      await setAchievementSettings({ enabled: false });
+      expect(await achievementsIn()).toBeUndefined();
+      await setAchievementSettings({ enabled: true });
+      // Ids and tiers only: the partner draws them, and the counts behind them stay here.
+      expect(await achievementsIn()).toEqual([{ id: "downloads", tier: 2 }]);
+
+      await prisma.remotePerson.update({
+        where: { id: personId },
+        data: { achievements: [{ id: "imports", tier: 1 }, { id: "regular", tier: 0, expired: true }, "junk"] },
+      });
+      expect((await remotePerson(personId))?.person.achievements).toEqual([
+        { id: "imports", tier: 1 },
+        { id: "regular", tier: 0, expired: true },
+      ]);
+      await setAchievementSettings({ enabled: false });
+      expect((await remotePerson(personId))?.person.achievements).toBeNull();
+    } finally {
+      await setAchievementSettings(saved);
+      await prisma.userAchievement.deleteMany({ where: { userId: owner.id } });
+      await prisma.remotePerson.update({ where: { id: personId }, data: { achievements: [] } });
+    }
   });
 
   it("gives only the shared models", async () => {
