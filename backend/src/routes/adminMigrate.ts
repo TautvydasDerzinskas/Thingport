@@ -6,6 +6,7 @@ import multer from "multer";
 import { z } from "zod";
 import { createExportToken, exportTokenState, revokeExportToken } from "../services/migrate/export";
 import {
+  assertSettled,
   changeFolder,
   getRun,
   listRuns,
@@ -88,6 +89,15 @@ router.get(
 // From another Thingport instance: its database dump, uploaded or as a path on this server, and its storage folder.
 router.post(
   "/thingport",
+  // Before the upload is written: settling clears the folder uploads go to.
+  (_req, _res, next) => {
+    try {
+      assertSettled();
+      next();
+    } catch (err) {
+      next(err);
+    }
+  },
   oneDump,
   asyncHandler(async (req, res) => {
     const folder = typeof req.body?.folder === "string" ? req.body.folder : "";

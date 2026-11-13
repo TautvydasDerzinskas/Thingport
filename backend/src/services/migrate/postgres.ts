@@ -52,15 +52,16 @@ function liveSsl(): URLSearchParams {
 }
 
 /** The same in libpq's terms, for pg_dump and pg_restore. Prisma checks the server's certificate and name only with
- *  sslaccept=strict, against sslcert (relative to the schema's folder), which is libpq's verify-full against
- *  sslrootcert. PGSSL* settings of this process's own come along, for a server that needs more. */
+ *  sslaccept=strict, against sslcert (relative to the schema's folder), and does whether sslmode is require or
+ *  prefer (its default), which is libpq's verify-full against sslrootcert. PGSSL* settings of this process's own come
+ *  along, for a server that needs more, such as a client certificate (PGSSLCERT, PGSSLKEY). */
 export function sslEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
   for (const [key, value] of Object.entries(process.env)) if (key.startsWith("PGSSL")) env[key] = value;
   const ssl = liveSsl();
   const mode = ssl.get("sslmode");
   if (mode) env.PGSSLMODE = mode;
-  if (mode === "require" && ssl.get("sslaccept") === "strict") {
+  if (mode !== "disable" && ssl.get("sslaccept") === "strict") {
     env.PGSSLMODE = "verify-full";
     const ca = ssl.get("sslcert");
     if (ca) env.PGSSLROOTCERT = path.resolve("prisma", ca);

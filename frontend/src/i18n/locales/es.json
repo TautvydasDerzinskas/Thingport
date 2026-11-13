@@ -3283,6 +3283,7 @@
           "outside": "Indica una ruta dentro de {{root}}: los archivos de la instancia antigua solo se leen de ahí.",
           "busy": "Ya hay una migración en curso.",
           "storage_move": "Se están moviendo los archivos de los modelos. Empieza la migración cuando termine.",
+          "settling": "El servidor aún está resolviendo las migraciones que tenía en curso antes de reiniciarse. Inténtalo de nuevo en un minuto.",
           "plain_dump": "Es un volcado SQL plano. Haz uno con el formato propio de pg_dump: pg_dump -Fc.",
           "not_a_dump": "Este archivo no es un archivo de pg_dump.",
           "dump_missing": "No hay ningún volcado en esa ruta de este servidor.",

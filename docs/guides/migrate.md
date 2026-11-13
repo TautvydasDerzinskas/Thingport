@@ -52,7 +52,9 @@ and again at Start.
 
 Since the dump is made first, nothing may change on the old instance from then until the migration is done: a model
 imported after the dump wouldn't come, and one deleted would be missing its files. Tell its people to stop using it,
-and start the migration when no import or synced collection is running there, but don't stop its backend.
+and start the migration when no import or synced collection is running there, but don't stop its backend. Synced
+collections check on a schedule too: before you create the token, set `COLLECTION_SYNC_ENABLED=false` on the old
+instance and restart its backend, and ask its people not to press **Sync now**, which still works.
 
 This server must be able to reach the old instance's address. Plain HTTP works, but then the token and everything it
 reads travel unencrypted, so use it on a network you trust. Revoke the token once the migration is done.
@@ -79,7 +81,9 @@ docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump
 ```
 
 Use your own user and database names if you changed `POSTGRES_USER` or `POSTGRES_DB`. The `-Fc` matters: a plain SQL
-dump is turned away, as restoring one would run its commands on this server.
+dump is turned away, as it's a script whose commands could reach this server itself. A `-Fc` dump can hold SQL too,
+which runs as it's restored, but as a role that reaches only its own working copy (see below). Restore dumps of
+instances you trust.
 
 ## 3. Bring the storage folder over
 
@@ -150,20 +154,25 @@ it is. You get a notification when it's done.
 A migration that stops part-way keeps its working copy. **Start again** from its ⋮ menu goes on from where it was:
 what came over already is skipped. Running the same dump again later brings nothing twice either.
 
-| Message                                            | What to do                                                                                                                                        |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| This is a plain SQL dump                           | Make the dump again with `-Fc`, as above.                                                                                                         |
-| The old instance is newer than this one            | Update this instance first. A dump can only come from the same release or an older one.                                                           |
-| A database change failed on the old instance       | One of its upgrades never finished. Fix that there (its backend's log says which), then make a new dump.                                          |
-| The database user can't create databases and roles | The working copy is a database of its own, restored as a role that can't reach anything else. Give the database user `CREATEDB` and `CREATEROLE`. |
-| pg_restore isn't installed on this server          | The Thingport image has it. Running the backend outside Docker, install the PostgreSQL client tools.                                              |
-| None of its files are in that folder               | The path is wrong, or this server can't read it. Change it on the Check step.                                                                     |
-| Give a path inside /app/migrate                    | Mount the old instance's files there, as above, and give the paths below it.                                                                      |
-| This server can't reach the address                | The address is as this server sees it, not your browser. From Docker, `localhost` is the container itself.                                        |
-| The old instance turned the token down             | It expired (after 24 hours), was revoked, or another was made since. Make a new one there.                                                        |
-| The old instance can't be copied online            | It's on a release without Migrate. Update it, or use a dump and its storage folder.                                                               |
-| The old instance stopped answering                 | **Start again** once it's back: what came over already is skipped.                                                                                |
-| Too big to upload through the web server           | Put the dump on the server and give its path.                                                                                                     |
+| Message                                            | What to do                                                                                                                                                                                                                                    |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| This is a plain SQL dump                           | Make the dump again with `-Fc`, as above.                                                                                                                                                                                                     |
+| The old instance is newer than this one            | Update this instance first. A dump can only come from the same release or an older one.                                                                                                                                                       |
+| A database change failed on the old instance       | One of its upgrades never finished. Fix that there (its backend's log says which), then make a new dump.                                                                                                                                      |
+| The database user can't create databases and roles | The working copy is a database of its own, restored as a role that can't reach anything else. Give the database user `CREATEDB` and `CREATEROLE`.                                                                                             |
+| pg_restore isn't installed on this server          | The Thingport image has it. Running the backend outside Docker, install the PostgreSQL client tools.                                                                                                                                          |
+| None of its files are in that folder               | The path is wrong, or this server can't read it. Change it on the Check step.                                                                                                                                                                 |
+| Give a path inside /app/migrate                    | Mount the old instance's files there, as above, and give the paths below it.                                                                                                                                                                  |
+| This server can't reach the address                | The address is as this server sees it, not your browser. From Docker, `localhost` is the container itself.                                                                                                                                    |
+| The old instance turned the token down             | It expired (after 24 hours), was revoked, or another was made since. A run it stopped can't go on: remove it from the list, which files what it brought, make a new token there and start a new migration. What came over already is skipped. |
+| The old instance can't be copied online            | It's on a release without Migrate. Update it, or use a dump and its storage folder.                                                                                                                                                           |
+| The old instance stopped answering                 | **Start again** once it's back: what came over already is skipped.                                                                                                                                                                            |
+| Too big to upload through the web server           | Put the dump on the server and give its path.                                                                                                                                                                                                 |
 
 The working copy is restored as a database role made for it, which can reach that copy and nothing else: an uploaded
 dump is trusted no more than any other upload.
+
+pg_dump and pg_restore reach the database as safely as the backend does: its `sslmode`, and `sslaccept=strict` checks
+the server's certificate against `sslcert`. They don't read Prisma's `sslidentity`, though: for a database that asks
+for a client certificate, give them the certificate and an unencrypted key as PEM files with `PGSSLCERT` and
+`PGSSLKEY` in the backend's environment.

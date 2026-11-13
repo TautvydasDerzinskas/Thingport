@@ -287,3 +287,63 @@ describe.skipIf(!hasPgTools)("copying an older instance online", () => {
     expect(run.remote).toEqual({ address });
   }, 240_000);
 });
+
+describe("an online run its token stopped", () => {
+  const tag = crypto.randomBytes(4).toString("hex");
+  let adminId = "";
+  let adminToken = "";
+  const runs: string[] = [];
+  const auth = () => ({ Authorization: `Bearer ${adminToken}` });
+  const options = {
+    people: ["p1"],
+    collections: true,
+    studio: true,
+    widgets: true,
+    tools: true,
+    syncs: true,
+    signIns: true,
+    settings: false,
+    secrets: false,
+  };
+
+  beforeAll(async () => {
+    ({ id: adminId, token: adminToken } = await admin(`${tag}-stopped`));
+  });
+
+  afterAll(async () => {
+    await prisma.migrationRun.deleteMany({ where: { id: { in: runs } } });
+    await prisma.user.deleteMany({ where: { id: adminId } });
+  });
+
+  it("isn't offered to start again, as the token never works again, unlike one the old instance lost", async () => {
+    const failedWith = async (code: string) => {
+      const run = await prisma.migrationRun.create({
+        data: {
+          source: "thingport-online",
+          status: "failed",
+          plan: { people: [{ id: "p1" }] },
+          options,
+          error: { code, message: "stopped" },
+          remote: { address: "http://old.lan", token: "tpm_old" },
+          stagingDb: `tp_migrate_${tag}${code.replace(/[^a-z]/g, "")}`,
+          startedAt: new Date(),
+          finishedAt: new Date(),
+        },
+      });
+      runs.push(run.id);
+      return run.id;
+    };
+    const refused = await failedWith("online_token");
+    const lost = await failedWith("online_lost");
+    const listed = (await request(app).get("/api/admin/migrate").set(auth())).body.runs as {
+      id: string;
+      can_resume: boolean;
+    }[];
+    expect(listed.find((run) => run.id === refused)?.can_resume).toBe(false);
+    expect(listed.find((run) => run.id === lost)?.can_resume).toBe(true);
+    const again = await request(app).post(`/api/admin/migrate/${refused}/start`).set(auth()).send(options);
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe("not_ready");
+    expect((await prisma.migrationRun.findUniqueOrThrow({ where: { id: refused } })).status).toBe("failed");
+  });
+});

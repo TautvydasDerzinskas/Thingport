@@ -3148,6 +3148,7 @@
           "outside": "Give a path inside {{root}}: the old instance's files are read only from there.",
           "busy": "A migration is under way already.",
           "storage_move": "Model files are being moved. Start the migration once that's done.",
+          "settling": "The server is still settling the migrations it ran before it restarted. Try again in a minute.",
           "plain_dump": "This is a plain SQL dump. Make one in pg_dump's custom format: pg_dump -Fc.",
           "not_a_dump": "This file isn't a pg_dump archive.",
           "dump_missing": "There's no dump at that path on this server.",

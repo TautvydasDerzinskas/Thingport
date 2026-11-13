@@ -3366,6 +3366,7 @@
           "outside": "Nurodykite kelią aplanke {{root}}: seno egzemplioriaus failai skaitomi tik iš ten.",
           "busy": "Perkėlimas jau vyksta.",
           "storage_move": "Modelių failai perkeliami. Pradėkite perkėlimą, kai tai baigsis.",
+          "settling": "Serveris dar tvarko perkėlimus, kurie vyko prieš jam persikraunant. Bandykite po minutės.",
           "plain_dump": "Tai paprasta SQL kopija. Padarykite ją pg_dump savuoju formatu: pg_dump -Fc.",
           "not_a_dump": "Šis failas nėra pg_dump archyvas.",
           "dump_missing": "Šiame serveryje tokiu keliu kopijos nėra.",

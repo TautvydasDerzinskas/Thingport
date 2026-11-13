@@ -1,8 +1,9 @@
 import fs from "node:fs";
+import fsp from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -16,7 +17,7 @@ import {
   storageFolder,
 } from "../src/services/migrate/export";
 import { Merge } from "../src/services/migrate/merge";
-import { httpSource } from "../src/services/migrate/remote";
+import { httpSource, remoteTuning } from "../src/services/migrate/remote";
 import { tmp } from "./migrateFixture";
 
 const bearer = (token: string) => `Bearer ${token}`;
@@ -79,6 +80,51 @@ describe("the migration exporter", () => {
       expect(await storageFolder(name, 4)).toHaveLength(4);
       await expect(storageFolder(name, 3)).rejects.toBeInstanceOf(FolderTooLargeError);
     } finally {
+      fs.rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("counts only files against the limit, not a folder or link after the last one", async () => {
+    const name = `full-${Date.now()}`;
+    const folder = path.join(STORAGE, name);
+    fs.mkdirSync(path.join(folder, "empty"), { recursive: true });
+    for (let i = 0; i < 4; i += 1) fs.writeFileSync(path.join(folder, `${i}.stl`), "solid");
+    fs.symlinkSync(path.join(folder, "0.stl"), path.join(folder, "link.stl"));
+    const real = fsp.readdir.bind(fsp);
+    // Files first, then the rest, whatever order the disk lists them in.
+    const spy = vi.spyOn(fsp, "readdir").mockImplementation((async (dir: string, options: unknown) => {
+      const entries = (await real(dir, options as { withFileTypes: true })) as fs.Dirent[];
+      return entries.toSorted((a, b) => Number(b.isFile()) - Number(a.isFile()));
+    }) as typeof fsp.readdir);
+    try {
+      expect(await storageFolder(name, 4)).toHaveLength(4);
+    } finally {
+      spy.mockRestore();
+      fs.rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("doesn't follow a folder swapped for a link out of storage after its parent was listed", async () => {
+    const outside = tmp();
+    fs.writeFileSync(path.join(outside, "secret.stl"), "solid secret");
+    const name = `swap-${Date.now()}`;
+    const folder = path.join(STORAGE, name);
+    const inner = path.join(folder, "inner");
+    fs.mkdirSync(inner, { recursive: true });
+    fs.writeFileSync(path.join(folder, "kept.stl"), "solid");
+    const real = fsp.readdir.bind(fsp);
+    const spy = vi.spyOn(fsp, "readdir").mockImplementation((async (dir: string, options: unknown) => {
+      const entries = await real(dir, options as { withFileTypes: true });
+      if (fs.realpathSync(String(dir)) === fs.realpathSync(folder)) {
+        fs.rmSync(inner, { recursive: true });
+        fs.symlinkSync(outside, inner);
+      }
+      return entries;
+    }) as typeof fsp.readdir);
+    try {
+      expect(await storageFolder(name)).toEqual(["kept.stl"]);
+    } finally {
+      spy.mockRestore();
       fs.rmSync(folder, { recursive: true, force: true });
     }
   });
@@ -149,5 +195,68 @@ describe("a merge whose old instance goes away", () => {
     run.fail("model", "Benchy", new Error("A file is missing"));
     run.fail("design", "Bracket", new MigrateError("online_folder", "too many"));
     expect(run.report.failures).toHaveLength(2);
+  });
+});
+
+describe("an old instance that stops sending", () => {
+  const idleMs = remoteTuning.idleMs;
+  let server: http.Server;
+  let address = "";
+
+  beforeAll(async () => {
+    remoteTuning.idleMs = 300;
+    server = http.createServer((req, res) => {
+      const url = new URL(req.url ?? "/", "http://x");
+      const name = url.searchParams.get("path");
+      if (name === "stalls.stl") {
+        // Starts the file, then sends nothing more.
+        res.writeHead(200, { "Content-Type": "application/octet-stream" });
+        res.write("solid half");
+        return;
+      }
+      if (name === "silent.stl") return; // Never even answers.
+      if (name === "slow.stl") {
+        // Far longer in all than the deadline, but never quiet for as long.
+        res.writeHead(200, { "Content-Type": "application/octet-stream" });
+        let sent = 0;
+        const timer = setInterval(() => {
+          sent += 1;
+          if (sent < 8) res.write(`chunk${sent};`);
+          else {
+            clearInterval(timer);
+            res.end("done");
+          }
+        }, 100);
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    address = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    remoteTuning.idleMs = idleMs;
+    server.closeAllConnections();
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  it("gives up on a file that stops coming, or never starts, as the old instance having stopped answering", async () => {
+    const files = httpSource({ address, token: "t" });
+    const to = tmp();
+    for (const name of ["stalls.stl", "silent.stl"]) {
+      const failure = await files.copy(name, path.join(to, name)).catch((err: unknown) => err);
+      expect(failure).toMatchObject({ code: "online_lost" });
+      expect(fs.existsSync(path.join(to, name))).toBe(false);
+    }
+    expect(fs.readdirSync(to)).toEqual([]);
+  });
+
+  it("waits for a file as long as it keeps coming", async () => {
+    const to = tmp();
+    expect(await httpSource({ address, token: "t" }).copy("slow.stl", path.join(to, "slow.stl"))).toBe(true);
+    expect(fs.readFileSync(path.join(to, "slow.stl"), "utf8")).toBe(
+      "chunk1;chunk2;chunk3;chunk4;chunk5;chunk6;chunk7;done",
+    );
   });
 });

@@ -32,6 +32,7 @@ export function SourceTile({ source = "thingport", size = 40 }: { source?: Migra
 const KNOWN_ERRORS = new Set([
   "busy",
   "storage_move",
+  "settling",
   "plain_dump",
   "not_a_dump",
   "dump_missing",
@@ -125,24 +126,14 @@ export function hostOf(address: string): string {
   }
 }
 
-/** Asks for the run every `ms` until stopped, one request at a time: the next is asked once the last has answered.
- *  What a request answers after `stop` is dropped, so an older answer never replaces what came since. */
-export function followRun(
-  get: () => Promise<MigrateRun>,
-  ms: number,
-  onRun: (run: MigrateRun) => void,
-  onError: (err: unknown) => void,
-): () => void {
+/** Runs `task` every `ms` until stopped, one at a time: the next once the last has settled, so a slow answer is never
+ *  overtaken by the next request. `stopped` says whether it was stopped meanwhile. */
+export function repeat(task: (stopped: () => boolean) => Promise<void>, ms: number): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const next = () => {
     timer = setTimeout(async () => {
-      try {
-        const run = await get();
-        if (!stopped) onRun(run);
-      } catch (err) {
-        if (!stopped) onError(err);
-      }
+      await task(() => stopped).catch(() => undefined);
       if (!stopped) next();
     }, ms);
   };
@@ -151,4 +142,22 @@ export function followRun(
     stopped = true;
     clearTimeout(timer);
   };
+}
+
+/** Asks for the run every `ms` until stopped, one request at a time: the next is asked once the last has answered.
+ *  What a request answers after `stop` is dropped, so an older answer never replaces what came since. */
+export function followRun(
+  get: () => Promise<MigrateRun>,
+  ms: number,
+  onRun: (run: MigrateRun) => void,
+  onError: (err: unknown) => void,
+): () => void {
+  return repeat(async (stopped) => {
+    try {
+      const run = await get();
+      if (!stopped()) onRun(run);
+    } catch (err) {
+      if (!stopped()) onError(err);
+    }
+  }, ms);
 }

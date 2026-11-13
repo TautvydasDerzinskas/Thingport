@@ -3283,6 +3283,7 @@
           "outside": "Indiquez un chemin dans {{root}} : les fichiers de l’ancienne instance ne sont lus que depuis cet endroit.",
           "busy": "Une migration est déjà en cours.",
           "storage_move": "Les fichiers des modèles sont en cours de déplacement. Lancez la migration une fois que c’est fini.",
+          "settling": "Le serveur règle encore les migrations qu’il menait avant de redémarrer. Réessayez dans une minute.",
           "plain_dump": "C’est un dump SQL brut. Faites-en un au format personnalisé de pg_dump : pg_dump -Fc.",
           "not_a_dump": "Ce fichier n’est pas une archive pg_dump.",
           "dump_missing": "Il n’y a pas de dump à ce chemin sur ce serveur.",

@@ -119,15 +119,23 @@ export async function storageFolder(relative: string, limit = FOLDER_LIMIT): Pro
   if (!start?.startsWith(root + path.sep)) return [];
   const found: string[] = [];
   const walk = async (dir: string): Promise<void> => {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch((err: unknown) => {
+    // Checked again right before it's read: one swapped for a link since its parent was read isn't followed out.
+    const real = await fs.realpath(dir).catch((err: unknown) => {
+      if (isAbsent(err)) return null;
+      throw err;
+    });
+    if (real !== start && !real?.startsWith(start + path.sep)) return;
+    const entries = await fs.readdir(real, { withFileTypes: true }).catch((err: unknown) => {
       if (isAbsent(err)) return [];
       throw err;
     });
     for (const entry of entries) {
-      if (found.length >= limit) throw new FolderTooLargeError(limit);
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) await walk(full);
-      else if (entry.isFile()) found.push(path.relative(start, full).split(path.sep).join("/"));
+      else if (entry.isFile()) {
+        if (found.length >= limit) throw new FolderTooLargeError(limit);
+        found.push(path.relative(start, full).split(path.sep).join("/"));
+      }
     }
   };
   await walk(start);

@@ -66,6 +66,8 @@ export type ManyfoldProgress = { phase: "owners" | "models" | "collections"; don
 export function manyfoldLicense(spdx: string | undefined): ProviderLicense | null {
   const raw = spdx?.trim();
   if (!raw) return null;
+  // Someone's own licence, never one it's named after ("LicenseRef-My-Modified-MIT" isn't MIT).
+  if (raw.startsWith("LicenseRef-")) return { id: null, raw, label: raw.slice("LicenseRef-".length) };
   const id =
     licenseById(raw)?.id ??
     licenseById(raw.replace(/-(only|or-later)$/, ""))?.id ??

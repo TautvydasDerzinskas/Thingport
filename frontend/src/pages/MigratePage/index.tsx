@@ -21,7 +21,7 @@ import { useToast } from "../../components/ToastProvider";
 import ExportTokenDialog from "./ExportTokenDialog";
 import ManyfoldMigrateDialog from "./ManyfoldMigrateDialog";
 import MigrationRow from "./MigrationRow";
-import { errorText, isActive, k, requestError, SourceTile } from "./parts";
+import { errorText, isActive, k, repeat, requestError, SourceTile } from "./parts";
 import ThingportMigrateDialog from "./ThingportMigrateDialog";
 
 const POLL_MS = 2000;
@@ -85,11 +85,9 @@ export default function MigratePage({ onUnauthorized }: Props) {
   }, [load, onUnauthorized]);
 
   const busy = Boolean(runs?.some(isActive));
-  React.useEffect(() => {
-    if (!busy) return;
-    const timer = window.setInterval(() => void load(), POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [busy, load]);
+  // The next list once the last has answered: asked every few seconds regardless, a list slower than that would always
+  // be dropped for the newer one, and progress would never show.
+  React.useEffect(() => (busy ? repeat(load, POLL_MS) : undefined), [busy, load]);
 
   const fail = (err: unknown) => {
     if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -97,18 +95,23 @@ export default function MigratePage({ onUnauthorized }: Props) {
   };
 
   const startAgain = async (run: MigrateRun) => {
+    let started: MigrateRun;
     try {
       if (run.source === "manyfold") {
         if (!run.options) return;
-        await migrateApi.startManyfold(run.id, run.options);
+        started = await migrateApi.startManyfold(run.id, run.options);
       } else {
         if (!run.options) return;
-        await migrateApi.start(run.id, run.options);
+        started = await migrateApi.start(run.id, run.options);
       }
-      await load();
     } catch (err) {
       fail(err);
+      return;
     }
+    // Shown running at once, which starts the polling, whether or not the list that follows comes.
+    listAsked.current += 1;
+    setRuns((previous) => previous?.map((item) => (item.id === started.id ? started : item)) ?? previous);
+    await load();
   };
 
   const remove = async (run: MigrateRun) => {

@@ -55,6 +55,11 @@ let active: Active | null = null;
 /** Runs Discard is removing: Start and Change folder turn them away until Discard is done, so neither reads a run
  *  whose working copy and record are going. Only that run is held; another one can still start meanwhile. */
 const discarding = new Set<string>();
+/** Set at startup until what the last process left is settled: a run "running" then is one nothing runs, which
+ *  mustn't be started or removed as if it were over or under way. */
+let held = false;
+/** How long to wait before trying again to settle them, when the database didn't answer. */
+export const settleTuning = { retryMs: 30_000 };
 
 export type RunOut = {
   id: string;
@@ -72,6 +77,11 @@ export type RunOut = {
   finished_at: string | null;
 };
 
+/** An online run the old instance's token stopped: expired, revoked or replaced, it never works again, so a new
+ *  migration with a new token goes on instead (what came is skipped). */
+const tokenRefused = (run: MigrationRun) =>
+  run.source === "thingport-online" && (run.error as { code?: unknown } | null)?.code === "online_token";
+
 function out(run: MigrationRun): RunOut {
   return {
     id: run.id,
@@ -83,7 +93,10 @@ function out(run: MigrationRun): RunOut {
     error: run.error ?? null,
     progress: active?.id === run.id ? { ...active.progress } : null,
     can_resume:
-      run.status === "failed" && Boolean(run.startedAt) && (Boolean(run.stagingDb) || run.source === "manyfold"),
+      run.status === "failed" &&
+      Boolean(run.startedAt) &&
+      (Boolean(run.stagingDb) || run.source === "manyfold") &&
+      !tokenRefused(run),
     created_at: run.createdAt.toISOString(),
     started_at: run.startedAt?.toISOString() ?? null,
     finished_at: run.finishedAt?.toISOString() ?? null,
@@ -95,6 +108,7 @@ const asHttp = (err: unknown) => (err instanceof MigrateError ? new MigrateHttpE
 /** Takes the one slot for a run, at once and before anything is awaited, so two requests can't both find it free;
  *  `release` gives it back. */
 function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Active {
+  assertSettled();
   if (active) throw new HttpError(409, "A migration is under way already.", "busy");
   if (discarding.has(id)) throw new HttpError(409, "A migration is under way already.", "busy");
   if (currentStorageMove()?.running) {
@@ -106,8 +120,20 @@ function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Act
   return state;
 }
 
+/** Turns a run away while the last process's are being settled. */
+export function assertSettled(): void {
+  if (held) {
+    throw new HttpError(
+      409,
+      "The server is still settling the migrations it ran before it restarted. Try again in a minute.",
+      "settling",
+    );
+  }
+}
+
 /** Says whether the slot is free, without taking it: for a check that holds nothing while it waits. */
 function assertFree(): void {
+  assertSettled();
   if (active) throw new HttpError(409, "A migration is under way already.", "busy");
   if (currentStorageMove()?.running) {
     throw new HttpError(409, "Model files are being moved. Start the migration once that's done.", "storage_move");
@@ -360,6 +386,7 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
     if (!run) throw new HttpError(404, "No such migration");
     const notReady = new HttpError(409, "This migration can't be started.", "not_ready");
     if (!run.stagingDb || !(run.status === "ready" || (run.status === "failed" && run.startedAt))) throw notReady;
+    if (tokenRefused(run)) throw notReady;
     stagingDb = run.stagingDb;
     started = run;
     const plan = run.plan as MigratePlan;
@@ -693,6 +720,7 @@ async function executeManyfold(state: Active, remote: ManyfoldRemote, options: M
 /** Discards a migration that's being prepared or waiting, or takes one that's over off the list. Files a run that
  *  stopped part-way left in its folder go where they belong first. */
 export async function removeRun(id: string): Promise<void> {
+  assertSettled();
   if (discarding.has(id)) throw new HttpError(409, "A migration is under way already.", "busy");
   // Held before the first await and through the cleanup: a Start that came in meanwhile would otherwise find the run
   // still "ready" and merge from a working copy that's being dropped.
@@ -743,4 +771,21 @@ export async function recoverMigrations(): Promise<void> {
     });
   }
   await fs.rm(UPLOADS, { recursive: true, force: true }).catch(() => undefined);
+}
+
+/** At startup, before serving: nothing starts or removes a run until what the last process left is settled. */
+export function holdMigrations(): void {
+  held = true;
+}
+
+/** Settles what the last process left, then lets runs start and go. A database that doesn't answer yet is asked
+ *  again later: until then nothing else can claim a run, so whatever is "running" is still the last process's. */
+export async function settleMigrations(): Promise<void> {
+  try {
+    await recoverMigrations();
+    held = false;
+  } catch (err) {
+    log.error("couldn't settle the migrations the last process left; trying again", { error: err });
+    setTimeout(() => void settleMigrations(), settleTuning.retryMs).unref();
+  }
 }

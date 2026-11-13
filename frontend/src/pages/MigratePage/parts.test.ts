@@ -5,7 +5,7 @@ import type { AdminUser } from "../../api/admin";
 import type { MigrateCounts, MigrateRun, ThingportRun } from "../../api/migrate";
 import { canStart, checkPassed } from "./CheckStep";
 import { guessUser, manyfoldLines } from "./ManyfoldMigrateDialog";
-import { errorDetails, errorText, followRun, formatBytes, runTitle } from "./parts";
+import { errorDetails, errorText, followRun, formatBytes, repeat, runTitle } from "./parts";
 
 // The English the page shows, as the app's own i18next would give it.
 const i18n = i18next.createInstance();
@@ -154,6 +154,32 @@ describe("following a run", () => {
       await vi.advanceTimersByTimeAsync(5000);
       expect(seen).toEqual(["preparing"]);
       expect(get).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("repeats a task only once the last has settled, and goes on after one that failed", async () => {
+    vi.useFakeTimers();
+    try {
+      const finish: (() => void)[] = [];
+      let calls = 0;
+      const stop = repeat(() => {
+        calls += 1;
+        if (calls === 2) return Promise.reject(new Error("down"));
+        return new Promise<void>((resolve) => finish.push(resolve));
+      }, 1000);
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(calls).toBe(1);
+      finish[0]();
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(calls).toBe(2);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(calls).toBe(3);
+      stop();
+      finish[1]();
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(calls).toBe(3);
     } finally {
       vi.useRealTimers();
     }

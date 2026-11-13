@@ -20,7 +20,15 @@ import {
   stagingName,
 } from "../src/services/migrate/postgres";
 import { MERGE_RULES } from "../src/services/migrate/rules";
-import { changeFolder, removeRun, startRun } from "../src/services/migrate/runs";
+import {
+  changeFolder,
+  holdMigrations,
+  removeRun,
+  settleMigrations,
+  settleTuning,
+  startRun,
+  UPLOADS,
+} from "../src/services/migrate/runs";
 import { checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
 import { dump, hasPgTools, oldInstance, RELEASE_1_0_0_MIGRATIONS, tmp, urlFor } from "./migrateFixture";
 
@@ -158,10 +166,82 @@ describe("restoring a dump", () => {
         PGSSLMODE: "verify-full",
         PGSSLROOTCERT: path.resolve("prisma", "certs/ca.pem"),
       });
+      // Strict checks it at Prisma's default sslmode, prefer, too; only disable turns it off.
+      for (const mode of ["", "&sslmode=prefer"]) {
+        process.env.DATABASE_URL = `${base}${mode}&sslaccept=strict&sslcert=certs/ca.pem`;
+        expect(sslEnv()).toMatchObject({ PGSSLMODE: "verify-full" });
+      }
+      process.env.DATABASE_URL = `${base}&sslmode=disable&sslaccept=strict`;
+      expect(sslEnv().PGSSLMODE).toBe("disable");
       process.env.DATABASE_URL = base;
       expect(sslEnv().PGSSLMODE).toBeUndefined();
     } finally {
       process.env.DATABASE_URL = live;
+    }
+  });
+});
+
+describe("starting up", () => {
+  it("holds migrations until what the last process left is settled, trying again when the database didn't answer", async () => {
+    const leftover = await prisma.migrationRun.create({
+      data: {
+        source: "thingport",
+        status: "running",
+        plan: {},
+        stagingDb: `tp_migrate_left${crypto.randomBytes(4).toString("hex")}`,
+        startedAt: new Date(),
+      },
+    });
+    const real = prisma.migrationRun.findMany.bind(prisma.migrationRun);
+    // Only this run, as the last process's: the database is shared with the other files' runs.
+    const findMany = vi
+      .spyOn(prisma.migrationRun, "findMany")
+      .mockRejectedValueOnce(new Error("the database isn't up yet"))
+      .mockImplementation(((args: Prisma.MigrationRunFindManyArgs) =>
+        real({ ...args, where: { ...args?.where, id: leftover.id } })) as unknown as typeof real);
+    const retryMs = settleTuning.retryMs;
+    settleTuning.retryMs = 50;
+    const email = `settle-admin-${crypto.randomBytes(4).toString("hex")}@example.com`;
+    const registered = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Settling Admin", email, password: "password123" });
+    await prisma.user.update({ where: { id: registered.body.user.id }, data: { role: "ADMIN" } });
+    const token = (await request(app).post("/api/login").send({ email, password: "password123" })).body.token;
+    try {
+      holdMigrations();
+      // Turned away before it's written: settling clears the folder uploads go to.
+      const mkdir = vi.spyOn(fs, "mkdirSync");
+      const upload = await request(app)
+        .post("/api/admin/migrate/thingport")
+        .set({ Authorization: `Bearer ${token}` })
+        .field("folder", "/app/migrate/storage")
+        .attach("dump", Buffer.from("PGDMP"), "old.dump");
+      const made = mkdir.mock.calls.map(([dir]) => String(dir));
+      mkdir.mockRestore();
+      expect(upload.status).toBe(409);
+      expect(upload.body.code).toBe("settling");
+      expect(made).not.toContain(UPLOADS);
+      await settleMigrations();
+      // Still "running", as nothing runs it: it can't be removed, or taken for one under way.
+      await expect(removeRun(leftover.id)).rejects.toMatchObject({ status: 409, code: "settling" });
+      let removed = false;
+      for (let tries = 0; tries < 100 && !removed; tries++) {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        removed = await removeRun(leftover.id).then(
+          () => true,
+          (err: { code?: string }) => {
+            if (err.code !== "settling") throw err;
+            return false;
+          },
+        );
+      }
+      expect(removed).toBe(true);
+      expect(findMany).toHaveBeenCalledTimes(2);
+    } finally {
+      findMany.mockRestore();
+      settleTuning.retryMs = retryMs;
+      await prisma.migrationRun.deleteMany({ where: { id: leftover.id } });
+      await prisma.user.deleteMany({ where: { id: registered.body.user.id } });
     }
   });
 });

@@ -14,7 +14,7 @@ import { startNotificationCleanup } from "./services/notificationService";
 import { startSystemNotificationSync } from "./services/systemNotificationService";
 import { announceVersionUpdate } from "./services/releaseNotesService";
 import { resumeStorageMove } from "./services/storageMoveService";
-import { recoverMigrations } from "./services/migrate/runs";
+import { holdMigrations, settleMigrations } from "./services/migrate/runs";
 import { resumeFileReuseBackfill } from "./services/fileReuseBackfill";
 import { seedProviderCategoryIds } from "./services/categorySiteIds";
 import { linkUnattributedPrints } from "./services/authorService";
@@ -26,6 +26,7 @@ const app = createApp();
 
 // Nothing is claimed until what the last process left RUNNING is settled, or a job just claimed would be taken for one.
 holdImportWorker();
+holdMigrations();
 const bootedAt = new Date();
 
 seedFlaresolverrUrl().catch((err) => console.error("Failed to seed the FlareSolverr URL setting:", err));
@@ -46,7 +47,7 @@ async function boot(): Promise<void> {
   );
   // Before serving: settling them clears the uploads folder, and a run started meanwhile would be taken for one the
   // last process left.
-  await recoverMigrations().catch((err) => console.error("Failed to settle the migrations the last run left:", err));
+  await settleMigrations();
   const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);
     startConsumeWatcher();

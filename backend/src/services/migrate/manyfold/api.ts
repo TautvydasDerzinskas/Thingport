@@ -245,19 +245,25 @@ export class ManyfoldClient {
     let res = await this.call(link, { headers: { Accept: "*/*" }, signal });
     // Each hop's address, which the next one's Location is read against: a bucket's relative one stays on the bucket.
     let at = new URL(this.onAddress(link));
+    // Whether the answer is Manyfold's own, which a refused key is told by, or a bucket's it sent the download to.
+    let fromManyfold = true;
     for (let hops = 0; res.status >= 300 && res.status < 400 && hops < 3; hops++) {
       const location = res.headers.get("location");
       if (!location) break;
       const next = new URL(location, at);
       at = next;
-      const sameOrigin = next.origin === new URL(this.connection.address).origin;
-      res = sameOrigin
+      fromManyfold = next.origin === new URL(this.connection.address).origin;
+      res = fromManyfold
         ? await this.call(next.toString(), { headers: { Accept: "*/*" }, signal })
         : await fetch(next, { redirect: "manual", signal }).catch(() => {
             throw lost();
           });
     }
     if (res.status === 404) return false;
+    // As for a list: every file after it would be refused the same way, so the run stops, to be started again.
+    if (fromManyfold && (res.status === 401 || res.status === 403)) {
+      throw new MigrateError("manyfold_key", "Manyfold turned the API key down.");
+    }
     if (!res.ok || !res.body) throw answered(res.status);
     await fs.mkdir(path.dirname(to), { recursive: true });
     const part = `${to}.part`;

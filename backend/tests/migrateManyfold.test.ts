@@ -47,6 +47,12 @@ describe("reading Manyfold", () => {
   it("maps licences, tags and notes into Thingport's", () => {
     expect(manyfoldLicense("CC-BY-4.0")?.id).toBe("CC-BY-4.0");
     expect(manyfoldLicense("LicenseRef-Commercial")).toMatchObject({ id: null, raw: "LicenseRef-Commercial" });
+    // A licence of its own, whatever it's named after.
+    expect(manyfoldLicense("LicenseRef-My-Modified-MIT")).toEqual({
+      id: null,
+      raw: "LicenseRef-My-Modified-MIT",
+      label: "My-Modified-MIT",
+    });
     expect(manyfoldLicense(undefined)).toBeNull();
     expect(manyfoldTags(["!new", "dragon", "Tabletop"])).toEqual(["Dragon", "Tabletop"]);
     expect(
@@ -84,6 +90,30 @@ describe("reading Manyfold", () => {
       expect(await client.download(`${address}/models/m1/raw/a.stl`, path.join(folder, "a.stl"))).toBe(true);
       expect(await fs.readFile(path.join(folder, "a.stl"), "utf8")).toBe(stl("actual"));
       expect(tokens).toEqual([undefined, undefined]);
+    } finally {
+      bucket.close();
+      manyfold.close();
+      await fs.rm(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("stops at a file Manyfold won't let the key download, but not at one a bucket refuses", async () => {
+    const bucket = http.createServer((_req, res) => res.writeHead(403).end());
+    const bucketAddress = await listen(bucket);
+    const manyfold = http.createServer((req, res) => {
+      if (req.url === "/oauth/token") return signedIn(res);
+      if (req.url === "/models/m1/raw/a.stl") return res.writeHead(403).end();
+      if (req.url === "/models/m1/raw/b.stl") return res.writeHead(302, { Location: `${bucketAddress}/b` }).end();
+      res.writeHead(404).end();
+    });
+    const address = await listen(manyfold);
+    const folder = await fs.mkdtemp(path.join(os.tmpdir(), "manyfold-download-"));
+    try {
+      const client = new ManyfoldClient({ address, clientId: "app", clientSecret: "secret" });
+      const refused = (name: string) =>
+        client.download(`${address}/models/m1/raw/${name}`, path.join(folder, name)).catch((err: unknown) => err);
+      expect(await refused("a.stl")).toMatchObject({ code: "manyfold_key" });
+      expect(await refused("b.stl")).toMatchObject({ code: "manyfold_error", values: { status: 403 } });
     } finally {
       bucket.close();
       manyfold.close();
