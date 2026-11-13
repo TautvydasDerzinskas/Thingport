@@ -596,6 +596,141 @@ describe("migrating from Manyfold", () => {
     }
   });
 
+  it("puts a model that's in its owner's library already into its collections too", async () => {
+    const models: Model[] = [
+      {
+        id: "linked9",
+        owner: "noa",
+        name: "Linked",
+        files: [{ id: "k1", path: "linked.stl", mime: "model/stl", body: stl("linked") }],
+        links: [{ url: "https://www.printables.com/model/777-linked" }],
+        collections: ["minis"],
+      },
+    ];
+    const noaServer = await standIn(secret, { models });
+    const noa = (await prisma.user.create({ data: { email: `noa-${tag}@example.com`, displayName: "Noa" } })).id;
+    users.push(noa);
+    const here = await prisma.print.create({
+      data: {
+        userId: noa,
+        name: "Linked",
+        nameNormalized: "linked",
+        sourceProvider: "printables",
+        sourceExternalId: "777",
+      },
+    });
+    try {
+      const report = await new ManyfoldImport(
+        new ManyfoldClient({
+          address: `http://127.0.0.1:${(noaServer.address() as AddressInfo).port}`,
+          clientId: "app",
+          clientSecret: secret,
+        }),
+        `manyfold-${tag}-noa`,
+        { owners: [{ username: "noa", userId: noa }], collections: true },
+        adminId,
+        new Set(),
+        () => undefined,
+      ).run();
+      expect(report.models).toMatchObject({ brought: 0, alreadyHere: 1 });
+      const minis = await prisma.collection.findFirstOrThrow({ where: { userId: noa }, include: { items: true } });
+      expect(minis.name).toBe("Minis");
+      expect(minis.items.map((item) => item.printId)).toEqual([here.id]);
+    } finally {
+      noaServer.close();
+    }
+  });
+
+  it("stops with the model it was making kept to remove, when removing it failed", async () => {
+    const models: Model[] = [
+      {
+        id: "first10",
+        owner: "pia",
+        name: "First",
+        files: [{ id: "r1", path: "first.stl", mime: "model/stl", body: stl("first") }],
+        collections: ["minis"],
+      },
+      {
+        id: "second11",
+        owner: "pia",
+        name: "Second",
+        files: [{ id: "r2", path: "second.stl", mime: "model/stl", body: stl("second") }],
+      },
+    ];
+    const piaServer = await standIn(secret, { models });
+    const pia = (await prisma.user.create({ data: { email: `pia-${tag}@example.com`, displayName: "Pia" } })).id;
+    users.push(pia);
+    const job = new ManyfoldImport(
+      new ManyfoldClient({
+        address: `http://127.0.0.1:${(piaServer.address() as AddressInfo).port}`,
+        clientId: "app",
+        clientSecret: secret,
+      }),
+      `manyfold-${tag}-pia`,
+      { owners: [{ username: "pia", userId: pia }], collections: true },
+      adminId,
+      new Set(),
+      () => undefined,
+    );
+    // Its collection can't be made, and then the database is gone for removing the model too.
+    const create = vi.spyOn(prisma.collection, "create").mockRejectedValueOnce(new Error("The database went away"));
+    const remove = vi.spyOn(prisma.print, "delete").mockRejectedValueOnce(new Error("Still away"));
+    try {
+      await expect(job.run()).rejects.toThrow("Still away");
+    } finally {
+      create.mockRestore();
+      remove.mockRestore();
+      piaServer.close();
+    }
+    const first = await prisma.print.findFirstOrThrow({ where: { userId: pia, name: "First" } });
+    expect(job.half).toBe(first.id);
+    expect([...job.done]).toEqual([]);
+    // Nothing after it was made, to be left half-made while `half` named another.
+    expect(await prisma.print.count({ where: { userId: pia, name: "Second" } })).toBe(0);
+  });
+
+  it("removes what a stopped run was making when it's taken off the list, and still skips what it brought", async () => {
+    const models: Model[] = [
+      {
+        id: "cup12",
+        owner: "uma",
+        name: "Cup",
+        files: [{ id: "c1", path: "cup.stl", mime: "model/stl", body: stl("cup") }],
+      },
+    ];
+    const umaServer = await standIn(secret, { models });
+    const umaAddress = `http://127.0.0.1:${(umaServer.address() as AddressInfo).port}`;
+    const uma = (await prisma.user.create({ data: { email: `uma-${tag}@example.com`, displayName: "Uma" } })).id;
+    users.push(uma);
+    const half = await prisma.print.create({ data: { userId: uma, name: "Cup", nameNormalized: "cup" } });
+    // It brought a mug before the server stopped while it made the cup.
+    const run = await prisma.migrationRun.create({
+      data: {
+        source: "manyfold",
+        status: "failed",
+        startedAt: new Date(),
+        createdById: adminId,
+        plan: { dump: null, folder: "", address: umaAddress },
+        remote: { address: umaAddress, clientId: "app", clientSecret: secret, done: ["mug13"], half: half.id },
+      },
+    });
+    try {
+      await request(app).delete(`/api/admin/migrate/${run.id}`).set(auth()).expect(204);
+      expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).toBeNull();
+      expect(await prisma.print.findUnique({ where: { id: half.id } })).toBeNull();
+      const again = await request(app)
+        .post("/api/admin/migrate/manyfold")
+        .set(auth())
+        .send({ address: umaAddress, clientId: "app", clientSecret: secret })
+        .expect(200);
+      runs.push(again.body.id);
+      expect(again.body.plan.manyfold.before).toBe(1);
+    } finally {
+      umaServer.close();
+      await prisma.setting.deleteMany({ where: { key: `migrate_manyfold_brought:${run.id}` } });
+    }
+  });
+
   it("stops when asked to slow down, and doesn't make a model whose creator it couldn't read", async () => {
     const models: Model[] = [
       {

@@ -3079,7 +3079,7 @@
           "upload": "Le téléverser",
           "onServer": "Il est déjà sur ce serveur",
           "drop": "Déposez ici le dump de la base de données de l’ancienne instance, ou cliquez pour le choisir",
-          "dropHelp": "Fait avec pg_dump -Fc. Jusqu’à 512 Mo passent par le serveur web ; déposez-en un plus gros sur le serveur.",
+          "dropHelp": "Fait avec pg_dump -Fc, une fois le backend de l’ancienne instance arrêté, pour que rien ne change ensuite. Jusqu’à 512 Mo passent par le serveur web ; déposez-en un plus gros sur le serveur.",
           "uploading": "Téléversement : {{percent}} %",
           "dumpPath": "Chemin du dump sur ce serveur",
           "folder": "Son dossier de stockage, tel que ce serveur le voit",

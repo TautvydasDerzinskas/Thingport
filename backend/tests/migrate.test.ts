@@ -8,6 +8,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
+import { Logger } from "../src/logger";
+import { holdMigrationBusy, migrationBusy } from "../src/services/migrate/busy";
 import { MERGED_TABLES, type MigrateOptions, tablesThatCome } from "../src/services/migrate/merge";
 import {
   createStaging,
@@ -546,6 +548,42 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     }
   }, 240_000);
 
+  it("discards a migration Discard caught as it was being made ready", async () => {
+    const update = prisma.migrationRun.update.bind(prisma.migrationRun);
+    let discarded = false;
+    // Discard comes once nothing is left to check but the "ready" being written.
+    const spy = vi.spyOn(prisma.migrationRun, "update").mockImplementation((async (
+      args: Prisma.MigrationRunUpdateArgs,
+    ) => {
+      if ((args.data as { status?: string }).status === "ready" && !discarded) {
+        discarded = true;
+        await removeRun(args.where.id!);
+      }
+      return update(args);
+    }) as never);
+    let id = "";
+    try {
+      const prepared = await request(app)
+        .post("/api/admin/migrate/thingport")
+        .set(auth())
+        .send({ dump_path: dumpFile, folder });
+      expect(prepared.status).toBe(202);
+      id = prepared.body.id;
+      runs.push(id);
+      for (let tries = 0; tries < 240 && (await prisma.migrationRun.findUnique({ where: { id } })); tries++) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    } finally {
+      spy.mockRestore();
+    }
+    expect(discarded).toBe(true);
+    expect(await prisma.migrationRun.findUnique({ where: { id } })).toBeNull();
+    const leftovers = await prisma.$queryRaw<{ datname: string }[]>`
+      SELECT datname FROM pg_database WHERE datname = ${stagingName(id)}`;
+    expect(leftovers).toHaveLength(0);
+    expect(migrationBusy()).toBe(false);
+  }, 120_000);
+
   it("refuses an instance newer than this one", async () => {
     const newer = new PrismaClient({ datasources: { db: { url: urlFor(sourceDb) } } });
     try {
@@ -617,6 +655,26 @@ describe("discarding a migration while it's being started or given another folde
     await prisma.migrationRun.delete({ where: { id: run.id } });
   });
 
+  it("only logs a run that couldn't even keep why it failed, rather than take the server down", async () => {
+    const run = await readyRun();
+    const logged = vi.spyOn(Logger.prototype, "error");
+    const update = vi.spyOn(prisma.migrationRun, "update").mockRejectedValue(new Error("The database went away"));
+    let messages: string[] = [];
+    try {
+      await startRun(run.id, "nobody", options);
+      for (let tries = 0; tries < 200 && !messages.includes("a migration crashed"); tries++) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        messages = logged.mock.calls.map(([message]) => message);
+      }
+    } finally {
+      update.mockRestore();
+      logged.mockRestore();
+    }
+    expect(messages).toContain("a migration crashed");
+    expect(migrationBusy()).toBe(false);
+    await prisma.migrationRun.delete({ where: { id: run.id } });
+  });
+
   it("turns Discard away while another folder is being checked", async () => {
     const run = await readyRun();
     const changing = changeFolder(run.id, "/nowhere").catch(() => undefined);
@@ -651,11 +709,24 @@ describe("discarding a migration while it's being started or given another folde
       const discarding = removeRun(run.id);
       await reached;
       await expect(startRun(run.id, "nobody", options)).rejects.toMatchObject({ status: 409, code: "busy" });
+      // Nor may the database be switched under it while it files them.
+      expect(migrationBusy()).toBe(true);
       letDiscard();
       await discarding;
     } finally {
       spy.mockRestore();
     }
     expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).toBeNull();
+    expect(migrationBusy()).toBe(false);
+  });
+
+  it("stays busy until every hold is let go of, each once", () => {
+    const preparing = holdMigrationBusy();
+    const discarding = holdMigrationBusy();
+    discarding();
+    discarding();
+    expect(migrationBusy()).toBe(true);
+    preparing();
+    expect(migrationBusy()).toBe(false);
   });
 });

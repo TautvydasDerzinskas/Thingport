@@ -3079,7 +3079,7 @@
           "upload": "Subirlo",
           "onServer": "Ya está en este servidor",
           "drop": "Suelta aquí el volcado de la base de datos de la instancia antigua o haz clic para elegirlo",
-          "dropHelp": "Hecho con pg_dump -Fc. Por el servidor web pasan hasta 512 MB; deja uno más grande en el servidor.",
+          "dropHelp": "Hecho con pg_dump -Fc, con el backend de la instancia antigua ya detenido, para que nada cambie después. Por el servidor web pasan hasta 512 MB; deja uno más grande en el servidor.",
           "uploading": "Subiendo: {{percent}} %",
           "dumpPath": "Ruta del volcado en este servidor",
           "folder": "Su carpeta de almacenamiento, tal como la ve este servidor",

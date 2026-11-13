@@ -77,6 +77,8 @@ const WITH_DETAILS = new Set(["restore_failed", "upgrade_failed", "unexpected"])
 /** What went wrong, translated where it's one of the server's known reasons. */
 export function errorText(t: TFunction, error: MigrateRunError | null | undefined): string {
   if (!error) return "";
+  // The Manyfold dialog's own, not the server's: its text is with that dialog's.
+  if (error.code === "manyfold_no_owner") return t(k("manyfold.noOwner"), error.values ?? {});
   if (KNOWN_ERRORS.has(error.code)) return t(k(`errors.${error.code}`), error.values ?? {});
   return t(k("errors.unexpected"));
 }

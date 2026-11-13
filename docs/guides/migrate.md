@@ -82,8 +82,8 @@ docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump
 
 Use your own user and database names if you changed `POSTGRES_USER` or `POSTGRES_DB`. The `-Fc` matters: a plain SQL
 dump is turned away, as it's a script whose commands could reach this server itself. A `-Fc` dump can hold SQL too,
-which runs as it's restored, but as a role that reaches only its own working copy (see below). Restore dumps of
-instances you trust.
+which runs as it's restored, but as a role made for its working copy, with no rights on this instance's data (see
+below). Restore dumps of instances you trust.
 
 ## 3. Bring the storage folder over
 
@@ -159,7 +159,7 @@ what came over already is skipped. Running the same dump again later brings noth
 | This is a plain SQL dump                           | Make the dump again with `-Fc`, as above.                                                                                                                                                                                                     |
 | The old instance is newer than this one            | Update this instance first. A dump can only come from the same release or an older one.                                                                                                                                                       |
 | A database change failed on the old instance       | One of its upgrades never finished. Fix that there (its backend's log says which), then make a new dump.                                                                                                                                      |
-| The database user can't create databases and roles | The working copy is a database of its own, restored as a role that can't reach anything else. Give the database user `CREATEDB` and `CREATEROLE`.                                                                                             |
+| The database user can't create databases and roles | The working copy is a database of its own, restored as a role made for it, with no rights on this instance's data. Give the database user `CREATEDB` and `CREATEROLE`.                                                                        |
 | pg_restore isn't installed on this server          | The Thingport image has it. Running the backend outside Docker, install the PostgreSQL client tools.                                                                                                                                          |
 | None of its files are in that folder               | The path is wrong, or this server can't read it. Change it on the Check step.                                                                                                                                                                 |
 | Give a path inside /app/migrate                    | Mount the old instance's files there, as above, and give the paths below it.                                                                                                                                                                  |
@@ -169,8 +169,11 @@ what came over already is skipped. Running the same dump again later brings noth
 | The old instance stopped answering                 | **Start again** once it's back: what came over already is skipped.                                                                                                                                                                            |
 | Too big to upload through the web server           | Put the dump on the server and give its path.                                                                                                                                                                                                 |
 
-The working copy is restored as a database role made for it, which can reach that copy and nothing else: an uploaded
-dump is trusted no more than any other upload.
+The working copy is restored as a database role made for it: an uploaded dump is trusted no more than any other upload.
+The role owns nothing but that copy and is given no rights on this instance's data, and the SQL in a dump runs inside
+the copy, as a Postgres connection can't query another database. Like any role, it may connect to the server's other
+databases where Postgres's default `CONNECT` for everyone allows, but it has no rights on their tables, and only the
+backend knows its password, which it makes from `AUTH_SECRET`.
 
 pg_dump and pg_restore reach the database as safely as the backend does: its `sslmode`, and `sslaccept=strict` checks
 the server's certificate against `sslcert`. They don't read Prisma's `sslidentity`, though: for a database that asks

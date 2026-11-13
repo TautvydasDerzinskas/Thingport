@@ -202,12 +202,36 @@ describe("an old instance that stops sending", () => {
   const idleMs = remoteTuning.idleMs;
   let server: http.Server;
   let address = "";
+  /** Whether the answer to a missing file with an error page that never ends was let go of. */
+  const errorPage = { closed: false };
 
   beforeAll(async () => {
     remoteTuning.idleMs = 300;
     server = http.createServer((req, res) => {
       const url = new URL(req.url ?? "/", "http://x");
       const name = url.searchParams.get("path");
+      if (url.pathname.endsWith("/missing")) {
+        // A list that takes far longer in all than the deadline to come, but never stops for as long.
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.write('{"missing":[');
+        let sent = 0;
+        const timer = setInterval(() => {
+          sent += 1;
+          if (sent < 8) res.write(`"gone${sent}.stl",`);
+          else {
+            clearInterval(timer);
+            res.end('"last.stl"]}');
+          }
+        }, 100);
+        return;
+      }
+      if (name === "proxied.stl") {
+        // A proxy's error page for a file that isn't there, which goes on and on.
+        res.writeHead(404, { "Content-Type": "text/html" });
+        res.write("<html><body>Not found");
+        res.on("close", () => (errorPage.closed = true));
+        return;
+      }
       if (name === "stalls.stl") {
         // Starts the file, then sends nothing more.
         res.writeHead(200, { "Content-Type": "application/octet-stream" });
@@ -250,6 +274,19 @@ describe("an old instance that stops sending", () => {
       expect(fs.existsSync(path.join(to, name))).toBe(false);
     }
     expect(fs.readdirSync(to)).toEqual([]);
+  });
+
+  it("lets go of a missing file's error page instead of keeping its connection", async () => {
+    const to = tmp();
+    expect(await httpSource({ address, token: "t" }).copy("proxied.stl", path.join(to, "proxied.stl"))).toBe(false);
+    for (let tries = 0; tries < 40 && !errorPage.closed; tries++)
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(errorPage.closed).toBe(true);
+  });
+
+  it("waits for a list as long as it keeps coming", async () => {
+    const missing = await httpSource({ address, token: "t" }).missing(["gone1.stl", "kept.stl"]);
+    expect(missing).toEqual([...Array.from({ length: 7 }, (_, index) => `gone${index + 1}.stl`), "last.stl"]);
   });
 
   it("waits for a file as long as it keeps coming", async () => {

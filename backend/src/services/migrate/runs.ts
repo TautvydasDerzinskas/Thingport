@@ -7,9 +7,9 @@ import { createLogger } from "../../logger";
 import { HttpError } from "../../utils/fileUtils";
 import { createLog } from "../auditLog";
 import { createNotification } from "../notificationService";
-import { discardPrint } from "../printCreation";
+import { discardPrintOrThrow } from "../printCreation";
 import { currentStorageMove } from "../storageMoveService";
-import { setMigrationBusy } from "./busy";
+import { holdMigrationBusy } from "./busy";
 import { MigrateError, MigrateHttpError, storedError } from "./errors";
 import { readSourceHistory } from "./history";
 import { fileRunModels, Merge, MIGRATE_FOLDER, type MergePhase, type MigrateOptions } from "./merge";
@@ -50,7 +50,14 @@ export const UPLOADS = path.join(STORAGE, MIGRATE_FOLDER, "uploads");
 
 /** The one slot's holder: a dump being prepared (which Discard stops), or a run being started or given another
  *  folder (which Discard turns away until it is over: stopping one part-way would leave it going on regardless). */
-type Active = { id: string; kind: "prepare" | "start" | "folder"; progress: RunProgress; abort: AbortController };
+type Active = {
+  id: string;
+  kind: "prepare" | "start" | "folder";
+  progress: RunProgress;
+  abort: AbortController;
+  /** Lets a database switch go ahead again. */
+  unbusy: () => void;
+};
 let active: Active | null = null;
 /** Runs Discard is removing: Start and Change folder turn them away until Discard is done, so neither reads a run
  *  whose working copy and record are going. Only that run is held; another one can still start meanwhile. */
@@ -114,9 +121,14 @@ function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Act
   if (currentStorageMove()?.running) {
     throw new HttpError(409, "Model files are being moved. Start the migration once that's done.", "storage_move");
   }
-  const state: Active = { id, kind, progress: { step, done: 0, total: 0 }, abort: new AbortController() };
+  const state: Active = {
+    id,
+    kind,
+    progress: { step, done: 0, total: 0 },
+    abort: new AbortController(),
+    unbusy: holdMigrationBusy(),
+  };
   active = state;
-  setMigrationBusy(true);
   return state;
 }
 
@@ -145,7 +157,13 @@ function assertFree(): void {
 function release(state: Active): void {
   if (active !== state) return;
   active = null;
-  setMigrationBusy(false);
+  state.unbusy();
+}
+
+/** Runs a run's work in the background. Its own failures are kept on the run; one it couldn't even keep (the database
+ *  gone) is only logged, and the run is settled at the next start, as one the server stopped. */
+function detach(work: Promise<void>, what: string, id: string): void {
+  work.catch((err: unknown) => log.error(`${what} crashed`, { runId: id, error: err }));
 }
 
 export async function listRuns(): Promise<RunOut[]> {
@@ -218,7 +236,11 @@ export async function prepareFromDump(adminId: string, given: DumpInput): Promis
     await dropUpload();
     throw err;
   }
-  void prepare(state, name, { kind: "dump", file: input.file, uploaded: input.uploaded, folder }, plan);
+  detach(
+    prepare(state, name, { kind: "dump", file: input.file, uploaded: input.uploaded, folder }, plan),
+    "preparing a migration",
+    run.id,
+  );
   void createLog({
     userId: adminId,
     action: "migration_prepared",
@@ -263,7 +285,7 @@ export async function prepareOnline(adminId: string, given: { address: string; t
     release(state);
     throw err;
   }
-  void prepare(state, name, { kind: "online", remote }, plan);
+  detach(prepare(state, name, { kind: "online", remote }, plan), "preparing a migration", run.id);
   void createLog({
     userId: adminId,
     action: "migration_prepared",
@@ -344,6 +366,8 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
         },
       },
     });
+    // Discarded while that was written: it goes, as it would have a moment before.
+    if (state.abort.signal.aborted) throw new Error("discarded");
     release(state);
   } catch (err) {
     await source?.$disconnect().catch(() => undefined);
@@ -403,7 +427,7 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
     release(state);
     throw err;
   }
-  void execute(state, stagingDb, started, chosen, adminId);
+  detach(execute(state, stagingDb, started, chosen, adminId), "a migration", id);
   void createLog({
     userId: adminId,
     action: "migration_started",
@@ -522,12 +546,19 @@ function manyfoldClient(id: string, remote: ManyfoldConnection): ManyfoldClient 
   return client;
 }
 
-/** The Manyfold models earlier migrations from the same address brought, so another one skips them. */
+/** Where what a Manyfold migration brought is kept once it's off the list, one setting per migration, by its id. */
+const BROUGHT_KEY = "migrate_manyfold_brought:";
+
+/** The Manyfold models earlier migrations from the same address brought, so another one skips them: those on the list,
+ *  and those taken off it. */
 async function broughtBefore(address: string): Promise<Set<string>> {
-  const runs = await prisma.migrationRun.findMany({ where: { source: "manyfold" }, select: { remote: true } });
+  const [runs, removed] = await Promise.all([
+    prisma.migrationRun.findMany({ where: { source: "manyfold" }, select: { remote: true } }),
+    prisma.setting.findMany({ where: { key: { startsWith: BROUGHT_KEY } }, select: { value: true } }),
+  ]);
   const done = new Set<string>();
-  for (const run of runs) {
-    const remote = run.remote as ManyfoldRemote | null;
+  for (const kept of [...runs.map((run) => run.remote), ...removed.map((row) => row.value)]) {
+    const remote = kept as Pick<ManyfoldRemote, "address" | "done"> | null;
     if (remote?.address === address) for (const id of remote.done ?? []) done.add(id);
   }
   return done;
@@ -641,7 +672,7 @@ export async function startManyfold(id: string, adminId: string, options: Manyfo
     release(state);
     throw err;
   }
-  void executeManyfold(state, remote, chosen, adminId);
+  detach(executeManyfold(state, remote, chosen, adminId), "a migration from Manyfold", id);
   void createLog({ userId: adminId, action: "migration_started", targetId: id, details: { source: "manyfold" } });
   return getRun(id);
 }
@@ -651,7 +682,7 @@ async function executeManyfold(state: Active, remote: ManyfoldRemote, options: M
   try {
     // Made before the server stopped, without all its files: brought again whole. Its Manyfold id isn't in `done`,
     // which is kept in the same write as this is cleared.
-    if (remote.half) await discardPrint(remote.half);
+    if (remote.half) await discardPrintOrThrow(remote.half);
     const done = await broughtBefore(remote.address);
     for (const earlier of remote.done ?? []) done.add(earlier);
     job = new ManyfoldImport(
@@ -723,8 +754,10 @@ export async function removeRun(id: string): Promise<void> {
   assertSettled();
   if (discarding.has(id)) throw new HttpError(409, "A migration is under way already.", "busy");
   // Held before the first await and through the cleanup: a Start that came in meanwhile would otherwise find the run
-  // still "ready" and merge from a working copy that's being dropped.
+  // still "ready" and merge from a working copy that's being dropped. A database switch is turned away too, or the
+  // filing below would go on in the other database.
   discarding.add(id);
+  const unbusy = holdMigrationBusy();
   try {
     const run = await prisma.migrationRun.findUnique({ where: { id } });
     if (!run) throw new HttpError(404, "No such migration");
@@ -740,8 +773,19 @@ export async function removeRun(id: string): Promise<void> {
     if (run.stagingDb) await dropStaging(run.stagingDb);
     if (run.startedAt) await fileRunModels(id);
     manyfoldClients.delete(id);
-    await prisma.migrationRun.delete({ where: { id } });
+    const remote = run.source === "manyfold" ? (run.remote as ManyfoldRemote | null) : null;
+    // The model a run the server stopped was making, which starting it again would have removed.
+    if (remote?.half) await discardPrintOrThrow(remote.half);
+    const done = remote?.done ?? [];
+    await prisma.$transaction([
+      // What it brought is still here, so a later migration from the same Manyfold mustn't bring it again.
+      ...(done.length
+        ? [prisma.setting.create({ data: { key: `${BROUGHT_KEY}${id}`, value: { address: remote!.address, done } } })]
+        : []),
+      prisma.migrationRun.delete({ where: { id } }),
+    ]);
   } finally {
+    unbusy();
     discarding.delete(id);
   }
 }

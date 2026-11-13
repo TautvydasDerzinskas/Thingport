@@ -440,10 +440,15 @@ export class Merge {
       this.report.models.toolModels += 1;
       return;
     }
-    const earlier = await prisma.print.findUnique({ where: { id: print.id }, select: { userId: true } });
+    const earlier = await prisma.print.findUnique({
+      where: { id: print.id },
+      select: { userId: true, copiedFromId: true },
+    });
     if (earlier) {
       if (earlier.userId !== userId) throw new Error("A model here already has this model's id");
       this.prints.set(print.id, print.id);
+      // Brought by a try that stopped before linking it to its original.
+      if (print.copiedFromId && !earlier.copiedFromId) this.copies.push([print.id, print.copiedFromId]);
       this.report.models.earlier += 1;
       return;
     }

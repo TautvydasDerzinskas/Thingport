@@ -2982,7 +2982,7 @@
           "upload": "Upload it",
           "onServer": "It's on this server",
           "drop": "Drop the old instance's database dump here, or click to pick it",
-          "dropHelp": "Made with pg_dump -Fc. Up to 512 MB goes through the web server; put a bigger one on the server.",
+          "dropHelp": "Made with pg_dump -Fc, with the old instance's backend stopped first, so nothing changes after it. Up to 512 MB goes through the web server; put a bigger one on the server.",
           "uploading": "Uploading: {{percent}}%",
           "dumpPath": "The dump's path on this server",
           "folder": "Its storage folder, as this server sees it",

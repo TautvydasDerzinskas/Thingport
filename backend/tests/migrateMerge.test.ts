@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { Merge, MIGRATE_FOLDER, type MigrateOptions } from "../src/services/migrate/merge";
@@ -28,6 +28,7 @@ function noFiles(failFolders = 0) {
   const folders: string[] = [];
   const files: SourceFiles = {
     exists: async () => false,
+    missing: async (paths) => paths,
     copy: async () => false,
     copyFolder: async (relative) => {
       folders.push(relative);
@@ -252,5 +253,32 @@ describe("merging a working copy", () => {
     expect(await prisma.userActiveDay.count({ where: { userId: ivy.hereId! } })).toBe(2);
     await merge([ivy.sourceId]);
     expect(await badges()).toEqual(after);
+  });
+
+  it("links a copy an earlier try brought to its original, once that comes too", async () => {
+    const jo = await person("jo");
+    const original = `orig${tag}`;
+    const copy = `copy${tag}`;
+    await source.print.create({ data: { id: original, userId: jo.sourceId, name: "Hook", nameNormalized: "hook" } });
+    await source.print.create({
+      data: { id: copy, userId: jo.sourceId, name: "Hook copy", nameNormalized: "hook copy", copiedFromId: original },
+    });
+    // The first try brings the copy, but not its original.
+    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    let failed = false;
+    const spy = vi.spyOn(prisma.print, "findUnique").mockImplementation(((args: { where: { id?: string } }) => {
+      if (args.where.id !== original || failed) return findUnique(args as never);
+      failed = true;
+      return Promise.reject(new Error("The database went away"));
+    }) as never);
+    try {
+      expect((await merge([jo.sourceId])).models).toMatchObject({ brought: 1, failed: 1 });
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: copy } })).copiedFromId).toBeNull();
+    expect((await merge([jo.sourceId])).models).toMatchObject({ brought: 1, earlier: 1 });
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: copy } })).copiedFromId).toBe(original);
+    await hereIdOf(jo.email);
   });
 });

@@ -18,6 +18,24 @@ await i18n.init({
 });
 const { t } = i18n;
 
+/** Someone on the Users page, with what a test doesn't care about filled in. */
+function adminUser(given: Pick<AdminUser, "id" | "display_name" | "email">): AdminUser {
+  return {
+    role: "MEMBER",
+    is_owner: false,
+    can_promote: false,
+    can_demote: false,
+    can_delete: false,
+    can_delete_models: false,
+    print_count: 0,
+    collection_count: 0,
+    makerworld_connected: false,
+    sign_in: { password: true, providers: [] },
+    created_at: "2026-01-01T00:00:00Z",
+    ...given,
+  };
+}
+
 // With no options or report, which are each source's own.
 const run = (
   patch: Omit<Partial<ThingportRun>, "plan" | "source" | "options" | "report"> & {
@@ -103,10 +121,10 @@ describe("migrate page helpers", () => {
   });
 
   it("guesses who a Manyfold username is here, by name or by email, else the one asking", () => {
-    const users = [
-      { id: "u1", display_name: "Alex", email: "alex.k@example.com" },
-      { id: "u2", display_name: "Samantha", email: "sam@example.com" },
-    ] as AdminUser[];
+    const users: AdminUser[] = [
+      adminUser({ id: "u1", display_name: "Alex", email: "alex.k@example.com" }),
+      adminUser({ id: "u2", display_name: "Samantha", email: "sam@example.com" }),
+    ];
     expect(guessUser("alex", users, "me")).toBe("u1");
     expect(guessUser("Sam", users, "me")).toBe("u2");
     expect(guessUser("robin", users, "me")).toBe("me");
@@ -127,6 +145,9 @@ describe("migrate page helpers", () => {
       "1 of them merged into one of theirs here",
     ]);
     expect(errorText(t, { code: "manyfold_key", message: "x" })).toMatch(/^Manyfold turned the API key down\./);
+    expect(errorText(t, { code: "manyfold_no_owner", message: "", values: { username: "robin" } })).toBe(
+      "robin owns no models on Manyfold.",
+    );
   });
 });
 

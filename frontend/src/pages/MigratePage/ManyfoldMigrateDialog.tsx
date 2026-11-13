@@ -172,7 +172,8 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
   const addOwner = () =>
     act(async () => {
       const name = username.trim();
-      if (!run || !name) return;
+      // Who they go to is guessed from the people here, so not before they're known.
+      if (!run || !name || !users) return;
       if (owners.some((owner) => owner.username.toLowerCase() === name.toLowerCase())) {
         setUsername("");
         return;
@@ -182,10 +183,7 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
         setError({ code: "manyfold_no_owner", message: "", values: { username: name } });
         return;
       }
-      setOwners((previous) => [
-        ...previous,
-        { username: name, models, userId: guessUser(name, users ?? [], me?.id ?? "") },
-      ]);
+      setOwners((previous) => [...previous, { username: name, models, userId: guessUser(name, users, me?.id ?? "") }]);
       setUsername("");
     });
 
@@ -324,7 +322,7 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
               type="submit"
               variant="outlined"
               startIcon={sending ? <CircularProgress size={16} /> : <AddIcon />}
-              disabled={sending || !username.trim()}
+              disabled={sending || !users || !username.trim()}
               sx={{ flexShrink: 0, height: 40 }}
             >
               {t(m("add"))}
@@ -465,7 +463,7 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
         </Stepper>
         {error && (
           <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-            {error.code === "manyfold_no_owner" ? t(m("noOwner"), error.values ?? {}) : errorText(t, error)}
+            {errorText(t, error)}
           </Alert>
         )}
         <Box

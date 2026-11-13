@@ -87,10 +87,18 @@ async function call(
   }
 }
 
-/** The answer's JSON, or the old instance stopped answering while it came. One that isn't JSON fails as it is. */
+/** The answer's JSON, with the deadline moved on as it comes, or the old instance stopped answering while it came. One
+ *  that isn't JSON fails as it is. */
 async function readJson<T>(res: Response, idle: Idle, remote: Remote, signal?: AbortSignal): Promise<T> {
   try {
-    return (await res.json()) as T;
+    const chunks: Buffer[] = [];
+    if (res.body) {
+      for await (const chunk of Readable.fromWeb(res.body as WebReadableStream<Uint8Array>)) {
+        idle.touch();
+        chunks.push(chunk as Buffer);
+      }
+    }
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as T;
   } catch (err) {
     if (signal?.aborted || err instanceof SyntaxError) throw err;
     throw stoppedAnswering(remote);
@@ -208,7 +216,14 @@ export function httpSource(remote: Remote, signal?: AbortSignal): SourceFiles {
     signal?.throwIfAborted();
     const { res, idle } = await call(remote, file(relative), {}, signal);
     if (res.status === 404) {
-      idle.done();
+      // Its body let go of too, or a proxy's error page would keep the connection.
+      try {
+        await res.body?.cancel();
+      } catch {
+        // Gone already.
+      } finally {
+        idle.done();
+      }
       return false;
     }
     if (!res.ok) throw await refused(res, idle, remote);

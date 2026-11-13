@@ -10,7 +10,7 @@ import { addPrintsToCollection, normalizeCollectionName } from "../../collection
 import { licenseById, licenseIdFromText, type ProviderLicense } from "../../licenseCatalog";
 import { licenseData } from "../../licenseService";
 import { isPreparedPrintFilename } from "../../preparedPrint";
-import { createPrint, discardPrint, type NewPlateInput } from "../../printCreation";
+import { createPrint, discardPrintOrThrow, type NewPlateInput } from "../../printCreation";
 import { saveFileFromTemp } from "../../printFileService";
 import { addUploadedPreviewImages } from "../../uploadService";
 import { MigrateError } from "../errors";
@@ -147,8 +147,9 @@ export class ManyfoldImport {
         try {
           await this.bring(ref["@id"], id);
         } catch (err) {
-          // Manyfold gone, or the key revoked: every model after would fail the same way.
-          if (err instanceof MigrateError && STOPS.has(err.code)) throw err;
+          // Manyfold gone, or the key revoked: every model after would fail the same way. A model half-made that
+          // couldn't be removed stops it too, so it isn't left behind once `half` names the next.
+          if (this.half || (err instanceof MigrateError && STOPS.has(err.code))) throw err;
           this.report.models.failed += 1;
           this.fail("model", ref.name ?? id, err);
         }
@@ -209,6 +210,8 @@ export class ManyfoldImport {
         select: { id: true },
       });
       if (here) {
+        // Still put in its collections: a collection whose models are all here already would be left out otherwise.
+        if (this.options.collections) await this.addToCollections(userId, here.id, model);
         this.done.add(id);
         this.report.models.alreadyHere += 1;
         return;
@@ -279,7 +282,9 @@ export class ManyfoldImport {
         // Here too, so a model left out of its collection isn't kept to be brought again by the next run.
         if (this.options.collections) await this.addToCollections(userId, print.id, model);
       } catch (err) {
-        await discardPrint(print.id);
+        // `half` is cleared only once the model is gone: one that couldn't be removed stops the run (see run) and
+        // stays `half`, for the next start to remove.
+        await discardPrintOrThrow(print.id);
         this.half = null;
         throw err;
       }

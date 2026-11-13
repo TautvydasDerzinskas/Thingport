@@ -9,10 +9,10 @@ import { liveDatabaseServer, type DatabaseServer } from "../databaseSettingsServ
 import { MigrateError } from "./errors";
 
 // The old instance's database becomes a database of its own on this instance's Postgres server, the working copy a
-// migration reads from. A dump is SQL, run as whoever restores it, so it's restored as a role made for it that can
-// reach nothing but that database: an uploaded file is trusted no more than any other upload. Whatever reads the copy
-// afterwards -- the database changes bringing it up to date, the check, the merge -- connects as that role too, since
-// what a dump defines (a view, a function) runs as whoever reads it.
+// migration reads from. A dump is SQL, run as whoever restores it, so it's restored as a role made for it, which owns
+// nothing else and is given no rights on this instance's data: an uploaded file is trusted no more than any other
+// upload. Whatever reads the copy afterwards -- the database changes bringing it up to date, the check, the merge --
+// connects as that role too, since what a dump defines (a view, a function) runs as whoever reads it.
 
 const NAME = /^tp_migrate_[a-z0-9]{8,40}$/;
 const TAIL_LINES = 30;
@@ -259,6 +259,8 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
     PGPASSWORD: stagingPassword(name),
     PGAPPNAME: "thingport-migrate",
     PGCONNECT_TIMEOUT: "15",
+    // Its lines in English, as restoreErrors reads them: a server set to another language would have them translated.
+    LC_ALL: "C",
   };
   const args = [
     // For the lines that say which entry an error is in (restoreErrors).

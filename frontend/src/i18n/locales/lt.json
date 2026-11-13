@@ -3124,7 +3124,7 @@
           "upload": "Įkelti",
           "onServer": "Ji jau šiame serveryje",
           "drop": "Numeskite seno egzemplioriaus duomenų bazės kopiją čia arba spustelėkite ir pasirinkite",
-          "dropHelp": "Padaryta su pg_dump -Fc. Per žiniatinklio serverį keliauja iki 512 MB, didesnę padėkite į serverį.",
+          "dropHelp": "Padaryta su pg_dump -Fc, prieš tai sustabdžius seno egzemplioriaus backend, kad po jos niekas nepasikeistų. Per žiniatinklio serverį keliauja iki 512 MB, didesnę padėkite į serverį.",
           "uploading": "Įkeliama: {{percent}} %",
           "dumpPath": "Kopijos kelias šiame serveryje",
           "folder": "Jo saugyklos aplankas, kaip jį mato šis serveris",
