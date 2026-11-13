@@ -42,6 +42,9 @@ export const UPLOADS = path.join(STORAGE, MIGRATE_FOLDER, "uploads");
  *  folder (which Discard turns away until it is over: stopping one part-way would leave it going on regardless). */
 type Active = { id: string; kind: "prepare" | "start" | "folder"; progress: RunProgress; abort: AbortController };
 let active: Active | null = null;
+/** Runs Discard is removing: Start and Change folder turn them away until Discard is done, so neither reads a run
+ *  whose working copy and record are going. Only that run is held; another one can still start meanwhile. */
+const discarding = new Set<string>();
 
 export type RunOut = {
   id: string;
@@ -82,6 +85,7 @@ const asHttp = (err: unknown) => (err instanceof MigrateError ? new MigrateHttpE
  *  `release` gives it back. */
 function claim(id: string, kind: Active["kind"], step: RunProgress["step"]): Active {
   if (active) throw new HttpError(409, "A migration is under way already.", "busy");
+  if (discarding.has(id)) throw new HttpError(409, "A migration is under way already.", "busy");
   if (currentStorageMove()?.running) {
     throw new HttpError(409, "Model files are being moved. Start the migration once that's done.", "storage_move");
   }
@@ -456,20 +460,28 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
 /** Discards a migration that's being prepared or waiting, or takes one that's over off the list. Files a run that
  *  stopped part-way left in its folder go where they belong first. */
 export async function removeRun(id: string): Promise<void> {
-  const run = await prisma.migrationRun.findUnique({ where: { id } });
-  if (!run) throw new HttpError(404, "No such migration");
-  if (run.status === "running") throw new HttpError(409, "It's running. Wait for it to finish.", "running");
-  if (active?.id === id && active.kind !== "prepare") {
-    throw new HttpError(409, "A migration is under way already.", "busy");
+  if (discarding.has(id)) throw new HttpError(409, "A migration is under way already.", "busy");
+  // Held before the first await and through the cleanup: a Start that came in meanwhile would otherwise find the run
+  // still "ready" and merge from a working copy that's being dropped.
+  discarding.add(id);
+  try {
+    const run = await prisma.migrationRun.findUnique({ where: { id } });
+    if (!run) throw new HttpError(404, "No such migration");
+    if (run.status === "running") throw new HttpError(409, "It's running. Wait for it to finish.", "running");
+    if (active?.id === id && active.kind !== "prepare") {
+      throw new HttpError(409, "A migration is under way already.", "busy");
+    }
+    if (active?.id === id) {
+      // Preparing: it stops, cleans up and goes.
+      active.abort.abort();
+      return;
+    }
+    if (run.stagingDb) await dropStaging(run.stagingDb);
+    if (run.startedAt) await fileRunModels(id);
+    await prisma.migrationRun.delete({ where: { id } });
+  } finally {
+    discarding.delete(id);
   }
-  if (active?.id === id) {
-    // Preparing: it stops, cleans up and goes.
-    active.abort.abort();
-    return;
-  }
-  if (run.stagingDb) await dropStaging(run.stagingDb);
-  if (run.startedAt) await fileRunModels(id);
-  await prisma.migrationRun.delete({ where: { id } });
 }
 
 /** At startup: what the last process was doing is over. A run being prepared failed; one merging failed too, with its
