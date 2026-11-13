@@ -1,8 +1,11 @@
 import JSZip from "jszip";
+import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
+import { createApp } from "../../src/app";
 import { prisma } from "../../src/db";
 import {
   getQidimakerConnection,
+  getUserQidimakerToken,
   normalizeQidimakerSession,
   setUserQidimakerSession,
 } from "../../src/providers/qidimaker/session";
@@ -23,6 +26,8 @@ vi.mock("node:dns/promises", () => ({
 // carries the headers its pages send. Answers are the recorded shapes in fixtures/providers/qidimaker.
 
 const TOKEN = "0123456789abcdef0123456789abcdef";
+// A sign-in saved after TOKEN, from Grab or pasted in Thingport.
+const NEWER = "fedcba9876543210fedcba9876543210";
 const API = "/community/v1/";
 const MODEL_ID = "2094485343639777281";
 const MODEL_URL = `https://www.qidimaker.com/en/models/detail/${MODEL_ID}`;
@@ -195,6 +200,20 @@ describe("QIDI Maker specifics", () => {
     expect(stub.calls.some((call) => call.url.pathname.endsWith("all_stls.zip"))).toBe(true);
   });
 
+  it("imports a queued link of a model without profiles as its own files, whichever profiles it asks for", async () => {
+    ctx.install(handlerFor("ok", "bare"));
+    const res = await ctx.post("/api/import/links", {
+      urls: ["https://www.qidimaker.com/en/models/detail/2105158803743387649"],
+      scope: "designer",
+    });
+    expectStatus(res, 202);
+    expect(await finished(res.body.job_id)).toMatchObject({ status: "DONE", failedCount: 0 });
+    expect((await plateRows()).map((plate) => plate.filename).toSorted()).toEqual([
+      "QIDI Plus5 Poop Chute - Clears Power, Switch & Eth.3mf",
+      "QIDI Plus5 Poop Chute - Clears Power, Switch & Eth.stl",
+    ]);
+  });
+
   it.each(["designer", "all"])("imports a model's %s profiles onto one print", async (scope) => {
     ctx.stub("ok");
     const res = await ctx.post("/api/import/qidimaker/profiles", { url: MODEL_URL, scope });
@@ -225,6 +244,37 @@ describe("QIDI Maker specifics", () => {
     expect(await getQidimakerConnection(ctx.userId)).toBe("expired");
   });
 
+  it("holds the likes' sync once their sign-in is turned down, but keeps one saved while they were read", async () => {
+    const { syncCollection } = await import("../../src/services/collectionSyncRunner");
+    const { findOrCreateCollectionByName } = await import("../../src/services/collectionService");
+    await spec.connect(ctx.userId);
+    const rejecting = handlerFor("rejected");
+    ctx.install(async (call) => {
+      // Grab sends a new sign-in while the likes are being read with the old one.
+      if (call.url.pathname.endsWith("getModelListByFavoriteId")) await setUserQidimakerSession(ctx.userId, NEWER);
+      return rejecting(call);
+    });
+    const collection = await findOrCreateCollectionByName(ctx.userId, "QIDI Maker likes, held");
+    const sync = await prisma.collectionSync.create({
+      data: {
+        userId: ctx.userId,
+        collectionId: collection.id,
+        provider: "qidimaker",
+        externalId: "likes",
+        sourceUrl: LIKES_URL,
+      },
+    });
+    try {
+      expect(await syncCollection(sync.id)).toBe("disconnected");
+      const held = await prisma.collectionSync.findUniqueOrThrow({ where: { id: sync.id } });
+      expect(held.lastError).toBe("QIDI Maker sign-in ran out");
+      expect(await getQidimakerConnection(ctx.userId)).toBe("connected");
+    } finally {
+      await prisma.collectionSync.delete({ where: { id: sync.id } }).catch(() => undefined);
+      await prisma.collection.delete({ where: { id: collection.id } }).catch(() => undefined);
+    }
+  });
+
   it("holds a sync of a collection it can't read without a sign-in, rather than taking it for gone", async () => {
     const { fetchListing } = await import("../../src/services/collectionSyncRunner");
     await spec.disconnect(ctx.userId);
@@ -235,6 +285,33 @@ describe("QIDI Maker specifics", () => {
 });
 
 describe("QIDI Maker sign-in", () => {
+  it("forgets the sign-in Grab saw signed out, but not one pasted in Thingport since", async () => {
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Grab sign-out", email: `qidi-signout-${Date.now()}@example.com`, password: "password123" });
+    const userId: string = res.body.user.id;
+    const patch = (body: Record<string, unknown>) =>
+      request(app)
+        .patch("/api/providers/qidimaker/connection")
+        .set({ Authorization: `Bearer ${res.body.token}` })
+        .send(body);
+    try {
+      await setUserQidimakerSession(userId, TOKEN);
+      expect((await patch({ token: null, signed_out_of: TOKEN })).body).toEqual({ configured: false });
+      expect(await getQidimakerConnection(userId)).toBe("disconnected");
+
+      await setUserQidimakerSession(userId, NEWER);
+      expect((await patch({ token: null, signed_out_of: TOKEN })).body).toEqual({ configured: true });
+      expect(await getUserQidimakerToken(userId)).toBe(NEWER);
+
+      // Disconnecting in Thingport clears whatever is there.
+      expect((await patch({ token: null })).body).toEqual({ configured: false });
+    } finally {
+      await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+    }
+  });
+
   it("reads the token cookie however it's pasted", () => {
     expect(normalizeQidimakerSession(TOKEN)).toBe(TOKEN);
     expect(normalizeQidimakerSession(`Cookie: theme=system; token=${TOKEN}; XSRF-TOKEN=abc`)).toBe(TOKEN);

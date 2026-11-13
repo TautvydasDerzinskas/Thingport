@@ -27,11 +27,10 @@ export function profileFiles(model: QidimakerModel): Linked[] {
   }));
 }
 
-/** The profile the page shows: the `?profile_id=` it writes as one is picked, else the `#profileId-` of a link
- *  Thingport made; "other" where that names one with no 3MF here. */
+/** The profile the page shows, as an import of it reads it (parseQidimakerModelUrl): the `?profile_id=` it writes as
+ *  one is picked, else the `#profileId-` of a link Thingport made; "other" where that names one with no 3MF here. */
 export function pickedProfile(href: string, files: AdaptFile[]): AdaptFile | null | "other" {
-  const own = new URL(href).searchParams.get("profile_id")?.trim();
-  return pickById(files, own || parseQidimakerModelUrl(href)?.requestedProfileId);
+  return pickById(files, parseQidimakerModelUrl(href)?.requestedProfileId);
 }
 
 const links = new Map<string, string>();

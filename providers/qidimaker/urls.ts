@@ -32,14 +32,14 @@ const SPECIAL_LIST_PATH = new RegExp(String.raw`^/${LANG}(?:my/)?collections/det
 // Its lists of a kind of its own, by `?type=`: the user's likes. Browse and download history aren't lists to sync.
 const LIKES_TYPE = "1";
 
-/** `/en/models/detail/<id>`; `?profile_id=<id>` names a print profile, as the page writes it when one is picked.
- *  Thingport's own `#profileId-<id>` names one too, and wins. */
+/** `/en/models/detail/<id>`; `?profile_id=<id>` names a print profile, as the page writes it when one is picked, so
+ *  it wins over Thingport's own `#profileId-<id>`, which a page opened from Thingport may still carry. */
 export function parseQidimakerModelUrl(url: string): { modelId: string; requestedProfileId: string | null } | null {
   const parsed = parseUrl(url);
   const m = parsed?.pathname.match(MODEL_PATH);
   if (!m) return null;
   const fromHash = parsed!.hash.match(/profileId-(\d{1,20})/i)?.[1];
-  return { modelId: m[1], requestedProfileId: digitsId(fromHash ?? parsed!.searchParams.get("profile_id")) };
+  return { modelId: m[1], requestedProfileId: digitsId(parsed!.searchParams.get("profile_id")) ?? digitsId(fromHash) };
 }
 
 export function qidimakerModelUrl(modelId: string, profileId?: string | null): string {

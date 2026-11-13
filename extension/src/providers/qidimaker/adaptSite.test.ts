@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { loadQidimakerModel, qidimakerModelFrom } from "./api";
 import { pickedProfile, profileFiles } from "./adaptSite";
 import { qidimakerProfileIds } from "./content";
+import { parseQidimakerModelUrl } from "./urls.generated";
 
 const CDN = "https://public-cdn.qidimaker.com/model/modelConfiguration/20260831/";
 const DESIGNER = "2094353516652474370";
@@ -84,6 +85,10 @@ describe("a QIDI Maker model's profiles", () => {
     expect(pickedProfile(`${page}#profileId-2094487632165285889`, files)).toBe(files[1]);
     expect(pickedProfile(page, files)).toBeNull();
     expect(pickedProfile(`${page}?profile_id=999`, files)).toBe("other");
+    // A page opened from Thingport's link, then another profile picked on it: the page's pick, for the import too.
+    const both = `${page}?profile_id=2091804233625579522#profileId-2094487632165285889`;
+    expect(pickedProfile(both, files)).toBe(files[2]);
+    expect(parseQidimakerModelUrl(both)?.requestedProfileId).toBe(files[2].id);
   });
 
   it("are offered for import as the backend picks them, the page's own first", () => {

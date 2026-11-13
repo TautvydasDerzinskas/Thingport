@@ -132,8 +132,8 @@ export const qidimakerImport: SourcedImport<null, QidimakerModelResolution> = {
       if (!parsed) throw new HttpError(400, "Not a QIDI Maker model link");
       const resolved = await resolveQidimakerModel(parsed.modelId);
       if (!resolved) throw new HttpError(404, qidimakerImport.missingMessage);
+      // None for a model without profiles: a queued link of it imports its own files, a job for its profiles fails.
       const profileIds = selectQidimakerProfiles(resolved, scope, parsed.requestedProfileId);
-      if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
       return {
         title: resolved.meta.title ?? null,
         urls: profileIds.map((profileId) => qidimakerModelUrl(resolved.modelId, profileId)),

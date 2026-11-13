@@ -3,7 +3,12 @@ import { HttpError } from "../../utils/fileUtils";
 import { parseBody } from "../../utils/validate";
 import type { ConnectionSlot } from "../types";
 import { checkQidimakerAuth } from "./api";
-import { getQidimakerConnection, normalizeQidimakerSession, setUserQidimakerSession } from "./session";
+import {
+  clearQidimakerSessionIf,
+  getQidimakerConnection,
+  normalizeQidimakerSession,
+  setUserQidimakerSession,
+} from "./session";
 
 const schema = z.object({
   token: z.string().max(10_000).nullable(),
@@ -38,5 +43,12 @@ export const qidimakerConnection: ConnectionSlot = {
       account = { id: check.userId, name: check.name };
     }
     return { configured: await setUserQidimakerSession(userId, token, account) };
+  },
+  // Grab saw the browser sign out: the token it sent goes, while it's still the one stored. One pasted in Thingport
+  // since is someone's own choice, and stays.
+  async signOut(userId, lastSent) {
+    const sent = normalizeQidimakerSession(lastSent);
+    if (sent) await clearQidimakerSessionIf(userId, sent);
+    return { configured: (await getQidimakerConnection(userId)) !== "disconnected" };
   },
 };

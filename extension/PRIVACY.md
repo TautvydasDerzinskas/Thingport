@@ -219,8 +219,9 @@ from the image servers of the sites you viewed them on, without saying which pag
   collections are read without it.
 - If you're signed in to QIDI Maker in this browser, and have allowed the extension there: your QIDI Maker sign-in (its
   `token` cookie), when you open a QIDI Maker page and it changed since last sent; when you've signed out there, the
-  extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your own collections
-  and likes there; its models, their files and anyone's public collections are read without it.
+  extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your likes there, and
+  sends it to QIDI Maker with every collection it reads, so your own private ones read too; anyone's public collections
+  need no sign-in. Its models and their files are read without it.
 - On MakerOnline: the download links MakerOnline gives the page for the files of a model you import, or of the models
   waiting on your Thingport instance for the extension (it asks your instance for that list on each MakerOnline page).
   Your instance downloads the files from those links.

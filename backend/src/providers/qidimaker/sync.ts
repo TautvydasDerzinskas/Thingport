@@ -31,8 +31,15 @@ export const qidimakerSync: ProviderSync = {
     if (signInOnly(sync.externalId)) {
       const token = await getUserQidimakerToken(sync.userId);
       if (!token) throw new SyncHeldError(LIKES_DISCONNECTED);
-      // All of them, not the import dialog's first 600, or likes past those would never be found.
-      return (await fetchQidimakerLikes(token, Number.POSITIVE_INFINITY)).entries.map((e) => e.modelId);
+      try {
+        // All of them, not the import dialog's first 600, or likes past those would never be found.
+        return (await fetchQidimakerLikes(token, Number.POSITIVE_INFINITY)).entries.map((e) => e.modelId);
+      } catch (err) {
+        if (!(err instanceof QidimakerAuthError)) throw err;
+        // Only the token this read used: one saved while it ran stays connected.
+        await markQidimakerSessionRejected(sync.userId, token);
+        throw new SyncHeldError(EXPIRED);
+      }
     }
     const collection = await readQidimakerCollection(sync.userId, sync.externalId, Number.POSITIVE_INFINITY);
     if (collection === "signIn") {
@@ -47,13 +54,6 @@ export const qidimakerSync: ProviderSync = {
     return connection === "disconnected" ? LIKES_DISCONNECTED : connection === "expired" ? EXPIRED : null;
   },
   signInOnly,
-  // Only the likes are read with the sign-in alone, so only they wait for a new one.
-  rejected: {
-    is: (err) => err instanceof QidimakerAuthError,
-    mark: (userId) => markQidimakerSessionRejected(userId),
-    problem: EXPIRED,
-    onlyThis: true,
-  },
   problems: [LIKES_DISCONNECTED, PRIVATE_DISCONNECTED, EXPIRED],
   // Its likes page names no user, so a sync reads whoever's sign-in Thingport has: there has to be one.
   async assertCanSync(userId, source) {

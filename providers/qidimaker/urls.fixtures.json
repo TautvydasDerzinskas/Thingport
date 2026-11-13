@@ -38,6 +38,15 @@
       "provider": "qidimaker",
       "kind": "model",
       "externalId": "2094485343639777281",
+      "requestedProfileId": "2094485346244440065"
+    }
+  },
+  {
+    "url": "https://www.qidimaker.com/en/models/detail/2094485343639777281#profileId-2094487632165285889",
+    "expect": {
+      "provider": "qidimaker",
+      "kind": "model",
+      "externalId": "2094485343639777281",
       "requestedProfileId": "2094487632165285889"
     }
   },

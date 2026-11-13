@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+import { prisma } from "../../db";
 import {
   connectionState,
   readConnection,
@@ -60,6 +62,14 @@ export async function setUserQidimakerSession(
 /** With `token`, only while it's still the one stored: Grab may have sent a new one since it was read. */
 export async function markQidimakerSessionRejected(userId: string, token?: string): Promise<void> {
   await rejectConnection(userId, ID, "default", token ? ({ token } satisfies Secret) : undefined);
+}
+
+/** Forgets `token`, only while it's still the one stored. Whose it was is kept, as on any disconnect. */
+export async function clearQidimakerSessionIf(userId: string, token: string): Promise<void> {
+  await prisma.providerConnection.updateMany({
+    where: { userId, provider: ID, slot: "default", secret: { equals: { token } satisfies Secret } },
+    data: { secret: Prisma.DbNull, expiresAt: null, rejectedAt: null },
+  });
 }
 
 /** Whose sign-in Thingport has, by the name QIDI Maker shows them under; null when it doesn't know. */
