@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { qidimakerModelFrom } from "./api";
+import { describe, expect, it, vi } from "vitest";
+import { loadQidimakerModel, qidimakerModelFrom } from "./api";
 import { pickedProfile, profileFiles } from "./adaptSite";
 import { qidimakerProfileIds } from "./content";
 
@@ -48,6 +48,13 @@ const GROUPS = [
   },
 ];
 
+/** The site's API answering every call with `status` and a body that says it went well. */
+const answering = (status: number) =>
+  vi.fn(async (url: string) => {
+    const data = url.endsWith("getModelDetail") ? DETAIL : GROUPS;
+    return new Response(JSON.stringify({ code: 200, data }), { status });
+  });
+
 describe("a QIDI Maker model's profiles", () => {
   const model = qidimakerModelFrom(DETAIL, GROUPS)!;
 
@@ -83,12 +90,16 @@ describe("a QIDI Maker model's profiles", () => {
     const { profiles } = model;
     expect(qidimakerProfileIds(profiles, "url", null)).toEqual(["2094485346244440065"]);
     expect(qidimakerProfileIds(profiles, "url", "2091804233625579522")).toEqual(["2091804233625579522"]);
+    // The designer's alone, as their import brings no one else's, from someone else's page too.
     expect(qidimakerProfileIds(profiles, "designer", "2091804233625579522")).toEqual([
+      "2094485346244440065",
+      "2094487632165285889",
+    ]);
+    expect(qidimakerProfileIds(profiles, "all", "2091804233625579522")).toEqual([
       "2091804233625579522",
       "2094485346244440065",
       "2094487632165285889",
     ]);
-    expect(qidimakerProfileIds(profiles, "all", null)).toHaveLength(3);
     // Where the designer made none, the first is theirs to stand in.
     expect(qidimakerProfileIds(profiles.slice(2), "designer", null)).toEqual(["2091804233625579522"]);
   });
@@ -96,5 +107,16 @@ describe("a QIDI Maker model's profiles", () => {
   it("are none where the page's data can't be read", () => {
     expect(qidimakerModelFrom(null, GROUPS)).toBeNull();
     expect(qidimakerModelFrom(DETAIL, null)).toEqual({ title: "True Flexi Filament Clip", profiles: [] });
+  });
+
+  it("are read only from answers that went well, whatever their body says", async () => {
+    try {
+      vi.stubGlobal("fetch", answering(200));
+      expect((await loadQidimakerModel(DETAIL.id))?.profiles).toHaveLength(3);
+      vi.stubGlobal("fetch", answering(500));
+      expect(await loadQidimakerModel(DETAIL.id)).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

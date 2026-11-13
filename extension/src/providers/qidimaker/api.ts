@@ -19,7 +19,7 @@ function timezone(): string {
 
 type Answer = { code: number | null; data: unknown };
 
-/** One call's answer, `code` 200 when it went well; null where it couldn't be read at all. */
+/** One call's answer, `code` 200 when it went well; null where it failed or couldn't be read at all. */
 async function qidimakerApi(path: string, body: unknown): Promise<Answer | null> {
   try {
     const res = await fetch(`${API}/${path}`, {
@@ -41,6 +41,7 @@ async function qidimakerApi(path: string, body: unknown): Promise<Answer | null>
       },
       body: JSON.stringify(body),
     });
+    if (!res.ok) return null;
     const json = (await res.json().catch(() => null)) as { code?: unknown; data?: unknown } | null;
     return { code: typeof json?.code === "number" ? json.code : null, data: json?.data };
   } catch {
