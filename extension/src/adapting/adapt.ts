@@ -1,9 +1,9 @@
 // Runs the 3MF adapter in a worker so a big model doesn't freeze the tab. Where the page's CSP won't allow a blob:
 // worker, it runs here instead.
 
-import { adaptFile, type AdaptOutcome } from "../../adapting/run";
-import type { WorkerReply, WorkerRequest } from "../../adapting/worker";
-import workerSource from "../../adapting/worker?worker";
+import { adaptFile, type AdaptOutcome, type AdaptPrinterTarget } from "./run";
+import type { WorkerReply, WorkerRequest } from "./worker";
+import workerSource from "./worker?worker";
 
 class WorkerUnavailable extends Error {}
 
@@ -37,14 +37,18 @@ function adaptInWorker(request: WorkerRequest): Promise<AdaptOutcome> {
   }).finally(() => URL.revokeObjectURL(url));
 }
 
-/** The copy of a MakerWorld 3MF made for `slicer` (the instance's; null without one), or the file when it needs none. */
-export async function adaptMakerworld3mf(input: ArrayBuffer, slicer: string | null): Promise<AdaptOutcome> {
+/** The copy of a model's 3MF made for `slicer` (and `printer`), or the file itself when it needs none. */
+export async function adaptBytes(
+  input: ArrayBuffer,
+  slicer: string | null,
+  printer: AdaptPrinterTarget | null,
+): Promise<AdaptOutcome> {
   try {
-    return await adaptInWorker({ input, slicer });
+    return await adaptInWorker({ input, slicer, printer });
   } catch (err) {
     if (!(err instanceof WorkerUnavailable)) throw err;
   }
   // Let the "Adapting…" state paint before the main thread is busy.
   await new Promise((resolve) => setTimeout(resolve, 50));
-  return adaptFile(new Uint8Array(input), slicer);
+  return adaptFile(new Uint8Array(input), slicer, printer);
 }

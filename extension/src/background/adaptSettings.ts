@@ -2,11 +2,26 @@
 // instance's slicers and printers (its Configuration → Slicer and Printers) take their place. On connecting, Grab
 // offers its own to an instance that has none yet, once per account.
 
-import { adaptSettingsOf, adaptUpdate, knownSlicers, type AdaptSettings } from "../shared/adaptSettings";
-import type { AdaptView, ThingportAdapt, ThingportPrinter } from "../shared/messages";
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { PrinterRecipe } from "../adapter/printer.generated";
+import { printerCatalogue } from "../printers/catalogue";
+import {
+  adaptSettingsOf,
+  adaptUpdate,
+  knownSlicers,
+  type AdaptPrinter,
+  type AdaptSettings,
+} from "../shared/adaptSettings";
+import { adaptInUse, adaptTargets, type TargetPrinter } from "../shared/adaptTargets";
+import type { AdaptOffer, AdaptView, ThingportAdapt, ThingportPrinter } from "../shared/messages";
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { ApiError, apiCall } from "./api";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
+
+// Long enough for an instance that's up; past it, Grab's own settings stand in, as for one out of reach.
+const INSTANCE_WAIT_MS = 5000;
+
+const catalogue = printerCatalogue();
 
 /** `GET /settings/slicer`, as any version answers it: one `slicer` before there were several. */
 type SlicerSettings = {
@@ -62,9 +77,6 @@ async function thingportPrinters(account?: ConfiguredConfig): Promise<ThingportP
     extruders: printer.extruders,
   }));
 }
-
-// Long enough for an instance that's up; past it, Grab's own settings stand in, as for one out of reach.
-const INSTANCE_WAIT_MS = 5000;
 
 async function thingportAdapt(): Promise<ThingportAdapt> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -182,4 +194,52 @@ let carrying: Promise<void> = Promise.resolve();
 export function carryAdaptPicks(): Promise<void> {
   carrying = carrying.then(carry).catch((err: unknown) => console.warn("[adapt] Couldn't read Grab's settings:", err));
   return carrying;
+}
+
+/** Grab's own printers as the catalogue describes them; one it no longer has keeps its id for a name. */
+async function describeOwn(): Promise<(printer: AdaptPrinter) => TargetPrinter> {
+  const index = await catalogue.index().catch(() => null);
+  const brands = new Map(index?.brands.map((brand) => [brand.id, brand.name]) ?? []);
+  return ({ id, nozzle }) => {
+    const known = index?.byId.get(id);
+    if (!known) return { id, brandName: "", model: id, nozzle, bed: null, height: null, extruders: 1 };
+    const { model, bed, height, extruders } = known;
+    return { id, brandName: brands.get(known.brand) ?? known.brand, model, nozzle, bed, height, extruders };
+  };
+}
+
+export async function getAdaptOffer(): Promise<AdaptOffer> {
+  const [view, describe, stored] = await Promise.all([getAdaptView(), describeOwn(), getStoredConfig()]);
+  return {
+    targets: adaptTargets(adaptInUse(view, describe)),
+    placement: view.own.placement,
+    lastKey: stored.adaptLastTarget ?? null,
+    connected: view.thingport !== null,
+  };
+}
+
+export async function setAdaptLast(key: string): Promise<null> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.adaptLastTarget]: String(key) });
+  return null;
+}
+
+export function printerRecipeFor(
+  slicer: string,
+  printerId: string,
+  nozzle: string,
+): Promise<{ choice: PrinterChoice; recipe: PrinterRecipe } | null> {
+  return catalogue.recipe(slicer, printerId, nozzle);
+}
+
+/** The popup, opened at Adapt 3MFs' settings: it reads the flag as it opens. A tab says so in its address. */
+export async function openAdaptSettings(): Promise<"popup" | "tab"> {
+  await chrome.storage.local.set({ [STORAGE_KEYS.adaptOpenSettings]: Date.now() });
+  try {
+    await chrome.action.openPopup();
+    return "popup";
+  } catch {
+    await chrome.storage.local.remove(STORAGE_KEYS.adaptOpenSettings);
+    await chrome.tabs.create({ url: chrome.runtime.getURL("popup.html?view=adapt") });
+    return "tab";
+  }
 }

@@ -45,6 +45,7 @@ export default {
     ownLists: "signIn",
     categoryIds: "number",
     trending: { kind: "trending", moreUrl: "https://www.makeronline.com/", rank: 4 },
+    adapted3mfs: ["bambu"],
   },
   examples: {
     model: "https://www.makeronline.com/en/model/Example-Model/123456.html",

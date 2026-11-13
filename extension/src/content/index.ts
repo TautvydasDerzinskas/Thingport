@@ -1,5 +1,5 @@
 // Content script entry point (MakerWorld, Thingiverse, Printables, and the optional sites in optionalSites.ts once
-// turned on). Network calls go through the background (see runtime.ts). MakerWorld's adapted download and its
+// turned on). Network calls go through the background (see runtime.ts). Download adapted (adapted/) and MakerWorld's
 // download resolution for the import button are wired in here, as the page's offline features and the button are
 // every provider's.
 
@@ -14,7 +14,14 @@ import {
   resolveMakerworldDownloadUrl,
   resolveMakerworldProfileDownload,
 } from "../providers/makerworld/downloadResolver";
-import { offerAdaptedDownload, unmountAdaptedDownload } from "../providers/makerworld/adaptedDownload";
+import {
+  adaptedReveal,
+  loadPageAdapt,
+  mountAdaptBubble,
+  mountAdaptedButton,
+  unmountAdaptedButton,
+  type PageAdapt,
+} from "./adapted";
 import { mountJobOverlay, mountPausedJobOverlay } from "./overlays";
 import { loadPanel } from "./panels";
 import { profileGap } from "./profiles";
@@ -38,10 +45,11 @@ import {
   mountPanel,
   renderPanel,
   setBubbleLook,
+  setPanelExtra,
   setPanelOpen,
   unmountHost,
 } from "./shell";
-import { manifestOf, providerOfHost } from "../providers/index.generated";
+import { providerOfHost } from "../providers/index.generated";
 
 declare global {
   interface Window {
@@ -51,6 +59,10 @@ declare global {
 
 // Bumped on every re-init so stale in-flight checks don't mount an icon for the wrong URL.
 let initToken = 0;
+
+// How long Download adapted waits for the bubble to be ready for its copies: a Thingport instance that doesn't answer
+// mustn't hold them back, so past this they go beside the site's button.
+const BUBBLE_WAIT_MS = 6000;
 
 function reportTabIconState(active: boolean): void {
   void send("SET_TAB_ICON_STATE", { active });
@@ -67,7 +79,7 @@ function reportProviderSite(): void {
 
 function unmount(): void {
   closeSetupModal();
-  unmountAdaptedDownload();
+  unmountAdaptedButton();
   unmountHost();
   setContext(null);
 }
@@ -107,39 +119,73 @@ async function init(): Promise<void> {
 
   if (classification.kind === "single") void trackViewedModel(url, isStale);
 
-  if (
-    classification.kind === "single" &&
-    manifestOf(classification.provider).capabilities.bambuProjects &&
-    stateRes.data.offlineFeatures.normalizeMakerworld
-  ) {
-    void offerAdaptedDownload(url, stateRes.data.configured, isStale);
-  }
-
-  // Not set up: still show a grayed-out icon on importable pages so the extension is discoverable.
-  if (!stateRes.data.configured) {
-    const root = mountHost();
-    mountFab(root, {
-      variant: "inactive",
-      label: "Set up Thingport Grab to import this",
-      title: "Thingport Grab isn't set up yet",
-      onClick: () => openSetupModal(root),
+  // Download adapted: beside the site's own button, or in the bubble where the settings say so and this page's bubble
+  // can hold it (`adaptHost`, set below by the bubble that can); where none can, beside the site's button after all.
+  // Where the site's button never shows, in the bubble that can hold the copies, or else in one that only can when
+  // it must (`adaptFallback`: one that can't reach the instance, say).
+  const adapting =
+    classification.kind === "single" && stateRes.data.offlineFeatures.normalizeMakerworld
+      ? loadPageAdapt(classification.provider, url)
+      : Promise.resolve(null);
+  let adaptHost: ((page: PageAdapt) => void) | null = null;
+  let adaptFallback: ((page: PageAdapt) => void) | null = null;
+  let bubbleSettled!: () => void;
+  const settled = new Promise<void>((resolve) => (bubbleSettled = resolve));
+  const settledOrLate = Promise.race([settled, new Promise((resolve) => setTimeout(resolve, BUBBLE_WAIT_MS))]);
+  void Promise.all([adapting, settledOrLate]).then(([page]) => {
+    if (!page || isStale()) return;
+    if (page.offer.placement === "bubble" && adaptHost) {
+      adaptHost(page);
+      return;
+    }
+    mountAdaptedButton(page, url, () => {
+      const offer = adaptHost ?? adaptFallback;
+      if (isStale() || !offer) return false;
+      offer(page);
+      return true;
     });
-    reportTabIconState(false);
-    return;
-  }
+  });
 
-  // Before anything else asks the instance, so a stale password or a down instance shows as such
-  // rather than as every model looking new.
-  const connectionRes = await send("CHECK_CONNECTION");
-  if (isStale()) return;
-  if (connectionRes?.ok && !connectionRes.data.connected) {
-    const problem = connectionRes.data;
-    const root = mountHost();
-    mountFab(root, {
-      variant: "disconnected",
-      label: "Thingport Grab can't sign in to your Thingport instance",
-      title: "Thingport Grab can't sign in to your Thingport instance",
-      onClick: () =>
+  try {
+    // Not set up: still show a grayed-out icon on importable pages so the extension is discoverable. Where Download
+    // adapted goes in the bubble, the bubble offers its copies, and setting imports up under them.
+    if (!stateRes.data.configured) {
+      const page = await adapting;
+      if (isStale()) return;
+      const adaptBubble = (offered: PageAdapt) => {
+        closeSetupModal();
+        unmountHost();
+        const root = mountHost();
+        mountAdaptBubble(root, classification.provider, url, offered, {
+          text: "Want it in your Thingport library as well? ",
+          action: "Set up Grab",
+          onClick: () => openSetupModal(root),
+        });
+      };
+      if (page?.offer.placement === "bubble") {
+        adaptBubble(page);
+        adaptHost = () => undefined;
+      } else {
+        const root = mountHost();
+        mountFab(root, {
+          variant: "inactive",
+          label: "Set up Thingport Grab to import this",
+          title: "Thingport Grab isn't set up yet",
+          onClick: () => openSetupModal(root),
+        });
+        adaptHost = adaptBubble;
+      }
+      reportTabIconState(false);
+      return;
+    }
+
+    // Before anything else asks the instance, so a stale password or a down instance shows as such
+    // rather than as every model looking new.
+    const connectionRes = await send("CHECK_CONNECTION");
+    if (isStale()) return;
+    if (connectionRes?.ok && !connectionRes.data.connected) {
+      const problem = connectionRes.data;
+      const signIn = (root: ShadowRoot) =>
         openSetupModal(root, {
           problem,
           instanceUrl: stateRes.data.instanceUrl,
@@ -148,99 +194,123 @@ async function init(): Promise<void> {
             unmount();
             void init();
           },
-        }),
-    });
-    reportTabIconState(false);
-    return;
-  }
-
-  // An admin turned this provider off for the whole instance: nothing from here would be accepted.
-  const enabled = await providerEnabled(classification.provider);
-  if (isStale()) return;
-  if (!enabled) {
-    reportTabIconState(false);
-    return;
-  }
-
-  // Some lists only their owner sees, and the instance reads them as the user: offered on their own page alone.
-  let pageUrl = url;
-  if (classification.kind === "batch") {
-    const own = await CONTENT_MODULES[classification.provider].ownList?.(url, classification.type);
-    if (isStale()) return;
-    if (own === null) {
+        });
+      const root = mountHost();
+      mountFab(root, {
+        variant: "disconnected",
+        label: "Thingport Grab can't sign in to your Thingport instance",
+        title: "Thingport Grab can't sign in to your Thingport instance",
+        onClick: () => signIn(root),
+      });
+      // Only where the site's button never shows: the copies, with the way to sign in again under them.
+      adaptFallback = (page) => {
+        closeSetupModal();
+        unmountHost();
+        const adaptRoot = mountHost();
+        mountAdaptBubble(adaptRoot, classification.provider, url, page, {
+          text: "Thingport Grab can't sign in to your Thingport instance. ",
+          action: "Sign in again",
+          onClick: () => signIn(adaptRoot),
+        });
+      };
       reportTabIconState(false);
       return;
     }
-    pageUrl = own ?? url;
-  }
 
-  let library: LibraryState | null = null;
-  // Of the page's print profiles, how many the library's model hasn't got, when the page's own is on it.
-  let missingProfiles = 0;
-  if (classification.kind === "single") {
-    try {
-      const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
-      if (isStale()) return;
-      // Which of the page's print profiles the library's model lacks, for a model it has.
-      const gap =
-        status.already_imported && status.print_id
-          ? await profileGap(classification.provider, url, status.imported_profile_ids)
-          : "none";
-      if (isStale()) return;
-      missingProfiles = gap && gap !== "none" ? gap.all.length : 0;
-      library = libraryStateOf(status, gap);
-    } catch {
-      // Show the icon anyway; the panel surfaces the real error.
+    // An admin turned this provider off for the whole instance: nothing from here would be accepted.
+    const enabled = await providerEnabled(classification.provider);
+    if (isStale()) return;
+    if (!enabled) {
+      // Imports aren't, but the copies are this browser's own: where the site's button never shows, a bubble of them.
+      adaptFallback = (page) => mountAdaptBubble(mountHost(), classification.provider, url, page, null);
+      reportTabIconState(false);
+      return;
     }
-  }
-  if (isStale()) return;
 
-  setContext({
-    url: pageUrl,
-    instanceUrl: stateRes.data.instanceUrl,
-    classification,
-    library,
-    canQueue: stateRes.data.canQueue,
-    importQueue: stateRes.data.importQueue,
-  });
-  const root = mountHost();
-  const togglePanel = mountPanel(root, () => void loadPanel());
-  mountFab(root, {
-    // A plus while there's something to add to the library's model, a tick once there's nothing.
-    variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",
-    label: !library
-      ? "Import to Thingport"
-      : library.state === "complete"
-        ? "Imported to Thingport: open it there"
-        : missingProfiles
-          ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
-          : library.state === "imported"
-            ? "Fetch this model's missing details into Thingport"
-            : "Add this print profile to Thingport",
-    onClick: togglePanel,
-  });
-  reportTabIconState(true);
+    // Some lists only their owner sees, and the instance reads them as the user: offered on their own page alone.
+    let pageUrl = url;
+    if (classification.kind === "batch") {
+      const own = await CONTENT_MODULES[classification.provider].ownList?.(url, classification.type);
+      if (isStale()) return;
+      if (own === null) {
+        reportTabIconState(false);
+        return;
+      }
+      pageUrl = own ?? url;
+    }
 
-  // A model built from a script says under the icon whether the script comes with it, before anyone opens the
-  // panel and finds out. Best-effort and last: a page that won't say is treated as any other model.
-  if (classification.kind === "single") {
-    void CONTENT_MODULES[classification.provider]
-      .scriptState?.(pageUrl)
-      .then((script) => {
-        if (!script || isStale()) return;
-        const [html, explainer] = script.withheld
-          ? [WITHHELD_SCRIPT_NOTE_HTML, WITHHELD_SCRIPT_EXPLAINER]
-          : [SHARED_SCRIPT_NOTE_HTML, SHARED_SCRIPT_EXPLAINER];
-        mountFabNote(root, html, explainer);
-      })
-      .catch(() => undefined);
-  }
+    let library: LibraryState | null = null;
+    // Of the page's print profiles, how many the library's model hasn't got, when the page's own is on it.
+    let missingProfiles = 0;
+    if (classification.kind === "single") {
+      try {
+        const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
+        if (isStale()) return;
+        // Which of the page's print profiles the library's model lacks, for a model it has.
+        const gap =
+          status.already_imported && status.print_id
+            ? await profileGap(classification.provider, url, status.imported_profile_ids)
+            : "none";
+        if (isStale()) return;
+        missingProfiles = gap && gap !== "none" ? gap.all.length : 0;
+        library = libraryStateOf(status, gap);
+      } catch {
+        // Show the icon anyway; the panel surfaces the real error.
+      }
+    }
+    if (isStale()) return;
 
-  // A guided import that stopped early lands back here, so show why.
-  if (jobRes?.ok && jobRes.data.error) {
-    const { message, imported, total } = jobRes.data.error;
-    setPanelOpen(true);
-    renderPanel(errorHtml(new Error(`Guided import stopped after ${imported} of ${total} models: ${message}`)));
+    setContext({
+      url: pageUrl,
+      instanceUrl: stateRes.data.instanceUrl,
+      classification,
+      library,
+      canQueue: stateRes.data.canQueue,
+      importQueue: stateRes.data.importQueue,
+    });
+    const root = mountHost();
+    const togglePanel = mountPanel(root, () => void loadPanel());
+    // Under the import, as an extra: a quiet button that shows the copies when it's clicked.
+    adaptHost = (page) => setPanelExtra(adaptedReveal(page, url));
+    mountFab(root, {
+      // A plus while there's something to add to the library's model, a tick once there's nothing.
+      variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",
+      label: !library
+        ? "Import to Thingport"
+        : library.state === "complete"
+          ? "Imported to Thingport: open it there"
+          : missingProfiles
+            ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
+            : library.state === "imported"
+              ? "Fetch this model's missing details into Thingport"
+              : "Add this print profile to Thingport",
+      onClick: togglePanel,
+    });
+    reportTabIconState(true);
+
+    // A model built from a script says under the icon whether the script comes with it, before anyone opens the
+    // panel and finds out. Best-effort and last: a page that won't say is treated as any other model.
+    if (classification.kind === "single") {
+      void CONTENT_MODULES[classification.provider]
+        .scriptState?.(pageUrl)
+        .then((script) => {
+          if (!script || isStale()) return;
+          const [html, explainer] = script.withheld
+            ? [WITHHELD_SCRIPT_NOTE_HTML, WITHHELD_SCRIPT_EXPLAINER]
+            : [SHARED_SCRIPT_NOTE_HTML, SHARED_SCRIPT_EXPLAINER];
+          mountFabNote(root, html, explainer);
+        })
+        .catch(() => undefined);
+    }
+
+    // A guided import that stopped early lands back here, so show why.
+    if (jobRes?.ok && jobRes.data.error) {
+      const { message, imported, total } = jobRes.data.error;
+      setPanelOpen(true);
+      renderPanel(errorHtml(new Error(`Guided import stopped after ${imported} of ${total} models: ${message}`)));
+    }
+  } finally {
+    bubbleSettled();
   }
 }
 

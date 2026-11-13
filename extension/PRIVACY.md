@@ -124,11 +124,9 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- A request for the slicer picked in your Thingport instance's Configuration, when a MakerWorld model page opens (and
-  again when you click **Download adapted**, if it didn't answer in time): it decides whether the button is shown,
-  which copy it makes, and the slicer its explanation names.
-- When you open the toolbar popup while connected: a request for your slicers and printers in your Thingport
-  instance's Configuration, which Adapt 3MFs then shows and uses in place of its own.
+- When a MakerWorld model page opens, and when you open the toolbar popup: a request for your slicers and printers in
+  your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they decide whether **Download
+  adapted** is shown and which copies it makes.
 - When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
   that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once
   per account, so ones you remove there aren't sent again; what couldn't go then (the instance didn't answer, or
@@ -227,9 +225,28 @@ from the image servers of the sites you viewed them on, without saying which pag
   It may also click the page's own Download button and read the link from the download that
   starts; that download is cancelled and removed from your download history straight away, so no
   file is saved.
-- When you click **Download adapted** on a MakerWorld model page, the extension downloads that
-  model's file from MakerWorld, as the page's own Download button would, converts it inside your
-  browser and saves the result to your downloads. The file isn't sent anywhere else.
+- When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint,
+  MakerOnline or eufyMake model page, the extension
+  downloads that model's file from the site, as the page's own Download button would, converts it inside your
+  browser for the slicer and printer you chose, using the printer list it carries, and saves the result to your
+  downloads. The file isn't sent anywhere else.
+- On a Printables model page, while Adapt 3MFs is on, the extension asks Printables' own API which 3MFs
+  the model has, the same way the page does, using your existing Printables session if you're signed in. When
+  you click **Download adapted** there, it asks it for that file's download link, as the page's own Download
+  does.
+- On a Creality Cloud, Snapmaker Space or NexPrint model page you allowed the extension on, while Adapt 3MFs is
+  on, the extension asks the site's own API which print profiles the model has, the same way the page does,
+  without your sign-in. When you click **Download adapted** there, it asks the site for that profile's download
+  link with the sign-in the page keeps for itself (its session cookie), as the page's own Download does.
+- On a MakerOnline model page you allowed the extension on, while Adapt 3MFs is on, the extension asks MakerOnline's
+  own API which print profiles and 3MFs the model has, the same way the page does, without your sign-in. It also has
+  the page note on itself which profile you pick, from the page's own state, so the button can follow it. When you
+  click **Download adapted** there, it has the page ask for that file's download link, with the sign-in the page keeps
+  (its session cookie) and the token MakerOnline's own anti-bot script makes, as the page's own Download does.
+- On an eufyMake model page you allowed the extension on, while Adapt 3MFs is on, the extension asks eufyMake's API
+  (aiot-wapi-eu.ankermake.com) which 3MFs the model has, the same way the page does, without your sign-in. When you
+  click **Download adapted** there, it asks again for a fresh link and downloads the file from eufyMake's file host,
+  also without your sign-in.
 - On a MakerWorld collection import, the extension moves your tab from one model page to the next,
   just as if you were clicking through them.
 - On Printables, once per open tab, the extension asks Printables' own API which account you're
@@ -286,7 +303,7 @@ websites.
 | Downloads                                        | Reads the link from the MakerWorld download it starts, then cancels and removes that download.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Scripting                                        | Adds the import button to MyMiniFactory's, Snapmaker Space's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, eufyMake's, Pinshape's, OwlCAD's, Toymakr3D's, Makerables', CGTrader's, GrabCAD's, Meshy's, PIXUP's, Fab365's and 3DExport's pages, and those of sites added later, once you allow them; on MakerOnline it also asks for file links from within the page, on eufyMake and Fab365 it reads the sign-in from the page's own storage, and on OwlCAD it exports a CAD project in an editor tab it opens (see above).                                                                   |
 | Alarms                                           | Renews the Snapmaker Space sign-in every few hours, once you've allowed Snapmaker Space.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and MakerWorld's Download adapted button, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and the Download adapted button on MakerWorld and Printables, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Access to newer model sites (optional)           | Asked for only when you turn sites on under **Providers** in the popup: one at a time by clicking a site, or all of them with **Enable all** (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, and sites added in later updates). You can take this access back in your browser's extension settings.                                                                                                                                                                |
 | Access to your Thingport instance                | Requested for that one address when you set the extension up, so it can talk to your instance and, while you pair it, read the address of the approval page it opens there.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 

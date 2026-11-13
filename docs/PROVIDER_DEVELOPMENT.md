@@ -177,11 +177,21 @@ Rules of thumb:
   provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw
   files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab offers them converted for other slicers
-  (`bambuProjects`); the app reads what kind of 3MF each file is itself.
+  (`adapted3mfs`); the app reads what kind of 3MF each file is itself.
+- **Download adapted in Grab** (`adapted3mfs`): a site whose models come as 3MFs lists their kinds ("bambu",
+  "prusa", "plain"), and Grab's popup offers it under Adapt 3MFs' Sites. Grab then needs a site of its own for it
+  (`extension/src/content/adapted/site.ts`): how its model's 3MFs are listed and downloaded in the page with the
+  user's own sign-in, where its own open or download button is, and how its theme shows. MakerWorld's and
+  Printables' and the others are in their `providers/<id>/adaptSite.ts`, and a test holds the two lists to each other.
+  Where the site's files come from one app (Creality Print, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next), the
+  site gives a typical file of it (`formats`), so each slicer is offered a copy only where it needs one; where the page
+  picks the print profile, the site says which (`selected`). MakerOnline keeps its pick only in its page's own store,
+  so Grab puts a watcher there (`WATCH_MAKERONLINE_PICK`) that copies it onto the page for `selected` to read.
 - **MakerOnline** can't download server-side at all: the download call needs a Risk-Token that only the site's
   anti-bot script makes in a real page. It uses `customImport` with a `grabQueue`. The backend plans the files, Grab
   gets their links signed on a makeronline.com page, and imports started elsewhere wait in `GrabImport` until the
-  user's next visit (`errorCodes.needsGrab`).
+  user's next visit (`errorCodes.needsGrab`). Download adapted gets its file's link signed the same way
+  (`SIGN_MAKERONLINE_FILE`).
 - **Cults3D** "orders" a free model for nothing, as its Download button does. An order line's download page then
   redirects to a signed CloudFront link that needs no credentials.
 - **Snapmaker** and **NexPrint** return file links signed for whoever asked, so files only download with the user's

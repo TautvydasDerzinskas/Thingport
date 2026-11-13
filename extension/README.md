@@ -9,10 +9,10 @@ panel: the model's picture and name as the page shows them, and one box that pic
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
 "Add > Import" does.
 
-It's useful without Thingport too: on MakerWorld model pages it adds a **Download adapted**
-button that saves the Bambu Studio project as a copy for the slicer your Thingport instance opens files in, or, without
-one, the copy PrusaSlicer and the slicers like it open with its colors and print settings. See
-[Download adapted](#download-adapted-no-thingport-needed).
+It's useful without Thingport too: on MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline and
+eufyMake model pages it adds a **Download adapted**
+button that saves the model's 3MF as a copy made for your slicer and printer, picked in its popup (or your
+Thingport instance's, once connected). See [Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
 <table>
@@ -132,34 +132,61 @@ A hand-installed copy doesn't update itself -- repeat these steps for a newer ve
 ## Download adapted (no Thingport needed)
 
 MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake Studio and the slicers built on
-OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version. On a
-MakerWorld model page, the extension adds a **Download adapted** button under MakerWorld's own "Open in Bambu Studio"
-(or Download) button. Clicking it downloads the selected print profile's file and saves `<name>-adapted.3mf`, a copy
-made for the slicer your Thingport instance opens files in (picked in its Configuration), the copy Thingport's
-**Open adapted** gives that slicer without a printer: it isn't made for your printer yet. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
-into your own printer, filament and print settings, with the designer's settings on each object and the painted colors
-on your extruders. Hover the bulb on the button for what the copy keeps.
+OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version.
+Printables' 3MFs come from PrusaSlicer as often as from Bambu Studio, and the Bambu family opens a PrusaSlicer project
+with none of its settings, colors or beds. Creality Cloud's are Creality Print projects, Snapmaker Space's Snapmaker Orca
+ones, NexPrint's Elegoo Slicer ones and MakerOnline's Anycubic Slicer Next ones, and eufyMake's print files are eufyMake
+Studio projects, which other slicers question or mis-read in the same ways. A project made for
+someone else's printer also opens on theirs. On a model page of any of these sites, the extension adds **Download
+adapted**: it downloads the model's 3MF (the print profile picked on the page, or on Printables the 3MF you pick) and
+saves a copy made for your slicer and, where your slicer loads a printer's presets by name, for your printer: that
+slicer's presets for it, the designer's settings on top and the plates laid out on its bed. It's the copy Thingport's
+**Open adapted** opens. Hover the bulb for what a copy keeps.
 
+- **The button:** an outlined button under the site's own "Open in Bambu Studio" or Download button, so the site's own
+  stays the main action. Under its label it names the copy a click makes, the last one made or else the first: "Bambu
+  Lab P1S · Bambu Studio", after the file where the model has several 3MFs. Its ▾ lists the others, one per slicer,
+  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer and Anycubic Slicer Next, and above
+  them the model's 3MFs on Printables, or the profile or file it's made of where the page picks one. Its last item
+  opens the settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾
+  offers to pick one. On Creality Cloud, Snapmaker Space, NexPrint and MakerOnline it needs you signed in there, as
+  their own Download does.
+- **In a file's row:** on Printables' **Files** tab, every 3MF also gets an **Adapted** button under its own Download,
+  and on NexPrint every profile 3MF in its Files list one beside its own buttons; its menu lists that file's copies.
+- **In Grab's bubble instead:** where the settings say so, or where the site's own button can't be found, the copies
+  are rows in the bubble's panel, with the file to adapt picked above them where there are several. Not connected to
+  Thingport, the bubble opens straight to them, with a way to set up imports under them. Connected, a quiet
+  **Download adapted** under the import shows them when clicked.
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
-  **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected). It isn't
-  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does, or when you switched
-  that slicer's **Open adapted** off in your instance's Configuration. If the instance doesn't say in time, the button
-  is offered and asks it again when you click.
-- **Settings:** the cog beside the switch opens them over the popup. **Slicer**: the slicers you open models in.
-  **Printers**: yours, picked from about a thousand printers by maker or by name, each with its nozzle (click a
-  printer for its nozzle, or to remove it). The list comes with the extension and draws each printer rather than
-  showing a picture. **Button**: beside the site's own button, or in Grab's bubble (where a site's button can't be found,
-  the bubble). **Sites**: where it works, with **Allow** for a site the extension doesn't run on until you let it. Under
-  the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
+  **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected), on a model with a 3MF,
+  on a site the extension runs on (Creality Cloud, Snapmaker Space, NexPrint, MakerOnline and eufyMake once you allow
+  them). A paid model you
+  haven't bought, or one for a site's members, gets none, as the site offers no download of it either. A
+  slicer that opens every kind of 3MF the site has as it is gets no copy unless one is made for a printer, and a file
+  your slicer opens as it is downloads as it is. Connected, nor does a slicer whose **Open adapted** you switched off in
+  your instance's Configuration get a copy.
+- **Settings:** the cog beside the switch opens them over the popup.
+  - **Slicer:** the slicers you open models in.
+  - **Printers:** yours, picked from about a thousand printers by maker or by name, each with its nozzle. Click a
+    printer for its nozzle, or to remove it. The list comes with the extension and draws each printer rather than
+    showing a picture.
+  - **Button:** beside the site's own button, or in Grab's bubble.
+  - **Sites:** where it works, with **Allow** for a site the extension doesn't run on until you let it.
+
+  Under the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
+
 - **Connected:** your slicers and printers are your Thingport instance's, from its **Configuration → Slicer** and
-  **Printers**, shown here and managed there (**Manage** opens them). The first time the extension connects to an
-  account with no slicers or no printers yet, it gives the account the ones picked here. An instance from before
-  printers keeps the extension's own printers in use.
+  **Printers**. They're shown here and managed there (**Manage** opens them), and a slicer's own printer there is the
+  only one it gets a copy for. The first time the extension connects to an account with no slicers or no printers yet,
+  it gives the account the ones picked here. An instance from before printers keeps the extension's own printers in
+  use, and one that doesn't answer within five seconds its own slicers and printers.
 - **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
-  server. The file goes nowhere but your downloads folder.
-- **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over
-  50 MB are too big to convert in the browser -- the button says so. MakerWorld's own button is found by
-  its label, in any of the languages the site comes in.
+  server, and the printers' presets from the list the extension carries. The file goes nowhere but your downloads
+  folder, as `<name>-adapted.3mf`, with the printer's model after it for a copy made for one.
+- **Limits:**
+  - You need to be signed in to MakerWorld, as for its own Download button.
+  - Files over 50 MB are too big to convert in the browser; the button says so.
+  - MakerWorld's own button is found by its label, in any of the languages the site comes in.
 
 ## Thingiverse dark mode and hidden ads (no Thingport needed)
 

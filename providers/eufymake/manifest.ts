@@ -44,6 +44,7 @@ export default {
     ownLists: "signIn",
     categoryIds: "number",
     trending: { kind: "featured", moreUrl: "https://makeitreal.eufymake.com/", rank: 11 },
+    adapted3mfs: ["bambu", "prusa", "plain"],
   },
   examples: {
     model: "https://makeitreal.eufymake.com/models/be7c829023dd11f19919128e55eac07e/phone stand/",

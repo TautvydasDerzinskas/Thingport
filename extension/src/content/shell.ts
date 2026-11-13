@@ -14,6 +14,8 @@ let stackEl: HTMLDivElement | null = null;
 let fabBodyEl: HTMLElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let contentEl: HTMLDivElement | null = null;
+// Under the content, for what isn't part of an import flow: Download adapted's copies (content/adapted/).
+let extraEl: HTMLDivElement | null = null;
 let noteEl: HTMLDivElement | null = null;
 let fabEl: HTMLButtonElement | null = null;
 // The bubble's look, as the popup's Appearance tab set it; set before the first mount, and again on every change.
@@ -43,6 +45,7 @@ const PILL_WORDS: Record<NonNullable<FabOptions["variant"]> | "import", string> 
   complete: "Imported",
   inactive: "Set up",
   disconnected: "Sign in",
+  adapt: "Adapt",
 };
 
 /** Its name, with the pill's word in front where it shows and the name doesn't already start with it: what's
@@ -81,11 +84,13 @@ export function unmountHost(): void {
   window.clearTimeout(closeTimer);
   panelEl = null;
   contentEl = null;
+  extraEl = null;
   noteEl = null;
 }
 
 type FabOptions = {
-  variant?: "in-library" | "complete" | "inactive" | "disconnected";
+  /** "adapt": not set up for imports, but offering Download adapted's copies, which it opens in the panel. */
+  variant?: "in-library" | "complete" | "inactive" | "disconnected" | "adapt";
   label: string;
   title?: string;
   onClick: () => void;
@@ -174,12 +179,17 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   const content = document.createElement("div");
   content.className = "tg-panel__content";
   panel.appendChild(content);
+  const extra = document.createElement("div");
+  extra.className = "tg-panel__extra";
+  extra.hidden = true;
+  panel.appendChild(extra);
   stack.appendChild(panel);
   root.appendChild(stack);
 
   stackEl = stack;
   panelEl = panel;
   contentEl = content;
+  extraEl = extra;
   let loaded = false;
   return () => {
     const open = !panelOpen;
@@ -262,6 +272,13 @@ export function setPanelNote(html: string | null, tone?: "shared" | "withheld"):
 
 export function isPanelMounted(): boolean {
   return contentEl !== null;
+}
+
+/** What sits under the panel's content whatever it shows; null takes it away. */
+export function setPanelExtra(node: Node | null): void {
+  if (!extraEl) return;
+  extraEl.replaceChildren(...(node ? [node] : []));
+  extraEl.hidden = !node;
 }
 
 export function renderPanel(html: string): void {

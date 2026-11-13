@@ -26,6 +26,10 @@ export const STORAGE_KEYS = {
   // The Thingport instance and account Grab's slicers and printers were last offered to on connecting, so they're
   // offered once, not again after the user removed them there.
   adaptCarriedTo: "adaptCarriedTo",
+  // The copy Download adapted made last (an AdaptTarget's key), made again by its button.
+  adaptLastTarget: "adaptLastTarget",
+  // Set by a page's "Adapt settings…" for the popup to open there; read and cleared when it opens.
+  adaptOpenSettings: "adaptOpenSettings",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
   // Whether the instance gives everyone an import queue of their own, as its health check said at the last sign-in:
@@ -70,6 +74,8 @@ export type StoredConfig = {
   /** What of Adapt 3MFs' settings has gone to each Thingport account, by `instanceUrl|email`: the parts settled, and
    *  the printers sent of a carry under way (background/adaptSettings.ts). */
   adaptCarriedTo?: Record<string, { settled: ("slicers" | "printers")[]; printersSent?: string[] }>;
+  adaptLastTarget?: string;
+  adaptOpenSettings?: number;
   isAdmin?: boolean;
   importQueue?: boolean;
   token?: string;
@@ -125,6 +131,10 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.normalizeMakerworld,
+  // Adapt 3MFs' settings: open pages offer the copies anew. Not the copy last made, which only the button shows.
+  STORAGE_KEYS.adaptSlicers,
+  STORAGE_KEYS.adaptPrinters,
+  STORAGE_KEYS.adaptPlacement,
   STORAGE_KEYS.isAdmin,
   STORAGE_KEYS.importQueue,
 ];

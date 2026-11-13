@@ -16,6 +16,8 @@ only to signed-in users, so every import runs as you.
   again with another profile, or picking the designer's or all profiles, adds more. A model without print profiles
   brings its model files instead.
 - Your likes and bookmarks, from your profile's **Interactions** tab, to import or keep in sync.
+- Its 3MFs are Snapmaker Orca projects; other slicers open them as [adapted 3MFs](../features/adapted-3mf.md), and Thingport
+  Grab downloads them adapted on Snapmaker Space itself, once you allow it there.
 
 ## Setup
 
