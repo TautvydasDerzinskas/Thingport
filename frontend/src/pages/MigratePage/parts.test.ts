@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it, vi } from "vitest";
-import type { MigrateRun } from "../../api/migrate";
+import type { MigrateCounts, MigrateRun } from "../../api/migrate";
 import { canStart, checkPassed } from "./CheckStep";
 import { errorDetails, errorText, followRun, formatBytes } from "./parts";
 
@@ -22,6 +22,22 @@ const run = (patch: Omit<Partial<MigrateRun>, "plan"> & { plan?: Partial<Migrate
   finished_at: null,
   ...patch,
   plan: { dump: null, folder: "/old", ...patch.plan },
+});
+
+/** A check's counts: nothing of anything, but what's given. */
+const countsOf = (some: Partial<MigrateCounts>): MigrateCounts => ({
+  people: 0,
+  models: 0,
+  files: 0,
+  collections: 0,
+  designs: 0,
+  widgets: 0,
+  tools: 0,
+  syncs: 0,
+  signIns: 0,
+  settings: 0,
+  secrets: 0,
+  ...some,
 });
 
 describe("migrate page helpers", () => {
@@ -48,8 +64,7 @@ describe("migrate page helpers", () => {
   });
 
   it("goes on from the check only once it's ready and some of its files were found", () => {
-    const counts = { people: 1, models: 2, files: 4, collections: 0, designs: 0, widgets: 0, tools: 0 };
-    const all = { ...counts, syncs: 0, signIns: 0, settings: 0, secrets: 0 };
+    const all = countsOf({ people: 1, models: 2, files: 4 });
     expect(checkPassed(run({ plan: { counts: all, missingFiles: 1 } }))).toBe(true);
     expect(checkPassed(run({ plan: { counts: all, missingFiles: 4 } }))).toBe(false);
     expect(checkPassed(run({ status: "preparing" }))).toBe(false);
@@ -87,7 +102,7 @@ describe("following a run", () => {
   });
 
   it("starts a run only once its latest check passed, and not while its folder is checked again", () => {
-    const counts = { files: 4 } as MigrateRun["plan"]["counts"];
+    const counts = countsOf({ files: 4 });
     expect(canStart(run({ plan: { counts, missingFiles: 1 } }), false)).toBe(true);
     expect(canStart(run({ plan: { counts, missingFiles: 1 } }), true)).toBe(false);
     expect(canStart(run({ plan: { counts, missingFiles: 4 } }), false)).toBe(false);
