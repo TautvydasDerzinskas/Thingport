@@ -376,14 +376,34 @@ describe("Free up space", () => {
     expect(fs.existsSync(fileOf(photos[2].id))).toBe(true);
   });
 
-  it("drops the rows of photos it removed when their removal can't be saved", async () => {
+  it("removes a photo's file only once its row is gone, so no reorder can make it the cover", async () => {
     const { printId, photos, fileOf } = await withPhotos(3);
-    // The database refuses the first deletion of this model's rows, as a dropped connection would, once their files
-    // are gone; a sequence, as it counts outside the transaction that's rolled back.
-    await prisma.$executeRawUnsafe(`CREATE SEQUENCE cleanup_test_refusals`);
+    const files = new Map(photos.map((photo) => [fileOf(photo.id), photo.id]));
+    const stillThere: string[] = [];
+    const rm = fsPromises.rm;
+    const spy = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
+      const id = files.get(String(target));
+      // Read from outside the clean-up, as a reorder would: the row must already be gone for good.
+      if (id && (await prisma.previewImage.findUnique({ where: { id } }))) stillThere.push(id);
+      return rm(target, options);
+    });
+    try {
+      await runCleanup(["photos"], 1);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(stillThere).toEqual([]);
+    for (const photo of photos.slice(1)) expect(fs.existsSync(fileOf(photo.id))).toBe(false);
+    const left = await prisma.previewImage.findMany({ where: { printId } });
+    expect(left.map((image) => image.id)).toEqual([photos[0].id]);
+  });
+
+  it("removes no file of a model whose rows it can't delete", async () => {
+    const { printId, photos, fileOf } = await withPhotos(3);
+    // The database refuses the deletion of this model's rows, as a dropped connection would.
     await prisma.$executeRawUnsafe(`CREATE FUNCTION cleanup_test_refuse() RETURNS trigger AS $$ BEGIN
-      IF OLD."printId" = '${printId}' AND nextval('cleanup_test_refusals') = 1 THEN RAISE EXCEPTION 'connection lost';
-      END IF; RETURN OLD; END $$ LANGUAGE plpgsql`);
+      IF OLD."printId" = '${printId}' THEN RAISE EXCEPTION 'connection lost'; END IF; RETURN OLD; END $$
+      LANGUAGE plpgsql`);
     await prisma.$executeRawUnsafe(`CREATE TRIGGER cleanup_test_refuse BEFORE DELETE ON "PreviewImage"
       FOR EACH ROW EXECUTE FUNCTION cleanup_test_refuse()`);
     let run: Awaited<ReturnType<typeof runCleanup>>;
@@ -392,13 +412,11 @@ describe("Free up space", () => {
     } finally {
       await prisma.$executeRawUnsafe(`DROP TRIGGER cleanup_test_refuse ON "PreviewImage"`);
       await prisma.$executeRawUnsafe(`DROP FUNCTION cleanup_test_refuse()`);
-      await prisma.$executeRawUnsafe(`DROP SEQUENCE cleanup_test_refusals`);
     }
     expect(run.tasks.find((each) => each.key === "photos")!.status).toBe("failed");
-    for (const photo of photos.slice(1)) expect(fs.existsSync(fileOf(photo.id))).toBe(false);
-    const left = await prisma.previewImage.findMany({ where: { printId } });
-    expect(left.map((image) => image.id)).toEqual([photos[0].id]);
-    expect(fs.existsSync(fileOf(photos[0].id))).toBe(true);
+    for (const photo of photos) expect(fs.existsSync(fileOf(photo.id))).toBe(true);
+    const left = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
+    expect(left.map((image) => image.id)).toEqual(photos.map((photo) => photo.id));
   });
 });
 
