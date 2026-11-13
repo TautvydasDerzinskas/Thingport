@@ -14,7 +14,7 @@ import { latestRequests } from "../../utils/latestRequests";
 import { useToast } from "../ToastProvider";
 import AchievementBadge from "./AchievementBadge";
 import AchievementReveal from "./AchievementReveal";
-import { onAchievementCheck } from "./achievementEvents";
+import { announceAchievementsFound, onAchievementCheck } from "./achievementEvents";
 
 // Tells the user, wherever they are in the app, about a badge they've just earned: a toast with it (View opens it on
 // My models), or for Diamond and Holographic the reveal. Looks now and then, when the tab comes back, and a moment
@@ -61,6 +61,7 @@ export default function AchievementWatcher() {
       // again; one raised meanwhile stays unseen.
       await achievementsApi.markSeen(unseen.map(({ id, tier }) => ({ id, tier })));
       if (!current()) return;
+      announceAchievementsFound();
       const shown = knownAchievements(unseen);
       const revealed = shown.filter((item) => REVEALED.has(materialOf(item.def, item.tier)));
       const toastNow = toastFor(shown.filter((item) => !revealed.includes(item)));

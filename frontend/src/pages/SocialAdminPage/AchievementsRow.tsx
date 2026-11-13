@@ -22,16 +22,25 @@ export default function AchievementsRow({ onUnauthorized }: Props) {
   const [error, setError] = React.useState<string | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
 
+  const read = React.useCallback(
+    () =>
+      achievementsApi.getSettings().then(
+        (settings) => {
+          setEnabled(settings.enabled);
+          setLoadFailed(false);
+        },
+        (err: unknown) => {
+          if (err instanceof UnauthorizedError) onUnauthorized?.();
+          else setLoadFailed(true);
+        },
+      ),
+    [onUnauthorized],
+  );
+
   const load = React.useCallback(() => {
     setLoadFailed(false);
-    achievementsApi.getSettings().then(
-      (settings) => setEnabled(settings.enabled),
-      (err: unknown) => {
-        if (err instanceof UnauthorizedError) onUnauthorized?.();
-        else setLoadFailed(true);
-      },
-    );
-  }, [onUnauthorized]);
+    void read();
+  }, [read]);
 
   React.useEffect(load, [load]);
 
@@ -42,15 +51,20 @@ export default function AchievementsRow({ onUnauthorized }: Props) {
     setError(null);
     try {
       setEnabled((await achievementsApi.updateSettings({ enabled: next })).enabled);
-      // My models' badges and the watcher follow straight away.
-      void refreshSocialStatus();
     } catch (err) {
       setEnabled(before);
-      if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else setError(err instanceof Error ? err.message : t("adminSettings.social.achievements.saveFailed"));
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized?.();
+        return;
+      }
+      setError(err instanceof Error ? err.message : t("adminSettings.social.achievements.saveFailed"));
+      // It may have been saved all the same, its answer lost: the switch shows what's saved, the error stays.
+      await read();
     } finally {
       setBusy(false);
     }
+    // My models' badges and the watcher follow straight away, after a failed save too.
+    void refreshSocialStatus();
   };
 
   const title = t("adminSettings.social.achievements.infoTitle");

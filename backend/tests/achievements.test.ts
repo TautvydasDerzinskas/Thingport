@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -130,6 +130,66 @@ describe("achievements switch", () => {
     expect(notes).toHaveLength(1);
     expect(notes[0].message).toMatchObject({ key: "achievementsCredited" });
     expect((await request(app).get("/api/social").set(auth(member))).body.achievements).toBe(true);
+  });
+
+  describe("switched off while crediting", () => {
+    let first: Account;
+    let second: Account;
+    let made = 0;
+    const credits = (account: Account) =>
+      prisma.notification.count({ where: { userId: account.id, type: "achievement" } });
+
+    beforeEach(async () => {
+      // Checks the tests above left waiting would read the setting at a moment of their own.
+      await Promise.all([checkAchievementsNow(admin.id), checkAchievementsNow(member.id)]);
+      made += 1;
+      first = await register(`First${made}`);
+      second = await register(`Second${made}`);
+      await downloads(first, 3);
+      await downloads(second, 3);
+      await setAchievementSettings({ enabled: true });
+      // Credited in this order, `first`'s notification switching achievements off.
+      vi.spyOn(prisma.user, "findMany").mockResolvedValue([{ id: first.id }, { id: second.id }] as never);
+      const create = prisma.notification.create.bind(prisma.notification);
+      vi.spyOn(prisma.notification, "create").mockImplementation(((args: { data: { userId: string } }) =>
+        create(args as never).then(async (row) => {
+          if (args.data.userId === first.id) await setAchievementSettings({ enabled: false });
+          return row;
+        })) as never);
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await setAchievementSettings({ enabled: true });
+    });
+
+    it("credits no one else", async () => {
+      await creditEveryone();
+      expect(await credits(first)).toBe(1);
+      expect(await credits(second)).toBe(0);
+      expect(await prisma.userAchievement.count({ where: { userId: second.id } })).toBe(0);
+    });
+
+    it("goes over everyone again, switched back on before the run is done", async () => {
+      let switchedOff = false;
+      const read = prisma.setting.findUnique.bind(prisma.setting);
+      vi.spyOn(prisma.setting, "findUnique").mockImplementation(((args: { where: { key: string } }) =>
+        read(args as never).then(async (row) => {
+          // The run reads "off" for `second`, and an admin switches achievements on again before it has stopped.
+          if (args.where.key === "achievements" && !switchedOff && (await credits(first))) {
+            switchedOff = true;
+            await setAchievementSettings({ enabled: true });
+            void creditEveryone();
+          }
+          return row;
+        })) as never);
+      await creditEveryone();
+      expect(switchedOff).toBe(true);
+      expect(await credits(first)).toBe(1);
+      expect(await prisma.notification.findMany({ where: { userId: second.id, type: "achievement" } })).toMatchObject([
+        { message: { key: "achievementsCredited", values: { count: 1 } } },
+      ]);
+    });
   });
 });
 

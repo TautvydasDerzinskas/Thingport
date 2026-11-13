@@ -4,10 +4,12 @@ import { achievementsApi, type OwnAchievement } from "../../api/achievements";
 import { knownAchievements } from "../../constants/achievements";
 import { latestRequests } from "../../utils/latestRequests";
 import AchievementsShowcase, { type ShowcaseOpen } from "./AchievementsShowcase";
-import { onAchievementCheck } from "./achievementEvents";
+import { onAchievementCheck, onAchievementsFound } from "./achievementEvents";
 
-// The user's own badges on My models, read again a moment after something may have earned one. A notification's
-// link opens one (?achievement=<id>) or all of them (?achievements=all); closing it takes that off the address.
+// The user's own badges on My models, read again a moment after something may have earned one, and as soon as the
+// watcher finds one, as nothing here asked about what the server raised by itself (an import, a day's visit). A
+// notification's link opens one (?achievement=<id>) or all of them (?achievements=all); closing it takes that off the
+// address.
 
 const AFTER_MS = 3000;
 
@@ -39,9 +41,11 @@ export default function MyAchievements() {
       }, AFTER_MS);
       timers.add(timer);
     });
+    const stopFound = onAchievementsFound(load);
     return () => {
       requests.cancel();
       stop();
+      stopFound();
       timers.forEach((timer) => window.clearTimeout(timer));
     };
   }, [load, requests]);

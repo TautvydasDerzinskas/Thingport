@@ -218,13 +218,26 @@ export async function checkAchievementsNow(userId: string): Promise<void> {
 }
 
 let creditRun: Promise<void> | null = null;
+// Switched off and on while a run goes: it may have stopped short, so everyone is gone over again once it ends.
+let creditAgain = false;
 
 /** Credits every user with what they'd earned before achievements were turned on: no toasts, one notification
- *  each. Asked again while it runs (switched off and on), it's the same run. */
+ *  each. Stops when they're switched off; asked again while it runs, it goes over everyone again after. */
 export function creditEveryone(): Promise<void> {
-  creditRun ??= creditAll().finally(() => {
-    creditRun = null;
-  });
+  if (creditRun) {
+    creditAgain = true;
+    return creditRun;
+  }
+  creditRun = (async () => {
+    try {
+      do {
+        creditAgain = false;
+        await creditAll();
+      } while (creditAgain);
+    } finally {
+      creditRun = null;
+    }
+  })();
   return creditRun;
 }
 
@@ -233,9 +246,12 @@ async function creditAll(): Promise<void> {
   try {
     const users = await prisma.user.findMany({ select: { id: true } });
     for (const { id } of users) {
+      let on = true;
       await inTurn(id, "crediting", async () => {
-        await creditIfDue(id);
+        on = (await getAchievementSettings()).enabled;
+        if (on) await creditIfDue(id);
       });
+      if (!on) return;
     }
   } finally {
     credited = null;
