@@ -1896,9 +1896,9 @@
         "intro": "Расширение для браузера, которое импортирует модели из MakerWorld, Thingiverse, Printables и MyMiniFactory прямо с их страниц.",
         "name": "Thingport Grab",
         "store": {
-          "chrome": "Получить в Chrome Web Store",
-          "edge": "Получить в Edge Add-ons",
-          "firefox": "Получить в Firefox Add-ons"
+          "chrome": "Открыть в Chrome Web Store",
+          "edge": "Открыть в Edge Add-ons",
+          "firefox": "Открыть в Firefox Add-ons"
         }
       },
       "bridge": {
@@ -2813,7 +2813,7 @@
         "none": "Не нужен."
       },
       "guide": "Полное руководство",
-      "getGrab": "Получить Thingport Grab",
+      "getGrab": "Установить Thingport Grab",
       "visit": "Открыть {{host}}",
       "compareLabel": "Что требуется каждому источнику и что он импортирует",
       "off": "Отключён",
@@ -3489,11 +3489,11 @@
           "modelsOnly": "Только модели"
         },
         "signInLine": {
-          "none": "Вход не требуется",
-          "userOptional": "Вход необязателен",
-          "user": "Пользователи входят сами",
+          "none": "Без входа",
+          "userOptional": "Вход по желанию",
+          "user": "Каждый со своим аккаунтом",
           "admin": "Ключ администратора",
-          "adminUser": "Ключ администратора, пользователи входят сами"
+          "adminUser": "Ключ администратора + личный аккаунт"
         },
         "keyMissing": "Ключ не задан",
         "shown": "Показано: {{shown}} из {{total}}",
