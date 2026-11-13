@@ -7532,6 +7532,37 @@
       "sync": {
         "notConnected": "Connect 3DExport in Configuration > Providers, or visit it signed in with Thingport Grab, to see your collections here."
       }
+    },
+    "qidimaker": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open www.qidimaker.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at www.qidimaker.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → https://www.qidimaker.com, copy the value of the token cookie and paste it below."
+        ],
+        "placeholder": "The value of the token cookie"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your QIDI Maker likes and private collections. Its models and anyone's public collections import without it.",
+        "expired": "Sign-in expired. Sign in on www.qidimaker.com with Thingport Grab, or connect QIDI Maker again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "QIDI Maker: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "QIDI Tech's model community for its X-Plus, X-Max and Q printers, with print profiles made in QIDI Studio.",
+        "signIn": "None to import; your sign-in adds your own collections and likes.",
+        "grab": "Sends your sign-in as you visit www.qidimaker.com.",
+        "setup": [
+          "Import any model link; no sign-in is needed.",
+          "For your own collections and likes: install Thingport Grab, enable it on QIDI Maker and open www.qidimaker.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections (each user's own and anyone's public ones) and each user's likes. Models and public collections import without a sign-in; likes and private collections need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect QIDI Maker in Configuration > Providers, or visit it with Thingport Grab, to see your collections and likes here."
+      }
     }
   }
 }

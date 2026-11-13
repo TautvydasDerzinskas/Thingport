@@ -22,6 +22,7 @@ describe("provider filters", () => {
       "makeronline",
       "crealitycloud",
       "eufymake",
+      "qidimaker",
     ]);
     expect(shown({ features: ["paidModels"] })).toEqual([
       "myminifactory",

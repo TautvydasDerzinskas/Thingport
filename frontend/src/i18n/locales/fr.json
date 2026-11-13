@@ -7855,6 +7855,37 @@
       "sync": {
         "notConnected": "Connectez 3DExport dans Configuration > Fournisseurs, ou visitez-le connecté avec Thingport Grab, pour voir ici vos collections."
       }
+    },
+    "qidimaker": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir www.qidimaker.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à www.qidimaker.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → https://www.qidimaker.com, copiez la valeur du cookie token et collez-la ci-dessous."
+        ],
+        "placeholder": "La valeur du cookie token"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire vos « J’aime » et vos collections privées QIDI Maker. Ses modèles et les collections publiques de chacun s’importent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à www.qidimaker.com avec Thingport Grab, ou reconnectez QIDI Maker dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "QIDI Maker : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La communauté de modèles de QIDI Tech pour ses imprimantes X-Plus, X-Max et Q, avec des profils d’impression faits dans QIDI Studio.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos collections et vos « J’aime ».",
+        "grab": "Envoie votre connexion lorsque vous visitez www.qidimaker.com.",
+        "setup": [
+          "Importez n’importe quel lien de modèle ; aucune connexion n’est nécessaire.",
+          "Pour vos collections et vos « J’aime » : installez Thingport Grab, activez-le sur QIDI Maker et ouvrez www.qidimaker.com en étant connecté."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles avec leurs profils d’impression, les collections (celles de chaque utilisateur et les collections publiques de chacun) et les « J’aime » de chaque utilisateur. Les modèles et les collections publiques s’importent sans connexion ; les « J’aime » et les collections privées demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez QIDI Maker dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos collections et vos « J’aime » ici."
+      }
     }
   }
 }

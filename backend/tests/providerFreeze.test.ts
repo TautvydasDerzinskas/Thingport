@@ -43,6 +43,7 @@ describe("provider-module freeze", () => {
         "https://pixup3d.com/en/posts/427",
         "https://fab365.net/items/116",
         "https://3dexport.com/3d-model-elephant-a001-667112",
+        "https://www.qidimaker.com/en/models/detail/2077275848848752642",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -65,6 +66,7 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
     ]);
   });
 
@@ -91,6 +93,7 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
     ]);
   });
 
@@ -116,6 +119,7 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
     ]);
   });
 
@@ -142,6 +146,7 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
     ]);
   });
 
@@ -167,6 +172,7 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
     ]);
   });
 
@@ -178,6 +184,7 @@ describe("provider-module freeze", () => {
       "crealitycloud",
       "nexprint",
       "eufymake",
+      "qidimaker",
     ]);
   });
 
@@ -216,6 +223,7 @@ describe("provider-module freeze", () => {
         "pixup3d_session",
         "fab365_session",
         "threedexport_session",
+        "qidimaker_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -337,6 +345,7 @@ describe("provider-module freeze", () => {
           "pixup3d_cat_ids",
           "fab365_cat_ids",
           "threedexport_cat_ids",
+          "qidimaker_cat_ids",
         ].toSorted(),
       );
     } finally {

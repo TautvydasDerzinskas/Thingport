@@ -24,6 +24,7 @@ import meshyCategories from "./meshy/categories.json";
 import pixup3dCategories from "./pixup3d/categories.json";
 import fab365Categories from "./fab365/categories.json";
 import threedexportCategories from "./threedexport/categories.json";
+import qidimakerCategories from "./qidimaker/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
@@ -40,6 +41,12 @@ import { threedexportImport, threedexportTrending, threedexportLists, threedexpo
 import { threedexportConnection } from "./threedexport/connection";
 import { threedexportSync } from "./threedexport/sync";
 import { threedexportBrowse } from "./threedexport/browse";
+import { qidimakerImport, qidimakerTrending, qidimakerLists, qidimakerDetails } from "./qidimaker";
+import { qidimakerConnection } from "./qidimaker/connection";
+import { qidimakerSync } from "./qidimaker/sync";
+import { qidimakerBrowse } from "./qidimaker/browse";
+import { qidimakerProfileFacts } from "./qidimaker/profileFacts";
+import { readQidimakerLicense } from "./qidimaker/license";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -589,6 +596,21 @@ export const PROVIDERS = {
     trending: threedexportTrending,
     // An older import's licence comes from its page's details, one request with no sign-in.
     details: threedexportDetails,
+  },
+  qidimaker: {
+    starterCategories: qidimakerCategories,
+    connection: { default: qidimakerConnection },
+    // Only the user's own collections and likes are read with the sign-in; its models and their files need none.
+    authStopText: grabSignInStop("qidimaker"),
+    sourcedImport: qidimakerImport,
+    lists: qidimakerLists,
+    sync: qidimakerSync,
+    browse: qidimakerBrowse,
+    trending: qidimakerTrending,
+    details: qidimakerDetails,
+    // From the model's details alone, without its print profiles' list.
+    license: readQidimakerLicense,
+    profileFacts: qidimakerProfileFacts,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

@@ -31,6 +31,12 @@ export function siteFormats(site: AdaptSite): ThreeMfFormat[] {
   return kinds.map((kind) => TYPICAL[kind]);
 }
 
+/** A Bambu layout project written by another app that keeps Bambu Studio's names for settings (QIDI Studio), as a
+ *  site's typical file: `app` and its `version`. */
+export function bambuFamilyFormat(app: string, version: string): ThreeMfFormat {
+  return { ...TYPICAL.bambu, app, appVersion: version };
+}
+
 /** A Bambu layout project written by another app, as a site's typical file: `app` and its `version`, the OrcaSlicer
  *  tag beside it if it writes one, in OrcaSlicer's names for settings. */
 export function orcaFamilyFormat(app: string, version: string, orcaTag: string | null = null): ThreeMfFormat {

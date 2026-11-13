@@ -188,24 +188,24 @@ router.patch(
 
 const MAX_CAT_IDS = 50;
 
-/** Parses "800;71;1001" into ids. Blank clears; stray or duplicate separators are tolerated;
- * anything not a positive integer is rejected with a message naming it. */
-function parseCatIdsInput(raw: string | null | undefined): number[] {
+/** Parses "800;71;1001" into ids, each kept as its digits: QIDI Maker's have 19, more than a number holds exactly.
+ * Blank clears; stray or duplicate separators are tolerated; anything not a positive whole number is rejected with a
+ * message naming it. */
+function parseCatIdsInput(raw: string | null | undefined): string[] {
   const trimmed = (raw ?? "").trim();
   if (!trimmed) return [];
   const tokens = trimmed
     .split(";")
     .map((t) => t.trim())
     .filter(Boolean);
-  const ids: number[] = [];
-  const seen = new Set<number>();
+  const ids: string[] = [];
+  const seen = new Set<string>();
   for (const token of tokens) {
-    // NexPrint's ids are 16 digits; isSafeInteger below still catches anything too large.
-    if (!/^\d+$/.test(token) || token.length > 16) {
+    const id = token.replace(/^0+(?=\d)/, "");
+    if (!/^\d+$/.test(token) || id.length > 20) {
       throw new HttpError(400, `Invalid category id "${token}" -- use numbers separated by ";", e.g. 800;71;1001`);
     }
-    const id = Number(token);
-    if (!Number.isSafeInteger(id) || id <= 0) {
+    if (id === "0") {
       throw new HttpError(400, `Invalid category id "${token}" -- must be a positive whole number`);
     }
     if (!seen.has(id)) {
@@ -272,7 +272,7 @@ router.patch(
     const ids = Object.fromEntries(
       given.map((id) => {
         const raw = body[`${id}_cat_ids`];
-        return [id, isPaths(id) ? parseCatPathsInput(raw) : parseCatIdsInput(raw).map(String)];
+        return [id, isPaths(id) ? parseCatPathsInput(raw) : parseCatIdsInput(raw)];
       }),
     );
     const updated = await prisma.$transaction(async (tx) => {

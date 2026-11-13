@@ -8010,6 +8010,37 @@
       "sync": {
         "notConnected": "Prijunkite 3DExport skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame prisijungę su Thingport Grab, kad čia matytumėte savo kolekcijas."
       }
+    },
+    "qidimaker": {
+      "connect": {
+        "steps": [
+          "Paprasčiausia: su Thingport Grab tiesiog atverkite www.qidimaker.com prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+          "Arba rankiniu būdu: prisijunkite prie www.qidimaker.com ir atverkite naršyklės kūrėjo įrankius (F12).",
+          "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → https://www.qidimaker.com nukopijuokite slapuko token reikšmę ir įklijuokite ją žemiau."
+        ],
+        "placeholder": "Slapuko token reikšmė"
+      },
+      "status": {
+        "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus QIDI Maker modelius ir privačias kolekcijas. Modeliai ir bet kieno viešos kolekcijos importuojami ir be jos.",
+        "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite www.qidimaker.com su Thingport Grab arba vėl prijunkite QIDI Maker skiltyje Konfigūracija → Šaltiniai.",
+        "expiredStatus": "Prisijungimas nebegalioja",
+        "disabledReason": "QIDI Maker: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+      },
+      "about": {
+        "summary": "QIDI Tech modelių bendruomenė jos X-Plus, X-Max ir Q spausdintuvams, su QIDI Studio sukurtais spausdinimo profiliais.",
+        "signIn": "Importuoti nereikia; prisijungimas prideda jūsų kolekcijas ir pamėgtus modelius.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės www.qidimaker.com.",
+        "setup": [
+          "Importuokite bet kurio modelio nuorodą; prisijungti nereikia.",
+          "Jūsų kolekcijoms ir pamėgtiems modeliams: įdiekite Thingport Grab, įjunkite jį QIDI Maker ir atverkite www.qidimaker.com prisijungę."
+        ]
+      },
+      "admin": {
+        "description": "Modeliai su spausdinimo profiliais, kolekcijos (kiekvieno naudotojo savos ir bet kieno viešos) ir kiekvieno naudotojo pamėgti modeliai. Modeliai ir viešos kolekcijos importuojami be prisijungimo; pamėgtiems modeliams ir privačioms kolekcijoms reikia naudotojo paties."
+      },
+      "sync": {
+        "notConnected": "Prijunkite QIDI Maker skiltyje Konfigūracija > Šaltiniai arba apsilankykite jame su Thingport Grab, kad čia matytumėte savo kolekcijas ir pamėgtus modelius."
+      }
     }
   }
 }
