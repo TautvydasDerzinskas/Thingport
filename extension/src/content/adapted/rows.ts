@@ -19,25 +19,40 @@ const downloadIcon = () => svg(ICONS.download);
 
 let picks = 0;
 
+/** The rows, and `follow`, which picks the file the page has picked now, unless one was picked here. */
+export type AdaptedRows = { box: HTMLElement; follow: () => void };
+
 /** A row per copy; `compact` for the rows under an import. */
-export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): HTMLElement {
+export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): AdaptedRows {
   const { site, files, targets } = page;
   const box = element("div", "ad");
   // The one the page has picked, where it picks one of them.
   const picked = site.selected?.(files);
   let file = picked && picked !== "other" ? picked : files[0];
+  let select: HTMLSelectElement | null = null;
+  // A file picked here, which the page's picks don't change.
+  let chosen = false;
+  const follow = () => {
+    const now = chosen ? null : site.selected?.(files);
+    if (!now || now === "other") return;
+    file = now;
+    if (select) select.value = String(files.indexOf(file));
+  };
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
     const label = element("label", "tg-label ad-file__label", "3MF file");
     label.htmlFor = id;
-    const select = element("select", "tg-select ad-file");
+    select = element("select", "tg-select ad-file");
     select.id = id;
     for (const [at, option] of files.entries()) {
       const size = sizeText(option.size);
       select.append(new Option(size ? `${shownName(option)} (${size})` : shownName(option), String(at)));
     }
     select.value = String(files.indexOf(file));
-    select.addEventListener("change", () => (file = files[Number(select.value)] ?? files[0]));
+    select.addEventListener("change", () => {
+      chosen = true;
+      file = files[Number(select!.value)] ?? files[0];
+    });
     box.append(label, select);
   }
   const list = element("div", `ad-list${compact ? " ad-list--compact" : ""}`);
@@ -64,6 +79,8 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     row.addEventListener("click", async () => {
       if (busy) return;
       busy = true;
+      // The page's pick may have changed while these were open.
+      follow();
       error.hidden = true;
       note.hidden = true;
       for (const other of box.querySelectorAll<HTMLButtonElement | HTMLSelectElement>("button, select")) {
@@ -93,7 +110,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     list.append(row);
   }
   box.append(list, note, error);
-  return box;
+  return { box, follow };
 }
 
 /** Set up for imports: under the import, a button as big as its own, in the quieter secondary style, whose copies open
@@ -109,7 +126,8 @@ export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
   pop.setAttribute("role", "group");
   pop.setAttribute("aria-label", "Copies to download");
   pop.hidden = true;
-  pop.append(adaptedRows(page, pageUrl, true));
+  const rows = adaptedRows(page, pageUrl, true);
+  pop.append(rows.box);
   toggle.setAttribute("aria-controls", pop.id);
 
   // Fixed, from the button's place in the window, so the panel's own scrolling can't clip it. A transformed ancestor
@@ -141,6 +159,7 @@ export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
     if (refocus) toggle.focus();
   }
   function open(): void {
+    rows.follow();
     pop.hidden = false;
     place();
     toggle.setAttribute("aria-expanded", "true");
@@ -175,10 +194,12 @@ export function mountAdaptBubble(
   page: PageAdapt,
   foot: AdaptFoot | null,
 ): void {
+  let rows: AdaptedRows | null = null;
   const toggle = mountPanel(root, () => {
     renderPanel(pageHeadHtml(provider, pageUrl, "Download adapted"));
     const body = element("div", "");
-    body.append(adaptedRows(page, pageUrl));
+    rows = adaptedRows(page, pageUrl);
+    body.append(rows.box);
     if (foot) {
       const line = element("div", "tg-hint ad-foot", foot.text);
       const action = element("button", "ad-link", foot.action);
@@ -189,5 +210,12 @@ export function mountAdaptBubble(
     }
     setPanelExtra(body);
   });
-  mountFab(root, { variant: "adapt", label: "Download adapted copies of this model", onClick: toggle });
+  mountFab(root, {
+    variant: "adapt",
+    label: "Download adapted copies of this model",
+    onClick: () => {
+      toggle();
+      rows?.follow();
+    },
+  });
 }
