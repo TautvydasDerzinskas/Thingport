@@ -1084,7 +1084,7 @@
             },
             "activity": {
               "title": "Актыўнасць",
-              "description": "Цеплавая карта і стужка вашай актыўнасці."
+              "description": "Ваша карта актыўнасці і стужка, а таксама дасягненні."
             },
             "collections": {
               "title": "Калекцыі",
@@ -1252,6 +1252,15 @@
         "importRunFrom_many": "{{site}}: імпартавана {{done}} з {{count}} мадэляў",
         "importRunFrom_other": "{{site}}: імпартавана {{done}} з {{count}} мадэлі",
         "bridgeUpdate": "Даступная версія Thingport Bridge {{version}}",
+        "achievementUnlocked": "Дасягненне атрымана: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "Атрымана {{count}} дасягненне",
+        "achievementsUnlocked_few": "Атрымана {{count}} дасягненні",
+        "achievementsUnlocked_many": "Атрымана {{count}} дасягненняў",
+        "achievementsUnlocked_other": "Атрымана {{count}} дасягнення",
+        "achievementsCredited_one": "У вас ужо {{count}} дасягненне",
+        "achievementsCredited_few": "У вас ужо {{count}} дасягненні",
+        "achievementsCredited_many": "У вас ужо {{count}} дасягненняў",
+        "achievementsCredited_other": "У вас ужо {{count}} дасягнення",
         "storageFreed": "У сховішчы вызвалена {{size}}"
       }
     },
@@ -3466,6 +3475,18 @@
             "declineUserText": "{{who}} паведамяць. На {{host}} нічога не адправіцца.",
             "declinedUser": "Запыт {{who}} адхілены"
           }
+        },
+        "achievements": {
+          "label": "Дасягненні",
+          "summary": "Значкі за тое, што робяць карыстальнікі, на іх старонцы «Мае мадэлі». Працуюць і з выключанымі сацыяльнымі функцыямі.",
+          "infoTitle": "Дасягненні",
+          "infoBadges": "Значкі за спампоўкі, імпарт, кожны сайт і інструмент, Studio, сінхранізаваныя калекцыі і актыўнасць — узроўні ад бронзы да галаграмы.",
+          "infoProfile": "Паказваюцца пад апісаннем кожнага карыстальніка на старонцы «Мае мадэлі» ўсім, хто можа бачыць яго профіль, у тым ліку людзям з падключаных асобнікаў.",
+          "infoSecrets": "Некалькі з іх — сакрэты, якія знаходзяць у праграме.",
+          "infoIndependent": "Свой пераключальнік: працуюць і з выключанымі сацыяльнымі функцыямі.",
+          "infoOff": "Пасля ўключэння кожны атрымлівае тое, што ўжо зарабіў. Пасля выключэння яны хаваюцца і захоўваюцца.",
+          "saveFailed": "Не ўдалося захаваць наладу дасягненняў.",
+          "loadFailed": "Не ўдалося загрузіць наладу дасягненняў."
         }
       },
       "providers": {
@@ -3876,6 +3897,7 @@
           "federation_unblocked": "Асобнік разблакаваны",
           "federation_user_requested": "Запытана зварот да карыстальніка іншага асобніка",
           "collection_sharing_changed": "Зменены супольны доступ да калекцыі",
+          "achievement_settings_changed": "Зменены дасягненні",
           "storage_cleanup_started": "Пачата вызваленне месца",
           "photos_per_model_changed": "Зменена колькасць фота на мадэль"
         },
@@ -3910,6 +3932,8 @@
         "licenseFilesOff": "Выключана",
         "chatsOn": "Чаты ўключаны",
         "chatsOff": "Чаты выключаны",
+        "achievementsOn": "Дасягненні ўключаны",
+        "achievementsOff": "Дасягненні выключаны",
         "photosTrimmed_one": "Лішнія фота, пакінута {{count}}",
         "photosTrimmed_few": "Лішнія фота, пакінута {{count}}",
         "photosTrimmed_many": "Лішнія фота, пакінута {{count}}",
@@ -4719,6 +4743,157 @@
         "none": "Няма прынтараў па запыце «{{query}}».",
         "added": "дададзены",
         "done": "Гатова"
+      }
+    },
+    "achievements": {
+      "title": "Дасягненні",
+      "help": "Значкі за тое, што чалавек зрабіў у Thingport. Паказваюцца толькі атрыманыя.",
+      "helpOwn": "Значкі за тое, што вы робіце ў Thingport. Паказваюцца толькі атрыманыя, і іх бачаць усе, хто можа бачыць ваш профіль.",
+      "all": "Усе ({{value}})",
+      "more_one": "Яшчэ {{count}} дасягненне",
+      "more_few": "Яшчэ {{count}} дасягненні",
+      "more_many": "Яшчэ {{count}} дасягненняў",
+      "more_other": "Яшчэ {{count}} дасягнення",
+      "empty": "Пакуль няма. Спампуйце, імпартуйце або стварыце мадэль, каб атрымаць першае.",
+      "unlocked": "Дасягненне атрымана",
+      "unlockedToast": "Дасягненне атрымана: {{name}} · {{tier}}",
+      "unlockedMany_one": "Атрымана {{count}} дасягненне",
+      "unlockedMany_few": "Атрымана {{count}} дасягненні",
+      "unlockedMany_many": "Атрымана {{count}} дасягненняў",
+      "unlockedMany_other": "Атрымана {{count}} дасягнення",
+      "view": "Адкрыць",
+      "great": "Выдатна!",
+      "earnedOn": "Атрымана {{date}}",
+      "next": "Наступны: {{value}}",
+      "top": "Дасягнуты найвышэйшы ўзровень",
+      "tiersEarned": "Атрыманыя ўзроўні",
+      "lapsed": "Скончылася",
+      "lapsedHint": "Карыстайцеся Thingport больш за 20 з апошніх 30 дзён, каб вярнуць яго.",
+      "tiers": {
+        "bronze": "Бронза",
+        "silver": "Срэбра",
+        "gold": "Золата",
+        "platinum": "Плаціна",
+        "diamond": "Дыямент",
+        "holo": "Галаграма",
+        "secret": "Сакрэт"
+      },
+      "groups": {
+        "milestones": "Вехі",
+        "sites": "Сайты",
+        "tools": "Інструменты",
+        "making": "Studio і сінхранізацыя",
+        "secrets": "Сакрэты"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Спампоўшчык",
+          "rule_one": "Спампуйце мадэлі {{count}} раз",
+          "rule_few": "Спампуйце мадэлі {{count}} разы",
+          "rule_many": "Спампуйце мадэлі {{count}} разоў",
+          "rule_other": "Спампуйце мадэлі {{count}} разу",
+          "stat_one": "{{count}} спампоўка",
+          "stat_few": "{{count}} спампоўкі",
+          "stat_many": "{{count}} спамповак",
+          "stat_other": "{{count}} спампоўкі"
+        },
+        "imports": {
+          "name": "Імпарцёр",
+          "rule_one": "Імпартуйце {{count}} мадэль",
+          "rule_few": "Імпартуйце {{count}} мадэлі",
+          "rule_many": "Імпартуйце {{count}} мадэляў",
+          "rule_other": "Імпартуйце {{count}} мадэлі",
+          "stat_one": "Імпартавана {{count}} мадэль",
+          "stat_few": "Імпартавана {{count}} мадэлі",
+          "stat_many": "Імпартавана {{count}} мадэляў",
+          "stat_other": "Імпартавана {{count}} мадэлі"
+        },
+        "regular": {
+          "name": "Заўсёднік",
+          "rule": "Карыстайцеся Thingport больш за 20 з апошніх 30 дзён",
+          "stat": "Актыўнасць {{count}} з апошніх 30 дзён"
+        },
+        "site": {
+          "name": "Імпарцёр {{site}}",
+          "rule_one": "Імпартуйце {{count}} мадэль з {{site}}",
+          "rule_few": "Імпартуйце {{count}} мадэлі з {{site}}",
+          "rule_many": "Імпартуйце {{count}} мадэляў з {{site}}",
+          "rule_other": "Імпартуйце {{count}} мадэлі з {{site}}",
+          "stat": "{{count}} з {{site}}"
+        },
+        "tool": {
+          "rule_one": "Захавайце {{count}} мадэль з «{{tool}}»",
+          "rule_few": "Захавайце {{count}} мадэлі з «{{tool}}»",
+          "rule_many": "Захавайце {{count}} мадэляў з «{{tool}}»",
+          "rule_other": "Захавайце {{count}} мадэлі з «{{tool}}»",
+          "stat": "{{count}} захавана з «{{tool}}»"
+        },
+        "studio": {
+          "name": "Дызайнер",
+          "rule_one": "Захавайце {{count}} праект Studio ў бібліятэку",
+          "rule_few": "Захавайце {{count}} праекты Studio ў бібліятэку",
+          "rule_many": "Захавайце {{count}} праектаў Studio ў бібліятэку",
+          "rule_other": "Захавайце {{count}} праекта Studio ў бібліятэку",
+          "stat_one": "{{count}} праект захаваны са Studio",
+          "stat_few": "{{count}} праекты захаваныя са Studio",
+          "stat_many": "{{count}} праектаў захавана са Studio",
+          "stat_other": "{{count}} праекта захавана са Studio"
+        },
+        "synced": {
+          "name": "Сінхронна",
+          "rule_one": "Сінхранізуйце {{count}} калекцыю",
+          "rule_few": "Сінхранізуйце {{count}} калекцыі",
+          "rule_many": "Сінхранізуйце {{count}} калекцый",
+          "rule_other": "Сінхранізуйце {{count}} калекцыі",
+          "stat_one": "{{count}} калекцыя сінхранізуецца",
+          "stat_few": "{{count}} калекцыі сінхранізуюцца",
+          "stat_many": "{{count}} калекцый сінхранізуецца",
+          "stat_other": "{{count}} калекцыі сінхранізуецца"
+        },
+        "syncSources": {
+          "name": "Шмат крыніц",
+          "rule": "Сінхранізуйце калекцыі з {{count}} розных сайтаў",
+          "stat": "Сінхранізацыя з {{count}} сайтаў"
+        },
+        "weatherGuest": {
+          "name": "Сустрэў госця",
+          "rule": "Сакрэт. Вы яго знайшлі.",
+          "stat": "Заўважаны ў сцэне надвор’я"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Майстар брэлокаў",
+          "tool": "Генератар брэлокаў"
+        },
+        "qr-code-generator": {
+          "badge": "Майстар QR",
+          "tool": "Генератар QR-кодаў"
+        },
+        "gridfinity-drawer": {
+          "badge": "Будаўнік Gridfinity",
+          "tool": "Канструктар шуфляд Gridfinity"
+        },
+        "enclosure-generator": {
+          "badge": "Майстар скрынак",
+          "tool": "Генератар корпусаў"
+        },
+        "multiboard-planner": {
+          "badge": "Планавальнік Multiboard",
+          "tool": "Планавальнік Multiboard"
+        },
+        "skadis-planner": {
+          "badge": "Планавальнік Skadis",
+          "tool": "Планавальнік Skadis"
+        },
+        "openscad-customizer": {
+          "badge": "Наладчык скрыптоў",
+          "tool": "Налада скрыптоў"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "Ахайнік 3MF",
+          "tool": "Нармалізатар 3MF для MakerWorld"
+        }
       }
     }
   },

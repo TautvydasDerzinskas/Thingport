@@ -168,6 +168,8 @@ model User {
   chatMessages             ChatMessage[]
   chatsCreated             Chat[]                   @relation("ChatCreatedBy")
   peerRequests             PeerRequest[]
+  achievements             UserAchievement[]
+  activeDays               UserActiveDay[]
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
 }
@@ -288,6 +290,11 @@ model Print {
   // The first original of that chain: what a copy of a copy is a copy of. No relation, so it outlasts the original's
   // deletion, and with it the knowledge that the user already has the model. One copy per user and original.
   originalId               String?
+  /// What made it, where Thingport made it rather than a file someone picked: "tool" (one of the Tools) or "studio".
+  /// Null for uploads, imports, copies and anything from before it was kept. What achievements count it by.
+  createdWith              String?
+  /// Which one: the tool's slug, or the Studio design's id. No relation, so it outlasts the tool or design.
+  createdWithRef           String?
   createdAt                DateTime                 @default(now())
   updatedAt                DateTime                 @updatedAt
   // Generated column (name A, tags B, notes C, creator D) created with its GIN index in a
@@ -307,6 +314,7 @@ model Print {
   @@index([userId, lastViewedAt])
   @@index([toolId])
   @@index([copiedFromId])
+  @@index([userId, createdWith, createdWithRef])
 }
 
 /// A user-curated group of models. Collection imports reuse a row by nameNormalized.
@@ -1306,6 +1314,9 @@ model RemotePerson {
   chats            ChatRemoteMember[]
   collectionShares CollectionShare[]
   messages         ChatMessage[]
+  /// Their achievements as their instance said, `[{ id, tier, expired }]` (services/achievementService.ts): drawn here
+  /// from this instance's own catalogue, so an id this one doesn't know is skipped.
+  achievements     Json               @default("[]")
 
   @@index([peerId])
   @@index([sharedAt])
@@ -1471,4 +1482,33 @@ model FederationKv {
   expiresAt DateTime?
 
   @@index([expiresAt])
+}
+
+/// A badge a user has earned (services/achievementService.ts), at the highest tier reached: tiers only go up, so
+/// deleting what earned one never takes it away. Shown while an admin has achievements on; kept while they're off.
+model UserAchievement {
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Its id in the catalogue, e.g. "downloads", "site:makerworld", "tool:keyring-generator". Never renamed.
+  badge    String
+  /// Which of its thresholds, from 0.
+  tier     Int       @default(0)
+  /// When it reached this tier.
+  earnedAt DateTime  @default(now())
+  /// When the user was shown it reaching this tier; null until the app has. Set at once for what turning
+  /// achievements on found already earned, which is told in one notification instead.
+  seenAt   DateTime?
+
+  @@unique([userId, badge])
+}
+
+/// A day (UTC) the user used Thingport, for the "Regular" badge: more than 20 of the last 30. Only recent days are kept.
+model UserActiveDay {
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day    DateTime @db.Date
+
+  @@id([userId, day])
+  @@index([day])
 }

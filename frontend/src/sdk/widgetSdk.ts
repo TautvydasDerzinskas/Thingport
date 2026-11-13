@@ -5,6 +5,7 @@ import { applyLabels, translator, type Translate } from "./labels";
 import { LIBRARIES, library } from "./libraries";
 import type { SdkLanguage, SdkTheme, SdkUi, WidgetSdk, WidgetSize } from "./types";
 import { buildUserLibrary, toFile, type SdkFileInput } from "./userLibrary";
+import { buildAchievements } from "./achievements";
 
 // The `thingport` object a dashboard widget's script gets.
 //
@@ -106,5 +107,6 @@ export function buildWidgetSdk({
     api: apiAsUser,
     download: downloadFile,
     ui,
+    achievements: buildAchievements(widget.slug),
   };
 }

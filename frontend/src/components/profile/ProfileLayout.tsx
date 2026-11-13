@@ -38,6 +38,8 @@ type Props = {
   /** Someone on a partner instance: their bio shows no images (see MarkdownDescription). */
   remote?: boolean;
   links?: string[];
+  /** At the foot of the column: their badges (AchievementsShowcase), while achievements are on. */
+  achievements?: ReactNode;
   /** Beside them: what they made. */
   children: ReactNode;
 };
@@ -55,6 +57,7 @@ export default function ProfileLayout({
   bioMarkdown,
   remote,
   links,
+  achievements,
   children,
 }: Props) {
   const { t } = useTranslation("models");
@@ -106,6 +109,7 @@ export default function ProfileLayout({
               </Typography>
             )}
             {links && links.length > 0 && <ProfileLinks links={links} />}
+            {achievements}
           </Box>
           <Box sx={{ minWidth: 0, py: 3 }}>{children}</Box>
         </Box>

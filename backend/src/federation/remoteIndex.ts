@@ -128,6 +128,26 @@ const date = z
   });
 const count = z.number().int().min(0).max(1_000_000).optional().catch(undefined);
 
+/** A person's badges (services/achievementService.ts): ids this instance draws from its own catalogue, each checked,
+ *  a broken one left out rather than the person. */
+const achievementSchema = z.object({
+  id: z.string().min(1).max(100),
+  tier: z.number().int().min(0).max(20),
+  expired: z.boolean().optional(),
+});
+const achievementList = z
+  .array(z.unknown())
+  .optional()
+  .catch(undefined)
+  .transform((list) =>
+    (list ?? []).slice(0, 200).flatMap((item) => {
+      const parsed = achievementSchema.safeParse(item);
+      if (!parsed.success) return [];
+      const { id, tier, expired } = parsed.data;
+      return [{ id, tier, ...(expired ? { expired: true } : {}) }];
+    }),
+  );
+
 const personSchema = z.object({
   id: z.string(),
   type: z.literal("Person"),
@@ -148,6 +168,7 @@ const personSchema = z.object({
   "thingport:collectionCount": count,
   "thingport:models": z.string().optional().catch(undefined),
   "thingport:collections": z.string().optional().catch(undefined),
+  "thingport:achievements": achievementList,
 });
 
 // What a copy needs of a model (remoteCopy.ts), each checked the same way: broken, it's left out, not the model.
@@ -767,6 +788,7 @@ async function storeIn(
       collectionCount: person["thingport:collectionCount"] ?? collections.length,
       sharedAt: person["thingport:sharedAt"],
       joinedAt: person.published,
+      achievements: person["thingport:achievements"],
       syncedAt: readAt,
       listed: true,
     };

@@ -51,7 +51,14 @@ function listOptions(options: { limit?: number; offset?: number } = {}) {
  * `openModel` is how the host leaves for a model's page — a tool closes its window first, a panel just navigates. A
  * tool adds `collections.pick` itself, as only it has a "save where?" dialog.
  */
-export function buildUserLibrary({ openModel }: { openModel: (id: string) => void }): {
+export function buildUserLibrary({
+  openModel,
+  createdWithTool,
+}: {
+  openModel: (id: string) => void;
+  /** The tool whose library this is, by slug: what its `models.create` says made a model. */
+  createdWithTool?: string;
+}): {
   models: SdkModels;
   collections: SdkCollections;
 } {
@@ -121,6 +128,7 @@ export function buildUserLibrary({ openModel }: { openModel: (id: string) => voi
         tags: input.tags,
         mode: "multiplate",
         origin: "created",
+        createdWithTool,
       });
       const print = prints[0];
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
