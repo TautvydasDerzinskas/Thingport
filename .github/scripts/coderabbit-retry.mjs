@@ -59,8 +59,10 @@ const issueNumber = (comment) => Number(comment.issue_url?.split("/").pop());
 const byCodeRabbit = (comment) => comment.user?.login === CODERABBIT;
 const isSummary = (comment) => byCodeRabbit(comment) && comment.body?.includes(SUMMARY_MARKER);
 const isReply = (comment) => byCodeRabbit(comment) && comment.body?.toLowerCase().includes(REPLY_MARKER);
-const isAsk = (comment) =>
-  !byCodeRabbit(comment) && /^\s*@coderabbitai\s+(full\s+)?review\s*$/i.test(comment.body ?? "");
+// The command on the first line: an ask carries the banner below it.
+const ASK_LINE = /^\s*@coderabbitai\s+(full\s+)?review[ \t]*(?:\r?\n|$)/i;
+const isAsk = (comment) => !byCodeRabbit(comment) && ASK_LINE.test(comment.body ?? "");
+const isFullAsk = (comment) => isAsk(comment) && Boolean(ASK_LINE.exec(comment.body)[1]);
 const rateLimited = (check) => /rate\s*limit/i.test(check.output?.title ?? "");
 const stuck = (check, now) => check.status !== "completed" && now - time(check.started_at) >= STUCK_REVIEW_MS;
 
@@ -201,7 +203,7 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
   const fallback = why ? since : since + UNKNOWN_WAIT_MS + MARGIN_MS;
   const notBefore = own.length ? Math.max(...own.map((n) => n.until)) : fallback;
   // A plain `review` after a refused `full review` is declined as "Already reviewed the last commit".
-  const full = comments.some((c) => isAsk(c) && /full/i.test(c.body) && time(c.created_at) > headDate);
+  const full = comments.some((c) => isFullAsk(c) && time(c.created_at) > headDate);
   return { waiting: true, since, notBefore, why: why ?? `refused at ${iso(since)}`, ask: full ? FULL_ASK : ASK };
 }
 
@@ -293,11 +295,27 @@ async function awaitAnswer(github, number, askedAt, { clock, pause }) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** The "Thingport ♥ CodeRabbit" banner under each ask, in the reader's GitHub theme. */
+export function banner(repository) {
+  const src = (theme) =>
+    `https://raw.githubusercontent.com/${repository}/develop/.github/assets/coderabbit-banner-${theme}.png`;
+  return `<picture><source media="(prefers-color-scheme: dark)" srcset="${src("dark")}"><img src="${src("light")}" alt="Thingport ♥ CodeRabbit" width="640" height="64"></picture>`;
+}
+
 /**
  * One run: asks for each pull request that's due, one at a time, and returns once the next isn't due yet. It never
  * waits for the allowance; only for CodeRabbit's answer to an ask, which comes within seconds.
  */
-export async function askDue({ github, poster, asker, dryRun, clock = Date.now, pause = sleep, log = console.log }) {
+export async function askDue({
+  github,
+  poster,
+  asker,
+  dryRun,
+  footer = "",
+  clock = Date.now,
+  pause = sleep,
+  log = console.log,
+}) {
   for (let asks = 0; asks < MAX_ASKS_PER_RUN;) {
     const now = clock();
     const { states, waiting, hold } = await survey(github, { asker, now });
@@ -314,7 +332,7 @@ export async function askDue({ github, poster, asker, dryRun, clock = Date.now, 
     if (dryRun) return log(`Would post "${command}" on #${number} now.`);
     const ask = await poster.request(`issues/${number}/comments`, {
       method: "POST",
-      body: JSON.stringify({ body: command }),
+      body: JSON.stringify({ body: footer ? `${command}\n\n${footer}` : command }),
     });
     asks++;
     log(`::notice::Posted "${command}" on #${number}`);
@@ -340,7 +358,7 @@ async function main() {
   const asker = poster ? (await poster.user()).login : null;
   if (!poster) console.log("::warning::No ASK_TOKEN (the CODERABBIT_ASK_TOKEN secret), so nothing is posted.");
   else console.log(`Asking as @${asker}.`);
-  await askDue({ github, poster, asker, dryRun: DRY_RUN === "true" || !poster });
+  await askDue({ github, poster, asker, dryRun: DRY_RUN === "true" || !poster, footer: banner(GITHUB_REPOSITORY) });
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

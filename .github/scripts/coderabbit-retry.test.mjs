@@ -7,6 +7,7 @@ import {
   FULL_ASK,
   MAX_ASKS_PER_COMMIT,
   askDue,
+  banner,
   latestCheck,
   nextAsk,
   noticesFrom,
@@ -17,6 +18,7 @@ import {
 
 const MINUTE = 60_000;
 const ASKER = "thingport-bot";
+const BANNER = banner("o/r");
 
 // CodeRabbit's texts as it posted them on pull requests.
 const SUMMARY_LIMITED = `<!-- coderabbit-ai-generated:v1 -->
@@ -211,6 +213,19 @@ test("a refused full review is asked for again as one", () => {
   assert.equal(state({ comments: full }).ask, FULL_ASK);
   // One asked for an earlier commit doesn't carry over to a new one.
   assert.equal(state({ comments: full, headDate: at(-0.1) }).ask, ASK);
+  // Only the command says which: the banner below it doesn't.
+  const fullWithBanner = [
+    ...base,
+    comment(ASKER, `${FULL_ASK}\n\n${BANNER}`, -0.5),
+    comment(CODERABBIT, REFUSED, -0.4),
+  ];
+  assert.equal(state({ comments: fullWithBanner }).ask, FULL_ASK);
+  const plainWithBanner = [
+    ...base,
+    comment(ASKER, `${ASK}\n\nfull ${BANNER}`, -0.5),
+    comment(CODERABBIT, REFUSED, -0.4),
+  ];
+  assert.equal(state({ comments: plainWithBanner }).ask, ASK);
 });
 
 test("a pull request someone paused is left alone until resumed", () => {
@@ -239,6 +254,11 @@ test("an ask in flight, accepted or declined isn't repeated", () => {
   // A person's ask counts too, so CodeRabbit isn't asked twice.
   const theirs = [...base, comment("someone", "@coderabbitai full review", 28)];
   assert.match(state({ comments: theirs }).reason, /no answer yet/);
+  // So does one with the banner below the command, though not a command mentioned within a sentence.
+  const withBanner = [...base, comment(ASKER, `${ASK}\n\n${BANNER}`, 25)];
+  assert.match(state({ comments: withBanner }).reason, /no answer yet/);
+  const mention = [...base, comment("someone", "Should @coderabbitai review this?", 25)];
+  assert.equal(state({ comments: mention }).waiting, true);
 });
 
 test("a refusal without a time waits longer each time, and the asks for a commit are capped", () => {
@@ -310,6 +330,7 @@ function fakeRun({ now, answers }) {
     throw new Error(`unexpected GET ${path}`);
   };
   const posted = [];
+  const bodies = [];
   const minutes = () => (clock - at(0)) / MINUTE;
   const poster = {
     async request(path, { body }) {
@@ -317,6 +338,7 @@ function fakeRun({ now, answers }) {
       const ask = comment(ASKER, JSON.parse(body).body, minutes(), { pr });
       comments.push(ask, comment(CODERABBIT, answers[pr], minutes() + 0.1, { pr }));
       posted.push(pr);
+      bodies.push(ask.body);
       return ask;
     },
   };
@@ -328,6 +350,7 @@ function fakeRun({ now, answers }) {
       poster,
       asker: ASKER,
       dryRun: false,
+      footer: BANNER,
       clock: () => clock,
       pause: async (ms) => {
         paused += ms;
@@ -335,7 +358,7 @@ function fakeRun({ now, answers }) {
       },
       log: () => {},
     });
-  return { run, posted, paused: () => paused };
+  return { run, posted, bodies, paused: () => paused };
 }
 
 test("a run asks what's due and stops, leaving what isn't to a later run", async () => {
@@ -344,9 +367,20 @@ test("a run asks what's due and stops, leaving what isn't to a later run", async
   await early.run();
   assert.deepEqual(early.posted, []);
   assert.equal(early.paused(), 0);
-  // Once they have: an accepted ask moves on to the next pull request, a refusal ends the run.
+  // Once they have: an accepted ask moves on to the next pull request, a refusal ends the run. Each ask carries the
+  // banner under the command, and still counts as an ask, so #7 isn't asked again.
   const due = fakeRun({ now: 30, answers: { 7: ACCEPTED, 8: REFUSED, 9: ACCEPTED } });
   await due.run();
   assert.deepEqual(due.posted, [7, 8]);
+  assert.equal(due.bodies[0], `${ASK}\n\n${BANNER}`);
   assert.ok(due.paused() <= 2 * 10_000, "only waits for CodeRabbit's answers");
+});
+
+test("the banner follows the reader's GitHub theme", () => {
+  const html = banner("o/r");
+  assert.match(
+    html,
+    /^<picture><source media="\(prefers-color-scheme: dark\)" srcset="[^"]+\/o\/r\/develop\/[^"]+-dark\.png">/,
+  );
+  assert.match(html, /<img src="[^"]+\/o\/r\/develop\/[^"]+-light\.png" alt="Thingport ♥ CodeRabbit"/);
 });
