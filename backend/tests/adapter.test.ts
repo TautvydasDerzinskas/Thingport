@@ -508,6 +508,22 @@ describe("planAdaptation", () => {
     expect(
       planAdaptation(format({ app: "QIDIStudio", appVersion: "02.07.02.73", printer: q1.preset }), qidi, q1),
     ).toBeNull();
+    // Another app's project naming that very printer would still open on the one selected in QIDI Studio.
+    expect(planAdaptation(format({ printer: q1.preset }), qidi, q1)).toEqual({
+      output: "bambu",
+      tag: ownTag,
+      dropOrcaTag: false,
+      dialect: null,
+      printer: q1,
+    });
+    expect(planAdaptation(format({ printer: q1.preset }), qidi)).toBeNull();
+    expect(planAdaptation({ ...snapmaker, printer: q1.preset }, qidi, q1)).toMatchObject({
+      tag: ownTag,
+      dialect: "bambu",
+      printer: q1,
+    });
+    // Bambu Studio opens it on the printer it names.
+    expect(planAdaptation(format({ printer: q1.preset }), slicerProfile("bambustudio"), q1)).toBeNull();
     const prusa = format({ kind: "prusa", app: "PrusaSlicer", appVersion: "2.9.7", dialect: null });
     expect(planAdaptation(prusa, qidi)).toMatchObject({ from: "prusa", tag: COMPATIBLE_TAG });
     expect(planAdaptation(prusa, qidi, q1)).toMatchObject({ from: "prusa", tag: ownTag, printer: q1 });

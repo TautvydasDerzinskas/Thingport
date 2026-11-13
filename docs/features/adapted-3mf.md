@@ -86,7 +86,8 @@ Add your printers under **Configuration → Printers**, and their copies are mad
 Which printer is set per slicer: right-click it under **Configuration → Slicer**, then **Printer**. With none set,
 opening a model adapted in one of the slicers above asks **Which printer is this for?** when the slicer has a preset
 for one of your printers, and remembers your answer for that slicer unless you untick **Remember**; otherwise the copy
-isn't made for a printer. A project made for the very preset you'd pick needs no copy for it.
+isn't made for a printer. A project made for the very preset you'd pick needs no copy for it, unless QIDI Studio is
+to open another slicer's project, which it would put on the printer selected in it.
 
 **Configuration → Printers** shows your printers as tiles: double-click one to add or remove it, and right-click it for
 its nozzle and the slicers it's used with. **Add** lists every printer the slicers know, with their pictures. Printers
