@@ -108,6 +108,8 @@ export default function FreeUpSpaceDialog({ usage, cleanup, keepSetting, onStart
   // What the last or current run did, once one has started from here or was already going.
   const progress = cleanup && (cleanup.running || cleanup.finished_at) ? cleanup : null;
   const [showProgress, setShowProgress] = React.useState(!!cleanup?.running);
+  // A run the page learns of only once this is open (its first read came back late) is followed too.
+  if (cleanup?.running && !showProgress) setShowProgress(true);
   const run = showProgress ? progress : null;
   const freed = run?.tasks.reduce((sum, task) => sum + task.freed, 0) ?? 0;
 
