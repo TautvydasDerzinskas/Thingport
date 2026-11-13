@@ -180,7 +180,7 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
   only one it gets a copy for. The first time the extension connects to an account with no slicers or no printers yet,
   it gives the account the ones picked here. An instance from before printers keeps the extension's own printers in
   use. While the instance can't be reached, or doesn't answer within five seconds, the copies are made for what it
-  said last, or for the extension's own slicers and printers if it has never answered.
+  said last for that account, or for the extension's own slicers and printers if it has never answered it.
 - **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
   server, and the printers' presets from the list the extension carries. The file goes nowhere but your downloads
   folder, as `<name>-adapted.3mf`, with the printer's model after it for a copy made for one.

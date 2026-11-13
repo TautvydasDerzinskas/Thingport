@@ -159,6 +159,14 @@ describe("Adapt 3MFs' settings in the background", () => {
 
     Object.assign(store, { email: "other@example.com" });
     expect((await getAdaptView()).thingport).toEqual({ error: "Internal error" });
+
+    // The other account answering too doesn't take the first one's answer away.
+    instance.answers["GET /settings/slicer"] = { slicers: ["cura"] };
+    instance.answers["GET /me/printers"] = { printers: [] };
+    expect((await getAdaptView()).thingport).toMatchObject({ slicers: ["cura"], printers: [] });
+    Object.assign(store, { email: CONNECTED.email });
+    instance.answers["GET /me/printers"] = new ApiError("Internal error", 500);
+    expect((await getAdaptView()).thingport).toEqual({ ...said, remembered: "Internal error" });
   });
 
   it("store a change cleaned, and give it back as stored", async () => {

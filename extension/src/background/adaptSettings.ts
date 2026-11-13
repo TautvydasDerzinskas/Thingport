@@ -96,18 +96,24 @@ const sameAccount = (a: StoredConfig, b: StoredConfig) => a.instanceUrl === b.in
 
 const accountOf = (config: ConfiguredConfig) => `${config.instanceUrl}|${config.email}`;
 
-/** The instance's answer, kept for when it can't give one: then what it said last stands in for it, saying why. */
+/** A record kept by account, as stored: empty where nothing (or something else) is. */
+function byAccount<T>(stored: Record<string, T> | undefined): Record<string, T> {
+  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+}
+
+/** The instance's answer, kept for its account for when it can't give one: then what it said last to that account
+ *  stands in for it, saying why. */
 async function withLastAnswer(
   config: ConfiguredConfig,
   answer: ThingportAdapt | { error: string },
 ): Promise<ThingportAdapt | { error: string }> {
   const account = accountOf(config);
-  const last = (await getStoredConfig()).adaptThingportLast;
-  const said = last?.account === account ? last.thingport : null;
+  const said = byAccount((await getStoredConfig()).adaptThingportLast)[account] ?? null;
   if ("error" in answer) return said ? { ...said, remembered: answer.error } : answer;
   if (JSON.stringify(said) !== JSON.stringify(answer)) {
+    const all = byAccount((await getStoredConfig()).adaptThingportLast);
     await chrome.storage.local
-      .set({ [STORAGE_KEYS.adaptThingportLast]: { account, thingport: answer } })
+      .set({ [STORAGE_KEYS.adaptThingportLast]: { ...all, [account]: answer } })
       .catch(() => undefined);
   }
   return answer;
@@ -137,10 +143,7 @@ export async function setAdaptSettings(change: Partial<AdaptSettings>): Promise<
 type CarrySection = "slicers" | "printers";
 type Carried = { settled: CarrySection[]; printersSent?: string[] };
 
-function carriedOf(config: StoredConfig): Record<string, Carried> {
-  const stored = config.adaptCarriedTo;
-  return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
-}
+const carriedOf = (config: StoredConfig): Record<string, Carried> => byAccount(config.adaptCarriedTo);
 
 /** The instance turned down one printer or its nozzle (it doesn't know it), rather than the request failing. */
 const printerRefused = (err: unknown) => err instanceof ApiError && (err.status === 404 || err.status === 400);

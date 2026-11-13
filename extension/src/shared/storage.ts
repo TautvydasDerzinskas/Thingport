@@ -78,8 +78,9 @@ export type StoredConfig = {
    *  the printers sent of a carry under way (background/adaptSettings.ts). */
   adaptCarriedTo?: Record<string, { settled: ("slicers" | "printers")[]; printersSent?: string[] }>;
   adaptLastTarget?: string;
-  /** By `instanceUrl|email`, the account it's of (background/adaptSettings.ts). */
-  adaptThingportLast?: { account: string; thingport: ThingportAdapt };
+  /** What each Thingport account's instance said last of its slicers and printers, by `instanceUrl|email`
+   *  (background/adaptSettings.ts). */
+  adaptThingportLast?: Record<string, ThingportAdapt>;
   adaptOpenSettings?: number;
   isAdmin?: boolean;
   importQueue?: boolean;

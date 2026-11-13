@@ -31,9 +31,9 @@ instance or account, so the new one has to be told.
 - **Adapt 3MFs' settings:** the slicers you picked in it, your printers (each by its id in the extension's own printer
   list, with its nozzle), where its button goes, and for each Thingport instance and email address you connected
   to, which of them it has given that account (see below), so each account is offered them once. Also the copy
-  **Download adapted** made last, which its button makes again, and the slicers and printers your Thingport instance
-  last listed for the account connected (their ids, names, nozzles and beds), so copies are still made for them while
-  the instance can't be reached. The printer list itself comes with the extension: nothing is downloaded for it.
+  **Download adapted** made last, which its button makes again, and for each of those accounts the slicers and
+  printers its Thingport instance last listed for it (their ids, names, nozzles and beds), so copies are still made
+  for them while the instance can't be reached. The printer list itself comes with the extension: nothing is downloaded for it.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
   it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
