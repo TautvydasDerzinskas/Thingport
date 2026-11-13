@@ -581,13 +581,15 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
       rows.delete(rowAnchor);
     }
   };
-  let scheduled = false;
+  // The frame a re-render's place() waits for, cancelled on stop(): run after it, it would put this page's controls
+  // beside the next page's button on a site that changes pages without loading one.
+  let frame: number | undefined;
+  let stopped = false;
   const schedule = () => {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      place();
+    if (frame !== undefined || stopped) return;
+    frame = requestAnimationFrame(() => {
+      frame = undefined;
+      if (!stopped) place();
     });
   };
   const observer = new MutationObserver(schedule);
@@ -603,6 +605,9 @@ export function mountAdaptedButton(page: PageAdapt, pageUrl: string, onNoAnchor:
 
   mounted = {
     stop: () => {
+      stopped = true;
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = undefined;
       observer.disconnect();
       themeObserver.disconnect();
       system.removeEventListener("change", theme);
