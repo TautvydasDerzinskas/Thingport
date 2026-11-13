@@ -8,7 +8,15 @@
 @use "dialog";
 @use "appearance";
 
+@font-face {
+  font-family: "Thingport";
+  src: url("../../assets/fonts/thingport-500.woff") format("woff");
+  font-weight: 500;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light dark;
   @include t.themed;
+  @include t.squared-in-dark;
 }

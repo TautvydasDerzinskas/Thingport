@@ -2,6 +2,11 @@
 @use "../../styles/mixins" as m;
 
 .form {
+  padding: t.$space-4;
+  border: 1px solid t.c("border");
+  border-radius: t.r("lg");
+  background: t.c("surface");
+
   &__intro {
     margin: 0 0 t.$space-3;
     line-height: 1.4;
@@ -28,7 +33,7 @@
   @include m.button-primary;
   margin-top: 14px;
   padding: t.$space-2 10px;
-  border-radius: t.$radius-sm;
+  border-radius: t.r("sm");
 
   &--secondary {
     @include m.button-secondary;

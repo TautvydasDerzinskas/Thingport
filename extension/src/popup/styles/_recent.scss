@@ -14,7 +14,7 @@
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid t.c("border");
-  border-radius: t.$radius-sm;
+  border-radius: t.r("sm");
   background: t.c("surface-sunken");
   font-size: 16px;
   font-weight: 700;

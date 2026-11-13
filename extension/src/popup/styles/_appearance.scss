@@ -19,7 +19,7 @@
   min-width: 0;
   padding: 5px;
   border: 1px solid t.c("border");
-  border-radius: t.$radius-md;
+  border-radius: t.r("md");
   background: transparent;
   font: inherit;
   color: inherit;
@@ -44,7 +44,7 @@
     display: block;
     height: 56px;
     overflow: hidden;
-    border-radius: t.$radius-sm;
+    border-radius: t.r("sm");
     background: t.c("surface-sunken");
   }
 
@@ -132,7 +132,7 @@
   height: 104px;
   overflow: hidden;
   border: 1px solid t.c("border");
-  border-radius: t.$radius-md;
+  border-radius: t.r("md");
   background: t.c("surface-sunken");
 
   &::before {

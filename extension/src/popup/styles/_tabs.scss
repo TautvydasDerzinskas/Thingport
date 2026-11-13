@@ -7,12 +7,15 @@
   display: grid;
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
-  margin: 0 (-(t.$space-4)) t.$space-3;
+  margin: 0;
+  padding: 0 t.$space-2;
   border-bottom: 1px solid t.c("border");
+  background: t.c("surface");
 
   &__tab {
     min-width: 0;
-    padding: t.$space-2 t.$space-1;
+    min-height: 40px;
+    padding: 10px t.$space-1;
     overflow: hidden;
     border: 0;
     background: transparent;
@@ -28,18 +31,21 @@
       outline-offset: -2px;
     }
 
-    &:hover,
-    &[aria-selected="true"] {
+    &:hover {
       color: t.c("text");
+    }
+
+    &[aria-selected="true"] {
+      color: t.c("heading");
     }
   }
 
   &__indicator {
     position: absolute;
     bottom: -1px;
-    left: 0;
+    left: t.$space-2;
     // One tab wide, under the one picked, of however many are shown (popup/index.ts sets both).
-    width: calc(100% / var(--tab-count, 3));
+    width: calc((100% - #{2 * t.$space-2}) / var(--tab-count, 3));
     height: 2px;
     background: t.c("accent");
     transform: translateX(calc(100% * var(--tab-index, 0)));
@@ -94,7 +100,7 @@
   gap: t.$space-3;
   padding: 10px t.$space-3;
   border: 1px solid t.c("border");
-  border-radius: t.$radius-md;
+  border-radius: t.r("md");
   background: t.c("surface-sunken");
 
   & + & {

@@ -3,7 +3,7 @@
 
 // A confirmation over the popup (a native <dialog>, so focus stays in it and Esc closes it).
 .dialog {
-  @include m.card(t.$radius-lg);
+  @include m.card(t.r("lg"));
   width: calc(100% - #{2 * t.$space-4});
   max-width: 288px;
   margin: auto;
