@@ -132,12 +132,14 @@ function transformVertices(vertices: number[], matrix: THREE.Matrix4): number[] 
  * transform. Bambu Studio writes a project's object as a wrapper around one like that, and the build places the
  * wrapper, so without this it draws nothing. Resolved once every object is read, as the file's order isn't
  * guaranteed, and all of them before any is added to, so a nested one isn't counted twice. Mirrors the server's
- * preview (modelPreviewRender.ts). Throws past MAX_EXPANDED_TRIANGLES, or MAX_COMPONENT_VISITS components followed.
+ * preview (modelPreviewRender.ts). Throws past MAX_EXPANDED_TRIANGLES copied for one object or kept for all of them,
+ * or MAX_COMPONENT_VISITS components followed.
  */
 export function resolveInternalComponents(
   objects: Map<string, { meshes: MeshData[] }>,
   refsByObjectId: Map<string, InternalComponentRef[]>,
 ): void {
+  // Per object: its copies at every level of its chain, most of them dropped once it's resolved.
   let budget = MAX_EXPANDED_TRIANGLES;
   let visits = MAX_COMPONENT_VISITS;
   const resolve = (objectId: string, depth: number): MeshData[] => {
@@ -163,7 +165,15 @@ export function resolveInternalComponents(
     return resolved;
   };
   const resolvedById = new Map<string, MeshData[]>();
-  for (const objectId of refsByObjectId.keys()) resolvedById.set(objectId, resolve(objectId, 0));
+  // Across objects: only what each keeps, so a wrapper of a wrapper isn't charged again for its inner one's copies.
+  let kept = 0;
+  for (const objectId of refsByObjectId.keys()) {
+    budget = MAX_EXPANDED_TRIANGLES;
+    const meshes = resolve(objectId, 0);
+    for (const mesh of meshes) kept += mesh.triangles.length / 3;
+    if (kept > MAX_EXPANDED_TRIANGLES) throw new Error(TOO_MANY_PLACED);
+    resolvedById.set(objectId, meshes);
+  }
   for (const [objectId, meshes] of resolvedById) {
     const object = objects.get(objectId);
     if (object) for (const mesh of meshes) object.meshes.push(mesh);
