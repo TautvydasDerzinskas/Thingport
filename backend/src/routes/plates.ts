@@ -156,9 +156,11 @@ router.get(
   asyncHandler(async (req, res) => {
     const plate = await prisma.plate.findFirst({
       where: { id: req.params.plateId, print: await readablePrintWhere(req.userId!) },
+      include: { print: { select: { assetsPath: true } } },
     });
     if (!plate) throw new HttpError(404, "Not found");
-    const glbPath = modelPreviewGlbPath(plate.id);
+    const home = plate.print.assetsPath;
+    const glbPath = modelPreviewGlbPath(plate.id, home);
     if (!fs.existsSync(glbPath)) {
       // The 404's code tells the viewer what to do: PREVIEW_DISABLED means parse in the browser;
       // otherwise generation is kicked off here and the viewer waits (PREVIEW_GENERATING) or gives up
@@ -169,8 +171,8 @@ router.get(
       }
       const srcPath = resolvePlateFilePath(plate);
       if (!srcPath) throw new HttpError(404, "Model file is missing", "PREVIEW_FAILED");
-      void generateModelPreviewGlb(plate.id, srcPath);
-      const state = modelPreviewState(plate.id);
+      void generateModelPreviewGlb(plate.id, srcPath, home);
+      const state = modelPreviewState(plate.id, home);
       if (state === "unsupported") {
         throw new HttpError(404, "This 3MF's layout isn't supported by the server preview", "PREVIEW_UNSUPPORTED");
       }
