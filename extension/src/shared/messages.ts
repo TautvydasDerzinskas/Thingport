@@ -28,6 +28,8 @@ export type ExtensionState = {
   offlineFeatures: Record<OfflineFeature, boolean>;
   /** How the floating bubble on model pages looks and where it sits. */
   bubble: BubbleLook;
+  /** Where Download adapted's copies go: beside the site's own button, or in the bubble. */
+  adaptPlacement: AdaptPlacement;
 };
 
 /** One of the user's printers in their Thingport instance (Configuration → Printers there), as it describes it. */

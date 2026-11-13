@@ -103,6 +103,8 @@ export function openSetupModal(
   openBtn.focus();
 }
 
+export const setupModalOpen = (): boolean => open !== null;
+
 export function closeSetupModal(): void {
   if (!open) return;
   document.removeEventListener("keydown", open.onKeydown, true);

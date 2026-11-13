@@ -136,12 +136,16 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.connectionToken,
   STORAGE_KEYS.disabled,
   STORAGE_KEYS.normalizeMakerworld,
-  // Adapt 3MFs' settings: open pages offer the copies anew. Not the copy last made, which only the button shows.
+  STORAGE_KEYS.isAdmin,
+  STORAGE_KEYS.importQueue,
+];
+
+/** Adapt 3MFs' settings: open pages offer the copies anew once they've settled, a hidden one once it's shown. Not the
+ *  copy last made, which only the button shows. */
+export const ADAPT_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.adaptSlicers,
   STORAGE_KEYS.adaptPrinters,
   STORAGE_KEYS.adaptPlacement,
-  STORAGE_KEYS.isAdmin,
-  STORAGE_KEYS.importQueue,
 ];
 
 export function normalizeInstanceUrl(raw: string | undefined | null): string {
