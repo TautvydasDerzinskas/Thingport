@@ -1,8 +1,8 @@
 # Thingport Bridge
 
 This helper registers the custom protocol `thingport://`, downloads the requested file, and
-launches it in the slicer Thingport asked for. It exists because some slicers' own URL protocol
-handlers won't take a link straight from a self-hosted Thingport instance:
+launches it in the slicer Thingport asked for. It exists because some slicers need a reliable
+local handoff from a self-hosted Thingport instance:
 
 - Bambu Studio's `bambustudio://` and PrusaSlicer's `prusaslicer://` both only accept links from a
   domain allowlist (Bambu Lab's own storefronts; printables.com plus a handful of sites Prusa has
@@ -11,6 +11,7 @@ handlers won't take a link straight from a self-hosted Thingport instance:
 - Cura's `cura://open` handler isn't domain-restricted, but its OS protocol registration is
   unreliable across its AppImage/Flatpak/Microsoft Store builds, so it's routed the same way for
   consistency.
+- QIDI Studio receives the downloaded file by path.
 - Anycubic Slicer Next is an OrcaSlicer fork that handles the same links, but it registers
   OrcaSlicer's own `orcaslicer://` protocol instead of one of its own -- with both installed, only
   one of them gets those links. The Bridge launches it by path, so the slicer you picked opens.
@@ -237,6 +238,7 @@ Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuS
 ## Slicer IDs
 
 - bambustudio
+- qidistudio
 - prusaslicer
 - cura
 - anycubicslicernext (Anycubic Slicer Next -- an OrcaSlicer fork that registers OrcaSlicer's own
@@ -261,11 +263,12 @@ Anycubic Slicer Next is looked for as `AnycubicSlicerNext.app` or `Anycubic Slic
 on Linux. If yours is elsewhere (e.g. an AppImage), add an `anycubicslicernext` entry to
 `config.json` or set `THINGPORT_SLICER_ANYCUBICSLICERNEXT=/path/to/it`.
 
-Where the others are looked for, as their official installers put them:
+Where the Bridge looks for known launcher names; use the environment override above for a custom installation:
 
 | Slicer          | Windows                                                                                                                                                                 | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                              | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
+| QIDI Studio     | `Program Files\QIDIStudio\qidi-studio.exe`                                                                                                                              | `QIDIStudio.app`                                                        | `qidi-studio`                                                                         |
 | Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
 | Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                          | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
 | Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                       | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |

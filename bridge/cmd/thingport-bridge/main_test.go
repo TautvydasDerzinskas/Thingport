@@ -218,6 +218,19 @@ func TestFindMacCommandChecksUserApplications(t *testing.T) {
 	}
 }
 
+func TestFindMacCommandResolvesQIDIStudio(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	appPath := filepath.Join(home, "Applications", "QIDIStudio.app")
+	if err := os.MkdirAll(appPath, 0755); err != nil {
+		t.Fatalf("mkdir app: %v", err)
+	}
+	candidates := map[string][]string{"qidistudio": {"/Applications/QIDIStudio.app"}}
+	if got := findMacCommand("qidistudio", candidates); got != appPath {
+		t.Fatalf("findMacCommand(...) = %q, expected %q", got, appPath)
+	}
+}
+
 func TestHandleProtocolRejectsUntrustedShapesBeforeDownload(t *testing.T) {
 	tests := []string{
 		"https://thingport.example/file",
@@ -268,6 +281,7 @@ func TestFindWindowsCommandResolvesBridgeableSlicers(t *testing.T) {
 		id, base, rel string
 	}{
 		{"orcaslicer", "ProgramFiles", "OrcaSlicer/orca-slicer.exe"},
+		{"qidistudio", "ProgramFiles", "QIDIStudio/qidi-studio.exe"},
 		{"crealityprintlink", "ProgramFiles", "Creality Print 5.1/CrealityPrint.exe"},
 		{"elegooslicer", "ProgramFiles", "ElegooSlicer/elegoo-slicer.exe"},
 		{"snapmaker-orca", "ProgramFiles", "Snapmaker_Orca/snapmaker-orca.exe"},
@@ -328,6 +342,21 @@ func TestFindLinuxCommandLooksInFlatpakExports(t *testing.T) {
 	}
 	if got := findLinuxCommand("snapmaker-orca", linuxCandidates()); got != launcher {
 		t.Fatalf("findLinuxCommand(snapmaker-orca) = %q, expected %q", got, launcher)
+	}
+}
+
+func TestFindLinuxCommandResolvesQIDIStudio(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Linux lookup")
+	}
+	dir := t.TempDir()
+	t.Setenv("PATH", dir)
+	launcher := filepath.Join(dir, "qidi-studio")
+	if err := os.WriteFile(launcher, []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatalf("write launcher: %v", err)
+	}
+	if got := findLinuxCommand("qidistudio", linuxCandidates()); got != launcher {
+		t.Fatalf("findLinuxCommand(qidistudio) = %q, expected %q", got, launcher)
 	}
 }
 

@@ -473,6 +473,7 @@ describe("planAdaptation", () => {
   });
 
   it("translates its settings' names for the Orca family, and retags it where a version would be questioned", () => {
+    expect(plan("qidistudio")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: null });
     expect(plan("orcaslicer")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("snapmaker-orca")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("elegooslicer")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: "orca" });

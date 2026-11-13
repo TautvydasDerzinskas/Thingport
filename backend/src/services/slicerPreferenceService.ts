@@ -4,6 +4,7 @@ import { prisma } from "../db";
 // utils/slicerLaunch.ts). Anything else is "other".
 export const SLICER_IDS = [
   "bambustudio",
+  "qidistudio",
   "orcaslicer",
   "prusaslicer",
   "cura",
