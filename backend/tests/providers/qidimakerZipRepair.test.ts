@@ -65,27 +65,44 @@ describe("QIDI Maker zip repair", () => {
     expect(await contents(zipPath)).toEqual(expected);
   });
 
+  // A binary STL's header can be anything: here a descriptor's signature, a CRC, and sizes of nothing.
+  const lookalike = Buffer.concat([
+    Buffer.from([0x50, 0x4b, 0x07, 0x08, 1, 2, 3, 4]),
+    Buffer.alloc(8),
+    Buffer.alloc(64, 32),
+    Buffer.from("facet ".repeat(500)),
+  ]);
+  const PART = "model_1_stl_files/part.stl";
+  // Three bytes of the directory a stream was cut off in.
+  const CUT_DIRECTORY = Buffer.from([0x50, 0x4b, 0x01]);
+  const text = (files: Record<string, Buffer>) =>
+    Object.fromEntries(Object.entries(files).map(([name, bytes]) => [name, bytes.toString("utf8")]));
+
   it("isn't misled by a stored file whose own bytes look like a descriptor", async () => {
-    // A binary STL's header can be anything: here a descriptor's signature, a CRC, and sizes of nothing.
-    const header = Buffer.concat([
-      Buffer.from([0x50, 0x4b, 0x07, 0x08, 1, 2, 3, 4]),
-      Buffer.alloc(8),
-      Buffer.alloc(64, 32),
-    ]);
-    const lookalike = {
-      "model_1_stl_files/part.stl": Buffer.concat([header, Buffer.from("facet ".repeat(500))]),
-      ...entries,
-    };
-    const zipPath = await file(withoutDirectory(await streamed(lookalike, "STORE")));
+    const first = { [PART]: lookalike, ...entries };
+    const zipPath = await file(withoutDirectory(await streamed(first, "STORE")));
     expect(await repairZipDirectory(zipPath)).toBe(true);
-    expect(await contents(zipPath)).toEqual(
-      Object.fromEntries(Object.entries(lookalike).map(([name, bytes]) => [name, bytes.toString("utf8")])),
-    );
+    expect(await contents(zipPath)).toEqual(text(first));
   });
 
   it("keeps the last entry where a directory cut short too soon to tell follows it", async () => {
-    const broken = withoutDirectory(await streamed(entries));
-    const zipPath = await file(Buffer.concat([broken, Buffer.from([0x50, 0x4b, 0x01])]));
+    const zipPath = await file(Buffer.concat([withoutDirectory(await streamed(entries)), CUT_DIRECTORY]));
+    expect(await repairZipDirectory(zipPath)).toBe(true);
+    expect(await contents(zipPath)).toEqual(expected);
+  });
+
+  it("keeps such a file whole as the last entry too, before a directory cut short", async () => {
+    const last = { ...entries, [PART]: lookalike };
+    const zipPath = await file(Buffer.concat([withoutDirectory(await streamed(last, "STORE")), CUT_DIRECTORY]));
+    expect(await repairZipDirectory(zipPath)).toBe(true);
+    expect(await contents(zipPath)).toEqual(text(last));
+  });
+
+  it("drops a last entry nothing it knows follows, rather than cut it short", async () => {
+    const last = { ...entries, [PART]: lookalike };
+    const zipPath = await file(
+      Buffer.concat([withoutDirectory(await streamed(last, "STORE")), Buffer.from("not a zip")]),
+    );
     expect(await repairZipDirectory(zipPath)).toBe(true);
     expect(await contents(zipPath)).toEqual(expected);
   });

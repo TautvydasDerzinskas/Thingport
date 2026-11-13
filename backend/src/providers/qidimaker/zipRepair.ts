@@ -11,8 +11,12 @@ const CENTRAL = 0x02014b50;
 const END = 0x06054b50;
 const LOCAL_SIZE = 30;
 const DESCRIPTOR_SIZE = 16;
-// What may come right after an entry's descriptor.
-const FOLLOWERS = new Set([LOCAL, CENTRAL, END]);
+// What may come right after an entry's descriptor: the next entry, the directory, or its end record.
+const FOLLOWERS = [LOCAL, CENTRAL, END].map((signature) => {
+  const bytes = Buffer.alloc(4);
+  bytes.writeUInt32LE(signature);
+  return bytes;
+});
 // Bit 3: the sizes and CRC come after the data, in a data descriptor.
 const SIZES_AFTER = 0x08;
 const CHUNK = 1 << 20;
@@ -48,26 +52,25 @@ async function hasEndRecord(file: fs.FileHandle, size: number): Promise<boolean>
   return false;
 }
 
+/** Whether `next`, the four bytes after a descriptor or what's left of the file there, is one of FOLLOWERS, or all of
+ *  one a zip cut off there kept. Nothing at all is the file's end. */
+const followsRight = (next: Buffer) => FOLLOWERS.some((signature) => signature.subarray(0, next.length).equals(next));
+
 /** Where the descriptor after an entry's data starts: one whose compressed size is the distance from `dataStart`, and
  *  that the next entry, the directory or the file's end follows, as a stored file's own bytes that only look like one
- *  aren't. Failing that, the first whose size fits, for a zip with something else after its last entry. Null when
- *  there's none before the end. */
+ *  aren't. Null when there's none, and the entry is dropped rather than cut short. */
 async function findDescriptor(file: fs.FileHandle, dataStart: number, size: number): Promise<number | null> {
-  let sizeFits: number | null = null;
   for (let from = dataStart; from < size; from += CHUNK) {
     // The chunks overlap by a descriptor and the signature after it, so both are read whole across their edge.
     const chunk = await readAt(file, from, CHUNK + DESCRIPTOR_SIZE + 4);
     const end = Math.min(chunk.length - DESCRIPTOR_SIZE, CHUNK - 1);
     for (let at = chunk.indexOf(DESCRIPTOR); at !== -1 && at <= end; at = chunk.indexOf(DESCRIPTOR, at + 1)) {
       const position = from + at;
-      if (chunk.readUInt32LE(at + 8) !== position - dataStart) continue;
-      const after = at + DESCRIPTOR_SIZE;
-      if (position + DESCRIPTOR_SIZE === size) return position;
-      if (after + 4 <= chunk.length && FOLLOWERS.has(chunk.readUInt32LE(after))) return position;
-      sizeFits ??= position;
+      const next = chunk.subarray(at + DESCRIPTOR_SIZE, at + DESCRIPTOR_SIZE + 4);
+      if (chunk.readUInt32LE(at + 8) === position - dataStart && followsRight(next)) return position;
     }
   }
-  return sizeFits;
+  return null;
 }
 
 /** Every entry, by its local header, up to the first thing that isn't one; and where the last one ends. */
