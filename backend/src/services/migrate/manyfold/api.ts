@@ -16,8 +16,12 @@ export type ManyfoldConnection = { address: string; clientId: string; clientSecr
 
 /** Reaching it failed part-way: it stopped, or the network did. A run stops here, to be started again. */
 const lost = () => new MigrateError("manyfold_lost", "Manyfold stopped answering.");
-/** It answered, with an error: about one model, which is left out, unless it's a list the run needs. */
-const answered = (status: number) => new MigrateError("manyfold_error", `Manyfold answered ${status}.`, { status });
+/** It answered, with an error: about one model, which is left out, unless it's a list the run needs. Asked to slow
+ *  down, by Manyfold or a proxy in front, the run stops instead, or every model after would be left out the same way. */
+const answered = (status: number) =>
+  status === 429
+    ? new MigrateError("manyfold_slow_down", "Manyfold asks to wait a few minutes.")
+    : new MigrateError("manyfold_error", `Manyfold answered ${status}.`, { status });
 
 const MEDIA_TYPE = "application/vnd.manyfold.v0+json";
 const TIMEOUT_MS = 30_000;

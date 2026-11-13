@@ -16,6 +16,9 @@ export interface SourceFiles {
   copyFolder(relative: string, to: string): Promise<number>;
 }
 
+/** A folder that isn't there, which reads as empty; any other failure to read one is the migration's to report. */
+export const isAbsent = (err: unknown) => ["ENOENT", "ENOTDIR"].includes((err as NodeJS.ErrnoException)?.code ?? "");
+
 /** The old instance's storage folder, as this server sees it: mounted or copied here by the admin. */
 export async function folderSource(given: string): Promise<SourceFiles> {
   const root = await checkFolder(given);
@@ -61,9 +64,15 @@ export async function folderSource(given: string): Promise<SourceFiles> {
       const walk = async (dir: string): Promise<void> => {
         // Each folder checked again right before it's read: a link, or one swapped for a link since its parent was
         // read, isn't followed out of the folder. Files are checked again on their own as they're copied.
-        const real = await fs.realpath(dir).catch(() => null);
+        const real = await fs.realpath(dir).catch((err: unknown) => {
+          if (isAbsent(err)) return null;
+          throw err;
+        });
         if (!real || !real.startsWith(root + path.sep)) return;
-        const entries = await fs.readdir(real, { withFileTypes: true }).catch(() => []);
+        const entries = await fs.readdir(real, { withFileTypes: true }).catch((err: unknown) => {
+          if (isAbsent(err)) return [];
+          throw err;
+        });
         for (const entry of entries) {
           const inner = path.relative(root, path.join(dir, entry.name));
           if (entry.isDirectory()) await walk(path.join(dir, entry.name));

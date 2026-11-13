@@ -1,10 +1,11 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -100,6 +101,18 @@ describe("letting another instance copy this one", () => {
         .get(`/api/migrate-export/folder?path=${encodeURIComponent(`u-export-${tag}`)}`)
         .set(asOther());
       expect(listed.body.files.toSorted()).toEqual(["Thing/.hidden.stl", "Thing/part.stl"]);
+
+      // A folder it can't read fails the listing, rather than leave its files out of it.
+      const denied = Object.assign(new Error("EACCES: permission denied, scandir"), { code: "EACCES" });
+      const readdir = vi.spyOn(fsPromises, "readdir").mockRejectedValueOnce(denied);
+      try {
+        const refused = await request(app)
+          .get(`/api/migrate-export/folder?path=${encodeURIComponent(`u-export-${tag}`)}`)
+          .set(asOther());
+        expect(refused.status).toBe(500);
+      } finally {
+        readdir.mockRestore();
+      }
     } finally {
       fs.rmSync(path.join(STORAGE, `u-export-${tag}`), { recursive: true, force: true });
     }

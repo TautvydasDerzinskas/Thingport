@@ -52,17 +52,25 @@ export default function MigratePage({ onUnauthorized }: Props) {
     setExportToken(next);
   }, []);
 
+  /** Counts the lists asked for, so one that answers after a later one is dropped: it could say a run that's started
+   *  is still waiting, and polling would stop. */
+  const listAsked = React.useRef(0);
   const load = React.useCallback(async () => {
+    const asked = ++listAsked.current;
     try {
       const listed = await migrateApi.list();
+      if (asked !== listAsked.current) return;
       setRuns(listed.runs);
       setRoot(listed.root);
       setLoadFailed(false);
     } catch (err) {
+      if (asked !== listAsked.current) return;
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setLoadFailed(true);
     }
   }, [onUnauthorized]);
+  // The same function from one render to the next, or each refresh would restart the dialogs' own polling.
+  const reload = React.useCallback(() => void load(), [load]);
 
   React.useEffect(() => {
     void load();
@@ -114,6 +122,8 @@ export default function MigratePage({ onUnauthorized }: Props) {
     if (!ok) return;
     try {
       await migrateApi.remove(run.id);
+      // A list asked for before it went would bring it back.
+      listAsked.current += 1;
       setRuns((previous) => previous?.filter((item) => item.id !== run.id) ?? previous);
     } catch (err) {
       fail(err);
@@ -257,7 +267,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
         <ManyfoldMigrateDialog
           initial={open.run}
           onClose={() => setOpen(null)}
-          onChanged={() => void load()}
+          onChanged={reload}
           onUnauthorized={onUnauthorized}
         />
       )}
@@ -266,7 +276,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
           initial={open.run}
           root={root}
           onClose={() => setOpen(null)}
-          onChanged={() => void load()}
+          onChanged={reload}
           onUnauthorized={onUnauthorized}
         />
       )}

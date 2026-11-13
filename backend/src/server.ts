@@ -44,6 +44,9 @@ async function boot(): Promise<void> {
       return false;
     },
   );
+  // Before serving: settling them clears the uploads folder, and a run started meanwhile would be taken for one the
+  // last process left.
+  await recoverMigrations().catch((err) => console.error("Failed to settle the migrations the last run left:", err));
   const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);
     startConsumeWatcher();
@@ -59,7 +62,6 @@ async function boot(): Promise<void> {
       })
       .catch((err) => console.error("Failed to start connected instances:", err));
     announceVersionUpdate().catch((err) => console.error("Failed to announce the version update:", err));
-    recoverMigrations().catch((err) => console.error("Failed to settle the migrations the last run left:", err));
     resumeStorageMove()
       .catch((err) => console.error("Failed to resume moving model files:", err))
       // After, so it sees a move that's carrying on and waits for it.

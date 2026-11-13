@@ -70,7 +70,8 @@ export default function StartStep({ run, people, chosen, choices }: Props) {
           </Stack>
         )}
       </Box>
-      <Alert severity="warning">{t(k("start.stopOld"))}</Alert>
+      {/* Online, the files come from the old instance as the run goes. */}
+      <Alert severity="warning">{t(k(run.source === "thingport-online" ? "start.keepOld" : "start.stopOld"))}</Alert>
     </Stack>
   );
 }

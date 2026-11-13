@@ -7,6 +7,7 @@ import { createLogger } from "../../logger";
 import { HttpError } from "../../utils/fileUtils";
 import { createLog } from "../auditLog";
 import { createNotification } from "../notificationService";
+import { discardPrint } from "../printCreation";
 import { currentStorageMove } from "../storageMoveService";
 import { setMigrationBusy } from "./busy";
 import { MigrateError, MigrateHttpError, storedError } from "./errors";
@@ -286,7 +287,8 @@ async function prepare(state: Active, name: string, way: WayIn, plan: MigratePla
     }
     state.progress = { step: "restoring", done: 0, total: 0 };
     await createStaging(name);
-    await restoreDump(file, name, state.abort.signal);
+    const skipped = await restoreDump(file, name, state.abort.signal);
+    if (skipped.length) log.info("the dump restored without what the working copy doesn't need", { lines: skipped });
     if (ownDump) await fs.rm(ownDump, { force: true }).catch(() => undefined);
     state.progress = { step: "checking", done: 0, total: 0 };
     source = stagingClient(name);
@@ -477,7 +479,8 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
 
 // --- Manyfold ---
 
-type ManyfoldRemote = ManyfoldConnection & { done?: string[] };
+/** `half`: the model here a run the server stopped was making, to discard when it's started again. */
+type ManyfoldRemote = ManyfoldConnection & { done?: string[]; half?: string | null };
 
 /** Each migration's client, with the token it signed in with: Manyfold lets a key sign in only ten times in three
  *  minutes, which looking up owners one by one would use up. */
@@ -619,6 +622,9 @@ export async function startManyfold(id: string, adminId: string, options: Manyfo
 async function executeManyfold(state: Active, remote: ManyfoldRemote, options: ManyfoldOptions, adminId: string) {
   let job: ManyfoldImport | null = null;
   try {
+    // Made before the server stopped, without all its files: brought again whole. Its Manyfold id isn't in `done`,
+    // which is kept in the same write as this is cleared.
+    if (remote.half) await discardPrint(remote.half);
     const done = await broughtBefore(remote.address);
     for (const earlier of remote.done ?? []) done.add(earlier);
     job = new ManyfoldImport(
@@ -631,7 +637,10 @@ async function executeManyfold(state: Active, remote: ManyfoldRemote, options: M
         state.progress = { step: progress.phase, done: progress.done, total: progress.total };
       },
       async () => {
-        await prisma.migrationRun.update({ where: { id: state.id }, data: { remote: { ...remote, done: [...done] } } });
+        await prisma.migrationRun.update({
+          where: { id: state.id },
+          data: { remote: { ...remote, done: [...done], half: job?.half ?? null } },
+        });
       },
     );
     const report = await job.run();
@@ -661,7 +670,11 @@ async function executeManyfold(state: Active, remote: ManyfoldRemote, options: M
         status: "failed",
         error: storedError(err),
         ...(job ? { report: job.report } : {}),
-        remote: { ...remote, done: [...(job?.done ?? remote.done ?? [])] },
+        remote: {
+          ...remote,
+          done: [...(job?.done ?? remote.done ?? [])],
+          half: job ? job.half : (remote.half ?? null),
+        },
         finishedAt: new Date(),
       },
     });

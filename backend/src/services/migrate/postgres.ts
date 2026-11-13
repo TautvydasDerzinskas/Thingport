@@ -36,20 +36,43 @@ function server(): DatabaseServer {
   return live;
 }
 
-/** As the live connection reaches the server, sslmode included. */
-function sslMode(): string | null {
+/** The live connection's TLS settings, in Prisma's terms: the working copy is reached as safely as the live one. */
+function liveSsl(): URLSearchParams {
+  const kept = new URLSearchParams();
   try {
-    return new URL(process.env.DATABASE_URL ?? "").searchParams.get("sslmode");
+    const given = new URL(process.env.DATABASE_URL ?? "").searchParams;
+    for (const key of ["sslmode", "sslcert", "sslaccept", "sslidentity", "sslpassword"]) {
+      const value = given.get(key);
+      if (value !== null) kept.set(key, value);
+    }
   } catch {
-    return null;
+    // No URL, so nothing to keep.
   }
+  return kept;
+}
+
+/** The same in libpq's terms, for pg_dump and pg_restore. Prisma checks the server's certificate and name only with
+ *  sslaccept=strict, against sslcert (relative to the schema's folder), which is libpq's verify-full against
+ *  sslrootcert. PGSSL* settings of this process's own come along, for a server that needs more. */
+export function sslEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(process.env)) if (key.startsWith("PGSSL")) env[key] = value;
+  const ssl = liveSsl();
+  const mode = ssl.get("sslmode");
+  if (mode) env.PGSSLMODE = mode;
+  if (mode === "require" && ssl.get("sslaccept") === "strict") {
+    env.PGSSLMODE = "verify-full";
+    const ca = ssl.get("sslcert");
+    if (ca) env.PGSSLROOTCERT = path.resolve("prisma", ca);
+  }
+  return env;
 }
 
 function url(user: string, password: string, database: string, extra = ""): string {
   const { host, port } = server();
-  const ssl = sslMode();
+  const ssl = liveSsl().toString();
   const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
-  return `postgresql://${auth}@${host}:${port}/${database}?schema=public${ssl ? `&sslmode=${ssl}` : ""}${extra}`;
+  return `postgresql://${auth}@${host}:${port}/${database}?schema=public${ssl ? `&${ssl}` : ""}${extra}`;
 }
 
 export function stagingUrl(name: string): string {
@@ -133,14 +156,21 @@ export async function dumpFormat(file: string): Promise<DumpFormat> {
 
 type ToolRun = { code: number | null; lines: string[] };
 
-/** Runs a tool to the end, keeping the last lines it printed. `env` is all it gets: nothing of this process's own,
- *  where the live database's password and the instance's secret are. */
-function runTool(command: string, args: string[], env: NodeJS.ProcessEnv, signal?: AbortSignal): Promise<ToolRun> {
+/** Runs a tool to the end, keeping the last lines it printed; `onLine` sees every one. `env` is all it gets: nothing
+ *  of this process's own, where the live database's password and the instance's secret are. */
+function runTool(
+  command: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  signal?: AbortSignal,
+  onLine?: (line: string) => void,
+): Promise<ToolRun> {
   return new Promise((resolve, reject) => {
     const lines: string[] = [];
     const keep = (chunk: Buffer) => {
       for (const line of chunk.toString("utf8").split(/\r?\n/)) {
         if (!line.trim()) continue;
+        onLine?.(line);
         lines.push(line);
         if (lines.length > TAIL_LINES) lines.shift();
       }
@@ -162,8 +192,33 @@ function baseEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
-/** Restores `file` into the working copy, as its role. pg_restore's own complaints about things the copy doesn't
- *  need (an owner, a comment) don't stop it; what was restored is checked afterwards. */
+/** What pg_restore may fail to make without the copy missing anything a migration reads: an extension the role may
+ *  not create, the public schema that's there already, comments and grants. Anything else, a table or its rows above
+ *  all, stops the restore. */
+const HARMLESS = /^(EXTENSION|SCHEMA|COMMENT|ACL|DEFAULT ACL|EVENT TRIGGER|PUBLICATION|SUBSCRIPTION|SECURITY LABEL) /;
+
+/** Of pg_restore's lines, the errors that matter, each after the entry it was restoring. An error is told apart by the
+ *  "from TOC entry <id>; <oid> <oid> <kind> ..." line before it; the archive's opening SETs (a newer pg_dump's setting
+ *  an older server doesn't know) come "while INITIALIZING", before any entry. */
+export function restoreErrors(): { see: (line: string) => void; serious: string[] } {
+  let entry: string | null = null;
+  const serious: string[] = [];
+  return {
+    serious,
+    see: (line) => {
+      const phase = /^pg_restore: while (\w+)/.exec(line);
+      if (phase) entry = phase[1] === "INITIALIZING" ? "INITIALIZING" : null;
+      const from = /^pg_restore: from TOC entry \d+; \d+ \d+ (.+)$/.exec(line);
+      if (from) entry = from[1];
+      if (!line.startsWith("pg_restore: error:")) return;
+      if (entry === "INITIALIZING" || (entry && HARMLESS.test(`${entry} `))) return;
+      serious.push(entry ? `${entry}: ${line.replace(/^pg_restore: error: /, "")}` : line);
+    },
+  };
+}
+
+/** Restores `file` into the working copy, as its role. Errors making what the copy doesn't need (see HARMLESS) don't
+ *  stop it and are returned; any other does. */
 export async function restoreDump(file: string, name: string, signal?: AbortSignal): Promise<string[]> {
   const format = await dumpFormat(file);
   if (format === "plain") {
@@ -174,16 +229,15 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
   }
   if (format === "unknown") throw new MigrateError("not_a_dump", "This file isn't a pg_dump archive.");
   const { host, port } = server();
-  const ssl = sslMode();
   const env: NodeJS.ProcessEnv = {
     ...baseEnv(),
+    ...sslEnv(),
     PGHOST: host.replace(/^\[|\]$/g, ""),
     PGPORT: String(port),
     PGUSER: name,
     PGPASSWORD: stagingPassword(name),
     PGAPPNAME: "thingport-migrate",
     PGCONNECT_TIMEOUT: "15",
-    ...(ssl ? { PGSSLMODE: ssl } : {}),
   };
   const args = [
     "--no-owner",
@@ -198,8 +252,9 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
     file,
   ];
   let result: ToolRun;
+  const errors = restoreErrors();
   try {
-    result = await runTool(process.env.PG_RESTORE_PATH || "pg_restore", args, env, signal);
+    result = await runTool(process.env.PG_RESTORE_PATH || "pg_restore", args, env, signal, errors.see);
   } catch (err) {
     if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
       throw new MigrateError("no_restore_tool", "pg_restore isn't installed on this server.");
@@ -208,7 +263,11 @@ export async function restoreDump(file: string, name: string, signal?: AbortSign
   }
   if (result.code === 0) return [];
   // 1 with "errors ignored on restore" is pg_restore carrying on past them.
-  if (result.code === 1 && result.lines.some((line) => /errors ignored on restore/i.test(line))) return result.lines;
+  const carriedOn = result.code === 1 && result.lines.some((line) => /errors ignored on restore/i.test(line));
+  if (carriedOn && errors.serious.length) {
+    throw new MigrateError("restore_failed", errors.serious.slice(0, 8).join("\n"));
+  }
+  if (carriedOn) return result.lines;
   throw new MigrateError(
     "restore_failed",
     result.lines.slice(-8).join("\n") || `pg_restore exited with ${result.code}`,

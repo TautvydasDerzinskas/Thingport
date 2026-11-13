@@ -19,7 +19,7 @@ import { UnauthorizedError } from "../../api/client";
 import { migrateApi, type MigrateRunError, type ThingportRun } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToastHost } from "../../components/ToastProvider";
-import CheckStep, { canStart, checkPassed } from "./CheckStep";
+import CheckStep, { canStart } from "./CheckStep";
 import ComesStep, { DEFAULT_CHOICES, type Choices } from "./ComesStep";
 import { errorText, followRun, isActive, k, requestError } from "./parts";
 import PeopleStep from "./PeopleStep";
@@ -183,7 +183,8 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
     step === 0
       ? sourceReady(source) && !sending
       : step === 1
-        ? checkPassed(run) && !rechecking
+        ? // A run that stopped part-way goes on from here too, as Start would.
+          canStart(run, rechecking)
         : step === 2
           ? chosen.size > 0
           : true;

@@ -9,7 +9,16 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { MERGED_TABLES, type MigrateOptions, tablesThatCome } from "../src/services/migrate/merge";
-import { dumpFormat, stagingName } from "../src/services/migrate/postgres";
+import {
+  createStaging,
+  dropStaging,
+  dumpFormat,
+  restoreDump,
+  restoreErrors,
+  sslEnv,
+  stagingClient,
+  stagingName,
+} from "../src/services/migrate/postgres";
 import { MERGE_RULES } from "../src/services/migrate/rules";
 import { changeFolder, removeRun, startRun } from "../src/services/migrate/runs";
 import { checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
@@ -59,6 +68,99 @@ describe("dump formats", () => {
   });
 });
 
+describe("restoring a dump", () => {
+  it("stops at a table or its rows it couldn't restore, not at what the copy does without", () => {
+    const errors = restoreErrors();
+    const lines = [
+      "pg_restore: while INITIALIZING:",
+      'pg_restore: error: could not execute query: ERROR:  unrecognized configuration parameter "transaction_timeout"',
+      "Command was: SET transaction_timeout = 0;",
+      "pg_restore: while PROCESSING TOC:",
+      "pg_restore: from TOC entry 2; 3079 1010499 EXTENSION pg_trgm (no owner)",
+      'pg_restore: error: could not execute query: ERROR:  permission denied to create extension "pg_trgm"',
+      "pg_restore: from TOC entry 3; 2615 2200 SCHEMA public postgres",
+      'pg_restore: error: could not execute query: ERROR:  schema "public" already exists',
+      "pg_restore: from TOC entry 210; 1259 1010580 TABLE Print thingport",
+      'pg_restore: error: could not execute query: ERROR:  type "citext" does not exist',
+      "pg_restore: from TOC entry 3688; 0 1010580 TABLE DATA Print thingport",
+      'pg_restore: error: COPY failed for table "Print": ERROR:  relation "Print" does not exist',
+      "pg_restore: warning: errors ignored on restore: 4",
+    ];
+    for (const line of lines) errors.see(line);
+    expect(errors.serious).toEqual([
+      'TABLE Print thingport: could not execute query: ERROR:  type "citext" does not exist',
+      'TABLE DATA Print thingport: COPY failed for table "Print": ERROR:  relation "Print" does not exist',
+    ]);
+  });
+
+  it.skipIf(!hasPgTools)("carries on past an extension it may not make, and stops at a table it lost", async () => {
+    const tag = crypto.randomBytes(4).toString("hex");
+    const dir = tmp();
+    const restore = async (database: string, setup: string[]) => {
+      await prisma.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${database}"`);
+      await prisma.$executeRawUnsafe(`CREATE DATABASE "${database}"`);
+      const old = new PrismaClient({ datasources: { db: { url: urlFor(database) } } });
+      try {
+        for (const sql of setup) await old.$executeRawUnsafe(sql);
+      } finally {
+        await old.$disconnect();
+      }
+      const file = path.join(dir, `${database}.dump`);
+      dump(database, file);
+      await prisma.$executeRawUnsafe(`DROP DATABASE "${database}"`);
+      const name = stagingName(`restore${database.slice(-12)}`);
+      await createStaging(name);
+      try {
+        const skipped = await restoreDump(file, name);
+        const copy = stagingClient(name);
+        try {
+          return { skipped, kept: await copy.$queryRawUnsafe<{ id: string }[]>(`SELECT id FROM "Kept"`) };
+        } finally {
+          await copy.$disconnect();
+        }
+      } finally {
+        await dropStaging(name);
+      }
+    };
+    // An extension the working copy's role may not make, with nothing that needs it: its rows all come.
+    const harmless = await restore(`tp_restore_ext_${tag}`, [
+      "CREATE EXTENSION IF NOT EXISTS pg_trgm",
+      `CREATE TABLE "Kept" (id text PRIMARY KEY)`,
+      `INSERT INTO "Kept" VALUES ('a'), ('b')`,
+    ]);
+    expect(harmless.skipped.join("\n")).toMatch(/errors ignored on restore/);
+    expect(harmless.kept.map((row) => row.id).toSorted()).toEqual(["a", "b"]);
+    // A table of a type from it can't be made, so its rows can't come: the restore stops rather than leave them out.
+    await expect(
+      restore(`tp_restore_lost_${tag}`, [
+        "CREATE EXTENSION IF NOT EXISTS citext",
+        `CREATE TABLE "Kept" (id text PRIMARY KEY)`,
+        `CREATE TABLE "Lost" (id citext PRIMARY KEY)`,
+        `INSERT INTO "Lost" VALUES ('a')`,
+      ]),
+    ).rejects.toMatchObject({ code: "restore_failed", message: expect.stringMatching(/^TABLE Lost /m) });
+  });
+
+  it("reaches the database as safely as the live connection does", () => {
+    const live = process.env.DATABASE_URL;
+    const base = "postgresql://thingport:secret@db:5432/thingport?schema=public";
+    try {
+      process.env.DATABASE_URL = `${base}&sslmode=require`;
+      expect(sslEnv()).toMatchObject({ PGSSLMODE: "require" });
+      // Prisma checks the certificate and the name only when strict, against its sslcert.
+      process.env.DATABASE_URL = `${base}&sslmode=require&sslaccept=strict&sslcert=certs/ca.pem`;
+      expect(sslEnv()).toMatchObject({
+        PGSSLMODE: "verify-full",
+        PGSSLROOTCERT: path.resolve("prisma", "certs/ca.pem"),
+      });
+      process.env.DATABASE_URL = base;
+      expect(sslEnv().PGSSLMODE).toBeUndefined();
+    } finally {
+      process.env.DATABASE_URL = live;
+    }
+  });
+});
+
 describe("the old instance's folder", () => {
   it("copies only plain files inside it", async () => {
     const root = inRoot();
@@ -94,6 +196,23 @@ describe("the old instance's folder", () => {
     } finally {
       readdir.mockRestore();
     }
+  });
+
+  it("fails on a folder it can't read, rather than copy none of it unsaid", async () => {
+    const root = inRoot();
+    fs.mkdirSync(path.join(root, "studio", "u-1", "design"), { recursive: true });
+    fs.writeFileSync(path.join(root, "studio", "u-1", "design", "mesh.stl"), "solid");
+    const files = await folderSource(root);
+    // One that isn't there has nothing in it.
+    expect(await files.copyFolder("studio/u-1/none", tmp())).toBe(0);
+    const denied = Object.assign(new Error("EACCES: permission denied, scandir"), { code: "EACCES" });
+    const readdir = vi.spyOn(fsPromises, "readdir").mockRejectedValueOnce(denied);
+    try {
+      await expect(files.copyFolder("studio/u-1/design", tmp())).rejects.toMatchObject({ code: "EACCES" });
+    } finally {
+      readdir.mockRestore();
+    }
+    expect(await files.copyFolder("studio/u-1/design", tmp())).toBe(1);
   });
 
   it("reads only from the migrate folder, and never this instance's own storage", async () => {

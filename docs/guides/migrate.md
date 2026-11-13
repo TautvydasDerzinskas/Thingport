@@ -6,7 +6,7 @@ instance's release on the way, so you don't upgrade it first, and nothing on it 
 
 It comes one of two ways:
 
-- **Online**, when the old instance runs a release with Migrate too: its admin makes a one-time token, and this instance
+- **Online**, when the old instance runs a release with Migrate too: its admin makes a 24-hour token, and this instance
   copies it over the network. See [online](#online-with-a-token).
 - **From a dump and its storage folder**, from any release since 1.0.0: a `pg_dump` of its database, and its storage
   folder readable on this server. See [steps 1 to 3](#1-stop-the-old-instances-backend).
@@ -104,12 +104,14 @@ docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app/storage"}}{{.Type
 
 Then let this instance's backend read it, and the dump beside it. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
+Add the one line to the backend's volumes and leave the ones it has, its `/app/storage` among them, as they are. The
+Compose files in the repository have it commented out.
 
 ```yaml
 services:
   backend:
     volumes:
-      - thingport_storage:/app/storage
+      # ...its own volumes, as they are...
       - /srv/old-thingport:/app/migrate:ro # holds thingport.dump and old-storage/
 ```
 

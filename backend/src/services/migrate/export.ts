@@ -7,6 +7,8 @@ import { STORAGE } from "../../config";
 import { prisma } from "../../db";
 import { createLog } from "../auditLog";
 import { liveDatabaseServer } from "../databaseSettingsService";
+import { sslEnv } from "./postgres";
+import { isAbsent } from "./sourceFiles";
 
 // Letting another Thingport instance copy this one online; services/migrate/remote.ts is the other side. An admin makes
 // a token here and gives it to the other instance's admin. With it, that instance may read this one's database, as a
@@ -108,12 +110,19 @@ export async function storageFolder(relative: string, limit = FOLDER_LIMIT): Pro
   const root = await fs.realpath(STORAGE);
   const joined = path.resolve(root, relative);
   if (!joined.startsWith(root + path.sep)) return [];
-  // The folder itself, or one above it, may be a link out of storage.
-  const start = await fs.realpath(joined).catch(() => null);
+  // The folder itself, or one above it, may be a link out of storage. One that isn't there has nothing in it; one that
+  // can't be read fails the request, rather than list only some of its files.
+  const start = await fs.realpath(joined).catch((err: unknown) => {
+    if (isAbsent(err)) return null;
+    throw err;
+  });
   if (!start?.startsWith(root + path.sep)) return [];
   const found: string[] = [];
   const walk = async (dir: string): Promise<void> => {
-    const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+    const entries = await fs.readdir(dir, { withFileTypes: true }).catch((err: unknown) => {
+      if (isAbsent(err)) return [];
+      throw err;
+    });
     for (const entry of entries) {
       if (found.length >= limit) throw new FolderTooLargeError(limit);
       const full = path.join(dir, entry.name);
@@ -134,6 +143,8 @@ export function streamDump(res: Response): void {
     return;
   }
   const env: NodeJS.ProcessEnv = {
+    // As safely as the live connection reaches it.
+    ...sslEnv(),
     PGHOST: live.host.replace(/^\[|\]$/g, ""),
     PGPORT: String(live.port),
     PGUSER: live.user,

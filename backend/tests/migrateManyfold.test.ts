@@ -4,6 +4,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import os from "node:os";
 import path from "node:path";
+import type { Prisma } from "@prisma/client";
 import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
@@ -185,7 +186,15 @@ function standIn(
     hold,
     signIns,
     models = MODELS,
-  }: { old?: boolean; hold?: Hold; signIns?: { count: number }; models?: Model[] } = {},
+    refuse,
+  }: {
+    old?: boolean;
+    hold?: Hold;
+    signIns?: { count: number };
+    models?: Model[];
+    /** Answers requests for paths it matches with this status, as long as `refuse.on` is set. */
+    refuse?: { path: RegExp; status: number; on: boolean };
+  } = {},
 ): Promise<http.Server> {
   const own = "http://localhost:3214";
   const server = http.createServer((req, res) => {
@@ -208,6 +217,7 @@ function standIn(
       return;
     }
     if (req.headers.authorization !== "Bearer token-1") return json(401, { error: "unauthorized" });
+    if (refuse?.on && refuse.path.test(url.pathname)) return json(refuse.status, {});
     const page = Number(url.searchParams.get("page") ?? "1");
     const list = (items: { "@id": string; name: string }[]) => {
       const slice = items.slice((page - 1) * 2, page * 2);
@@ -553,6 +563,121 @@ describe("migrating from Manyfold", () => {
       expect(minis.items.map((item) => item.printId)).toEqual([boxed[0].id]);
     } finally {
       kimServer.close();
+    }
+  });
+
+  it("stops when asked to slow down, and doesn't make a model whose creator it couldn't read", async () => {
+    const models: Model[] = [
+      {
+        id: "lamp7",
+        owner: "lee",
+        name: "Lamp",
+        files: [{ id: "l1", path: "lamp.stl", mime: "model/stl", body: stl("lamp") }],
+      },
+    ];
+    const refuse = { path: /^\/creators\//, status: 500, on: true };
+    const leeServer = await standIn(secret, { models, refuse });
+    const lee = (await prisma.user.create({ data: { email: `lee-${tag}@example.com`, displayName: "Lee" } })).id;
+    users.push(lee);
+    const importer = () =>
+      new ManyfoldImport(
+        new ManyfoldClient({
+          address: `http://127.0.0.1:${(leeServer.address() as AddressInfo).port}`,
+          clientId: "app",
+          clientSecret: secret,
+        }),
+        `manyfold-${tag}-lee`,
+        { owners: [{ username: "lee", userId: lee }], collections: false },
+        adminId,
+        new Set(),
+        () => undefined,
+      );
+    try {
+      // Its creator couldn't be read: it isn't made without, but left for the next run to bring whole.
+      expect((await importer().run()).models).toMatchObject({ brought: 0, failed: 1 });
+      expect(await prisma.print.count({ where: { userId: lee } })).toBe(0);
+      // Asked to slow down, the run stops, rather than leave out every model after.
+      Object.assign(refuse, { path: /^\/models\/lamp7$/, status: 429 });
+      await expect(importer().run()).rejects.toMatchObject({ code: "manyfold_slow_down" });
+      expect(await prisma.print.count({ where: { userId: lee } })).toBe(0);
+      // A creator that's gone isn't one: the model comes without.
+      Object.assign(refuse, { path: /^\/creators\//, status: 404 });
+      expect((await importer().run()).models).toMatchObject({ brought: 1, failed: 0 });
+      expect((await prisma.print.findFirstOrThrow({ where: { userId: lee } })).creator).toBeNull();
+    } finally {
+      leeServer.close();
+    }
+  });
+
+  it("discards a model the server stopped part-way through, and brings it again whole", async () => {
+    const models: Model[] = [
+      {
+        id: "vase8",
+        owner: "rio",
+        name: "Vase",
+        files: [
+          { id: "v1", path: "vase.stl", mime: "model/stl", body: stl("vase") },
+          { id: "v2", path: "vase.png", mime: "image/png", body: PNG },
+        ],
+      },
+    ];
+    const rioServer = await standIn(secret, { models });
+    const rioAddress = `http://127.0.0.1:${(rioServer.address() as AddressInfo).port}`;
+    const [rio, rioAgain] = await Promise.all(
+      ["rio", "rio-again"].map(
+        async (name) =>
+          (await prisma.user.create({ data: { email: `${name}-${tag}@example.com`, displayName: name } })).id,
+      ),
+    );
+    users.push(rio, rioAgain);
+    try {
+      // The model it's making is kept as soon as it's made, until its files and pictures are all in.
+      const halves: (string | null)[] = [];
+      const job: ManyfoldImport = new ManyfoldImport(
+        new ManyfoldClient({ address: rioAddress, clientId: "app", clientSecret: secret }),
+        `manyfold-${tag}-rio`,
+        { owners: [{ username: "rio", userId: rio }], collections: false },
+        adminId,
+        new Set(),
+        () => undefined,
+        async () => {
+          halves.push(job.half);
+        },
+      );
+      expect((await job.run()).models).toMatchObject({ brought: 1 });
+      const vase = await prisma.print.findFirstOrThrow({ where: { userId: rio, name: "Vase" } });
+      expect(halves).toEqual([vase.id, null]);
+
+      // A run the server stopped while it made one: started again, it discards that one and brings it whole.
+      const prepared = await request(app)
+        .post("/api/admin/migrate/manyfold")
+        .set(auth())
+        .send({ address: rioAddress, clientId: "app", clientSecret: secret })
+        .expect(200);
+      const id = prepared.body.id as string;
+      runs.push(id);
+      const half = await prisma.print.create({ data: { userId: rioAgain, name: "Vase", nameNormalized: "vase" } });
+      const kept = (await prisma.migrationRun.findUniqueOrThrow({ where: { id } })).remote as Prisma.JsonObject;
+      await prisma.migrationRun.update({
+        where: { id },
+        data: { status: "failed", startedAt: new Date(), remote: { ...kept, half: half.id } },
+      });
+      await request(app)
+        .post(`/api/admin/migrate/${id}/start-manyfold`)
+        .set(auth())
+        .send({ owners: [{ username: "rio", userId: rioAgain }], collections: false })
+        .expect(202);
+      expect((await until(id)).status).toBe("done");
+      expect(await prisma.print.findUnique({ where: { id: half.id } })).toBeNull();
+      const vases = await prisma.print.findMany({
+        where: { userId: rioAgain },
+        include: { plates: true, previewImages: true },
+      });
+      expect(vases.map((print) => [print.name, print.plates.length, print.previewImages.length])).toEqual([
+        ["Vase", 1, 1],
+      ]);
+    } finally {
+      rioServer.close();
     }
   });
 });

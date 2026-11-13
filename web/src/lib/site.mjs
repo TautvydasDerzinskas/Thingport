@@ -364,7 +364,7 @@ export const DOCS = [
     title: "Move to another Thingport instance",
     nav: "Migrate",
     description:
-      "Bring another Thingport instance's people and libraries into this one: online with a one-time token, or from any release since 1.0.0 with a database dump and its storage folder.",
+      "Bring another Thingport instance's people and libraries into this one: online with a 24-hour token, or from any release since 1.0.0 with a database dump and its storage folder.",
   },
   {
     slug: "guides/migrate-manyfold",

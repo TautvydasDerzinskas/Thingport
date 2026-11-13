@@ -1,14 +1,22 @@
-import type { TFunction } from "i18next";
+import i18next from "i18next";
 import { describe, expect, it, vi } from "vitest";
+import en from "../../i18n/locales/en.json";
 import type { AdminUser } from "../../api/admin";
 import type { MigrateCounts, MigrateRun, ThingportRun } from "../../api/migrate";
 import { canStart, checkPassed } from "./CheckStep";
 import { guessUser, manyfoldLines } from "./ManyfoldMigrateDialog";
 import { errorDetails, errorText, followRun, formatBytes, runTitle } from "./parts";
 
-// Answers with the key and its values, so a test sees which sentence would show.
-const t = ((key: string, values?: Record<string, unknown>) =>
-  values && Object.keys(values).length ? `${key} ${JSON.stringify(values)}` : key) as unknown as TFunction;
+// The English the page shows, as the app's own i18next would give it.
+const i18n = i18next.createInstance();
+await i18n.init({
+  lng: "en",
+  ns: ["app"],
+  defaultNS: "app",
+  resources: { en: { app: en.app } },
+  interpolation: { escapeValue: false },
+});
+const { t } = i18n;
 
 // With no options or report, which are each source's own.
 const run = (
@@ -51,13 +59,15 @@ const countsOf = (some: Partial<MigrateCounts>): MigrateCounts => ({
 describe("migrate page helpers", () => {
   it("translates the server's reasons, with their values, and says something for any other", () => {
     expect(errorText(t, { code: "folder_missing", message: "x", values: { folder: "/old" } })).toBe(
-      'adminSettings.migrate.errors.folder_missing {"folder":"/old"}',
+      "There's no folder at /old on this server.",
     );
-    expect(errorText(t, { code: "something_new", message: "x" })).toBe("adminSettings.migrate.errors.unexpected");
+    expect(errorText(t, { code: "something_new", message: "x" })).toBe(
+      "Something went wrong. The server's log says more.",
+    );
     expect(errorText(t, null)).toBe("");
     // An old instance's folder too big to copy online says so, rather than "something went wrong".
-    expect(errorText(t, { code: "online_folder", message: "x", values: { limit: 10000 } })).toBe(
-      'adminSettings.migrate.errors.online_folder {"limit":10000}',
+    expect(errorText(t, { code: "online_folder", message: "x", values: { limit: 10000 } })).toMatch(
+      /^A folder on the old instance has more than 10000 files, more than can be copied online\./,
     );
   });
 
@@ -85,10 +95,10 @@ describe("migrate page helpers", () => {
 
   it("names a migration by where it came from", () => {
     expect(runTitle(t, run({ plan: { dump: { name: "old.dump", size: 1 }, version: "1.2.0" } }))).toBe(
-      'adminSettings.migrate.runs.fromRelease {"name":"old.dump","version":"1.2.0"}',
+      "From old.dump (release 1.2.0)",
     );
     expect(runTitle(t, run({ source: "manyfold", plan: { address: "http://192.168.1.30:3214" } }))).toBe(
-      'adminSettings.migrate.manyfold.runTitle {"name":"192.168.1.30:3214"}',
+      "From Manyfold at 192.168.1.30:3214",
     );
   });
 
@@ -110,13 +120,13 @@ describe("migrate page helpers", () => {
       failures: [],
     };
     expect(manyfoldLines(t, report)).toEqual([
-      'adminSettings.migrate.report.models {"count":3}',
-      'adminSettings.migrate.report.modelsEarlier {"count":2}',
-      'adminSettings.migrate.manyfold.report.noFiles {"count":1}',
-      'adminSettings.migrate.report.collections {"count":2}',
-      'adminSettings.migrate.report.collectionsMerged {"count":1}',
+      "3 models brought over",
+      "2 models came over before",
+      "1 left out: it has no 3D file Thingport takes",
+      "2 collections",
+      "1 of them merged into one of theirs here",
     ]);
-    expect(errorText(t, { code: "manyfold_key", message: "x" })).toBe("adminSettings.migrate.errors.manyfold_key");
+    expect(errorText(t, { code: "manyfold_key", message: "x" })).toMatch(/^Manyfold turned the API key down\./);
   });
 });
 

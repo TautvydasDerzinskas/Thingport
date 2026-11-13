@@ -79,6 +79,11 @@ export function manyfoldTags(keywords: string[] | undefined): string[] {
   return normalizeTags((keywords ?? []).filter((tag) => tag && !tag.startsWith("!")));
 }
 
+/** The files' contents one after another, each read only once the one before is done with. */
+async function* readEach(files: string[]): AsyncGenerator<Buffer> {
+  for (const file of files) yield await fs.readFile(file);
+}
+
 /** The model's notes: its caption, its description and the links that aren't its source. */
 export function manyfoldNotes(model: ManyfoldModel, sourceLink: string | null): string | null {
   const parts: string[] = [];
@@ -101,6 +106,8 @@ export class ManyfoldImport {
   private creators = new Map<string, string | null>();
   /** Each person's collections here by name, made or found. */
   private collectionsHere = new Map<string, string>();
+  /** The model here that's being made, until its files and pictures are all in. */
+  half: string | null = null;
 
   constructor(
     private readonly client: ManyfoldClient,
@@ -110,8 +117,9 @@ export class ManyfoldImport {
     /** Manyfold model ids brought before; each one brought now is added. */
     readonly done: Set<string>,
     private readonly onProgress: (progress: ManyfoldProgress) => void,
-    /** Keeps `done` after each model that came, so a run the server stopped doesn't bring it twice. */
-    private readonly onBrought: () => Promise<void> = async () => undefined,
+    /** Keeps `done` and `half` as each model is made and as it's whole, so a run the server stopped doesn't bring a
+     *  model twice, or leave one half-made. */
+    private readonly keep: () => Promise<void> = async () => undefined,
   ) {}
 
   private fail(kind: string, name: string, err: unknown) {
@@ -175,7 +183,11 @@ export class ManyfoldImport {
     if (!ref?.["@id"]) return null;
     const id = idOf(ref);
     if (!this.creators.has(id)) {
-      const creator = await this.client.json<ManyfoldCreator>(ref["@id"]).catch(() => null);
+      // Only one that's gone is left out: Manyfold or the key failing stops the run before the model is made.
+      const creator = await this.client.json<ManyfoldCreator>(ref["@id"]).catch((err: unknown) => {
+        if (err instanceof MigrateError && err.code === "manyfold_error" && err.values.status === 404) return null;
+        throw err;
+      });
       this.creators.set(id, creator?.name?.trim() || null);
     }
     return this.creators.get(id) ?? null;
@@ -200,6 +212,7 @@ export class ManyfoldImport {
         return;
       }
     }
+    const creator = await this.creatorName(model.creator);
     const temp = path.join(STORAGE, MIGRATE_FOLDER, this.runId, id);
     try {
       const plates: NewPlateInput[] = [];
@@ -236,7 +249,7 @@ export class ManyfoldImport {
         {
           notes: manyfoldNotes(model, sourceLink),
           tags: manyfoldTags(model.keywords),
-          creator: await this.creatorName(model.creator),
+          creator,
           sourceProvider: source ? source.provider : null,
           sourceExternalId: source ? source.externalId : null,
           licenseColumns: license ? licenseData(license, "user", null) : undefined,
@@ -245,7 +258,11 @@ export class ManyfoldImport {
         plates,
         { describe: false, classify: false },
       );
+      // Kept before its other files and pictures come, so a run the server stops here discards it when started again
+      // instead of keeping it half-made, or making it twice.
+      this.half = print.id;
       try {
+        await this.keep();
         // A model has one prepared print, which a second would replace: any more are kept beside it.
         let prepared = false;
         for (const other of others) {
@@ -256,17 +273,18 @@ export class ManyfoldImport {
         }
         // Its preview first, as it was there.
         const ordered = images.toSorted((a, b) => Number(b.preview) - Number(a.preview));
-        if (ordered.length)
-          await addUploadedPreviewImages(print.id, await Promise.all(ordered.map((image) => fs.readFile(image.file))));
+        if (ordered.length) await addUploadedPreviewImages(print.id, readEach(ordered.map((image) => image.file)));
         // Here too, so a model left out of its collection isn't kept to be brought again by the next run.
         if (this.options.collections) await this.addToCollections(userId, print.id, model);
       } catch (err) {
         await discardPrint(print.id);
+        this.half = null;
         throw err;
       }
       this.done.add(id);
+      this.half = null;
       this.report.models.brought += 1;
-      await this.onBrought();
+      await this.keep();
     } finally {
       await fs.rm(temp, { recursive: true, force: true }).catch(() => undefined);
     }

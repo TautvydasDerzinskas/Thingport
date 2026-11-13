@@ -30,7 +30,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** On the old instance: the one-time token that lets another instance copy this one online. Its value is shown when
+/** On the old instance: the token that lets another instance copy this one online, for a day. Its value is shown when
  *  it's made, and never again. */
 export default function ExportTokenDialog({ state, onChanged, onClose, onUnauthorized }: Props) {
   const { t, i18n } = useTranslation(["app", "common"]);
@@ -40,6 +40,7 @@ export default function ExportTokenDialog({ state, onChanged, onClose, onUnautho
   const [busy, setBusy] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const tokenRef = React.useRef<HTMLElement>(null);
   const time = (iso: string) =>
     new Date(iso).toLocaleString(i18n.language, { dateStyle: "medium", timeStyle: "short" });
   // Over plain HTTP the token, and the database it opens, travel as they are.
@@ -82,10 +83,17 @@ export default function ExportTokenDialog({ state, onChanged, onClose, onUnautho
     });
   };
 
+  // Where the browser won't copy, the token is selected, to copy by hand.
   const copy = async () => {
     if (!made) return;
-    await copyText(made.token);
-    setCopied(true);
+    try {
+      await copyText(made.token);
+      setError(null);
+      setCopied(true);
+    } catch {
+      if (tokenRef.current) window.getSelection()?.selectAllChildren(tokenRef.current);
+      setError(t(k("export.copyFailed")));
+    }
   };
 
   const active = Boolean(made || state?.active);
@@ -128,6 +136,7 @@ export default function ExportTokenDialog({ state, onChanged, onClose, onUnautho
                 }}
               >
                 <Typography
+                  ref={tokenRef}
                   component="code"
                   variant="body2"
                   sx={{ flex: 1, fontFamily: "monospace", overflowWrap: "anywhere", userSelect: "all" }}
