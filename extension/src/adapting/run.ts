@@ -29,8 +29,7 @@ type Scanner = ReturnType<typeof plainModelScanner>;
 // A model file's text goes through the scanner in pieces this big, rather than as one string.
 const SCAN_SLICE = 1024 * 1024;
 
-async function scanEntry(file: JSZip.JSZipObject, scanner: Scanner): Promise<void> {
-  const bytes = await file.async("uint8array");
+function scanModel(bytes: Uint8Array, scanner: Scanner): void {
   const decoder = new TextDecoder();
   for (let at = 0; at < bytes.length; at += SCAN_SLICE) {
     scanner.add(decoder.decode(bytes.subarray(at, at + SCAN_SLICE), { stream: true }));
@@ -48,18 +47,22 @@ export async function formatOfZip(zip: JSZip): Promise<ThreeMfFormat> {
     return entry ? zip.file(entry)!.async("string") : null;
   };
   const root = named("3d/3dmodel.model");
-  const head = root ? (await zip.file(root)!.async("uint8array")).subarray(0, HEAD_BYTES) : null;
+  // Unzipped once: its head says what wrote it, and a plain 3MF's colours are read from all of it.
+  const rootBytes = root ? await zip.file(root)!.async("uint8array") : null;
   const files = {
     entries,
-    modelHead: head ? new TextDecoder().decode(head) : null,
+    modelHead: rootBytes ? new TextDecoder().decode(rootBytes.subarray(0, HEAD_BYTES)) : null,
     projectSettings: await text("metadata/project_settings.config"),
     modelSettings: await text("metadata/model_settings.config"),
     prusaConfig: await text("metadata/slic3r_pe.config"),
   };
   const format = classify3mf(files);
-  if (format.kind !== "plain" || !root) return format;
+  if (format.kind !== "plain" || !rootBytes) return format;
   const scanner = plainModelScanner();
-  for (const entry of entries.filter((name) => /\.model$/i.test(name))) await scanEntry(zip.file(entry)!, scanner);
+  scanModel(rootBytes, scanner);
+  for (const entry of entries.filter((name) => name !== root && /\.model$/i.test(name))) {
+    scanModel(await zip.file(entry)!.async("uint8array"), scanner);
+  }
   return classify3mf({ ...files, plainModel: scanner.result() });
 }
 
