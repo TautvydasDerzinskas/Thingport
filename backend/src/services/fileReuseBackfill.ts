@@ -12,6 +12,7 @@ import { cloneFromHandle, MIN_SHARE_BYTES, openRegularFile, sha256OfFile, sha256
 import { createNotification } from "./notificationService";
 import { pruneEmptyStorageDirs } from "./printService";
 import { getFileReuse } from "./settingsService";
+import { currentStorageCleanup } from "./storageCleanup";
 import { currentStorageMove } from "./storageMoveService";
 import { delegate, DROP, LEGACY_BUNDLES, managedPathOf, STORED, type StoredKind } from "./storedContent";
 
@@ -137,8 +138,9 @@ const dropSetting = (key: string) => prisma.setting.deleteMany({ where: { key } 
 async function run(state: FileReuseBackfillRun, pending: Pending): Promise<void> {
   try {
     await putSetting(PENDING_KEY, pending);
-    // A move changes where files are; wait for it rather than race it. (Starting one is refused while this runs.)
-    while (currentStorageMove()?.running) await sleep(1000);
+    // A move changes where files are, and freeing space removes some: wait for either rather than race it. (Starting
+    // one is refused while this runs, but one can begin while the switch's setting is being saved.)
+    while (currentStorageMove()?.running || currentStorageCleanup()?.running) await sleep(1000);
     await removeLeftovers();
     const canClone = await probeClones();
     state.unsupported = !canClone;

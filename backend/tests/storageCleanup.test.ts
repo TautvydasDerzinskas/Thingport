@@ -14,6 +14,7 @@ import { assetTarget, plateGlbFile } from "../src/services/modelAssets";
 import { generateModelPreviewGlb } from "../src/services/modelPreviewCache";
 import { reorderPreviewImages } from "../src/services/previewImageService";
 import { currentStorageCleanup, startStorageCleanup } from "../src/services/storageCleanup";
+import { currentStorageMove } from "../src/services/storageMoveService";
 import { takeInventory } from "../src/services/storageInventory";
 import { getPhotosPerModel, setPhotosPerModel } from "../src/services/settingsService";
 import { withStorageLock } from "../src/utils/storageLock";
@@ -278,6 +279,62 @@ describe("Free up space", () => {
     expect(startStorageCleanup(null, ["old"], null)).not.toBeNull();
     expect(startStorageCleanup(null, ["slicer"], null)).toBeNull();
     await waitForCleanup();
+  });
+
+  it("goes first when it starts while a storage structure is being saved: the move waits for it", async () => {
+    const template = (await request(app).get("/api/settings/storage").set(auth())).body.template as string;
+    // The save held where the structure is written, so the clean-up can start meanwhile.
+    let save!: () => void;
+    const saveGate = new Promise<void>((resolve) => (save = resolve));
+    let saving = false;
+    const realUpsert = prisma.setting.upsert.bind(prisma.setting);
+    const upsert = vi.spyOn(prisma.setting, "upsert").mockImplementation(((args: any) => {
+      if (args.where?.key !== "storage_path_template" || saving) return realUpsert(args);
+      saving = true;
+      return saveGate.then(() => realUpsert(args));
+    }) as any);
+    // The clean-up held at its first read, the models' folders; the move's first step is listing every model.
+    let free!: () => void;
+    const freeGate = new Promise<void>((resolve) => (free = resolve));
+    let listed = false;
+    const realFindMany = prisma.print.findMany.bind(prisma.print);
+    const findMany = vi.spyOn(prisma.print, "findMany").mockImplementation(((args: any) => {
+      if (args?.where?.assetsPath) return freeGate.then(() => realFindMany(args));
+      if (args?.include?.plates && args?.orderBy?.id === "asc") listed = true;
+      return realFindMany(args);
+    }) as any);
+    const until = async (done: () => boolean) => {
+      while (!done()) await sleep(10);
+    };
+    try {
+      const saved = request(app)
+        .post("/api/settings/storage")
+        .set(auth())
+        .send({ template })
+        .then((res) => res);
+      await until(() => saving);
+      const started = await request(app)
+        .post("/api/admin/storage/cleanup")
+        .set(auth())
+        .send({ tasks: ["old"] });
+      expect(started.status).toBe(200);
+      save();
+      expect((await saved).status).toBe(200);
+      const move = currentStorageMove()!;
+      try {
+        expect(move.running).toBe(true);
+        await sleep(300);
+        expect(listed).toBe(false);
+      } finally {
+        free();
+        await waitForCleanup();
+        await until(() => !move.running);
+      }
+      expect(listed).toBe(true);
+    } finally {
+      upsert.mockRestore();
+      findMany.mockRestore();
+    }
   });
 
   it("counts an older version it couldn't remove as failed, and leaves it", async () => {

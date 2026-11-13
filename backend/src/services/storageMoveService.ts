@@ -8,6 +8,7 @@ import { createLogger } from "../logger";
 import { createNotification } from "./notificationService";
 import { isLegacyRender } from "./modelAssets";
 import { getStorageTemplate, reorganizeManagedPrints } from "./printService";
+import { currentStorageCleanup } from "./storageCleanup";
 
 // Moving every user's model files to the storage structure an admin saved. It runs in the background, followed by
 // a bar at the bottom of the app; it can't be stopped, since half the files in one layout and half in another is
@@ -64,6 +65,9 @@ async function run(state: StorageMoveRun, pending: Pending): Promise<void> {
       create: { key: PENDING_KEY, value },
       update: { value },
     });
+    // Freeing space reads where files are once, before it starts: wait for it rather than move them from under it.
+    // (Starting it is refused while this runs, but it can begin while the new structure is being saved.)
+    while (currentStorageCleanup()?.running) await new Promise((resolve) => setTimeout(resolve, 1000));
     log.info("moving files", { template: pending.template });
     const { moved, skipped } = await reorganizeManagedPrints(pending.template, undefined, (progress) => {
       Object.assign(state, progress);
