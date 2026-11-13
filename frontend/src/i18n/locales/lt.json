@@ -571,7 +571,8 @@
         "migrateDone_few": "Perkėlimas baigtas: perkelti {{count}} modeliai",
         "migrateDone_many": "Perkėlimas baigtas: perkelta {{count}} modelio",
         "migrateDone_other": "Perkėlimas baigtas: perkelta {{count}} modelių",
-        "migrateFailed": "Perkėlimas sustojo"
+        "migrateFailed": "Perkėlimas sustojo",
+        "storageFreed": "Saugykloje atlaisvinta {{size}}"
       }
     },
     "search": {
@@ -1506,7 +1507,87 @@
         "summary_one": "Iš viso diske {{total}}: {{models}} užima {{count}} modelis, {{pictures}} – paveikslėliai ir peržiūros",
         "summary_few": "Iš viso diske {{total}}: {{models}} užima {{count}} modeliai, {{pictures}} – paveikslėliai ir peržiūros",
         "summary_other": "Iš viso diske {{total}}: {{models}} užima {{count}} modelių, {{pictures}} – paveikslėliai ir peržiūros",
-        "totalHint": "Viskas Thingport saugyklos aplanke: modelių failai ({{models}}), paveikslėliai ir peržiūros (miniatiūros, galerijų ir aprašymų paveikslėliai, 3D peržiūros, žymų paveikslėliai: {{pictures}}) ir kiti sugeneruoti failai (pjaustyklėms paruoštos kopijos ir atsisiuntimų paketai: {{other}}). Matuojama ne dažniau kaip kas kelias minutes."
+        "totalHint": "Viskas Thingport saugyklos aplanke: modelių failai ({{models}}), paveikslėliai ir peržiūros (miniatiūros, galerijų ir aprašymų paveikslėliai, 3D peržiūros, žymų paveikslėliai: {{pictures}}) ir kiti sugeneruoti failai (pjaustyklėms paruoštos kopijos ir atsisiuntimų paketai: {{other}}). Matuojama ne dažniau kaip kas kelias minutes.",
+        "onDisk": "{{total}} diske",
+        "modelCount_one": "{{count}} modelis",
+        "modelCount_few": "{{count}} modeliai",
+        "modelCount_other": "{{count}} modelių",
+        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
+        "chartLabel": "Saugyklos užimtumas pagal rūšį",
+        "failed": "Nepavyko išmatuoti saugyklos.",
+        "kinds": {
+          "models": "Modelių failai",
+          "previews": "3D peržiūros",
+          "old": "Senos 3D peržiūros",
+          "photos": "Nuotraukos",
+          "thumbnails": "Miniatiūros ir atvaizdai",
+          "description": "Aprašymo paveikslėliai",
+          "slicer": "Pjaustyklės kopijos",
+          "other": "Kita"
+        }
+      },
+      "photosPerModel": {
+        "label": "Nuotraukų vienam modeliui",
+        "help": "Kiek nuotraukų iš modelio puslapio paliekama importuojant ar sinchronizuojant iš naujo, pradedant viršeliu. „Visos“ palieka kiekvieną. Jau išsaugoti modeliai savo nuotraukas pasilieka, sumažinti jų skaičių galima per „Atlaisvinti vietos“. Jūsų įkeltos nuotraukos neribojamos.",
+        "all": "Visos",
+        "saveFailed": "Nepavyko išsaugoti, kiek nuotraukų palikti",
+        "loadFailed": "Nepavyko įkelti, kiek nuotraukų palikti."
+      },
+      "freeSpace": {
+        "open": "Atlaisvinti vietos",
+        "freeing": "Atlaisvinama vieta…",
+        "title": "Atlaisvinti vietos",
+        "tasks": {
+          "old": {
+            "title": "Senos 3D peržiūros",
+            "detail": "Ankstesnės versijos, kurios niekur nebėra rodomos",
+            "help": "Kaskart pasikeitus formatui, nauja 3D peržiūra ar atvaizdas sukuriami šalia senųjų, o ištrintų modelių peržiūros likdavo diske. Jų niekas nerodo, todėl tai, ką matote, nepasikeis."
+          },
+          "compress": {
+            "title": "Suspausti 3D peržiūras",
+            "detail": "Ta pati išvaizda, maždaug penktadalis dydžio",
+            "help": "Kiekviena 3D peržiūra suspaudžiama tinklelio glaudinimu, formos suapvalinamos iki kelių tūkstantųjų milimetro dalių – smulkiau, nei parodo peržiūra. Naujos peržiūros suspaudžiamos vos sukūrus. Per didelė suspausti peržiūra lieka tokia, kokia yra."
+          },
+          "slicer": {
+            "title": "Pjaustyklės kopijos",
+            "detail": "Sukuriamos iš naujo, kai modelis kitą kartą atidaromas pjaustyklėje",
+            "help": "3MF kopijos, pritaikytos pjaustyklei ar spausdintuvui. Jos sukuriamos iš naujo, kai modelis kitą kartą joje atidaromas, o tai užtrunka kelias sekundes."
+          },
+          "photos": {
+            "title": "Papildomos nuotraukos",
+            "detail": "Palikti tik pirmąsias kiekvieno modelio nuotraukas",
+            "help": "Ištrina kiekvieno modelio nuotraukas po pirmųjų kelių, viršelis visada paliekamas. Vėliau importuojant ir sinchronizuojant paliekama tiek pat („Nuotraukų vienam modeliui“)."
+          }
+        },
+        "cantUndo": "Negrįžtama",
+        "keep": "Palikti",
+        "keepLabel": "Kiek nuotraukų palikti kiekvienam modeliui",
+        "about": "~{{size}}",
+        "nothing": "Nėra ką atlaisvinti",
+        "frees": "Atlaisvins apie {{size}}",
+        "start": "Atlaisvinti {{size}}",
+        "confirmPhotosTitle": "Ištrinti papildomas nuotraukas?",
+        "confirmPhotosMessage_one": "Kiekvienam modeliui paliekama pirmoji nuotrauka – viršelis, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekama {{count}} nuotrauka.",
+        "confirmPhotosMessage_few": "Kiekvienam modeliui paliekamos pirmosios {{count}} nuotraukos su viršeliu, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekamos {{count}} nuotraukos.",
+        "confirmPhotosMessage_other": "Kiekvienam modeliui paliekama pirmųjų {{count}} nuotraukų su viršeliu, kitos ištrinamos visam laikui. Nuo šiol importuojant ir sinchronizuojant paliekama {{count}} nuotraukų.",
+        "confirmPhotosAction": "Ištrinti nuotraukas",
+        "queued": "Laukia",
+        "freed": "Atlaisvinta {{size}}",
+        "filesDone": "{{done}} iš {{total}}",
+        "someFailed_one": "{{count}} failo nepavyko apdoroti",
+        "someFailed_few": "{{count}} failų nepavyko apdoroti",
+        "someFailed_other": "{{count}} failų nepavyko apdoroti",
+        "taskFailed": "Sustojo dėl klaidos",
+        "taskDone": "Atlikta",
+        "runningFooter": "Kol kas atlaisvinta {{size}} · uždarius šį langą darbas tęsiasi",
+        "finishedFooter": "Atlaisvinta {{size}}",
+        "done": "Baigti",
+        "startFailed": "Nepavyko pradėti atlaisvinti vietos",
+        "refused": {
+          "running": "Vieta jau atlaisvinama",
+          "moving": "Modelių failai perkeliami – bandykite dar kartą, kai tai bus baigta",
+          "checking": "Tikrinami vienodi failai – bandykite dar kartą, kai tai bus baigta"
+        }
       },
       "website": {
         "link": "Thingport svetainė ir dokumentacija",
@@ -2258,7 +2339,9 @@
           "migration_started": "Pradėtas perkėlimas",
           "migration_export_created": "Sukurtas perkėlimo raktas",
           "migration_export_revoked": "Atšauktas perkėlimo raktas",
-          "migration_export_read": "Nukopijuotas kito egzemplioriaus"
+          "migration_export_read": "Nukopijuotas kito egzemplioriaus",
+          "storage_cleanup_started": "Pradėta atlaisvinti vietą",
+          "photos_per_model_changed": "Pakeista, kiek nuotraukų paliekama vienam modeliui"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2295,7 +2378,14 @@
         "migrationPeople_few": "{{count}} žmonės",
         "migrationPeople_many": "{{count}} žmogaus",
         "migrationPeople_other": "{{count}} žmonių",
-        "migrationManyfold": "Iš Manyfold"
+        "migrationManyfold": "Iš Manyfold",
+        "photosTrimmed_one": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosTrimmed_few": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosTrimmed_other": "Papildomos nuotraukos, paliekama {{count}}",
+        "photosKept_one": "{{count}} nuotrauka vienam modeliui",
+        "photosKept_few": "{{count}} nuotraukos vienam modeliui",
+        "photosKept_other": "{{count}} nuotraukų vienam modeliui",
+        "photosKeptAll": "Visos nuotraukos"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2386,7 +2476,9 @@
           "image": "Paveikslėlis",
           "description": "Aprašymo paveikslėlis",
           "thumb": "Miniatiūra",
-          "render": "Atvaizdas"
+          "render": "Atvaizdas",
+          "preview": "3D peržiūra",
+          "slicer": "Pjaustyklės kopija"
         },
         "location": {
           "source": "Šaltinyje",

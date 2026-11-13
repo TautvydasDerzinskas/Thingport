@@ -9,32 +9,36 @@ import type { ModelPreviewWorkerInput, ModelPreviewWorkerResult } from "./modelP
 import type { QualityReport } from "./meshQuality";
 import { getSimplifyPreviews } from "./settingsService";
 import {
+  ASSET_SUBFOLDERS,
   assetExists,
   assetPath,
   assetTarget,
+  legacyAssetPath,
+  olderPlateFiles,
   plateAssetHome,
+  plateGlbFile,
   plateRenderFile,
   removeAsset,
   COLOR_RENDER_FILE_TAG,
+  PREVIEW_FORMAT_VERSION,
   RENDER_FILE_TAG,
   type AssetHome,
 } from "./modelAssets";
+import { isCompressedGltf } from "./glbCompression";
 import { ensureAssetHome } from "./printService";
 import { workerBootstrap } from "../utils/workerBootstrap";
+import { withStorageLock } from "../utils/storageLock";
 
 // Renders run in a worker thread under memory and time limits, so a pathological .3mf can't take
 // down the server.
 
-// Part of the cache filename, so bumping it regenerates older GLBs on next view. Failure markers
-// carry it too, so a file an older renderer refused gets another attempt.
-const PREVIEW_FORMAT_VERSION = 5;
+// A plate's 3D preview lives in its model's folder (`home`, the model's Print.assetsPath), with the model's other
+// pictures; one the storage move hasn't brought over yet is still in the shared MODEL_PREVIEWS. Its failure and
+// in-progress markers stay there for good: they're the cache's own bookkeeping, not the model's.
 
-export function modelPreviewGlbPath(plateId: string): string {
-  return path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.glb`);
-}
-
-function legacyModelPreviewGlbPath(plateId: string): string {
-  return path.join(MODEL_PREVIEWS, `${plateId}.glb`);
+/** Where the plate's 3D preview is, or would be. */
+export function modelPreviewGlbPath(plateId: string, home: AssetHome = null): string {
+  return assetPath(home, plateGlbFile(plateId));
 }
 
 function modelPreviewErrorPath(plateId: string): string {
@@ -51,8 +55,8 @@ function modelPreviewPendingPath(plateId: string): string {
   return path.join(MODEL_PREVIEWS, `${plateId}.pending`);
 }
 
-export function modelPreviewGlbExists(plateId: string): boolean {
-  return fsSync.existsSync(modelPreviewGlbPath(plateId));
+export function modelPreviewGlbExists(plateId: string, home: AssetHome = null): boolean {
+  return assetExists(home, plateGlbFile(plateId));
 }
 
 const ERROR_RETRY_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
@@ -183,9 +187,10 @@ async function drainRenders(): Promise<void> {
   }
 }
 
-/** Never throws. Concurrent calls for the same plate no-op. */
-export async function generateModelPreviewGlb(plateId: string, srcPath: string): Promise<void> {
-  if (modelPreviewGlbExists(plateId) || inFlight.has(plateId) || recentlyFailed(plateId)) return;
+/** Never throws. Concurrent calls for the same plate no-op. `home` is looked up when not given. */
+export async function generateModelPreviewGlb(plateId: string, srcPath: string, home?: AssetHome): Promise<void> {
+  const where = home === undefined ? await plateAssetHome(plateId).catch(() => null) : home;
+  if (modelPreviewGlbExists(plateId, where) || inFlight.has(plateId) || recentlyFailed(plateId)) return;
   if (fsSync.existsSync(modelPreviewPendingPath(plateId))) {
     if (!crashWarned.has(plateId)) {
       crashWarned.add(plateId);
@@ -203,8 +208,8 @@ export async function generateModelPreviewGlb(plateId: string, srcPath: string):
 /** "failed" won't retry soon; "unsupported" is left to the browser's loaders. */
 export type ModelPreviewState = "ready" | "generating" | "failed" | "unsupported";
 
-export function modelPreviewState(plateId: string): ModelPreviewState {
-  if (modelPreviewGlbExists(plateId)) return "ready";
+export function modelPreviewState(plateId: string, home: AssetHome = null): ModelPreviewState {
+  if (modelPreviewGlbExists(plateId, home)) return "ready";
   if (inFlight.has(plateId)) return "generating";
   if (recentlyFailed(plateId)) {
     try {
@@ -219,11 +224,49 @@ export function modelPreviewState(plateId: string): ModelPreviewState {
   return "generating";
 }
 
+/** Where a plate's new 3D preview goes: its model's folder, chosen now as the model may have moved while it was
+ *  drawn. The shared folder for a plate that can't be looked up (no database, as in some tests; or deleted
+ *  meanwhile, where the next clean-up or start-up move takes it away). */
+async function newPreviewHome(plateId: string): Promise<string | null> {
+  try {
+    const plate = await prisma.plate.findUnique({ where: { id: plateId }, select: { printId: true } });
+    return plate ? await ensureAssetHome(plate.printId) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The plate's 3D previews of earlier formats, their failure markers, and a copy of the current one still in the
+ *  shared folder when the new one went into the model's. */
+async function removeOlderPreviews(plateId: string, home: string | null): Promise<void> {
+  for (const file of olderPlateFiles(plateId).filter((older) => older.kind === "preview"))
+    await removeAsset(home, file);
+  if (home) await fs.rm(legacyAssetPath(plateGlbFile(plateId)), { force: true });
+  await fs.rm(legacyModelPreviewErrorPath(plateId), { force: true });
+  for (let version = 1; version < PREVIEW_FORMAT_VERSION; version++) {
+    await fs.rm(path.join(MODEL_PREVIEWS, `${plateId}.v${version}.error`), { force: true });
+  }
+}
+
+/** Whether a packed preview came out smaller than the one it was packed from: a tiny one can grow. */
+async function isSmaller(packed: string, drawn: string): Promise<boolean> {
+  const [after, before] = await Promise.all([fs.stat(packed), fs.stat(drawn)]);
+  return after.size < before.size;
+}
+
+/** Packs a GLB smaller into `dest` in a worker of its own, after the render's has gone; false when it couldn't. */
+async function packInWorker(src: string, dest: string): Promise<boolean> {
+  const outcome = await renderInWorker({ kind: "compress", srcPath: src, destPath: dest });
+  if (outcome.status !== "ok") console.warn(`Couldn't pack the 3D preview ${path.basename(src)} smaller`, outcome);
+  return outcome.status === "ok";
+}
+
 async function runGeneration(plateId: string, srcPath: string): Promise<void> {
   const pendingPath = modelPreviewPendingPath(plateId);
   const errorPath = modelPreviewErrorPath(plateId);
-  const dest = modelPreviewGlbPath(plateId);
-  const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  // Drawn beside the markers, and only then put in the model's folder: the model may move while it waits.
+  const tmp = path.join(MODEL_PREVIEWS, `${plateId}.v${PREVIEW_FORMAT_VERSION}.${process.pid}.${Date.now()}.tmp`);
+  const packedTmp = `${tmp}.packed.tmp`;
   try {
     await fs.writeFile(pendingPath, new Date().toISOString());
     const simplify = await getSimplifyPreviews();
@@ -236,12 +279,22 @@ async function runGeneration(plateId: string, srcPath: string): Promise<void> {
       }),
     );
     switch (outcome.status) {
-      case "ok":
-        await fs.rename(tmp, dest);
+      case "ok": {
+        // Packed smaller before anyone downloads it, which takes a fraction of the drawing; one that can't be
+        // packed (too big for the memory limit, say), or that packing doesn't make smaller, is served as drawn.
+        const ready = (await packInWorker(tmp, packedTmp)) && (await isSmaller(packedTmp, tmp)) ? packedTmp : tmp;
+        // Under the lock a move of files takes, so the model can't move between choosing its folder and the rename.
+        const home = await withStorageLock(async () => {
+          const chosen = await newPreviewHome(plateId);
+          const dest = chosen ? assetTarget(chosen, plateGlbFile(plateId)) : legacyAssetPath(plateGlbFile(plateId));
+          await fs.mkdir(path.dirname(dest), { recursive: true });
+          await fs.rename(ready, dest);
+          return chosen;
+        });
         await fs.rm(errorPath, { force: true });
-        await fs.rm(legacyModelPreviewGlbPath(plateId), { force: true });
-        await fs.rm(legacyModelPreviewErrorPath(plateId), { force: true });
+        await removeOlderPreviews(plateId, home);
         break;
+      }
       case "too-complex":
         await fs.writeFile(errorPath, `${PERMANENT_FAILURE_PREFIX}too-complex`);
         break;
@@ -262,9 +315,48 @@ async function runGeneration(plateId: string, srcPath: string): Promise<void> {
     await fs.writeFile(errorPath, String(err)).catch(() => undefined);
   } finally {
     await fs.rm(tmp, { force: true }).catch(() => undefined);
+    await fs.rm(packedTmp, { force: true }).catch(() => undefined);
     await fs.rm(pendingPath, { force: true }).catch(() => undefined);
     inFlight.delete(plateId);
   }
+}
+
+export type CompressOutcome =
+  { status: "compressed"; before: number; after: number } | { status: "skipped" | "failed" };
+
+/**
+ * Packs a 3D preview drawn before previews were packed (glbCompression.ts) in the render worker, after the renders
+ * already waiting, and puts it back where it was. One already packed, gone, or replaced while it was being packed is left
+ * as it is, as is one packing wouldn't make smaller, or that the worker couldn't pack (too big for its memory limit,
+ * say): that one still shows, only larger. Never throws.
+ */
+export function compressPreviewGlb(file: string): Promise<CompressOutcome> {
+  return new Promise((resolve) => {
+    void scheduleRender("image", async () => {
+      const tmp = `${file}.${process.pid}.${Date.now()}.packed.tmp`;
+      try {
+        const before = await fs.stat(file).catch(() => null);
+        if (!before || (await readGlbSummary(file))?.compressed !== false) return resolve({ status: "skipped" });
+        if (!(await packInWorker(file, tmp))) return resolve({ status: "failed" });
+        const after = (await fs.stat(tmp)).size;
+        if (after >= before.size) return resolve({ status: "skipped" });
+        // Under the lock a move of files takes, so the model can't move between the check and the rename.
+        const replaced = await withStorageLock(async () => {
+          // Drawn again, moved or deleted while it was packed: what's there now isn't what was packed.
+          const now = await fs.stat(file).catch(() => null);
+          if (!now || now.mtimeMs !== before.mtimeMs || now.size !== before.size) return false;
+          await fs.rename(tmp, file);
+          return true;
+        });
+        resolve(replaced ? { status: "compressed", before: before.size, after } : { status: "skipped" });
+      } catch (err) {
+        console.warn(`Couldn't pack the 3D preview ${path.basename(file)} smaller`, err);
+        resolve({ status: "failed" });
+      } finally {
+        await fs.rm(tmp, { force: true }).catch(() => undefined);
+      }
+    });
+  });
 }
 
 export type QualityCheckOutcome = RenderOutcome;
@@ -418,6 +510,11 @@ export async function generateModelImage(
         if (outcome.colored) {
           colorDest = assetTarget(assetsPath, colorFile);
           await fs.rename(colorTmp, colorDest);
+          await removeAsset(null, colorFile);
+        }
+        // Renders of an earlier look, which nothing shows any more.
+        for (const older of olderPlateFiles(plateId).filter((candidate) => candidate.kind === "render")) {
+          await removeAsset(assetsPath, older);
         }
         await fs.rm(errorPath, { force: true });
         await onReady?.(dest, colorDest, true);
@@ -456,7 +553,7 @@ export function modelImageState(
   }
 }
 
-type GlbSummary = { triangles: number; simplified: boolean };
+type GlbSummary = { triangles: number; simplified: boolean; compressed: boolean };
 
 /** Reads only a cached GLB's JSON chunk. Null for a file this renderer didn't write. */
 async function readGlbSummary(file: string): Promise<GlbSummary | null> {
@@ -468,6 +565,7 @@ async function readGlbSummary(file: string): Promise<GlbSummary | null> {
     const json = Buffer.alloc(header.readUInt32LE(12));
     await handle.read(json, 0, json.length, 20);
     const gltf = JSON.parse(json.toString("utf-8")) as {
+      extensionsUsed?: string[];
       accessors?: { count: number }[];
       meshes?: { primitives: { indices?: number }[] }[];
       nodes?: { extras?: { thingportPreview?: string } }[];
@@ -481,25 +579,53 @@ async function readGlbSummary(file: string): Promise<GlbSummary | null> {
     const meta = gltf.nodes?.find((node) => typeof node.extras?.thingportPreview === "string")?.extras
       ?.thingportPreview;
     const simplified = meta ? Boolean((JSON.parse(meta) as { simplified?: unknown }).simplified) : false;
-    return { triangles, simplified };
+    return { triangles, simplified, compressed: isCompressedGltf(gltf) };
   } finally {
     await handle.close();
   }
 }
 
+// The answer for a file that hasn't changed since it was last read, so measuring storage again doesn't read every
+// preview again.
+const packedByFile = new Map<string, { key: string; compressed: boolean }>();
+
+/** Whether a 3D preview is packed smaller already; null for one that isn't this renderer's or can't be read. */
+export async function isPreviewCompressed(
+  file: string,
+  stats: { size: number; mtimeMs: number },
+): Promise<boolean | null> {
+  const key = `${stats.size}:${stats.mtimeMs}`;
+  const known = packedByFile.get(file);
+  if (known?.key === key) return known.compressed;
+  const summary = await readGlbSummary(file).catch(() => null);
+  if (!summary) return null;
+  packedByFile.set(file, { key, compressed: summary.compressed });
+  return summary.compressed;
+}
+
+/** Every 3D preview of the current format, in the models' folders and the old shared one, with the plate it's of. */
+export async function currentPreviewGlbs(): Promise<{ plateId: string; file: string }[]> {
+  const suffix = `.v${PREVIEW_FORMAT_VERSION}.glb`;
+  const homes = await prisma.print.findMany({ where: { assetsPath: { not: null } }, select: { assetsPath: true } });
+  const dirs = [
+    MODEL_PREVIEWS,
+    ...new Set(homes.map((print) => path.join(STORAGE, print.assetsPath!, ASSET_SUBFOLDERS.preview))),
+  ];
+  const found: { plateId: string; file: string }[] = [];
+  for (const dir of dirs) {
+    const names = await fs.readdir(dir).catch(() => [] as string[]);
+    for (const name of names) {
+      if (name.endsWith(suffix)) found.push({ plateId: name.slice(0, -suffix.length), file: path.join(dir, name) });
+    }
+  }
+  return found;
+}
+
 /** Removes the cached previews the new setting would change, so they're rebuilt on next view. */
 export async function dropPreviewsAffectedBySimplification(simplify: boolean): Promise<number> {
-  const suffix = `.v${PREVIEW_FORMAT_VERSION}.glb`;
   let removed = 0;
-  let names: string[];
-  try {
-    names = await fs.readdir(MODEL_PREVIEWS);
-  } catch {
-    return 0;
-  }
-  for (const name of names) {
-    if (!name.endsWith(suffix)) continue;
-    const file = path.join(MODEL_PREVIEWS, name);
+  for (const { file } of await currentPreviewGlbs()) {
+    const name = path.basename(file);
     try {
       const summary = await readGlbSummary(file);
       if (!summary) continue;

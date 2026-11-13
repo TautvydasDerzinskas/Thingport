@@ -19,10 +19,12 @@ import {
   galleryImageFile,
   ownedAssetFiles,
   plateAssetHome,
+  plateGlbFile,
   plateRenderFile,
   COLOR_RENDER_FILE_TAG,
   plateThumbFile,
   removeAsset,
+  removePlateAssets,
   type AssetFile,
   type AssetHome,
 } from "./modelAssets";
@@ -550,7 +552,8 @@ async function relocatePrintFiles(
   return moved;
 }
 
-/** Every picture the model has: its gallery and description images, and each plate's thumbnail and render. */
+/** Every picture the model has: its gallery and description images, and each plate's thumbnail, render and 3D
+ *  preview. Slicer copies aren't brought over from the old shared folder: they're made again when next needed. */
 async function modelAssetFiles(printId: string, plateIds: string[]): Promise<AssetFile[]> {
   const [images, descriptions] = await Promise.all([
     prisma.previewImage.findMany({ where: { printId }, select: { id: true } }),
@@ -563,6 +566,7 @@ async function modelAssetFiles(printId: string, plateIds: string[]): Promise<Ass
       plateThumbFile(plateId),
       plateRenderFile(plateId),
       plateRenderFile(plateId, COLOR_RENDER_FILE_TAG),
+      plateGlbFile(plateId),
     ]),
   ];
 }
@@ -870,11 +874,11 @@ export function plateThumbExists(plateId: string, home: AssetHome): boolean {
   return assetExists(home, plateThumbFile(plateId));
 }
 
-/** A plate's thumbnail and render, once the plate is gone. */
+/** Everything made of the plate, once it's gone or its file changed: its thumbnail, and its renders, 3D previews and
+ *  slicer copies of any version. */
 export async function removePlatePictures(plateId: string, home: AssetHome): Promise<void> {
   await removeAsset(home, plateThumbFile(plateId));
-  await removeAsset(home, plateRenderFile(plateId));
-  await removeAsset(home, plateRenderFile(plateId, COLOR_RENDER_FILE_TAG));
+  for (const kind of ["render", "preview", "slicer"] as const) await removePlateAssets(home, kind, plateId);
 }
 
 /** True when the plate has no thumb or only our own 3D render, which an imported image beats. */

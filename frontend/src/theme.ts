@@ -27,6 +27,8 @@ declare module "@mui/material/styles" {
       selectedNavText: string;
       /** White in dark mode, text.primary in light. */
       headingText: string;
+      /** Charts: hues for categories, in this order and never cycled, and a neutral for "everything else". */
+      chart: { series: string[]; other: string };
     };
   }
   interface ThemeOptions {
@@ -40,6 +42,7 @@ declare module "@mui/material/styles" {
       selectedNavBackground: string;
       selectedNavText: string;
       headingText: string;
+      chart: { series: string[]; other: string };
     };
   }
 }
@@ -67,6 +70,7 @@ type ThemeDef = {
   selectedNavBackground: string;
   selectedNavText: string;
   headingText: string;
+  chart: { series: string[]; other: string };
 };
 
 type AccentKeys = "accent" | "accentLight" | "accentStrong" | "accentSoft" | "accentContrast" | "selectedNavText";
@@ -90,6 +94,8 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     modelEmissive: "#94a3b8",
     navInactiveText: "#858585",
     headingText: "#1f1f1f",
+    // Checked for colour-blind separation against the panel; labels carry the low-contrast ones.
+    chart: { series: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"], other: "#b8bcc4" },
   },
   dark: {
     mode: "dark",
@@ -109,6 +115,8 @@ const THEME_DEFS: Record<ResolvedTheme, BaseThemeDef> = {
     navInactiveText: "#969ba0",
     selectedNavBackground: "linear-gradient(to right, rgb(24, 31, 57) 0%, rgba(49, 206, 255, 0) 100%)",
     headingText: "#ffffff",
+    // The same hues stepped for the dark panel.
+    chart: { series: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300"], other: "#5b6380" },
   },
 };
 
@@ -270,6 +278,7 @@ export function buildTheme(id: ResolvedTheme, accent: AccentColor = DEFAULT_ACCE
       selectedNavBackground: d.selectedNavBackground,
       selectedNavText: d.selectedNavText,
       headingText: d.headingText,
+      chart: d.chart,
     },
   };
   return createTheme(options);

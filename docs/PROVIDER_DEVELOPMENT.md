@@ -181,7 +181,9 @@ Rules of thumb:
 - **MakerOnline** can't download server-side at all: the download call needs a Risk-Token that only the site's
   anti-bot script makes in a real page. It uses `customImport` with a `grabQueue`. The backend plans the files, Grab
   gets their links signed on a makeronline.com page, and imports started elsewhere wait in `GrabImport` until the
-  user's next visit (`errorCodes.needsGrab`).
+  user's next visit (`errorCodes.needsGrab`). Where MakerOnline answers 1003, it wants its puzzle solved first: for an
+  import started on the page, Grab shows the site's own (`$nuxt.$initCaptcha`) and asks again with its answer
+  (`signInPage.ts`); imports waiting for Grab show none, as nobody asked for them there.
 - **Cults3D** "orders" a free model for nothing, as its Download button does. An order line's download page then
   redirects to a signed CloudFront link that needs no credentials.
 - **Snapmaker** and **NexPrint** return file links signed for whoever asked, so files only download with the user's
