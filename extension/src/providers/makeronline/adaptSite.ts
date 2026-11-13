@@ -66,12 +66,13 @@ export function moldFiles(data: Record<string, unknown> | null | undefined): (Ad
   ];
 }
 
-/** The file the page has picked, from its picks kept on <html> ("<profile id>|<file id>") and the tab it shows: none
- *  where it's a file other than a 3MF. */
-export function pickedFile(files: AdaptFile[], picks: string | null, filesTab: boolean): AdaptFile | null {
+/** The file the page has picked, from its picks kept on <html> ("<profile id>|<file id>") and the tab it shows: null
+ *  where it hasn't picked one there, "other" where it's a file other than a 3MF. */
+export function pickedFile(files: AdaptFile[], picks: string | null, filesTab: boolean): AdaptFile | null | "other" {
   const [profile = "", file = ""] = (picks ?? "").split("|");
   const id = filesTab ? file && `f${file}` : profile && `p${profile}`;
-  return (id && files.find((each) => each.id === id)) || null;
+  if (!id) return null;
+  return files.find((each) => each.id === id) ?? "other";
 }
 
 const signing = new Map<string, Signing>();

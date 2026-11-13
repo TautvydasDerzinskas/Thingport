@@ -55,16 +55,21 @@ describe("the MakerOnline file a page has picked", () => {
   const files = moldFiles(MOLD);
 
   it("is the print profile picked, on the print profiles tab", () => {
-    expect(pickedFile(files, "145663|489530", false)?.id).toBe("p145663");
+    expect(pickedFile(files, "145663|489530", false)).toMatchObject({ id: "p145663" });
   });
 
   it("is the model's own 3MF picked, on its files tab", () => {
-    expect(pickedFile(files, "145663|491598", true)?.id).toBe("f491598");
+    expect(pickedFile(files, "145663|491598", true)).toMatchObject({ id: "f491598" });
   });
 
-  it("is none where the pick there isn't a 3MF, or nothing is picked yet", () => {
-    expect(pickedFile(files, "145663|489530", true)).toBeNull();
+  it("is another file where the pick there isn't a 3MF, which gets no copy rather than the first's", () => {
+    expect(pickedFile(files, "145663|489530", true)).toBe("other");
+    expect(pickedFile(files, "10|491598", false)).toBe("other");
+  });
+
+  it("is none where nothing is picked there yet", () => {
     expect(pickedFile(files, "|", false)).toBeNull();
+    expect(pickedFile(files, "145663|", true)).toBeNull();
     expect(pickedFile(files, null, false)).toBeNull();
   });
 });

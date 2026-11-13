@@ -16,11 +16,12 @@ const NO_MODEL = 220001;
 const TOO_FAST = 220010;
 // Its page's parts, by the start of their class names: the end is a hash that changes with each release.
 const FILE_LIST = '[class*="Files-module--filesBox"]';
-const PICKED_ROW = '[class*="Files-module--fileItem"][class*="Files-module--active"]';
-const ROW_NAME = 'p[class*="Files-module--fileName"]';
+const ROW = '[class*="Files-module--fileItem"]';
+const PICKED_ROW = `${ROW}[class*="Files-module--active"]`;
 
-/** A 3MF with its link, which works for a day after the model data was read. */
-type Linked = AdaptFile & { link: string };
+/** A 3MF with its link, which works for a day after the model data was read, and the row its file list shows it in:
+ *  "<box>:<place>", as the rows show only names, which files can share. */
+type Linked = AdaptFile & { link: string; row: string };
 
 const positive = (value: unknown) => (typeof value === "number" && value > 0 ? Math.round(value) : null);
 const is3mf = (name: unknown): name is string => typeof name === "string" && /\.3mf$/i.test(name);
@@ -30,9 +31,13 @@ const isLink = (url: unknown): url is string => typeof url === "string" && url.s
  *  (`f<id>`). The zip of everything isn't one. */
 export function modelFiles(model: Record<string, unknown> | null | undefined): Linked[] {
   const prints = Array.isArray(model?.model_print_infos) ? (model.model_print_infos as Record<string, unknown>[]) : [];
-  const own = Array.isArray(model?.model_file) ? (model.model_file as Record<string, unknown>[]) : [];
+  // The page's boxes: every print file, then the model files of this type, each in its order.
+  const own = (Array.isArray(model?.model_file) ? (model.model_file as Record<string, unknown>[]) : []).filter(
+    (file) => file?.file_type === 1,
+  );
+  const ownBox = prints.length ? 1 : 0;
   return [
-    ...prints.flatMap((print) =>
+    ...prints.flatMap((print, place) =>
       print?.info_id != null && is3mf(print.print_name) && isLink(print.file_3mf_key)
         ? [
             {
@@ -40,18 +45,20 @@ export function modelFiles(model: Record<string, unknown> | null | undefined): L
               name: print.print_name,
               size: positive(print.print_size),
               link: print.file_3mf_key,
+              row: `0:${place}`,
             },
           ]
         : [],
     ),
-    ...own.flatMap((file) =>
-      file?.file_id != null && file.file_type === 1 && is3mf(file.file_name) && isLink(file.download_link)
+    ...own.flatMap((file, place) =>
+      file.file_id != null && is3mf(file.file_name) && isLink(file.download_link)
         ? [
             {
               id: `f${String(file.file_id)}`,
               name: file.file_name,
               size: positive(file.file_size),
               link: file.download_link,
+              row: `${ownBox}:${place}`,
             },
           ]
         : [],
@@ -59,19 +66,10 @@ export function modelFiles(model: Record<string, unknown> | null | undefined): L
   ];
 }
 
-/** A name as its file list shows it: past `max` characters, its start and end with "..." between. */
-export function shownName(name: string, max = 28): string {
-  if (name.length <= max) return name;
-  const keep = Math.floor((max - 3) / 1.3);
-  return `${name.slice(0, keep)}...${name.slice(name.length - keep)}`;
-}
-
-/** The 3MF behind the row picked in its file list: the list it's in (print files first, where there are any) and the
- *  name it shows. None where the row is another kind of file. */
-export function pickedFile(files: AdaptFile[], list: number, shown: string): AdaptFile | null {
-  const prints = files.some((file) => file.id.startsWith("p"));
-  const kind = prints && list === 0 ? "p" : "f";
-  return files.find((file) => file.id.startsWith(kind) && shownName(file.name) === shown) ?? null;
+/** The 3MF behind the row picked in its file list, by the row's box and place ("<box>:<place>"): "other" where that
+ *  row is another kind of file. */
+export function pickedFile(files: AdaptFile[], row: string): AdaptFile | "other" {
+  return files.find((file) => "row" in file && file.row === row) ?? "other";
 }
 
 async function readModel(modelId: string): Promise<Linked[]> {
@@ -107,11 +105,11 @@ export const EUFYMAKE_ADAPT: AdaptSite = {
   },
 
   selected(files) {
-    const row = document.querySelector<HTMLElement>(PICKED_ROW);
-    const shown = row?.querySelector(ROW_NAME)?.textContent?.trim();
-    if (!row || !shown) return null;
-    const list = [...document.querySelectorAll(FILE_LIST)].findIndex((box) => box.contains(row));
-    return pickedFile(files, list, shown);
+    const picked = document.querySelector<HTMLElement>(PICKED_ROW);
+    const boxes = [...document.querySelectorAll(FILE_LIST)];
+    const box = picked ? boxes.findIndex((each) => each.contains(picked)) : -1;
+    if (!picked || box < 0) return null;
+    return pickedFile(files, `${box}:${[...boxes[box].querySelectorAll(ROW)].indexOf(picked)}`);
   },
 
   async download(pageUrl, file, progress) {
