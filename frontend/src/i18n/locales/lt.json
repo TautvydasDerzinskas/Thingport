@@ -2255,7 +2255,10 @@
           "federation_user_requested": "Paprašyta pasiekti ką nors kitur",
           "collection_sharing_changed": "Pakeistas kolekcijos bendrinimas",
           "migration_prepared": "Paruoštas perkėlimas",
-          "migration_started": "Pradėtas perkėlimas"
+          "migration_started": "Pradėtas perkėlimas",
+          "migration_export_created": "Sukurtas perkėlimo raktas",
+          "migration_export_revoked": "Atšauktas perkėlimo raktas",
+          "migration_export_read": "Nukopijuotas kito egzemplioriaus"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",
@@ -2291,7 +2294,8 @@
         "migrationPeople_one": "{{count}} žmogus",
         "migrationPeople_few": "{{count}} žmonės",
         "migrationPeople_many": "{{count}} žmogaus",
-        "migrationPeople_other": "{{count}} žmonių"
+        "migrationPeople_other": "{{count}} žmonių",
+        "migrationManyfold": "Iš Manyfold"
       },
       "rendering": {
         "heading": "Atvaizdavimas",
@@ -2940,7 +2944,8 @@
           "title": "Iš kito Thingport egzemplioriaus",
           "text": "Jo žmonės su slaptažodžiais, bibliotekomis, kolekcijomis, Studijos projektais ir nustatymais, iš bet kurios versijos nuo 1.0.0. Kas turi paskyrą ir čia, sujungiamas su ja.",
           "dump": "Duomenų bazės kopija + saugykla",
-          "start": "Pradėti"
+          "start": "Pradėti",
+          "online": "Internetu"
         },
         "runs": {
           "heading": "Perkėlimai",
@@ -2983,7 +2988,8 @@
           "remove": "Pašalinti iš sąrašo",
           "discardConfirm": "Atmesti šį perkėlimą? Darbinė senos duomenų bazės kopija bus ištrinta. Dar niekas neperkelta.",
           "removeConfirm": "Pašalinti šį perkėlimą iš sąrašo? Tai, ką jis perkėlė, lieka.",
-          "actions": "Perkėlimo veiksmai"
+          "actions": "Perkėlimo veiksmai",
+          "viaOnline": "internetu"
         },
         "steps": {
           "source": "Šaltinis",
@@ -3007,14 +3013,22 @@
           "dumpPath": "Kopijos kelias šiame serveryje",
           "folder": "Jo saugyklos aplankas, kaip jį mato šis serveris",
           "folderHelp": "Seno egzemplioriaus saugyklos aplankas, prijungtas prie šio serverio arba į jį nukopijuotas. Jo failai kopijuojami, o aplankas nekeičiamas.",
-          "untouched": "Pakeliui jis atnaujinamas iki šio egzemplioriaus versijos. Senas egzempliorius neliečiamas."
+          "untouched": "Pakeliui jis atnaujinamas iki šio egzemplioriaus versijos. Senas egzempliorius neliečiamas.",
+          "wayIn": "Kaip perkeliama",
+          "dumpWay": "Duomenų bazės kopija + saugykla",
+          "onlineWay": "Internetu",
+          "address": "Jo adresas",
+          "addressHelp": "Kaip jį pasiekia šis serveris, pvz., http://192.168.1.20 arba https://thingport.example.com.",
+          "token": "Raktas",
+          "tokenHelp": "Sukuriamas sename egzemplioriuje, skiltyje Administravimas → Perkėlimas. Tam reikia versijos su Perkėlimu; senesnė perkeliama su duomenų bazės kopija."
         },
         "check": {
           "steps": {
             "restoring": "Atkuriama jo duomenų bazė",
             "checking": "Nustatoma jo versija",
             "upgrading": "Atnaujinama iki šio egzemplioriaus versijos",
-            "files": "Ieškoma jo failų"
+            "files": "Ieškoma jo failų",
+            "downloading": "Atsisiunčiama jo duomenų bazė"
           },
           "failed": "Jo perkelti negalima",
           "release": "Thingport {{version}}",
@@ -3255,7 +3269,129 @@
           "upload_failed": "Įkėlimas nutrūko. Bandykite dar kartą.",
           "no_people": "Pasirinkite, ką perkelti.",
           "not_ready": "Šis perkėlimas dabar to padaryti negali.",
-          "unexpected": "Kažkas nepavyko. Daugiau pasakys serverio žurnalas."
+          "unexpected": "Kažkas nepavyko. Daugiau pasakys serverio žurnalas.",
+          "online_address": "Nurodykite seno egzemplioriaus adresą, prasidedantį http:// arba https://.",
+          "online_unreachable": "Šis serveris nepasiekia {{address}}.",
+          "online_token": "Senas egzempliorius atmetė raktą. Sukurkite ten naują.",
+          "online_old": "Seno egzemplioriaus negalima perkelti internetu: atnaujinkite jį arba perkelkite su duomenų bazės kopija.",
+          "online_dump": "Senas egzempliorius negalėjo padaryti savo duomenų bazės kopijos.",
+          "online_lost": "Senas egzempliorius nustojo atsakinėti. Pradėkite iš naujo, kai jis vėl veiks.",
+          "manyfold_address": "Nurodykite Manyfold adresą, prasidedantį http:// arba https://.",
+          "manyfold_unreachable": "Šis serveris nepasiekia Manyfold adresu {{address}}.",
+          "manyfold_not_manyfold": "Tuo adresu atsako ne Manyfold.",
+          "manyfold_slow_down": "Manyfold prašo palaukti kelias minutes prieš jungiantis vėl.",
+          "manyfold_key": "Manyfold nepriėmė API rakto. Patikrinkite kliento ID ir slaptąjį raktą bei ar raktas turi read teisę.",
+          "manyfold_old": "Šis Manyfold senesnis nei 0.149 ir nenurodo, kur yra jo failai. Atnaujinkite jį, tada perkelkite.",
+          "manyfold_lost": "Manyfold nustojo atsakinėti.",
+          "manyfold_error": "Manyfold atsakė klaida ({{status}}).",
+          "online_folder": "Senojo egzemplioriaus aplanke yra daugiau nei {{limit}} failų – tiek internetu nukopijuoti negalima. Perkelkite jį su duomenų bazės kopija ir saugyklos aplanku."
+        },
+        "export": {
+          "title": "Išsikraustote iš šio egzemplioriaus?",
+          "text": "Duokite kitam Thingport egzemplioriui vienkartinį raktą, kad jis nukopijuotų šį internetu.",
+          "create": "Sukurti raktą",
+          "manage": "Tvarkyti",
+          "activeUntil": "Raktas galioja iki {{time}}",
+          "dialogTitle": "Leisti kitam egzemplioriui nukopijuoti šį",
+          "explain": "Su šiuo raktu egzempliorius, kuriam jį duosite, 24 valandas arba kol jį atšauksite skaito šio egzemplioriaus duomenų bazę ir failus. Tame egzemplioriuje atverkite Administravimas → Perkėlimas, pradėkite Iš kito Thingport egzemplioriaus, pasirinkite Internetu ir nurodykite šio egzemplioriaus adresą bei raktą.",
+          "http": "Šis egzempliorius pasiekiamas paprastu HTTP, tad raktas ir tai, ką jis skaito, keliauja nešifruoti. Naudokite jį patikimame tinkle.",
+          "copy": "Kopijuoti",
+          "copied": "Nukopijuota",
+          "copyNow": "Nukopijuokite jį dabar: jis daugiau nebus rodomas.",
+          "until": "Galioja iki {{time}}.",
+          "used": "Paskutinį kartą skaitytas {{time}}.",
+          "revoke": "Atšaukti",
+          "replace": "Sukurti naują",
+          "revokeConfirm": "Atšaukti raktą? Su juo šį egzempliorių kopijuojantis egzempliorius sustos."
+        },
+        "manyfold": {
+          "title": "Iš Manyfold",
+          "text": "Jo modeliai su failais, paveikslėliais, žymomis ir licencijomis bei kolekcijos, nuskaitomi su ten sukurtu API raktu. Kiekvieno žmogaus modeliai atitenka tam, kurį pasirinksite čia.",
+          "apiKey": "API raktas",
+          "anywhere": "Vietinis tinklas ar nuotoliniu būdu",
+          "runTitle": "Iš Manyfold adresu {{name}}",
+          "dialogTitle": "Perkėlimas iš Manyfold",
+          "steps": {
+            "connect": "Prisijungimas",
+            "owners": "Savininkai"
+          },
+          "address": "Manyfold adresas",
+          "addressHelp": "Kaip jį pasiekia šis serveris, pvz., http://192.168.1.30:3214.",
+          "clientId": "Kliento ID",
+          "clientSecret": "Kliento slaptasis raktas",
+          "key": "Manyfold sukurtas API raktas su read teise.",
+          "keyHelp": "Manyfold prisijungę kaip administratorius, atidarykite savo naudotojo meniu, tada API keys, ir sukurkite raktą su read teise. Jis skaito tai, ką ten mato jo savininkas, ir nieko nekeičia. Jis saugomas, kol perkėlimas baigiasi arba pašalinamas.",
+          "checked": "Manyfold adresu {{host}}",
+          "keyWorks": "API raktas veikia.",
+          "staysBehind": "Kas lieka Manyfold",
+          "staysBehindHelp": "Komentarams, jautraus turinio žymai, leidimams ir žymoms, kurie failai su atramomis (presupported), čia nėra vietos. Modelis be 3D failo, kurį priima Thingport, taip pat lieka.",
+          "ownersIntro": "Čia nepridėtų žmonių modeliai atitenka jums.",
+          "ownersHelp": "Manyfold API raktui savo žmonių nerodo, tad pridėkite kiekvieną pagal jo naudotojo vardą ten, tada pasirinkite, į kieno biblioteką čia keliauja jo modeliai.",
+          "username": "Manyfold naudotojo vardas",
+          "add": "Pridėti",
+          "goesTo": "Į kieno biblioteką keliauja {{username}} modeliai",
+          "you": "Jūs ({{name}})",
+          "remove": "Pašalinti",
+          "removeOwner": "Pašalinti {{username}}",
+          "noOwners": "Niekas nepridėtas: visi modeliai atitenka jums.",
+          "noOwner": "{{username}} Manyfold neturi jokių modelių.",
+          "always": "Perkeliamas kiekvienas modelis su 3D failu: jo failai savo aplankuose, paveikslėliai, žymos, licencija, autorius ir pastabos.",
+          "collectionsHelp": "Kiekviena tampa kolekcija to, kam atitenka jos modeliai. Esanti kitos viduje pavadinama abiejų vardais, pvz., Minis / Dragons. Kolekcija tokiu pat pavadinimu kaip jų čia esanti sujungiama su ja.",
+          "allToYou": "Visi atitenka jums.",
+          "discardConfirm": "Atmesti šį perkėlimą? Dar niekas neperkelta, o API raktas pamirštamas.",
+          "before_one": "{{count}} jo modelis perkeltas per ankstesnį perkėlimą ir praleidžiamas.",
+          "before_few": "{{count}} jo modeliai perkelti per ankstesnį perkėlimą ir praleidžiami.",
+          "before_many": "{{count}} jo modelio perkelta per ankstesnį perkėlimą ir praleidžiama.",
+          "before_other": "{{count}} jo modelių perkelta per ankstesnį perkėlimą ir praleidžiama.",
+          "models_one": "{{count}} modelis",
+          "models_few": "{{count}} modeliai",
+          "models_many": "{{count}} modelio",
+          "models_other": "{{count}} modelių",
+          "summary_one": "{{count}} modelis iš Manyfold",
+          "summary_few": "{{count}} modeliai iš Manyfold",
+          "summary_many": "{{count}} modelio iš Manyfold",
+          "summary_other": "{{count}} modelių iš Manyfold",
+          "ownersSummary_one": "{{count}} žmogaus modeliai keliauja į jam pasirinktą biblioteką, kiti – jums.",
+          "ownersSummary_few": "{{count}} žmonių modeliai keliauja į jiems pasirinktas bibliotekas, kiti – jums.",
+          "ownersSummary_many": "{{count}} žmogaus modeliai keliauja į jiems pasirinktas bibliotekas, kiti – jums.",
+          "ownersSummary_other": "{{count}} žmonių modeliai keliauja į jiems pasirinktas bibliotekas, kiti – jums.",
+          "readyLine_one": "Patikrinta: {{count}} modelis. Laukia, kol pradėsite.",
+          "readyLine_few": "Patikrinta: {{count}} modeliai. Laukia, kol pradėsite.",
+          "readyLine_many": "Patikrinta: {{count}} modelio. Laukia, kol pradėsite.",
+          "readyLine_other": "Patikrinta: {{count}} modelių. Laukia, kol pradėsite.",
+          "leftOut_one": "{{count}} be 3D failo praleistas",
+          "leftOut_few": "{{count}} be 3D failo praleisti",
+          "leftOut_many": "{{count}} be 3D failo praleista",
+          "leftOut_other": "{{count}} be 3D failo praleista",
+          "counts": {
+            "models_one": "modelis",
+            "models_few": "modeliai",
+            "models_many": "modelio",
+            "models_other": "modelių",
+            "collections_one": "kolekcija",
+            "collections_few": "kolekcijos",
+            "collections_many": "kolekcijos",
+            "collections_other": "kolekcijų",
+            "creators_one": "autorius",
+            "creators_few": "autoriai",
+            "creators_many": "autoriaus",
+            "creators_other": "autorių"
+          },
+          "phases": {
+            "owners": "Ieškoma kiekvieno žmogaus modelių: {{done}} iš {{total}}",
+            "collections": "Skaitomos kolekcijos: {{done}} iš {{total}}",
+            "models": "Kopijuojami modeliai: {{done}} iš {{total}}"
+          },
+          "report": {
+            "noFiles_one": "{{count}} praleistas: jis neturi 3D failo, kurį priima Thingport",
+            "noFiles_few": "{{count}} praleisti: jie neturi 3D failo, kurį priima Thingport",
+            "noFiles_many": "{{count}} praleista: jie neturi 3D failo, kurį priima Thingport",
+            "noFiles_other": "{{count}} praleista: jie neturi 3D failo, kurį priima Thingport",
+            "missingFiles_one": "Manyfold neturėjo {{count}} failo",
+            "missingFiles_few": "Manyfold neturėjo {{count}} failų",
+            "missingFiles_many": "Manyfold neturėjo {{count}} failo",
+            "missingFiles_other": "Manyfold neturėjo {{count}} failų"
+          }
         }
       }
     },

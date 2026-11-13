@@ -255,7 +255,10 @@ describe("provider-module freeze", () => {
             : // Connected instances' ActivityPub routes, ahead of the JSON body parser.
               mount.regexp.test("/api/ap/__freeze__")
               ? "/api/ap"
-              : null;
+              : // Another instance copying this one online, also ahead of it.
+                mount.regexp.test("/api/migrate-export/__freeze__")
+                ? "/api/migrate-export"
+                : null;
         if (!prefix) throw new Error(`Unknown Express mount: ${mount.regexp}`);
         const wholeRouter = [importsRoutes, settingsRoutes, providerCollectionsRoutes].includes(mount.handle as never);
         // Providers' own routers are mounted inside one router of theirs (providers/routes.ts).

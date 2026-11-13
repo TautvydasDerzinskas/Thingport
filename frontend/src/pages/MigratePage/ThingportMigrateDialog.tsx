@@ -16,28 +16,28 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Theme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import { UnauthorizedError } from "../../api/client";
-import { migrateApi, type MigrateRun, type MigrateRunError } from "../../api/migrate";
+import { migrateApi, type MigrateRunError, type ThingportRun } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToastHost } from "../../components/ToastProvider";
 import CheckStep, { canStart, checkPassed } from "./CheckStep";
 import ComesStep, { DEFAULT_CHOICES, type Choices } from "./ComesStep";
 import { errorText, followRun, isActive, k, requestError } from "./parts";
 import PeopleStep from "./PeopleStep";
-import SourceStep, { sourceReady, type SourceInput } from "./SourceStep";
+import SourceStep, { EMPTY_SOURCE, sourceReady, type SourceInput } from "./SourceStep";
 import StartStep from "./StartStep";
 
 const STEPS = ["source", "check", "people", "comes", "start"] as const;
 const POLL_MS = 1500;
 
 /** Where the dialog opens for a migration from the list: at its check while it's waiting, at its end once it ran. */
-function stepFor(run: MigrateRun | null): number {
+function stepFor(run: ThingportRun | null): number {
   if (!run) return 0;
   if (run.status === "running" || run.status === "done") return 4;
   if (run.status === "failed") return run.started_at ? 4 : 1;
   return 1;
 }
 
-function choicesFor(run: MigrateRun | null): Choices {
+function choicesFor(run: ThingportRun | null): Choices {
   if (!run?.options) return DEFAULT_CHOICES;
   const { people: _people, ...choices } = run.options;
   return choices;
@@ -45,7 +45,7 @@ function choicesFor(run: MigrateRun | null): Choices {
 
 type Props = {
   /** A migration from the list, or null for a new one. */
-  initial: MigrateRun | null;
+  initial: ThingportRun | null;
   /** Where on the server the dump and the storage folder must be. */
   root: string;
   onClose: () => void;
@@ -61,9 +61,9 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
   const confirm = useConfirm();
   const paperRef = useToastHost(true);
   const phone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
-  const [run, setRun] = React.useState<MigrateRun | null>(initial);
+  const [run, setRun] = React.useState<ThingportRun | null>(initial);
   const [step, setStep] = React.useState(() => stepFor(initial));
-  const [source, setSource] = React.useState<SourceInput>({ mode: "upload", file: null, dumpPath: "", folder: "" });
+  const [source, setSource] = React.useState<SourceInput>(EMPTY_SOURCE);
   const [uploading, setUploading] = React.useState<number | null>(null);
   const [sending, setSending] = React.useState(false);
   // Its folder being checked again: what the check found before doesn't count until it's done.
@@ -100,6 +100,8 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
       () => migrateApi.get(runId),
       POLL_MS,
       (next) => {
+        // The same run, so never Manyfold's: this tells TypeScript.
+        if (next.source === "manyfold") return;
         setRun(next);
         if (!isActive(next)) onChanged();
       },
@@ -114,9 +116,11 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
     setSending(true);
     try {
       const prepared =
-        source.mode === "upload" && source.file
-          ? await migrateApi.prepareWithUpload(source.file, source.folder.trim(), setUploading)
-          : await migrateApi.prepareWithPath(source.dumpPath.trim(), source.folder.trim());
+        source.way === "online"
+          ? await migrateApi.prepareOnline(source.address.trim(), source.token.trim())
+          : source.mode === "upload" && source.file
+            ? await migrateApi.prepareWithUpload(source.file, source.folder.trim(), setUploading)
+            : await migrateApi.prepareWithPath(source.dumpPath.trim(), source.folder.trim());
       setRun(prepared);
       setStep(1);
       onChanged();

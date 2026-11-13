@@ -2232,7 +2232,10 @@
           "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs",
           "collection_sharing_changed": "Partage de collection modifié",
           "migration_prepared": "Migration préparée",
-          "migration_started": "Migration lancée"
+          "migration_started": "Migration lancée",
+          "migration_export_created": "Jeton de migration créé",
+          "migration_export_revoked": "Jeton de migration révoqué",
+          "migration_export_read": "Copiée par une autre instance"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2264,7 +2267,8 @@
         "userDeleted_many": "{{email}} — avec {{count}} modèles",
         "migrationPeople_one": "{{count}} utilisateur",
         "migrationPeople_many": "{{count}} d’utilisateurs",
-        "migrationPeople_other": "{{count}} utilisateurs"
+        "migrationPeople_other": "{{count}} utilisateurs",
+        "migrationManyfold": "Depuis Manyfold"
       },
       "rendering": {
         "heading": "Rendu",
@@ -2902,7 +2906,8 @@
           "title": "Depuis une autre instance Thingport",
           "text": "Ses utilisateurs, avec leurs mots de passe, bibliothèques, collections, conceptions du Studio et réglages, depuis n’importe quelle version à partir de 1.0.0. Quelqu’un qui a aussi un compte ici y est fusionné.",
           "dump": "Dump de base de données + stockage",
-          "start": "Commencer"
+          "start": "Commencer",
+          "online": "En ligne"
         },
         "runs": {
           "heading": "Migrations",
@@ -2940,7 +2945,8 @@
           "remove": "Retirer de la liste",
           "discardConfirm": "Abandonner cette migration ? Sa copie de travail de l’ancienne base de données est supprimée. Rien n’a encore été transféré.",
           "removeConfirm": "Retirer cette migration de la liste ? Ce qu’elle a apporté reste.",
-          "actions": "Actions de la migration"
+          "actions": "Actions de la migration",
+          "viaOnline": "en ligne"
         },
         "steps": {
           "source": "Source",
@@ -2964,14 +2970,22 @@
           "dumpPath": "Chemin du dump sur ce serveur",
           "folder": "Son dossier de stockage, tel que ce serveur le voit",
           "folderHelp": "Le dossier de stockage de l’ancienne instance, monté dans ce serveur ou copié dessus. Ses fichiers sont copiés, et le dossier n’est pas modifié.",
-          "untouched": "Elle est mise à jour vers la version de cette instance en chemin. L’ancienne instance n’est pas touchée."
+          "untouched": "Elle est mise à jour vers la version de cette instance en chemin. L’ancienne instance n’est pas touchée.",
+          "wayIn": "Comment elle vient",
+          "dumpWay": "Dump de base de données + stockage",
+          "onlineWay": "En ligne",
+          "address": "Son adresse",
+          "addressHelp": "Telle que ce serveur la joint, par exemple http://192.168.1.20 ou https://thingport.example.com.",
+          "token": "Jeton",
+          "tokenHelp": "Créé sur l’ancienne instance, dans Administration → Migrer. Il faut une version avec Migrer ; une plus ancienne vient avec un dump de base de données."
         },
         "check": {
           "steps": {
             "restoring": "Restauration de sa base de données",
             "checking": "Lecture de sa version",
             "upgrading": "Mise à jour vers la version de cette instance",
-            "files": "Recherche de ses fichiers"
+            "files": "Recherche de ses fichiers",
+            "downloading": "Téléchargement de sa base de données"
           },
           "failed": "Elle ne peut pas être migrée",
           "release": "Thingport {{version}}",
@@ -3174,7 +3188,118 @@
           "upload_failed": "Le téléversement s’est arrêté. Réessayez.",
           "no_people": "Choisissez qui transférer.",
           "not_ready": "Cette migration ne peut pas faire cela maintenant.",
-          "unexpected": "Un problème est survenu. Le journal du serveur en dit plus."
+          "unexpected": "Un problème est survenu. Le journal du serveur en dit plus.",
+          "online_address": "Indiquez l’adresse de l’ancienne instance, en commençant par http:// ou https://.",
+          "online_unreachable": "Ce serveur ne parvient pas à joindre {{address}}.",
+          "online_token": "L’ancienne instance a refusé le jeton. Créez-en un nouveau là-bas.",
+          "online_old": "L’ancienne instance ne peut pas être copiée en ligne : mettez-la à jour, ou transférez-la avec un dump de base de données.",
+          "online_dump": "L’ancienne instance n’a pas pu faire le dump de sa base de données.",
+          "online_lost": "L’ancienne instance ne répond plus. Relancez une fois qu’elle est revenue.",
+          "manyfold_address": "Indiquez l’adresse de Manyfold, commençant par http:// ou https://.",
+          "manyfold_unreachable": "Ce serveur ne parvient pas à joindre Manyfold sur {{address}}.",
+          "manyfold_not_manyfold": "Cette adresse ne répond pas comme Manyfold.",
+          "manyfold_slow_down": "Manyfold demande d’attendre quelques minutes avant de se reconnecter.",
+          "manyfold_key": "Manyfold a refusé la clé d’API. Vérifiez son ID et son secret client, et qu’elle a la portée read.",
+          "manyfold_old": "Ce Manyfold est antérieur à 0.149, qui n’indique pas où sont ses fichiers. Mettez-le à jour, puis migrez.",
+          "manyfold_lost": "Manyfold ne répond plus.",
+          "manyfold_error": "Manyfold a répondu par une erreur ({{status}}).",
+          "online_folder": "Un dossier de l'ancienne instance contient plus de {{limit}} fichiers, plus qu'on ne peut en copier en ligne. Importez-la avec une sauvegarde de la base de données et son dossier de stockage."
+        },
+        "export": {
+          "title": "Vous quittez cette instance ?",
+          "text": "Donnez à une autre instance Thingport un jeton à usage unique pour qu’elle copie celle-ci en ligne.",
+          "create": "Créer un jeton",
+          "manage": "Gérer",
+          "activeUntil": "Jeton actif jusqu’à {{time}}",
+          "dialogTitle": "Laisser une autre instance copier celle-ci",
+          "explain": "Avec ce jeton, l’instance à qui vous le donnez lit la base de données et les fichiers de cette instance pendant 24 heures ou jusqu’à ce que vous le révoquiez. Sur cette instance, ouvrez Administration → Migrer, lancez Depuis une autre instance Thingport, choisissez En ligne et indiquez l’adresse de cette instance et le jeton.",
+          "http": "Cette instance est jointe en HTTP simple, donc le jeton et ce qu’il lit circulent sans chiffrement. Utilisez-le sur un réseau de confiance.",
+          "copy": "Copier",
+          "copied": "Copié",
+          "copyNow": "Copiez-le maintenant : il n’est plus affiché ensuite.",
+          "until": "Il fonctionne jusqu’au {{time}}.",
+          "used": "Dernière lecture : {{time}}.",
+          "revoke": "Révoquer",
+          "replace": "En créer un nouveau",
+          "revokeConfirm": "Révoquer le jeton ? Une instance qui copie celle-ci avec lui s’arrêtera."
+        },
+        "manyfold": {
+          "title": "Depuis Manyfold",
+          "text": "Ses modèles, avec leurs fichiers, images, étiquettes et licences, et ses collections, lus avec une clé d’API créée là-bas. Les modèles de chaque personne vont à qui vous choisissez ici.",
+          "apiKey": "Clé d’API",
+          "anywhere": "Réseau local ou distant",
+          "runTitle": "Depuis Manyfold sur {{name}}",
+          "dialogTitle": "Migrer depuis Manyfold",
+          "steps": {
+            "connect": "Connexion",
+            "owners": "Propriétaires"
+          },
+          "address": "Adresse de Manyfold",
+          "addressHelp": "Telle que ce serveur la joint, par exemple http://192.168.1.30:3214.",
+          "clientId": "ID client",
+          "clientSecret": "Secret client",
+          "key": "Une clé d’API créée sur Manyfold, avec la portée read.",
+          "keyHelp": "Sur Manyfold, connecté en administrateur, ouvrez votre menu utilisateur, puis API keys, et créez-en une avec la portée read. Elle lit ce que son propriétaire y voit, et ne change rien. Elle est gardée jusqu’à ce que la migration se termine ou soit retirée.",
+          "checked": "Manyfold sur {{host}}",
+          "keyWorks": "La clé d’API fonctionne.",
+          "staysBehind": "Ce qui reste sur Manyfold",
+          "staysBehindHelp": "Les commentaires, l’indicateur de contenu sensible, les permissions et les fichiers marqués comme pré-supportés n’ont pas leur place ici. Un modèle sans fichier 3D que Thingport accepte reste aussi.",
+          "ownersIntro": "Les modèles de ceux que vous n’ajoutez pas ici vous reviennent.",
+          "ownersHelp": "Manyfold ne montre pas ses utilisateurs à une clé d’API : ajoutez chacun par son nom d’utilisateur là-bas, puis choisissez dans quelle bibliothèque ici vont ses modèles.",
+          "username": "Nom d’utilisateur Manyfold",
+          "add": "Ajouter",
+          "goesTo": "Bibliothèque où vont les modèles de {{username}}",
+          "you": "Vous ({{name}})",
+          "remove": "Retirer",
+          "removeOwner": "Retirer {{username}}",
+          "noOwners": "Personne d’ajouté : tous les modèles vous reviennent.",
+          "noOwner": "{{username}} n’a aucun modèle sur Manyfold.",
+          "always": "Chaque modèle avec un fichier 3D vient, avec ses fichiers dans leurs dossiers, ses images, étiquettes, licence, créateur et notes.",
+          "collectionsHelp": "Chacune devient une collection de la personne à qui vont ses modèles. Une collection dans une autre prend le nom des deux, comme Minis / Dragons. Une collection du même nom qu’une des leurs ici y est fusionnée.",
+          "allToYou": "Ils vous reviennent tous.",
+          "discardConfirm": "Abandonner cette migration ? Rien n’a encore été transféré, et la clé d’API est oubliée.",
+          "before_one": "{{count}} de ses modèles est venu lors d’une migration précédente, et est ignoré.",
+          "before_many": "{{count}} de ses modèles sont venus lors d’une migration précédente, et sont ignorés.",
+          "before_other": "{{count}} de ses modèles sont venus lors d’une migration précédente, et sont ignorés.",
+          "models_one": "{{count}} modèle",
+          "models_many": "{{count}} de modèles",
+          "models_other": "{{count}} modèles",
+          "summary_one": "{{count}} modèle de Manyfold",
+          "summary_many": "{{count}} de modèles de Manyfold",
+          "summary_other": "{{count}} modèles de Manyfold",
+          "ownersSummary_one": "Les modèles de {{count}} personne vont à la bibliothèque choisie pour elle, le reste à vous.",
+          "ownersSummary_many": "Les modèles de {{count}} de personnes vont aux bibliothèques choisies pour elles, le reste à vous.",
+          "ownersSummary_other": "Les modèles de {{count}} personnes vont aux bibliothèques choisies pour elles, le reste à vous.",
+          "readyLine_one": "Vérifiée : {{count}} modèle. Elle attend que vous la lanciez.",
+          "readyLine_many": "Vérifiée : {{count}} de modèles. Elle attend que vous la lanciez.",
+          "readyLine_other": "Vérifiée : {{count}} modèles. Elle attend que vous la lanciez.",
+          "leftOut_one": "{{count}} sans fichier 3D laissé de côté",
+          "leftOut_many": "{{count}} de modèles sans fichier 3D laissés de côté",
+          "leftOut_other": "{{count}} sans fichier 3D laissés de côté",
+          "counts": {
+            "models_one": "modèle",
+            "models_many": "modèles",
+            "models_other": "modèles",
+            "collections_one": "collection",
+            "collections_many": "collections",
+            "collections_other": "collections",
+            "creators_one": "créateur",
+            "creators_many": "créateurs",
+            "creators_other": "créateurs"
+          },
+          "phases": {
+            "owners": "Recherche des modèles de chaque personne : {{done}} sur {{total}}",
+            "collections": "Lecture des collections : {{done}} sur {{total}}",
+            "models": "Copie des modèles : {{done}} sur {{total}}"
+          },
+          "report": {
+            "noFiles_one": "{{count}} laissé de côté : il n’a aucun fichier 3D que Thingport accepte",
+            "noFiles_many": "{{count}} de modèles laissés de côté : ils n’ont aucun fichier 3D que Thingport accepte",
+            "noFiles_other": "{{count}} laissés de côté : ils n’ont aucun fichier 3D que Thingport accepte",
+            "missingFiles_one": "{{count}} fichier que Manyfold n’avait pas",
+            "missingFiles_many": "{{count}} de fichiers que Manyfold n’avait pas",
+            "missingFiles_other": "{{count}} fichiers que Manyfold n’avait pas"
+          }
         }
       }
     },

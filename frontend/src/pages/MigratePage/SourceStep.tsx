@@ -13,14 +13,30 @@ import HelpTip from "../../components/HelpTip";
 import { formatBytes, k } from "./parts";
 
 export type SourceInput = {
+  /** A database dump and the storage folder, or the old instance online. */
+  way: "dump" | "online";
   mode: "upload" | "server";
   file: File | null;
   dumpPath: string;
   folder: string;
+  address: string;
+  token: string;
+};
+
+export const EMPTY_SOURCE: SourceInput = {
+  way: "dump",
+  mode: "upload",
+  file: null,
+  dumpPath: "",
+  folder: "",
+  address: "",
+  token: "",
 };
 
 export const sourceReady = (input: SourceInput) =>
-  Boolean(input.folder.trim()) && (input.mode === "upload" ? Boolean(input.file) : Boolean(input.dumpPath.trim()));
+  input.way === "online"
+    ? Boolean(input.address.trim() && input.token.trim())
+    : Boolean(input.folder.trim()) && (input.mode === "upload" ? Boolean(input.file) : Boolean(input.dumpPath.trim()));
 
 type Props = {
   input: SourceInput;
@@ -43,8 +59,38 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
     if (!disabled) picker.current?.click();
   };
 
+  if (input.way === "online") {
+    return (
+      <Stack spacing={2.5}>
+        <WaySwitch input={input} onChange={onChange} disabled={disabled} />
+        <TextField
+          label={t(k("source.address"))}
+          placeholder="http://192.168.1.20"
+          value={input.address}
+          onChange={(event) => set({ address: event.target.value })}
+          disabled={disabled}
+          fullWidth
+          helperText={t(k("source.addressHelp"))}
+          slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: "off", inputMode: "url" } }}
+        />
+        <TextField
+          label={t(k("source.token"))}
+          value={input.token}
+          onChange={(event) => set({ token: event.target.value })}
+          disabled={disabled}
+          fullWidth
+          type="password"
+          autoComplete="off"
+          helperText={`${t(k("source.tokenHelp"))} ${t(k("source.untouched"))}`}
+          slotProps={{ htmlInput: { spellCheck: false, autoCapitalize: "off" } }}
+        />
+      </Stack>
+    );
+  }
+
   return (
     <Stack spacing={2.5}>
+      <WaySwitch input={input} onChange={onChange} disabled={disabled} />
       <Segmented
         label={t(k("source.where"))}
         value={input.mode}
@@ -147,5 +193,31 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
         helperText={`${t(k("source.inside"), { root })} ${t(k("source.untouched"))}`}
       />
     </Stack>
+  );
+}
+
+/** A dump and the storage folder, or the old instance online. */
+function WaySwitch({
+  input,
+  onChange,
+  disabled,
+}: {
+  input: SourceInput;
+  onChange: (input: SourceInput) => void;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation("app");
+  return (
+    <Segmented
+      fullWidth
+      label={t(k("source.wayIn"))}
+      value={input.way}
+      onChange={(way) => onChange({ ...input, way })}
+      disabled={disabled}
+      options={[
+        { value: "dump", label: t(k("source.dumpWay")) },
+        { value: "online", label: t(k("source.onlineWay")) },
+      ]}
+    />
   );
 }
