@@ -211,8 +211,6 @@ async function init(): Promise<void> {
       return;
     }
 
-    // Before anything else asks the instance, so a stale password or a down instance shows as such
-    // rather than as every model looking new.
     // Until the instance answers, which may be never: the copies on their own where the site's button doesn't show,
     // as they're this browser's own. Where they were, what the answer brings takes their place and offers them again.
     let early: PageAdapt | null = null;
@@ -226,6 +224,8 @@ async function init(): Promise<void> {
       if (page) unmountHost();
       return page;
     };
+    // Before anything else asks the instance, so a stale password or a down instance shows as such
+    // rather than as every model looking new.
     const connectionRes = await send("CHECK_CONNECTION");
     if (isStale()) return;
     if (connectionRes?.ok && !connectionRes.data.connected) {
