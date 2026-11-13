@@ -29,6 +29,7 @@ import {
   PHOTO_KEEP_OPTIONS,
   type CleanupTaskKey,
   type PhotoKeep,
+  StorageCleanupError,
   type StorageCleanup,
   type StorageCleanupTask,
   type StorageUsage,
@@ -61,6 +62,13 @@ const ICONS: Record<CleanupTaskKey, React.ReactNode> = {
 
 // Photos are gone for good, so they're never ticked for the admin.
 const DEFAULT_ON: Record<CleanupTaskKey, boolean> = { old: true, compress: true, slicer: true, photos: false };
+
+// The server's reasons for refusing a start, by their keys under adminSettings.freeSpace.refused.
+const REFUSALS: Record<string, string | undefined> = {
+  storage_cleanup_running: "running",
+  storage_moving: "moving",
+  file_reuse_running: "checking",
+};
 
 function TaskIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -129,11 +137,13 @@ export default function FreeUpSpaceDialog({ usage, cleanup, keepSetting, onStart
       setShowProgress(true);
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
-      else
+      else {
+        const refused = err instanceof StorageCleanupError && err.code ? REFUSALS[err.code] : undefined;
         toast({
-          message: err instanceof Error && err.message ? err.message : t("adminSettings.freeSpace.startFailed"),
+          message: t(refused ? `adminSettings.freeSpace.refused.${refused}` : "adminSettings.freeSpace.startFailed"),
           severity: "error",
         });
+      }
     } finally {
       setStarting(false);
     }

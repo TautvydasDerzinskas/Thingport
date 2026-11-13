@@ -1512,7 +1512,12 @@
         "runningFooter": "{{size}} freed so far · closing this doesn't stop it",
         "finishedFooter": "Freed {{size}}",
         "done": "Done",
-        "startFailed": "Couldn't start freeing space"
+        "startFailed": "Couldn't start freeing space",
+        "refused": {
+          "running": "Space is already being freed",
+          "moving": "Model files are being moved; try again once that's done",
+          "checking": "Identical files are being checked; try again once that's done"
+        }
       },
       "website": {
         "link": "Thingport website & docs",

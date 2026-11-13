@@ -1,5 +1,5 @@
 import { authHeaders } from "../utils/auth";
-import { apiBase, assertOk, assertOkWithMessage, readErrorMessage, UnauthorizedError } from "./client";
+import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { ImportJob } from "./imports";
 import type { ProviderId } from "../providers/index.generated";
 
@@ -169,6 +169,17 @@ export type StorageCleanup = {
   tasks: StorageCleanupTask[];
 };
 
+/** Freeing space refused; `code` is the server's reason (e.g. "storage_moving"), for the page to say in its language. */
+export class StorageCleanupError extends Error {
+  constructor(
+    message: string,
+    readonly code: string | null,
+  ) {
+    super(message);
+    this.name = "StorageCleanupError";
+  }
+}
+
 export type StorageFolder = {
   name: string;
   path: string;
@@ -240,14 +251,21 @@ export const adminApi = {
     return (await res.json()).cleanup;
   },
 
-  /** Refused with the server's message while one is running, or files are being moved or checked. */
+  /** Refused with a StorageCleanupError while one is running, or files are being moved or checked. */
   startStorageCleanup: async (tasks: CleanupTaskKey[], keepPhotos: PhotoKeep | null): Promise<StorageCleanup> => {
     const res = await fetch(`${apiBase()}/admin/storage/cleanup`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ tasks, keep_photos: keepPhotos }),
     });
-    await assertOkWithMessage(res, "Couldn't start freeing space");
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { detail?: unknown; code?: unknown } | null;
+      throw new StorageCleanupError(
+        typeof body?.detail === "string" ? body.detail : "Couldn't start freeing space",
+        typeof body?.code === "string" ? body.code : null,
+      );
+    }
     return (await res.json()).cleanup;
   },
 

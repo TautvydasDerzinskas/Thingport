@@ -1565,7 +1565,12 @@
         "runningFooter": "{{size}} libérés pour l’instant · fermer cette fenêtre ne l’arrête pas",
         "finishedFooter": "{{size}} libérés",
         "done": "Terminé",
-        "startFailed": "Impossible de commencer à libérer de l’espace"
+        "startFailed": "Impossible de commencer à libérer de l’espace",
+        "refused": {
+          "running": "Libération de l’espace déjà en cours",
+          "moving": "Les fichiers des modèles sont en cours de déplacement ; réessayez une fois terminé",
+          "checking": "Les fichiers identiques sont en cours de vérification ; réessayez une fois terminé"
+        }
       },
       "website": {
         "link": "Site web et documentation de Thingport",

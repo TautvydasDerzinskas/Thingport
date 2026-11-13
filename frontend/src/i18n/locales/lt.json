@@ -1577,7 +1577,12 @@
         "runningFooter": "Kol kas atlaisvinta {{size}} · uždarius šį langą darbas tęsiasi",
         "finishedFooter": "Atlaisvinta {{size}}",
         "done": "Baigti",
-        "startFailed": "Nepavyko pradėti atlaisvinti vietos"
+        "startFailed": "Nepavyko pradėti atlaisvinti vietos",
+        "refused": {
+          "running": "Vieta jau atlaisvinama",
+          "moving": "Modelių failai perkeliami – bandykite dar kartą, kai tai bus baigta",
+          "checking": "Tikrinami vienodi failai – bandykite dar kartą, kai tai bus baigta"
+        }
       },
       "website": {
         "link": "Thingport svetainė ir dokumentacija",

@@ -61,7 +61,7 @@ export function useStorageCleanup(onFinished: () => void, onUnauthorized?: () =>
     };
   }, [running, onUnauthorized]);
 
-  /** Throws the server's message when it refuses (one running already, files being moved or checked). */
+  /** Throws a StorageCleanupError when the server refuses (one running already, files being moved or checked). */
   const start = useCallback(async (tasks: CleanupTaskKey[], keepPhotos: PhotoKeep | null) => {
     const started = await adminApi.startStorageCleanup(tasks, keepPhotos);
     starts.current++;
