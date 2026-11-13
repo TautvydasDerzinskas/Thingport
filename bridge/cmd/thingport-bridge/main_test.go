@@ -208,11 +208,12 @@ func TestFindWindowsCommandResolvesAnycubicSlicerNext(t *testing.T) {
 func TestFindMacCommandChecksUserApplications(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	appPath := filepath.Join(home, "Applications", "AnycubicSlicerNext.app")
+	t.Setenv("USERPROFILE", home)
+	appPath := filepath.Join(home, "Applications", "ThingportTestAnycubic.app")
 	if err := os.MkdirAll(appPath, 0755); err != nil {
 		t.Fatalf("mkdir app: %v", err)
 	}
-	candidates := map[string][]string{"anycubicslicernext": {"/Applications/AnycubicSlicerNext.app"}}
+	candidates := map[string][]string{"anycubicslicernext": {"/Applications/ThingportTestAnycubic.app"}}
 	if got := findMacCommand("anycubicslicernext", candidates); got != appPath {
 		t.Fatalf("findMacCommand(...) = %q, expected %q", got, appPath)
 	}
@@ -221,11 +222,12 @@ func TestFindMacCommandChecksUserApplications(t *testing.T) {
 func TestFindMacCommandResolvesQIDIStudio(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	appPath := filepath.Join(home, "Applications", "QIDIStudio.app")
+	t.Setenv("USERPROFILE", home)
+	appPath := filepath.Join(home, "Applications", "ThingportTestQIDIStudio.app")
 	if err := os.MkdirAll(appPath, 0755); err != nil {
 		t.Fatalf("mkdir app: %v", err)
 	}
-	candidates := map[string][]string{"qidistudio": {"/Applications/QIDIStudio.app"}}
+	candidates := map[string][]string{"qidistudio": {"/Applications/ThingportTestQIDIStudio.app"}}
 	if got := findMacCommand("qidistudio", candidates); got != appPath {
 		t.Fatalf("findMacCommand(...) = %q, expected %q", got, appPath)
 	}
