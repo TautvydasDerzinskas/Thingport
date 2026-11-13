@@ -70,7 +70,11 @@ export async function exportTokenOf(header: string | undefined): Promise<Stored 
 /** When it was last read from, for the Migrate page to say; the audit log says who made it. */
 export async function markExportRead(value: Stored): Promise<void> {
   const next: Stored = { ...value, usedAt: new Date().toISOString() };
-  await prisma.setting.updateMany({ where: { key: KEY }, data: { value: next } });
+  // Only the record that was read: a token made since then isn't overwritten by the one it replaced.
+  await prisma.setting.updateMany({
+    where: { key: KEY, value: { path: ["tokenHash"], equals: value.tokenHash } },
+    data: { value: next },
+  });
   void createLog({ userId: value.createdById, action: "migration_export_read" });
 }
 
@@ -89,17 +93,29 @@ export async function storageFile(relative: string): Promise<string | null> {
   }
 }
 
-/** The files under a folder of storage, relative to it, as Studio's assets for a design. */
-export async function storageFolder(relative: string): Promise<string[]> {
+/** A folder with more files than one listing gives: copying only some of them would lose the rest unsaid. */
+export class FolderTooLargeError extends Error {
+  constructor(readonly limit: number) {
+    super(`The folder has more than ${limit} files.`);
+    this.name = "FolderTooLargeError";
+  }
+}
+
+/** The files under a folder of storage, relative to it, as Studio's assets for a design: inside storage, through no
+ *  link out of it. Throws FolderTooLargeError past FOLDER_LIMIT files rather than leave some out. */
+export async function storageFolder(relative: string, limit = FOLDER_LIMIT): Promise<string[]> {
   if (!relative || path.isAbsolute(relative)) return [];
   const root = await fs.realpath(STORAGE);
-  const start = path.resolve(root, relative);
-  if (!start.startsWith(root + path.sep)) return [];
+  const joined = path.resolve(root, relative);
+  if (!joined.startsWith(root + path.sep)) return [];
+  // The folder itself, or one above it, may be a link out of storage.
+  const start = await fs.realpath(joined).catch(() => null);
+  if (!start?.startsWith(root + path.sep)) return [];
   const found: string[] = [];
   const walk = async (dir: string): Promise<void> => {
     const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
     for (const entry of entries) {
-      if (found.length >= FOLDER_LIMIT) return;
+      if (found.length >= limit) throw new FolderTooLargeError(limit);
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) await walk(full);
       else if (entry.isFile()) found.push(path.relative(start, full).split(path.sep).join("/"));

@@ -169,7 +169,7 @@ export default function ExportTokenDialog({ state, onChanged, onClose, onUnautho
           {t(k(active ? "export.replace" : "export.create"))}
         </Button>
         {made && (
-          <Button variant="contained" onClick={onClose}>
+          <Button variant="contained" onClick={onClose} disabled={busy}>
             {t("common:close")}
           </Button>
         )}

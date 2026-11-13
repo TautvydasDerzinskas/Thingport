@@ -47,6 +47,10 @@ describe("migrate page helpers", () => {
     );
     expect(errorText(t, { code: "something_new", message: "x" })).toBe("adminSettings.migrate.errors.unexpected");
     expect(errorText(t, null)).toBe("");
+    // An old instance's folder too big to copy online says so, rather than "something went wrong".
+    expect(errorText(t, { code: "online_folder", message: "x", values: { limit: 10000 } })).toBe(
+      'adminSettings.migrate.errors.online_folder {"limit":10000}',
+    );
   });
 
   it("shows the tools' own words only where they say more", () => {

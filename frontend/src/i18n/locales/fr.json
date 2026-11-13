@@ -3193,7 +3193,8 @@
           "online_token": "L’ancienne instance a refusé le jeton. Créez-en un nouveau là-bas.",
           "online_old": "L’ancienne instance ne peut pas être copiée en ligne : mettez-la à jour, ou transférez-la avec un dump de base de données.",
           "online_dump": "L’ancienne instance n’a pas pu faire le dump de sa base de données.",
-          "online_lost": "L’ancienne instance ne répond plus. Relancez une fois qu’elle est revenue."
+          "online_lost": "L’ancienne instance ne répond plus. Relancez une fois qu’elle est revenue.",
+          "online_folder": "Un dossier de l'ancienne instance contient plus de {{limit}} fichiers, plus qu'on ne peut en copier en ligne. Importez-la avec une sauvegarde de la base de données et son dossier de stockage."
         },
         "export": {
           "title": "Vous quittez cette instance ?",

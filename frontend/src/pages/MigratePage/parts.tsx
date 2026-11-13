@@ -57,6 +57,7 @@ const KNOWN_ERRORS = new Set([
   "online_old",
   "online_dump",
   "online_lost",
+  "online_folder",
 ]);
 
 /** The tools' own output, shown under the sentence for what failed. */

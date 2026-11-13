@@ -3193,7 +3193,8 @@
           "online_token": "La instancia antigua rechazó el token. Crea uno nuevo allí.",
           "online_old": "La instancia antigua no se puede copiar en línea: actualízala o tráela con un volcado de la base de datos.",
           "online_dump": "La instancia antigua no pudo hacer el volcado de su base de datos.",
-          "online_lost": "La instancia antigua dejó de responder. Empieza de nuevo cuando vuelva."
+          "online_lost": "La instancia antigua dejó de responder. Empieza de nuevo cuando vuelva.",
+          "online_folder": "Una carpeta de la instancia antigua tiene más de {{limit}} archivos, más de los que se pueden copiar en línea. Tráela con un volcado de la base de datos y su carpeta de almacenamiento."
         },
         "export": {
           "title": "¿Te vas de esta instancia?",

@@ -3065,7 +3065,8 @@
           "online_token": "The old instance turned the token down. Create a new one there.",
           "online_old": "The old instance can't be copied online: update it, or bring it over with a database dump.",
           "online_dump": "The old instance couldn't make its database dump.",
-          "online_lost": "The old instance stopped answering. Start again once it's back."
+          "online_lost": "The old instance stopped answering. Start again once it's back.",
+          "online_folder": "A folder on the old instance has more than {{limit}} files, more than can be copied online. Bring it over with a database dump and its storage folder."
         },
         "export": {
           "title": "Moving away from this instance?",

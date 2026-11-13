@@ -3274,7 +3274,8 @@
           "online_token": "Senas egzempliorius atmetė raktą. Sukurkite ten naują.",
           "online_old": "Seno egzemplioriaus negalima perkelti internetu: atnaujinkite jį arba perkelkite su duomenų bazės kopija.",
           "online_dump": "Senas egzempliorius negalėjo padaryti savo duomenų bazės kopijos.",
-          "online_lost": "Senas egzempliorius nustojo atsakinėti. Pradėkite iš naujo, kai jis vėl veiks."
+          "online_lost": "Senas egzempliorius nustojo atsakinėti. Pradėkite iš naujo, kai jis vėl veiks.",
+          "online_folder": "Senojo egzemplioriaus aplanke yra daugiau nei {{limit}} failų – tiek internetu nukopijuoti negalima. Perkelkite jį su duomenų bazės kopija ir saugyklos aplanku."
         },
         "export": {
           "title": "Išsikraustote iš šio egzemplioriaus?",
