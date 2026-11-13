@@ -10,7 +10,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import type { MigratePerson, MigrateReport, MigrateRun } from "../../api/migrate";
+import type { MigratePerson, MigrateReport, MigrateRun, ThingportRun } from "../../api/migrate";
 import ToneChip from "../../components/ToneChip";
 import type { Choices } from "./ComesStep";
 
@@ -19,7 +19,7 @@ type CountKey = { [K in keyof MigrateReport]: MigrateReport[K] extends number ? 
 import { errorDetails, errorText, k } from "./parts";
 
 type Props = {
-  run: MigrateRun;
+  run: ThingportRun;
   people: MigratePerson[];
   chosen: ReadonlySet<string>;
   choices: Choices;

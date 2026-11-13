@@ -9,11 +9,12 @@ import { normalizeTags } from "../../../utils/tagNormalization";
 import { addPrintsToCollection, normalizeCollectionName } from "../../collectionService";
 import { licenseById, licenseIdFromText, type ProviderLicense } from "../../licenseCatalog";
 import { licenseData } from "../../licenseService";
+import { isPreparedPrintFilename } from "../../preparedPrint";
 import { createPrint, discardPrint, type NewPlateInput } from "../../printCreation";
 import { saveFileFromTemp } from "../../printFileService";
 import { addUploadedPreviewImages } from "../../uploadService";
 import { MigrateError } from "../errors";
-import { MIGRATE_FOLDER } from "../merge";
+import { MIGRATE_FOLDER, PLAIN_ID } from "../merge";
 import {
   filePathOf,
   idOf,
@@ -182,6 +183,8 @@ export class ManyfoldImport {
 
   /** One model, with its files, into its owner's library. */
   private async bring(link: string, id: string) {
+    // It names the model's folder while its files come, so ".." would be the folder above.
+    if (!PLAIN_ID.test(id)) throw new Error("This model's id isn't one Manyfold makes");
     const model = await this.client.json<ManyfoldModel>(link);
     const userId = this.owner.get(id) ?? this.adminId;
     const sourceLink = (model.links ?? []).find((item) => item.url && parseModelUrl(item.url))?.url ?? null;
@@ -243,18 +246,24 @@ export class ManyfoldImport {
         { describe: false, classify: false },
       );
       try {
+        // A model has one prepared print, which a second would replace: any more are kept beside it.
+        let prepared = false;
         for (const other of others) {
-          await saveFileFromTemp(userId, print.id, other.file, other.name, other.mime, { folder: other.folder });
+          const role: "PREPARED" | "SUPPORTING" =
+            !prepared && isPreparedPrintFilename(other.name) ? "PREPARED" : "SUPPORTING";
+          prepared ||= role === "PREPARED";
+          await saveFileFromTemp(userId, print.id, other.file, other.name, other.mime, { role, folder: other.folder });
         }
         // Its preview first, as it was there.
         const ordered = images.toSorted((a, b) => Number(b.preview) - Number(a.preview));
         if (ordered.length)
           await addUploadedPreviewImages(print.id, await Promise.all(ordered.map((image) => fs.readFile(image.file))));
+        // Here too, so a model left out of its collection isn't kept to be brought again by the next run.
+        if (this.options.collections) await this.addToCollections(userId, print.id, model);
       } catch (err) {
         await discardPrint(print.id);
         throw err;
       }
-      if (this.options.collections) await this.addToCollections(userId, print.id, model);
       this.done.add(id);
       this.report.models.brought += 1;
       await this.onBrought();

@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it, vi } from "vitest";
 import type { AdminUser } from "../../api/admin";
-import type { MigrateCounts, MigrateRun } from "../../api/migrate";
+import type { MigrateCounts, MigrateRun, ThingportRun } from "../../api/migrate";
 import { canStart, checkPassed } from "./CheckStep";
 import { guessUser, manyfoldLines } from "./ManyfoldMigrateDialog";
 import { errorDetails, errorText, followRun, formatBytes, runTitle } from "./parts";
@@ -10,7 +10,13 @@ import { errorDetails, errorText, followRun, formatBytes, runTitle } from "./par
 const t = ((key: string, values?: Record<string, unknown>) =>
   values && Object.keys(values).length ? `${key} ${JSON.stringify(values)}` : key) as unknown as TFunction;
 
-const run = (patch: Omit<Partial<MigrateRun>, "plan"> & { plan?: Partial<MigrateRun["plan"]> }): MigrateRun => ({
+// With no options or report, which are each source's own.
+const run = (
+  patch: Omit<Partial<ThingportRun>, "plan" | "source" | "options" | "report"> & {
+    source?: MigrateRun["source"];
+    plan?: Partial<MigrateRun["plan"]>;
+  },
+): MigrateRun => ({
   id: "r",
   source: "thingport",
   status: "ready",

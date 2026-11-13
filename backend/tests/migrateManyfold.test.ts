@@ -1,12 +1,23 @@
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
+import path from "node:path";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
+import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { manyfoldLicense, manyfoldNotes, manyfoldTags } from "../src/services/migrate/manyfold/import";
-import { filePathOf } from "../src/services/migrate/manyfold/api";
+import {
+  ManyfoldImport,
+  manyfoldLicense,
+  manyfoldNotes,
+  manyfoldTags,
+  type ManyfoldOptions,
+} from "../src/services/migrate/manyfold/import";
+import { filePathOf, ManyfoldClient } from "../src/services/migrate/manyfold/api";
+import { MIGRATE_FOLDER } from "../src/services/migrate/merge";
 
 const app = createApp();
 // Real enough for the import's pictures and plates: a 1x1 PNG, and a one-triangle STL.
@@ -16,6 +27,14 @@ const PNG = Buffer.from(
 ).toString("latin1");
 const stl = (name: string) =>
   `solid ${name}\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid ${name}\n`;
+const listen = (server: http.Server) =>
+  new Promise<string>((resolve) =>
+    server.listen(0, "127.0.0.1", () => resolve(`http://127.0.0.1:${(server.address() as AddressInfo).port}`)),
+  );
+const signedIn = (res: http.ServerResponse) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ access_token: "token-1", token_type: "Bearer", expires_in: 7200 }));
+};
 
 describe("reading Manyfold", () => {
   it("finds a file's folder in its link, as Manyfold 0.149 and newer give it", () => {
@@ -40,6 +59,62 @@ describe("reading Manyfold", () => {
         "https://www.printables.com/model/1-x",
       ),
     ).toBe("*A boat*\n\nPrints well.\n\n- [More](https://example.com/more)");
+  });
+
+  it("follows a bucket's redirect on to the bucket's own next one, without the token", async () => {
+    const tokens: (string | undefined)[] = [];
+    const bucket = http.createServer((req, res) => {
+      tokens.push(req.headers.authorization);
+      if (req.url === "/files/item") res.writeHead(302, { Location: "actual.stl" }).end();
+      else if (req.url === "/files/actual.stl") res.writeHead(200).end(stl("actual"));
+      else res.writeHead(404).end();
+    });
+    const bucketAddress = await listen(bucket);
+    const manyfold = http.createServer((req, res) => {
+      if (req.url === "/oauth/token") return signedIn(res);
+      if (req.url === "/models/m1/raw/a.stl")
+        return res.writeHead(302, { Location: `${bucketAddress}/files/item` }).end();
+      res.writeHead(404).end();
+    });
+    const address = await listen(manyfold);
+    const folder = await fs.mkdtemp(path.join(os.tmpdir(), "manyfold-download-"));
+    try {
+      const client = new ManyfoldClient({ address, clientId: "app", clientSecret: "secret" });
+      expect(await client.download(`${address}/models/m1/raw/a.stl`, path.join(folder, "a.stl"))).toBe(true);
+      expect(await fs.readFile(path.join(folder, "a.stl"), "utf8")).toBe(stl("actual"));
+      expect(tokens).toEqual([undefined, undefined]);
+    } finally {
+      bucket.close();
+      manyfold.close();
+      await fs.rm(folder, { recursive: true, force: true });
+    }
+  });
+
+  it("leaves out a model whose id would name the folder above its own", async () => {
+    // Something answering as Manyfold, for "/models/.." (which a request makes "/") as for any model.
+    const hostile = http.createServer((req, res) => {
+      if (req.url === "/oauth/token") return signedIn(res);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      if (req.url?.startsWith("/models?")) {
+        return res.end(JSON.stringify({ totalItems: 1, member: [{ "@id": "/models/..", name: "Up" }] }));
+      }
+      res.end(JSON.stringify({ "@id": "/models/..", name: "Up" }));
+    });
+    const address = await listen(hostile);
+    const runId = `manyfold-${crypto.randomBytes(4).toString("hex")}`;
+    const kept = path.join(STORAGE, MIGRATE_FOLDER, `other-${runId}`, "kept.txt");
+    await fs.mkdir(path.dirname(kept), { recursive: true });
+    await fs.writeFile(kept, "another run's");
+    try {
+      const client = new ManyfoldClient({ address, clientId: "app", clientSecret: "secret" });
+      const options = { owners: [], collections: false };
+      const report = await new ManyfoldImport(client, runId, options, "admin", new Set(), () => undefined).run();
+      expect(report.models).toMatchObject({ brought: 0, noFiles: 0, failed: 1 });
+      expect(await fs.readFile(kept, "utf8")).toBe("another run's");
+    } finally {
+      hostile.close();
+      await fs.rm(path.dirname(kept), { recursive: true, force: true });
+    }
   });
 });
 
@@ -105,7 +180,12 @@ type Hold = { model: string | null; onHold?: (res: http.ServerResponse) => void 
 /** Manyfold as its API answers, two models a page, with links on another hostname as its PUBLIC_HOSTNAME gives. */
 function standIn(
   secret: string,
-  { old = false, hold, signIns }: { old?: boolean; hold?: Hold; signIns?: { count: number } } = {},
+  {
+    old = false,
+    hold,
+    signIns,
+    models = MODELS,
+  }: { old?: boolean; hold?: Hold; signIns?: { count: number }; models?: Model[] } = {},
 ): Promise<http.Server> {
   const own = "http://localhost:3214";
   const server = http.createServer((req, res) => {
@@ -140,16 +220,18 @@ function standIn(
     let match: RegExpExecArray | null;
     if (url.pathname === "/models") {
       const owner = url.searchParams.get("owner");
-      if (owner && !MODELS.some((model) => model.owner === owner)) return json(404, { error: "not found" });
+      if (owner && !models.some((model) => model.owner === owner)) return json(404, { error: "not found" });
       return list(
-        MODELS.filter((model) => !owner || model.owner === owner).map((model) => ({
-          "@id": `${own}/models/${model.id}`,
-          name: model.name,
-        })),
+        models
+          .filter((model) => !owner || model.owner === owner)
+          .map((model) => ({
+            "@id": `${own}/models/${model.id}`,
+            name: model.name,
+          })),
       );
     }
     if ((match = /^\/models\/([^/]+)$/.exec(url.pathname))) {
-      const model = MODELS.find((item) => item.id === match![1]);
+      const model = models.find((item) => item.id === match![1]);
       if (!model) return json(404, {});
       return json(200, {
         "@id": `${own}/models/${model.id}`,
@@ -169,7 +251,7 @@ function standIn(
       });
     }
     if ((match = /^\/models\/([^/]+)\/model_files\/([^/]+)$/.exec(url.pathname))) {
-      const model = MODELS.find((item) => item.id === match![1]);
+      const model = models.find((item) => item.id === match![1]);
       const file = model?.files.find((item) => item.id === match![2]);
       if (!model || !file) return json(404, {});
       const contentUrl = old
@@ -182,7 +264,7 @@ function standIn(
       });
     }
     if ((match = /^\/models\/([^/]+)\/raw\/(.+)$/.exec(url.pathname))) {
-      const model = MODELS.find((item) => item.id === match![1]);
+      const model = models.find((item) => item.id === match![1]);
       const file = model?.files.find((item) => item.path === decodeURIComponent(match![2]));
       if (!file) return json(404, {});
       if (hold?.model && hold.model === model?.id) return hold.onHold?.(res);
@@ -401,6 +483,76 @@ describe("migrating from Manyfold", () => {
       expect(names.map((print) => print.name).toSorted()).toEqual(["Gear", "Red Dragon"]);
     } finally {
       flaky.close();
+    }
+  });
+
+  it("keeps each prepared print a model has, and brings again one whose collection failed", async () => {
+    const models: Model[] = [
+      {
+        id: "printed5",
+        owner: "kim",
+        name: "Printed",
+        files: [
+          { id: "q1", path: "part.stl", mime: "model/stl", body: stl("part") },
+          { id: "q2", path: "part.gcode", mime: "text/x-gcode", body: "G28\n" },
+          { id: "q3", path: "part-fine.gcode", mime: "text/x-gcode", body: "G28\nG1 X1\n" },
+        ],
+      },
+      {
+        id: "boxed6",
+        owner: "kim",
+        name: "Boxed",
+        files: [{ id: "x1", path: "box.stl", mime: "model/stl", body: stl("box") }],
+        collections: ["minis"],
+      },
+    ];
+    const kimServer = await standIn(secret, { models });
+    const kim = (await prisma.user.create({ data: { email: `kim-${tag}@example.com`, displayName: "Kim" } })).id;
+    users.push(kim);
+    const options: ManyfoldOptions = { owners: [{ username: "kim", userId: kim }], collections: true };
+    const done = new Set<string>();
+    const importer = () =>
+      new ManyfoldImport(
+        new ManyfoldClient({
+          address: `http://127.0.0.1:${(kimServer.address() as AddressInfo).port}`,
+          clientId: "app",
+          clientSecret: secret,
+        }),
+        `manyfold-${tag}-kim`,
+        options,
+        adminId,
+        done,
+        () => undefined,
+      );
+    try {
+      // Its collection can't be made the first time: Boxed is left out whole, for the next run to bring.
+      const create = vi.spyOn(prisma.collection, "create").mockRejectedValueOnce(new Error("The database went away"));
+      try {
+        expect((await importer().run()).models).toMatchObject({ brought: 1, failed: 1 });
+      } finally {
+        create.mockRestore();
+      }
+      expect(await prisma.print.count({ where: { userId: kim, name: "Boxed" } })).toBe(0);
+      expect([...done]).toEqual(["printed5"]);
+
+      // A model has one prepared print: the other is kept beside it rather than taking its place.
+      const printed = await prisma.print.findFirstOrThrow({
+        where: { userId: kim, name: "Printed" },
+        include: { files: true },
+      });
+      expect(printed.files.map((file) => [file.filename, file.role]).toSorted()).toEqual([
+        ["part-fine.gcode", "SUPPORTING"],
+        ["part.gcode", "PREPARED"],
+      ]);
+      expect(printed.preparedFileId).toBe(printed.files.find((file) => file.filename === "part.gcode")?.id);
+
+      expect((await importer().run()).models).toMatchObject({ brought: 1, earlier: 1, failed: 0 });
+      const boxed = await prisma.print.findMany({ where: { userId: kim, name: "Boxed" }, select: { id: true } });
+      expect(boxed).toHaveLength(1);
+      const minis = await prisma.collection.findFirstOrThrow({ where: { userId: kim }, include: { items: true } });
+      expect(minis.items.map((item) => item.printId)).toEqual([boxed[0].id]);
+    } finally {
+      kimServer.close();
     }
   });
 });

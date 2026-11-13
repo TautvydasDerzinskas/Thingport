@@ -97,15 +97,10 @@ export type MigrateStep =
 
 export type MigrateRunError = { code: string; message: string; values?: Record<string, string | number> };
 
-export type MigrateRun = {
+type RunBase = {
   id: string;
-  source: "thingport" | "thingport-online" | "manyfold";
   status: "preparing" | "ready" | "running" | "done" | "failed";
   plan: MigratePlan;
-  /** The admin's choices: ManyfoldOptions for one from Manyfold (manyfoldOptions() reads them). */
-  options: MigrateOptions | null;
-  /** What it did: a ManyfoldReport for one from Manyfold (manyfoldReport() reads it). */
-  report: MigrateReport | null;
   error: MigrateRunError | null;
   /** While it's preparing or running, how far it is. */
   progress: { step: MigrateStep; done: number; total: number } | null;
@@ -126,8 +121,22 @@ export type ManyfoldReport = {
   failures: { kind: string; name: string; error: string }[];
 };
 
-export const manyfoldOptions = (run: MigrateRun) => run.options as unknown as ManyfoldOptions | null;
-export const manyfoldReport = (run: MigrateRun) => run.report as unknown as ManyfoldReport | null;
+/** From another Thingport instance, by its dump or online: the admin's choices, and what it did. */
+export type ThingportRun = RunBase & {
+  source: "thingport" | "thingport-online";
+  options: MigrateOptions | null;
+  report: MigrateReport | null;
+};
+
+/** From Manyfold, whose choices and report are its own. */
+export type ManyfoldRun = RunBase & {
+  source: "manyfold";
+  options: ManyfoldOptions | null;
+  report: ManyfoldReport | null;
+};
+
+/** A migration: what its options and report hold depends on its source, so read them after checking that. */
+export type MigrateRun = ThingportRun | ManyfoldRun;
 
 /** Whether another instance can copy this one now, and when it last did. */
 export type ExportToken = { active: boolean; expires_at: string | null; used_at: string | null };
@@ -178,7 +187,7 @@ export const migrateApi = {
   get: (id: string): Promise<MigrateRun> => send(`/${encodeURIComponent(id)}`, { method: "GET" }, "Couldn't load it"),
 
   /** From another Thingport instance, with its dump uploaded. `onProgress` gets the share sent, 0 to 1. */
-  prepareWithUpload: (file: File, folder: string, onProgress: (sent: number) => void): Promise<MigrateRun> =>
+  prepareWithUpload: (file: File, folder: string, onProgress: (sent: number) => void): Promise<ThingportRun> =>
     new Promise((resolve, reject) => {
       const body = new FormData();
       body.append("folder", folder);
@@ -193,14 +202,14 @@ export const migrateApi = {
       request.addEventListener("error", () => reject(new MigrateApiError("The upload stopped", "upload_failed", 0)));
       request.addEventListener("load", () => {
         const res = new Response(request.responseText || null, { status: request.status });
-        if (request.status >= 200 && request.status < 300) resolve(res.json() as Promise<MigrateRun>);
+        if (request.status >= 200 && request.status < 300) resolve(res.json() as Promise<ThingportRun>);
         else failure(res, "Couldn't upload the dump").catch(reject);
       });
       request.send(body);
     }),
 
   /** From another Thingport instance, with its dump already on the server. */
-  prepareWithPath: (dumpPath: string, folder: string): Promise<MigrateRun> =>
+  prepareWithPath: (dumpPath: string, folder: string): Promise<ThingportRun> =>
     send(
       "/thingport",
       { method: "POST", body: JSON.stringify({ dump_path: dumpPath, folder }) },
@@ -208,7 +217,7 @@ export const migrateApi = {
     ),
 
   /** From another Thingport instance online, with the token its admin made there. */
-  prepareOnline: (address: string, token: string): Promise<MigrateRun> =>
+  prepareOnline: (address: string, token: string): Promise<ThingportRun> =>
     send(
       "/thingport-online",
       { method: "POST", body: JSON.stringify({ address, token }) },
@@ -216,7 +225,7 @@ export const migrateApi = {
     ),
 
   /** From Manyfold, with an API key made there: tried at once, and ready to start. */
-  prepareManyfold: (address: string, clientId: string, clientSecret: string): Promise<MigrateRun> =>
+  prepareManyfold: (address: string, clientId: string, clientSecret: string): Promise<ManyfoldRun> =>
     send(
       "/manyfold",
       { method: "POST", body: JSON.stringify({ address, clientId, clientSecret }) },
@@ -231,7 +240,7 @@ export const migrateApi = {
       "Couldn't ask Manyfold",
     ),
 
-  startManyfold: (id: string, options: ManyfoldOptions): Promise<MigrateRun> =>
+  startManyfold: (id: string, options: ManyfoldOptions): Promise<ManyfoldRun> =>
     send(
       `/${encodeURIComponent(id)}/start-manyfold`,
       { method: "POST", body: JSON.stringify(options) },
@@ -247,10 +256,10 @@ export const migrateApi = {
 
   revokeExportToken: (): Promise<void> => send("/export-token", { method: "DELETE" }, "Couldn't revoke the token"),
 
-  start: (id: string, options: MigrateOptions): Promise<MigrateRun> =>
+  start: (id: string, options: MigrateOptions): Promise<ThingportRun> =>
     send(`/${encodeURIComponent(id)}/start`, { method: "POST", body: JSON.stringify(options) }, "Couldn't start it"),
 
-  changeFolder: (id: string, folder: string): Promise<MigrateRun> =>
+  changeFolder: (id: string, folder: string): Promise<ThingportRun> =>
     send(
       `/${encodeURIComponent(id)}/folder`,
       { method: "POST", body: JSON.stringify({ folder }) },

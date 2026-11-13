@@ -239,10 +239,13 @@ export class ManyfoldClient {
   async download(link: string, to: string): Promise<boolean> {
     const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS);
     let res = await this.call(link, { headers: { Accept: "*/*" }, signal });
+    // Each hop's address, which the next one's Location is read against: a bucket's relative one stays on the bucket.
+    let at = new URL(this.onAddress(link));
     for (let hops = 0; res.status >= 300 && res.status < 400 && hops < 3; hops++) {
       const location = res.headers.get("location");
       if (!location) break;
-      const next = new URL(location, this.onAddress(link));
+      const next = new URL(location, at);
+      at = next;
       const sameOrigin = next.origin === new URL(this.connection.address).origin;
       res = sameOrigin
         ? await this.call(next.toString(), { headers: { Accept: "*/*" }, signal })

@@ -30,20 +30,13 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import { adminApi, type AdminUser } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
-import {
-  manyfoldOptions,
-  manyfoldReport,
-  migrateApi,
-  type ManyfoldReport,
-  type MigrateRun,
-  type MigrateRunError,
-} from "../../api/migrate";
+import { migrateApi, type ManyfoldReport, type ManyfoldRun, type MigrateRunError } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import HelpTip from "../../components/HelpTip";
 import ToneChip from "../../components/ToneChip";
 import { useToastHost } from "../../components/ToastProvider";
 import { readUser } from "../../utils/auth";
-import { errorText, hostOf, isActive, k, requestError } from "./parts";
+import { errorText, followRun, hostOf, isActive, k, requestError } from "./parts";
 import { ReportLines, RunningView, StoppedView } from "./StartStep";
 
 /** Its steps, with the Thingport dialog's names where they're the same step. */
@@ -62,7 +55,7 @@ const m = (key: string) => k(`manyfold.${key}`);
 type Owner = { username: string; userId: string; models: number | null };
 
 /** Where the dialog opens for one from the list: its check while it waits, its end once it ran. */
-function stepFor(run: MigrateRun | null): number {
+function stepFor(run: ManyfoldRun | null): number {
   if (!run) return 0;
   return run.started_at ? LAST : 1;
 }
@@ -92,7 +85,7 @@ export function manyfoldLines(t: TFunction, report: ManyfoldReport): string[] {
 
 type Props = {
   /** A migration from the list, or null for a new one. */
-  initial: MigrateRun | null;
+  initial: ManyfoldRun | null;
   onClose: () => void;
   /** Something in the list changed: one started, finished or went. */
   onChanged: () => void;
@@ -107,22 +100,17 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
   const paperRef = useToastHost(true);
   const phone = useMediaQuery((theme: Theme) => theme.breakpoints.down("sm"));
   const me = React.useMemo(() => readUser(), []);
-  const [run, setRun] = React.useState<MigrateRun | null>(initial);
+  const [run, setRun] = React.useState<ManyfoldRun | null>(initial);
   const [step, setStep] = React.useState(() => stepFor(initial));
   const [connection, setConnection] = React.useState({ address: "", clientId: "", clientSecret: "" });
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState<MigrateRunError | null>(null);
   const [users, setUsers] = React.useState<AdminUser[] | null>(null);
   const [owners, setOwners] = React.useState<Owner[]>(
-    () =>
-      (initial &&
-        manyfoldOptions(initial)?.owners.map(({ username, userId }) => ({ username, userId, models: null }))) ??
-      [],
+    () => initial?.options?.owners.map(({ username, userId }) => ({ username, userId, models: null })) ?? [],
   );
   const [username, setUsername] = React.useState("");
-  const [collections, setCollections] = React.useState(
-    () => (initial && manyfoldOptions(initial)?.collections) ?? true,
-  );
+  const [collections, setCollections] = React.useState(() => initial?.options?.collections ?? true);
 
   const fail = React.useCallback(
     (err: unknown) => {
@@ -141,16 +129,19 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
   const active = run ? isActive(run) : false;
   React.useEffect(() => {
     if (!runId || !active) return;
-    const timer = window.setInterval(async () => {
-      try {
-        const next = await migrateApi.get(runId);
+    return followRun(
+      () => migrateApi.get(runId),
+      POLL_MS,
+      (next) => {
+        // The same run, so always Manyfold's: this tells TypeScript.
+        if (next.source !== "manyfold") return;
         setRun(next);
         if (!isActive(next)) onChanged();
-      } catch (err) {
+      },
+      (err) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-      }
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
+      },
+    );
   }, [runId, active, onChanged, onUnauthorized]);
 
   const act = async (work: () => Promise<void>) => {
@@ -525,14 +516,14 @@ export default function ManyfoldMigrateDialog({ initial, onClose, onChanged, onU
 }
 
 /** Before it starts, what's about to happen; then how far it is; then what it did. */
-function ManyfoldEnd({ run, owners, collections }: { run: MigrateRun; owners: number; collections: boolean }) {
+function ManyfoldEnd({ run, owners, collections }: { run: ManyfoldRun; owners: number; collections: boolean }) {
   const { t } = useTranslation("app");
   if (run.status === "running") {
     const step = run.progress?.step ?? "owners";
     const values = { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 };
     return <RunningView run={run} label={t(m(`phases.${step}`), values)} />;
   }
-  const report = manyfoldReport(run);
+  const report = run.report;
   if (run.status === "done" && report)
     return <ReportLines lines={manyfoldLines(t, report)} failures={report.failures} />;
   if (run.status === "failed" && run.started_at) {

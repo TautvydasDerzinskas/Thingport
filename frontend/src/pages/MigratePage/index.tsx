@@ -13,7 +13,7 @@ import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
 import MoveUpOutlinedIcon from "@mui/icons-material/MoveUpOutlined";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { manyfoldOptions, migrateApi, type ExportToken, type MigrateRun } from "../../api/migrate";
+import { migrateApi, type ExportToken, type ManyfoldRun, type MigrateRun, type ThingportRun } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import ToneChip from "../../components/ToneChip";
@@ -39,7 +39,9 @@ export default function MigratePage({ onUnauthorized }: Props) {
   const [root, setRoot] = React.useState("/app/migrate");
   const [loadFailed, setLoadFailed] = React.useState(false);
   /** The dialog: a new migration from a source, or one from the list. */
-  const [open, setOpen] = React.useState<{ run: MigrateRun | null; manyfold: boolean } | null>(null);
+  const [open, setOpen] = React.useState<
+    { manyfold: true; run: ManyfoldRun | null } | { manyfold: false; run: ThingportRun | null } | null
+  >(null);
   /** The token letting another instance copy this one, and its dialog. */
   const [exportToken, setExportToken] = React.useState<ExportToken | null>(null);
   const [exporting, setExporting] = React.useState(false);
@@ -87,10 +89,14 @@ export default function MigratePage({ onUnauthorized }: Props) {
   };
 
   const startAgain = async (run: MigrateRun) => {
-    if (!run.options) return;
-    const manyfold = run.source === "manyfold" ? manyfoldOptions(run) : null;
     try {
-      await (manyfold ? migrateApi.startManyfold(run.id, manyfold) : migrateApi.start(run.id, run.options));
+      if (run.source === "manyfold") {
+        if (!run.options) return;
+        await migrateApi.startManyfold(run.id, run.options);
+      } else {
+        if (!run.options) return;
+        await migrateApi.start(run.id, run.options);
+      }
       await load();
     } catch (err) {
       fail(err);
@@ -227,7 +233,9 @@ export default function MigratePage({ onUnauthorized }: Props) {
                 <MigrationRow
                   key={run.id}
                   run={run}
-                  onOpen={(item) => setOpen({ run: item, manyfold: item.source === "manyfold" })}
+                  onOpen={(item) =>
+                    setOpen(item.source === "manyfold" ? { manyfold: true, run: item } : { manyfold: false, run: item })
+                  }
                   onStartAgain={(item) => void startAgain(item)}
                   onRemove={(item) => void remove(item)}
                 />

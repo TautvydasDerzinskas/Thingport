@@ -17,7 +17,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReplayIcon from "@mui/icons-material/Replay";
 import type { TFunction } from "i18next";
-import { manyfoldReport, type MigrateRun } from "../../api/migrate";
+import type { ManyfoldRun, MigrateRun, ThingportRun } from "../../api/migrate";
 import ToneChip from "../../components/ToneChip";
 import { errorText, k, runTitle, SourceTile } from "./parts";
 
@@ -31,7 +31,7 @@ const NARROW_WRAP = {
 const TONES = { preparing: "info", ready: "info", running: "info", done: "success", failed: "error" } as const;
 
 /** What one from another Thingport instance is doing, or did, with its people. */
-function thingportLine(t: TFunction, run: MigrateRun, when: string): string {
+function thingportLine(t: TFunction, run: ThingportRun, when: string): string {
   const people = run.options?.people.length ?? run.plan.counts?.people ?? 0;
   const merged = (run.plan.people ?? []).filter(
     (person) => person.merge && (!run.options || run.options.people.includes(person.id)),
@@ -66,13 +66,13 @@ function thingportLine(t: TFunction, run: MigrateRun, when: string): string {
 }
 
 /** What one from Manyfold is doing, or did. */
-function manyfoldLine(t: TFunction, run: MigrateRun, when: string): string {
+function manyfoldLine(t: TFunction, run: ManyfoldRun, when: string): string {
   if (run.status === "running") {
     const step = run.progress?.step ?? "owners";
     return t(k(`manyfold.phases.${step}`), { done: run.progress?.done ?? 0, total: run.progress?.total ?? 0 });
   }
   if (run.status === "ready") return t(k("manyfold.readyLine"), { count: run.plan.manyfold?.models ?? 0 });
-  const report = manyfoldReport(run);
+  const report = run.report;
   if (run.status === "done" && report) {
     const left = report.models.noFiles;
     return [
@@ -108,7 +108,7 @@ export default function MigrationRow({ run, onOpen, onStartAgain, onRemove }: Pr
   if (run.status === "running" && run.progress && run.progress.total > 0) {
     progress = (run.progress.done / run.progress.total) * 100;
   }
-  const line = manyfold ? manyfoldLine(t, run, when) : thingportLine(t, run, when);
+  const line = run.source === "manyfold" ? manyfoldLine(t, run, when) : thingportLine(t, run, when);
 
   const close = () => setMenu(null);
   const openMenu = (event: React.MouseEvent<HTMLElement>, atPointer = false) => {
