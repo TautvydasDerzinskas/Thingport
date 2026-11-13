@@ -62,7 +62,7 @@ function labelTabs(connected: boolean): void {
 function localizeDynamicContent(): void {
   els.enabledToggle.dataset.tooltip = t("extensionEnabled");
   els.viewedClearWrap.dataset.tooltip = t("clearRecentlyViewed");
-  els.languageSelect.setAttribute("aria-label", t("language"));
+  els.languageTrigger.setAttribute("aria-label", t("language"));
   els.pairNote.textContent = t(pairNoteKey);
   refreshAppearance();
   void loadRecentlyViewed();
@@ -114,7 +114,115 @@ function displayInstanceUrl(instanceUrl: string): string {
 }
 
 let localeRevision = 0;
+const languageOptions = [...els.languageSelect.options];
+let activeLanguage = 0;
+
+els.languageList.replaceChildren(
+  ...languageOptions.map((option, index) => {
+    const item = document.createElement("li");
+    item.className = "language-list__option";
+    item.id = `language-option-${option.value}`;
+    item.dataset.index = String(index);
+    item.setAttribute("role", "option");
+    item.textContent = option.textContent;
+    return item;
+  }),
+);
+
+function highlightLanguage(index: number): void {
+  activeLanguage = index;
+  for (const [i, item] of [...els.languageList.children].entries()) {
+    item.classList.toggle("language-list__option--active", i === index);
+  }
+  const active = els.languageList.children.item(index) as HTMLElement | null;
+  if (active && !els.languageList.hidden) {
+    els.languageTrigger.setAttribute("aria-activedescendant", active.id);
+    active.scrollIntoView({ block: "nearest" });
+  } else {
+    els.languageTrigger.removeAttribute("aria-activedescendant");
+  }
+}
+
+function syncLanguagePicker(): void {
+  const selected = Math.max(
+    languageOptions.findIndex((option) => option.value === els.languageSelect.value),
+    0,
+  );
+  els.languageValue.textContent = languageOptions[selected].textContent;
+  for (const [index, item] of [...els.languageList.children].entries()) {
+    item.setAttribute("aria-selected", String(index === selected));
+  }
+  highlightLanguage(selected);
+}
+
+function openLanguagePicker(): void {
+  els.languageList.hidden = false;
+  syncLanguagePicker();
+  els.languagePicker.classList.add("language-picker--open");
+  els.languageTrigger.setAttribute("aria-expanded", "true");
+}
+
+function closeLanguagePicker(): void {
+  els.languageList.hidden = true;
+  els.languagePicker.classList.remove("language-picker--open");
+  els.languageTrigger.setAttribute("aria-expanded", "false");
+  els.languageTrigger.removeAttribute("aria-activedescendant");
+}
+
+function chooseLanguage(index: number): void {
+  const option = languageOptions[index];
+  if (!option) return;
+  els.languageSelect.value = option.value;
+  closeLanguagePicker();
+  els.languageTrigger.focus();
+  els.languageSelect.dispatchEvent(new Event("change"));
+}
+
+els.languageTrigger.addEventListener("click", () => {
+  if (els.languageList.hidden) openLanguagePicker();
+  else closeLanguagePicker();
+});
+
+els.languageTrigger.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    if (els.languageList.hidden) openLanguagePicker();
+    else {
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      highlightLanguage((activeLanguage + direction + languageOptions.length) % languageOptions.length);
+    }
+    return;
+  }
+  if (!els.languageList.hidden && (event.key === "Home" || event.key === "End")) {
+    event.preventDefault();
+    highlightLanguage(event.key === "Home" ? 0 : languageOptions.length - 1);
+    return;
+  }
+  if (!els.languageList.hidden && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    chooseLanguage(activeLanguage);
+    return;
+  }
+  if (event.key === "Escape" && !els.languageList.hidden) {
+    event.preventDefault();
+    closeLanguagePicker();
+  }
+});
+
+els.languageTrigger.addEventListener("blur", closeLanguagePicker);
+
+els.languageList.addEventListener("pointerdown", (event) => event.preventDefault());
+els.languageList.addEventListener("click", (event) => {
+  const index = (event.target as HTMLElement).closest<HTMLElement>(".language-list__option")?.dataset.index;
+  if (index !== undefined) chooseLanguage(Number(index));
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (!els.languagePicker.contains(event.target as Node)) closeLanguagePicker();
+});
+
 els.languageSelect.addEventListener("change", async () => {
+  syncLanguagePicker();
   localeRevision++;
   const locale = els.languageSelect.value as Locale;
   setLocale(locale);
@@ -125,6 +233,8 @@ els.languageSelect.addEventListener("change", async () => {
   const res = await send("SET_LOCALE", { locale });
   if (!res?.ok) showError(res?.error ?? t("saveFailed"));
 });
+
+syncLanguagePicker();
 
 function showConfiguredView(state: ExtensionState): void {
   labelTabs(true);
@@ -254,6 +364,7 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     setLocale(res.data.locale);
     document.documentElement.lang = res.data.locale;
     els.languageSelect.value = res.data.locale;
+    syncLanguagePicker();
     applyTranslations();
     localizeDynamicContent();
   }

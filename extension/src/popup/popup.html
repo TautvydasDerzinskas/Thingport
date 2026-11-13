@@ -60,15 +60,35 @@
           </button>
         </div>
       </div>
-      <select class="language-select" id="language-select" data-i18n-aria-label="language" aria-label="Language">
-        <option value="en">English</option>
-        <option value="ru">Русский</option>
-        <option value="uk">Українська</option>
-        <option value="be">Беларуская</option>
-        <option value="es">Español</option>
-        <option value="fr">Français</option>
-        <option value="lt">Lietuvių</option>
-      </select>
+      <div class="language-picker" id="language-picker">
+        <!-- Kept as the locale state/change contract; the visible list is custom because native option popups ignore CSS. -->
+        <select id="language-select" hidden aria-hidden="true" tabindex="-1">
+          <option value="en">English</option>
+          <option value="ru">Русский</option>
+          <option value="uk">Українська</option>
+          <option value="be">Беларуская</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="lt">Lietuvių</option>
+        </select>
+        <button
+          type="button"
+          class="language-select"
+          id="language-trigger"
+          role="combobox"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          aria-controls="language-list"
+          data-i18n-aria-label="language"
+          aria-label="Language"
+        >
+          <span class="language-select__value" id="language-value">English</span>
+          <svg class="language-select__chevron" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="language-list" id="language-list" role="listbox" hidden></ul>
+      </div>
       <span class="tooltip" id="enabled-toggle" data-tooltip="Extension enabled" hidden>
         <input
           type="checkbox"

@@ -6,7 +6,11 @@ function byId<T extends HTMLElement>(id: string): T {
 
 export const els = {
   headerIcon: byId("header-icon"),
+  languagePicker: byId("language-picker"),
   languageSelect: byId<HTMLSelectElement>("language-select"),
+  languageTrigger: byId<HTMLButtonElement>("language-trigger"),
+  languageValue: byId("language-value"),
+  languageList: byId<HTMLUListElement>("language-list"),
   instanceRow: byId("instance-row"),
   instanceLink: byId<HTMLAnchorElement>("instance-link"),
   editInstanceBtn: byId<HTMLButtonElement>("edit-instance-btn"),
