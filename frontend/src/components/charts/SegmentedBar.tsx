@@ -89,7 +89,8 @@ export default function SegmentedBar({ segments, label, height = 24 }: Props) {
                 background: segmentFill(segment),
                 display: "flex",
                 alignItems: "center",
-                px: 0.75,
+                // Only around a value: padding would hold a small part wider than its share.
+                px: labelled ? 0.75 : 0,
                 overflow: "hidden",
                 outlineOffset: 2,
                 "&:focus-visible": { outline: (theme) => `2px solid ${theme.palette.text.primary}` },
