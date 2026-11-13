@@ -2942,7 +2942,7 @@
           }
         },
         "people": {
-          "intro": "Their passwords come with them, so they sign in as before.",
+          "intro": "A new account comes with its old password, so they sign in as before. Merged into an account here, they keep its password.",
           "introHelp": "Someone with the same email here is merged into that account: it stays as it is, and what's theirs is added to it. The old instance's owner comes as an admin, as this instance keeps its own owner.",
           "everyone": "Everyone",
           "person": "Person",

@@ -50,9 +50,22 @@ files are read one by one over the network. This server must be able to reach th
 works, but then the token and everything it reads travel unencrypted, so use it on a network you trust. Revoke the
 token once the migration is done.
 
-## 1. Make the dump
+## 1. Stop the old instance's backend
 
-On the old instance's server. With Docker Compose, from the folder its `docker-compose.yml` is in:
+The dump and the storage copy are what comes, so nothing may change on the old instance once they're made: a model
+imported after the dump wouldn't come. Stop its backend, but leave its database running for the dump. With Docker
+Compose, from the folder its `docker-compose.yml` is in:
+
+```sh
+docker compose stop backend
+```
+
+Keep it stopped until this instance takes over. Running both would also run synced collections and provider sign-ins
+twice, and a site that renews a sign-in only once signs one of them out.
+
+## 2. Make the dump
+
+On the old instance's server, from the same folder:
 
 ```sh
 docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump
@@ -61,14 +74,26 @@ docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump
 Use your own user and database names if you changed `POSTGRES_USER` or `POSTGRES_DB`. The `-Fc` matters: a plain SQL
 dump is turned away, as restoring one would run its commands on this server.
 
-## 2. Bring the storage folder over
+## 3. Bring the storage folder over
 
-Copy the old instance's storage folder (its `/app/storage`) to this server, or mount it where it is. With the default
-Docker Compose file, that folder is the `thingport_storage` volume. This copies it out, on the old server:
+Copy the old instance's storage folder (its `/app/storage`) to this server, or mount it where it is. Where it is on the
+old server depends on its Compose file. This says, from the same folder (the backend may be stopped):
 
 ```sh
-docker run --rm -v thingport_storage:/from -v "$PWD/old-storage":/to alpine cp -a /from/. /to/
+docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app/storage"}}{{.Type}} {{.Name}} {{.Source}}{{end}}{{end}}' \
+  "$(docker compose ps -aq backend)"
 ```
+
+- **`bind`**, as with `./data/storage:/app/storage` in the repository's `docker-compose.yml`: the storage is the folder
+  it names last. Copy that folder, for example `cp -a ./data/storage/. old-storage/`.
+- **`volume`**, as with `thingport_storage:/app/storage` in the README's: copy out the volume it names, which Compose
+  prefixes with its project's name (`thingport_thingport_storage`, say):
+
+  ```sh
+  docker run --rm -v thingport_thingport_storage:/from:ro -v "$PWD/old-storage":/to alpine cp -a /from/. /to/
+  ```
+
+  Use the name it printed: a name that isn't a volume yet makes a new, empty one, and copies nothing.
 
 Then let this instance's backend read it, and the dump beside it. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
@@ -84,7 +109,7 @@ services:
 Restart the backend (`docker compose up -d backend`) after adding the line. The backend runs as `PUID`/`PGID`, so that
 user has to be able to read the folder. Running the backend outside Docker, set `MIGRATE_DIR` to the folder instead.
 
-## 3. Run the migration
+## 4. Run the migration
 
 Open **Administration → Migrate** and click **Start** on **From another Thingport instance**. The steps:
 
@@ -99,8 +124,7 @@ Open **Administration → Migrate** and click **Start** on **From another Thingp
    its own owner.
 4. **What comes.** Models always come with their people. Switch off what shouldn't come with them. Instance settings
    and secrets are off unless you switch them on: they replace this instance's.
-5. **Start.** Stop the old instance first. Otherwise synced collections and provider sign-ins run on both, and a site
-   that renews a sign-in only once signs one of them out.
+5. **Start.** With the old instance's backend still stopped, as in step 1.
 
 You can close the dialog while it runs: the migration goes on in the background, and its row on the page says how far
 it is. You get a notification when it's done.

@@ -59,7 +59,11 @@ export async function folderSource(given: string): Promise<SourceFiles> {
       if (!start.startsWith(root + path.sep)) return 0;
       let copied = 0;
       const walk = async (dir: string): Promise<void> => {
-        const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+        // Each folder checked again right before it's read: a link, or one swapped for a link since its parent was
+        // read, isn't followed out of the folder. Files are checked again on their own as they're copied.
+        const real = await fs.realpath(dir).catch(() => null);
+        if (!real || !real.startsWith(root + path.sep)) return;
+        const entries = await fs.readdir(real, { withFileTypes: true }).catch(() => []);
         for (const entry of entries) {
           const inner = path.relative(root, path.join(dir, entry.name));
           if (entry.isDirectory()) await walk(path.join(dir, entry.name));

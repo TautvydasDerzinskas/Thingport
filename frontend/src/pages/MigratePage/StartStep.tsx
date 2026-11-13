@@ -13,6 +13,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import type { MigratePerson, MigrateReport, MigrateRun } from "../../api/migrate";
 import ToneChip from "../../components/ToneChip";
 import type { Choices } from "./ComesStep";
+
+/** The report's fields that are a count on their own. */
+type CountKey = { [K in keyof MigrateReport]: MigrateReport[K] extends number ? K : never }[keyof MigrateReport];
 import { errorDetails, errorText, k } from "./parts";
 
 type Props = {
@@ -104,7 +107,7 @@ function Report({ report, partial = false }: { report: MigrateReport; partial?: 
   const collections = report.collections.brought + report.collections.merged;
   if (collections) lines.push(t(k("report.collections"), { count: collections }));
   if (report.collections.merged) lines.push(t(k("report.collectionsMerged"), { count: report.collections.merged }));
-  const extras: [keyof MigrateReport, string][] = [
+  const extras: [CountKey, string][] = [
     ["designs", "report.designs"],
     ["widgets", "report.widgets"],
     ["tools", "report.tools"],
@@ -114,7 +117,7 @@ function Report({ report, partial = false }: { report: MigrateReport; partial?: 
     ["secrets", "report.secrets"],
   ];
   for (const [key, label] of extras) {
-    const count = report[key] as number;
+    const count = report[key];
     if (count) lines.push(t(k(label), { count }));
   }
   return <ReportLines lines={lines} failures={report.failures} partial={partial} />;

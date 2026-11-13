@@ -136,6 +136,37 @@ function rowFor<T>(model: Prisma.ModelName, row: object): T {
   return out as T;
 }
 
+type CategoryNode = { name: string; parentId: string | null; kind: string };
+
+/** A category's names from the top of its tree down, as they're compared: a tree no deeper than 64. */
+function categoryNames(row: CategoryNode, byId: Map<string, CategoryNode>): string[] {
+  const names: string[] = [];
+  let at: CategoryNode | undefined = row;
+  for (let depth = 0; at && depth < 64; depth++) {
+    names.unshift(at.name.trim().toLowerCase());
+    at = at.parentId ? byId.get(at.parentId) : undefined;
+  }
+  return names;
+}
+
+/** Where a category is in its tree, as a key: the names as a list, so a name with a "/" in it isn't two. */
+function categoryKey(row: CategoryNode, byId: Map<string, CategoryNode>): string {
+  return JSON.stringify([row.kind, ...categoryNames(row, byId)]);
+}
+
+/** Whether two issuer URLs are the same issuer, written either way. */
+function sameIssuer(a: string, b: string): boolean {
+  const plain = (url: string) =>
+    url
+      .trim()
+      .replace(/\/\.well-known\/openid-configuration\/?$/, "")
+      .replace(/\/+$/, "");
+  return plain(a) === plain(b);
+}
+
+/** An id the old database gives a model or design, which names a folder here: only a plain one, as ids are. */
+const PLAIN_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 /** For a row whose own id another row here has already: which, ids being random, only a clash of one in billions
  *  could cause. */
 const freshId = () => `m${crypto.randomBytes(12).toString("hex")}`;
@@ -310,33 +341,15 @@ export class Merge {
   private async mergeCategories(sourceUserId: string, userId: string) {
     const rows = await this.source.category.findMany({ where: { userId: sourceUserId }, include: { siteIds: true } });
     const byId = new Map(rows.map((row) => [row.id, row]));
-    const pathOf = (row: (typeof rows)[number]): string => {
-      const names: string[] = [];
-      let at: (typeof rows)[number] | undefined = row;
-      for (let depth = 0; at && depth < 64; depth++) {
-        names.unshift(at.name.trim().toLowerCase());
-        at = at.parentId ? byId.get(at.parentId) : undefined;
-      }
-      return `${row.kind}:${names.join("/")}`;
-    };
-    const depthOf = (row: (typeof rows)[number]) => pathOf(row).split("/").length;
     const here = await prisma.category.findMany({
       where: { userId },
       select: { id: true, name: true, parentId: true, kind: true },
     });
     const hereById = new Map(here.map((row) => [row.id, row]));
-    const herePaths = new Map<string, string>();
-    for (const row of here) {
-      const names: string[] = [];
-      let at: (typeof here)[number] | undefined = row;
-      for (let depth = 0; at && depth < 64; depth++) {
-        names.unshift(at.name.trim().toLowerCase());
-        at = at.parentId ? hereById.get(at.parentId) : undefined;
-      }
-      herePaths.set(`${row.kind}:${names.join("/")}`, row.id);
-    }
+    const herePaths = new Map(here.map((row) => [categoryKey(row, hereById), row.id]));
+    const depthOf = (row: (typeof rows)[number]) => categoryNames(row, byId).length;
     for (const row of rows.toSorted((a, b) => depthOf(a) - depthOf(b))) {
-      const key = pathOf(row);
+      const key = categoryKey(row, byId);
       const { siteIds, ...category } = row;
       try {
         // An earlier run brought it, though it may have been renamed or moved here since.
@@ -431,6 +444,12 @@ export class Merge {
       return;
     }
 
+    // Its id and its files' and pictures' name the paths they're copied to, so none may climb out of the run's folder.
+    if (!PLAIN_ID.test(print.id)) throw new Error("This model's id isn't one Thingport makes");
+    const children = [...print.plates, ...print.files, ...print.previewImages, ...print.descriptionImages];
+    if (!children.every(({ id }) => PLAIN_ID.test(id))) {
+      throw new Error("An id of this model's files or pictures isn't one Thingport makes");
+    }
     const temp = path.join(this.tempRoot, print.id);
     const copied = await this.copyModelFiles(print, temp);
     if (print.plates.length && !copied.plates.length) {
@@ -775,13 +794,24 @@ export class Merge {
     }
   }
 
+  /** This instance's sign-in provider that's the same as one there: the same name and the same issuer, as a sign-in
+   *  is the issuer's word for who someone is. Undefined for none; null for one by that name with another issuer. */
+  private async oidcHere(provider: { slug: string; issuerUrl: string }): Promise<string | null | undefined> {
+    const here = await prisma.oidcProvider.findUnique({
+      where: { slug: provider.slug },
+      select: { id: true, issuerUrl: true },
+    });
+    if (!here) return undefined;
+    return sameIssuer(here.issuerUrl, provider.issuerUrl) ? here.id : null;
+  }
+
   /** How they sign in through a sign-in provider: to one here with the same name, or one that came with the secrets. */
   private async mergeIdentities(sourceIds: string[]) {
-    const providers = await this.source.oidcProvider.findMany({ select: { id: true, slug: true } });
+    const providers = await this.source.oidcProvider.findMany({ select: { id: true, slug: true, issuerUrl: true } });
     for (const provider of providers) {
       if (this.oidc.has(provider.id)) continue;
-      const here = await prisma.oidcProvider.findUnique({ where: { slug: provider.slug }, select: { id: true } });
-      if (here) this.oidc.set(provider.id, here.id);
+      const here = await this.oidcHere(provider);
+      if (here) this.oidc.set(provider.id, here);
     }
     const identities = await this.source.userIdentity.findMany({ where: { userId: { in: sourceIds } } });
     const data = identities.flatMap((identity) => {
@@ -909,10 +939,15 @@ export class Merge {
     for (const design of designs) {
       const userId = this.users.get(design.userId)!;
       try {
-        if (await prisma.studioDesign.findUnique({ where: { id: design.id }, select: { id: true } })) continue;
-        await prisma.studioDesign.create({
-          data: { ...design, userId, document: design.document as Prisma.InputJsonValue },
-        });
+        if (!PLAIN_ID.test(design.id)) throw new Error("This design's id isn't one Thingport makes");
+        const earlier = await prisma.studioDesign.findUnique({ where: { id: design.id }, select: { userId: true } });
+        // Another's design with its id isn't theirs to add to. One an earlier try made gets what that try didn't.
+        if (earlier && earlier.userId !== userId) throw new Error("A design here already has this design's id");
+        if (!earlier) {
+          await prisma.studioDesign.create({
+            data: { ...design, userId, document: design.document as Prisma.InputJsonValue },
+          });
+        }
         for (let skip = 0; ; skip += 50) {
           const revisions = await this.source.studioRevision.findMany({
             where: { designId: design.id },
@@ -938,7 +973,7 @@ export class Merge {
           path.join("studio", `u-${design.userId}`, design.id),
           path.join(STUDIO_ASSETS, `u-${userId}`, design.id),
         );
-        this.report.designs += 1;
+        if (!earlier) this.report.designs += 1;
       } catch (err) {
         this.fail("design", design.name, err);
       }
@@ -997,9 +1032,10 @@ export class Merge {
       this.report.secrets += 1;
     }
     for (const provider of await this.source.oidcProvider.findMany()) {
-      const here = await prisma.oidcProvider.findUnique({ where: { slug: provider.slug }, select: { id: true } });
-      if (here) {
-        this.oidc.set(provider.id, here.id);
+      const here = await this.oidcHere(provider);
+      // One by that name with another issuer stays as it is here, and their sign-ins through the old one don't come.
+      if (here !== undefined) {
+        if (here) this.oidc.set(provider.id, here);
         continue;
       }
       const id = (await prisma.oidcProvider.findUnique({ where: { id: provider.id }, select: { id: true } }))

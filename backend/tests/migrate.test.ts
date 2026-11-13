@@ -1,17 +1,32 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { Prisma, PrismaClient } from "@prisma/client";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
-import { MERGED_TABLES, tablesThatCome } from "../src/services/migrate/merge";
-import { dumpFormat } from "../src/services/migrate/postgres";
+import { MERGED_TABLES, type MigrateOptions, tablesThatCome } from "../src/services/migrate/merge";
+import { dumpFormat, stagingName } from "../src/services/migrate/postgres";
 import { MERGE_RULES } from "../src/services/migrate/rules";
+import { changeFolder, removeRun, startRun } from "../src/services/migrate/runs";
 import { checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
 import { dump, hasPgTools, oldInstance, RELEASE_1_0_0_MIGRATIONS, tmp, urlFor } from "./migrateFixture";
+
+// A notification that takes its time when a test asks, as one to a slow database would.
+const notices = vi.hoisted(() => ({ delay: 0 }));
+vi.mock("../src/services/notificationService", async (original) => {
+  const real = await original<typeof import("../src/services/notificationService")>();
+  return {
+    ...real,
+    createNotification: async (...args: Parameters<typeof real.createNotification>) => {
+      if (notices.delay) await new Promise((resolve) => setTimeout(resolve, notices.delay));
+      return real.createNotification(...args);
+    },
+  };
+});
 
 const app = createApp();
 // The one folder a migration reads from, as /app/migrate is in the image. By its real path, as the checks compare those.
@@ -61,6 +76,24 @@ describe("the old instance's folder", () => {
     expect(await files.copy("../" + path.basename(outside) + "/secret.txt", path.join(to, "up.txt"))).toBe(false);
     expect(await files.copy(path.join(outside, "secret.txt"), path.join(to, "abs.txt"))).toBe(false);
     expect(fs.existsSync(path.join(to, "link.stl"))).toBe(false);
+  });
+
+  it("doesn't look through a folder of its that leads out of it", async () => {
+    const root = inRoot();
+    const outside = tmp();
+    fs.mkdirSync(path.join(outside, "inner"));
+    fs.writeFileSync(path.join(outside, "inner", "secret.txt"), "secret");
+    fs.mkdirSync(path.join(root, "studio", "u-1"), { recursive: true });
+    fs.symlinkSync(outside, path.join(root, "studio", "u-1", "design"));
+    const files = await folderSource(root);
+    const readdir = vi.spyOn(fsPromises, "readdir");
+    try {
+      expect(await files.copyFolder("studio/u-1/design", tmp())).toBe(0);
+      const read = readdir.mock.calls.map(([dir]) => fs.realpathSync(String(dir)));
+      expect(read.filter((dir) => !dir.startsWith(root + path.sep))).toEqual([]);
+    } finally {
+      readdir.mockRestore();
+    }
   });
 
   it("reads only from the migrate folder, and never this instance's own storage", async () => {
@@ -248,7 +281,7 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
 
     // The working copy and its role are gone, and so is the run's folder.
     const leftovers = await prisma.$queryRaw<{ datname: string }[]>`
-      SELECT datname FROM pg_database WHERE datname = ${`tp_migrate_${prepared.body.id}`}`;
+      SELECT datname FROM pg_database WHERE datname = ${stagingName(prepared.body.id)}`;
     expect(leftovers).toHaveLength(0);
     expect(fs.existsSync(path.join(STORAGE, ".migrate", prepared.body.id))).toBe(false);
 
@@ -266,6 +299,47 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     expect(second.report.models).toMatchObject({ brought: 0, earlier: 3, alreadyHere: 1 });
     expect(await prisma.print.count({ where: { userId: bobId } })).toBe(3);
     expect(await prisma.collectionItem.count({ where: { collectionId: mechanical.id } })).toBe(2);
+  }, 240_000);
+
+  it("starts a run once however often Start is pressed, and is free again as soon as it says it's done", async () => {
+    const prepared = await request(app)
+      .post("/api/admin/migrate/thingport")
+      .set(auth())
+      .send({ dump_path: dumpFile, folder });
+    expect(prepared.status).toBe(202);
+    runs.push(prepared.body.id);
+    const ready = await until(prepared.body.id, (status) => status !== "preparing");
+    expect(ready.status).toBe("ready");
+    const options = {
+      people: ready.plan.people.map((person: { id: string }) => person.id),
+      collections: true,
+      studio: true,
+      widgets: true,
+      tools: true,
+      syncs: true,
+      signIns: true,
+      settings: false,
+      secrets: false,
+    };
+    notices.delay = 3000;
+    try {
+      const start = () => request(app).post(`/api/admin/migrate/${prepared.body.id}/start`).set(auth()).send(options);
+      const started = await Promise.all([start(), start()]);
+      expect(started.map((res) => res.status).toSorted()).toEqual([202, 409]);
+      const done = await until(prepared.body.id, (status) => status === "done" || status === "failed");
+      expect(done.status).toBe("done");
+      // Its notification is still on the way, and the next one can be prepared already.
+      const next = await request(app)
+        .post("/api/admin/migrate/thingport")
+        .set(auth())
+        .send({ dump_path: dumpFile, folder });
+      expect(next.status).toBe(202);
+      runs.push(next.body.id);
+      await until(next.body.id, (status) => status !== "preparing");
+      await request(app).delete(`/api/admin/migrate/${next.body.id}`).set(auth()).expect(204);
+    } finally {
+      notices.delay = 0;
+    }
   }, 240_000);
 
   it("refuses an instance newer than this one", async () => {
@@ -288,4 +362,96 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     expect(failed.status).toBe("failed");
     expect(failed.error.code).toBe("source_newer");
   }, 120_000);
+});
+
+describe("discarding a migration while it's being started or given another folder", () => {
+  const options: MigrateOptions = {
+    people: ["someone"],
+    collections: false,
+    studio: false,
+    widgets: false,
+    tools: false,
+    syncs: false,
+    signIns: false,
+    settings: false,
+    secrets: false,
+  };
+  const readyRun = () =>
+    prisma.migrationRun.create({
+      data: {
+        source: "thingport",
+        status: "ready",
+        stagingDb: `thingport_migrate_missing_${crypto.randomBytes(4).toString("hex")}`,
+        plan: { people: [{ id: "someone" }] },
+      },
+    });
+
+  it("turns Discard away while Start is still claiming the run, so it can't start after it was discarded", async () => {
+    const run = await readyRun();
+    let letStart!: () => void;
+    const held = new Promise<void>((resolve) => (letStart = resolve));
+    const updateMany = prisma.migrationRun.updateMany.bind(prisma.migrationRun);
+    // Start holds the slot, the run still "ready", until Discard has had its answer.
+    const spy = vi.spyOn(prisma.migrationRun, "updateMany").mockImplementation((async (args: never) => {
+      await held;
+      return updateMany(args);
+    }) as never);
+    try {
+      const starting = startRun(run.id, "nobody", options);
+      await expect(removeRun(run.id)).rejects.toMatchObject({ status: 409, code: "busy" });
+      letStart();
+      await starting;
+    } finally {
+      spy.mockRestore();
+    }
+    for (let tries = 0; tries < 200; tries++) {
+      const now = await prisma.migrationRun.findUniqueOrThrow({ where: { id: run.id } });
+      if (now.status !== "running") break;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    expect((await prisma.migrationRun.findUniqueOrThrow({ where: { id: run.id } })).status).toBe("failed");
+    await prisma.migrationRun.delete({ where: { id: run.id } });
+  });
+
+  it("turns Discard away while another folder is being checked", async () => {
+    const run = await readyRun();
+    const changing = changeFolder(run.id, "/nowhere").catch(() => undefined);
+    await expect(removeRun(run.id)).rejects.toMatchObject({ status: 409, code: "busy" });
+    await changing;
+    expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).not.toBeNull();
+    await prisma.migrationRun.delete({ where: { id: run.id } });
+  });
+  it("turns Start away while Discard is cleaning up a run, so it can't merge from what's going", async () => {
+    // Failed part-way with its working copy kept: Start would go on with it, and Discard files its models first.
+    const run = await prisma.migrationRun.create({
+      data: {
+        source: "thingport",
+        status: "failed",
+        stagingDb: `thingport_migrate_missing_${crypto.randomBytes(4).toString("hex")}`,
+        startedAt: new Date(),
+        plan: { people: [{ id: "someone" }] },
+      },
+    });
+    let letDiscard!: () => void;
+    const held = new Promise<void>((resolve) => (letDiscard = resolve));
+    let filing!: () => void;
+    const reached = new Promise<void>((resolve) => (filing = resolve));
+    const findMany = prisma.print.findMany.bind(prisma.print);
+    // Discard waits while it files the run's models until Start has had its answer.
+    const spy = vi.spyOn(prisma.print, "findMany").mockImplementation((async (args: never) => {
+      filing();
+      await held;
+      return findMany(args);
+    }) as never);
+    try {
+      const discarding = removeRun(run.id);
+      await reached;
+      await expect(startRun(run.id, "nobody", options)).rejects.toMatchObject({ status: 409, code: "busy" });
+      letDiscard();
+      await discarding;
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).toBeNull();
+  });
 });

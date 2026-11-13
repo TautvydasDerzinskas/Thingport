@@ -19,9 +19,9 @@ import { UnauthorizedError } from "../../api/client";
 import { migrateApi, type MigrateRun, type MigrateRunError } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToastHost } from "../../components/ToastProvider";
-import CheckStep, { checkPassed } from "./CheckStep";
+import CheckStep, { canStart, checkPassed } from "./CheckStep";
 import ComesStep, { DEFAULT_CHOICES, type Choices } from "./ComesStep";
-import { errorText, isActive, k, requestError } from "./parts";
+import { errorText, followRun, isActive, k, requestError } from "./parts";
 import PeopleStep from "./PeopleStep";
 import SourceStep, { EMPTY_SOURCE, sourceReady, type SourceInput } from "./SourceStep";
 import StartStep from "./StartStep";
@@ -66,6 +66,8 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
   const [source, setSource] = React.useState<SourceInput>(EMPTY_SOURCE);
   const [uploading, setUploading] = React.useState<number | null>(null);
   const [sending, setSending] = React.useState(false);
+  // Its folder being checked again: what the check found before doesn't count until it's done.
+  const [rechecking, setRechecking] = React.useState(false);
   const [error, setError] = React.useState<MigrateRunError | null>(null);
   const [chosen, setChosen] = React.useState<Set<string>>(
     () => new Set(initial?.options?.people ?? (initial?.plan.people ?? []).map((person) => person.id)),
@@ -94,16 +96,17 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
   const active = run ? isActive(run) : false;
   React.useEffect(() => {
     if (!runId || !active) return;
-    const timer = window.setInterval(async () => {
-      try {
-        const next = await migrateApi.get(runId);
+    return followRun(
+      () => migrateApi.get(runId),
+      POLL_MS,
+      (next) => {
         setRun(next);
         if (!isActive(next)) onChanged();
-      } catch (err) {
+      },
+      (err) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
-      }
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
+      },
+    );
   }, [runId, active, onChanged, onUnauthorized]);
 
   const prepare = async () => {
@@ -144,11 +147,14 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
   const changeFolder = async (folder: string) => {
     if (!run) return;
     setError(null);
+    setRechecking(true);
     try {
       setRun(await migrateApi.changeFolder(run.id, folder));
     } catch (err) {
       fail(err);
       throw err;
+    } finally {
+      setRechecking(false);
     }
   };
 
@@ -172,7 +178,13 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
 
   const waiting = run?.status === "ready" || (run?.status === "failed" && run.can_resume);
   const canNext =
-    step === 0 ? sourceReady(source) && !sending : step === 1 ? checkPassed(run) : step === 2 ? chosen.size > 0 : true;
+    step === 0
+      ? sourceReady(source) && !sending
+      : step === 1
+        ? checkPassed(run) && !rechecking
+        : step === 2
+          ? chosen.size > 0
+          : true;
 
   let content: React.ReactNode = null;
   if (step === 0) {
@@ -256,7 +268,7 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
           </Button>
         )}
         {step === 4 && waiting && (
-          <Button variant="contained" onClick={() => void start()} disabled={sending}>
+          <Button variant="contained" onClick={() => void start()} disabled={sending || !canStart(run, rechecking)}>
             {t(k(run?.status === "failed" ? "runs.startAgain" : "start.start"))}
           </Button>
         )}

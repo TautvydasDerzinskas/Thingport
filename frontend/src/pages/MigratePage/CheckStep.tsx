@@ -226,3 +226,9 @@ export function checkPassed(run: MigrateRun | null): boolean {
   const files = run.plan.counts?.files ?? 0;
   return !(files > 0 && (run.plan.missingFiles ?? 0) >= files);
 }
+
+/** Whether the run can be started as it is now: checked, and with no new check of its folder under way. */
+export function canStart(run: MigrateRun | null, rechecking: boolean): boolean {
+  if (!run || rechecking) return false;
+  return run.status === "failed" ? run.can_resume : checkPassed(run);
+}
