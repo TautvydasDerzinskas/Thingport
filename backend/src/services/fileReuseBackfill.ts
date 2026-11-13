@@ -7,6 +7,7 @@ import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { withStorageLock } from "../utils/storageLock";
+import { formatBytes } from "../utils/formatBytes";
 import { cloneFromHandle, MIN_SHARE_BYTES, openRegularFile, sha256OfFile, sha256OfHandle } from "./fileReuse";
 import { createNotification } from "./notificationService";
 import { pruneEmptyStorageDirs } from "./printService";
@@ -188,17 +189,6 @@ async function startQueued(ended: FileReuseBackfillRun): Promise<void> {
     ended.restartQueued = false;
     log.error("couldn't start the queued run", { error: err });
   }
-}
-
-function formatBytes(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${unit ? value.toFixed(1) : value} ${units[unit]}`;
 }
 
 async function notifyDone(userId: string, state: FileReuseBackfillRun): Promise<void> {

@@ -107,6 +107,7 @@ import {
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
+import { getPhotosPerModel } from "./settingsService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
@@ -662,8 +663,10 @@ export async function attachImportedPreviewImages(
   let firstAdded = false;
   let stored = 0;
   const urls = orderedUrls.slice(0, PREVIEW_IMAGE_MAX_COUNT);
+  // Administration → Storage's "Photos kept per model"; one that couldn't be fetched doesn't count.
+  const keep = (await getPhotosPerModel()) ?? PREVIEW_IMAGE_MAX_COUNT;
   const delayMs = paceMs ?? IMPORT_PREVIEW_IMAGE_DELAY_MS;
-  for (let i = 0; i < urls.length; i++) {
+  for (let i = 0; i < urls.length && stored < keep; i++) {
     await sleep(delayMs);
     const buf = await fetchImageBytes(urls[i]);
     if (!buf) continue;

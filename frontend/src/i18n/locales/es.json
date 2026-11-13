@@ -559,7 +559,8 @@
         "importRunFrom_one": "{{done}} de {{count}} modelo importado desde {{site}}",
         "importRunFrom_many": "{{done}} de {{count}} de modelos importados desde {{site}}",
         "importRunFrom_other": "{{done}} de {{count}} modelos importados desde {{site}}",
-        "bridgeUpdate": "Thingport Bridge {{version}} ya está disponible"
+        "bridgeUpdate": "Thingport Bridge {{version}} ya está disponible",
+        "storageFreed": "Se liberaron {{size}} de almacenamiento"
       },
       "minutesAgo_many": "hace {{count}} minutos",
       "hoursAgo_many": "hace {{count}} horas",
@@ -1489,7 +1490,81 @@
         "summary_one": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelo y {{pictures}} por imágenes y vistas previas",
         "summary_other": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelos y {{pictures}} por imágenes y vistas previas",
         "totalHint": "Todo lo que hay en la carpeta de almacenamiento de Thingport: archivos de modelos ({{models}}), imágenes y vistas previas (miniaturas, imágenes de galería y descripción, vistas previas 3D, imágenes de etiquetas: {{pictures}}) y otros archivos generados (copias listas para el slicer y paquetes de descarga: {{other}}). Se mide como mucho cada pocos minutos.",
-        "summary_many": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelos y {{pictures}} por imágenes y vistas previas"
+        "summary_many": "{{total}} en disco en total: {{models}} ocupados por {{count}} modelos y {{pictures}} por imágenes y vistas previas",
+        "onDisk": "{{total}} en disco",
+        "modelCount_one": "{{count}} modelo",
+        "modelCount_other": "{{count}} modelos",
+        "modelCount_many": "{{count}} modelos",
+        "breakdownHint": "Se mide cada pocos minutos como mucho. Las vistas previas 3D antiguas son versiones anteriores que ya no se muestran en ningún sitio, y vistas previas de modelos que ya no están. Otros es el resto del almacenamiento: diseños de Studio, imágenes de etiquetas, iconos y fotos de perfil.",
+        "chartLabel": "Uso del almacenamiento por tipo",
+        "failed": "No se pudo medir el almacenamiento.",
+        "kinds": {
+          "models": "Archivos de modelos",
+          "previews": "Vistas previas 3D",
+          "old": "Vistas previas 3D antiguas",
+          "photos": "Fotos",
+          "thumbnails": "Miniaturas y renders",
+          "description": "Imágenes de la descripción",
+          "slicer": "Copias para el laminador",
+          "other": "Otros"
+        }
+      },
+      "photosPerModel": {
+        "label": "Fotos por modelo",
+        "help": "Cuántas fotos de la página del modelo se guardan al importarlo o volver a sincronizarlo, empezando por la portada. «Todas» guarda cada una. Los modelos ya guardados conservan las suyas; Liberar espacio puede recortarlas. Las fotos que subes tú no tienen límite.",
+        "all": "Todas",
+        "saveFailed": "No se pudo guardar cuántas fotos conservar"
+      },
+      "freeSpace": {
+        "open": "Liberar espacio",
+        "freeing": "Liberando espacio…",
+        "title": "Liberar espacio",
+        "tasks": {
+          "old": {
+            "title": "Vistas previas 3D antiguas",
+            "detail": "Versiones anteriores que ya no se muestran en ningún sitio",
+            "help": "Cada vez que cambia su formato, se dibuja una vista previa 3D o un render nuevo junto al antiguo, y las vistas previas de modelos borrados se quedaban en el disco. Nada las muestra, así que lo que ves no cambia."
+          },
+          "compress": {
+            "title": "Comprimir vistas previas 3D",
+            "detail": "El mismo aspecto, en torno a una quinta parte del tamaño",
+            "help": "Empaqueta cada vista previa 3D con compresión de malla y redondea las formas a unas milésimas de milímetro, más fino de lo que muestra el visor. Las nuevas se comprimen en cuanto se dibujan. Una demasiado grande para comprimirla se queda como está."
+          },
+          "slicer": {
+            "title": "Copias para el laminador",
+            "detail": "Se vuelven a crear la próxima vez que el modelo se abre en un laminador",
+            "help": "Copias de 3MF adaptadas a un laminador o una impresora. Se vuelven a crear la próxima vez que el modelo se abre en él, lo que lleva unos segundos."
+          },
+          "photos": {
+            "title": "Fotos de más",
+            "detail": "Conservar solo las primeras fotos de cada modelo",
+            "help": "Borra las fotos de cada modelo a partir de las primeras, conservando siempre la portada. Después, las importaciones y resincronizaciones guardan las mismas (Fotos por modelo)."
+          }
+        },
+        "cantUndo": "No se puede deshacer",
+        "keep": "Conservar",
+        "keepLabel": "Fotos que conserva cada modelo",
+        "about": "~{{size}}",
+        "nothing": "Nada que liberar",
+        "frees": "Libera unos {{size}}",
+        "start": "Liberar {{size}}",
+        "confirmPhotosTitle": "¿Borrar las fotos de más?",
+        "confirmPhotosMessage_one": "Cada modelo conserva su primera foto, la portada; las demás se borran para siempre. Desde ahora, las importaciones y resincronizaciones guardan {{count}}.",
+        "confirmPhotosMessage_other": "Cada modelo conserva sus primeras {{count}} fotos, portada incluida; las demás se borran para siempre. Desde ahora, las importaciones y resincronizaciones guardan {{count}}.",
+        "confirmPhotosMessage_many": "Cada modelo conserva sus primeras {{count}} fotos, portada incluida; las demás se borran para siempre. Desde ahora, las importaciones y resincronizaciones guardan {{count}}.",
+        "confirmPhotosAction": "Borrar fotos",
+        "queued": "En espera",
+        "freed": "{{size}} liberados",
+        "filesDone": "{{done}} de {{total}}",
+        "someFailed_one": "{{count}} archivo no se pudo procesar",
+        "someFailed_other": "{{count}} archivos no se pudieron procesar",
+        "someFailed_many": "{{count}} archivos no se pudieron procesar",
+        "taskFailed": "Se detuvo por un error",
+        "taskDone": "Hecho",
+        "runningFooter": "{{size}} liberados hasta ahora · sigue aunque cierres esto",
+        "finishedFooter": "{{size}} liberados",
+        "done": "Hecho",
+        "startFailed": "No se pudo empezar a liberar espacio"
       },
       "website": {
         "link": "Sitio web y documentación de Thingport",
@@ -2226,7 +2301,9 @@
           "federation_blocked": "Instancia bloqueada",
           "federation_unblocked": "Instancia desbloqueada",
           "federation_user_requested": "Pidió llegar a alguien de otra instancia",
-          "collection_sharing_changed": "Uso compartido de colección cambiado"
+          "collection_sharing_changed": "Uso compartido de colección cambiado",
+          "storage_cleanup_started": "Se empezó a liberar espacio",
+          "photos_per_model_changed": "Cambió cuántas fotos se conservan por modelo"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",
@@ -2255,7 +2332,14 @@
         "chatsOn": "Chats activados",
         "chatsOff": "Chats desactivados",
         "tagDeleted_many": "{{name}} — quitada de {{count}} modelos",
-        "userDeleted_many": "{{email}} — con {{count}} modelos"
+        "userDeleted_many": "{{email}} — con {{count}} modelos",
+        "photosTrimmed_one": "Fotos de más, conservando {{count}}",
+        "photosTrimmed_other": "Fotos de más, conservando {{count}}",
+        "photosTrimmed_many": "Fotos de más, conservando {{count}}",
+        "photosKept_one": "{{count}} foto por modelo",
+        "photosKept_other": "{{count}} fotos por modelo",
+        "photosKept_many": "{{count}} fotos por modelo",
+        "photosKeptAll": "Todas las fotos"
       },
       "rendering": {
         "heading": "Renderizado",
@@ -2344,7 +2428,9 @@
           "image": "Imagen",
           "description": "Imagen de la descripción",
           "thumb": "Miniatura",
-          "render": "Render"
+          "render": "Render",
+          "preview": "Vista previa 3D",
+          "slicer": "Copia para el laminador"
         },
         "location": {
           "source": "En su origen",

@@ -660,9 +660,14 @@ export async function loadCachedBambuGlb(url: string): Promise<CachedGlbOutcome>
     }
     const arrayBuffer = await res.arrayBuffer();
 
-    const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+    const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
+      import("three/examples/jsm/loaders/GLTFLoader.js"),
+      import("three/examples/jsm/libs/meshopt_decoder.module.js"),
+    ]);
+    // The server packs its previews smaller with meshopt once they're drawn (backend glbCompression.ts).
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
     const gltf = await new Promise<{ scene: THREE.Group }>((resolve, reject) => {
-      new GLTFLoader().parse(arrayBuffer, "", (result) => resolve(result as unknown as { scene: THREE.Group }), reject);
+      loader.parse(arrayBuffer, "", (result) => resolve(result as unknown as { scene: THREE.Group }), reject);
     });
 
     let root: THREE.Object3D | null = null;

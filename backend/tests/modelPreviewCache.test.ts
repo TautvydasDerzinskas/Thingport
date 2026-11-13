@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import * as THREE from "three";
 import { writeZip } from "../src/utils/zipWriter";
 import {
   generateModelPreviewGlb,
@@ -149,8 +150,33 @@ async function buildWrapperFixture3mf(destPath: string): Promise<void> {
 }
 
 // `+ 0` turns -0 into 0, which toEqual would treat as different.
+// Positions as drawn: a packed preview stores them as integers across the mesh's bounds, with the scale and offset on
+// the mesh's node, so they're read back through both and rounded well inside the 16-bit step.
 function positionsOf(mesh: any): number[] {
-  return Array.from(mesh.geometry.attributes.position.array as ArrayLike<number>, (v) => v + 0);
+  mesh.updateMatrix();
+  const attribute = mesh.geometry.attributes.position;
+  const out: number[] = [];
+  for (let i = 0; i < attribute.count; i++) {
+    const point = new THREE.Vector3().fromBufferAttribute(attribute, i).applyMatrix4(mesh.matrix);
+    out.push(...point.toArray().map((v) => Math.round(v * 100) / 100 + 0));
+  }
+  return out;
+}
+
+/** three's loader as the app's viewer sets it up, reading previews the server packed with meshopt. */
+async function gltfLoader(): Promise<any> {
+  const [{ GLTFLoader }, { MeshoptDecoder }] = await Promise.all([
+    import("three/examples/jsm/loaders/GLTFLoader.js"),
+    import("meshoptimizer"),
+  ]);
+  await MeshoptDecoder.ready;
+  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+}
+
+/** The extensions a GLB's JSON chunk says it uses. */
+function extensionsUsed(file: string): string[] {
+  const buf = fsSync.readFileSync(file);
+  return (JSON.parse(buf.subarray(20, 20 + buf.readUInt32LE(12)).toString("utf-8")).extensionsUsed ?? []) as string[];
 }
 
 describe("modelPreviewCache", () => {
@@ -170,16 +196,21 @@ describe("modelPreviewCache", () => {
   });
 
   it("generates a GLB with both plates, correct colors, and correctly transformed geometry", async () => {
+    // One of an earlier format, which nothing reads once the new one is there.
+    const older = path.join(cacheDir(), `${plateId}.v4.glb`);
+    await fs.writeFile(older, "older");
     await generateModelPreviewGlb(plateId, fixturePath);
     expect(modelPreviewGlbExists(plateId)).toBe(true);
+    expect(fsSync.existsSync(older)).toBe(false);
+    // Packed smaller once drawn, before the call returns.
+    expect(extensionsUsed(modelPreviewGlbPath(plateId))).toContain("EXT_meshopt_compression");
 
-    const THREE = await import("three");
-    const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+    const loader = await gltfLoader();
     const buf = fsSync.readFileSync(modelPreviewGlbPath(plateId));
     const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const gltf = await new Promise<any>((resolve, reject) => {
-      new GLTFLoader().parse(arrayBuffer, "", resolve, reject);
+      loader.parse(arrayBuffer, "", resolve, reject);
     });
 
     let root: any = null;
@@ -213,8 +244,6 @@ describe("modelPreviewCache", () => {
     // Z-up -> Y-up rotation (x,y,z -> x,z,-y). A plain swap would mirror the model.
     expect(meshes["extruder-0"].positions).toEqual([0, 0, 0, 10, 0, 0, 0, 0, -10]);
     expect(meshes["extruder-1"].positions).toEqual([50, 0, 0, 70, 0, 0, 50, 0, -20]);
-
-    void THREE; // imported only to force-load three before GLTFLoader in some module graphs
   });
 
   it("is idempotent -- a second call while the GLB already exists is a fast no-op", async () => {
@@ -244,12 +273,12 @@ describe("modelPreviewCache -- internal <component> references", () => {
     await generateModelPreviewGlb(wrapperPlateId, wrapperFixturePath);
     expect(modelPreviewGlbExists(wrapperPlateId)).toBe(true);
 
-    const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+    const loader = await gltfLoader();
     const buf = fsSync.readFileSync(modelPreviewGlbPath(wrapperPlateId));
     const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
 
     const gltf = await new Promise<any>((resolve, reject) => {
-      new GLTFLoader().parse(arrayBuffer, "", resolve, reject);
+      loader.parse(arrayBuffer, "", resolve, reject);
     });
 
     let root: any = null;
@@ -343,11 +372,11 @@ describe("modelPreviewCache -- memory safety", () => {
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(true);
 
-    const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+    const loader = await gltfLoader();
     const buf = fsSync.readFileSync(modelPreviewGlbPath(plateId));
     const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
     const gltf = await new Promise<any>((resolve, reject) => {
-      new GLTFLoader().parse(arrayBuffer, "", resolve, reject);
+      loader.parse(arrayBuffer, "", resolve, reject);
     });
     const meshes: any[] = [];
     gltf.scene.traverse((obj: any) => {
@@ -396,11 +425,11 @@ function triangleAt(x: number): string {
 }
 
 async function loadGlbMeshes(plateId: string): Promise<any[]> {
-  const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+  const loader = await gltfLoader();
   const buf = fsSync.readFileSync(modelPreviewGlbPath(plateId));
   const arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   const gltf = await new Promise<any>((resolve, reject) => {
-    new GLTFLoader().parse(arrayBuffer, "", resolve, reject);
+    loader.parse(arrayBuffer, "", resolve, reject);
   });
   const meshes: any[] = [];
   gltf.scene.traverse((obj: any) => {

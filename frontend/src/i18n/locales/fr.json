@@ -559,7 +559,8 @@
         "importRunFrom_one": "{{done}} sur {{count}} modèle importé depuis {{site}}",
         "importRunFrom_many": "{{done}} sur {{count}} de modèles importés depuis {{site}}",
         "importRunFrom_other": "{{done}} sur {{count}} modèles importés depuis {{site}}",
-        "bridgeUpdate": "Thingport Bridge {{version}} est disponible"
+        "bridgeUpdate": "Thingport Bridge {{version}} est disponible",
+        "storageFreed": "{{size}} de stockage libérés"
       },
       "minutesAgo_many": "il y a {{count}} minutes",
       "hoursAgo_many": "il y a {{count}} heures",
@@ -1489,7 +1490,81 @@
         "summary_one": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèle, {{pictures}} par les images et aperçus",
         "summary_other": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèles, {{pictures}} par les images et aperçus",
         "totalHint": "Tout ce qui se trouve dans le dossier de stockage de Thingport : fichiers de modèles ({{models}}), images et aperçus (miniatures, images de galerie et de description, aperçus 3D, images des étiquettes : {{pictures}}) et autres fichiers générés (copies prêtes pour le slicer et paquets de téléchargement : {{other}}). Mesuré au plus toutes les quelques minutes.",
-        "summary_many": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèles, {{pictures}} par les images et aperçus"
+        "summary_many": "{{total}} sur le disque au total : {{models}} occupés par {{count}} modèles, {{pictures}} par les images et aperçus",
+        "onDisk": "{{total}} sur le disque",
+        "modelCount_one": "{{count}} modèle",
+        "modelCount_other": "{{count}} modèles",
+        "modelCount_many": "{{count}} modèles",
+        "breakdownHint": "Mesuré au plus toutes les quelques minutes. Les anciens aperçus 3D sont des versions antérieures que plus rien n’affiche, et des aperçus de modèles supprimés. Autres, c’est le reste du stockage : projets Studio, images des étiquettes, icônes et photos de profil.",
+        "chartLabel": "Utilisation du stockage par type",
+        "failed": "Impossible de mesurer le stockage.",
+        "kinds": {
+          "models": "Fichiers des modèles",
+          "previews": "Aperçus 3D",
+          "old": "Anciens aperçus 3D",
+          "photos": "Photos",
+          "thumbnails": "Miniatures et rendus",
+          "description": "Images de la description",
+          "slicer": "Copies pour le trancheur",
+          "other": "Autres"
+        }
+      },
+      "photosPerModel": {
+        "label": "Photos par modèle",
+        "help": "Combien de photos de la page du modèle sont gardées à l’import ou à une nouvelle synchronisation, la couverture en premier. « Toutes » les garde toutes. Les modèles déjà enregistrés gardent les leurs ; Libérer de l’espace peut les réduire. Les photos que vous envoyez ne sont pas limitées.",
+        "all": "Toutes",
+        "saveFailed": "Impossible d’enregistrer le nombre de photos à garder"
+      },
+      "freeSpace": {
+        "open": "Libérer de l’espace",
+        "freeing": "Libération de l’espace…",
+        "title": "Libérer de l’espace",
+        "tasks": {
+          "old": {
+            "title": "Anciens aperçus 3D",
+            "detail": "Des versions antérieures que plus rien n’affiche",
+            "help": "À chaque changement de format, un nouvel aperçu 3D ou rendu est dessiné à côté de l’ancien, et les aperçus des modèles supprimés restaient sur le disque. Rien ne les affiche, donc ce que vous voyez ne change pas."
+          },
+          "compress": {
+            "title": "Compresser les aperçus 3D",
+            "detail": "Même apparence, environ un cinquième de la taille",
+            "help": "Compresse chaque aperçu 3D (compression de maillage) en arrondissant les formes à quelques millièmes de millimètre, plus fin que ce qu’affiche la visionneuse. Les nouveaux aperçus sont compressés dès qu’ils sont dessinés. Un aperçu trop gros pour être compressé reste tel quel."
+          },
+          "slicer": {
+            "title": "Copies pour le trancheur",
+            "detail": "Recréées la prochaine fois que le modèle est ouvert dans un trancheur",
+            "help": "Des copies de 3MF adaptées à un trancheur ou une imprimante. Elles sont recréées la prochaine fois que le modèle y est ouvert, ce qui prend quelques secondes."
+          },
+          "photos": {
+            "title": "Photos en trop",
+            "detail": "Ne garder que les premières photos de chaque modèle",
+            "help": "Supprime les photos de chaque modèle au-delà des premières, la couverture toujours gardée. Les imports et nouvelles synchronisations en gardent ensuite autant (Photos par modèle)."
+          }
+        },
+        "cantUndo": "Irréversible",
+        "keep": "Garder",
+        "keepLabel": "Photos gardées par modèle",
+        "about": "~{{size}}",
+        "nothing": "Rien à libérer",
+        "frees": "Libère environ {{size}}",
+        "start": "Libérer {{size}}",
+        "confirmPhotosTitle": "Supprimer les photos en trop ?",
+        "confirmPhotosMessage_one": "Chaque modèle garde sa première photo, la couverture ; les autres sont supprimées définitivement. Désormais, les imports et synchronisations en gardent {{count}}.",
+        "confirmPhotosMessage_other": "Chaque modèle garde ses {{count}} premières photos, couverture comprise ; les autres sont supprimées définitivement. Désormais, les imports et synchronisations en gardent {{count}}.",
+        "confirmPhotosMessage_many": "Chaque modèle garde ses {{count}} premières photos, couverture comprise ; les autres sont supprimées définitivement. Désormais, les imports et synchronisations en gardent {{count}}.",
+        "confirmPhotosAction": "Supprimer les photos",
+        "queued": "En attente",
+        "freed": "{{size}} libérés",
+        "filesDone": "{{done}} sur {{total}}",
+        "someFailed_one": "{{count}} fichier n’a pas pu être traité",
+        "someFailed_other": "{{count}} fichiers n’ont pas pu être traités",
+        "someFailed_many": "{{count}} fichiers n’ont pas pu être traités",
+        "taskFailed": "Arrêté sur une erreur",
+        "taskDone": "Terminé",
+        "runningFooter": "{{size}} libérés pour l’instant · fermer cette fenêtre ne l’arrête pas",
+        "finishedFooter": "{{size}} libérés",
+        "done": "Terminé",
+        "startFailed": "Impossible de commencer à libérer de l’espace"
       },
       "website": {
         "link": "Site web et documentation de Thingport",
@@ -2226,7 +2301,9 @@
           "federation_blocked": "Instance bloquée",
           "federation_unblocked": "Instance débloquée",
           "federation_user_requested": "A demandé à joindre quelqu'un d'ailleurs",
-          "collection_sharing_changed": "Partage de collection modifié"
+          "collection_sharing_changed": "Partage de collection modifié",
+          "storage_cleanup_started": "Libération d’espace lancée",
+          "photos_per_model_changed": "Nombre de photos par modèle modifié"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",
@@ -2255,7 +2332,14 @@
         "chatsOn": "Discussions activées",
         "chatsOff": "Discussions désactivées",
         "tagDeleted_many": "{{name}} — retirée de {{count}} modèles",
-        "userDeleted_many": "{{email}} — avec {{count}} modèles"
+        "userDeleted_many": "{{email}} — avec {{count}} modèles",
+        "photosTrimmed_one": "Photos en trop, {{count}} gardée",
+        "photosTrimmed_other": "Photos en trop, {{count}} gardées",
+        "photosTrimmed_many": "Photos en trop, {{count}} gardées",
+        "photosKept_one": "{{count}} photo par modèle",
+        "photosKept_other": "{{count}} photos par modèle",
+        "photosKept_many": "{{count}} photos par modèle",
+        "photosKeptAll": "Toutes les photos"
       },
       "rendering": {
         "heading": "Rendu",
@@ -2344,7 +2428,9 @@
           "image": "Image",
           "description": "Image de la description",
           "thumb": "Miniature",
-          "render": "Rendu"
+          "render": "Rendu",
+          "preview": "Aperçu 3D",
+          "slicer": "Copie pour le trancheur"
         },
         "location": {
           "source": "À sa source",
