@@ -188,8 +188,10 @@ test("a push CodeRabbit didn't review gets a review, or a full one if it never r
   assert.equal(skipped.ask, FULL_ASK);
   assert.equal(skipped.notBefore, at(-1));
   assert.match(skipped.why, /Review skipped/);
-  // No check at all: asked for once CodeRabbit has had 15 minutes.
-  assert.match(state({ checkRuns: [], comments: [], headDate: at(20) }).reason, /no CodeRabbit check/);
+  // No check at all: asked for once CodeRabbit has had 15 minutes, when a waiting run looks again.
+  const unchecked = state({ checkRuns: [], comments: [], headDate: at(20) });
+  assert.match(unchecked.reason, /no CodeRabbit check/);
+  assert.equal(unchecked.recheck, at(35));
   const missed = state({ checkRuns: [], comments: [], headDate: at(1) });
   assert.equal(missed.ask, ASK);
   assert.equal(missed.notBefore, at(1));
@@ -199,10 +201,14 @@ test("a push CodeRabbit didn't review gets a review, or a full one if it never r
 });
 
 test("a head CodeRabbit is reviewing, or reviewed with comments, is left alone", () => {
-  assert.match(state({ checkRuns: check("Review in progress", null, 25, "in_progress") }).reason, /reviewing it/);
+  const reviewing = state({ checkRuns: check("Review in progress", null, 25, "in_progress") });
+  assert.match(reviewing.reason, /reviewing it/);
+  assert.equal(reviewing.recheck, at(80));
   // Unless that review never finished.
   assert.equal(state({ checkRuns: check("Review in progress", null, -40, "in_progress") }).waiting, true);
-  assert.match(state({ checkRuns: FINISHED, reviews: [OLD_REVIEW, HEAD_REVIEW] }).reason, /reviewed it/);
+  const reviewed = state({ checkRuns: FINISHED, reviews: [OLD_REVIEW, HEAD_REVIEW] });
+  assert.match(reviewed.reason, /reviewed it/);
+  assert.equal(reviewed.recheck, undefined);
 });
 
 test("a head CodeRabbit reviewed without a word gets a full review", () => {
@@ -212,7 +218,9 @@ test("a head CodeRabbit reviewed without a word gets a full review", () => {
   assert.equal(quiet.limited, false);
   assert.match(quiet.why, /without a word/);
   // Its comments may still be on the way.
-  assert.match(state({ checkRuns: FINISHED, now: at(16) }).reason, /only just finished/);
+  const settling = state({ checkRuns: FINISHED, now: at(16) });
+  assert.match(settling.reason, /only just finished/);
+  assert.equal(settling.recheck, at(18));
 });
 
 test("a refused ask is asked again the same way once the wait is over", () => {
@@ -271,6 +279,7 @@ test("a plain review that finished without a word gets a full review, and a full
   const triggered = reply("✅ Actions performed", "Review triggered.");
   const running = [SUMMARY, comment(ASKER, ASK, 25), comment(CODERABBIT, triggered, 25)];
   assert.match(state({ comments: running }).reason, /took the ask/);
+  assert.equal(state({ comments: running }).recheck, at(85));
   const fullTaken = [...asked, comment(ASKER, FULL_ASK, 20), comment(CODERABBIT, FULL_ACCEPTED, 20)];
   assert.match(state({ checkRuns: FINISHED, comments: fullTaken }).reason, /took the full review/);
 });
@@ -278,6 +287,7 @@ test("a plain review that finished without a word gets a full review, and a full
 test("an ask in flight isn't repeated, nor one CodeRabbit ignored", () => {
   const asked = [SUMMARY, comment(ASKER, ASK, 25)];
   assert.match(state({ comments: asked }).reason, /no answer yet/);
+  assert.equal(state({ comments: asked }).recheck, at(35));
   assert.match(state({ comments: asked, now: at(40) }).reason, /didn't answer the ask/);
   // Someone else's ignored ask (github-actions[bot]'s, say) doesn't stop ours.
   const ignored = [SUMMARY, comment("github-actions[bot]", ASK, 25)];
@@ -332,8 +342,9 @@ test("asks the longest-waiting pull request once the allowance is back", () => {
 });
 
 // A repository of pull requests CodeRabbit reviewed before, whose heads it refused at minute 0 unless checks says
-// otherwise; it answers each ask with the pull request's answer.
-function fakeRun({ now, answers, checks = {}, extra = [] }) {
+// otherwise; it answers each ask with the pull request's answer, or the next of its answers, and with review, posts a
+// review of the head for each ask it takes. A run may wait until minute `until`.
+function fakeRun({ now, answers, checks = {}, extra = [], until = 0, review = false }) {
   let clock = at(now);
   const pulls = Object.keys(answers).map((number) => ({
     ...PULL,
@@ -354,19 +365,29 @@ function fakeRun({ now, answers, checks = {}, extra = [] }) {
     if (checksOf) return { check_runs: checks[checksOf] ?? limitedCheck(0) };
     if (/^commits\/sha\d+$/.test(route)) return { commit: { committer: { date: isoAt(-1) } } };
     if (onPull) return fresh(comments.filter((c) => c.issue_url.endsWith(`/${onPull}`)));
-    if (/^pulls\/\d+\/reviews$/.test(route)) return [OLD_REVIEW];
+    const reviewsOf = route.match(/^pulls\/(\d+)\/reviews$/)?.[1];
+    if (reviewsOf) return [OLD_REVIEW, ...reviews.filter((r) => r.commit_id === `sha${reviewsOf}`)];
     if (route === "issues/comments") return fresh(comments);
     throw new Error(`unexpected GET ${path}`);
   };
   const posted = [];
+  const postedAt = [];
   const bodies = [];
+  const reviews = [];
   const minutes = () => (clock - at(0)) / MINUTE;
+  const answer = (pr) =>
+    Array.isArray(answers[pr]) && answers[pr].length > 1 ? answers[pr].shift() : [answers[pr]].flat()[0];
   const poster = {
     async request(path, { body }) {
       const pr = Number(path.match(/^issues\/(\d+)\/comments$/)[1]);
       const ask = comment(ASKER, JSON.parse(body).body, minutes(), { pr });
-      comments.push(ask, comment(CODERABBIT, answers[pr], minutes() + 0.1, { pr }));
+      const said = answer(pr);
+      comments.push(ask, comment(CODERABBIT, said, minutes() + 0.1, { pr }));
+      if (review && replyOutcome(said) === "accepted") {
+        reviews.push({ user: { login: CODERABBIT }, commit_id: `sha${pr}`, submitted_at: isoAt(minutes() + 0.15) });
+      }
       posted.push(pr);
+      postedAt.push(minutes());
       bodies.push(ask.body);
       return ask;
     },
@@ -380,6 +401,7 @@ function fakeRun({ now, answers, checks = {}, extra = [] }) {
       asker: ASKER,
       dryRun: false,
       footer: BANNER,
+      until: until && at(until),
       clock: () => clock,
       pause: async (ms) => {
         paused += ms;
@@ -387,13 +409,13 @@ function fakeRun({ now, answers, checks = {}, extra = [] }) {
       },
       log: () => {},
     });
-  return { run, posted, bodies, paused: () => paused };
+  return { run, posted, postedAt, bodies, paused: () => paused };
 }
 
-test("a run asks what's due and stops, leaving what isn't to a later run", async () => {
+test("with no time to wait, a run asks what's due and stops, leaving what isn't to a later run", async () => {
   // The summary's 19 minutes haven't passed: nothing is asked, and the run doesn't wait for them.
   const early = fakeRun({ now: 10, answers: { 7: ACCEPTED, 8: REFUSED } });
-  await early.run();
+  assert.deepEqual(await early.run(), { at: at(19) + 30_000 });
   assert.deepEqual(early.posted, []);
   assert.equal(early.paused(), 0);
   // #8's notice holds back #7's full review too: the allowance is the repository's.
@@ -421,6 +443,32 @@ test("a run asks for full reviews where CodeRabbit had nothing to say", async ()
   await run.run();
   assert.deepEqual(run.posted, [7, 8]);
   assert.equal(run.bodies[0], `${FULL_ASK}\n\n${BANNER}`);
+});
+
+test("a run waits in the run for what's due within its time", async () => {
+  // Both heads wait for the summary's 19 minutes. #7's ask is refused for 4 more, which holds #8 back too; then the
+  // longest waiting goes first, and once both are reviewed nothing is left to come.
+  const run = fakeRun({
+    now: 10,
+    until: 130,
+    review: true,
+    answers: { 7: [REFUSED_WITH_TIME, ACCEPTED], 8: ACCEPTED },
+  });
+  assert.deepEqual(await run.run(), {});
+  assert.deepEqual(run.posted, [7, 8, 7]);
+  const [first, second] = run.postedAt;
+  assert.ok(first >= 19.5 && first < 20, `asked at minute ${first}`);
+  assert.ok(second >= first + 4.5 && second < first + 5, `asked again at minute ${second}`);
+  assert.equal(run.bodies[2], `${ASK}\n\n${BANNER}`);
+});
+
+test("a run looks again when something should have changed, and hands over what comes after its time", async () => {
+  // No check on #7's head yet: the run looks again once CodeRabbit has had 15 minutes, finds the summary's notice
+  // holding the ask past minute 15, waits out its own time and hands the rest to the next run.
+  const run = fakeRun({ now: 5, until: 15, answers: { 7: ACCEPTED }, checks: { 7: [] } });
+  assert.deepEqual(await run.run(), { at: at(19) + 30_000 });
+  assert.deepEqual(run.posted, []);
+  assert.equal(run.paused(), 10 * MINUTE);
 });
 
 test("the banner follows the reader's GitHub theme", () => {
