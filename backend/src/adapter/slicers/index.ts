@@ -6,6 +6,7 @@ import { elegooslicer } from "./elegooslicer";
 import { eufystudio3d } from "./eufystudio3d";
 import { orcaslicer } from "./orcaslicer";
 import { prusaslicer } from "./prusaslicer";
+import { qidistudio } from "./qidistudio";
 import { snapmakerOrca } from "./snapmakerOrca";
 import type { SlicerProfile } from "./types";
 
@@ -23,6 +24,7 @@ export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.f
     elegooslicer,
     snapmakerOrca,
     eufystudio3d,
+    qidistudio,
   ].map((profile) => [profile.id, profile]),
 );
 

@@ -146,7 +146,7 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
 - **The button:** an outlined button under the site's own "Open in Bambu Studio" or Download button, so the site's own
   stays the main action. Under its label it names the copy a click makes, the last one made or else the first: "Bambu
   Lab P1S · Bambu Studio", after the file where the model has several 3MFs. Its ▾ lists the others, one per slicer,
-  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer and Anycubic Slicer Next, and above
+  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next and QIDI Studio, and above
   them the model's 3MFs on Printables, or the profile or file it's made of where the page picks one. Its last item
   opens the settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾
   offers to pick one. On Creality Cloud, Snapmaker Space, NexPrint and MakerOnline it needs you signed in there, as

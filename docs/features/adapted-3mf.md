@@ -19,6 +19,7 @@ read no 3MF colours (see [colours](#colours-in-other-3mfs)). Any other 3MF opens
 | Cura                                                                          | A Cura project for any printer (a UCP, Cura 5.7 and later). Opened as UCP, the designer's layer height, adhesion and kind of supports go onto your printer's settings, and every object keeps its extruder. Multi-part objects keep their parts, each on its own extruder, and the designer's walls, top and bottom layers, infill and whether to print supports are set on each object. Modifiers, negative parts and support volumes become Cura's matching mesh types. Imported as models, it's the same without the print settings, and only parts keep their extruders. Cura reads no painted colours. |
 | Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next | Opens as the slicer's own project, parts, plates, painting and the designer's settings, without its questions about the file's version. A setting it names differently is renamed, to the nearest of its choices where it has fewer.                                                                                                                                                                                                                                                                                                                                                                        |
 | Creality Print                                                                | Keeps the parts, plates, painting and the designer's settings, under the names Creality Print gives them. It still asks which of your printers to use, as it does for any project from another slicer.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| QIDI Studio                                                                   | Opens a Bambu Studio project with the designer's settings on the printer selected in it (2.4 and later), with its own filaments of the same types (2.6 and later), so such a project needs no copy. Another slicer's project would open without its settings: its copy keeps the parts, painting and the designer's settings, under the names QIDI Studio gives them. [Made for your printer](#made-for-your-printer), the copy opens as QIDI Studio's own project.                                                                                                                                         |
 
 Cura older than 5.7 doesn't know a UCP and offers to open its copy as a project with a printer of its own: choose
 **Import models** there.
@@ -69,7 +70,8 @@ The copy joins your own printer, filament and print settings: load the filaments
 
 A project names the printer it was made for: a MakerWorld model is often made for an A1 mini or an H2D, not for the
 printer you print on. Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer and Anycubic Slicer Next then open it on
-the designer's printer, or on one they build from the file if they don't have it.
+the designer's printer, or on one they build from the file if they don't have it, and QIDI Studio on the printer
+selected in it.
 
 Add your printers under **Configuration → Printers**, and their copies are made for your printer instead:
 
@@ -84,7 +86,8 @@ Add your printers under **Configuration → Printers**, and their copies are mad
 Which printer is set per slicer: right-click it under **Configuration → Slicer**, then **Printer**. With none set,
 opening a model adapted in one of the slicers above asks **Which printer is this for?** when the slicer has a preset
 for one of your printers, and remembers your answer for that slicer unless you untick **Remember**; otherwise the copy
-isn't made for a printer. A project made for the very preset you'd pick needs no copy for it.
+isn't made for a printer. A project made for the very preset you'd pick needs no copy for it, unless QIDI Studio is
+to open another slicer's project, which it would put on the printer selected in it.
 
 **Configuration → Printers** shows your printers as tiles: double-click one to add or remove it, and right-click it for
 its nozzle and the slicers it's used with. **Add** lists every printer the slicers know, with their pictures. Printers

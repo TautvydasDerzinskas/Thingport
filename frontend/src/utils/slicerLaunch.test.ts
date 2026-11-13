@@ -20,6 +20,9 @@ describe("slicerLaunchUrl", () => {
     expect(slicerLaunchUrl("prusaslicer", FILE, "a.stl")).toBe(
       `thingport://open?url=${encodeURIComponent(FILE)}&slicer=prusaslicer&filename=a.stl`,
     );
+    expect(slicerLaunchUrl("qidistudio", FILE, "a.stl")).toBe(
+      `thingport://open?url=${encodeURIComponent(FILE)}&slicer=qidistudio&filename=a.stl`,
+    );
   });
 
   it("opens a slicer with its own protocol through the Bridge when the user picked that", () => {
@@ -37,6 +40,7 @@ describe("slicerLaunchUrl", () => {
 
   it("tells which slicers open through the Bridge", () => {
     expect(isBridgedSlicer("bambustudio")).toBe(true);
+    expect(isBridgedSlicer("qidistudio")).toBe(true);
     expect(isBridgedSlicer("elegooslicer")).toBe(false);
     expect(isBridgedSlicer("elegooslicer", ["elegooslicer"])).toBe(true);
     // Nothing to send through it.

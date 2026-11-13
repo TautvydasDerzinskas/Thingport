@@ -96,6 +96,31 @@ describe("Download adapted's copies of Printables' files", () => {
   });
 });
 
+describe("Download adapted's copies for QIDI Studio", () => {
+  const Q1: TargetPrinter = { ...P1S, id: "qidi-q1pro", brandName: "QIDI", model: "Q1 Pro", bed: null };
+
+  it("are made only for a printer of a Bambu Studio project, which it opens on its own printer", () => {
+    expect(outputsFor(MAKERWORLD_ADAPT, target("qidistudio"))).toEqual([]);
+    expect(outputsFor(MAKERWORLD_ADAPT, target("qidistudio", Q1))).toEqual(["bambu"]);
+    // Another app's project would open without its settings.
+    expect(outputsFor(CREALITYCLOUD_ADAPT, target("qidistudio"))).toEqual(["bambu"]);
+  });
+
+  it("say it puts a copy that isn't for a printer on the one selected in it", () => {
+    const own = explanation(CREALITYCLOUD_ADAPT, target("qidistudio"));
+    expect(own).toContain("under the names QIDI Studio gives them");
+    expect(own).toContain("QIDI Studio puts it on the printer selected in it");
+    expect(explanation(PRINTABLES_ADAPT, target("qidistudio"))).toContain("on the printer selected in QIDI Studio");
+    expect(explanation(MAKERWORLD_ADAPT, target("qidistudio", Q1))).toContain(
+      "your QIDI Q1 Pro with its 0.4 mm nozzle in QIDI Studio",
+    );
+    expect(savedNote(target("qidistudio", P1S), { copy: false, printerless: true, nozzle: null })).toBe(
+      "Grab has no QIDI Studio preset for the Bambu Lab P1S, so QIDI Studio puts the file itself on the printer " +
+        "selected in it. Pick yours there before slicing.",
+    );
+  });
+});
+
 /** The slicers among `slicers` a site's files get a copy for. */
 const offered = (site: Parameters<typeof outputsFor>[0], slicers: string[]) =>
   slicers.filter((slicer) => outputsFor(site, target(slicer)).length > 0);

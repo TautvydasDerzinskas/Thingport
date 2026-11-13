@@ -83,7 +83,7 @@ export function planAdaptation(
     return {
       output: "bambu",
       from: "prusa",
-      tag: COMPATIBLE_TAG,
+      tag: (forPrusa && slicer.ownTag) || COMPATIBLE_TAG,
       dropOrcaTag: false,
       dialect: slicer.dialect ?? null,
       ...(forPrusa ? { printer: forPrusa } : {}),
@@ -101,14 +101,18 @@ export function planAdaptation(
   if (slicer.reads === "prusa") return { output: "prusa" };
   if (slicer.reads === "cura") return { output: "cura" };
 
-  const forPrinter = printer && slicer.targetsPrinter && !madeFor(format.printer, printer) ? printer : null;
+  // A slicer with a tag of its own opens another app's project on the printer selected in it, even one naming the
+  // user's printer, so only a project under its own tag is left as made for that printer.
+  const ownProject = !slicer.ownTag || format.app === slicer.ownTag.split("-")[0];
+  const forPrinter =
+    printer && slicer.targetsPrinter && !(ownProject && madeFor(format.printer, printer)) ? printer : null;
   const dropOrcaTag = !orcaTagQuiet(format, slicer);
   const retag = !slicer.asksForPrinter && (!ownedBy(format, slicer) || !quietFor(format, slicer) || dropOrcaTag);
   const dialect = slicer.dialect && format.dialect && format.dialect !== slicer.dialect ? slicer.dialect : null;
   if (!retag && !dropOrcaTag && !dialect && !forPrinter) return null;
   return {
     output: "bambu",
-    tag: retag ? COMPATIBLE_TAG : null,
+    tag: (forPrinter && slicer.ownTag) || (retag ? COMPATIBLE_TAG : null),
     dropOrcaTag,
     dialect,
     ...(forPrinter ? { printer: forPrinter } : {}),
@@ -122,7 +126,7 @@ export function planKey(plan: AdaptPlan): string {
   return [
     "bambu",
     plan.from === "prusa" ? "fromprusa" : "",
-    plan.tag ? "tag" : "",
+    !plan.tag ? "" : plan.tag === COMPATIBLE_TAG ? "tag" : `tag-${plan.tag.split("-")[0].toLowerCase()}`,
     plan.dropOrcaTag ? "noorca" : "",
     plan.dialect ?? "",
     plan.printer ? ["for", plan.printer.id, plan.printer.nozzle, plan.printer.stamp].filter(Boolean).join("-") : "",

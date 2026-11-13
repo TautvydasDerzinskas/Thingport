@@ -12,6 +12,7 @@ export const SLICER_IDS = [
   "elegooslicer",
   "snapmaker-orca",
   "eufystudio3d",
+  "qidistudio",
   "other",
 ] as const;
 export type SlicerId = (typeof SLICER_IDS)[number];

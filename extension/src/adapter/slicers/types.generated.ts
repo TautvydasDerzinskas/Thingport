@@ -28,4 +28,7 @@ export type SlicerProfile = {
   /** Loads a project's printer, process and filament presets by name, so a copy can name its presets for the
    *  user's printer (printer.ts). */
   targetsPrinter?: boolean;
+  /** The Application its own files carry, for a slicer that moves another app's project onto the printer selected in
+   *  it: a copy for the user's printer carries it, so it opens on the presets it names. */
+  ownTag?: string;
 };
