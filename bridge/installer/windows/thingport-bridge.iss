@@ -48,6 +48,7 @@ Source: "..\..\dist\thingport-bridge-windows-amd64.exe"; DestDir: "{app}"; DestN
 Source: "assets\thingport.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
+Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\thingport"; ValueType: string; ValueName: ""; ValueData: "URL:{#MyAppName}"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\thingport"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\thingport\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\thingport.ico,0"
