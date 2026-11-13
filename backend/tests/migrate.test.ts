@@ -539,4 +539,37 @@ describe("discarding a migration while it's being started or given another folde
     expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).not.toBeNull();
     await prisma.migrationRun.delete({ where: { id: run.id } });
   });
+  it("turns Start away while Discard is cleaning up a run, so it can't merge from what's going", async () => {
+    // Failed part-way with its working copy kept: Start would go on with it, and Discard files its models first.
+    const run = await prisma.migrationRun.create({
+      data: {
+        source: "thingport",
+        status: "failed",
+        stagingDb: `thingport_migrate_missing_${crypto.randomBytes(4).toString("hex")}`,
+        startedAt: new Date(),
+        plan: { people: [{ id: "someone" }] },
+      },
+    });
+    let letDiscard!: () => void;
+    const held = new Promise<void>((resolve) => (letDiscard = resolve));
+    let filing!: () => void;
+    const reached = new Promise<void>((resolve) => (filing = resolve));
+    const findMany = prisma.print.findMany.bind(prisma.print);
+    // Discard waits while it files the run's models until Start has had its answer.
+    const spy = vi.spyOn(prisma.print, "findMany").mockImplementation((async (args: never) => {
+      filing();
+      await held;
+      return findMany(args);
+    }) as never);
+    try {
+      const discarding = removeRun(run.id);
+      await reached;
+      await expect(startRun(run.id, "nobody", options)).rejects.toMatchObject({ status: 409, code: "busy" });
+      letDiscard();
+      await discarding;
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await prisma.migrationRun.findUnique({ where: { id: run.id } })).toBeNull();
+  });
 });
