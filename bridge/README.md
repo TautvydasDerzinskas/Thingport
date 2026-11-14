@@ -234,7 +234,11 @@ Create a config file if you want custom slicer paths or arguments:
 
 Use `config.example.json` as a template.
 
-Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuStudio`
+Environment override (per slicer): `THINGPORT_SLICER_<ID>`, the slicer's id in capitals with `-` as `_`, e.g.
+`THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuStudio`. Your browser starts the Bridge, not a terminal, so a variable
+set in a shell doesn't reach it: on Windows make it a user environment variable (`setx`, then restart the browser), on
+Linux put it in your desktop session's environment (`~/.profile`, then sign in again), on macOS use
+`launchctl setenv` (kept until restart). `config.json` works the same everywhere and is simpler.
 
 ## Slicer IDs
 
@@ -271,8 +275,8 @@ QIDI Studio for Linux comes only as an AppImage, which the Bridge finds once it'
 
 Flash Studio's Windows installer doesn't say which folder it installs to, so the Bridge tries the ones its maker's
 and product's names make (below). If it isn't found there, add an `orca-flashforge` entry to `config.json` or set
-`THINGPORT_SLICER_ORCA_FLASHFORGE="/path/to/flash studio.exe"`. Its Linux builds on GitHub are AppImages, found once
-they're on `PATH` as `FlashStudio`.
+the `THINGPORT_SLICER_ORCA_FLASHFORGE` user environment variable to its `flash studio.exe` (see [Config](#config)).
+Its Linux builds on GitHub are AppImages, found once they're on `PATH` as `FlashStudio`.
 
 Where the others are looked for, as their official installers put them:
 
