@@ -28,7 +28,8 @@ export default function FillGapsDialog({ open, print, gaps, onClose, onUpdated, 
   const showToast = useToast();
   const [busy, setBusy] = useState(false);
   const providerLabel = importProviderInfo(print.source_provider)?.label ?? t("models:detail.fillGapsSource");
-  // "Title, description", or 标题、描述: listed in the reader's language, with no "and".
+  // Narrow, so English stays "title, description" while other languages list their own way: 标题、描述,
+  // "pavadinimas ir aprašymas".
   const listOf = (list: SourceGap[]) =>
     new Intl.ListFormat(i18n.language, { type: "conjunction", style: "narrow" }).format(
       list.map((gap) => t(`models:detail.gap.${gap}`)),

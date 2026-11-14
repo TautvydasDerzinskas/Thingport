@@ -31,17 +31,18 @@ const NARROW_WRAP = {
 const TONES = { preparing: "info", ready: "info", running: "info", done: "success", failed: "error" } as const;
 
 /** What one from another Thingport instance is doing, or did, with its people. */
-function thingportLine(t: TFunction, run: ThingportRun, when: string, language: string): string {
+export function thingportLine(t: TFunction, run: ThingportRun, when: string): string {
   const people = run.options?.people.length ?? run.plan.counts?.people ?? 0;
   const merged = (run.plan.people ?? []).filter(
     (person) => person.merge && (!run.options || run.options.people.includes(person.id)),
   ).length;
-  // Listed in the reader's language, with no "and": "3 people, 1 merged", or 3 人、1 人已合并.
-  const peopleLine = new Intl.ListFormat(language, { type: "conjunction", style: "narrow" }).format(
-    [t(k("runs.people"), { count: people }), merged ? t(k("runs.merged"), { count: merged }) : null].filter(
-      (part): part is string => Boolean(part),
-    ),
-  );
+  // Not a list: the merged ones are some of the people, and "3 people and 1 merged" would sound like four.
+  const peopleLine = merged
+    ? t(k("runs.peopleMerged"), {
+        people: t(k("runs.people"), { count: people }),
+        merged: t(k("runs.merged"), { count: merged }),
+      })
+    : t(k("runs.people"), { count: people });
   if (run.status === "preparing") return t(k(`check.steps.${run.progress?.step ?? "restoring"}`));
   if (run.status === "running") {
     const step = run.progress?.step ?? "people";
@@ -111,7 +112,7 @@ export default function MigrationRow({ run, onOpen, onStartAgain, onRemove }: Pr
   if (run.status === "running" && run.progress && run.progress.total > 0) {
     progress = (run.progress.done / run.progress.total) * 100;
   }
-  const line = run.source === "manyfold" ? manyfoldLine(t, run, when) : thingportLine(t, run, when, i18n.language);
+  const line = run.source === "manyfold" ? manyfoldLine(t, run, when) : thingportLine(t, run, when);
 
   const close = () => setMenu(null);
   const openMenu = (event: React.MouseEvent<HTMLElement>, atPointer = false) => {

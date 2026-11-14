@@ -2855,6 +2855,7 @@
           },
           "people_other": "{{count}} 人",
           "merged_other": "{{count}} 人合并到这里的已有账号",
+          "peopleMerged": "{{people}}，其中 {{merged}}",
           "readyLine_other": "已检查：{{people}}，{{count}} 个模型。等待你开始。",
           "doneLine_other": "{{count}} 个模型（{{people}}）",
           "leftOut_other": "{{count}} 个没有文件的模型未迁移",
