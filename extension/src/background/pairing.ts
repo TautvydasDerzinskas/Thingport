@@ -12,6 +12,7 @@ import { backgroundText } from "./localize";
 
 let resuming: Promise<null> | null = null;
 let rerunRequested = false;
+let rerunRetries = false;
 const claimingTabs = new Set<number>();
 
 function base64url(bytes: Uint8Array): string {
@@ -71,27 +72,41 @@ export async function startPairing(rawInstanceUrl: string): Promise<null> {
   return null;
 }
 
-/** Resumes after Chrome's permission prompt, even when that prompt destroyed the popup that started it. */
-export function resumePairingIntent(): Promise<null> {
+/** Resumes after Chrome's permission prompt, even when that prompt destroyed the popup that started it. `retry` is
+ *  for the popup's pair button only: it may try again an intent whose tab couldn't be opened, where a browser event
+ *  may not, since putting that intent back is itself a storage event. */
+export function resumePairingIntent(retry = false): Promise<null> {
   if (resuming) {
     // A permission event can arrive after the active attempt read the old permission state.
     rerunRequested = true;
+    rerunRetries ||= retry;
     return resuming;
   }
   resuming = (async () => {
+    let retrying = retry;
     do {
       rerunRequested = false;
-      await attemptPairingIntentResume();
+      await attemptPairingIntentResume(retrying);
+      retrying = rerunRetries;
+      rerunRetries = false;
     } while (rerunRequested);
     return null;
   })().finally(() => {
     resuming = null;
     rerunRequested = false;
+    rerunRetries = false;
   });
   return resuming;
 }
 
-async function attemptPairingIntentResume(): Promise<null> {
+/** For chrome.storage.onChanged: the popup saved a new intent before its permission prompt. */
+export function onPairingStorageChanged(changes: Record<string, chrome.storage.StorageChange>, area: string): void {
+  if (area === "local" && changes[STORAGE_KEYS.pairingIntent]?.newValue) {
+    void resumePairingIntent().catch(() => undefined);
+  }
+}
+
+async function attemptPairingIntentResume(retry: boolean): Promise<null> {
   const config = await getStoredConfig();
   const intent = config.pairingIntent;
   if (!intent) return null;
@@ -99,6 +114,7 @@ async function attemptPairingIntentResume(): Promise<null> {
     await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     return null;
   }
+  if (intent.failed && !retry) return null;
   if (pairingFresh(config.pendingPairing)) {
     await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     return null;
@@ -111,7 +127,7 @@ async function attemptPairingIntentResume(): Promise<null> {
     return await startPairing(intent.instanceUrl);
   } catch (error) {
     // Keep the address for a retry instead of dropping the user's input on another transient browser failure.
-    await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent });
+    await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: { ...intent, failed: true } });
     throw error;
   }
 }
@@ -163,8 +179,8 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
   // Chrome can report the same fragment through both its URL and completed-load updates. Claim ownership before
   // the first await so two handlers that already read the same pending value cannot both exchange the code.
   claimingTabs.add(tabId);
-  await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
   try {
+    await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
     await claim(pending, code);
     void carryAdaptPicks();
     await chrome.tabs.remove(tabId).catch(() => undefined);

@@ -124,7 +124,8 @@ export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature):
 }
 
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
-export type PairingIntent = { instanceUrl: string; startedAt: number };
+/** `failed`: put back after the approval tab couldn't be opened, for the address field; only the pair button tries it again. */
+export type PairingIntent = { instanceUrl: string; startedAt: number; failed?: true };
 
 // Long enough to sign in through a provider on the way.
 export const PAIRING_TTL_MS = 15 * 60 * 1000;
