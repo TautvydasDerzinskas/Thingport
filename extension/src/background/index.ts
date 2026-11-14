@@ -2,7 +2,7 @@
 // and every request to the Thingport instance.
 
 import { listen, senderTabId, type BackgroundMessages } from "../shared/messages";
-import { LEGACY_SESSION_KEYS } from "../shared/storage";
+import { LEGACY_SESSION_KEYS, STORAGE_KEYS } from "../shared/storage";
 import {
   carryAdaptPicks,
   getAdaptOffer,
@@ -12,7 +12,7 @@ import {
   setAdaptLast,
   setAdaptSettings,
 } from "./adaptSettings";
-import { apiCall, checkConnection, disconnect } from "./api";
+import { apiCall, checkConnection, disconnect, probePairing } from "./api";
 import { getState, saveConfig, setBubble, setDisabled, setLocale, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
@@ -28,7 +28,7 @@ import { getRecentImports } from "./recentImports";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./recentlyViewed";
 import { syncSession } from "./sessionSync";
-import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
+import { onPairingStorageChanged, onPairingTabClosed, onPairingTabUrl, resumePairingIntent } from "./pairing";
 import { openSetup } from "./setup";
 import {
   forgetProviderTab,
@@ -58,7 +58,8 @@ listen<BackgroundMessages>({
   SET_ADAPT_LAST: ({ key }) => setAdaptLast(key),
   GET_PRINTER_RECIPE: ({ slicer, printerId, nozzle }) => printerRecipeFor(slicer, printerId, nozzle),
   OPEN_ADAPT_SETTINGS: () => openAdaptSettings(),
-  START_PAIRING: ({ instanceUrl }) => startPairing(instanceUrl),
+  RESUME_PAIRING: () => resumePairingIntent(true),
+  PROBE_PAIRING: ({ instanceUrl }) => probePairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
   GET_SEASONAL_ICON: () => seasonalIcon(),
   RECORD_VIEWED_MODEL: (model) => recordViewedModel(model),
@@ -98,6 +99,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onStartup.addListener(() => {
   void checkConnection();
   void forgetProviderTabs();
+  // Tab ids start over with the browser, so an approval tab from the last session can't be finished or told apart.
+  void chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
 });
 chrome.runtime.onInstalled.addListener(() => {
   void checkConnection();
@@ -109,11 +112,16 @@ chrome.runtime.onInstalled.addListener(() => {
 // site get Grab straight away; it doesn't run twice in one.
 void syncSiteScripts();
 chrome.permissions.onAdded.addListener(() => {
+  void resumePairingIntent().catch(() => undefined);
   void syncSiteScripts().then(async () => {
     for (const site of OPTIONAL_SITES) if (await siteEnabled(site)) await injectIntoOpenTabs(site);
   });
   onProvidersWake();
 });
+
+// The popup starts the durable write and permission request together to preserve the user gesture. Whichever
+// browser event arrives second resumes the intent; the pairing module serializes the two attempts.
+chrome.storage.onChanged.addListener(onPairingStorageChanged);
 chrome.permissions.onRemoved.addListener(() => {
   void syncSiteScripts();
   onProvidersWake();

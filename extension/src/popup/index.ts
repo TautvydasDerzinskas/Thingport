@@ -7,7 +7,7 @@ import { fillIcons } from "../shared/icon";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
-import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { STORAGE_KEYS, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
 import { applyTranslations, detectLocale, setLocale, t, type Locale } from "../shared/i18n";
 import { loadAdapt, renderAll as renderAdapt } from "./adapt";
 import { refreshAppearance, showAppearance } from "./appearance";
@@ -169,14 +169,19 @@ function showConfiguredView(state: ExtensionState): void {
 }
 
 /** `credentials`: open with the password form already out, for someone coming back to fix one. */
-function showSetupForm(prefillUrl = "", prefillEmail = "", { credentials = false } = {}): void {
+/** `cancellable`: there's a connection to go back to; an address kept from a pairing has none. */
+function showSetupForm(
+  prefillUrl = "",
+  prefillEmail = "",
+  { credentials = false, cancellable = Boolean(prefillUrl) } = {},
+): void {
   labelTabs(false);
   els.recentSection.hidden = true;
   els.configuredView.hidden = true;
   els.instanceRow.hidden = true;
   els.enabledToggle.hidden = true;
   els.setupForm.hidden = false;
-  els.cancelBtn.hidden = !prefillUrl;
+  els.cancelBtn.hidden = !cancellable;
   els.instanceUrlInput.value = prefillUrl;
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
@@ -245,18 +250,11 @@ async function probeInstance(rawUrl: string): Promise<void> {
   const looksLikeUrl = /^https?:\/\/[^/]+/i.test(instanceUrl);
   setPairable(looksLikeUrl);
   if (!looksLikeUrl) return;
-  try {
-    // Health answers any origin, so this works before the instance's permission is granted.
-    const res = await fetch(apiUrl(instanceUrl, "/health"), {
-      signal: AbortSignal.timeout(4000),
-    });
-    const health = (await res.json()) as { grab_pairing?: boolean };
-    if (probe !== instanceProbe || health.grab_pairing === true) return;
-    setPairable(false, "pairUnsupported");
-    showCredentials();
-  } catch {
-    // Unreachable from here, or still being typed: leave pairing on offer rather than guess.
-  }
+  const res = await send("PROBE_PAIRING", { instanceUrl });
+  // Unreachable, or still being typed (null): leave pairing on offer rather than guess.
+  if (probe !== instanceProbe || !res?.ok || res.data !== false) return;
+  setPairable(false, "pairUnsupported");
+  showCredentials();
 }
 
 function connectionProblem(connection: Extract<Connection, { connected: false }>): string {
@@ -294,7 +292,9 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   // Its slicers and printers are the instance's once connected, so it's read again whenever this is.
   void loadAdapt();
   if (!res.data.configured) {
-    showSetupForm();
+    showSetupForm(res.data.pairingInstanceUrl, "", { cancellable: false });
+    setPairing(res.data.pairing);
+    els.pairPending.hidden = !res.data.pairing;
     return;
   }
   showConfiguredView(res.data);
@@ -395,16 +395,32 @@ async function pairWithInstance(): Promise<void> {
     return;
   }
   setPairing(true);
-  // First, while this still counts as the user's gesture: it's what lets Grab read the approval tab.
-  const granted = await chrome.permissions.request({
+  // Start the durable write without awaiting it, then request permission while this still counts as the user's
+  // gesture. Chrome may dismiss this popup for its prompt; background storage/permission listeners continue it.
+  const rememberIntent = chrome.storage.local.set({
+    [STORAGE_KEYS.pairingIntent]: { instanceUrl, startedAt: Date.now() },
+  });
+  const permission = chrome.permissions.request({
     origins: instanceOrigins(origin),
   });
+  let granted: boolean;
+  try {
+    granted = await permission;
+    await rememberIntent;
+  } catch {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent).catch(() => undefined);
+    setPairing(false);
+    showError(t("openThingportFailed"));
+    return;
+  }
   if (!granted) {
+    await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     setPairing(false);
     showError(t("instancePermission"));
     return;
   }
-  const res = await send("START_PAIRING", { instanceUrl });
+  // Also resume here for already-granted access, where permissions.onAdded does not fire.
+  const res = await send("RESUME_PAIRING");
   if (!res?.ok) {
     setPairing(false);
     showError(res?.error ?? t("openThingportFailed"));
@@ -420,8 +436,12 @@ els.pairBtn.addEventListener("click", () => void pairWithInstance());
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (!changes[STORAGE_KEYS.connectionToken]?.newValue) {
-    if (STORAGE_KEYS.pendingPairing in changes && !changes[STORAGE_KEYS.pendingPairing].newValue) {
-      setPairing(false);
+    // Both ways: the background may open the approval tab after this popup read the state, as it resumes a pairing
+    // the permission prompt closed the popup on.
+    if (STORAGE_KEYS.pendingPairing in changes) {
+      const waiting = Boolean(changes[STORAGE_KEYS.pendingPairing].newValue);
+      setPairing(waiting);
+      els.pairPending.hidden = !waiting;
     }
     return;
   }
