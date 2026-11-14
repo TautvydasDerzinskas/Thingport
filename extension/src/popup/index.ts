@@ -118,6 +118,8 @@ function displayInstanceUrl(instanceUrl: string): string {
 let localeRevision = 0;
 /** The choice stored, which a failed save goes back to (null: follow the browser). */
 let savedLanguage: Locale | null = null;
+/** The pick `savedLanguage` came from: a save that answers after a newer one's doesn't take its place. */
+let savedRevision = 0;
 
 function showLanguage(choice: Locale | null): void {
   const locale = choice ?? detectLocale();
@@ -136,7 +138,10 @@ async function chooseLanguage(choice: Locale | null): Promise<void> {
   showLanguage(choice);
   const res = await send("SET_LOCALE", { locale: choice });
   if (res?.ok) {
-    savedLanguage = choice;
+    if (revision > savedRevision) {
+      savedRevision = revision;
+      savedLanguage = choice;
+    }
     return;
   }
   // A later pick has replaced this one already.
