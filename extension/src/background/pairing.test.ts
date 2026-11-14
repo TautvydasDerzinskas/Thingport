@@ -274,6 +274,21 @@ describe("pairing permission continuity", () => {
     expect(tabsOpened()).toHaveLength(1);
   });
 
+  it("shows the address typed last, not a left-over approval tab's", async () => {
+    const pending = {
+      instanceUrl: "https://old.example.com",
+      verifier: "secret",
+      tabId: 9,
+      startedAt: Date.now() - 16 * 60 * 1000,
+    } satisfies PendingPairing;
+    store[STORAGE_KEYS.pendingPairing] = pending;
+    store[STORAGE_KEYS.pairingIntent] = intent("https://new.example.com");
+    await expect(getState()).resolves.toMatchObject({ pairing: false, pairingInstanceUrl: "https://new.example.com" });
+
+    store[STORAGE_KEYS.pendingPairing] = { ...pending, startedAt: Date.now() };
+    await expect(getState()).resolves.toMatchObject({ pairing: true, pairingInstanceUrl: "https://old.example.com" });
+  });
+
   it("lets the approval tab finish after forgetting its pairing failed once", async () => {
     store[STORAGE_KEYS.pendingPairing] = {
       instanceUrl: "https://thingport.example.com",

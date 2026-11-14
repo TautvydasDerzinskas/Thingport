@@ -43,6 +43,7 @@ export async function getState(): Promise<ExtensionState> {
     });
   }
   const importQueue = config.importQueue === true;
+  const pairing = pairingFresh(config.pendingPairing);
   return {
     configured: isConfigured(config),
     disabled: Boolean(config.disabled),
@@ -51,8 +52,13 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
-    pairing: pairingFresh(config.pendingPairing),
-    pairingInstanceUrl: config.pendingPairing?.instanceUrl || config.pairingIntent?.instanceUrl || "",
+    pairing,
+    // A left-over approval tab's address only when nothing newer was typed.
+    pairingInstanceUrl:
+      (pairing ? config.pendingPairing?.instanceUrl : "") ||
+      config.pairingIntent?.instanceUrl ||
+      config.pendingPairing?.instanceUrl ||
+      "",
     offlineFeatures: Object.fromEntries(
       (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [
         feature,
