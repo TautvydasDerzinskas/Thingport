@@ -409,6 +409,7 @@
   "providerAbout.fab365": "Fab365 是一家韩国 3D 模型交易平台，自 2018 年运营至今。它以精心设计的模型闻名——SpaceX 火箭、可折叠机器人、星球大战飞船——其中许多设计为无需支撑也能干净地打印出来。",
   "providerAbout.threedexport": "历史最悠久的 3D 模型交易平台之一，2004 年上线，总部位于圣何塞：游戏和影视素材、纹理，以及庞大的 3D 打印模型目录，均由设计者自行出售，也有一些免费赠送。",
   "providerAbout.qidimaker": "QIDI Maker 是 QIDI Tech 的模型社区，QIDI Tech 是生产 X-Plus、X-Max 和 Q 系列打印机的中国厂商。它于 2026 年上线，模型附带在 QIDI Studio 中为这些打印机制作的打印配置。",
+  "providerAbout.voxelshare": "VoxelShare 是 Flashforge 的模型社区，Flashforge 是生产 Adventurer 和 Creator 系列打印机的中国厂商。其模型附带在 Flashforge 自家的切片软件 Flash Studio 中为这些打印机制作的打印配置。",
   "printablesCollections": "合集",
   "printablesLikes": "点赞",
   "addProfiles": "添加打印配置",

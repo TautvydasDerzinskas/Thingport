@@ -64,7 +64,7 @@ type Props = {
 /** The import sites as app icons: right-click one to connect or disconnect it, or double-click a
  *  disconnected one to connect it. Stored credentials are never shown, only whether one is set. */
 export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
-  const { t } = useTranslation(["app", "common"]);
+  const { t, i18n } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const providers = useProviders();
   const [menu, setMenu] = React.useState<{ id: ProviderId; top: number; left: number } | null>(null);
@@ -113,7 +113,9 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
     const state = stateOf(id);
     if (!state || !regionsOf(id).length) return t("providers.connected");
     const sites = siteAuths(id).filter((auth) => state.slots[auth.slot]?.status === "connected");
-    return t("providers.connectedSites", { sites: sites.map((auth) => siteName(id, auth.slot)).join(", ") });
+    // Narrow, so English stays "International, China" and Chinese lists its own way: 国际、中国.
+    const names = new Intl.ListFormat(i18n.language, { type: "conjunction", style: "narrow" });
+    return t("providers.connectedSites", { sites: names.format(sites.map((auth) => siteName(id, auth.slot))) });
   };
   /** The tile's sites not connected yet, which its menu offers to connect besides those that are. */
   const unconnectedSites = (id: ProviderId) =>
