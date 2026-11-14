@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Paper from "@mui/material/Paper";
@@ -78,6 +78,32 @@ function BookmarkLoader() {
   );
 }
 
+// Room kept under the panel when it sticks, so its last action isn't flush with the window's edge.
+const STICKY_BOTTOM_GAP = 16;
+
+/** Whether the panel fits in the window below the sticky top bar. One taller than that doesn't stick: it scrolls with
+ *  the page, so its lower actions can be reached. */
+function useFitsBelowTopBar(ref: RefObject<HTMLElement | null>): boolean {
+  const [fits, setFits] = useState(true);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const topBar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 80;
+      setFits(topBar + el.offsetHeight + STICKY_BOTTOM_GAP <= window.innerHeight);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [ref]);
+  return fits;
+}
+
 /** "failed" still opens the dialog, just without showing a number. */
 export type CollectionCount = number | "loading" | "failed";
 
@@ -101,7 +127,7 @@ type Props = {
   onPreviewPlate?: (key: string, plateIndex: number) => void;
 };
 
-/** The detail page's sticky summary card. */
+/** The detail page's summary card, sticky while it fits in the window. */
 export default function ModelSidePanel({
   print,
   collectionCount,
@@ -117,6 +143,8 @@ export default function ModelSidePanel({
   onPreviewPlate,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const sticky = useFitsBelowTopBar(panelRef);
   const [category, setCategory] = useState<Category | null>(null);
   // Only a starter category's name has translations, and English needs none, so English skips the request.
   const translating = matchLanguage(i18n.language) !== FALLBACK_LANGUAGE;
@@ -246,12 +274,13 @@ export default function ModelSidePanel({
 
   return (
     <Paper
+      ref={panelRef}
       variant="outlined"
       sx={{
         p: 2.5,
         borderRadius: "12px",
         borderColor: dividerBorderColor,
-        position: { xs: "static", md: "sticky" },
+        position: { xs: "static", md: sticky ? "sticky" : "static" },
         // Stick just below the sticky TopBar, which can wrap taller.
         top: "var(--topbar-height, 80px)",
       }}
@@ -338,31 +367,58 @@ export default function ModelSidePanel({
           </Box>
         )}
 
-        {print.category_id && print.category_name && (
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-              {t("models:detail.category")}
-            </Typography>
-            <ButtonBase
-              onClick={goToCategory}
-              sx={{
-                borderRadius: 1,
-                px: 0.5,
-                py: 0.25,
-                mx: -0.5,
-                gap: 0.75,
-                color: (muiTheme) => muiTheme.thingport.headingText,
-                "&:hover": { color: "primary.main" },
-              }}
-            >
-              <FolderIcon fontSize="small" />
-              <Typography variant="body2" fontWeight={600}>
-                {categoryName}
-              </Typography>
-              {print.category_source === "ai" && (
-                <Chip size="small" label={t("models:aiCategorization.byAi")} color="secondary" variant="outlined" />
-              )}
-            </ButtonBase>
+        {/* Category on the left and size on the right, sharing a row; either alone keeps to the left. */}
+        {((print.category_id && print.category_name) || typeof print.total_size === "number") && (
+          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2 }}>
+            {print.category_id && print.category_name && (
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                  {t("models:detail.category")}
+                </Typography>
+                <ButtonBase
+                  onClick={goToCategory}
+                  sx={{
+                    borderRadius: 1,
+                    px: 0.5,
+                    py: 0.25,
+                    mx: -0.5,
+                    gap: 0.75,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-start",
+                    textAlign: "left",
+                    color: (muiTheme) => muiTheme.thingport.headingText,
+                    "&:hover": { color: "primary.main" },
+                  }}
+                >
+                  <FolderIcon fontSize="small" />
+                  <Typography variant="body2" fontWeight={600} sx={{ overflowWrap: "anywhere" }}>
+                    {categoryName}
+                  </Typography>
+                  {print.category_source === "ai" && (
+                    <Chip size="small" label={t("models:aiCategorization.byAi")} color="secondary" variant="outlined" />
+                  )}
+                </ButtonBase>
+              </Box>
+            )}
+            {typeof print.total_size === "number" && (
+              <Box sx={{ flexShrink: 0, textAlign: print.category_id && print.category_name ? "right" : "left" }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                  {t("models:detail.size")}
+                </Typography>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.75}
+                  title={t("models:detail.sizeHint")}
+                  sx={{ width: "fit-content", ml: "auto", color: (muiTheme) => muiTheme.thingport.headingText }}
+                >
+                  <StorageIcon fontSize="small" />
+                  <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "nowrap" }}>
+                    {formatFileSize(print.total_size)}
+                  </Typography>
+                </Stack>
+              </Box>
+            )}
           </Box>
         )}
 
@@ -459,26 +515,6 @@ export default function ModelSidePanel({
               </Stack>
             </Stack>
           </Paper>
-        )}
-
-        {typeof print.total_size === "number" && (
-          <Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-              {t("models:detail.size")}
-            </Typography>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={0.75}
-              title={t("models:detail.sizeHint")}
-              sx={{ width: "fit-content", color: (muiTheme) => muiTheme.thingport.headingText }}
-            >
-              <StorageIcon fontSize="small" />
-              <Typography variant="body2" fontWeight={600}>
-                {formatFileSize(print.total_size)}
-              </Typography>
-            </Stack>
-          </Box>
         )}
 
         {owner && (
