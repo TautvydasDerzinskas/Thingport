@@ -1,21 +1,28 @@
 // VoxelShare's own API, as its pages call it from www.voxelshare.com: plain GETs on api.voxelshare.com answered with
-// `{code, msg, data}`, code 0 when it went well. Models and their print profiles need no sign-in, so none is sent.
+// `{code, msg, data}`, code 0 when it went well. Its China site's pages call the same API on api.voxelshare.cn. Models
+// and their print profiles need no sign-in, so none is sent.
 
-import { MANIFESTS } from "../index.generated";
+import { MANIFESTS, type RegionId } from "../index.generated";
 import { parseVoxelshareModelUrl } from "./urls.generated";
 
-const API = MANIFESTS.voxelshare.endpoints.api;
+const { voxelshare } = MANIFESTS;
+/** Each site's API: its main one's, and its China one's. */
+const apiOf = (region: RegionId | null) => (region ? voxelshare.regions[0].endpoints.api : voxelshare.endpoints.api);
 const CODE_OK = 0;
 // A model or profile its page shows.
 const SHOWN = 1;
 
 type Answer = { code: number | null; data: unknown };
 
-/** One call's answer; null where it failed or couldn't be read at all. A plain GET, so the browser asks nothing
- *  first. */
-async function voxelshareApi(path: string, params: Record<string, string>): Promise<Answer | null> {
+/** One call's answer from a site's API; null where it failed or couldn't be read at all. A plain GET, so the browser
+ *  asks nothing first. */
+async function voxelshareApi(
+  path: string,
+  params: Record<string, string>,
+  region: RegionId | null,
+): Promise<Answer | null> {
   try {
-    const res = await fetch(`${API}/${path}?${new URLSearchParams(params)}`, { credentials: "omit" });
+    const res = await fetch(`${apiOf(region)}/${path}?${new URLSearchParams(params)}`, { credentials: "omit" });
     if (!res.ok) return null;
     const json = (await res.json().catch(() => null)) as { code?: unknown; data?: unknown } | null;
     return { code: typeof json?.code === "number" ? json.code : null, data: json?.data };
@@ -57,11 +64,15 @@ export function voxelshareModelFrom(detail: unknown, list: unknown): VoxelshareM
   return { title: text(detail.modelName) ?? text(detail.originalName), profiles };
 }
 
-/** The model's title and print profiles, from the same public API the page calls. Null when they can't be read. */
-export async function loadVoxelshareModel(modelId: string): Promise<VoxelshareModel | null> {
+/** The model's title and print profiles, from the same public API the page calls, on the site it's on (null its main
+ *  one). Null when they can't be read. */
+export async function loadVoxelshareModel(
+  modelId: string,
+  region: RegionId | null = null,
+): Promise<VoxelshareModel | null> {
   const [detail, list] = await Promise.all([
-    voxelshareApi("v3/model/detail/info", { modelId }),
-    voxelshareApi("v3/model/detail/print_configs", { modelId }),
+    voxelshareApi("v3/model/detail/info", { modelId }, region),
+    voxelshareApi("v3/model/detail/print_configs", { modelId }, region),
   ]);
   if (detail?.code !== CODE_OK || list?.code !== CODE_OK) return null;
   return voxelshareModelFrom(detail.data, list.data);

@@ -56,8 +56,8 @@ names them on the website too).
 A provider needs no column and no migration:
 
 - **Sign-ins:** each user's sign-in and who they are on the site are a `ProviderConnection` row per user, provider
-  and auth slot. Read and write them through `backend/src/providers/connections.ts`. What the `secret` JSON holds is
-  up to the provider's `session.ts`.
+  and auth slot (a region's sign-in is the slot named after it, below). Read and write them through
+  `backend/src/providers/connections.ts`. What the `secret` JSON holds is up to the provider's `session.ts`.
 - **Instance credentials:** an admin's key is a `Setting` row (Thingiverse's `token.ts`, MyMiniFactory's
   `apiKey.ts`).
 - **Category ids:** the site's ids for the starter categories are `backend/src/providers/<id>/categories.json`,
@@ -67,6 +67,28 @@ A provider needs no column and no migration:
 
 A table of the provider's own is the exception, and it goes in `schema.prisma`: Printables' `ProviderListing`, and
 `GrabImport`, the imports waiting for Grab, which MakerOnline and OwlCAD share, told apart by its `provider`.
+
+### Regions: a second site with its own accounts
+
+A site that runs a second site for one country, with the same pages but its own API, uploads and accounts
+(VoxelShare's www.voxelshare.cn), is a region of the same provider, not a provider of its own:
+
+- **Manifest:** `regions` lists each, with its `id` (stored, so it never changes), `name`, `site`, `hosts` (among the
+  provider's own), `endpoints`, and `trending.moreUrl` where it has a trending list of its own. Its sign-in is a user
+  auth slot named after it (`{ slot: "cn", scope: "user", ... }`), and its origins go in `extension.origins` beside the
+  main site's. The generator fails a region whose hosts or site aren't the provider's, or that has no such slot.
+- **Ids:** what's read from a region is kept as `<region>-<id>` (`regionalId` and `splitRegionalId`,
+  `providers/_lib/regions.ts`), so a print's link (`modelUrl`) and every later read go back to that site; the main
+  site's stay as they are. `urls.ts` reads either site's links and writes each id's back to its own. The same model
+  from both sites is two models, as a print keeps only its provider and id.
+- **Backend:** the provider's own code splits the id and reads that site's API with that site's sign-in. Its
+  trending's `region(userId)` picks which site's list a user sees; each is kept apart, with its own "more" link.
+- **App:** one tile in Configuration → Providers, connected by any site's sign-in (`signInStatus` in
+  `frontend/src/providers/overrides.ts`). Its connect form switches between the sites, and its menu offers the ones
+  not connected yet. Each region needs `connect.<region>.steps` and `.placeholder`, and `status.<region>.expired` and
+  `.expiredStatus`, under `providers.<id>`.
+- **Grab:** the region's sign-in is `SESSION_SOURCES["<id>:<region>"]`, with its `slot`; a page sends the region it's
+  on (`regionOfHost`) with `SYNC_PROVIDER_SESSION`.
 
 ## Strategies the existing providers use
 
@@ -360,7 +382,7 @@ Open an issue first, then:
 
 Clients in the wild, older Grab versions from the stores among them, depend on these:
 
-- Provider ids, `errorCodes` and API token scope ids.
+- Provider ids, `errorCodes`, API token scope ids, and region ids, which kept ids and sign-in slots carry.
 - The `legacy` endpoints and auth `legacyEndpoint`s in the older manifests, which are aliases of the generic routes.
   `backend/tests/providerFreeze.test.ts` and its route snapshot guard them. Providers added since have none.
 - The built-in Grab sites (MakerWorld, Printables, Thingiverse). The `buildManifest` snapshot test fails on any change

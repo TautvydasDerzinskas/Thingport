@@ -1,10 +1,17 @@
 // Sends the instance a provider's sign-in as this browser holds it, at the endpoint its manifest names, whenever it
-// changed since it was last sent. Each provider's own module says how its cookies read (providers/sessions.ts).
+// changed since it was last sent. Each provider's own module says how its cookies read (providers/sessions.ts), and
+// one with regions (other sites with accounts of their own) has a source for each, by `provider:region`.
 
-import { MANIFESTS, type AuthSlot, type ProviderId } from "../providers/index.generated";
+import { MANIFESTS, type AuthSlot, type ProviderId, type RegionId } from "../providers/index.generated";
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { apiCall, requireConfig } from "./api";
 import { SESSION_SOURCES } from "../providers/sessions";
+
+/** A sign-in source's key: its provider's, or for one of its regions, `provider:region`. */
+export type SessionKey = ProviderId | `${ProviderId}:${RegionId}`;
+
+export const sessionKey = (provider: ProviderId, region: RegionId | null): SessionKey =>
+  region ? `${provider}:${region}` : provider;
 
 /** `value` tells it from the one sent last; `body` is what its endpoint takes. `userId`: who's signed in there. */
 export type BrowserSession = { value: string; body: Record<string, unknown>; userId?: string | null };
@@ -29,21 +36,26 @@ function endpointOf(provider: ProviderId, slot: AuthSlot["slot"]) {
 
 // One write at a time, so two providers syncing at once don't each drop the other's entry.
 let writes: Promise<unknown> = Promise.resolve();
-function remember(provider: ProviderId, entry: { account: string; value: string } | null): Promise<void> {
+function remember(key: SessionKey, entry: { account: string; value: string } | null): Promise<void> {
   const write = writes.then(async () => {
     const stored = (await chrome.storage.local.get(STORAGE_KEYS.lastSyncedSessions)) as StoredConfig;
     const sessions = { ...stored.lastSyncedSessions };
-    if (entry) sessions[provider] = entry;
-    else delete sessions[provider];
+    if (entry) sessions[key] = entry;
+    else delete sessions[key];
     await chrome.storage.local.set({ [STORAGE_KEYS.lastSyncedSessions]: sessions });
   });
   writes = write.catch(() => undefined);
   return write;
 }
 
-/** Best-effort: never throws. Says who's signed in there, where the provider's cookies tell. */
-export async function syncSession(provider: ProviderId): Promise<{ userId: string | null }> {
-  const source = SESSION_SOURCES[provider];
+/** Best-effort: never throws. Says who's signed in there, where the provider's cookies tell. `region`: the site of the
+ *  provider's the page is on, null for its main one. */
+export async function syncSession(
+  provider: ProviderId,
+  region: RegionId | null = null,
+): Promise<{ userId: string | null }> {
+  const key = sessionKey(provider, region);
+  const source = SESSION_SOURCES[key];
   const config = source ? await requireConfig().catch(() => null) : null;
   if (!source || !config) return { userId: null };
   const session = await source.read().catch(() => undefined);
@@ -51,18 +63,18 @@ export async function syncSession(provider: ProviderId): Promise<{ userId: strin
   const { method, path } = endpointOf(provider, source.slot ?? "default");
   // Per Thingport account, so switching the extension to another one sends it there too.
   const account = `${config.instanceUrl} ${config.email}`;
-  const last = config.lastSyncedSessions?.[provider];
+  const last = config.lastSyncedSessions?.[key];
   try {
     if (!session) {
       // Clear the sign-in Grab sent, but not one pasted in Thingport: it says which one it sent, so an instance that
       // can tell clears it only while it's still the one stored. Older instances ignore that, and clear what's there.
       if (source.signedOut && last?.account === account) {
         await apiCall(method, path, { ...source.signedOut, signed_out_of: last.value });
-        await remember(provider, null);
+        await remember(key, null);
       }
     } else if (last?.account !== account || last.value !== session.value) {
       await apiCall(method, path, session.body);
-      await remember(provider, { account, value: session.value });
+      await remember(key, { account, value: session.value });
     }
   } catch {}
   return { userId: session?.userId ?? null };

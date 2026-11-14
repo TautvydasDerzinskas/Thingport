@@ -13,7 +13,7 @@ import {
   type ProviderProfileFactsById,
 } from "../../services/printProfileFacts";
 import { asRecord, recordsOf } from "../../services/trendingModel";
-import { fetchVoxelshareDetail, fetchVoxelshareProfiles, voxelshareId } from "./api";
+import { fetchVoxelshareDetail, fetchVoxelshareProfiles, voxelshareId, voxelshareSiteIdOf } from "./api";
 
 /** Filaments as the site lists them, each with its colour and weight in grams. */
 function filaments(list: unknown): ProfileFilament[] {
@@ -73,12 +73,14 @@ export function voxelshareProfileFactsFrom(items: unknown): ProviderProfileFacts
   return out;
 }
 
-/** Null for a model the site no longer has, whose list of profiles is as empty as a model's without any. */
+/** By the id it's kept under, from the site that names. Null for a model the site no longer has, whose list of
+ *  profiles is as empty as a model's without any. */
 export async function voxelshareProfileFacts(
   _userId: string,
-  modelId: string,
+  externalId: string,
 ): Promise<ProviderProfileFactsById | null> {
-  const items = await fetchVoxelshareProfiles(modelId);
-  if (!items.length && !(await fetchVoxelshareDetail(modelId))) return null;
+  const { region, id } = voxelshareSiteIdOf(externalId);
+  const items = await fetchVoxelshareProfiles(id, region);
+  if (!items.length && !(await fetchVoxelshareDetail(id, region))) return null;
   return voxelshareProfileFactsFrom(items);
 }

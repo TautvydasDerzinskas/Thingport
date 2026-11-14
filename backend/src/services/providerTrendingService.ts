@@ -4,7 +4,9 @@
 import { TtlCache } from "../utils/ttlCache";
 import {
   MANIFESTS,
+  manifestOf,
   type ProviderId,
+  type Region,
   TRENDING_PROVIDER_IDS,
   type TrendingProviderId,
 } from "../providers/index.generated";
@@ -37,13 +39,23 @@ function source(provider: TrendingProvider) {
   return { kind, moreUrl, ...PROVIDERS[provider].trending! };
 }
 
-/** A provider's list, from the cache when it's fresh. Setup is checked every time, so adding a token shows at once. */
+/** The region whose own list the user sees, where the provider gives them one; null for its main site's. */
+async function regionOf(provider: TrendingProvider, userId: string): Promise<Region | null> {
+  const id = await PROVIDERS[provider].trending!.region?.(userId);
+  return manifestOf(provider).regions?.find((region) => region.id === id && region.trending) ?? null;
+}
+
+/** A provider's list, from the cache when it's fresh. Setup is checked every time, so adding a token shows at once.
+ *  Each of its sites' lists is kept apart. */
 export async function getTrending(provider: TrendingProvider, userId: string): Promise<TrendingResult> {
-  const { kind, moreUrl, fetch, perUser } = source(provider);
-  const cached = perUser ? null : cache.get(provider);
+  const { kind, fetch, perUser, ...main } = source(provider);
+  const region = await regionOf(provider, userId);
+  const moreUrl = region?.trending?.moreUrl ?? main.moreUrl;
+  const key = region ? `${provider}:${region.id}` : provider;
+  const cached = perUser ? null : cache.get(key);
   if (cached) return { status: "ok", kind, moreUrl, models: cached };
-  const models = await fetch(userId, TRENDING_MAX);
+  const models = await fetch(userId, TRENDING_MAX, region?.id ?? null);
   if (typeof models === "string") return { status: "needsSetup", setup: models, moreUrl };
-  if (!perUser) cache.set(provider, models);
+  if (!perUser) cache.set(key, models);
   return { status: "ok", kind, moreUrl, models };
 }

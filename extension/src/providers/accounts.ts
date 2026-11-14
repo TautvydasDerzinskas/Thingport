@@ -2,7 +2,7 @@
 // the user is there. Only the signed-in account: these pages link to plenty of other people's profiles too.
 
 import { send } from "../shared/messages";
-import type { ProviderId } from "./index.generated";
+import { regionOfHost, type ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
 import { grabcadSignedIn } from "./grabcad/content";
 import { syncMakeronline } from "./makeronline/content";
@@ -15,8 +15,9 @@ import { toymakr3dSignedIn } from "./toymakr3d/content";
 import { syncPrintables } from "./printables/content";
 import { captureThingiverseAccount } from "./thingiverse/account";
 
+/** The sign-in of the provider's site this page is on: its main one, or one of its regions. */
 function syncSession(provider: ProviderId): void {
-  void send("SYNC_PROVIDER_SESSION", { provider });
+  void send("SYNC_PROVIDER_SESSION", { provider, region: regionOfHost(provider, location.hostname) });
 }
 
 /** What a page of each provider's sends on, once per tab. */
@@ -77,7 +78,8 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // every visit: a signed-out one clears the sign-in Grab sent.
   qidimaker: syncSession,
   // Its sign-in reads the user's own collections and likes. Only a signed-in visitor has its cookie, and the site
-  // renews it as it's used, so it's read on every visit: a signed-out one clears the sign-in Grab sent.
+  // renews it as it's used, so it's read on every visit: a signed-out one clears the sign-in Grab sent. Its China
+  // site's pages send that site's own.
   voxelshare: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,

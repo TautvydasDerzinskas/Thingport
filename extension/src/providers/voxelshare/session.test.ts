@@ -13,7 +13,7 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { voxelshareSession } = await import("./session");
+const { voxelshareChinaSession, voxelshareSession } = await import("./session");
 
 // A token in the site's shape, made up.
 const TOKEN = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIiwiZXhwIjo0MDcwOTA4ODAwfQ.c2lnbmF0dXJl";
@@ -34,5 +34,13 @@ describe("VoxelShare's sign-in, read from its cookies", () => {
 
   it("clears the sign-in it sent once the user signs out there", () => {
     expect(voxelshareSession.signedOut).toEqual({ token: null });
+  });
+
+  it("reads the China site's own cookie, for the sign-in named after it", async () => {
+    jar = { token: TOKEN };
+    expect(await voxelshareChinaSession.read()).toEqual({ value: TOKEN, body: { token: TOKEN }, userId: null });
+    expect(asked.at(-1)).toEqual({ url: "https://www.voxelshare.cn", name: "token" });
+    expect(voxelshareChinaSession.slot).toBe("cn");
+    expect(voxelshareSession.slot).toBeUndefined();
   });
 });

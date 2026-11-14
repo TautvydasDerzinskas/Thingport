@@ -3614,11 +3614,15 @@
       "title": "Fournisseurs",
       "subtitle": "Les sites depuis lesquels vous importez des modèles. Faites un clic droit sur l’un d’eux pour le connecter ou le déconnecter.",
       "connected": "Connecté",
+      "connectedSites": "Connecté · {{sites}}",
       "notConnected": "Non connecté",
       "connect": "Connecter",
+      "connectSite": "Connecter : {{site}}",
       "connecting": "Connexion…",
       "disconnect": "Déconnecter",
       "connectTitle": "Connecter {{name}}",
+      "site": "Site",
+      "regions": { "main": "International", "cn": "Chine" },
       "disconnectTitle": "Déconnecter {{name}} ?",
       "disconnectMessage": "Votre clé {{name}} est supprimée, et les importations depuis {{name}} cessent de fonctionner jusqu’à ce que vous la reconnectiez.",
       "disconnectMessageShared": "Le jeton {{name}} est supprimé pour tous les utilisateurs de cette instance Thingport, et les importations depuis {{name}} cessent de fonctionner jusqu’à sa reconnexion.",
@@ -7894,21 +7898,33 @@
           "Ou manuellement : connectez-vous à www.voxelshare.com et ouvrez les outils de développement de votre navigateur (F12).",
           "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → https://www.voxelshare.com, copiez la valeur du cookie token et collez-la ci-dessous."
         ],
-        "placeholder": "La valeur du cookie token"
+        "placeholder": "La valeur du cookie token",
+        "cn": {
+          "steps": [
+            "Le plus simple : avec Thingport Grab, il suffit d’ouvrir www.voxelshare.cn en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+            "Ou manuellement : connectez-vous à www.voxelshare.cn et ouvrez les outils de développement de votre navigateur (F12).",
+            "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → https://www.voxelshare.cn, copiez la valeur du cookie token et collez-la ci-dessous."
+          ],
+          "placeholder": "La valeur du cookie token"
+        }
       },
       "status": {
         "notConnected": "Reliez votre compte pour lire vos « J’aime » et vos collections privées VoxelShare. Ses modèles et les collections publiques de chacun s’importent sans lui.",
         "expired": "La connexion a expiré. Connectez-vous à www.voxelshare.com avec Thingport Grab, ou reconnectez VoxelShare dans Configuration → Fournisseurs.",
         "expiredStatus": "Connexion expirée",
-        "disabledReason": "VoxelShare : connectez votre compte dans Configuration → Fournisseurs"
+        "disabledReason": "VoxelShare : connectez votre compte dans Configuration → Fournisseurs",
+        "cn": {
+          "expired": "La connexion au site chinois a expiré. Connectez-vous à www.voxelshare.cn avec Thingport Grab, ou reconnectez le site chinois de VoxelShare dans Configuration → Fournisseurs.",
+          "expiredStatus": "Connexion au site chinois expirée"
+        }
       },
       "about": {
         "summary": "La communauté de modèles de Flashforge pour ses imprimantes Adventurer et Creator, avec des profils d’impression faits dans Flash Studio.",
         "signIn": "Aucune pour importer ; votre connexion ajoute vos collections et vos « J’aime ».",
-        "grab": "Envoie votre connexion lorsque vous visitez www.voxelshare.com.",
+        "grab": "Envoie votre connexion lorsque vous visitez www.voxelshare.com ou son site chinois, www.voxelshare.cn.",
         "setup": [
           "Importez n’importe quel lien de modèle ; aucune connexion n’est nécessaire.",
-          "Pour vos collections et vos « J’aime » : installez Thingport Grab, activez-le sur VoxelShare et ouvrez www.voxelshare.com en étant connecté."
+          "Pour vos collections et vos « J’aime » : installez Thingport Grab, activez-le sur VoxelShare et ouvrez www.voxelshare.com en étant connecté (www.voxelshare.cn pour un compte chinois)."
         ]
       },
       "admin": {

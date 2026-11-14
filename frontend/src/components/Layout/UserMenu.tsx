@@ -22,7 +22,7 @@ import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import type { ProviderState } from "../../api/providers";
 import { refreshProviders, useProviders } from "../../hooks/useProviders";
 import { MANIFESTS } from "../../providers/index.generated";
-import { PROVIDER_UI, providerReady } from "../../providers/overrides";
+import { PROVIDER_UI, expiredSite, expiredTexts, providerReady, signInStatus } from "../../providers/overrides";
 
 type Props = {
   user: AuthUser | null;
@@ -49,8 +49,9 @@ export function UserMenu({ user, onOpenConfiguration, onOpenProfile, onLogout }:
 
   /** Why its imports don't work yet. */
   const notReadyReason = (state: ProviderState) => {
-    const status = state.slots.default?.status;
-    if (status === "expired") return t(`providers:${state.id}.status.expired`);
+    const status = signInStatus(state);
+    const expired = expiredSite(state);
+    if (status === "expired" && expired) return expiredTexts(state.id, expired, t).tooltip;
     if (status === "connected") {
       const missing = PROVIDER_UI[state.id]?.missing?.(state, t);
       if (missing) return missing.tooltip;
