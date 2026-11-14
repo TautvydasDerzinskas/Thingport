@@ -36,6 +36,16 @@ export function siteSlots(id: ProviderId): ("default" | RegionId)[] {
   return ["default", ...(manifestOf(id).regions ?? []).map((region) => region.id)];
 }
 
+/** Those of its sites the instance keeps a sign-in for: one from before a site was added lists only the others, and
+ *  turns that one's slot away. */
+export function sitesOnInstance<T extends { slot: string }>(
+  sites: readonly T[],
+  state: ProviderState | undefined,
+): T[] {
+  const slots = state?.slots ?? {};
+  return sites.filter((site) => site.slot === "default" || site.slot in slots);
+}
+
 /** Its sign-in across its sites: connected where any is, else expired where any was turned down; undefined for a
  *  provider with none to give, or before it's known. */
 export function signInStatus(state: ProviderState): ConnectionStatus | undefined {

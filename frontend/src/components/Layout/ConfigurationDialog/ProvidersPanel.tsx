@@ -25,7 +25,13 @@ import { PanelHeader } from "./parts";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./providerLogos";
 import { refreshProviders, useProviders } from "../../../hooks/useProviders";
 import { type AuthSlot, MANIFESTS, PROVIDER_IDS, manifestOf } from "../../../providers/index.generated";
-import { expiredSite, expiredTexts, missingOf as missingFor, signInStatus } from "../../../providers/overrides";
+import {
+  expiredSite,
+  expiredTexts,
+  missingOf as missingFor,
+  signInStatus,
+  sitesOnInstance,
+} from "../../../providers/overrides";
 import { useProviderAbout } from "../../providerAbout/ProviderAboutProvider";
 import Segmented from "../../controls/Segmented";
 
@@ -72,6 +78,7 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
   }, []);
 
   const stateOf = (id: ProviderId): ProviderState | undefined => providers?.find((p) => p.id === id);
+  const instanceSites = (id: ProviderId) => sitesOnInstance(siteAuths(id), stateOf(id));
   // Any of its sites' sign-ins connects the tile.
   const statusOf = (id: ProviderId) => {
     const state = stateOf(id);
@@ -110,7 +117,9 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
   };
   /** The tile's sites not connected yet, which its menu offers to connect besides those that are. */
   const unconnectedSites = (id: ProviderId) =>
-    regionsOf(id).length ? siteAuths(id).filter((auth) => stateOf(id)?.slots[auth.slot]?.status !== "connected") : [];
+    regionsOf(id).length
+      ? instanceSites(id).filter((auth) => stateOf(id)?.slots[auth.slot]?.status !== "connected")
+      : [];
   /** The sign-in a connect starts on: the one that ran out, else the tile's own. */
   const firstAuth = (id: ProviderId) => {
     const state = stateOf(id);
@@ -133,7 +142,7 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
       await providersApi.saveConnection(id, auth.slot, values);
     } else {
       if (auth.slot === "default") {
-        const others = [...extraAuths(id), ...siteAuths(id).filter((site) => site.slot !== "default")];
+        const others = [...extraAuths(id), ...instanceSites(id).filter((site) => site.slot !== "default")];
         for (const other of others) await providersApi.saveConnection(id, other.slot, forget(other));
       }
       await providersApi.saveConnection(id, auth.slot, forget(auth));
@@ -354,7 +363,7 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
           auth={connecting.auth}
           sites={
             isRegionSlot(connecting.id, connecting.auth.slot) || connecting.auth.slot === "default"
-              ? siteAuths(connecting.id)
+              ? instanceSites(connecting.id)
               : []
           }
           siteName={(slot) => siteName(connecting.id, slot)}
@@ -424,11 +433,11 @@ function ConnectBox({ id, auth: first, sites, siteName, name, onCancel, onConnec
   const extra = auth.slot !== "default" && !site;
   const keyPrefix = auth.slot !== "default" ? `providers:${id}.connect.${auth.slot}` : `providers:${id}.connect`;
 
-  /** Another site: what's typed stays where the fields are the same. */
+  /** Another site starts empty: a sign-in is one site's, and what was typed for one is never sent to the other. */
   const switchSite = (slot: string) => {
     const next = sites.find((s) => s.slot === slot);
     if (!next || next.slot === auth.slot) return;
-    setDrafts((current) => next.fields.map((field, i) => (auth.fields[i]?.name === field.name ? current[i] : "")));
+    setDrafts(next.fields.map(() => ""));
     setError(null);
     setAuth(next);
   };
