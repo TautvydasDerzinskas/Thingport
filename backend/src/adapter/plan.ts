@@ -56,6 +56,8 @@ function ownedBy(format: ThreeMfFormat, slicer: SlicerProfile): boolean {
 }
 
 function quietFor(format: ThreeMfFormat, slicer: SlicerProfile): boolean {
+  // A tag it would have to drop leaves the Application to go by again.
+  if (slicer.orcaTagFirst && format.orcaTag && orcaTagQuiet(format, slicer)) return true;
   const limit = format.app ? slicer.quietUpTo?.[format.app] : undefined;
   return !limit || (format.appVersion !== null && versionAtMost(format.appVersion, limit));
 }

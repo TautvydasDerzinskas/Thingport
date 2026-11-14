@@ -455,10 +455,12 @@ func windowsCandidates() map[string][]string {
 		"elegooslicer":   {"ElegooSlicer/elegoo-slicer.exe"},
 		"snapmaker-orca": {"Snapmaker_Orca/snapmaker-orca.exe"},
 		// Flash Studio's launcher beside Orca-Flashforge.dll. Its installer (Advanced Installer) doesn't say where it
-		// puts it, so the folders its maker and product names would make, and the one its CPack script names.
+		// puts it, so the folders its maker and product names would make, under its older product name too, and the
+		// one its CPack script names.
 		"orca-flashforge": {
 			"Flashforge/Flash Studio Desktop/flash studio.exe",
 			"Flashforge/Flash Studio*/flash studio.exe",
+			"Flashforge/Orca-Flashforge/flash studio.exe",
 			"Flash Studio*/flash studio.exe",
 			"Orca-Flashforge/flash studio.exe",
 		},

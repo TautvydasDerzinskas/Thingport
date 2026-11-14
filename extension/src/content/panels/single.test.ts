@@ -220,6 +220,24 @@ describe("the single-model panel", () => {
   });
 
   describe("Import", () => {
+    it("sends the profile the page shows where its address doesn't name it, to the import and the queue alike", async () => {
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
+      answers.QUEUE_IMPORT = { job_id: "job1", item_id: "item1", duplicate: false, waiting: 1 };
+      // VoxelShare's page keeps its pick to itself: the module names it in the link.
+      contentModules.printables = { shownProfileUrl: (url: string) => `${url}#profileId-9` };
+      atProvider("printables", { canQueue: true, importQueue: true });
+      await loadSingleItem();
+      await click("import");
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-9`]);
+
+      await loadSingleItem();
+      await click("queue");
+      expect(messages.find(({ type }) => type === "QUEUE_IMPORT")?.payload).toMatchObject({
+        url: `${URL_PRINTABLES}#profileId-9`,
+        scope: "url",
+      });
+    });
+
     it("stays immediate, flag or not: it's never Add to the queue", async () => {
       answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
       atProvider("printables", { canQueue: true, importQueue: true });

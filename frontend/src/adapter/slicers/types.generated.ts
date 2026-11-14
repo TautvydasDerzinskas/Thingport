@@ -20,6 +20,8 @@ export type SlicerProfile = {
   quietUpTo?: Readonly<Record<string, string>>;
   /** The newest `OrcaSlicer` tag it opens without a dialog; unset, it never minds one. */
   orcaTagQuietUpTo?: string;
+  /** Takes a file's `OrcaSlicer` tag as its version where it has one, so `quietUpTo` only counts for a file without. */
+  orcaTagFirst?: boolean;
   /** Whose names it gives settings (Bambu layout only). */
   dialect?: SettingsDialect;
   /** Asks which printer to use for another maker's project and rebases the project on it, so such a project is
