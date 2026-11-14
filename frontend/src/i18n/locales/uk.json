@@ -7586,6 +7586,7 @@
         "cn": {
           "steps": [
             "Найпростіше: увійдіть на space.snapmaker.cn і відкрийте його з Thingport Grab. Він підключить обліковий запис і оновлюватиме дані входу, адже вхід Snapmaker діє лише день.",
+            "Дозволили Grab на Snapmaker Space ще до того, як він дізнався про китайський сайт? Тоді дозвольте його й на space.snapmaker.cn та id.snapmaker.cn у налаштуваннях розширень браузера (доступ до сайтів).",
             "Або вручну: увійдіть на space.snapmaker.cn і відкрийте інструменти розробника браузера (F12).",
             "У розділі Application (Chrome, Edge) або Storage (Firefox) → Cookies → space.snapmaker.cn скопіюйте значення login_access_token та вставте його нижче. Вручну він діє день."
           ],

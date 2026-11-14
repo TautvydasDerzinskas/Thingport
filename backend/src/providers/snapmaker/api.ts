@@ -119,8 +119,9 @@ export async function checkSnapmakerToken(
   }
 }
 
-// The account's own API, on the host that renews its sign-in: where Snapmaker's slicer lists the user's printers.
-const ACCOUNT_API = `${new URL(manifest.endpoints.token).origin}/api`;
+// A site's account API, on the host that renews its sign-in: where Snapmaker's slicer lists the user's printers.
+const accountApi = (region: SnapmakerRegion) =>
+  `${new URL(region ? CHINA.endpoints.token : manifest.endpoints.token).origin}/api`;
 const DEVICE_PAGE = 100;
 
 /** Each printer of a device list's answer by the names its model goes by: its product name, then its model and its
@@ -136,26 +137,29 @@ export function snapmakerDeviceModels(data: unknown): string[][] {
   });
 }
 
-/** The printers bound to the account, by `snapmakerDeviceModels`; null when Snapmaker can't say. Throws when it turns
- *  the sign-in down. */
-export async function fetchSnapmakerDeviceModels(token: string): Promise<string[][] | null> {
+/** The printers bound to the account on a site, by `snapmakerDeviceModels`; null when Snapmaker can't say. Throws when
+ *  it turns the sign-in down. */
+export async function fetchSnapmakerDeviceModels(
+  token: string,
+  region: SnapmakerRegion = null,
+): Promise<string[][] | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   let body: unknown;
   try {
-    const res = await credentialRequest("snapmaker-id", `${ACCOUNT_API}/user/device/list`, {
+    const res = await credentialRequest("snapmaker-id", `${accountApi(region)}/user/device/list`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ pageIndex: 1, pageRows: DEVICE_PAGE }),
       signal: controller.signal,
     });
     body = await res.json().catch(() => null);
-    if (res.status === 401) throw new SnapmakerAuthError();
+    if (res.status === 401) throw new SnapmakerAuthError(region);
   } finally {
     clearTimeout(timeout);
   }
   const code = isRecord(body) && typeof body.code === "number" ? body.code : null;
-  if (code === CODE_UNAUTHORIZED) throw new SnapmakerAuthError();
+  if (code === CODE_UNAUTHORIZED) throw new SnapmakerAuthError(region);
   return code === CODE_OK && isRecord(body) ? snapmakerDeviceModels(body.data) : null;
 }
 

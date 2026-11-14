@@ -7308,6 +7308,7 @@
         "cn": {
           "steps": [
             "Lo más fácil: con Thingport Grab, basta con abrir space.snapmaker.cn con la sesión iniciada. Conecta tu cuenta y mantiene el inicio de sesión actualizado, ya que el de Snapmaker dura solo un día.",
+            "¿Permitiste Grab en Snapmaker Space antes de que conociera el sitio de China? Permítelo también en space.snapmaker.cn e id.snapmaker.cn en los ajustes de extensiones de tu navegador (acceso a sitios).",
             "O manualmente: inicia sesión en space.snapmaker.cn y abre las herramientas de desarrollador de tu navegador (F12).",
             "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → space.snapmaker.cn, copia el valor de login_access_token y pégalo abajo. Pegado a mano, dura un día."
           ],

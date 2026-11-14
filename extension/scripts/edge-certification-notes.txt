@@ -6,7 +6,7 @@
 Thingport Grab {{version}}. Changes: {{changes}}
 
 WHAT IT DOES
-Imports 3D-printing models from model sites (MakerWorld, Printables, Thingiverse, and others the user enables) into the user's own self-hosted Thingport server (open source: https://github.com/TautvydasDerzinskas/Thingport). Data goes only to the user's server, the model sites (including id.snapmaker.com and id.snapmaker.cn to renew the Snapmaker sign-ins) and the browser's own sync storage (recent imports list); never to the developer.
+Imports 3D-printing models from model sites (MakerWorld, Printables, Thingiverse, and others the user enables) into the user's own self-hosted Thingport server (open source: https://github.com/TautvydasDerzinskas/Thingport). Data goes only to the user's server, the model sites (and id.snapmaker.com and .cn to renew Snapmaker sign-ins) and the browser's own sync storage (recent imports list); never to the developer.
 
 HOW TO TEST
 1. A Thingport server is required. {{testServer}}

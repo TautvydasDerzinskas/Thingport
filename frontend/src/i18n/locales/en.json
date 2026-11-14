@@ -6997,6 +6997,7 @@
         "cn": {
           "steps": [
             "Easiest: with Thingport Grab, just open space.snapmaker.cn while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
+            "Allowed Grab on Snapmaker Space before it knew the China site? Then also allow it on space.snapmaker.cn and id.snapmaker.cn in your browser's extension settings (site access).",
             "Or by hand: sign in at space.snapmaker.cn and open your browser's developer tools (F12).",
             "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.cn, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
           ],

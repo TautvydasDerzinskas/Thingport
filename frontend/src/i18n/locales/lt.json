@@ -7476,6 +7476,7 @@
         "cn": {
           "steps": [
             "Paprasčiausia: su Thingport Grab tiesiog atverkite space.snapmaker.cn prisijungę. Jis prijungs jūsų paskyrą ir palaikys prisijungimą galiojantį, nes Snapmaker prisijungimas galioja tik parą.",
+            "Grab leidote Snapmaker Space dar prieš atsirandant Kinijos svetainei? Tada naršyklės plėtinių nustatymuose (prieiga prie svetainių) leiskite jį ir space.snapmaker.cn bei id.snapmaker.cn.",
             "Arba rankiniu būdu: prisijunkite prie space.snapmaker.cn ir atverkite naršyklės kūrėjo įrankius (F12).",
             "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → space.snapmaker.cn nukopijuokite login_access_token reikšmę ir įklijuokite ją žemiau. Įklijuotas rankiniu būdu, jis galioja parą."
           ],
