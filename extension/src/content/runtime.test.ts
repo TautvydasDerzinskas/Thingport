@@ -76,6 +76,23 @@ describe("own navigation", () => {
       expect(seen).toBe(false);
     });
 
+    it("isn't the model coming back after the page went to another, whose panel it then showed", async () => {
+      const seen: boolean[] = [];
+      let importing = false;
+      await whileImporting(PAGE, async () => {
+        page.href = "https://makerworld.com/en/models/200-other";
+        seen.push(isOwnNavigation());
+        page.href = `${PAGE}#profileId-11`;
+        seen.push(isOwnNavigation());
+        page.href = `${PAGE}#profileId-12`;
+        seen.push(isOwnNavigation());
+        importing = isImporting(PAGE);
+      });
+      expect(seen).toEqual([false, false, false]);
+      expect(importing).toBe(true);
+      expect(isOwnNavigation()).toBe(false);
+    });
+
     it("is the user's again once the run is over, but for where the run left the address", async () => {
       await whileImporting(PAGE, async () => void (page.href = `${PAGE}#profileId-11`));
       expect(isOwnNavigation()).toBe(true);

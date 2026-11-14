@@ -432,6 +432,40 @@ describe("the single-model panel", () => {
   });
 
   describe("importing several print profiles", () => {
+    it("leaves out the first one too when another tab brought it in after the panel was drawn", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1", "2"] };
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "profile_added" };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: true,
+        print_id: "print1",
+        imported_profile_ids: ["1"],
+      };
+      // Drawn while the model wasn't in the library.
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-2`]);
+      expect(last()).toContain("Print profiles imported: 1, 1 already on the model.");
+    });
+
+    it("leaves nothing out of a fresh model, which the instance says has no profiles", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1"] };
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: false,
+        print_id: null,
+        imported_profile_ids: [],
+      };
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-1`]);
+    });
+
     it("says why the ones that failed did, when some came in", async () => {
       profileScope = "all";
       contentModules.printables = { loadProfiles: async () => () => ["1", "2", "3"] };

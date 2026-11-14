@@ -41,8 +41,9 @@ export async function holdingNavigation<T>(work: () => Promise<T>): Promise<T> {
  *  less its #fragment on a page that names no model. */
 export const importKey = (url: string): string => modelKey(url) ?? withoutFragment(url);
 
-/** The models imports started on this page are for, while they run. */
-const importsUnderWay = new Set<string>();
+/** The imports started on this page, by the model they're for, while they run. `left`: the page has since been on
+ *  another, whose panel was drawn, so coming back needs this one's drawn again. */
+const importsUnderWay = new Map<string, { left: boolean }>();
 
 /**
  * Runs an import started on the page, for the model `url` is of. While it runs, the address moving anywhere on that
@@ -52,13 +53,14 @@ const importsUnderWay = new Set<string>();
  */
 export async function whileImporting<T>(url: string, work: () => Promise<T>): Promise<T> {
   const key = importKey(url);
-  importsUnderWay.add(key);
+  const run = { left: false };
+  importsUnderWay.set(key, run);
   try {
     return await work();
   } finally {
     importsUnderWay.delete(key);
     // As a hold's end: where the run left the address, should that be noticed only afterwards.
-    ownAddress = importKey(location.href) === key ? location.href : null;
+    ownAddress = !run.left && importKey(location.href) === key ? location.href : null;
   }
 }
 
@@ -69,9 +71,11 @@ export function isImporting(url: string): boolean {
 
 /** Asked once the address has changed: whether `holdingNavigation`'s work changed it, rather than the user. Only the
  *  held page's #fragment is the work's to change; any other address is the user going elsewhere. During an import, any
- *  address on its model is the run's. */
+ *  address on its model is the run's, until the page goes to another. */
 export function isOwnNavigation(): boolean {
-  if (importsUnderWay.has(importKey(location.href))) return true;
+  const here = importKey(location.href);
+  for (const [key, run] of importsUnderWay) if (key !== here) run.left = true;
+  if (importsUnderWay.get(here)?.left === false) return true;
   if (navigationHolds > 0) return withoutFragment(location.href) === heldPage;
   const own = location.href === ownAddress;
   ownAddress = null;

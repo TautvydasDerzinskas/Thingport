@@ -526,15 +526,13 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
     const progress = statusHtml(t("importingPrintProfile", { current: index + 1, total: wanted.length }));
     runProgress.set(importKey(url), progress);
     renderPanel(progress);
-    // Asked again before each one, as the model may have it by now (from another tab, say), and on MakerWorld it would
-    // be downloaded before the instance could say so. Nothing to ask before there's a model.
-    if (library || printId) {
-      const now = await heldProfilesNow(url);
-      if (now && !withoutHeld([instanceId], now.held).length) {
-        printId ??= now.printId;
-        already++;
-        continue;
-      }
+    // Asked again before each one, the first too, as the model may have it by now (from another tab, say), and on
+    // MakerWorld it would be downloaded before the instance could say so.
+    const now = await heldProfilesNow(url);
+    if (now && !withoutHeld([instanceId], now.held).length) {
+      printId ??= now.printId;
+      already++;
+      continue;
     }
     // The gap is between two of the site's downloads: one left out asked it nothing.
     if (fetchedOne) await sleep(PROFILE_GAP_MS);
