@@ -32,6 +32,7 @@ import { useToast } from "../../components/ToastProvider";
 import type { AuthUser } from "../../api/auth";
 import { switchSlicer } from "../../hooks/useSlicerPreference";
 import { dividerBorderColor } from "../../theme";
+import { onTopBarHeight, readTopBarHeight } from "../../utils/topBarHeight";
 import { SELF_AUTHOR_ID } from "../../constants/selfAuthor";
 import { importProviderInfo } from "../../constants/importProviders";
 import { useDownloadPrint } from "./useDownloadPrint";
@@ -89,16 +90,17 @@ function useFitsBelowTopBar(ref: RefObject<HTMLElement | null>): boolean {
     const el = ref.current;
     if (!el) return;
     const update = () => {
-      const topBar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 80;
-      setFits(topBar + el.offsetHeight + STICKY_BOTTOM_GAP <= window.innerHeight);
+      setFits(readTopBarHeight(80) + el.offsetHeight + STICKY_BOTTOM_GAP <= window.innerHeight);
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
     window.addEventListener("resize", update);
+    const stopHearing = onTopBarHeight(update);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", update);
+      stopHearing();
     };
   }, [ref]);
   return fits;

@@ -1,6 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Plate } from "../../api/prints";
-import type { AdaptPlan } from "../../adapter/plan.generated";
 import type { AdaptedTarget } from "./useOpenInSlicer";
 
 // The hook's state as a mounted component keeps it, without a DOM: each useState and useRef is a cell kept between
@@ -48,9 +46,17 @@ const target: AdaptedTarget = {
   filename: "benchy.3mf",
   launchFilename: "benchy.3mf",
   index: 0,
-  plate: { id: "plate-1" } as Plate,
+  plate: {
+    id: "plate-1",
+    print_id: "print-1",
+    position: 0,
+    filename: "benchy.3mf",
+    mime: "model/3mf",
+    size: 3,
+    url: "/plate-1.3mf",
+  },
   href: "bambustudio://open?file=x",
-  plan: {} as AdaptPlan,
+  plan: { output: "bambu", tag: null, dropOrcaTag: false, dialect: null },
   printer: null,
   fileUrl: "/plate-1-adapted.3mf",
 };
