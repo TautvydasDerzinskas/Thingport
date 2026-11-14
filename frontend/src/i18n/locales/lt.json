@@ -3159,6 +3159,7 @@
           "hostHelp": "Kaip senas serveris jį pasiekia per SSH.",
           "folder": "Aplankas šiame serveryje",
           "folderHelp": "Kur keliauja kopija ir old-storage. Šio egzemplioriaus backend jį mato kaip {{root}}.",
+          "folderAbsolute": "Nurodykite visą kelią, pvz., {{example}}.",
           "mountLead": "Šiame serveryje, aplanke, kuriame yra jo docker-compose.yml: pridėkite eilutę prie backend tomų, esamus palikdami kaip yra, tada paleiskite backend iš naujo.",
           "keepVolumes": "...jo esami tomai, kaip yra...",
           "use": "Naudoti šiuos kelius",

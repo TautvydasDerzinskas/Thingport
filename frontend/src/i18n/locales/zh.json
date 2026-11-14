@@ -2920,6 +2920,7 @@
           "hostHelp": "旧服务器通过 SSH 连接它时使用的地址。",
           "folder": "此服务器上的文件夹",
           "folderHelp": "转储和 old-storage 放在这里。此实例的后端将它视为 {{root}}。",
+          "folderAbsolute": "请填写完整路径，例如 {{example}}。",
           "mountLead": "在此服务器上，于其 docker-compose.yml 所在的文件夹中：把这一行加到后端的 volumes 中，已有的保持不变，然后重启后端。",
           "keepVolumes": "……原有的卷，保持不变……",
           "use": "使用这些路径",

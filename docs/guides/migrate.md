@@ -95,8 +95,12 @@ docker cp "$(docker compose ps -aq backend)":/app/storage/. old-storage
 ```
 
 This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
-or in a Docker volume. It needs as much free space as the storage takes. On the same server, a storage folder (not a
-volume) can be read where it is instead: put the dump beside it and mount the folder that holds both.
+or in a Docker volume. It needs as much free space as the storage takes. `/app/storage` is the old backend's
+`FILE_STORAGE`, which the Compose files set: if you changed it, use yours.
+
+On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `rsync`
+below, put the dump beside the folder and mount the folder that holds both. The Source step then takes the storage
+folder by its own name, such as `/app/migrate/storage`, rather than `/app/migrate/old-storage`.
 
 Then bring both to this server, over SSH or on a disk. On the same server, move them instead. Use this server's address
 and a folder of your own:

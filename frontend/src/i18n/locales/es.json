@@ -3114,6 +3114,7 @@
           "hostHelp": "Tal como el servidor antiguo lo alcanza por SSH.",
           "folder": "Carpeta en este servidor",
           "folderHelp": "Donde van el volcado y old-storage. El backend de esta instancia la ve como {{root}}.",
+          "folderAbsolute": "Indica la ruta completa, como {{example}}.",
           "mountLead": "En este servidor, desde la carpeta donde está su docker-compose.yml: añade la línea a los volúmenes del backend, dejando los que tiene como están, y reinicia el backend.",
           "keepVolumes": "...sus volúmenes, como están...",
           "use": "Usar estas rutas",

@@ -3114,6 +3114,7 @@
           "hostHelp": "Telle que l’ancien serveur le joint en SSH.",
           "folder": "Dossier sur ce serveur",
           "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}.",
+          "folderAbsolute": "Indiquez le chemin complet, par exemple {{example}}.",
           "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : ajoutez la ligne aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
           "keepVolumes": "...ses volumes, tels quels...",
           "use": "Utiliser ces chemins",

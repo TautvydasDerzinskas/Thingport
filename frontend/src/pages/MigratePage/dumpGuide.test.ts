@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_NAMES, guessHost, guideCommands, guidePaths, shellWord } from "./dumpGuide";
+import {
+  DEFAULT_NAMES,
+  composeValue,
+  folderIsAbsolute,
+  guessHost,
+  guideCommands,
+  guidePaths,
+  shellWord,
+} from "./dumpGuide";
 
 const where = { root: "/app/migrate", comment: "...its own volumes, as they are..." };
 
@@ -34,6 +42,22 @@ describe("dump guide", () => {
     );
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
     expect(commands.bring).toBe("rsync -a thingport.dump old-storage '192.168.1.20:/srv/old library/'");
+  });
+
+  it("writes the mount so Compose reads the folder as it was given", () => {
+    const mount = (folder: string) =>
+      guideCommands({ ...DEFAULT_NAMES, folder }, where)
+        .mount.split("\n")
+        .at(-1);
+    expect(mount("/srv/old #1")).toBe('      - "/srv/old #1:/app/migrate:ro"');
+    expect(mount("/srv/$backup")).toBe('      - "/srv/$$backup:/app/migrate:ro"');
+    expect(mount("C:\\thingport\\old")).toBe('      - "C:\\\\thingport\\\\old:/app/migrate:ro"');
+    expect(composeValue("/srv/old-thingport:/app/migrate:ro")).toBe("/srv/old-thingport:/app/migrate:ro");
+  });
+
+  it("takes only an absolute folder, as Compose mounts a bare name as a volume", () => {
+    for (const folder of ["", " ", "/srv/old", "C:\\old", "D:/old"]) expect(folderIsAbsolute(folder)).toBe(true);
+    for (const folder of ["old-migration", "./old", "~/old"]) expect(folderIsAbsolute(folder)).toBe(false);
   });
 
   it("guesses this server's address from the browser's, but not a loopback one", () => {

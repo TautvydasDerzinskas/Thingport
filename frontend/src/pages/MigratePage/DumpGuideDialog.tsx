@@ -20,7 +20,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CodeBlock from "../../components/CodeBlock";
 import HelpTip from "../../components/HelpTip";
 import { THINGPORT_WEBSITE_URL } from "../../constants/website";
-import { DEFAULT_NAMES, guessHost, guideCommands, guidePaths, type GuideNames } from "./dumpGuide";
+import { DEFAULT_NAMES, folderIsAbsolute, guessHost, guideCommands, guidePaths, type GuideNames } from "./dumpGuide";
 import { k } from "./parts";
 
 const GUIDE_URL = `${THINGPORT_WEBSITE_URL}docs/guides/migrate/#1-stop-the-old-instances-backend`;
@@ -46,8 +46,9 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
   }));
   const commands = guideCommands(names, { root, comment: t(k("dumpGuide.keepVolumes")) });
   const last = step === STEPS.length - 1;
+  const folderWrong = !folderIsAbsolute(names.folder);
 
-  const field = (key: keyof GuideNames, label: string, help: string) => (
+  const field = (key: keyof GuideNames, label: string, help: string, error?: string) => (
     <TextField
       size="small"
       fullWidth
@@ -60,6 +61,8 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
       value={names[key]}
       onChange={(event) => setNames({ ...names, [key]: event.target.value })}
       placeholder={DEFAULT_NAMES[key]}
+      error={Boolean(error)}
+      helperText={error}
       slotProps={{
         htmlInput: { spellCheck: false, autoCapitalize: "off" },
         inputLabel: { shrink: true, sx: { pointerEvents: "auto" } },
@@ -98,7 +101,12 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
         {lead("bringLead")}
         <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, pt: 1 }}>
           {field("host", t(k("dumpGuide.host")), t(k("dumpGuide.hostHelp")))}
-          {field("folder", t(k("dumpGuide.folder")), t(k("dumpGuide.folderHelp"), { root }))}
+          {field(
+            "folder",
+            t(k("dumpGuide.folder")),
+            t(k("dumpGuide.folderHelp"), { root }),
+            folderWrong ? t(k("dumpGuide.folderAbsolute"), { example: DEFAULT_NAMES.folder }) : undefined,
+          )}
         </Box>
         <CodeBlock code={commands.bring} />
       </>
@@ -170,7 +178,11 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
             {t(k("dumpGuide.use"))}
           </Button>
         ) : (
-          <Button variant="contained" onClick={() => setStep(step + 1)}>
+          <Button
+            variant="contained"
+            disabled={STEPS[step] === "bring" && folderWrong}
+            onClick={() => setStep(step + 1)}
+          >
             {t(k("dialog.next"))}
           </Button>
         )}

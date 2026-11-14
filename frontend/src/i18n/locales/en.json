@@ -3017,6 +3017,7 @@
           "hostHelp": "As the old server reaches it over SSH.",
           "folder": "Folder on this server",
           "folderHelp": "Where the dump and old-storage go. This instance's backend reads it as {{root}}.",
+          "folderAbsolute": "Give the full path, such as {{example}}.",
           "mountLead": "On this server, from the folder its docker-compose.yml is in: add the line to the backend's volumes, leaving the ones it has as they are, then restart the backend.",
           "keepVolumes": "...its own volumes, as they are...",
           "use": "Use these paths",

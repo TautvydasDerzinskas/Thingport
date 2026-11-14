@@ -33,6 +33,20 @@ export function shellWord(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
+/** A value for a Compose file: `$` doubled, as Compose reads `$NAME` as a variable even in quotes, and double-quoted
+ *  unless YAML would read it as a plain string, as ` #` starts a comment. */
+export function composeValue(value: string): string {
+  const escaped = value.replace(/\$/g, () => "$$");
+  return /^[\w/.][\w@%+=:,./-]*$/.test(escaped) ? escaped : JSON.stringify(escaped);
+}
+
+/** Whether the folder field holds an absolute path, or nothing (the default): Compose mounts a bare name as a named
+ *  volume, not a folder. */
+export function folderIsAbsolute(value: string): boolean {
+  const folder = value.trim();
+  return !folder || folder.startsWith("/") || /^[A-Za-z]:[\\/]/.test(folder);
+}
+
 /** The commands for each step, with the names given, or their defaults where a field is left empty. `root` is where
  *  this server's backend reads a migration from, `comment` the Compose file's note that its other volumes stay. */
 export function guideCommands(given: GuideNames, { root, comment }: { root: string; comment: string }) {
@@ -46,7 +60,13 @@ export function guideCommands(given: GuideNames, { root, comment }: { root: stri
     // docker cp reads a stopped container, its mounts included, so a bind folder and a volume copy alike.
     storage: `docker cp "$(docker compose ps -aq backend)":/app/storage/. ${STORAGE}`,
     bring: `rsync -a ${DUMP} ${STORAGE} ${shellWord(`${pick("host")}:${folder}/`)}`,
-    mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, `      - ${folder}:${root}:ro`].join("\n"),
+    mount: [
+      "services:",
+      "  backend:",
+      "    volumes:",
+      `      # ${comment}`,
+      `      - ${composeValue(`${folder}:${root}:ro`)}`,
+    ].join("\n"),
     restart: "docker compose up -d backend",
   };
 }
