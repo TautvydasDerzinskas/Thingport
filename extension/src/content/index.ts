@@ -50,6 +50,7 @@ import {
   renderPanel,
   setBubbleLook,
   setPanelExtra,
+  setFabTakesFocus,
   setPanelOpen,
   unmountHost,
 } from "./shell";
@@ -113,10 +114,12 @@ function relocalize(stored: unknown): void {
   else reinit();
 }
 
-function reinit(): void {
+/** `refocus`: started over from a control that had the focus, which the icon taking its place gets. */
+function reinit({ refocus = false } = {}): void {
   adaptChanged = false;
   clearTimeout(adaptSettle);
   unmount();
+  setFabTakesFocus(refocus);
   void init();
 }
 

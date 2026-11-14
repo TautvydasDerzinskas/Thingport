@@ -1,6 +1,6 @@
 # Thingport Grab privacy policy
 
-_Effective 13 November 2026._
+_Effective 14 November 2026._
 
 Thingport Grab is a browser extension that imports 3D-printing models from MakerWorld, Printables,
 Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
@@ -20,9 +20,13 @@ instance or account, so the new one has to be told.
   one of two things. If you paired the extension with your instance, the connection your instance issued for this
   browser when you approved it -- a token, with no password. If you entered credentials instead, your email and
   password as you entered them, so the extension can sign in again when its session expires.
-- **A pairing in progress:** while you approve the extension on your instance, a random one-time secret, the address
-  of your instance and the browser's number for the tab the extension opened there. It's deleted once the pairing
-  finishes or is cancelled, or that tab is closed, and it can't finish a pairing more than 15 minutes old.
+- **A pairing in progress:** from when you press **Pair with Thingport**, the address you entered and the time, so the
+  pairing can go on if your browser closes the popup to ask for access to your instance, and so the popup can fill
+  that address in again. It's replaced the next time you press it, deleted once the approval tab opens or you sign in
+  with a password instead, and never resumed once 15 minutes old. Then, while you approve the extension on your
+  instance, a random one-time secret, the address of your instance and the browser's number for the tab the extension
+  opened there. That's deleted once the pairing finishes or is cancelled, or that tab is closed, and it can't finish a
+  pairing more than 15 minutes old.
 - **A session token** your Thingport instance issues when the extension signs in, and when it expires.
 - **Your settings:** whether the extension is switched on, which Offline features are on (Adapt 3MFs' Download
   adapted button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,

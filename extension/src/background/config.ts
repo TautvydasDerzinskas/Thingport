@@ -3,6 +3,7 @@ import {
   STORAGE_KEYS,
   normalizeInstanceUrl,
   offlineFeatureOn,
+  pairingFresh,
   type OfflineFeature,
   type StoredConfig,
 } from "../shared/storage";
@@ -42,6 +43,7 @@ export async function getState(): Promise<ExtensionState> {
     });
   }
   const importQueue = config.importQueue === true;
+  const pairing = pairingFresh(config.pendingPairing);
   return {
     configured: isConfigured(config),
     disabled: Boolean(config.disabled),
@@ -50,6 +52,13 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
+    pairing,
+    // A left-over approval tab's address only when nothing newer was typed.
+    pairingInstanceUrl:
+      (pairing ? config.pendingPairing?.instanceUrl : "") ||
+      config.pairingIntent?.instanceUrl ||
+      config.pendingPairing?.instanceUrl ||
+      "",
     offlineFeatures: Object.fromEntries(
       (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [
         feature,
@@ -78,7 +87,11 @@ export async function saveConfig({
   await loginAndStoreToken({ instanceUrl: normalized, email, password });
   await chrome.storage.local.set({ instanceUrl: normalized, email, password, disabled: false });
   // The password replaces a connection made by approval; that one stays listed in Thingport until removed there.
-  await chrome.storage.local.remove([STORAGE_KEYS.connectionToken, STORAGE_KEYS.pendingPairing]);
+  await chrome.storage.local.remove([
+    STORAGE_KEYS.connectionToken,
+    STORAGE_KEYS.pendingPairing,
+    STORAGE_KEYS.pairingIntent,
+  ]);
   return null;
 }
 

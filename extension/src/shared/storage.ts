@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   connectionToken: "connectionToken",
   // A connection by approval in progress: the secret it proves itself with, and the tab it opened.
   pendingPairing: "pendingPairing",
+  // The address saved before the browser's host-permission prompt dismisses the popup.
+  pairingIntent: "pairingIntent",
   disabled: "disabled",
   // The popup's Offline features (see OFFLINE_FEATURE_DEFAULTS); unset means the default.
   normalizeMakerworld: "normalizeMakerworld",
@@ -67,6 +69,7 @@ export type StoredConfig = {
   password?: string;
   connectionToken?: string;
   pendingPairing?: PendingPairing;
+  pairingIntent?: PairingIntent;
   disabled?: boolean;
   normalizeMakerworld?: boolean;
   thingiverseDark?: boolean;
@@ -121,6 +124,16 @@ export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature):
 }
 
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
+/** `failed`: put back after the approval tab couldn't be opened, for the address field; only the pair button tries it again. */
+export type PairingIntent = { instanceUrl: string; startedAt: number; failed?: true };
+
+// Long enough to sign in through a provider on the way.
+export const PAIRING_TTL_MS = 15 * 60 * 1000;
+
+/** Still in time to finish; an older one is left over (its tab gone unnoticed) and mustn't hold the popup up. */
+export function pairingFresh<T extends { startedAt: number }>(pairing: T | undefined): pairing is T {
+  return pairing != null && Date.now() - pairing.startedAt <= PAIRING_TTL_MS;
+}
 
 /** Where each sign-in sent was remembered before lastSyncedSessions; dropped on update, so each is sent once more. */
 export const LEGACY_SESSION_KEYS = [

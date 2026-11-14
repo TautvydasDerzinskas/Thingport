@@ -3,7 +3,7 @@
 
 import type { LoginResult } from "../shared/api";
 import type { Connection } from "../shared/messages";
-import { STORAGE_KEYS, apiUrl } from "../shared/storage";
+import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl } from "../shared/storage";
 import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
@@ -129,6 +129,22 @@ async function askImportQueue(instanceUrl: string): Promise<boolean | null> {
     if (!res.ok) return null;
     const health = (await res.json()) as { import_queue?: boolean } | null;
     return health ? health.import_queue === true : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether the instance can approve Grab instead of taking a password. Null when it can't be asked: unreachable, or
+ *  an address still being typed. Its health check answers any origin, so this works before access is granted. */
+export async function probePairing(rawInstanceUrl: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(apiUrl(normalizeInstanceUrl(rawInstanceUrl), "/health"), {
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+    });
+    // An error, say a proxy's with a JSON body of its own, says nothing of what the instance can do.
+    if (!res.ok) return null;
+    const health = (await res.json()) as { grab_pairing?: boolean } | null;
+    return health ? health.grab_pairing === true : null;
   } catch {
     return null;
   }

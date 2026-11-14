@@ -21,6 +21,8 @@ let noteEl: HTMLDivElement | null = null;
 let fabEl: HTMLButtonElement | null = null;
 // The bubble's look, as the popup's Appearance tab set it; set before the first mount, and again on every change.
 let look: BubbleLook = DEFAULT_BUBBLE;
+// The page started over from a control that had the focus: the next icon mounted takes it.
+let fabTakesFocus = false;
 
 /** The bubble's style and corner, on the host for the stylesheet to read (styles/_bubble.scss), and its name, which
  *  carries the pill's word. */
@@ -102,6 +104,10 @@ type FabOptions = {
   onClick: () => void;
 };
 
+export function setFabTakesFocus(on: boolean): void {
+  fabTakesFocus = on;
+}
+
 export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: FabOptions): void {
   const button = document.createElement("button");
   button.type = "button";
@@ -137,6 +143,10 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   fabEl = button;
   button.addEventListener("click", onClick);
   root.appendChild(button);
+  if (fabTakesFocus) {
+    fabTakesFocus = false;
+    button.focus({ preventScroll: true });
+  }
   attachMagnet(button, body, {
     // The stack, not the panel: the panel itself is never hidden, its column is (see mountPanel).
     paused: () => Boolean(stackEl && !stackEl.hidden),
