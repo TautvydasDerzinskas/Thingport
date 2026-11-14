@@ -552,6 +552,10 @@ describe("planAdaptation", () => {
     });
     // An OrcaSlicer project as old as its own opens as it is.
     expect(plan("orca-flashforge", format({ app: "OrcaSlicer", appVersion: "2.3.0", dialect: "orca" }))).toBeNull();
+    // The tag is the version it goes by where there is one, whatever the Bambu Studio version beside it.
+    expect(
+      plan("orca-flashforge", format({ appVersion: "02.08.01.55", orcaTag: "2.3.2", dialect: "orca" })),
+    ).toBeNull();
     // A copy for the user's Flashforge printer names its own presets.
     const ad5m = { id: "flashforge-adventurer5m", nozzle: "0.4", preset: "Flashforge Adventurer 5M 0.4 Nozzle" };
     expect(planAdaptation(own, flash, ad5m)).toMatchObject({ printer: ad5m, tag: null });

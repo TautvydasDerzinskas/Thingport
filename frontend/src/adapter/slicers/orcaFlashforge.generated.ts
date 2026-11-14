@@ -13,6 +13,7 @@ export const orcaFlashforge: SlicerProfile = {
   ownWithOrcaTag: true,
   quietUpTo: { BambuStudio: "2.3.2", OrcaSlicer: "2.3.2" },
   orcaTagQuietUpTo: "2.3.2",
+  orcaTagFirst: true,
   dialect: "orca",
   targetsPrinter: true,
 };
