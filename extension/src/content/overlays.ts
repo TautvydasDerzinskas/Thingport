@@ -149,6 +149,11 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
   );
   fillIcons(overlay);
   root.appendChild(overlay);
+  // In place of the import's overlay, whose Abort had the focus: removing it left the focus nowhere. Not modal, so
+  // the CAPTCHA underneath stays in reach, and focus the user put on the page stays there.
+  if (!document.activeElement || document.activeElement === document.body) {
+    overlay.querySelector<HTMLElement>(".tg-overlay__card")!.focus({ preventScroll: true });
+  }
   wireAbort(overlay);
   const resumeBtn = overlay.querySelector<HTMLButtonElement>("[data-action=resume]")!;
   resumeBtn.addEventListener("click", () => {

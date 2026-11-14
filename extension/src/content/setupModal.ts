@@ -140,7 +140,8 @@ function dismiss(): void {
   closeSetupModal();
   if (!onClosed) return;
   onClosed();
-  if (hadFocus) getShadowRoot()?.querySelector<HTMLElement>("button")?.focus();
+  // The icon itself: the panel that comes with it, close button and all, is still hidden.
+  if (hadFocus) getShadowRoot()?.querySelector<HTMLElement>(".tg-fab")?.focus();
 }
 
 export function closeSetupModal(): void {
