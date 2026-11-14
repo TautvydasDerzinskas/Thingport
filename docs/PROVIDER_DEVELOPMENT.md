@@ -79,8 +79,9 @@ A site that runs a second site for one country, with the same pages but its own 
   main site's. The generator fails a region whose hosts or site aren't the provider's, or that has no such slot.
 - **Ids:** what's read from a region is kept as `<region>-<id>` (`regionalId` and `splitRegionalId`,
   `providers/_lib/regions.ts`), so a print's link (`modelUrl`) and every later read go back to that site; the main
-  site's stay as they are. `urls.ts` reads either site's links and writes each id's back to its own. The same model
-  from both sites is two models, as a print keeps only its provider and id.
+  site's stay as they are. Authors too, as a region's accounts are its own. `urls.ts` reads either site's links and
+  writes each id's back to its own. The same model from both sites is two models, as a print keeps only its provider
+  and id.
 - **Backend:** the provider's own code splits the id and reads that site's API with that site's sign-in. Its
   trending's `region(userId)` picks which site's list a user sees; each is kept apart, with its own "more" link.
 - **App:** one tile in Configuration → Providers, connected by any site's sign-in (`signInStatus` in

@@ -23,14 +23,16 @@ describe("VoxelShare metadata", () => {
     expect(resolved.meta.author).toMatchObject({ externalId: "284e9b6c92974fe2f24708db6e6b1e16", name: "Maker 6" });
   });
 
-  it("keeps a model read from the China site under its cn- id, its maker linked there", () => {
+  it("keeps a model read from the China site under its cn- id, its maker too, linked there", () => {
     const resolved = voxelshareMetaFromDetail(loadFixture("voxelshare", "model-detail").data, [], [], "cn")!;
     expect(resolved.modelId).toBe("cn-8242660");
+    expect(resolved.meta.author?.externalId).toBe("cn-284e9b6c92974fe2f24708db6e6b1e16");
     expect(resolved.meta.author?.links).toEqual([
       "https://www.voxelshare.cn/zh/profile/284e9b6c92974fe2f24708db6e6b1e16",
     ]);
     const main = voxelshareMetaFromDetail(loadFixture("voxelshare", "model-detail").data)!;
     expect(main.modelId).toBe("8242660");
+    expect(main.meta.author?.externalId).toBe("284e9b6c92974fe2f24708db6e6b1e16");
     expect(main.meta.author?.links).toEqual(["https://www.voxelshare.com/en/profile/284e9b6c92974fe2f24708db6e6b1e16"]);
   });
 

@@ -258,7 +258,8 @@ function authorOf(user: unknown, region: VoxelshareRegion): ImportedAuthorInfo |
   if (!userId || !name) return null;
   return {
     provider: PROVIDER,
-    externalId: userId,
+    // The China site's accounts are its own, like its models.
+    externalId: regionalId(region, userId),
     name,
     handle: str(user.customUid),
     bio: null,
