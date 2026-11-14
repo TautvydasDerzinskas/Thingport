@@ -225,13 +225,14 @@ describe("VoxelShare specifics", () => {
     expect(stub.calls.some((call) => call.url.pathname.includes("download/report"))).toBe(false);
   });
 
-  it("credits where a model it copied from another site was first published", async () => {
+  it("keeps the site's HTML description as Markdown, crediting where a copied model was first published", async () => {
     ctx.install(handlerFor("ok", "bare"));
     expectStatus(await ctx.importUrl(`https://www.voxelshare.com/en/models/${BARE_ID}`), 200);
     const [print] = await ctx.prints();
-    expect(print.notes).toContain(
-      'Originally published on Printables: <a href="https://www.printables.com/model/1763372-grumpy-highland-cow-from-the-grumpy-animals-series">',
-    );
+    const origin = "https://www.printables.com/model/1763372-grumpy-highland-cow-from-the-grumpy-animals-series";
+    expect(print.notes).toContain(`Originally published on Printables: [${origin}](${origin})`);
+    expect(print.notes).toContain("**Grumpy Highland Cow**");
+    expect(print.notes).not.toMatch(/<\/?(p|a|strong|figure|img)\b/);
   });
 
   it("imports a model's own files where none of its profiles is shown", async () => {

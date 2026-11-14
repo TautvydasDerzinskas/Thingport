@@ -3608,7 +3608,7 @@
         "appearance": "Apparence",
         "providers": "Fournisseurs",
         "slicer": "Slicer",
-        "printers": "Imprimantes"
+        "printers": "Imprimante"
       }
     },
     "providers": {
@@ -3631,7 +3631,7 @@
       "comingSoon": "Bientôt disponible"
     },
     "slicer": {
-      "subtitle": "Les slicers installés sur cet ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
+      "subtitle": "Les slicers installés sur votre ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
       "active": "Actif",
       "notActive": "Inactif",
       "activate": "Activer",
@@ -5001,18 +5001,20 @@
       "suggestedProjects_many": "{{count}} de vos projets sont faits pour elle",
       "suggestedProjects_other": "{{count}} de vos projets sont faits pour elle",
       "empty": "Ajoutez les imprimantes sur lesquelles vous imprimez : les modèles s’ouvrent alors dans votre slicer préparés pour elles.",
-      "bambu": {
-        "region": "Votre compte Bambu Lab",
-        "question": "Trouver vos imprimantes dans votre compte Bambu Lab ?",
+      "accounts": {
+        "region": "Vos comptes sur les sites des fabricants d’imprimantes",
+        "question": "Trouver vos imprimantes dans vos comptes ?",
         "find": "Les trouver",
         "later": "Pas maintenant",
-        "found_one": "{{count}} imprimante ajoutée depuis votre compte Bambu Lab.",
-        "found_many": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
-        "found_other": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
-        "none": "Votre compte Bambu Lab n’a aucune imprimante que Thingport connaît.",
-        "expired": "Votre connexion à MakerWorld a expiré. Reconnectez-vous dans Fournisseurs.",
-        "signedOut": "Connectez-vous d’abord à MakerWorld dans Fournisseurs.",
-        "failed": "Bambu Lab n’a pas listé vos imprimantes. Réessayez plus tard."
+        "found_one": "{{count}} imprimante ajoutée depuis {{sites}}.",
+        "found_many": "{{count}} imprimantes ajoutées depuis {{sites}}.",
+        "found_other": "{{count}} imprimantes ajoutées depuis {{sites}}.",
+        "none": "{{sites}} : aucune imprimante que Thingport connaît.",
+        "expired_one": "Votre connexion à {{sites}} a expiré. Reconnectez-vous dans Fournisseurs.",
+        "expired_many": "Vos connexions à {{sites}} ont expiré. Reconnectez-vous dans Fournisseurs.",
+        "expired_other": "Vos connexions à {{sites}} ont expiré. Reconnectez-vous dans Fournisseurs.",
+        "failed": "Impossible d’obtenir la liste des imprimantes de {{sites}}. Réessayez plus tard.",
+        "error": "Impossible de trouver vos imprimantes. Réessayez plus tard."
       },
       "menu": {
         "nozzle": "Buse",
@@ -5964,6 +5966,10 @@
       "openInSlicer": "Ouvrir dans {{slicer}}",
       "openInStudio": "Ouvrir dans Thingport Studio",
       "openAdaptedInSlicer": "Ouvrir la version adaptée dans {{slicer}}",
+      "adaptedFor": "adapté pour {{target}}",
+      "adaptedForYourPrinter": "adapté pour votre imprimante",
+      "downloadAdapted": "Télécharger la version adaptée",
+      "adaptedActions": "Ouvrir ou télécharger la copie adaptée",
       "adaptedInfo": {
         "prusa": "Une copie faite pour {{slicer}} : elle rejoint vos propres réglages d’imprimante, de filament et d’impression, avec la hauteur de couche, les parois, le remplissage et les supports du créateur réglés sur chaque objet, et les couleurs peintes sur vos extrudeurs. Le fichier stocké n’est pas modifié.",
         "cura": "Une copie faite pour {{slicer}}, un projet Cura pour n’importe quelle imprimante : ouvert comme UCP, la hauteur de couche, l’adhérence et le type de supports du créateur rejoignent les réglages de votre imprimante, et chaque objet garde son extrudeur. Les objets en plusieurs pièces gardent leurs pièces, et les parois, couches supérieures et inférieures, remplissage et supports du créateur sont réglés sur chaque objet. Cura ne lit pas les couleurs peintes. Le fichier stocké n’est pas modifié.",

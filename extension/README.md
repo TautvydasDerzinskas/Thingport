@@ -55,7 +55,7 @@ it stores and sends.
 <table>
   <tr>
     <td width="50%" align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/popup-setup-dark.png"><img src="docs/screenshots/popup-setup.png" alt="Popup before setup, leading with Pair with Thingport" width="300"></picture><br><sub><b>Popup</b> -- before setup</sub></td>
-    <td width="50%" align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/popup-connected-dark.png"><img src="docs/screenshots/popup-connected.png" alt="Popup when connected, with the sites Grab runs on in two columns" width="300"></picture><br><sub><b>Popup</b> -- connected, with the sites it runs on</sub></td>
+    <td width="50%" align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/popup-connected-dark.png"><img src="docs/screenshots/popup-connected.png" alt="Popup when connected, with the sites Grab runs on as tiles" width="300"></picture><br><sub><b>Popup</b> -- connected, with the sites it runs on</sub></td>
   </tr>
 </table>
 
@@ -172,7 +172,8 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
     printer for its nozzle, or to remove it. The list comes with the extension and draws each printer rather than
     showing a picture.
   - **Button:** beside the site's own button, or in Grab's bubble.
-  - **Sites:** where it works, with **Allow** for a site the extension doesn't run on until you let it.
+  - **Sites:** where it works, with **Allow** for a site the extension doesn't run on until you let it. Shown until
+    the extension is connected; then the **Providers** tab marks those sites instead.
 
   Under the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
 
@@ -264,14 +265,18 @@ in a card above it.
 ### MyMiniFactory and newer sites: allow them once
 
 Sites added after MakerWorld, Printables and Thingiverse, starting with MyMiniFactory, need one click first. The
-popup's **Providers** tab lists every site Grab supports in two columns, under a count of how many are on: a tick means
-it already runs there, and clicking a site without one asks your browser for access to that site alone; **Enable all**
-asks for all the rest at once. (An update that added each site to the extension itself would have the browser switch
+popup's **Providers** tab shows every site Grab supports as a tile, five to a row, under a count of how many are on: a
+tick in a tile's corner means it already runs there, and clicking a tile with a + asks your browser for access to that
+site alone; **Enable all** asks for all the rest at once. A line along a tile's bottom edge marks a site Download
+adapted works on (grey while **Adapt 3MFs** is off), and **Settings** under the tiles opens Adapt 3MFs' settings. (An update that added each site to the extension itself would have the browser switch
 the extension off for everyone until they approved it, every time.) A site stays on until you take the access back in
 your browser's extension settings.
 
 Opened on a page of a site Grab runs on, the popup leads with that site's card: its logo, a couple of sentences on
 what the site is, and its tick.
+
+The footer's **Like the extension? Show your love!** opens the ways to support Thingport: Buy Me a Coffee and GitHub
+Sponsors, each in a new tab.
 
 Opening MyMiniFactory while signed in also connects your MyMiniFactory account to Thingport, so the models you
 bought, and free ones that only download when signed in, import from your library. On a paid model you haven't

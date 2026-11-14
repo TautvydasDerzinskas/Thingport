@@ -30,6 +30,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
       .catch(() => {});
   };
   const recordUse = () => record("slicer");
+  /** A download made elsewhere, such as an adapted copy's. */
+  const recordDownload = () => record("download");
 
   /** A plate, or any other of the model's files, such as its prepared print. */
   const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
@@ -87,5 +89,6 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     downloadAllZip,
     sortedPlates,
     recordUse,
+    recordDownload,
   };
 }

@@ -3305,7 +3305,7 @@
       "comingSoon": "即将推出"
     },
     "slicer": {
-      "subtitle": "此电脑上安装的切片软件。模型会在你上次使用的切片软件中打开，其他的则在“打开方式”菜单中。双击某个切片软件，或右键单击它，即可启用或停用。",
+      "subtitle": "你电脑上安装的切片软件。模型会在你上次使用的切片软件中打开，其他的则在“打开方式”菜单中。双击某个切片软件，或右键单击它，即可启用或停用。",
       "active": "已启用",
       "notActive": "未启用",
       "activate": "启用",
@@ -4601,16 +4601,16 @@
       "suggestedSliced_other": "你有 {{count}} 个打印文件是为它切片的",
       "suggestedProjects_other": "你有 {{count}} 个项目是为它制作的",
       "empty": "添加你用来打印的打印机，模型就会以专为它们制作的版本在切片软件中打开。",
-      "bambu": {
-        "region": "你的 Bambu Lab 账号",
-        "question": "要在你的 Bambu Lab 账号中查找打印机吗？",
+      "accounts": {
+        "region": "你在打印机厂商网站上的账号",
+        "question": "要在你的账号中查找打印机吗？",
         "find": "查找",
         "later": "以后再说",
-        "found_other": "已从你的 Bambu Lab 账号添加 {{count}} 台打印机。",
-        "none": "你的 Bambu Lab 账号中没有 Thingport 认识的打印机。",
-        "expired": "你的 MakerWorld 登录信息已过期。请在“模型网站”中重新登录。",
-        "signedOut": "请先在“模型网站”中登录 MakerWorld。",
-        "failed": "Bambu Lab 没有列出你的打印机。请稍后重试。"
+        "found_other": "已从 {{sites}} 添加 {{count}} 台打印机。",
+        "none": "{{sites}}：没有 Thingport 认识的打印机。",
+        "expired_other": "你在 {{sites}} 的登录信息已过期。请在“模型网站”中重新登录。",
+        "failed": "未能从 {{sites}} 获取你的打印机列表。请稍后重试。",
+        "error": "未能查找你的打印机。请稍后重试。"
       },
       "menu": {
         "nozzle": "喷嘴",
@@ -5520,6 +5520,10 @@
       "openInSlicer": "在 {{slicer}} 中打开",
       "openInStudio": "在 Thingport Studio 中打开",
       "openAdaptedInSlicer": "在 {{slicer}} 中打开适配版",
+      "adaptedFor": "已适配 {{target}}",
+      "adaptedForYourPrinter": "已适配你的打印机",
+      "downloadAdapted": "下载适配版",
+      "adaptedActions": "打开或下载适配版",
       "adaptedInfo": {
         "prusa": "为 {{slicer}} 制作的副本：使用你自己的打印机、耗材和打印设置，在每个对象上设置设计者的层高、墙、填充和支撑，涂色则分配到你的挤出机上。存储的文件不会被更改。",
         "cura": "为 {{slicer}} 制作的副本，是适用于任何打印机的 Cura 项目：以 UCP 方式打开时，设计者的层高、附着方式和支撑类型会应用到你的打印机设置上，每个对象保留其挤出机。多零件对象保留各自的零件，设计者的墙、顶层和底层、填充和支撑设置在每个对象上。Cura 不读取涂色。存储的文件不会被更改。",

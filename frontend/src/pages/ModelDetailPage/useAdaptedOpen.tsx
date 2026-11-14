@@ -9,21 +9,34 @@ import { useToast } from "../../components/ToastProvider";
 import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { setCachedSlicerSettings } from "../../hooks/useSlicerPreference";
 import { useUserPrinters } from "../../hooks/useUserPrinters";
-import { isAdaptedTarget, type AdaptedTarget } from "./useOpenInSlicer";
+import { saveBlobToDisk } from "../../utils/downloadResponse";
+import { isAdaptedTarget, type AdaptedTarget, type SlicerTarget } from "./useOpenInSlicer";
 
 export type AdaptState = "idle" | "preparing" | "ready";
 
 const POLL_MS = 2000;
 
+/** `<name>-adapted.3mf`, with the printer's model after it for a copy made for one: as Thingport Grab names its. */
+export function adaptedCopyFilename(source: string, printerModel: string | null): string {
+  const base = source.replace(/\.3mf$/i, "");
+  const model = printerModel
+    ?.replace(/[\\/:*?"<>|]+/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+  return `${base}-adapted${model ? `-${model}` : ""}.3mf`;
+}
+
 /** "Open adapted in <slicer>": asks the server for the copy that slicer gets and polls until it's made, so no
  *  request has to outlast a proxy timeout. A cached copy opens straight away. A slow one ends in "ready" and needs a
- *  second click: browsers only launch a slicer's protocol right after a click. A target that asks which printer it's
- *  for asks first, in `dialog`, which the caller renders. */
+ *  second click: browsers only launch a slicer's protocol right after a click. `download` saves the copy instead, once
+ *  made, which needs no second click. A target that asks which printer it's for asks first, in `dialog`, which the
+ *  caller renders. */
 export function useAdaptedOpen(
   printId: string,
   slicerId: string | null,
   onOpened: () => void,
   onUnauthorized?: () => void,
+  onDownloaded?: () => void,
 ) {
   const { t } = useTranslation(["models"]);
   const showToast = useToast();
@@ -31,7 +44,12 @@ export function useAdaptedOpen(
   const [states, setStates] = useState<Record<string, AdaptState>>({});
   // The copy picked for a target that asks, kept while it's made, so the second click opens it without asking again.
   const [picked, setPicked] = useState<Record<string, AdaptedTarget>>({});
-  const [asking, setAsking] = useState<{ target: AdaptedTarget; resolve: (launched: boolean) => void } | null>(null);
+  const [asking, setAsking] = useState<{
+    target: AdaptedTarget;
+    action: "open" | "download";
+    resolve: (done: boolean) => void;
+  } | null>(null);
+  const [downloading, setDownloading] = useState(false);
   // Set on every mount: StrictMode unmounts and remounts once in development.
   const mounted = useRef(false);
   useEffect(() => {
@@ -107,11 +125,81 @@ export function useAdaptedOpen(
     });
   }, []);
 
+  /** The user's printer a copy is made for, as the catalogue names it ("Bambu Lab P1S"); null for one that isn't. */
+  const printerOf = useCallback(
+    (target: AdaptedTarget) => {
+      const choice = current(target).printer;
+      return (choice && printers.find((printer) => printer.printer.id === choice.id)) ?? null;
+    },
+    [current, printers],
+  );
+  const printerName = useCallback(
+    (target: AdaptedTarget): string | null => {
+      const printer = printerOf(target);
+      return printer ? `${printer.brandName} ${printer.printer.model}`.trim() : null;
+    },
+    [printerOf],
+  );
+
+  /** Saves the copy once it's made, or the file itself where the printer picked needs none. */
+  const downloadNow = useCallback(
+    async (target: AdaptedTarget | SlicerTarget, printerModel: string | null): Promise<boolean> => {
+      if (!slicerId) return false;
+      setDownloading(true);
+      try {
+        let url = target.url;
+        let filename = target.filename;
+        if (isAdaptedTarget(target) && target.plate) {
+          const plateId = target.plate.id;
+          const adapt = () => printsApi.adaptPlate(printId, plateId, slicerId, target.printer);
+          let { status } = await adapt();
+          while (status === "preparing") {
+            await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+            if (!mounted.current) return false;
+            ({ status } = await adapt());
+          }
+          // Left the page meanwhile, a cached copy's too: nothing is fetched or saved after that.
+          if (!mounted.current) return false;
+          if (status === "failed") throw new Error("Adapting failed");
+          url = target.fileUrl;
+          // The adapted link serves the plate itself where no copy is needed: then it's named as the plate is.
+          if (status === "ready") filename = adaptedCopyFilename(target.filename, printerModel);
+        }
+        const res = await fetch(printsApi.fileUrl(url));
+        if (res.status === 401) throw new UnauthorizedError();
+        if (!res.ok) throw new Error("Download failed");
+        const blob = await res.blob();
+        if (!mounted.current) return false;
+        // Named here: the server names a copy after its plate, as the original's own download is.
+        await saveBlobToDisk(blob, filename);
+        onDownloaded?.();
+        return true;
+      } catch (err) {
+        if (err instanceof UnauthorizedError) onUnauthorized?.();
+        else if (mounted.current) showToast({ message: t("models:detail.downloadFailed"), severity: "warning" });
+        return false;
+      } finally {
+        if (mounted.current) setDownloading(false);
+      }
+    },
+    [printId, slicerId, onDownloaded, onUnauthorized, showToast, t],
+  );
+
+  /** Resolves true once saved. A target that asks which printer it's for asks first. */
+  const download = useCallback(
+    async (target: AdaptedTarget): Promise<boolean> => {
+      const now = current(target);
+      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, action: "download", resolve }));
+      return downloadNow(now, printerOf(target)?.printer.model ?? null);
+    },
+    [current, downloadNow, printerOf],
+  );
+
   /** Resolves true when the slicer was launched, so a menu can close. */
   const open = useCallback(
     async (target: AdaptedTarget): Promise<boolean> => {
       const now = current(target);
-      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, resolve }));
+      if (now.ask) return new Promise<boolean>((resolve) => setAsking({ target, action: "open", resolve }));
       const launched = await openNow(now);
       if (launched && target.ask) forget(pickKey(target));
       return launched;
@@ -121,7 +209,7 @@ export function useAdaptedOpen(
 
   const choose = async (printer: UserPrinter, remember: boolean) => {
     if (!asking) return;
-    const { target, resolve } = asking;
+    const { target, action, resolve } = asking;
     setAsking(null);
     const chosen = target.withPrinter?.(printer) ?? null;
     if (!chosen) return resolve(false);
@@ -133,6 +221,7 @@ export function useAdaptedOpen(
           if (err instanceof UnauthorizedError) onUnauthorized?.();
         });
     }
+    if (action === "download") return resolve(await downloadNow(chosen, printer.printer.model));
     // Made for that very printer: the file opens as it is, as Open opens it.
     if (!isAdaptedTarget(chosen)) {
       window.location.href = chosen.href;
@@ -159,5 +248,5 @@ export function useAdaptedOpen(
     />
   ) : null;
 
-  return { stateOf, open, dialog };
+  return { stateOf, open, download, downloading, printerName, dialog };
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { htmlToMarkdown, markdownFromDescription } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
@@ -293,15 +294,42 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 }
 
-/** The model's description, with where it was first published after it when VoxelShare copied it from elsewhere. */
+/** The model's description as Markdown, with where it was first published after it when VoxelShare copied it from
+ *  elsewhere. The site keeps it as HTML. */
 function descriptionOf(detail: Record<string, unknown>): string | null {
-  const description = str(detail.content) ?? str(detail.originalContent);
+  const content = str(detail.content) ?? str(detail.originalContent);
   const origin = voxelshareOriginOf(detail);
-  if (!origin) return description;
-  const credit =
-    `<p>Originally published on ${escapeHtml(origin.site)}: ` +
-    `<a href="${escapeHtml(origin.url)}">${escapeHtml(origin.url)}</a></p>`;
-  return description ? `${description}\n${credit}` : credit;
+  const credit = origin
+    ? htmlToMarkdown(
+        `<p>Originally published on ${escapeHtml(origin.site)}: ` +
+          `<a href="${escapeHtml(origin.url)}">${escapeHtml(origin.url)}</a></p>`,
+      )
+    : null;
+  return [content && markdownFromDescription(content), credit].filter(Boolean).join("\n\n") || null;
+}
+
+// Flashforge's printer list, on the same API as the site's, which takes its sign-in: what Flash Studio asks for, as
+// its Mac app (app 31, platform 15).
+const DEVICE_LIST = { currentPage: 1, pageSize: 100, appId: 31, platform: 15 };
+
+/** Each printer of a device list's answer by the name of its model, as Flash Studio shows it. Nothing else of a
+ *  printer is read. */
+export function voxelshareDeviceModels(data: unknown): string[][] {
+  const devices = isRecord(data) && Array.isArray(data.detail) ? data.detail : [];
+  return devices.flatMap((device) => {
+    const model = isRecord(device) ? str(device.model) : null;
+    return model ? [[model]] : [];
+  });
+}
+
+/** The printers bound to the account on a site, by `voxelshareDeviceModels`; null when it can't say. Throws when it
+ *  turns the sign-in down. */
+export async function fetchVoxelshareDeviceModels(
+  token: string,
+  region: VoxelshareRegion = null,
+): Promise<string[][] | null> {
+  const res = await fetchApi("GET", "v2/external/truck/device/list", DEVICE_LIST, token, region);
+  return res.code === CODE_OK ? voxelshareDeviceModels(res.data) : null;
 }
 
 /** The model's print profiles from its list of them, in the site's order. One that's private, or not shown, is left

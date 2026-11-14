@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { UnauthorizedError } from "../api/client";
 import { printersApi, type MyPrinters } from "../api/printers";
 
-const EMPTY: MyPrinters = { printers: [], suggestions: [], bambu: false };
+const EMPTY: MyPrinters = { printers: [], suggestions: [], accounts: [] };
 
 // Shared by every mounted instance so there's one request, and changes reach all of them.
 let cached: MyPrinters | undefined;
@@ -41,7 +41,7 @@ function read(): Promise<MyPrinters> {
   return request;
 }
 
-/** Reads them again, e.g. after a change the server makes more of (suggestions, the Bambu offer). */
+/** Reads them again, e.g. after a change the server makes more of (suggestions, the accounts to find them in). */
 export function reloadPrinters(): Promise<MyPrinters> {
   const running = inFlight;
   if (!running) return read();
@@ -61,7 +61,7 @@ export function reloadPrinters(): Promise<MyPrinters> {
   return queued;
 }
 
-/** The user's printers, their library's suggestions and the Bambu offer; `loaded` false until the first answer, and
+/** The user's printers, their library's suggestions and the accounts to find them in; `loaded` false until the first answer, and
  *  `failed` when that answer was an error, which `reload` tries again. */
 export function useUserPrinters(onUnauthorized?: () => void) {
   const [value, setValue] = useState<MyPrinters>(cached ?? EMPTY);

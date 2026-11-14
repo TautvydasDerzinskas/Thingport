@@ -9,6 +9,7 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Skeleton from "@mui/material/Skeleton";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
@@ -20,10 +21,11 @@ import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import ReplayIcon from "@mui/icons-material/Replay";
 import { slicerProfile } from "../../../adapter/slicers/index.generated";
 import { UnauthorizedError } from "../../../api/client";
-import { BambuSignInError, printersApi, type PrinterSummary, type UserPrinter } from "../../../api/printers";
+import { printersApi, type PrinterSummary, type UserPrinter } from "../../../api/printers";
 import { settingsApi } from "../../../api/settings";
 import { SLICER_OPTIONS } from "../../../constants/settingsOptions";
 import { setCachedSlicerSettings, useSlicerSettings } from "../../../hooks/useSlicerPreference";
+import { MANIFESTS, type ProviderId } from "../../../providers/index.generated";
 import { reloadPrinters, useUserPrinters } from "../../../hooks/useUserPrinters";
 import NestedMenuItem from "../../NestedMenuItem";
 import { bedText } from "../../printers/AddPrinterDialog";
@@ -32,6 +34,7 @@ import PrinterPicture from "../../printers/PrinterPicture";
 import { useToast } from "../../ToastProvider";
 import { AddTile, AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader } from "./AppTiles";
 import { PanelHeader } from "./parts";
+import { ProviderLogo } from "./providerLogos";
 
 const TILE = 60;
 
@@ -44,14 +47,14 @@ type Tile =
 /** The printers the user prints on, as app tiles like the Slicer section's, with the ones their library points at
  *  dimmed beside them: double-click adds or removes one, right-click sets its nozzle and the slicers it's for. */
 export default function PrintersPanel({ onUnauthorized }: Props) {
-  const { t } = useTranslation(["app", "common"]);
+  const { t, i18n } = useTranslation(["app", "common"]);
   const showToast = useToast();
-  const { printers, suggestions, bambu, loaded, failed, reload } = useUserPrinters(onUnauthorized);
+  const { printers, suggestions, accounts, loaded, failed, reload } = useUserPrinters(onUnauthorized);
   const slicerSettings = useSlicerSettings();
   const [menu, setMenu] = React.useState<{ id: string; top: number; left: number } | null>(null);
   const [adding, setAdding] = React.useState(false);
   // Asked again on the next visit, until a printer is chosen.
-  const [bambuLater, setBambuLater] = React.useState(false);
+  const [accountsLater, setAccountsLater] = React.useState(false);
   const [finding, setFinding] = React.useState(false);
 
   const fail = React.useCallback(
@@ -120,22 +123,35 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
     }
   };
 
-  const findInBambu = async () => {
+  const findInAccounts = async () => {
     setFinding(true);
     try {
-      const found = await printersApi.findInBambuAccount();
+      const { printers: found, accounts: answers } = await printersApi.findInAccounts();
       await reloadPrinters();
-      showToast({
-        message: found.length ? t("printers.bambu.found", { count: found.length }) : t("printers.bambu.none"),
-        severity: found.length ? "success" : "info",
-      });
-    } catch (err) {
-      if (err instanceof BambuSignInError)
+      const list = new Intl.ListFormat(i18n.language, { type: "conjunction" });
+      const sites = (ids: ProviderId[]) => list.format(ids.map((id) => MANIFESTS[id].name));
+      const where = (state: string) => answers.filter((a) => a.state === state).map((a) => a.provider);
+      const from = answers.filter((a) => a.found > 0).map((a) => a.provider);
+      const [none, expired, broken] = [where("ok"), where("expired"), where("failed")];
+      if (found.length) {
         showToast({
-          message: err.reason === "expired" ? t("printers.bambu.expired") : t("printers.bambu.signedOut"),
+          message: t("printers.accounts.found", { count: found.length, sites: sites(from) }),
+          severity: "success",
+        });
+      } else if (none.length) {
+        showToast({ message: t("printers.accounts.none", { sites: sites(none) }), severity: "info" });
+      }
+      if (expired.length) {
+        showToast({
+          message: t("printers.accounts.expired", { count: expired.length, sites: sites(expired) }),
           severity: "warning",
         });
-      else fail(err, t("printers.bambu.failed"));
+      }
+      if (broken.length) {
+        showToast({ message: t("printers.accounts.failed", { sites: sites(broken) }), severity: "error" });
+      }
+    } catch (err) {
+      fail(err, t("printers.accounts.error"));
     } finally {
       setFinding(false);
     }
@@ -149,15 +165,16 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
     <>
       <PanelHeader title={t("configuration.tabs.printers")} subtitle={t("printers.subtitle")} />
 
-      {bambu && !bambuLater && (
+      {accounts.length > 0 && !accountsLater && (
         <Box
           component="section"
-          aria-label={t("printers.bambu.region")}
+          aria-label={t("printers.accounts.region")}
           sx={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "auto 1fr",
             alignItems: "center",
-            flexWrap: "wrap",
-            gap: 1,
+            columnGap: 1,
+            rowGap: 0.75,
             mb: 2,
             px: 1.5,
             py: 1,
@@ -169,22 +186,53 @@ export default function PrintersPanel({ onUnauthorized }: Props) {
           }}
         >
           <CloudOutlinedIcon fontSize="small" sx={{ color: "primary.main" }} />
-          <Typography variant="body2" sx={{ flex: 1, minWidth: 180 }}>
-            {t("printers.bambu.question")}
-          </Typography>
-          <Button
-            size="small"
-            variant="contained"
-            disableElevation
-            disabled={finding}
-            onClick={() => void findInBambu()}
-            startIcon={finding ? <CircularProgress size={14} color="inherit" /> : undefined}
-          >
-            {t("printers.bambu.find")}
-          </Button>
-          <Button size="small" onClick={() => setBambuLater(true)} disabled={finding}>
-            {t("printers.bambu.later")}
-          </Button>
+          <Typography variant="body2">{t("printers.accounts.question")}</Typography>
+          <Box sx={{ gridColumn: 2, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+            {/* The accounts it would look in, each on a white tile as Providers shows them, so a dark logo stays
+                legible in the dark theme. */}
+            <Box
+              component="ul"
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, m: 0, mr: "auto", p: 0, listStyle: "none" }}
+            >
+              {accounts.map((id) => (
+                <Tooltip key={id} title={MANIFESTS[id].name}>
+                  <Box
+                    component="li"
+                    tabIndex={0}
+                    aria-label={MANIFESTS[id].name}
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "6px",
+                      bgcolor: "common.white",
+                      // For a logo drawn in the text's colour, which on a white tile is dark in both themes.
+                      color: "grey.900",
+                      boxShadow: (theme) => `inset 0 0 0 1px ${alpha(theme.palette.common.black, 0.08)}`,
+                      "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+                    }}
+                  >
+                    <ProviderLogo id={id} size={16} />
+                  </Box>
+                </Tooltip>
+              ))}
+            </Box>
+            <Button
+              size="small"
+              variant="contained"
+              disableElevation
+              disabled={finding}
+              onClick={() => void findInAccounts()}
+              startIcon={finding ? <CircularProgress size={14} color="inherit" /> : undefined}
+            >
+              {t("printers.accounts.find")}
+            </Button>
+            <Button size="small" onClick={() => setAccountsLater(true)} disabled={finding}>
+              {t("printers.accounts.later")}
+            </Button>
+          </Box>
         </Box>
       )}
 

@@ -119,6 +119,46 @@ export async function checkSnapmakerToken(
   }
 }
 
+// The account's own API, on the host that renews its sign-in: where Snapmaker's slicer lists the user's printers.
+const ACCOUNT_API = `${new URL(manifest.endpoints.token).origin}/api`;
+const DEVICE_PAGE = 100;
+
+/** Each printer of a device list's answer by the names its model goes by: its product name, then its model and its
+ *  product code. Nothing else of a printer is read. */
+export function snapmakerDeviceModels(data: unknown): string[][] {
+  const devices = Array.isArray(data) ? data : isRecord(data) && Array.isArray(data.list) ? data.list : [];
+  return devices.flatMap((device) => {
+    if (!isRecord(device)) return [];
+    const names = [str(device.productName), str(device.deviceModel), str(device.productCode)].filter(
+      (name): name is string => !!name,
+    );
+    return names.length ? [names] : [];
+  });
+}
+
+/** The printers bound to the account, by `snapmakerDeviceModels`; null when Snapmaker can't say. Throws when it turns
+ *  the sign-in down. */
+export async function fetchSnapmakerDeviceModels(token: string): Promise<string[][] | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  let body: unknown;
+  try {
+    const res = await credentialRequest("snapmaker-id", `${ACCOUNT_API}/user/device/list`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ pageIndex: 1, pageRows: DEVICE_PAGE }),
+      signal: controller.signal,
+    });
+    body = await res.json().catch(() => null);
+    if (res.status === 401) throw new SnapmakerAuthError();
+  } finally {
+    clearTimeout(timeout);
+  }
+  const code = isRecord(body) && typeof body.code === "number" ? body.code : null;
+  if (code === CODE_UNAUTHORIZED) throw new SnapmakerAuthError();
+  return code === CODE_OK && isRecord(body) ? snapmakerDeviceModels(body.data) : null;
+}
+
 /** `coverUrl`: the profile's own picture, which becomes its file's thumbnail. */
 export type SnapmakerProfile = { id: string; title: string; creatorId: string | null; coverUrl: string | null };
 

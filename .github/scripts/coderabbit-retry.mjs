@@ -1,7 +1,8 @@
 // Asks CodeRabbit for the reviews a pull request is owed. Run by coderabbit-retry.yml whenever a CodeRabbit check
 // finishes or a pull request is pushed to: a run asks for what's due, then waits in the run for what comes next (the
 // allowance back, a check that should have started, a review settling) for up to RUN_MINUTES, and starts the next run
-// if something is still to come. A newer run replaces a waiting one.
+// if something is still to come. A waiting run stops, with success, once a newer one has started: a cancelled run
+// would leave a failed check on its commit.
 //
 // For each open pull request (drafts, paused ones and ones whose description says `@coderabbitai ignore` aside), the
 // newest thing since its head commit decides:
@@ -19,8 +20,8 @@
 // ASK_TOKEN, an ordinary account's token; an ask it leaves unanswered isn't repeated for that commit.
 //
 // Usage: node coderabbit-retry.mjs, with GH_TOKEN (reads, and starts the next run), ASK_TOKEN (posts), GITHUB_API_URL,
-// GITHUB_REPOSITORY and RUN_MINUTES (0, the default, asks what's due and stops) set. Without ASK_TOKEN, or with
-// DRY_RUN=true, it only says what it would ask and when.
+// GITHUB_REPOSITORY and RUN_MINUTES (0, the default, asks what's due and stops) set, and in Actions GITHUB_RUN_ID and
+// GITHUB_WORKFLOW_REF. Without ASK_TOKEN, or with DRY_RUN=true, it only says what it would ask and when.
 
 import { pathToFileURL } from "node:url";
 
@@ -55,6 +56,8 @@ const SETTLE_MS = 3 * MINUTE;
 // A waiting run looks again just after the time it waited for, and never sooner than this after its last look.
 const WAKE_MARGIN_MS = 1000;
 const MIN_PAUSE_MS = 30_000;
+// How often a waiting run looks for a newer one to leave the rest to.
+const HANDOVER_POLL_MS = 60_000;
 
 const time = (iso) => Date.parse(iso);
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -356,9 +359,29 @@ export function banner(repository) {
 }
 
 /**
+ * A newer run of this workflow that will do the work, or null: one still to finish whose job isn't skipped (most
+ * check_run runs are), not one started by a pull request (it only starts another) and not a dry run.
+ */
+export async function newerRun(github, workflow, runId) {
+  const runs = [];
+  for (const status of ["queued", "in_progress"]) {
+    const page = await github.request(`actions/workflows/${workflow}/runs?status=${status}&per_page=100`);
+    runs.push(...page.workflow_runs);
+  }
+  const candidates = runs
+    .filter((run) => run.id > runId && run.event !== "pull_request_target" && !/dry run/i.test(run.display_title ?? ""))
+    .sort((a, b) => b.id - a.id);
+  for (const run of candidates) {
+    const { jobs } = await github.request(`actions/runs/${run.id}/jobs`);
+    if (jobs.some((job) => job.status !== "completed")) return run;
+  }
+  return null;
+}
+
+/**
  * One run: asks for each pull request that's due, one at a time, looking again after each ask, and waits in between
  * for the next ask or recheck until `until`. Returns { at } when the next of those comes later than that, so another
- * run has to look then, or {} when nothing is to come.
+ * run has to look then, or {} when nothing is to come or `superseded` finds a newer run to leave it to.
  */
 export async function askDue({
   github,
@@ -367,11 +390,26 @@ export async function askDue({
   dryRun,
   footer = "",
   until = 0,
+  superseded = async () => null,
   clock = Date.now,
   pause = sleep,
   log = console.log,
 }) {
+  const handedOver = async () => {
+    const run = await superseded();
+    if (run) log(`Run ${run.id} started since, so it takes over from here.`);
+    return Boolean(run);
+  };
+  // Waits ms, looking for a newer run meanwhile; true once there is one.
+  const rest = async (ms) => {
+    for (const end = clock() + ms; clock() < end;) {
+      await pause(Math.min(end - clock(), HANDOVER_POLL_MS));
+      if (await handedOver()) return true;
+    }
+    return false;
+  };
   for (let asks = 0; asks < MAX_ASKS_PER_RUN;) {
+    if (await handedOver()) return {};
     const now = clock();
     const { states, waiting, hold } = await survey(github, { asker, now });
     for (const state of states) {
@@ -395,11 +433,11 @@ export async function askDue({
         }
         // Looks once more at the end of its time, so a run hands over at most once in that time.
         log(`${what} at ${iso(wake)}; looking again at the end of this run, ${iso(until)}.`);
-        await pause(Math.max(until - now, MIN_PAUSE_MS));
+        if (await rest(Math.max(until - now, MIN_PAUSE_MS))) return {};
         continue;
       }
       log(`${what} at ${iso(wake)}; waiting.`);
-      await pause(Math.max(wake - now + WAKE_MARGIN_MS, MIN_PAUSE_MS));
+      if (await rest(Math.max(wake - now + WAKE_MARGIN_MS, MIN_PAUSE_MS))) return {};
       continue;
     }
     const { number, ask: command } = next.pull;
@@ -407,6 +445,8 @@ export async function askDue({
       log(`Would post "${command}" on #${number} now.`);
       return {};
     }
+    // A run started during the look above is looking too, and would ask the same.
+    if (await handedOver()) return {};
     const ask = await poster.request(`issues/${number}/comments`, {
       method: "POST",
       body: JSON.stringify({ body: footer ? `${command}\n\n${footer}` : command }),
@@ -430,6 +470,7 @@ async function main() {
     GITHUB_API_URL = "https://api.github.com",
     GITHUB_REPOSITORY,
     GITHUB_REF_NAME,
+    GITHUB_RUN_ID,
     GITHUB_WORKFLOW_REF,
     GH_TOKEN,
     ASK_TOKEN,
@@ -449,11 +490,14 @@ async function main() {
   // A dry run only says what's due; a real one waits for what comes within its time.
   const minutes = Number(RUN_MINUTES) || 0;
   const until = dryRun || minutes <= 0 ? 0 : Date.now() + minutes * MINUTE;
-  const { at } = await askDue({ github, poster, asker, dryRun, footer: banner(GITHUB_REPOSITORY), until });
+  const workflow = GITHUB_WORKFLOW_REF?.split("@")[0].split("/").pop();
+  // Runs aren't cancelled for newer ones, so a waiting one leaves the rest to the newest itself.
+  const superseded =
+    until && workflow && GITHUB_RUN_ID ? () => newerRun(github, workflow, Number(GITHUB_RUN_ID)) : undefined;
+  const { at } = await askDue({ github, poster, asker, dryRun, footer: banner(GITHUB_REPOSITORY), until, superseded });
   // Only a run that had time hands over: it waited all of it first, so runs can't start each other in a loop. Nothing
   // else may start one by then, as GitHub fires few of the scheduled runs.
-  if (!at || !until || !GITHUB_WORKFLOW_REF) return;
-  const workflow = GITHUB_WORKFLOW_REF.split("@")[0].split("/").pop();
+  if (!at || !until || !workflow) return;
   await github.request(`actions/workflows/${workflow}/dispatches`, {
     method: "POST",
     body: JSON.stringify({ ref: GITHUB_REF_NAME }),

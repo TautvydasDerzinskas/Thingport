@@ -289,6 +289,10 @@ Rules of thumb:
   (`listImport: "grab"`). A sync turned on from the app brings only models added from then on (`syncsNewOnly`).
 - **Trending** declares its list's `kind` (trending, popular, featured or recommended) and its `rank` on the
   dashboard panel, or `false` where the site has no such list.
+- **Owned printers** (`ownedPrinters`): where the site's printer maker lists the user's printers to its sign-in, the
+  provider gives them to Find my printers in Configuration → Printer, read only when the user asks. Only each
+  printer's model, matched to the printer catalogue by `brandOwnedPrinters` (`providers/ownedPrinters.ts`), and its
+  nozzle are read: never its serial, name, address or keys.
 - **Category ids** are numbers for most sites. Thangs has no ids, so its are paths (`categoryIds: "path"`), and so are
   CGTrader's: the `<category>/<subcategory>` a model's address names; GrabCAD's and Meshy's, their categories' slugs;
   and OwlCAD's, the label a model carries (`Printer Parts`). A GrabCAD model is in several, which it lists alphabetically, so the

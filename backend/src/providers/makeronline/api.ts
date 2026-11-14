@@ -84,6 +84,26 @@ async function fetchApi(
   return { code, message: isRecord(body) ? str(body.message) : null, data: isRecord(body) ? body.data : null };
 }
 
+/** The printer a profile says its user prints on, by the label its choice has among `options` (the site's list of
+ *  them for its kind of printer); null where none is picked. */
+export function makeronlineProfilePrinter(info: unknown, options: unknown): string | null {
+  const picked = isRecord(info) ? Number(info.printer_id) : 0;
+  if (!Number.isInteger(picked) || picked <= 0 || !Array.isArray(options)) return null;
+  const option = options.find((o) => isRecord(o) && Number(o.value) === picked);
+  return isRecord(option) ? str(option.label) : null;
+}
+
+/** The printer the user picked on their MakerOnline profile, the one printer it keeps of theirs; null where they
+ *  picked none, undefined when MakerOnline can't say. Throws when it turns the sign-in down. */
+export async function fetchMakeronlineProfilePrinter(token: string): Promise<string | null | undefined> {
+  const { code, data } = await fetchApi("/user/personal/info", token);
+  if (code !== CODE_OK || !isRecord(data)) return undefined;
+  const kind = Number(data.print_type);
+  if (!Number.isInteger(kind) || kind <= 0 || !(Number(data.printer_id) > 0)) return null;
+  const options = await fetchApi(`/user/personal/printer-options?print_type=${kind}`, token);
+  return options.code === CODE_OK ? makeronlineProfilePrinter(data, options.data) : undefined;
+}
+
 /** Who the token signs in as, or "rejected"/"unreachable". Without a token the call asks for an id, so a token that
  *  answers with one is a real sign-in. */
 export async function checkMakeronlineToken(
