@@ -3631,7 +3631,7 @@
       "comingSoon": "Bientôt disponible"
     },
     "slicer": {
-      "subtitle": "Les slicers installés sur cet ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
+      "subtitle": "Les slicers installés sur votre ordinateur. Un modèle s’ouvre dans le dernier utilisé ; les autres sont dans son menu « Ouvrir dans ». Double-cliquez sur l’un d’eux, ou faites un clic droit, pour l’activer ou le désactiver.",
       "active": "Actif",
       "notActive": "Inactif",
       "activate": "Activer",

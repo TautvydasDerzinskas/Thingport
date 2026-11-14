@@ -3460,7 +3460,7 @@
       "comingSoon": "Coming soon"
     },
     "slicer": {
-      "subtitle": "The slicers installed on this computer. A model opens in the last one you used; the others are in its “Open in” menu. Double-click one, or right-click it, to switch it on or off.",
+      "subtitle": "The slicers installed on your computer. A model opens in the last one you used; the others are in its “Open in” menu. Double-click one, or right-click it, to switch it on or off.",
       "active": "Active",
       "notActive": "Not active",
       "activate": "Activate",
