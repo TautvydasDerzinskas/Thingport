@@ -443,8 +443,12 @@ els.pairBtn.addEventListener("click", () => void pairWithInstance());
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (!changes[STORAGE_KEYS.connectionToken]?.newValue) {
-    if (STORAGE_KEYS.pendingPairing in changes && !changes[STORAGE_KEYS.pendingPairing].newValue) {
-      setPairing(false);
+    // Both ways: the background may open the approval tab after this popup read the state, as it resumes a pairing
+    // the permission prompt closed the popup on.
+    if (STORAGE_KEYS.pendingPairing in changes) {
+      const waiting = Boolean(changes[STORAGE_KEYS.pendingPairing].newValue);
+      setPairing(waiting);
+      els.pairPending.hidden = !waiting;
     }
     return;
   }
