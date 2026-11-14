@@ -1,8 +1,9 @@
 // The model sites Grab works on: the built-in ones always, the optional ones (optionalSites.ts) once enabled here.
 // Enabling asks the browser for that one site; registering Grab there follows in the background, from the browser's
-// permission event. They show in two columns, so fifteen of them don't push the popup past the height a browser gives
-// it, and the one whose site the active tab is on is lifted out of the grid into a card of its own at the top, with
-// what it imports -- so the site in front of the user takes no searching for.
+// permission event. They show as tiles, five to a row, so forty of them still fit the height a browser gives a popup,
+// and the one whose site the active tab is on is lifted out of the grid into a card of its own at the top, with what
+// it imports -- so the site in front of the user takes no searching for. A line along a tile's bottom edge marks the
+// sites Download adapted works on, grey while Adapt 3MFs is off.
 
 import { t } from "../shared/i18n";
 import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/optionalSites";
@@ -52,6 +53,12 @@ const SITES: Site[] = [
   })),
 ];
 
+/** Where Download adapted works: the sites whose 3MFs Grab can adapt. */
+export const ADAPT_SITES: Provider[] = PROVIDER_IDS.filter(
+  (id) => (MANIFESTS[id].capabilities as { adapted3mfs?: readonly string[] }).adapted3mfs?.length,
+);
+const ADAPTS = new Set(ADAPT_SITES);
+
 /** Every site that can be enabled, so the count doesn't promise what Grab can't do yet. */
 const LISTED = SITES.filter((site) => !site.comingSoon);
 
@@ -87,7 +94,7 @@ function tick(site: Site, appeared = false): HTMLElement {
   el.className = appeared ? "site__tick site__tick--new" : "site__tick";
   el.setAttribute("role", "img");
   el.setAttribute("aria-label", t("enabledOn", { site: site.name }));
-  el.title = t("enabled");
+  el.title = site.optional ? t("enabled") : t("adaptPopup.siteAlwaysOn");
   el.append(
     svg("M5 12.5l4.5 4.5L19 7.5", {
       fill: "none",
@@ -152,12 +159,14 @@ function comingSoonButton(site: Site): HTMLElement {
   return wrap;
 }
 
-/** A grid row's contents, laid out the same whether the row is a button or not. */
+/** A tile's contents, laid out the same whether the tile is a button or not. Its name may be cut short, so the
+ *  tooltip starts with it, and says where Download adapted works. */
 function fillRow<T extends HTMLElement>(el: T, site: Site, status: Element): T {
   el.className = "site__row";
   const name = document.createElement("span");
   name.className = "site__name";
   name.textContent = site.name;
+  el.title = [site.name, el.title, ADAPTS.has(site.id) ? t("adaptedWorksHere") : ""].filter(Boolean).join("\n");
   el.append(providerLogo(site.id), name, status);
   return el;
 }
@@ -176,7 +185,7 @@ function siteLink(site: Site): HTMLAnchorElement {
  *  `appeared` pops the tick in where the button was. */
 function siteRow(site: Site, appeared = false): HTMLLIElement {
   const row = document.createElement("li");
-  row.className = "site";
+  row.className = ADAPTS.has(site.id) ? "site site--adapt" : "site";
   if (site.comingSoon) {
     row.classList.add("site--soon");
     row.append(fillRow(document.createElement("div"), site, comingSoonButton(site)));
@@ -213,7 +222,10 @@ function renderFeatured(site: Site | null): void {
   els.featured.style.setProperty("--site-accent-line", `${accent}59`);
   els.featuredLogo.replaceChildren(providerLogo(site.id));
   els.featuredName.textContent = site.name;
+  els.featuredName.dataset.site = site.id;
   els.featuredDesc.textContent = t(`providerAbout.${site.id}`);
+  els.featuredDesc.title = els.featuredDesc.textContent;
+  els.featuredAdapted.hidden = !ADAPTS.has(site.id) || !els.normalizeSwitch.checked;
 
   // Enabled is the usual state here: the active provider is only known from a page of Grab's own on the site, and
   // that only runs where it's allowed to. Access taken back in the browser's settings leaves such a page behind in
@@ -266,6 +278,18 @@ els.sitesEnableAll.addEventListener("click", async () => {
   els.sitesEnableAll.disabled = false;
 });
 
+/** The marks follow Adapt 3MFs' switch: the line goes grey while it's off, and the card stops offering it. */
+function syncAdaptMarks(): void {
+  const on = els.normalizeSwitch.checked;
+  els.sitesList.classList.toggle("sites--adapt-off", !on);
+  els.sitesLegend.classList.toggle("sites__legend--off", !on);
+  els.sitesLegendText.textContent = t(on ? "adaptedSitesLegend" : "adaptedSitesLegendOff");
+  const featured = SITES.find((site) => site.id === els.featuredName.dataset.site);
+  els.featuredAdapted.hidden = !featured || !ADAPTS.has(featured.id) || !on;
+}
+
+els.normalizeSwitch.addEventListener("change", syncAdaptMarks);
+
 export async function loadSites(): Promise<void> {
   const flags = await Promise.all(LISTED.map((site) => (site.optional ? siteEnabled(site.optional) : true)));
   enabled.clear();
@@ -274,4 +298,5 @@ export async function loadSites(): Promise<void> {
   const featured = await featuredSite();
   renderFeatured(featured);
   els.sitesList.replaceChildren(...SITES.filter((site) => site !== featured).map((site) => siteRow(site)));
+  syncAdaptMarks();
 }

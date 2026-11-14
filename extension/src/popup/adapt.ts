@@ -1,8 +1,8 @@
 // Adapt 3MFs in the popup. Its row under Offline features (Extra features once connected) shows the slicers and
-// printers picked, or asks for a slicer; its cog opens its settings over the popup: Slicer, Printers,
-// where the Download adapted button goes, and the sites it works on. Not connected, they're Grab's own; connected, the
-// slicers and printers are the Thingport instance's, managed there. Add printer lists the makers first, then a
-// maker's printers as tiles; typing searches every printer.
+// printers picked, or asks for a slicer; its cog opens its settings over the popup: Slicer, Printers, where the
+// Download adapted button goes, and, until Grab is connected, the sites it works on (the Providers tab marks them
+// then). Not connected, they're Grab's own; connected, the slicers and printers are the Thingport instance's, managed
+// there. Add printer lists the makers first, then a maker's printers as tiles; typing searches every printer.
 
 import {
   ADAPT_PLACEMENTS,
@@ -18,7 +18,7 @@ import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
 import { SLICER_LABELS } from "../shared/slicers";
 import { STORAGE_KEYS } from "../shared/storage";
 import { printerCatalogue, type CatalogueBrand, type CataloguePrinter } from "../printers/catalogue";
-import { MANIFESTS, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
+import { MANIFESTS, type ProviderId } from "../providers/index.generated";
 import {
   addPrinterTile,
   el,
@@ -32,7 +32,7 @@ import {
 import { clearError, els, opensInTab, showError } from "./dom";
 import { openMenu } from "./menu";
 import { nameMatches, nameWords } from "./printerSearch";
-import { providerLogo } from "./sites";
+import { ADAPT_SITES, providerLogo } from "./sites";
 import { isOpen, openView } from "./subview";
 
 // Keys, looked up as they're drawn: the popup's language is set after this module loads.
@@ -57,11 +57,6 @@ const COMMON_MAKERS = [
   "vorondesign",
 ];
 const SEARCH_LIMIT = 60;
-
-// Where Download adapted works: the sites whose 3MFs Grab can adapt.
-const ADAPT_SITES: ProviderId[] = PROVIDER_IDS.filter(
-  (id) => (MANIFESTS[id].capabilities as { adapted3mfs?: readonly string[] }).adapted3mfs?.length,
-);
 
 const catalogue = printerCatalogue();
 type Index = Awaited<ReturnType<typeof catalogue.index>>;
@@ -386,7 +381,8 @@ function renderSettings(): void {
     slicerSection(use),
     printerSection(use),
     placementSection(view.own.placement),
-    sitesSection(),
+    // Connected, the Providers tab marks them and turns them on; there's no such tab before.
+    ...(view.thingport ? [] : [sitesSection()]),
   );
 }
 
@@ -400,6 +396,8 @@ function openSettings(opener: HTMLElement, { toSlicers = false } = {}): void {
 }
 
 els.adaptSettingsBtn.addEventListener("click", () => openSettings(els.adaptSettingsBtn));
+// From under the Providers tab's tiles, which mark where Download adapted works.
+els.sitesLegendLink.addEventListener("click", () => openSettings(els.sitesLegendLink));
 
 // The view's switch is the row's: the row's saves it (popup/index.ts).
 els.adaptViewSwitch.addEventListener("change", () => {

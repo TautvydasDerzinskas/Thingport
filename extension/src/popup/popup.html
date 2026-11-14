@@ -141,11 +141,43 @@
                 <span class="featured__logo" id="featured-logo"></span>
                 <span class="featured__name" id="featured-name"></span>
                 <span class="featured__here" data-i18n="thisSite">this site</span>
+                <span class="featured__adapted" id="featured-adapted" data-i18n-title="adaptedWorksHere" hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3v11" />
+                    <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                  </svg>
+                  <span data-i18n="downloadAdapted">Download adapted</span>
+                </span>
                 <span class="featured__status" id="featured-status"></span>
               </div>
               <p class="featured__desc" id="featured-desc"></p>
             </div>
             <ul class="sites" id="sites-list" data-i18n-aria-label="providers" aria-label="Providers"></ul>
+            <!-- What the line along some tiles' bottom edge means, and the way to Adapt 3MFs' settings (popup/adapt.ts). -->
+            <p class="sites__legend" id="sites-legend">
+              <span class="sites__band" aria-hidden="true"></span>
+              <span class="sites__legend-text" id="sites-legend-text"></span>
+              <button
+                type="button"
+                class="text-btn sites__legend-link"
+                id="sites-legend-link"
+                data-i18n="adaptPopup.settings"
+                data-i18n-aria-label="adaptPopup.settingsLabel"
+                aria-label="Adapt 3MFs settings"
+                aria-haspopup="dialog"
+              >
+                Settings
+              </button>
+            </p>
           </div>
           <div class="error" id="configured-error" role="alert"></div>
         </section>
