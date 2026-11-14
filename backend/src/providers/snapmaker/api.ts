@@ -33,7 +33,8 @@ const PROVIDER = manifest.id;
 
 const CODE_OK = 200;
 const CODE_UNAUTHORIZED = 110002;
-const CODE_NOT_FOUND = 603000;
+// Both codes it answers a model that isn't there with.
+const NOT_FOUND = new Set([712001, 603000]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -191,7 +192,7 @@ export function snapmakerMetaFromDetail(detail: Record<string, unknown>): Snapma
  *  isn't public. */
 export async function fetchSnapmakerDetail(modelId: string): Promise<Record<string, unknown> | null> {
   const { code, data } = await fetchApi(`/model/detail/${encodeURIComponent(modelId)}`, null);
-  if (code === CODE_NOT_FOUND) return null;
+  if (code !== null && NOT_FOUND.has(code)) return null;
   if (code !== CODE_OK || !isRecord(data)) throw new Error(`Couldn't read this Snapmaker model (code ${code})`);
   return data;
 }
@@ -214,7 +215,7 @@ function fileName(value: unknown, fallback: string): string {
  *  doesn't exist. Throws SnapmakerAuthError for a token Snapmaker doesn't take. */
 export async function fetchSnapmakerDownloads(modelId: string, token: string): Promise<SnapmakerDownloads | null> {
   const { code, data } = await fetchApi(`/model/download/${encodeURIComponent(modelId)}`, token);
-  if (code === CODE_NOT_FOUND) return null;
+  if (code !== null && NOT_FOUND.has(code)) return null;
   if (code !== CODE_OK || !isRecord(data)) throw new Error(`Couldn't get this Snapmaker model's files (code ${code})`);
   const modelFiles = Array.isArray(data.modelFiles)
     ? data.modelFiles.flatMap((file, index) =>

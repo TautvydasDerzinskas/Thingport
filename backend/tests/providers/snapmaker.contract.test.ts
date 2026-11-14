@@ -13,7 +13,7 @@ vi.mock("node:dns/promises", () => ({
 }));
 
 // Snapmaker Space on the contract harness (its own end-to-end tests stay in snapmakerImport.test.ts, which also pins
-// profile naming and covers). The API answers `{code, msg, data}` with its own codes: 200 ok, 603000 not found,
+// profile naming and covers). The API answers `{code, msg, data}` with its own codes: 200 ok, 712001 not found,
 // 110002 a sign-in it turns down. Answers are the recorded shapes in fixtures/providers/snapmaker.
 
 const API = "https://api-models.snapmaker.com/api";
