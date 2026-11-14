@@ -142,6 +142,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/voxelshare",
+    "name": "VoxelShare",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

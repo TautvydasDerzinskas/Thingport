@@ -114,6 +114,8 @@ describe("slicer settings", () => {
   it("has no choice to make for the slicers that always go through the Bridge", async () => {
     expect((await patch({ bridge: "bambustudio" })).status).toBe(400);
     expect((await patch({ unbridge: "other" })).status).toBe(400);
+    // Flash Studio takes a link itself, so it may go either way.
+    expect((await patch({ bridge: "orca-flashforge" })).body.bridged).toContain("orca-flashforge");
     expect((await patch({ bridge: "notepad" })).status).toBe(400);
   });
 

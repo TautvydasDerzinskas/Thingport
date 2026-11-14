@@ -44,6 +44,7 @@ describe("provider-module freeze", () => {
         "https://fab365.net/items/116",
         "https://3dexport.com/3d-model-elephant-a001-667112",
         "https://www.qidimaker.com/en/models/detail/2077275848848752642",
+        "https://www.voxelshare.com/en/models/8242660-flexi-mechanical-dragon",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -67,6 +68,7 @@ describe("provider-module freeze", () => {
       "fab365",
       "threedexport",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -94,6 +96,7 @@ describe("provider-module freeze", () => {
       "fab365",
       "threedexport",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -120,6 +123,7 @@ describe("provider-module freeze", () => {
       "fab365",
       "threedexport",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -147,6 +151,7 @@ describe("provider-module freeze", () => {
       "fab365",
       "threedexport",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -173,6 +178,7 @@ describe("provider-module freeze", () => {
       "fab365",
       "threedexport",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -185,6 +191,7 @@ describe("provider-module freeze", () => {
       "nexprint",
       "eufymake",
       "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -224,6 +231,7 @@ describe("provider-module freeze", () => {
         "fab365_session",
         "threedexport_session",
         "qidimaker_session",
+        "voxelshare_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -346,6 +354,7 @@ describe("provider-module freeze", () => {
           "fab365_cat_ids",
           "threedexport_cat_ids",
           "qidimaker_cat_ids",
+          "voxelshare_cat_ids",
         ].toSorted(),
       );
     } finally {

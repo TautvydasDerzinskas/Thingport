@@ -3,9 +3,9 @@
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
 
-It imports from 22 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
+It imports from 23 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
 Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP,
-Fab365, 3DExport and QIDI Maker.
+Fab365, 3DExport, QIDI Maker and VoxelShare.
 
 ## Ways to import
 
@@ -13,16 +13,16 @@ Fab365, 3DExport and QIDI Maker.
   Paste several links, one per line, and they join the [import queue](#the-import-queue) as one import. You can also
   paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all 22 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
+  all 23 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
   click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
   import whole collections. **Pair with Thingport** in its popup connects it: you approve the browser in Thingport, and
   no password is saved in the extension. This is the recommended way to import.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
   bookmarks bar: clicking it on a model's page opens Thingport with the link already in the import dialog.
 - **Import a collection or your likes.** Paste the link of a collection or another list, and pick which models to
-  bring in. Besides collections, your private ones on PIXUP, 3DExport and QIDI Maker included, that's anyone's likes on
+  bring in. Besides collections, your private ones on PIXUP, 3DExport, QIDI Maker and VoxelShare included, that's anyone's likes on
   Thingiverse, Cults3D, Pinshape and GrabCAD, anyone's PIXUP wishlist, your own likes on Creality Cloud, Thangs,
-  eufyMake, Toymakr3D, CGTrader and QIDI Maker, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default
+  eufyMake, Toymakr3D, CGTrader, QIDI Maker and VoxelShare, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default
   Collection and the projects you saved on Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's
   Interactions tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists
   each site has.
@@ -41,7 +41,7 @@ Fab365, 3DExport and QIDI Maker.
   <img src="../../frontend/src/assets/screenshots/light/50_model_print_profiles.png" alt="A model's print profiles as picture tiles, the picked one with its print time, filament, plates, printer and settings" width="100%">
 </picture>
 
-- Its model files, or on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake and QIDI Maker its
+- Its model files, or on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare its
   print profiles instead, where it has any: the one the link points to, all of the designer's, or the community's too. Each
   profile becomes its own file on the model. Ones left out, or that failed, can be added later: while the model in your
   library lacks any of the page's profiles, Thingport Grab shows its icon there and adds just those. Profiles the model
@@ -71,7 +71,7 @@ again.
 
 ## Link a model you already have
 
-A model you uploaded yourself can be linked to its page on any of the 22 sites, without importing it again. Choose
+A model you uploaded yourself can be linked to its page on any of the 23 sites, without importing it again. Choose
 **Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
 menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
 
@@ -174,7 +174,7 @@ on it, restart the server.
 ## Before you start
 
 MakerWorld needs your session cookie and Thingiverse an App Token set by an admin, while Printables, eufyMake, OwlCAD,
-Makerables and QIDI Maker work with no setup. The other sites each need a key or your own sign-in, which Thingport Grab mostly
+Makerables, QIDI Maker and VoxelShare work with no setup. The other sites each need a key or your own sign-in, which Thingport Grab mostly
 hands over for you. MakerOnline's files come only through Grab, and CGTrader's downloads also need Grab or
 [FlareSolverr](../PROVIDER_SETUP.md#flaresolverr) to get past its bot check. [Providers](../PROVIDER_SETUP.md) compares
 what each one needs, with a setup page per site. Admins can also

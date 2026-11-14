@@ -415,7 +415,8 @@ async function importChosen(
     await runProfilesImport(profiles, await collectionIdFor(choice));
     return;
   }
-  const { url, instanceUrl, classification, title } = ctx();
+  const { instanceUrl, classification, title } = ctx();
+  const url = selectedProfileUrl();
   renderFunStatus(importingPhrases(classification.provider));
   const collectionId = await collectionIdFor(choice);
   try {
@@ -593,6 +594,12 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   );
 }
 
+/** The link the page's own profile, the panel's "currently selected", imports under. */
+function selectedProfileUrl(): string {
+  const { url, classification } = ctx();
+  return CONTENT_MODULES[classification.provider].shownProfileUrl?.(url) ?? url;
+}
+
 /** The print profiles the library's model has now, and which model that is. Null where the instance can't say: no
  *  answer, or one from before 1.6.0. */
 async function heldProfilesNow(url: string): Promise<{ held: string[]; printId: string | null } | null> {
@@ -607,7 +614,8 @@ async function heldProfilesNow(url: string): Promise<{ held: string[]; printId: 
 /** Sends the link to the import queue with the panel's collection and profile choices. No download
  *  is resolved here: the instance does that when the link's turn comes. */
 async function runQueueImport(scope: ProfileScope, collectionId: string | null): Promise<void> {
-  const { url, instanceUrl, title, importQueue } = ctx();
+  const { instanceUrl, title, importQueue } = ctx();
+  const url = scope === "url" ? selectedProfileUrl() : ctx().url;
   renderPanel(statusHtml(t("addingToQueue")));
   try {
     const result = await request("QUEUE_IMPORT", { url, collectionId, scope, title: title ?? null });

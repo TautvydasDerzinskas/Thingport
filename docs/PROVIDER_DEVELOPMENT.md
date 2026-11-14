@@ -56,8 +56,8 @@ names them on the website too).
 A provider needs no column and no migration:
 
 - **Sign-ins:** each user's sign-in and who they are on the site are a `ProviderConnection` row per user, provider
-  and auth slot. Read and write them through `backend/src/providers/connections.ts`. What the `secret` JSON holds is
-  up to the provider's `session.ts`.
+  and auth slot (a region's sign-in is the slot named after it, below). Read and write them through
+  `backend/src/providers/connections.ts`. What the `secret` JSON holds is up to the provider's `session.ts`.
 - **Instance credentials:** an admin's key is a `Setting` row (Thingiverse's `token.ts`, MyMiniFactory's
   `apiKey.ts`).
 - **Category ids:** the site's ids for the starter categories are `backend/src/providers/<id>/categories.json`,
@@ -68,6 +68,29 @@ A provider needs no column and no migration:
 A table of the provider's own is the exception, and it goes in `schema.prisma`: Printables' `ProviderListing`, and
 `GrabImport`, the imports waiting for Grab, which MakerOnline and OwlCAD share, told apart by its `provider`.
 
+### Regions: a second site with its own accounts
+
+A site that runs a second site for one country, with the same pages but its own API, uploads and accounts
+(VoxelShare's www.voxelshare.cn), is a region of the same provider, not a provider of its own:
+
+- **Manifest:** `regions` lists each, with its `id` (stored, so it never changes), `name`, `site`, `hosts` (among the
+  provider's own), `endpoints`, and `trending.moreUrl` where it has a trending list of its own. Its sign-in is a user
+  auth slot named after it (`{ slot: "cn", scope: "user", ... }`), and its origins go in `extension.origins` beside the
+  main site's. The generator fails a region whose hosts or site aren't the provider's, or that has no such slot.
+- **Ids:** what's read from a region is kept as `<region>-<id>` (`regionalId` and `splitRegionalId`,
+  `providers/_lib/regions.ts`), so a print's link (`modelUrl`) and every later read go back to that site; the main
+  site's stay as they are. Authors too, as a region's accounts are its own. `urls.ts` reads either site's links and
+  writes each id's back to its own. The same model from both sites is two models, as a print keeps only its provider
+  and id.
+- **Backend:** the provider's own code splits the id and reads that site's API with that site's sign-in. Its
+  trending's `region(userId)` picks which site's list a user sees; each is kept apart, with its own "more" link.
+- **App:** one tile in Configuration → Providers, connected by any site's sign-in (`signInStatus` in
+  `frontend/src/providers/overrides.ts`). Its connect form switches between the sites, and its menu offers the ones
+  not connected yet. Each region needs `connect.<region>.steps` and `.placeholder`, and `status.<region>.expired` and
+  `.expiredStatus`, under `providers.<id>`.
+- **Grab:** the region's sign-in is `SESSION_SOURCES["<id>:<region>"]`, with its `slot`; a page sends the region it's
+  on (`regionOfHost`) with `SYNC_PROVIDER_SESSION`.
+
 ## Strategies the existing providers use
 
 Sites differ most in four things: how the backend reaches them, how a sign-in is kept, where files come from, and
@@ -75,16 +98,16 @@ how lists are read. When a new site resembles one of these, copy that provider's
 
 ### Reaching the site
 
-| Approach                                          | Providers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                                                                                                                                                                                |
-| Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                                                                                                                                                                            |
-| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD, Meshy, QIDI Maker. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers; QIDI Maker any without its `X-*` ones, a timestamp within a minute of its clock (each answer gives its time) and a nonce it hasn't seen among them |
-| Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Its pages' HTML, rendered on the server           | Pinshape, Toymakr3D and 3DExport, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), 3DExport's with that HTML inside JSON, and their redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one; Toymakr3D's and 3DExport's canonical page for a link whose name is wrong                                                                                                    |
-| Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                                                                                                                                                                                      |
-| A Firebase app's public endpoints                 | OwlCAD: its gallery is a Firestore collection read over REST, its library parts are Firebase Storage objects, and its one call is a Cloud Function, all answering without a sign-in. Firestore answers a document that isn't there with 403, not 404                                                                                                                                                                                                                                                   |
+| Approach                                          | Providers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Official API with an instance key                 | Thingiverse (an admin's App Token), MyMiniFactory (an admin's API key as `?key=`)                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Official API with the user's key                  | Cults3D's GraphQL API (nickname + API key) for models, likes, printlists and orders, though never files                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Public GraphQL API, no sign-in                    | Printables (`api.printables.com` answers unauthenticated, unlike the Cloudflare-gated site)                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| The site's own private API (what its pages call)  | Snapmaker, MakerOnline, Creality Cloud, NexPrint, Thangs, eufyMake, Makerables, GrabCAD, Meshy, QIDI Maker, VoxelShare. Most wrap answers in a `code` of their own, so check that, not the HTTP status; GrabCAD's answers with plain statuses, a visitor's `/members/me` with a 204. Creality Cloud refuses any call without its full set of `__cxy_*` headers; QIDI Maker any without its `X-*` ones, a timestamp within a minute of its clock (each answer gives its time) and a nonce it hasn't seen among them |
+| Model pages plus the maker's cloud API            | MakerWorld (page data, and `api.bambulab.com` with the user's cookie)                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Its pages' HTML, rendered on the server           | Pinshape, Toymakr3D and 3DExport, read with cheerio. Pinshape's own calls answer with more HTML (`{success, html, pagination}`), 3DExport's with that HTML inside JSON, and their redirects are their answers: Pinshape's `/index` for a missing model, `/auth/login` for a refused sign-in; Toymakr3D's `/login` for one; Toymakr3D's and 3DExport's canonical page for a link whose name is wrong                                                                                                                |
+| Its pages' data, as the JSON they hold or ask for | CGTrader: its listings answer JSON to a page's own script, a model page hands its React components their data as `data-react-props`, and `/products/<slug>.js`, the script the page loads to learn who's looking, says whether the user bought the model. Its redirect to `/not_found` is its 404                                                                                                                                                                                                                  |
+| A Firebase app's public endpoints                 | OwlCAD: its gallery is a Firestore collection read over REST, its library parts are Firebase Storage objects, and its one call is a Cloud Function, all answering without a sign-in. Firestore answers a document that isn't there with 403, not 404                                                                                                                                                                                                                                                               |
 
 **Cloudflare:**
 
@@ -146,6 +169,7 @@ guards its pages but not the API its provider reads, so it only sends the browse
 | Meshy          | Supabase's 15-minute access token and the refresh token in `sb-auth-auth-token` | **The backend renews it itself**, saving each rotated refresh token before using it, only while it's the one stored |
 | 3DExport       | Its ten-year remember-me pair, `nm_userid` and `nm_hash`                        | Any request turns it into a session of its own; signing out anywhere revokes the hash, which the site then clears   |
 | QIDI Maker     | Its 90-day `token` cookie, out of reach of the page's scripts                   | Grab reads it from the browser's cookies and sends each new one; its CSRF pair only has to match, so it's made up   |
+| VoxelShare     | Its 31-day `token` cookie, a JWT its pages send as a Bearer token               | Grab sends each new one the site renews; its refresh token is never used, as whether a renewal signs out is unknown |
 
 Rules of thumb:
 
@@ -185,7 +209,7 @@ Rules of thumb:
   user's own sign-in, where its own open or download button is, and how its theme shows. MakerWorld's and
   Printables' and the others are in their `providers/<id>/adaptSite.ts`, and a test holds the two lists to each other.
   Where the site's files come from one app (Creality Print, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next, QIDI
-  Studio), the site gives a typical file of it (`formats`: `orcaFamilyFormat` for an app that writes OrcaSlicer's names
+  Studio, Flash Studio), the site gives a typical file of it (`formats`: `orcaFamilyFormat` for an app that writes OrcaSlicer's names
   for settings, `bambuFamilyFormat` for QIDI Studio, which keeps Bambu Studio's), so each slicer is offered a copy only where it needs one; where the page
   picks the print profile, the site says which (`selected`). MakerOnline keeps its pick only in its page's own store,
   so Grab puts a watcher there (`WATCH_MAKERONLINE_PICK`) that copies it onto the page for `selected` to read.
@@ -240,6 +264,11 @@ Rules of thumb:
   download on the user's account; the provider doesn't, to keep a sync's imports out of the user's download history.
   A model without print profiles comes from the zip the site makes of its files, most of which it writes without a
   central directory: `qidimaker/zipRepair.ts` rebuilds one from the entries' own headers before it's unpacked.
+- **VoxelShare** gives every file as a link on its image host signed for about a day, to anyone, so an import needs no
+  sign-in; its own Download then reports the download, which the provider doesn't. A model without print profiles
+  brings its own files, many of them kept zipped one by one (`0_<name>.zip`), so the download is named as a zip and
+  unpacked. Many of its models are copies of other sites', and `sourceInfo.url` says whose: the description credits it.
+  Its listing pages carry hidden links that only a crawler follows; the provider reads nothing but its JSON API.
 - **Repairs** (`services/modelRepairService.ts`) fetch a model's lost files again through the provider's own import
   (`sourcedImport`'s `downloadModel`, or the link import) and replace only the files. A provider with a `grabQueue` has
   the model wait for Grab instead, so its `customImport.addToExisting` has to put the files back when `kit.filesMissing`
@@ -354,7 +383,7 @@ Open an issue first, then:
 
 Clients in the wild, older Grab versions from the stores among them, depend on these:
 
-- Provider ids, `errorCodes` and API token scope ids.
+- Provider ids, `errorCodes`, API token scope ids, and region ids, which kept ids and sign-in slots carry.
 - The `legacy` endpoints and auth `legacyEndpoint`s in the older manifests, which are aliases of the generic routes.
   `backend/tests/providerFreeze.test.ts` and its route snapshot guard them. Providers added since have none.
 - The built-in Grab sites (MakerWorld, Printables, Thingiverse). The `buildManifest` snapshot test fails on any change

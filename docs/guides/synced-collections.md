@@ -56,6 +56,7 @@ Thingport imports from can be synced except OwlCAD, which has no collections or 
 | Fab365          | Your favourites                               | Your sign-in, for the list and the files                                                                  |
 | 3DExport        | Collections, your private ones too            | Your sign-in, for the files and your own collections                                                      |
 | QIDI Maker      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
+| VoxelShare      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
 
 A few have more to know:
 
@@ -65,6 +66,8 @@ A few have more to know:
   with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model. 3DExport's
   lasts until you sign out of 3dexport.com, in any browser, and Grab sends the new one when you sign in again.
   QIDI Maker's lasts 90 days; without it, a sync of a private collection of yours waits rather than take it for gone.
+  VoxelShare's lasts 31 days, and Grab sends each new one the site makes as you use it; a sync of a private collection
+  waits for it too.
 - **Left out.** A MyMiniFactory collection's paid models; on Thangs, Cults3D and PIXUP the paid ones you don't own, and
   on Thangs the print-only ones too. CGTrader's and 3DExport's paid ones aren't left out: one you haven't bought is
   refused when the sync reaches it, and counts as failed.
@@ -83,7 +86,7 @@ A few have more to know:
    Pinshape, the collections you subscribed to as well). Or paste the link of any list the site lets Thingport read,
    yours or someone else's.
 4. Pick one and click **Sync**. The dialog opens the new source, where you can change how often it's checked, and for
-   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake and QIDI Maker which print profiles each
+   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare which print profiles each
    new model brings.
 
 The models already in the list are imported now, one at a time; MakerOnline's wait for Grab, as below. MakerWorld
@@ -109,10 +112,10 @@ before Grab has read it, and its models come in on that next visit.
 
 1. Open the list's page on the site, with the site switched on in Grab's popup:
    - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs,
-     Pinshape, Meshy, PIXUP, 3DExport or QIDI Maker (your **Default Collection** too), or on NexPrint one open on its
+     Pinshape, Meshy, PIXUP, 3DExport, QIDI Maker (your **Default Collection** too) or VoxelShare, or on NexPrint one open on its
      owner's page;
    - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, anyone's wishlist on PIXUP,
-     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake, Toymakr3D or QIDI Maker;
+     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake, Toymakr3D, QIDI Maker or VoxelShare;
    - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, your favourites on Fab365, or
      your **Interactions** tab on Snapmaker Space, where the panel's switch picks your likes or bookmarks.
 

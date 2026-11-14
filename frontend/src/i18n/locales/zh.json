@@ -3286,11 +3286,18 @@
       "title": "模型网站",
       "subtitle": "你导入模型的来源网站。右键单击某个网站可连接、断开连接或查看介绍。",
       "connected": "已连接",
+      "connectedSites": "已连接 · {{sites}}",
       "notConnected": "未连接",
       "connect": "连接",
+      "connectSite": "连接{{site}}",
       "connecting": "正在连接…",
       "disconnect": "断开连接",
       "connectTitle": "连接 {{name}}",
+      "site": "站点",
+      "regions": {
+        "main": "国际站",
+        "cn": "中国站"
+      },
       "disconnectTitle": "要断开 {{name}} 的连接吗？",
       "disconnectMessage": "你的 {{name}} 密钥将被移除，重新连接之前将无法从 {{name}} 导入。",
       "disconnectMessageShared": "将为此 Thingport 实例上的所有人移除 {{name}} 令牌，重新连接之前将无法从 {{name}} 导入。",
@@ -7254,6 +7261,49 @@
       },
       "sync": {
         "notConnected": "在“配置 > 模型网站”中连接 QIDI Maker，或在装有 Thingport Grab 的浏览器中访问它，即可在这里看到你的合集和点赞。"
+      }
+    },
+    "voxelshare": {
+      "connect": {
+        "steps": [
+          "最简单的方法：装好 Thingport Grab 后，在已登录状态下打开 www.voxelshare.com 即可。它会连接你的账号，并在你每次重新登录该网站时发送新的登录信息。",
+          "或手动操作：登录 www.voxelshare.com，然后打开浏览器的开发者工具（F12）。",
+          "在 Chrome、Edge 的应用（Application）或 Firefox 的存储（Storage）→ Cookie → https://www.voxelshare.com 中，复制 token Cookie 的值，粘贴到下方。"
+        ],
+        "placeholder": "token Cookie 的值",
+        "cn": {
+          "steps": [
+            "最简单的方法：装好 Thingport Grab 后，在已登录状态下打开 www.voxelshare.cn 即可。它会连接你的账号，并在你每次重新登录该网站时发送新的登录信息。",
+            "或手动操作：登录 www.voxelshare.cn，然后打开浏览器的开发者工具（F12）。",
+            "在 Chrome、Edge 的应用（Application）或 Firefox 的存储（Storage）→ Cookie → https://www.voxelshare.cn 中，复制 token Cookie 的值，粘贴到下方。"
+          ],
+          "placeholder": "token Cookie 的值"
+        }
+      },
+      "status": {
+        "notConnected": "连接账号后即可读取你在 VoxelShare 上的点赞和私有合集。无需连接也能导入其模型和任何人的公开合集。",
+        "expired": "登录信息已过期。请在装有 Thingport Grab 的浏览器中登录 www.voxelshare.com，或在“配置 → 模型网站”中重新连接 VoxelShare。",
+        "expiredStatus": "登录信息已过期",
+        "disabledReason": "VoxelShare：请在“配置 → 模型网站”中连接你的账号",
+        "cn": {
+          "expired": "中国站的登录信息已过期。请在装有 Thingport Grab 的浏览器中登录 www.voxelshare.cn，或在“配置 → 模型网站”中重新连接 VoxelShare 中国站。",
+          "expiredStatus": "中国站的登录信息已过期"
+        }
+      },
+      "about": {
+        "summary": "Flashforge 为其 Adventurer 和 Creator 系列打印机打造的模型社区，提供在 Flash Studio 中制作的打印配置。",
+        "signIn": "导入无需登录；登录后可加入你自己的合集和点赞。",
+        "grab": "你访问 www.voxelshare.com 或其中国站 www.voxelshare.cn 时，它会发送你的登录信息。",
+        "setup": [
+          "导入任意模型链接，无需登录。",
+          "如需你自己的合集和点赞：安装 Thingport Grab，在 VoxelShare 上启用它，然后在已登录状态下打开 www.voxelshare.com（中国站账号请打开 www.voxelshare.cn）。"
+        ]
+      },
+      "admin": {
+        "description": "模型及其打印配置、合集（每个用户自己的合集和任何人的公开合集），以及每个用户的点赞。导入模型和公开合集无需登录；点赞和私有合集需要用户自己的登录信息。"
+      },
+      "sync": {
+        "notConnected": "在“配置 > 模型网站”中连接 VoxelShare，或在装有 Thingport Grab 的浏览器中访问它，即可在这里看到你的合集和点赞。"
       }
     }
   }

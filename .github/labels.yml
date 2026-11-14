@@ -114,4 +114,7 @@
 - name: "provider: QIDI Maker"
   color: "4479fb"
   description: "About QIDI Maker, from the bug form's Provider answer"
+- name: "provider: VoxelShare"
+  color: "00a0e9"
+  description: "About VoxelShare, from the bug form's Provider answer"
 # /providers:labels

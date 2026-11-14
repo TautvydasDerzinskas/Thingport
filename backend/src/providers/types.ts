@@ -17,7 +17,7 @@ import type { TrendingSetup } from "../services/providerTrendingService";
 import type { ProviderCollectionCard } from "../services/providerCollectionCard";
 import type { TrendingModel } from "../services/trendingModel";
 import type { HttpError } from "../utils/fileUtils";
-import type { ProviderId } from "./index.generated";
+import type { ProviderId, RegionId } from "./index.generated";
 import type { SyncProblem } from "./syncProblem";
 
 /** A model as its provider describes it. */
@@ -255,10 +255,14 @@ export type ProviderBrowse = {
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */
 export type ProviderTrending = {
-  /** Up to `limit` models, or the setup it can't be read without (an admin's token or key, or the user's own). */
-  fetch(userId: string, limit: number): Promise<TrendingModel[] | TrendingSetup>;
+  /** Up to `limit` models, or the setup it can't be read without (an admin's token or key, or the user's own); from
+   *  the region `region` names, where it has lists of its own, else from its main site. */
+  fetch(userId: string, limit: number, region: RegionId | null): Promise<TrendingModel[] | TrendingSetup>;
   /** Read with each user's own key, so one user's list isn't kept for the others. */
   perUser?: boolean;
+  /** Which of its sites' lists the user sees, for a provider with regions that have one of their own (the manifest's
+   *  `regions[].trending`): null for the main site's. Each site's is kept apart. */
+  region?(userId: string): Promise<RegionId | null>;
 };
 
 export type ConnectionStatus = "connected" | "expired" | "disconnected";

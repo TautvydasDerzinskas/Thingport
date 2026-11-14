@@ -1,0 +1,157 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "hasMore": true,
+    "items": [
+      {
+        "itemData": {
+          "modelId": "8247883",
+          "modelName": "Hexagon Fidget with Handle",
+          "slug": "hexagon-fidget-with-handle",
+          "modelUrl": "https://www.voxelshare.com/models/8247883-hexagon-fidget-with-handle",
+          "source": "Voxelshare",
+          "printAdded": false,
+          "publishTime": 1780297862,
+          "category": 85,
+          "free": true,
+          "license": "CC BY",
+          "mainImage": {
+            "url": "https://webimage.voxelshare.com/models/c6c812d43505538a/images/1.jpg?t=6af88b48&sign=882155fe9dd7944852949b7a7d42cf48&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+            "aspectRatio": 1.3333333333333333
+          },
+          "expIds": "home_hot_v2",
+          "score": 14.03238939561375,
+          "downloadJsId": "voxelshare",
+          "downloadType": "url",
+          "creator": {
+            "id": "75ebacb4051eee579ec676fba1820f4a",
+            "nickname": "Maker 8",
+            "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+            "followed": false
+          },
+          "liked": false,
+          "likeCount": 781,
+          "commentCount": 20,
+          "downloadCount": 1601,
+          "printCount": 4041,
+          "viewCount": 0,
+          "collectCount": 675
+        },
+        "itemType": "model",
+        "itemFrom": "auto"
+      },
+      {
+        "itemData": {
+          "modelId": "5882724",
+          "modelName": "Flashforge AD5X Tool Holder with Nozzle Storage",
+          "slug": "flashforge-ad5x-tool-holder-with-nozzle-storage",
+          "modelUrl": "https://www.voxelshare.com/models/5882724-flashforge-ad5x-tool-holder-with-nozzle-storage",
+          "source": "Voxelshare",
+          "printAdded": false,
+          "publishTime": 1769052850,
+          "category": 1,
+          "free": true,
+          "license": "CC BY-SA",
+          "mainImage": {
+            "url": "https://webimage.voxelshare.com/models/07dd3baa2885f9aa/images/0.jpeg?t=6af88b48&sign=b674931a120bcf23a8dce6886ff6d759&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+            "aspectRatio": 0.81
+          },
+          "expIds": "home_hot_v2",
+          "score": 13.863368830202653,
+          "downloadJsId": "voxelshare",
+          "downloadType": "url",
+          "creator": {
+            "id": "3d0cba99ff28fa1943b33d6c45d8a6ac",
+            "nickname": "Maker 9",
+            "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+            "followed": false
+          },
+          "liked": false,
+          "likeCount": 598,
+          "commentCount": 9,
+          "downloadCount": 1016,
+          "printCount": 1298,
+          "viewCount": 0,
+          "collectCount": 695
+        },
+        "itemType": "model",
+        "itemFrom": "auto"
+      },
+      {
+        "itemData": {
+          "modelId": "5716383",
+          "modelName": "Simple Spool Filament Clip",
+          "slug": "simple-spool-filament-clip",
+          "modelUrl": "https://www.voxelshare.com/models/5716383-simple-spool-filament-clip",
+          "source": "Voxelshare",
+          "printAdded": false,
+          "publishTime": 1770236076,
+          "category": 0,
+          "free": true,
+          "license": "CC BY-SA",
+          "mainImage": {
+            "url": "https://webimage.voxelshare.com/models/2e8574018883e1e6/images/0.jpg?t=6af88b48&sign=716e8e5a9b62eeb036cc6d67922481ab&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+            "aspectRatio": 1.3333333333333333
+          },
+          "expIds": "home_hot_v2",
+          "score": 13.348606021677215,
+          "downloadJsId": "voxelshare",
+          "downloadType": "url",
+          "creator": {
+            "id": "1ed41844d3a92afd66a5614549a5aa8d",
+            "nickname": "Maker 10",
+            "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+            "followed": false
+          },
+          "liked": false,
+          "likeCount": 619,
+          "commentCount": 5,
+          "downloadCount": 981,
+          "printCount": 1788,
+          "viewCount": 0,
+          "collectCount": 748
+        },
+        "itemType": "model",
+        "itemFrom": "auto"
+      },
+      {
+        "itemData": {
+          "modelId": "8479014",
+          "modelName": "Apple iPhone Stand",
+          "slug": "apple-iphone-stand",
+          "modelUrl": "https://www.voxelshare.com/models/8479014-apple-iphone-stand",
+          "source": "Voxelshare",
+          "printAdded": false,
+          "publishTime": 1777447503,
+          "category": 43,
+          "free": true,
+          "license": "CC0",
+          "mainImage": {
+            "url": "https://webimage.voxelshare.com/models/e9c582dd4fdc4fb0/images/0.jpg?t=6af88b48&sign=9ab6e9bbe80dd11d420503efdcdb16e8&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+            "aspectRatio": 1.3333333333333333
+          },
+          "expIds": "home_hot_v2",
+          "score": 13.023263663693145,
+          "downloadJsId": "voxelshare",
+          "downloadType": "url",
+          "creator": {
+            "id": "f2000ee99e9a5e588bd2f8e6c4f4afa4",
+            "nickname": "Maker 11",
+            "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+            "followed": false
+          },
+          "liked": false,
+          "likeCount": 428,
+          "commentCount": 3,
+          "downloadCount": 456,
+          "printCount": 1158,
+          "viewCount": 0,
+          "collectCount": 369
+        },
+        "itemType": "model",
+        "itemFrom": "auto"
+      }
+    ]
+  }
+}

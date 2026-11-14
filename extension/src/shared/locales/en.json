@@ -409,6 +409,7 @@
   "providerAbout.fab365": "Fab365 is a South Korean 3D-model marketplace, running since 2018. It's known for meticulously engineered models — SpaceX rockets, foldable robots, Star Wars ships — many designed to print cleanly without supports.",
   "providerAbout.threedexport": "One of the oldest 3D model marketplaces, open since 2004 and based in San Jose: game and film assets, textures and a large 3D printing catalogue, sold by their designers and some given away free.",
   "providerAbout.qidimaker": "QIDI Maker is the model community of QIDI Tech, the Chinese maker of the X-Plus, X-Max and Q printers. It opened in 2026, and its models come with print profiles made in QIDI Studio for those printers.",
+  "providerAbout.voxelshare": "VoxelShare is the model community of Flashforge, the Chinese maker of the Adventurer and Creator printers. Its models come with print profiles for those printers, made in Flash Studio, Flashforge's own slicer.",
   "printablesCollections": "collections",
   "printablesLikes": "likes",
   "addProfiles": "Add profiles",
