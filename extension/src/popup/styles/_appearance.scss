@@ -290,8 +290,13 @@
   cursor: pointer;
   transition: border-color 0.15s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: t.c("text-muted");
+  }
+
+  // Only while the popup reads the stored language, so it keeps its look.
+  &:disabled {
+    cursor: default;
   }
 
   // The input's ring is for typing into it; a click on a button needn't show one.

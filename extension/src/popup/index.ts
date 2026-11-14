@@ -280,6 +280,8 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     applyTranslations();
     localizeDynamicContent();
   }
+  // Off until the stored choice is known, as a failed pick goes back to it.
+  els.languageTrigger.disabled = false;
   for (const [feature, input] of Object.entries(FEATURE_SWITCHES) as [OfflineFeature, HTMLInputElement][]) {
     input.checked = res.data.offlineFeatures[feature];
   }
