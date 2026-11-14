@@ -3595,7 +3595,7 @@
         "appearance": "Apariencia",
         "providers": "Proveedores",
         "slicer": "Slicer",
-        "printers": "Impresoras"
+        "printers": "Impresora"
       }
     },
     "providers": {
@@ -3618,7 +3618,7 @@
       "comingSoon": "Próximamente"
     },
     "slicer": {
-      "subtitle": "Los slicers instalados en este ordenador. Un modelo se abre en el último que usaste; los demás están en su menú «Abrir en». Haz doble clic en uno, o clic derecho, para activarlo o desactivarlo.",
+      "subtitle": "Los slicers instalados en tu ordenador. Un modelo se abre en el último que usaste; los demás están en su menú «Abrir en». Haz doble clic en uno, o clic derecho, para activarlo o desactivarlo.",
       "active": "Activo",
       "notActive": "No activo",
       "activate": "Activar",
@@ -4988,18 +4988,20 @@
       "suggestedProjects_many": "{{count}} de tus proyectos están hechos para ella",
       "suggestedProjects_other": "{{count}} de tus proyectos están hechos para ella",
       "empty": "Añade las impresoras en las que imprimes y los modelos se abrirán en tu slicer preparados para ellas.",
-      "bambu": {
-        "region": "Tu cuenta de Bambu Lab",
-        "question": "¿Buscar tus impresoras en tu cuenta de Bambu Lab?",
+      "accounts": {
+        "region": "Tus cuentas en sitios de fabricantes de impresoras",
+        "question": "¿Buscar tus impresoras en tus cuentas?",
         "find": "Buscarlas",
         "later": "Ahora no",
-        "found_one": "Se añadió {{count}} impresora de tu cuenta de Bambu Lab.",
-        "found_many": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
-        "found_other": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
-        "none": "Tu cuenta de Bambu Lab no tiene impresoras que Thingport conozca.",
-        "expired": "Tu sesión de MakerWorld ha caducado. Vuelve a iniciarla en Proveedores.",
-        "signedOut": "Inicia sesión en MakerWorld en Proveedores primero.",
-        "failed": "Bambu Lab no listó tus impresoras. Inténtalo más tarde."
+        "found_one": "Se añadió {{count}} impresora de {{sites}}.",
+        "found_many": "Se añadieron {{count}} impresoras de {{sites}}.",
+        "found_other": "Se añadieron {{count}} impresoras de {{sites}}.",
+        "none": "{{sites}}: ninguna impresora que Thingport conozca.",
+        "expired_one": "Tu sesión de {{sites}} ha caducado. Vuelve a iniciarla en Proveedores.",
+        "expired_many": "Tus sesiones de {{sites}} han caducado. Vuelve a iniciarlas en Proveedores.",
+        "expired_other": "Tus sesiones de {{sites}} han caducado. Vuelve a iniciarlas en Proveedores.",
+        "failed": "No se pudo obtener la lista de impresoras de {{sites}}. Inténtalo más tarde.",
+        "error": "No se pudieron buscar tus impresoras. Inténtalo más tarde."
       },
       "menu": {
         "nozzle": "Boquilla",
@@ -5951,6 +5953,10 @@
       "openInSlicer": "Abrir en {{slicer}}",
       "openInStudio": "Abrir en Thingport Studio",
       "openAdaptedInSlicer": "Abrir versión adaptada en {{slicer}}",
+      "adaptedFor": "adaptado para {{target}}",
+      "adaptedForYourPrinter": "adaptado para tu impresora",
+      "downloadAdapted": "Descargar versión adaptada",
+      "adaptedActions": "Abrir o descargar la copia adaptada",
       "adaptedInfo": {
         "prusa": "Una copia hecha para {{slicer}}: entra en tus propios ajustes de impresora, filamento e impresión, con la altura de capa, las paredes, el relleno y los soportes del diseñador en cada objeto, y los colores pintados en tus extrusores. El archivo guardado no cambia.",
         "cura": "Una copia hecha para {{slicer}}, un proyecto de Cura para cualquier impresora: abierto como UCP, la altura de capa, la adherencia y el tipo de soportes del diseñador pasan a los ajustes de tu impresora, y cada objeto conserva su extrusor. Los objetos con varias piezas conservan sus piezas, y las paredes, capas superiores e inferiores, relleno y soportes del diseñador se ajustan en cada objeto. Cura no lee los colores pintados. El archivo guardado no cambia.",

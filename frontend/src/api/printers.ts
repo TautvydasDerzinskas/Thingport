@@ -1,3 +1,4 @@
+import type { ProviderId } from "../providers/index.generated";
 import { authHeaders } from "../utils/auth";
 import { apiBase, readErrorMessage, UnauthorizedError } from "./client";
 
@@ -45,20 +46,15 @@ export type PrinterSuggestion = {
   declined: boolean;
 };
 
-/** The user's printers, the ones their library suggests, and whether to offer finding them in their Bambu account. */
-export type MyPrinters = { printers: UserPrinter[]; suggestions: PrinterSuggestion[]; bambu: boolean };
+/** The user's printers, the ones their library suggests, and the accounts Find my printers would look in (empty once
+ *  they have a printer). */
+export type MyPrinters = { printers: UserPrinter[]; suggestions: PrinterSuggestion[]; accounts: ProviderId[] };
 
 export type PrinterCatalogue = { brands: PrinterBrand[]; printers: PrinterSummary[] };
 
-/** Thrown when finding printers in the Bambu account needs a MakerWorld sign-in first, or a new one. */
-export class BambuSignInError extends Error {
-  constructor(
-    readonly reason: "signed-out" | "expired",
-    message: string,
-  ) {
-    super(message);
-  }
-}
+/** How one account answered Find my printers: "expired" when it turned the sign-in down, "failed" when it couldn't
+ *  say. `found` counts its printers Thingport knows. */
+export type PrinterAccountResult = { provider: ProviderId; state: "ok" | "expired" | "failed"; found: number };
 
 async function call<T>(path: string, init: RequestInit, fallback: string): Promise<T> {
   const res = await fetch(`${apiBase()}${path}`, { ...init, headers: authHeaders(init.headers) });
@@ -107,15 +103,7 @@ export const printersApi = {
       "Failed to save the suggestion",
     ),
 
-  /** Reads the printers bound to the Bambu account the user's MakerWorld sign-in is, and adds them. */
-  findInBambuAccount: async (): Promise<UserPrinter[]> => {
-    const res = await fetch(`${apiBase()}/me/printers/bambu`, { method: "POST", headers: authHeaders() });
-    if (res.status === 401) throw new UnauthorizedError();
-    if (res.status === 409) {
-      const body = (await res.json().catch(() => ({}))) as { code?: string; detail?: string };
-      throw new BambuSignInError(body.code === "makerworld_rejected" ? "expired" : "signed-out", body.detail ?? "");
-    }
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to find your printers"));
-    return ((await res.json()) as { printers: UserPrinter[] }).printers;
-  },
+  /** Reads the printers the user's accounts on printer makers' sites have, and adds them. */
+  findInAccounts: (): Promise<{ printers: UserPrinter[]; accounts: PrinterAccountResult[] }> =>
+    call("/me/printers/accounts", { method: "POST" }, "Failed to find your printers"),
 };

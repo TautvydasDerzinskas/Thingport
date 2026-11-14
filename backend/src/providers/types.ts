@@ -265,6 +265,20 @@ export type ProviderTrending = {
   region?(userId: string): Promise<RegionId | null>;
 };
 
+/** One of the user's own printers, as the printer catalogue has it, with its nozzle in mm where the site says. */
+export type OwnedPrinter = { printerId: string; nozzle: number | null };
+
+/** The printers the user's account on a site has, for Configuration > Printer's Find my printers: a site whose printer
+ *  maker's cloud lists them to the user's sign-in there. Read only when the user asks, and nothing of a printer but its
+ *  model and nozzle: never its serial, name, address or keys. */
+export type ProviderOwnedPrinters = {
+  /** Whether the user has a sign-in there to ask with. */
+  connected(userId: string): Promise<boolean>;
+  /** Those the catalogue knows. "rejected" when the site turned the sign-in down, which is then marked so; null when
+   *  it couldn't say. */
+  read(userId: string): Promise<OwnedPrinter[] | "signed-out" | "rejected" | null>;
+};
+
 export type ConnectionStatus = "connected" | "expired" | "disconnected";
 
 /** One of the credentials the manifest lists under `auth`, as Configuration → Providers shows and changes it. */

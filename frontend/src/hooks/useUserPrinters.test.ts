@@ -6,7 +6,11 @@ import type { MyPrinters, PrinterSuggestion } from "../api/printers";
 const mine = vi.fn<() => Promise<MyPrinters>>();
 vi.mock("../api/printers", () => ({ printersApi: { mine: () => mine() } }));
 
-const answer = (bambu: boolean): MyPrinters => ({ printers: [], suggestions: [], bambu });
+const answer = (offered: boolean): MyPrinters => ({
+  printers: [],
+  suggestions: [],
+  accounts: offered ? ["makerworld"] : [],
+});
 const suggestion = (i: number): PrinterSuggestion => ({
   printer: {
     id: `brand-${i}`,
@@ -27,7 +31,7 @@ const suggestion = (i: number): PrinterSuggestion => ({
 const nth = (n: number): MyPrinters => ({
   printers: [],
   suggestions: Array.from({ length: n }, (_, i) => suggestion(i)),
-  bambu: false,
+  accounts: [],
 });
 
 /** What a component using the hook gets now: its first render reads the shared cache. */
@@ -91,7 +95,7 @@ describe("the user's printers", () => {
     old.resolve(answer(false));
     await settle();
 
-    expect(seen(useUserPrinters).bambu).toBe(true);
+    expect(seen(useUserPrinters).accounts).toEqual(["makerworld"]);
     expect(mine).toHaveBeenCalledTimes(2);
   });
 

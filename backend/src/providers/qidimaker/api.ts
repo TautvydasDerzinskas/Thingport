@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
+import { markdownFromDescription } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
@@ -313,8 +314,10 @@ export function qidimakerMetaFromDetail(
   // Its pages show a model in the reader's language where it was translated, so it's read as they show it in English.
   const title = str(detail.translatedModelName) ?? str(detail.modelName);
   if (title) meta.title = title;
+  // HTML, as the site's editor writes it.
   const description = str(detail.translatedModelDescription) ?? str(detail.modelDescription);
-  if (description) meta.description = description;
+  const markdown = description ? markdownFromDescription(description) : null;
+  if (markdown) meta.description = markdown;
   const translated = strings(detail.translatedTags);
   const tags = [...new Set(translated.length ? translated : strings(detail.tags))];
   if (tags.length) meta.tags = tags;

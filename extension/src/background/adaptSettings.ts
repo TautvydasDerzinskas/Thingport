@@ -1,5 +1,5 @@
 // Adapt 3MFs' settings in the background. Grab keeps its own (shared/adaptSettings.ts); once connected, the Thingport
-// instance's slicers and printers (its Configuration → Slicer and Printers) take their place. On connecting, Grab
+// instance's slicers and printers (its Configuration → Slicer and Printer) take their place. On connecting, Grab
 // offers its own to an instance that has none yet, once per account.
 
 import type { PrinterChoice } from "../adapter/plan.generated";

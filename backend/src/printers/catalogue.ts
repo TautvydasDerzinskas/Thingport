@@ -129,6 +129,22 @@ export function printerForName(
   return found ? { printer: found, nozzle: hit?.[1] ?? null } : null;
 }
 
+/** A brand's printer by the name a site gives its model, with the brand's name ("Creality K1C") or without it ("K1C"),
+ *  and the nozzle a preset's name says. Null for a name that isn't one of that brand's. */
+export function brandPrinterForName(
+  brandId: string,
+  name: string | null | undefined,
+): { printer: PrinterSummary; nozzle: string | null } | null {
+  const model = String(name ?? "").trim();
+  const brand = printerBrands().find((b) => b.id === brandId);
+  if (!model || !brand) return null;
+  for (const candidate of [model, `${brand.name} ${model}`]) {
+    const hit = printerForName(candidate);
+    if (hit?.printer.brand === brandId) return hit;
+  }
+  return null;
+}
+
 /** The printers of a Bambu Lab model code, as Bambu's cloud lists a bound printer's (`C12`). */
 export function printersForBambuCode(code: string | null | undefined): PrinterSummary[] {
   if (!code) return [];

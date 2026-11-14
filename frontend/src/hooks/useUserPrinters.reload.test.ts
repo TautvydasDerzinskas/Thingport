@@ -24,7 +24,7 @@ vi.mock("react", () => ({
 const mine = vi.fn<() => Promise<MyPrinters>>();
 vi.mock("../api/printers", () => ({ printersApi: { mine: () => mine() } }));
 
-const answer: MyPrinters = { printers: [], suggestions: [], bambu: true };
+const answer: MyPrinters = { printers: [], suggestions: [], accounts: ["makerworld"] };
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function pending() {
@@ -72,7 +72,7 @@ describe("trying the user's printers again", () => {
 
     mine.mockResolvedValueOnce(answer);
     await render().reload();
-    expect(render()).toMatchObject({ loaded: true, failed: false, bambu: true });
+    expect(render()).toMatchObject({ loaded: true, failed: false, accounts: ["makerworld"] });
   });
 
   it("keeps the answer it has known while it reads them again", async () => {
@@ -83,7 +83,7 @@ describe("trying the user's printers again", () => {
     const retry = pending();
     mine.mockReturnValueOnce(retry.promise);
     const reloading = render().reload();
-    expect(render()).toMatchObject({ loaded: true, failed: false, bambu: true });
+    expect(render()).toMatchObject({ loaded: true, failed: false, accounts: ["makerworld"] });
     retry.resolve(answer);
     await reloading;
   });
