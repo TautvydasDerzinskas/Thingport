@@ -9,6 +9,7 @@ import {
   askDue,
   banner,
   latestCheck,
+  newerRun,
   nextAsk,
   noticesFrom,
   pullState,
@@ -344,7 +345,8 @@ test("asks the longest-waiting pull request once the allowance is back", () => {
 // A repository of pull requests CodeRabbit reviewed before, whose heads it refused at minute 0 unless checks says
 // otherwise; it answers each ask with the pull request's answer, or the next of its answers, and with review, posts a
 // review of the head for each ask it takes. A run may wait until minute `until`.
-function fakeRun({ now, answers, checks = {}, extra = [], until = 0, review = false }) {
+// A newer run starts at minute `newerAt`, if given.
+function fakeRun({ now, answers, checks = {}, extra = [], until = 0, review = false, newerAt }) {
   let clock = at(now);
   const pulls = Object.keys(answers).map((number) => ({
     ...PULL,
@@ -394,22 +396,23 @@ function fakeRun({ now, answers, checks = {}, extra = [], until = 0, review = fa
   };
   let paused = 0;
   const github = { all: async (path, pick = (page) => page) => pick(get(path)), request: async (path) => get(path) };
-  const run = () =>
-    askDue({
-      github,
-      poster,
-      asker: ASKER,
-      dryRun: false,
-      footer: BANNER,
-      until: until && at(until),
-      clock: () => clock,
-      pause: async (ms) => {
-        paused += ms;
-        clock += ms;
-      },
-      log: () => {},
-    });
-  return { run, posted, postedAt, bodies, paused: () => paused };
+  const options = {
+    github,
+    poster,
+    asker: ASKER,
+    dryRun: false,
+    footer: BANNER,
+    until: until && at(until),
+    superseded: async () => (newerAt !== undefined && clock >= at(newerAt) ? { id: 2 } : null),
+    clock: () => clock,
+    pause: async (ms) => {
+      paused += ms;
+      clock += ms;
+    },
+    log: () => {},
+  };
+  const run = () => askDue(options);
+  return { run, options, posted, postedAt, bodies, paused: () => paused };
 }
 
 test("with no time to wait, a run asks what's due and stops, leaving what isn't to a later run", async () => {
@@ -469,6 +472,50 @@ test("a run looks again when something should have changed, and hands over what 
   assert.deepEqual(await run.run(), { at: at(19) + 30_000 });
   assert.deepEqual(run.posted, []);
   assert.equal(run.paused(), 10 * MINUTE);
+});
+
+test("a waiting run leaves the rest to a newer one within a minute, and asks nothing once there is one", async () => {
+  // Waiting for the summary's 19 minutes, a newer run starts at minute 12.
+  const waiting = fakeRun({ now: 10, until: 130, answers: { 7: ACCEPTED }, newerAt: 12 });
+  assert.deepEqual(await waiting.run(), {});
+  assert.deepEqual(waiting.posted, []);
+  assert.ok(waiting.paused() > 2 * MINUTE - 1000 && waiting.paused() <= 3 * MINUTE, `waited ${waiting.paused()} ms`);
+  // One started after it with the ask already due doesn't post it either.
+  const late = fakeRun({ now: 30, until: 130, answers: { 7: ACCEPTED }, newerAt: 0 });
+  await late.run();
+  assert.deepEqual(late.posted, []);
+  // Nor does one whose newer run started while it was looking.
+  let looks = 0;
+  const racing = fakeRun({ now: 30, until: 130, answers: { 7: ACCEPTED } });
+  const raced = await askDue({
+    ...racing.options,
+    superseded: async () => (++looks > 1 ? { id: 2 } : null),
+  });
+  assert.deepEqual(raced, {});
+  assert.deepEqual(racing.posted, []);
+});
+
+test("a newer run counts only if it will do the work", async () => {
+  const run = (id, event = "check_run", display_title = "CodeRabbit retry") => ({ id, event, display_title });
+  const github = (runs, jobs) => ({
+    request: async (path) => {
+      const status = path.match(/^actions\/workflows\/retry\.yml\/runs\?status=(\w+)&/)?.[1];
+      if (status) return { workflow_runs: runs[status] ?? [] };
+      const id = Number(path.match(/^actions\/runs\/(\d+)\/jobs$/)[1]);
+      return { jobs: jobs[id] ?? [] };
+    },
+  });
+  const done = [{ status: "completed", conclusion: "skipped" }];
+  const busy = [{ status: "in_progress" }];
+  const runs = {
+    queued: [run(5), run(9)],
+    in_progress: [run(10), run(11, "pull_request_target"), run(12, "workflow_dispatch", "CodeRabbit retry (dry run)")],
+  };
+  // 5 is older, 11 only starts a run, 12 is a dry run, 10 skipped its job and 9 has none yet.
+  const jobs = { 5: busy, 10: done, 11: busy, 12: busy };
+  assert.equal(await newerRun(github(runs, jobs), "retry.yml", 8), null);
+  const next = await newerRun(github(runs, { ...jobs, 9: [{ status: "queued" }] }), "retry.yml", 8);
+  assert.equal(next.id, 9);
 });
 
 test("the banner follows the reader's GitHub theme", () => {
