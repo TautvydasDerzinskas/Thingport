@@ -71,9 +71,10 @@ uses, as above. One without your language shows English.
 ## Thingport Grab
 
 The browser extension's words are in [`extension/src/shared/locales/`](../extension/src/shared/locales), one file per
-language with the same keys as `en.json`. Its placeholders take single braces, such as `{site}`, and it has no plural
-forms: a number goes in as a label, as in `"Printers: {count}"`. A language that isn't there yet also needs a flag and
-an entry in Grab's language menu, so ask for it in an issue or your pull request.
+language with the same keys as `en.json`. Its placeholders take single braces, such as `{site}`, and it doesn't pick
+plural forms itself: a number mostly goes in as a label, as in `"Printers: {count}"`, and where the code chooses
+between a key's `_one` and `_other` variants, such as `missingProfilesHint_one`, translate both. A language that isn't
+there yet also needs a flag and an entry in Grab's language menu, so ask for it in an issue or your pull request.
 
 ## Keeping up
 

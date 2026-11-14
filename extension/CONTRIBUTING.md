@@ -120,9 +120,10 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
 - If it adds a runtime message, add it to `src/shared/messages.ts` so both ends stay typed.
 - Text a user reads goes through `t()` (`src/shared/i18n.ts`), or `backgroundText()` in the background, which never
   sets a language, with its key in every `src/shared/locales/*.json`. Placeholders take single braces (`{site}`) and
-  there are no plural forms, so a number goes in as a label (`Printers: {count}`). `src/shared/i18n.test.ts` fails on
-  a missing key or a placeholder a translation dropped. Call `t()` when drawing, not at module level: a page's language
-  is set after its modules load.
+  nothing picks plural forms, so a number goes in as a label (`Printers: {count}`), or the code picks a key's `_one` or
+  `_other` variant itself (`missingProfilesHint_one`). `src/shared/i18n.test.ts` fails on a missing key or a
+  placeholder a translation dropped. Call `t()` when drawing, not at module level: a page's language is set after its
+  modules load.
 - Provider URL patterns live in `providers/<id>/urls.ts` at the repo root, shared with the web app
   and backend: change them there, run `npm run providers:sync` at the root, and add a case to
   `providers/<id>/urls.fixtures.json`.
