@@ -1010,7 +1010,8 @@ model ProviderConnection {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider    String
-  /// "default", or "browser" for a second sign-in beside it (Cults3D's).
+  /// "default", "browser" for a second sign-in beside it (Cults3D's), or a region's id for that site's own (VoxelShare's
+  /// "cn").
   slot        String    @default("default")
   /// The credential, shaped as the provider's session.ts reads it; null once disconnected, the account kept.
   secret      Json?

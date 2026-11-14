@@ -2891,11 +2891,15 @@
       "title": "Правайдары",
       "subtitle": "Сайты, з якіх вы імпартуеце мадэлі. Пстрыкніце правай кнопкай мышы па адным з іх, каб падключыць, адключыць яго або даведацца пра яго больш.",
       "connected": "Падключана",
+      "connectedSites": "Падключана · {{sites}}",
       "notConnected": "Не падключана",
       "connect": "Падключыць",
+      "connectSite": "Падключыць: {{site}}",
       "connecting": "Падключэнне…",
       "disconnect": "Адключыць",
       "connectTitle": "Падключыць {{name}}",
+      "site": "Сайт",
+      "regions": { "main": "Міжнародны", "cn": "Кітай" },
       "disconnectTitle": "Адключыць {{name}}?",
       "disconnectMessage": "Ваш ключ {{name}} выдалены, і імпарт з {{name}} не будзе працаваць, пакуль вы не падключыце яго зноў.",
       "disconnectMessageShared": "Токен {{name}} выдалены для ўсіх у гэтым асобніку Thingport, і імпарт з {{name}} не будзе працаваць, пакуль яго зноў не падключаць.",
@@ -8157,21 +8161,33 @@
           "Або ўручную: увайдзіце на www.voxelshare.com і адкрыйце інструменты распрацоўшчыка браўзера (F12).",
           "У раздзеле Application (Chrome, Edge) або Storage (Firefox) → Cookies → https://www.voxelshare.com скапіруйце значэнне cookie token і ўстаўце ніжэй."
         ],
-        "placeholder": "Значэнне cookie token"
+        "placeholder": "Значэнне cookie token",
+        "cn": {
+          "steps": [
+            "Найпрасцей: з Thingport Grab проста адкрыйце www.voxelshare.cn, увайшоўшы ў акаўнт. Ён падключыць акаўнт і перадасць новыя даныя ўваходу пры наступным уваходзе на сайт.",
+            "Або ўручную: увайдзіце на www.voxelshare.cn і адкрыйце інструменты распрацоўшчыка браўзера (F12).",
+            "У раздзеле Application (Chrome, Edge) або Storage (Firefox) → Cookies → https://www.voxelshare.cn скапіруйце значэнне cookie token і ўстаўце ніжэй."
+          ],
+          "placeholder": "Значэнне cookie token"
+        }
       },
       "status": {
         "notConnected": "Падключыце акаўнт, каб чытаць свае ўпадабанні і прыватныя калекцыі VoxelShare. Мадэлі і чужыя публічныя калекцыі імпартуюцца і без яго.",
         "expired": "Тэрмін дзеяння ўваходу скончыўся. Увайдзіце на www.voxelshare.com з Thingport Grab або зноў падключыце VoxelShare у Налады → Прайдары.",
         "expiredStatus": "Тэрмін дзеяння ўваходу скончыўся",
-        "disabledReason": "VoxelShare: падключыце акаўнт у Налады → Прайдары"
+        "disabledReason": "VoxelShare: падключыце акаўнт у Налады → Прайдары",
+        "cn": {
+          "expired": "Тэрмін дзеяння ўваходу на кітайскі сайт скончыўся. Увайдзіце на www.voxelshare.cn з Thingport Grab або зноў падключыце кітайскі сайт VoxelShare у Налады → Прайдары.",
+          "expiredStatus": "Уваход на кітайскі сайт скончыўся"
+        }
       },
       "about": {
         "summary": "Супольнасць мадэляў Flashforge для яе прынтараў Adventurer і Creator, з профілямі друку з Flash Studio.",
         "signIn": "Для імпарту не патрэбны; ваш уваход дадае вашы калекцыі і ўпадабанні.",
-        "grab": "Перадае даныя ўваходу, калі вы наведваеце www.voxelshare.com.",
+        "grab": "Перадае даныя ўваходу, калі вы наведваеце www.voxelshare.com або яго кітайскі сайт www.voxelshare.cn.",
         "setup": [
           "Імпартуйце спасылку на любую мадэль — уваход не патрэбны.",
-          "Для вашых калекцый і ўпадабанняў: усталюйце Thingport Grab, уключыце яго для VoxelShare і адкрыйце www.voxelshare.com, увайшоўшы ў акаўнт."
+          "Для вашых калекцый і ўпадабанняў: усталюйце Thingport Grab, уключыце яго для VoxelShare і адкрыйце www.voxelshare.com, увайшоўшы ў акаўнт (для кітайскага акаўнта — www.voxelshare.cn)."
         ]
       },
       "admin": {

@@ -280,6 +280,13 @@ describe("the catalogue's recipes", () => {
     const u1 = printerTarget("snapmaker-orca", "snapmaker-u1", "0.4");
     expect(u1?.choice.preset).toBe("Snapmaker U1 (0.4 nozzle)");
     expect(u1?.recipe.bed).toEqual({ minX: 0.5, minY: 1, maxX: 270.5, maxY: 271 });
+    // Flash Studio's, which knows Flashforge's printers only.
+    const ad5m = printerTarget("orca-flashforge", "flashforge-adventurer5m", "0.4");
+    expect(ad5m?.choice.preset).toBe("Flashforge Adventurer 5M 0.4 Nozzle");
+    expect(ad5m?.recipe.processes.map((process) => process.name)).toContain(
+      "0.20mm Standard @Flashforge AD5M 0.4 Nozzle",
+    );
+    expect(printerTarget("orca-flashforge", "bambulab-p1s", "0.4")).toBeNull();
   });
 
   it("take the nearest nozzle a slicer has, and none for a printer the slicer doesn't know", () => {

@@ -16,7 +16,12 @@ const BRIDGEABLE_SLICERS = new Set([
   "elegooslicer",
   "snapmaker-orca",
   "eufystudio3d",
+  "orca-flashforge",
 ]);
+
+// The scheme each slicer registers is its id, but for Flash Studio's: its id is its project's, Orca-Flashforge, as
+// the printer catalogue names it.
+const SCHEMES: Readonly<Record<string, string>> = { "orca-flashforge": "orcaflashforge" };
 
 /** True for a slicer that always goes through the Bridge. */
 export function alwaysBridged(slicerId: string): boolean {
@@ -68,5 +73,6 @@ export function slicerLaunchUrl(
     return `eufystudio3d://open/?file=${encodeURIComponent(fileUrl)}${name}`;
   }
   const hinted = filename ? withFilenameHint(slicerId, fileUrl, filename) : { fileUrl, extra: "" };
-  return `${slicerId}://open?file=${encodeURIComponent(hinted.fileUrl)}${hinted.extra}`;
+  const scheme = Object.hasOwn(SCHEMES, slicerId) ? SCHEMES[slicerId] : slicerId;
+  return `${scheme}://open?file=${encodeURIComponent(hinted.fileUrl)}${hinted.extra}`;
 }

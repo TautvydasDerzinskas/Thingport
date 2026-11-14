@@ -143,10 +143,11 @@ saves a copy made for your slicer and, where your slicer loads a printer's prese
 slicer's presets for it, the designer's settings on top and the plates laid out on its bed. It's the copy Thingport's
 **Open adapted** opens. Hover the bulb for what a copy keeps.
 
-- **The button:** an outlined button under the site's own "Open in Bambu Studio", "Open in QIDI Studio" or Download button, so the site's own
+- **The button:** an outlined button under the site's own "Open in Bambu Studio", "Open in QIDI Studio", "Open in Flash Studio Desktop" or Download button, so the site's own
   stays the main action. Under its label it names the copy a click makes, the last one made or else the first: "Bambu
   Lab P1S · Bambu Studio", after the file where the model has several 3MFs. Its ▾ lists the others, one per slicer,
-  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next and QIDI Studio, and above
+  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next, QIDI Studio and
+  Flash Studio (Flashforge's printers only), and above
   them the model's 3MFs on Printables, or the profile or file it's made of where the page picks one. Its last item
   opens the settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾
   offers to pick one. On Creality Cloud, Snapmaker Space, NexPrint and MakerOnline it needs you signed in there, as
@@ -422,7 +423,8 @@ above it.
 
 VoxelShare's models, their print profiles and anyone's public collections import without a sign-in. Its sign-in, its
 `token` cookie, is read when you open www.voxelshare.com signed in, and sent whenever the site renews it; signing out
-there makes Thingport forget the one Grab sent. Thingport needs it only for your own private collections and your likes
+there makes Thingport forget the one Grab sent. Its China site, www.voxelshare.cn, has accounts of its own: its sign-in
+is read from its own pages and sent as a second one, and its models import from there the same way. Thingport needs it only for your own private collections and your likes
 (`/en/print_list?recordTab=like`), which import from their pages and can be kept in sync. The page keeps the print
 profile you pick to itself, so the panel imports the one picked in its list. **Download adapted** sits under its **Open
 in Flash Studio Desktop**, for that profile.

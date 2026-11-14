@@ -198,7 +198,7 @@ export const PROVIDER_DOCS = [
     title: "VoxelShare",
     nav: "VoxelShare",
     description:
-      "Import models from VoxelShare with their print profiles for Flashforge printers, anyone's public collections, and your own collections and likes with your sign-in.",
+      "Import models from VoxelShare and its China site with their print profiles for Flashforge printers, anyone's public collections, and your own collections and likes with your sign-in.",
   },
 ];
 
@@ -736,7 +736,7 @@ export const PROVIDER_PAGES = [
       likes: true,
       sync: true,
       profiles: true,
-      slicers: [],
+      slicers: ["Flash Studio"],
       adaptedCopies: true,
       trending: "trending",
       categories: true,

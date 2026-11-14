@@ -5,7 +5,7 @@ export default {
   about:
     "VoxelShare is the model community of Flashforge, the Chinese maker of the Adventurer and Creator printers. Its models come with print profiles for those printers, made in Flash Studio, Flashforge's own slicer.",
   description:
-    "Import models from VoxelShare with their print profiles for Flashforge printers, anyone's public collections, and your own collections and likes with your sign-in.",
+    "Import models from VoxelShare and its China site with their print profiles for Flashforge printers, anyone's public collections, and your own collections and likes with your sign-in.",
   signIn: "Yours, for your collections and likes",
   highlight: {
     title: "Flashforge profiles, for any printer",

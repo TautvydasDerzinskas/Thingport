@@ -1,7 +1,8 @@
 export type SlicerOption = { id: string; label: string };
 
 // Slicers that register a URL protocol. IDs must match the backend's SLICER_IDS and (except
-// "other") equal the scheme the slicer registers, e.g. "crealityprintlink". Some are launched via
+// "other") equal the scheme the slicer registers, e.g. "crealityprintlink", but for Flash Studio's, which is its
+// project's name as the printer catalogue knows it (utils/slicerLaunch.ts gives its scheme). Some are launched via
 // the Bridge instead (see utils/slicerLaunch.ts).
 export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "bambustudio", label: "Bambu Studio" },
@@ -14,6 +15,7 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "snapmaker-orca", label: "Snapmaker Orca" },
   { id: "eufystudio3d", label: "eufyMake Studio" },
   { id: "qidistudio", label: "QIDI Studio" },
+  { id: "orca-flashforge", label: "Flash Studio" },
   { id: "other", label: "Other / Manual" },
 ];
 

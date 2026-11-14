@@ -38,8 +38,9 @@ let lastRead: Promise<unknown> = Promise.resolve();
 export function readVoxelshareLicense(_userId: string, externalId: string): Promise<ProviderLicense | null> {
   const read = lastRead.then(async () => {
     // Loaded when it's read: the API module reads this one's mapping.
-    const { fetchVoxelshareDetail } = await import("./api");
-    const detail = await fetchVoxelshareDetail(externalId);
+    const { fetchVoxelshareDetail, voxelshareSiteIdOf } = await import("./api");
+    const { region, id } = voxelshareSiteIdOf(externalId);
+    const detail = await fetchVoxelshareDetail(id, region);
     return detail ? voxelshareLicenseFrom(detail.license) : null;
   });
   lastRead = read.catch(() => undefined).then(() => sleep(READ_GAP_MS));

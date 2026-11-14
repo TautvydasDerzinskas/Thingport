@@ -20,6 +20,31 @@ export type Logo = {
   layers?: readonly { d: string; color: `#${string}`; fillRule?: "evenodd" }[];
 };
 
+/** The regions a site can have beside its main one: a site of its own, with accounts of its own. */
+export type RegionId = "cn";
+
+/**
+ * A region of a provider's site with accounts of its own, beside its main site: VoxelShare's China site. Its hosts,
+ * credential hosts and Grab origins are the provider's too (the manifest's `hosts`, `credentialHosts` and
+ * `extension.origins` list them); a region only tells code which site a link or a model is on. Models and lists read
+ * from a region are kept under their id with the region in front (`cn-123`, _lib/regions.ts), so they're read from
+ * there again, and the region's sign-in is the auth slot named after it.
+ */
+export type Region = {
+  /** Stored in what's kept from it and sent by clients: never change it. */
+  id: RegionId;
+  /** As the app names it beside the main site, where it can't translate it: "China". */
+  name: string;
+  site: `https://${string}`;
+  /** Its domains, subdomains included: some of the provider's `hosts`. */
+  hosts: readonly string[];
+  /** Its APIs and file hosts, by what they serve, as the provider's `endpoints` give the main site's. */
+  endpoints?: Readonly<Record<string, `https://${string}`>>;
+  /** Its own trending list, where it has one apart from the main site's: the page the panel's "more" opens. Which of
+   *  them a user sees is the provider's backend's call (its trending's `region`). */
+  trending?: { moreUrl: `https://${string}` };
+};
+
 export type ProviderManifest = {
   /** Stored in the database and sent by clients: never change it. */
   id: string;
@@ -29,8 +54,10 @@ export type ProviderManifest = {
   site: string;
   /** The page under docs/providers/ on the website. */
   docsSlug: string;
-  /** The provider's domains; their subdomains count too. */
+  /** The provider's domains; their subdomains count too. Its regions' are among them. */
   hosts: readonly string[];
+  /** Its site's regions beside its main one, each with accounts of its own; none for most. */
+  regions?: readonly Region[];
   /** Exact hosts allowed to receive each kind of this provider's credentials. */
   credentialHosts?: Readonly<Record<string, { exact: readonly string[] }>>;
   /** Its APIs and file hosts, by what they serve, for every package that calls them. */
@@ -119,8 +146,9 @@ export type AuthField = { name: string; secret?: boolean; multiline?: boolean };
 
 export type AuthSlot = {
   /** "default" is the one its tile connects. Others: Cults3D's "browser" sign-in its downloads need besides its API
-   *  key, MyMiniFactory's "instance" API key beside each user's sign-in. */
-  slot: "default" | "browser" | "instance";
+   *  key, MyMiniFactory's "instance" API key beside each user's sign-in, and a region's own sign-in, named after it
+   *  (VoxelShare's "cn"), which the tile connects too. */
+  slot: "default" | "browser" | "instance" | RegionId;
   /** One credential for the whole instance, which only an admin sets, or each user's own. */
   scope: "instance" | "user";
   fields: readonly AuthField[];
