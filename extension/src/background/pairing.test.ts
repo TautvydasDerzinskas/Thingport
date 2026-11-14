@@ -8,7 +8,10 @@ let blockPermissionCheck = false;
 let releasePermissionCheck: (() => void) | null = null;
 let nextTabId = 40;
 let updateFails = false;
-let removeFailsFor: string | null = null;
+// Runs as the next tab update starts; throwing from it fails that update.
+let onNextUpdate: (() => Promise<void>) | null = null;
+let claimHeld: Promise<void> | null = null;
+let claimRefused = false;
 const fetchUrls: string[] = [];
 type StorageListener = (changes: Record<string, chrome.storage.StorageChange>, area: string) => void;
 const storageListeners: StorageListener[] = [];
@@ -28,6 +31,8 @@ vi.stubGlobal("fetch", async (input: string | URL | Request) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   fetchUrls.push(url);
   if (url.endsWith("/api/grab/pairings/claim")) {
+    if (claimHeld) await claimHeld;
+    if (claimRefused) return new Response(JSON.stringify({ detail: "refused" }), { status: 400 });
     return new Response(
       JSON.stringify({
         connection_token: "connection",
@@ -58,10 +63,6 @@ vi.stubGlobal("chrome", {
       remove: async (keys: string | string[]) => {
         const wanted = Array.isArray(keys) ? keys : [keys];
         operations.push(`remove:${wanted.join(",")}`);
-        if (removeFailsFor && wanted.includes(removeFailsFor)) {
-          removeFailsFor = null;
-          throw new Error("storage remove failed");
-        }
         const changes = Object.fromEntries(
           wanted.filter((key) => key in store).map((key) => [key, { oldValue: store[key] }]),
         );
@@ -88,6 +89,9 @@ vi.stubGlobal("chrome", {
     },
     update: async (_tabId: number, options: { url: string; active: boolean }) => {
       operations.push(`update:${new URL(options.url).pathname}:${options.active}`);
+      const hook = onNextUpdate;
+      onNextUpdate = null;
+      if (hook) await hook();
       if (updateFails) throw new Error("tab update failed");
       return {};
     },
@@ -112,7 +116,9 @@ beforeEach(() => {
   blockPermissionCheck = false;
   releasePermissionCheck = null;
   updateFails = false;
-  removeFailsFor = null;
+  onNextUpdate = null;
+  claimHeld = null;
+  claimRefused = false;
   storageListeners.length = 0;
 });
 
@@ -289,21 +295,94 @@ describe("pairing permission continuity", () => {
     await expect(getState()).resolves.toMatchObject({ pairing: true, pairingInstanceUrl: "https://old.example.com" });
   });
 
-  it("lets the approval tab finish after forgetting its pairing failed once", async () => {
+  it("still answers the pair button with its failure when an event's pass after it has nothing to do", async () => {
+    store[STORAGE_KEYS.pairingIntent] = intent();
+    permissionGranted = true;
+    updateFails = true;
+
+    const pressed = resumePairingIntent(true);
+    void resumePairingIntent().catch(() => undefined);
+
+    await expect(pressed).rejects.toThrow("tab update failed");
+    expect(tabsOpened()).toHaveLength(1);
+  });
+
+  it("keeps the pairing until its code is claimed, so another can't start meanwhile", async () => {
     store[STORAGE_KEYS.pendingPairing] = {
       instanceUrl: "https://thingport.example.com",
       verifier: "secret",
       tabId: 7,
       startedAt: Date.now(),
     } satisfies PendingPairing;
-    const approved = "https://thingport.example.com/connect-grab#grab_code=approved";
-    removeFailsFor = STORAGE_KEYS.pendingPairing;
+    let releaseClaim!: () => void;
+    claimHeld = new Promise<void>((resolve) => (releaseClaim = resolve));
+    const claiming = onPairingTabUrl(7, "https://thingport.example.com/connect-grab#grab_code=approved");
+    await vi.waitFor(() => expect(fetchUrls.some((url) => url.endsWith("/api/grab/pairings/claim"))).toBe(true));
 
-    await onPairingTabUrl(7, approved).catch(() => undefined);
-    await onPairingTabUrl(7, approved);
+    store[STORAGE_KEYS.pairingIntent] = intent("https://other.example.com");
+    permissionGranted = true;
+    await expect(getState()).resolves.toMatchObject({ pairing: true });
+    await resumePairingIntent();
+    releaseClaim();
+    await claiming;
 
+    expect(tabsOpened()).toHaveLength(0);
     expect(store[STORAGE_KEYS.connectionToken]).toBe("connection");
     expect(store[STORAGE_KEYS.pendingPairing]).toBeUndefined();
+  });
+
+  it("forgets the pairing when its code is refused", async () => {
+    store[STORAGE_KEYS.pendingPairing] = {
+      instanceUrl: "https://thingport.example.com",
+      verifier: "secret",
+      tabId: 7,
+      startedAt: Date.now(),
+    } satisfies PendingPairing;
+    claimRefused = true;
+
+    await onPairingTabUrl(7, "https://thingport.example.com/connect-grab#grab_code=approved");
+
+    expect(store[STORAGE_KEYS.pendingPairing]).toBeUndefined();
+    expect(store[STORAGE_KEYS.connectionToken]).toBeUndefined();
+    expect(operations).toContain("update:/connect-grab:undefined");
+  });
+
+  it("leaves an address saved during the permission check to its own pass", async () => {
+    store[STORAGE_KEYS.pairingIntent] = intent("https://first.example.com");
+    permissionGranted = true;
+    blockPermissionCheck = true;
+    storageListeners.push(onPairingStorageChanged);
+
+    const first = resumePairingIntent();
+    await vi.waitFor(() => expect(releasePermissionCheck).not.toBeNull());
+    await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent("https://second.example.com") });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    blockPermissionCheck = false;
+    releasePermissionCheck!();
+    await first;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(tabsOpened()).toHaveLength(1);
+    expect(store[STORAGE_KEYS.pendingPairing]).toMatchObject({ instanceUrl: "https://second.example.com" });
+    expect(store[STORAGE_KEYS.pairingIntent]).toBeUndefined();
+  });
+
+  it("doesn't put a failed address back over one saved meanwhile, and goes on to that one", async () => {
+    store[STORAGE_KEYS.pairingIntent] = intent("https://first.example.com");
+    permissionGranted = true;
+    storageListeners.push(onPairingStorageChanged);
+    onNextUpdate = async () => {
+      await chrome.storage.local.set({ [STORAGE_KEYS.pairingIntent]: intent("https://second.example.com") });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      throw new Error("tab update failed");
+    };
+
+    await resumePairingIntent().catch(() => undefined);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(tabsOpened()).toHaveLength(2);
+    expect(store[STORAGE_KEYS.pendingPairing]).toMatchObject({ instanceUrl: "https://second.example.com" });
+    expect(store[STORAGE_KEYS.pairingIntent]).toBeUndefined();
   });
 
   it("claims one approval code once when Chrome reports the fragment twice", async () => {
