@@ -72,10 +72,19 @@ async function grantedOrigins(site: OptionalSite): Promise<string[]> {
 const sameSet = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && a.every((value) => b.includes(value));
 
+let lastPass: Promise<void> = Promise.resolve();
+
 /** Registers the content script for every site whose access is granted, on the origins granted, and drops it for the
  *  rest. Safe to run any time: from startup, and whenever access is granted or taken back, in the browser's own
- *  settings too. */
-export async function syncSiteScripts(): Promise<void> {
+ *  settings too. Passes take turns, each reading what the one before left: two at once would each act on what was
+ *  registered when they began, and the earlier could undo the later. */
+export function syncSiteScripts(): Promise<void> {
+  const pass = lastPass.then(reconcileSiteScripts);
+  lastPass = pass.catch(() => undefined);
+  return pass;
+}
+
+async function reconcileSiteScripts(): Promise<void> {
   const registered = new Map(
     (await chrome.scripting.getRegisteredContentScripts()).map((script) => [script.id, script.matches ?? []]),
   );
@@ -91,7 +100,7 @@ export async function syncSiteScripts(): Promise<void> {
         await chrome.scripting.registerContentScripts([{ id, matches, js: ["content.js"], runAt: "document_idle" }]);
       }
     } catch (err) {
-      // Two wake-ups racing to register the same script; the other one did it.
+      // Access taken back mid-pass, say: the pass that change starts sets it right.
       console.warn(`[sites] ${site.id}:`, err);
     }
   }

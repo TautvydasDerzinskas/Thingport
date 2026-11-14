@@ -95,8 +95,9 @@ export async function setUserSnapmakerToken(
   return Boolean(token);
 }
 
-export async function markSnapmakerTokenRejected(userId: string, region: Region = null): Promise<void> {
-  await rejectConnection(userId, ID, slotOf(region));
+/** With `token`, only while it's still the one stored: Grab may have sent a new one since it was read. */
+export async function markSnapmakerTokenRejected(userId: string, token?: string, region: Region = null): Promise<void> {
+  await rejectConnection(userId, ID, slotOf(region), token ? ({ token } satisfies Secret) : undefined);
 }
 
 export type SnapmakerConnection = ConnectionState;

@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // one given a region in an update stays on for those who allowed it before.
 let granted: string[] = [];
 let scripts: { id: string; matches: string[] }[] = [];
+// Holds an unregistering until released, as a slow browser call would.
+let gate: { entered: () => void; until: Promise<void> } | null = null;
 
 vi.stubGlobal("chrome", {
   permissions: {
@@ -15,6 +17,10 @@ vi.stubGlobal("chrome", {
       scripts.push(...list.map(({ id, matches }) => ({ id, matches })));
     },
     unregisterContentScripts: async ({ ids }: { ids: string[] }) => {
+      if (gate) {
+        gate.entered();
+        await gate.until;
+      }
       scripts = scripts.filter((script) => !ids.includes(script.id));
     },
   },
@@ -29,6 +35,7 @@ const CHINA = ["*://space.snapmaker.cn/*", "*://id.snapmaker.cn/*"];
 beforeEach(() => {
   granted = [];
   scripts = [];
+  gate = null;
 });
 
 describe("a provider's regions among Grab's optional sites", () => {
@@ -52,6 +59,27 @@ describe("a provider's regions among Grab's optional sites", () => {
     granted = [...MAIN, ...CHINA];
     expect(await regionEnabled(snapmaker, "cn")).toBe(true);
     await syncSiteScripts();
+    expect(scripts.filter((script) => script.id === "site-snapmaker")).toEqual([
+      { id: "site-snapmaker", matches: [...MAIN, ...CHINA] },
+    ]);
+  });
+
+  it("are registered a pass at a time, so one begun earlier can't undo a later one", async () => {
+    granted = [...MAIN, ...CHINA];
+    await syncSiteScripts();
+    // China taken back, then given again while that pass is still dropping the registration.
+    granted = [...MAIN];
+    let release!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      gate = { entered: resolve, until: new Promise<void>((done) => (release = done)) };
+    });
+    const first = syncSiteScripts();
+    await entered;
+    granted = [...MAIN, ...CHINA];
+    const second = syncSiteScripts();
+    gate = null;
+    release();
+    await Promise.all([first, second]);
     expect(scripts.filter((script) => script.id === "site-snapmaker")).toEqual([
       { id: "site-snapmaker", matches: [...MAIN, ...CHINA] },
     ]);

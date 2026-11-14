@@ -284,7 +284,8 @@ signed in connects your account to Thingport, and from then on Grab renews the s
 browser is open -- for the browser and Thingport together, writing the new one back into the site's own cookies. Only
 Grab may renew it: a Snapmaker sign-in can be renewed once, and renewing it twice would sign the browser out. On your
 own profile's **Interactions** tab, the panel imports your likes or bookmarks (a switch picks which), and can keep
-either in sync.
+either in sync. Its China site, space.snapmaker.cn, has accounts of its own: Grab sends and renews that sign-in apart,
+at id.snapmaker.cn.
 
 ### MakerOnline: files only through Grab
 

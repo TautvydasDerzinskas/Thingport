@@ -81,9 +81,9 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
     return token;
   },
   resolveModel: (externalId) => resolveSnapmakerModel(externalId),
-  async mapError(userId, err) {
+  async mapError(userId, err, token) {
     if (err instanceof SnapmakerAuthError) {
-      await markSnapmakerTokenRejected(userId, err.region);
+      await markSnapmakerTokenRejected(userId, token, err.region);
       // 400, not 401: see tryMakerworldCloudApi.
       return new HttpError(400, err.message, SESSION_CODE);
     }
@@ -160,7 +160,7 @@ export const snapmakerLists: ProviderLists = {
       listing = await fetchSnapmakerList(list, token, undefined, region);
     } catch (err) {
       if (err instanceof SnapmakerAuthError) {
-        await markSnapmakerTokenRejected(userId, region);
+        await markSnapmakerTokenRejected(userId, token, region);
         // 400, not 401: the frontend treats any 401 as an expired Thingport session.
         throw new HttpError(400, err.message, SESSION_CODE);
       }

@@ -18,7 +18,7 @@ async function siteCards(userId: string, region: SnapmakerRegion, token: string,
   try {
     return await listSnapmakerCollections(token, snapmakerId, region);
   } catch (err) {
-    if (err instanceof SnapmakerAuthError) await markSnapmakerTokenRejected(userId, region);
+    if (err instanceof SnapmakerAuthError) await markSnapmakerTokenRejected(userId, token, region);
     throw err;
   }
 }

@@ -48,7 +48,7 @@ export const snapmakerSync: ProviderSync = {
       return (await fetchSnapmakerList(list, token, undefined, region)).entries.map((e) => e.modelId);
     } catch (err) {
       if (!(err instanceof SnapmakerAuthError)) throw err;
-      await markSnapmakerTokenRejected(sync.userId, region);
+      await markSnapmakerTokenRejected(sync.userId, token, region);
       throw new SyncHeldError(problems.expired);
     }
   },

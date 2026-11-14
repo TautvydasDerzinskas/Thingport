@@ -248,6 +248,19 @@ describe("importPrintFromUrl -- Snapmaker Space", () => {
     expect(await getUserSnapmakerToken(userId)).not.toBeNull();
   });
 
+  it("keeps a sign-in Grab sent while an import with the one before was being turned down", async () => {
+    await setUserSnapmakerToken(userId, token());
+    const renewed = { ...token(), token: token().token.replace(/sig$/, "renewed") };
+    const site = mockSnapmaker({ downloadCode: 110002 });
+    global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
+      if (String(input) === `${API}/model/download/${MODEL_ID}`) await setUserSnapmakerToken(userId, renewed);
+      return site(input);
+    }) as unknown as typeof fetch;
+    await expect(importPrintFromUrl(userId, MODEL_URL, { url: MODEL_URL, tags: [] })).rejects.toThrow(/Snapmaker/);
+    expect(await getSnapmakerConnection(userId)).toBe("connected");
+    expect(await getUserSnapmakerToken(userId)).toBe(renewed.token);
+  });
+
   describe("its China site", () => {
     const CN_API = "https://api-models.snapmaker.cn/api";
     const CN_URL = `https://space.snapmaker.cn/zh/model/${MODEL_ID}`;

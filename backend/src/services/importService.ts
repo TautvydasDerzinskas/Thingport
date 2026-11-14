@@ -1313,7 +1313,7 @@ async function importSourced(
   try {
     resolved = await impl.resolveModel(linked.externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   const source = { provider: linked.provider, externalId: impl.canonicalId?.(resolved) ?? linked.externalId };
@@ -1332,7 +1332,7 @@ async function importSourced(
       IMPORT_KIT,
     );
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   // A folder every file shares says nothing of which is which.
@@ -1374,7 +1374,7 @@ async function addSourcedProfile(
     }
     profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!profile) throw new HttpError(404, profiles.missingMessage);
   // Without its details the profile still comes in, only not named or pictured apart.
@@ -1556,14 +1556,14 @@ export async function downloadSourcedModelFiles(
   try {
     resolved = await impl.resolveModel(externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   let downloaded: NewPlateInput[];
   try {
     downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });

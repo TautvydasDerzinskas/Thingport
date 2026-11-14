@@ -55,8 +55,8 @@ instance or account, so the new one has to be told.
   it's only saved there again when it changes.
 - **Your MyMiniFactory sign-in (its `PHPSESSID` cookie),** as last sent to your Thingport instance, so it's only sent
   again when it changes.
-- **Your Snapmaker Space sign-in (its access token),** as last sent to your Thingport instance, so it's only sent
-  again when it changes.
+- **Your Snapmaker Space sign-in (its access token),** and your sign-in to its China site, space.snapmaker.cn, as
+  last sent to your Thingport instance, so each is only sent again when it changes.
 - **Your MakerOnline sign-in (its access token),** as last sent to your Thingport instance, so it's only sent again
   when it changes.
 - **Your Creality Cloud sign-in (its `model_token` and `model_user_id` cookies),** as last sent to your Thingport
@@ -107,8 +107,8 @@ instance or account, so the new one has to be told.
 
 The extension only communicates with **your Thingport instance** (the address you entered) and with
 the **provider site you're on**. The one exception: once you've allowed Snapmaker Space, it also renews your
-Snapmaker sign-in at id.snapmaker.com every few hours while the browser is open, even with no Snapmaker page open
-(see below). And when you open the popup's **History** tab, the pictures of your recently viewed models load straight
+Snapmaker sign-in at id.snapmaker.com, and your China site sign-in at id.snapmaker.cn, every few hours while the
+browser is open, even with no Snapmaker page open (see below). And when you open the popup's **History** tab, the pictures of your recently viewed models load straight
 from the image servers of the sites you viewed them on, without saying which page asked for them.
 
 **To your Thingport instance:**
@@ -156,6 +156,8 @@ from the image servers of the sites you viewed them on, without saying which pag
 - If you're signed in to Snapmaker Space in this browser, and have allowed the extension there: your Snapmaker access
   token, when you open a Snapmaker Space page and every few hours while the browser is open, whenever it changed since
   last sent. Your Thingport instance uses it to download Snapmaker models and to read your likes and bookmarks there.
+  Its China site, space.snapmaker.cn, has accounts of its own: your sign-in there is read from that site's cookies
+  and sent, renewed and used the same way, for its own models, likes and bookmarks.
 - If you're signed in to MakerOnline in this browser, and have allowed the extension there: your MakerOnline access
   token, when you open a MakerOnline page and it changed since last sent. Your Thingport instance uses it to read your
   likes and private collections there.
@@ -292,8 +294,10 @@ from the image servers of the sites you viewed them on, without saying which pag
   the private collections you sync.
 - On Snapmaker Space, once you've allowed it there: Snapmaker's sign-in lasts a day, so every few hours while the
   browser is open, when it's running out, the extension renews it at Snapmaker's own sign-in service (id.snapmaker.com)
-  the same way the site does, and writes the renewed sign-in back into the site's own cookies, so you stay signed in
-  there. When you open the panel on a model page, it also asks Snapmaker's public model API which print profiles the
+  the same way the site does, sending it the refresh token from the site's cookies, and writes the renewed sign-in
+  back into the site's own cookies, so you stay signed in there. Signed in to its China site too, and allowed there,
+  it renews that sign-in the same way at the China site's own sign-in service (id.snapmaker.cn), into the China
+  site's cookies. When you open the panel on a model page, it also asks Snapmaker's public model API which print profiles the
   model has.
 - On MakerOnline, once you've allowed it there: MakerOnline gives its files only to its own pages, so to import a model
   the extension asks MakerOnline's download service for each file's link from the page itself, the same way the page's
