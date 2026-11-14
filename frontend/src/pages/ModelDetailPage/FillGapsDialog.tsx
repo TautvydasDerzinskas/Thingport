@@ -24,11 +24,15 @@ type Props = {
 /** "Fetch missing details": fills the model's empty fields and images from its source. Only
  *  offered while there's a gap, and never touches anything the user filled in. */
 export default function FillGapsDialog({ open, print, gaps, onClose, onUpdated, onUnauthorized }: Props) {
-  const { t } = useTranslation(["models", "common"]);
+  const { t, i18n } = useTranslation(["models", "common"]);
   const showToast = useToast();
   const [busy, setBusy] = useState(false);
   const providerLabel = importProviderInfo(print.source_provider)?.label ?? t("models:detail.fillGapsSource");
-  const listOf = (list: SourceGap[]) => list.map((gap) => t(`models:detail.gap.${gap}`)).join(", ");
+  // "Title, description", or 标题、描述: listed in the reader's language, with no "and".
+  const listOf = (list: SourceGap[]) =>
+    new Intl.ListFormat(i18n.language, { type: "conjunction", style: "narrow" }).format(
+      list.map((gap) => t(`models:detail.gap.${gap}`)),
+    );
 
   const summaryOf = (result: FillGapsResult): string => {
     const remaining = result.remaining.length

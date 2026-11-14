@@ -40,5 +40,5 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Custom dashboard widgets](guides/custom-widgets.md)**
 - **[Tools: planners, generators, calculators and a 3MF normalizer](guides/tools.md)**
 - **[Make your own tools, or have an AI write them](guides/tools.md#have-an-ai-write-one)**
-- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian and Belarusian](features/appearance.md)**
+- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese](features/appearance.md)**
 - **[Self-hosted](../README.md#installation)**

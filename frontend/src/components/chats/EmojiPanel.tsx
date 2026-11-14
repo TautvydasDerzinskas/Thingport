@@ -17,6 +17,7 @@ const NAMES: Partial<Record<string, () => Promise<{ default: unknown }>>> = {
   fr: () => import("emoji-picker-react/dist/data/emojis-fr.json"),
   ru: () => import("emoji-picker-react/dist/data/emojis-ru.json"),
   uk: () => import("emoji-picker-react/dist/data/emojis-uk.json"),
+  zh: () => import("emoji-picker-react/dist/data/emojis-zh.json"),
 };
 
 const WIDTH = 340;
