@@ -9,7 +9,8 @@ It comes one of two ways:
 - **Online**, when the old instance runs a release with Migrate too: its admin makes a 24-hour token, and this instance
   copies it over the network. See [online](#online-with-a-token).
 - **From a dump and its storage folder**, from any release since 1.0.0: a `pg_dump` of its database, and its storage
-  folder readable on this server. See [steps 1 to 3](#1-stop-the-old-instances-backend).
+  folder readable on this server. See [steps 1 to 3](#1-stop-the-old-instances-backend), which **How do I make these?**
+  on the Source step also walks through, with the commands filled in.
 
 Coming from Manyfold instead? See [Move from Manyfold](migrate-manyfold.md).
 
@@ -87,26 +88,24 @@ below). Restore dumps of instances you trust.
 
 ## 3. Bring the storage folder over
 
-Copy the old instance's storage folder (its `/app/storage`) to this server, or mount it where it is. Where it is on the
-old server depends on its Compose file. This says, from the same folder (the backend may be stopped):
+Copy the old instance's storage out of its backend's container, from the same folder (the backend may be stopped):
 
 ```sh
-docker inspect -f '{{range .Mounts}}{{if eq .Destination "/app/storage"}}{{.Type}} {{.Name}} {{.Source}}{{end}}{{end}}' \
-  "$(docker compose ps -aq backend)"
+docker cp "$(docker compose ps -aq backend)":/app/storage/. old-storage
 ```
 
-- **`bind`**, as with `./data/storage:/app/storage` in the repository's `docker-compose.yml`: the storage is the folder
-  it names last. Copy that folder, for example `cp -a ./data/storage/. old-storage/`.
-- **`volume`**, as with `thingport_storage:/app/storage` in the README's: copy out the volume it names, which Compose
-  prefixes with its project's name (`thingport_thingport_storage`, say):
+This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
+or in a Docker volume. It needs as much free space as the storage takes. On the same server, a storage folder (not a
+volume) can be read where it is instead: put the dump beside it and mount the folder that holds both.
 
-  ```sh
-  docker run --rm -v thingport_thingport_storage:/from:ro -v "$PWD/old-storage":/to alpine cp -a /from/. /to/
-  ```
+Then bring both to this server, over SSH or on a disk. On the same server, move them instead. Use this server's address
+and a folder of your own:
 
-  Use the name it printed: a name that isn't a volume yet makes a new, empty one, and copies nothing.
+```sh
+rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
+```
 
-Then let this instance's backend read it, and the dump beside it. It reads them from one folder only, `/app/migrate`
+Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
 Add the one line to the backend's volumes and leave the ones it has, its `/app/storage` among them, as they are. The
 Compose files in the repository have it commented out.

@@ -3094,6 +3094,31 @@
           "token": "Token",
           "tokenHelp": "Se crea en la instancia antigua, en Administración → Migrar. Necesita una versión con Migrar; una más antigua viene con un volcado de la base de datos."
         },
+        "dumpGuide": {
+          "open": "¿Cómo los hago?",
+          "title": "Cómo hacer el volcado y la copia del almacenamiento",
+          "steps": {
+            "dump": "Detener y volcar",
+            "storage": "Copiar almacenamiento",
+            "bring": "Traer aquí",
+            "mount": "Montar"
+          },
+          "dumpLead": "En el servidor de la instancia antigua, desde la carpeta donde está su docker-compose.yml. Esto detiene su backend para que nada cambie después del volcado: mantenlo detenido desde ahora.",
+          "user": "Usuario de Postgres",
+          "userHelp": "El POSTGRES_USER de la instancia antigua, si lo cambiaste.",
+          "database": "Base de datos",
+          "databaseHelp": "El POSTGRES_DB de la instancia antigua, si lo cambiaste.",
+          "storageLead": "Desde la misma carpeta. Esto copia su almacenamiento a old-storage, junto al volcado, sea una carpeta o un volumen de Docker. Necesita tanto espacio libre como ocupa el almacenamiento.",
+          "bringLead": "Copia ambos a este servidor, o llévalos en un disco. Si es el mismo servidor, muévelos a la carpeta.",
+          "host": "Dirección de este servidor",
+          "hostHelp": "Tal como el servidor antiguo lo alcanza por SSH.",
+          "folder": "Carpeta en este servidor",
+          "folderHelp": "Donde van el volcado y old-storage. El backend de esta instancia la ve como {{root}}.",
+          "mountLead": "En este servidor, desde la carpeta donde está su docker-compose.yml: añade la línea a los volúmenes del backend, dejando los que tiene como están, y reinicia el backend.",
+          "keepVolumes": "...sus volúmenes, como están...",
+          "use": "Usar estas rutas",
+          "guide": "Guía completa"
+        },
         "check": {
           "steps": {
             "restoring": "Restaurando su base de datos",

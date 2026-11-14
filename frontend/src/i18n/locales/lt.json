@@ -3139,6 +3139,31 @@
           "token": "Raktas",
           "tokenHelp": "Sukuriamas sename egzemplioriuje, skiltyje Administravimas → Perkėlimas. Tam reikia versijos su Perkėlimu; senesnė perkeliama su duomenų bazės kopija."
         },
+        "dumpGuide": {
+          "open": "Kaip jas padaryti?",
+          "title": "Kopijos ir saugyklos paruošimas",
+          "steps": {
+            "dump": "Sustabdyti ir kopijuoti",
+            "storage": "Kopijuoti saugyklą",
+            "bring": "Perkelti čia",
+            "mount": "Prijungti"
+          },
+          "dumpLead": "Seno egzemplioriaus serveryje, aplanke, kuriame yra jo docker-compose.yml. Tai sustabdo jo backend, kad po kopijos niekas nepasikeistų: nuo šiol laikykite jį sustabdytą.",
+          "user": "Postgres naudotojas",
+          "userHelp": "Seno egzemplioriaus POSTGRES_USER, jei jį keitėte.",
+          "database": "Duomenų bazė",
+          "databaseHelp": "Seno egzemplioriaus POSTGRES_DB, jei jį keitėte.",
+          "storageLead": "Tame pačiame aplanke. Tai nukopijuoja jo saugyklą į old-storage šalia kopijos, nesvarbu, ar tai aplankas, ar Docker tomas. Reikia tiek laisvos vietos, kiek užima saugykla.",
+          "bringLead": "Nukopijuokite abi į šį serverį arba perneškite diske. Tame pačiame serveryje tiesiog perkelkite jas į aplanką.",
+          "host": "Šio serverio adresas",
+          "hostHelp": "Kaip senas serveris jį pasiekia per SSH.",
+          "folder": "Aplankas šiame serveryje",
+          "folderHelp": "Kur keliauja kopija ir old-storage. Šio egzemplioriaus backend jį mato kaip {{root}}.",
+          "mountLead": "Šiame serveryje, aplanke, kuriame yra jo docker-compose.yml: pridėkite eilutę prie backend tomų, esamus palikdami kaip yra, tada paleiskite backend iš naujo.",
+          "keepVolumes": "...jo esami tomai, kaip yra...",
+          "use": "Naudoti šiuos kelius",
+          "guide": "Visas vadovas"
+        },
         "check": {
           "steps": {
             "restoring": "Atkuriama jo duomenų bazė",

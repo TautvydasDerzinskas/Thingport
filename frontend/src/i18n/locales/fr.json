@@ -3094,6 +3094,31 @@
           "token": "Jeton",
           "tokenHelp": "Créé sur l’ancienne instance, dans Administration → Migrer. Il faut une version avec Migrer ; une plus ancienne vient avec un dump de base de données."
         },
+        "dumpGuide": {
+          "open": "Comment les faire ?",
+          "title": "Faire le dump et la copie du stockage",
+          "steps": {
+            "dump": "Arrêt et dump",
+            "storage": "Copie du stockage",
+            "bring": "Transfert ici",
+            "mount": "Montage"
+          },
+          "dumpLead": "Sur le serveur de l’ancienne instance, depuis le dossier de son docker-compose.yml. Cela arrête son backend, pour que rien ne change après le dump : gardez-le arrêté désormais.",
+          "user": "Utilisateur Postgres",
+          "userHelp": "Le POSTGRES_USER de l’ancienne instance, si vous l’avez changé.",
+          "database": "Base de données",
+          "databaseHelp": "Le POSTGRES_DB de l’ancienne instance, si vous l’avez changé.",
+          "storageLead": "Depuis le même dossier. Cela copie son stockage dans old-storage, à côté du dump, qu’il s’agisse d’un dossier ou d’un volume Docker. Il faut autant d’espace libre que le stockage en occupe.",
+          "bringLead": "Copiez les deux sur ce serveur, ou apportez-les sur un disque. Sur le même serveur, déplacez-les simplement dans le dossier.",
+          "host": "Adresse de ce serveur",
+          "hostHelp": "Telle que l’ancien serveur le joint en SSH.",
+          "folder": "Dossier sur ce serveur",
+          "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}.",
+          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : ajoutez la ligne aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
+          "keepVolumes": "...ses volumes, tels quels...",
+          "use": "Utiliser ces chemins",
+          "guide": "Guide complet"
+        },
         "check": {
           "steps": {
             "restoring": "Restauration de sa base de données",
