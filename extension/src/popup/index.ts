@@ -1,5 +1,6 @@
 // Toolbar popup (or a tab, when the browser won't open the popup). Connect: the setup form, which becomes Providers
-// once connected. Offline features (Extra features once connected): what works without an instance. History: recent
+// once connected. Appearance: the language (language.ts) and the bubble. Offline features (Extra features once
+// connected): what works without an instance, Adapt 3MFs with its settings among them (adapt.ts). History: recent
 // imports when connected, and recently viewed models either way.
 
 import { fillIcons } from "../shared/icon";
@@ -8,7 +9,9 @@ import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
 import { applyTranslations, detectLocale, setLocale, t, type Locale } from "../shared/i18n";
+import { loadAdapt, renderAll as renderAdapt } from "./adapt";
 import { refreshAppearance, showAppearance } from "./appearance";
+import { renderLanguage, setUpLanguage } from "./language";
 import { confirmAction } from "./confirm";
 import { clearError, els, opensInTab, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
@@ -46,15 +49,14 @@ const TABS: Record<Tab, { tab: HTMLButtonElement; panel: HTMLElement }> = {
   history: { tab: els.historyTab, panel: els.historyPanel },
 };
 
-/** The tabs on offer: Appearance only once connected. */
+/** The tabs on offer. */
 const shownTabs = (): Tab[] => (Object.keys(TABS) as Tab[]).filter((name) => !TABS[name].tab.hidden);
 
-/** What the tabs hold changes once connected: the first two are named for it, and Appearance comes in. */
+/** What the tabs hold changes once connected: the first two are named for it. */
 function labelTabs(connected: boolean): void {
   els.connectTab.textContent = connected ? t("providers") : t("connect");
   els.offlineTab.textContent = connected ? t("tabExtraFeatures") : t("tabOfflineFeatures");
   els.offlineNote.hidden = connected;
-  els.appearanceTab.hidden = !connected;
   const active = els.tabs.dataset.active as Tab | undefined;
   selectTab(active && shownTabs().includes(active) ? active : "connect");
 }
@@ -62,9 +64,9 @@ function labelTabs(connected: boolean): void {
 function localizeDynamicContent(): void {
   els.enabledToggle.dataset.tooltip = t("extensionEnabled");
   els.viewedClearWrap.dataset.tooltip = t("clearRecentlyViewed");
-  els.languageTrigger.setAttribute("aria-label", t("language"));
   els.pairNote.textContent = t(pairNoteKey);
   refreshAppearance();
+  renderAdapt();
   void loadRecentlyViewed();
   if (!els.configuredView.hidden) {
     void loadRecentImports();
@@ -114,127 +116,23 @@ function displayInstanceUrl(instanceUrl: string): string {
 }
 
 let localeRevision = 0;
-const languageOptions = [...els.languageSelect.options];
-let activeLanguage = 0;
 
-els.languageList.replaceChildren(
-  ...languageOptions.map((option, index) => {
-    const item = document.createElement("li");
-    item.className = "language-list__option";
-    item.id = `language-option-${option.value}`;
-    item.dataset.index = String(index);
-    item.setAttribute("role", "option");
-    item.textContent = option.textContent;
-    return item;
-  }),
-);
-
-function highlightLanguage(index: number): void {
-  activeLanguage = index;
-  for (const [i, item] of [...els.languageList.children].entries()) {
-    item.classList.toggle("language-list__option--active", i === index);
-  }
-  const active = els.languageList.children.item(index) as HTMLElement | null;
-  if (active && !els.languageList.hidden) {
-    els.languageTrigger.setAttribute("aria-activedescendant", active.id);
-    active.scrollIntoView({ block: "nearest" });
-  } else {
-    els.languageTrigger.removeAttribute("aria-activedescendant");
-  }
-}
-
-function syncLanguagePicker(): void {
-  const selected = Math.max(
-    languageOptions.findIndex((option) => option.value === els.languageSelect.value),
-    0,
-  );
-  els.languageValue.textContent = languageOptions[selected].textContent;
-  for (const [index, item] of [...els.languageList.children].entries()) {
-    item.setAttribute("aria-selected", String(index === selected));
-  }
-  highlightLanguage(selected);
-}
-
-function openLanguagePicker(): void {
-  els.languageList.hidden = false;
-  syncLanguagePicker();
-  els.languagePicker.classList.add("language-picker--open");
-  els.languageTrigger.setAttribute("aria-expanded", "true");
-}
-
-function closeLanguagePicker(): void {
-  els.languageList.hidden = true;
-  els.languagePicker.classList.remove("language-picker--open");
-  els.languageTrigger.setAttribute("aria-expanded", "false");
-  els.languageTrigger.removeAttribute("aria-activedescendant");
-}
-
-function chooseLanguage(index: number): void {
-  const option = languageOptions[index];
-  if (!option) return;
-  els.languageSelect.value = option.value;
-  closeLanguagePicker();
-  els.languageTrigger.focus();
-  els.languageSelect.dispatchEvent(new Event("change"));
-}
-
-els.languageTrigger.addEventListener("click", () => {
-  if (els.languageList.hidden) openLanguagePicker();
-  else closeLanguagePicker();
-});
-
-els.languageTrigger.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    event.preventDefault();
-    if (els.languageList.hidden) openLanguagePicker();
-    else {
-      const direction = event.key === "ArrowDown" ? 1 : -1;
-      highlightLanguage((activeLanguage + direction + languageOptions.length) % languageOptions.length);
-    }
-    return;
-  }
-  if (!els.languageList.hidden && (event.key === "Home" || event.key === "End")) {
-    event.preventDefault();
-    highlightLanguage(event.key === "Home" ? 0 : languageOptions.length - 1);
-    return;
-  }
-  if (!els.languageList.hidden && (event.key === "Enter" || event.key === " ")) {
-    event.preventDefault();
-    chooseLanguage(activeLanguage);
-    return;
-  }
-  if (event.key === "Escape" && !els.languageList.hidden) {
-    event.preventDefault();
-    closeLanguagePicker();
-  }
-});
-
-els.languageTrigger.addEventListener("blur", closeLanguagePicker);
-
-els.languageList.addEventListener("pointerdown", (event) => event.preventDefault());
-els.languageList.addEventListener("click", (event) => {
-  const index = (event.target as HTMLElement).closest<HTMLElement>(".language-list__option")?.dataset.index;
-  if (index !== undefined) chooseLanguage(Number(index));
-});
-
-document.addEventListener("pointerdown", (event) => {
-  if (!els.languagePicker.contains(event.target as Node)) closeLanguagePicker();
-});
-
-els.languageSelect.addEventListener("change", async () => {
-  syncLanguagePicker();
+/** Shows Grab in `locale` at once, and saves the choice (null: follow the browser). */
+async function chooseLanguage(choice: Locale | null): Promise<void> {
   localeRevision++;
-  const locale = els.languageSelect.value as Locale;
+  const locale = choice ?? detectLocale();
   setLocale(locale);
   document.documentElement.lang = locale;
+  renderLanguage(choice);
   applyTranslations();
   labelTabs(!els.configuredView.hidden);
   localizeDynamicContent();
-  const res = await send("SET_LOCALE", { locale });
+  const res = await send("SET_LOCALE", { locale: choice });
   if (!res?.ok) showError(res?.error ?? t("saveFailed"), els.configuredView.hidden ? els.error : els.configuredError);
-});
+}
 
-syncLanguagePicker();
+setUpLanguage((choice) => void chooseLanguage(choice));
+renderLanguage(null);
 
 function showConfiguredView(state: ExtensionState): void {
   labelTabs(true);
@@ -363,8 +261,7 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   if (localeAtRequest === localeRevision) {
     setLocale(res.data.locale);
     document.documentElement.lang = res.data.locale;
-    els.languageSelect.value = res.data.locale;
-    syncLanguagePicker();
+    renderLanguage(res.data.localeChoice);
     applyTranslations();
     localizeDynamicContent();
   }
@@ -372,6 +269,8 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     input.checked = res.data.offlineFeatures[feature];
   }
   showAppearance(res.data.bubble);
+  // Its slicers and printers are the instance's once connected, so it's read again whenever this is.
+  void loadAdapt();
   if (!res.data.configured) {
     showSetupForm();
     return;

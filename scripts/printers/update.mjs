@@ -16,6 +16,7 @@ import { mergeCatalogue } from "./lib/merge.mjs";
 import { readOrcaProfiles } from "./lib/orca.mjs";
 import { readPrusaProfiles } from "./lib/prusa.mjs";
 import { writeCatalogue } from "./lib/write.mjs";
+import { syncGrabCatalogue } from "../sync-printers.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const OUT = path.join(ROOT, "backend", "assets", "printers");
@@ -42,6 +43,8 @@ const { printers, report, records } = mergeCatalogue(sources, reads);
 const covers = await writeCovers(printers, path.join(OUT, "covers"), path.join(ROOT, "backend"));
 const filaments = Object.fromEntries(sources.map((s) => [s.id, reads[s.id].filaments ?? null]));
 const written = writeCatalogue(OUT, { printers, sources: pinned, covers, filaments });
+// Grab's copy goes with it (scripts/sync-printers.mjs).
+const grabFiles = syncGrabCatalogue().length;
 
 const reportFile = path.join(cacheDir, "report.json");
 writeFileSync(
@@ -59,5 +62,6 @@ writeFileSync(
 console.log(
   `${printers.length} printers of ${written.brands} brands from ${records} records; ${covers.count} pictures ` +
     `(${(covers.bytes / 1048576).toFixed(1)} MB); ${written.names} names (${written.sharedNames} shared by two printers); ` +
-    `${report.bedDisagreements.length} bed and ${report.heightDisagreements.length} height disagreements (${reportFile})`,
+    `${report.bedDisagreements.length} bed and ${report.heightDisagreements.length} height disagreements (${reportFile}); ` +
+    `${grabFiles} file(s) of Grab's copy changed`,
 );

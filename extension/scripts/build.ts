@@ -118,7 +118,7 @@ async function buildTarget(target: Target, watch: boolean): Promise<void> {
     minify: false,
     sourcemap: watch ? "inline" : false,
     legalComments: "none",
-    loader: { ".svg": "text", ".woff": "file" },
+    loader: { ".svg": "text" },
     plugins: [scssPlugin, workerPlugin, staticFilesPlugin(target, outdir, pkg)],
     logLevel: "info",
   };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { catalogs, detectLocale, localeOf, LOCALES, setLocale, t } from "./i18n";
 import { ABOUT, PROVIDER_IDS } from "../providers/index.generated";
 
@@ -84,7 +84,7 @@ const contentKeys = [
   "funLiningUp",
   "funGettingFile",
   "funFinding3mf",
-  "funAskingMakerWorld",
+  "funAskingSiteShort",
   "adapting",
   "funKeepingColors",
   "funTranslatingSettings",
@@ -118,19 +118,11 @@ const providerKeys = [
   "noModelsFound",
   "addingExistingModelsToCollection",
   "nothingNewCollectionImport",
-  "adaptedDownloadExplanationUnknown",
   "adaptedDownloadExplanationCreality",
   "adaptedDownloadExplanationBambu",
-  "adaptedDownloadExplanationCura",
-  "adaptedDownloadExplanationOther",
-  "adaptedDownloadKnownSlicer",
-  "adaptedDownloadOtherSlicers",
-  "adaptedDownloadTooBig",
   "adaptedDownloadProgress",
   "adaptedDownloadProgressUnknown",
   "couldNotGetMakerworldFile",
-  "makerworldFileServerRefused",
-  "couldNotAdaptMakerworldFile",
   "makerworldCaptchaMessage",
   "makerworldDownloadLimit",
   "guidedImportAborted",
@@ -201,6 +193,41 @@ describe("runtime localization", () => {
   it("keeps every catalog structurally aligned with English", () => {
     const english = Object.keys(catalogs.en).toSorted();
     for (const locale of LOCALES) expect(Object.keys(catalogs[locale]).toSorted()).toEqual(english);
+  });
+
+  it("keeps every message's placeholders in every catalog", () => {
+    for (const locale of TRANSLATED_LOCALES) {
+      for (const [key, english] of Object.entries(catalogs.en)) {
+        const translated = placeholders(catalogs[locale][key]);
+        // A "one" form may say the number its "other" form is given, where the language does.
+        const other = key.endsWith("_one") ? catalogs.en[key.replace(/_one$/, "_other")] : undefined;
+        if (other === undefined) expect(translated, `${locale} ${key}`).toEqual(placeholders(english));
+        else {
+          const given = new Set([...placeholders(english), ...placeholders(other)]);
+          expect(
+            translated.filter((name) => !given.has(name)),
+            `${locale} ${key}`,
+          ).toEqual([]);
+        }
+      }
+    }
+  });
+
+  it("has an English message for every key the code names", () => {
+    const named = new Set<string>();
+    const walk = (dir: URL) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) walk(new URL(`${entry.name}/`, dir));
+        else if (/\.(ts|html)$/.test(entry.name) && !entry.name.includes(".test.")) {
+          const source = readFileSync(new URL(entry.name, dir), "utf8");
+          for (const match of source.matchAll(/\b(?:t|backgroundText)\("([^"]+)"/g)) named.add(match[1]);
+          for (const match of source.matchAll(/data-i18n(?:-[a-z-]+)?="([^"]+)"/g)) named.add(match[1]);
+        }
+      }
+    };
+    walk(new URL("../", import.meta.url));
+    expect(named.size).toBeGreaterThan(300);
+    expect([...named].filter((key) => !(key in catalogs.en))).toEqual([]);
   });
 
   it("keeps popup placeholders aligned without relying on English fallback", () => {

@@ -3,16 +3,16 @@
 A browser extension for Chrome, Edge and Firefox that imports models into your self-hosted Thingport instance without
 leaving the site they're on: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
 Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP,
-Fab365 and 3DExport.
+Fab365, 3DExport and QIDI Maker.
 Visiting a model page, or a collection or likes page, shows a floating Thingport icon. Clicking it opens the import
 panel: the model's picture and name as the page shows them, and one box that picks one of your collections or makes a
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
 "Add > Import" does.
 
-It's useful without Thingport too: on MakerWorld model pages it adds a **Download adapted**
-button that saves the Bambu Studio project as a copy for the slicer your Thingport instance opens files in, or, without
-one, the copy PrusaSlicer and the slicers like it open with its colors and print settings. See
-[Download adapted](#download-adapted-no-thingport-needed).
+It's useful without Thingport too: on MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline,
+eufyMake and QIDI Maker model pages it adds a **Download adapted**
+button that saves the model's 3MF as a copy made for your slicer and printer, picked in its popup (or your
+Thingport instance's, once connected). See [Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
 
 <table>
@@ -132,24 +132,62 @@ A hand-installed copy doesn't update itself -- repeat these steps for a newer ve
 ## Download adapted (no Thingport needed)
 
 MakerWorld's files are Bambu Studio projects, which PrusaSlicer, Cura, eufyMake Studio and the slicers built on
-OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version. On a
-MakerWorld model page, the extension adds a **Download adapted** button under MakerWorld's own "Open in Bambu Studio"
-(or Download) button. Clicking it downloads the selected print profile's file and saves `<name>-adapted.3mf`, a copy
-made for the slicer your Thingport instance opens files in (picked in its Configuration), the copy Thingport's
-**Open adapted** gives that slicer without a printer: it isn't made for your printer yet. Without an instance, it's the copy PrusaSlicer and the slicers like it read: it goes
-into your own printer, filament and print settings, with the designer's settings on each object and the painted colors
-on your extruders. Hover the bulb on the button for what the copy keeps.
+OrcaSlicer often open without their colors, parts or print settings, or with questions about the file's version.
+Printables' 3MFs come from PrusaSlicer as often as from Bambu Studio, and the Bambu family opens a PrusaSlicer project
+with none of its settings, colors or beds. Creality Cloud's are Creality Print projects, Snapmaker Space's Snapmaker Orca
+ones, NexPrint's Elegoo Slicer ones and MakerOnline's Anycubic Slicer Next ones, eufyMake's print files are eufyMake
+Studio projects and QIDI Maker's QIDI Studio ones, which other slicers question or mis-read in the same ways. A project made for
+someone else's printer also opens on theirs. On a model page of any of these sites, the extension adds **Download
+adapted**: it downloads the model's 3MF (the print profile picked on the page, or on Printables the 3MF you pick) and
+saves a copy made for your slicer and, where your slicer loads a printer's presets by name, for your printer: that
+slicer's presets for it, the designer's settings on top and the plates laid out on its bed. It's the copy Thingport's
+**Open adapted** opens. Hover the bulb for what a copy keeps.
 
+- **The button:** an outlined button under the site's own "Open in Bambu Studio", "Open in QIDI Studio" or Download button, so the site's own
+  stays the main action. Under its label it names the copy a click makes, the last one made or else the first: "Bambu
+  Lab P1S · Bambu Studio", after the file where the model has several 3MFs. Its ▾ lists the others, one per slicer,
+  and one per printer for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next and QIDI Studio, and above
+  them the model's 3MFs on Printables, or the profile or file it's made of where the page picks one. Its last item
+  opens the settings. Before a slicer is picked, it makes the copy PrusaSlicer and the slicers like it read, and the ▾
+  offers to pick one. On Creality Cloud, Snapmaker Space, NexPrint and MakerOnline it needs you signed in there, as
+  their own Download does.
+- **In a file's row:** on Printables' **Files** tab, every 3MF also gets an **Adapted** button under its own Download,
+  and on NexPrint every profile 3MF in its Files list one beside its own buttons; its menu lists that file's copies.
+- **In Grab's bubble instead:** where the settings say so, or where the site's own button can't be found, the copies
+  are rows in the bubble's panel, with the file to adapt picked above them where there are several. Not connected to
+  Thingport, the bubble opens straight to them, with a way to set up imports under them. Connected, a quiet
+  **Download adapted** under the import shows them when clicked.
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
-  **Adapt MakerWorld 3MFs** switch is on, under **Offline features** (**Extra features** once connected). It isn't
-  offered when your instance's slicer opens MakerWorld's files as they are, as Bambu Studio does, or when you switched
-  that slicer's **Open adapted** off in your instance's Configuration. If the instance doesn't say in time, the button
-  is offered and asks it again when you click.
+  **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected), on a model with a 3MF,
+  on a site the extension runs on (Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake and QIDI Maker once
+  you allow them). A paid model you
+  haven't bought, or one for a site's members, gets none, as the site offers no download of it either. A
+  slicer that opens every kind of 3MF the site has as it is gets no copy unless one is made for a printer, and a file
+  your slicer opens as it is downloads as it is. Connected, nor does a slicer whose **Open adapted** you switched off in
+  your instance's Configuration get a copy.
+- **Settings:** the cog beside the switch opens them over the popup.
+  - **Slicer:** the slicers you open models in.
+  - **Printers:** yours, picked from about a thousand printers by maker or by name, each with its nozzle. Click a
+    printer for its nozzle, or to remove it. The list comes with the extension and draws each printer rather than
+    showing a picture.
+  - **Button:** beside the site's own button, or in Grab's bubble.
+  - **Sites:** where it works, with **Allow** for a site the extension doesn't run on until you let it.
+
+  Under the switch, the popup shows the slicers and printers picked, or offers to pick a slicer.
+
+- **Connected:** your slicers and printers are your Thingport instance's, from its **Configuration → Slicer** and
+  **Printers**. They're shown here and managed there (**Manage** opens them), and a slicer's own printer there is the
+  only one it gets a copy for. The first time the extension connects to an account with no slicers or no printers yet,
+  it gives the account the ones picked here. An instance from before printers keeps the extension's own printers in
+  use. While the instance can't be reached, or doesn't answer within five seconds, the copies are made for what it
+  said last for that account, or for the extension's own slicers and printers if it has never answered it.
 - **Where it runs:** entirely in your browser, with the same converter Thingport's **Open adapted** uses on the
-  server. The file goes nowhere but your downloads folder.
-- **Limits:** you need to be signed in to MakerWorld, as for its own Download button, and files over
-  50 MB are too big to convert in the browser -- the button says so. MakerWorld's own button is found by
-  its label, in any of the languages the site comes in.
+  server, and the printers' presets from the list the extension carries. The file goes nowhere but your downloads
+  folder, as `<name>-adapted.3mf`, with the printer's model after it for a copy made for one.
+- **Limits:**
+  - You need to be signed in to MakerWorld, as for its own Download button.
+  - Files over 50 MB are too big to convert in the browser; the button says so.
+  - MakerWorld's own button is found by its label, in any of the languages the site comes in.
 
 ## Thingiverse dark mode and hidden ads (no Thingport needed)
 
@@ -371,6 +409,15 @@ signing out there makes Thingport forget the one Grab sent. On a paid model you 
 front. Your Default Collection (`3dexport.com/mybookmarks/default`) and any collection's page, a private one of yours
 too, import the listed models and can keep them in sync.
 
+### QIDI Maker: a sign-in only for your own lists
+
+QIDI Maker's models, their print profiles and anyone's public collections import without a sign-in. Its sign-in, a
+cookie its pages can't read, is read from the browser's cookies when you open www.qidimaker.com signed in, and sent
+whenever it changes; signing out there makes Thingport forget the one Grab sent. Thingport needs it only for your own
+private collections and your likes (`/en/my/collections/detail?type=1`), which import from their pages and can be kept
+in sync. On a model page, **Download adapted** sits under its **Open in QIDI Studio**, for the print profile picked
+above it.
+
 ## What counts as "importable"
 
 - A single model page on any of the sites. Once the model is in your library the icon wears a badge: a **+** while
@@ -378,11 +425,11 @@ too, import the listed models and can keep them in sync.
   which **Fetch missing details** brings over), and a **✓** with a green ring once everything's in, when the panel
   just offers **Open in Thingport**. If some of the print profiles you picked fail, the panel says **Partly imported**,
   ending with the last error, such as a CAPTCHA or the daily download limit.
-- A MakerWorld, Printables, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint, Thangs, Pinshape, Meshy, PIXUP or
-  3DExport collection, a Thingiverse Collection, one of your Cults3D printlists, your 3DExport Default Collection;
-  anyone's Thingiverse, Cults3D, Pinshape or GrabCAD likes or PIXUP wishlist; your own MakerOnline, Creality Cloud,
-  Thangs, eufyMake, Toymakr3D or CGTrader likes, your CGTrader wishlist, your Fab365 favourites, or your Snapmaker Space
-  likes and bookmarks -- lets you import the listed designs in one go.
+- A MakerWorld, Printables, MyMiniFactory, MakerOnline, Creality Cloud, NexPrint, Thangs, Pinshape, Meshy, PIXUP,
+  3DExport or QIDI Maker collection, a Thingiverse Collection, one of your Cults3D printlists, your 3DExport Default
+  Collection; anyone's Thingiverse, Cults3D, Pinshape or GrabCAD likes or PIXUP wishlist; your own MakerOnline, Creality
+  Cloud, Thangs, eufyMake, Toymakr3D, CGTrader or QIDI Maker likes, your CGTrader wishlist, your Fab365 favourites, or
+  your Snapmaker Space likes and bookmarks -- lets you import the listed designs in one go.
 
 Picking a destination collection is only offered for a single-model import; a batch import instead
 lands in Thingport's own auto-named collection for that batch (e.g. "Thingiverse likes (@username)"), matching
@@ -410,7 +457,7 @@ also be turned on in Thingport, from the collection's **Sync configuration**.
   Clicking it, or **... > Sync configuration**, opens the collection's sync configuration: when it
   was last checked and when the next sync is due, **Sync now** and **Stop syncing**, and under
   Settings how often it's checked and, on a site with print profiles (MakerWorld, Snapmaker Space, MakerOnline,
-  Creality Cloud, NexPrint, eufyMake), which print profiles each new model brings (the default one, all of the designer's, or
+  Creality Cloud, NexPrint, eufyMake, QIDI Maker), which print profiles each new model brings (the default one, all of the designer's, or
   all of them).
 - The link follows the provider's collection id, so renaming the Thingport collection, or the
   provider's, keeps it synced. A provider collection syncs with one Thingport collection at most,

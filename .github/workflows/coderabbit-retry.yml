@@ -1,14 +1,22 @@
 name: CodeRabbit retry
 
 # Asks CodeRabbit for the reviews a pull request is owed: a push it didn't review, a review its rate limit refused
-# once the wait is over, and a full review where a plain one had nothing to say. Every 30 minutes; a run asks for
-# what's due and stops, never waiting. The rules are in .github/scripts/coderabbit-retry.mjs.
+# once the wait is over, and a full review where a plain one had nothing to say. The rules are in
+# .github/scripts/coderabbit-retry.mjs. GitHub hardly ever fires this repository's schedules, so a run starts whenever
+# a CodeRabbit check finishes or a pull request into develop is pushed to, and waits in the run for what's due next,
+# for up to two hours; one still waiting then starts the next run.
 #
 # CodeRabbit ignores commands from github-actions[bot], so the asks are posted by an ordinary GitHub account kept for
 # it: the CODERABBIT_ASK_TOKEN secret holds that account's classic token with only the `public_repo` scope. The account
 # needn't be a collaborator, and shouldn't be: that scope would then let the token push. Without the secret nothing
 # is posted.
 on:
+  check_run:
+    types: [completed]
+  # The base's side, so pull requests from forks count too; their code is never checked out.
+  pull_request_target:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
     # Off the hour, when GitHub delays and drops the most scheduled runs.
     - cron: "17,47 * * * *"
@@ -20,20 +28,22 @@ on:
         default: false
 
 permissions:
+  # To start the next run.
+  actions: write
   contents: read
   checks: read
   issues: read
   pull-requests: read
 
-# One at a time, so two runs can't ask for the same pull request.
-concurrency:
-  group: coderabbit-retry
-  cancel-in-progress: false
-
 jobs:
   retry:
+    if: github.event_name != 'check_run' || github.event.check_run.app.slug == 'coderabbitai'
+    # The newest run has the newest view, so it replaces one still waiting. On the job, so a skipped one replaces none.
+    concurrency:
+      group: coderabbit-retry
+      cancel-in-progress: true
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 160
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,3 +57,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ASK_TOKEN: ${{ secrets.CODERABBIT_ASK_TOKEN }}
           DRY_RUN: ${{ inputs.dry-run }}
+          RUN_MINUTES: 120

@@ -73,8 +73,12 @@ export function loadingModelsPhrases(provider: Provider): string[] {
   ];
 }
 
-/** Short, for the "Download adapted" button: MakerWorld hands over the 3MF. */
-export let gettingFilePhrases: string[] = [];
+/** Short, for the "Download adapted" button while a site hands over the 3MF: `site` is the one asked. */
+export const gettingFilePhrases = (site: string) => [
+  t("funGettingFile"),
+  t("funFinding3mf"),
+  t("funAskingSiteShort", { site }),
+];
 
 /** Short, for the "Download adapted" button: the Bambu project becomes a copy for the slicer. */
 export let adaptingPhrases: string[] = [];
@@ -90,7 +94,6 @@ export function refreshFunStatusPhrases(): void {
     t("funSortingModels"),
     t("funUntanglingFileNames"),
   ];
-  gettingFilePhrases = [t("funGettingFile"), t("funFinding3mf"), t("funAskingMakerWorld")];
   adaptingPhrases = [
     t("adapting"),
     t("funKeepingColors"),

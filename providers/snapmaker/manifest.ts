@@ -44,6 +44,7 @@ export default {
     ownLists: "signIn",
     categoryIds: "number",
     trending: { kind: "featured", moreUrl: "https://space.snapmaker.com/", rank: 10 },
+    adapted3mfs: ["bambu"],
   },
   examples: {
     model: "https://space.snapmaker.com/en/model/12345-example-model",

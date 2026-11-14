@@ -1,10 +1,10 @@
-import { t } from "../shared/i18n";
 // The model sites Grab works on: the built-in ones always, the optional ones (optionalSites.ts) once enabled here.
 // Enabling asks the browser for that one site; registering Grab there follows in the background, from the browser's
 // permission event. They show in two columns, so fifteen of them don't push the popup past the height a browser gives
 // it, and the one whose site the active tab is on is lifted out of the grid into a card of its own at the top, with
 // what it imports -- so the site in front of the user takes no searching for.
 
+import { t } from "../shared/i18n";
 import { OPTIONAL_SITES, siteEnabled, type OptionalSite } from "../shared/optionalSites";
 import { send } from "../shared/messages";
 import type { Provider } from "../shared/urls";

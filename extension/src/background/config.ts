@@ -6,8 +6,9 @@ import {
   type OfflineFeature,
   type StoredConfig,
 } from "../shared/storage";
+import { adaptSettingsOf } from "../shared/adaptSettings";
 import { bubbleLookOf, bubbleUpdate, type BubbleLook } from "../shared/bubble";
-import { localeOf, type Locale } from "../shared/i18n";
+import { isLocale, localeOf, type Locale } from "../shared/i18n";
 import type { ExtensionState } from "../shared/messages";
 import { learnImportQueue, loginAndStoreToken } from "./api";
 
@@ -57,6 +58,8 @@ export async function getState(): Promise<ExtensionState> {
     ) as Record<OfflineFeature, boolean>,
     bubble: bubbleLookOf(config),
     locale: localeOf(config.locale),
+    localeChoice: isLocale(config.locale) ? config.locale : null,
+    adaptPlacement: adaptSettingsOf(config).placement,
   };
 }
 
@@ -96,7 +99,10 @@ export async function setBubble(pick: Partial<BubbleLook>): Promise<null> {
   return null;
 }
 
-export async function setLocale(locale: Locale): Promise<null> {
-  await chrome.storage.local.set({ [STORAGE_KEYS.locale]: locale });
+/** Null goes back to following the browser. */
+export async function setLocale(locale: Locale | null): Promise<null> {
+  if (locale === null) await chrome.storage.local.remove(STORAGE_KEYS.locale);
+  else if (isLocale(locale)) await chrome.storage.local.set({ [STORAGE_KEYS.locale]: locale });
+  else throw new Error(`Unknown language: ${String(locale)}`);
   return null;
 }

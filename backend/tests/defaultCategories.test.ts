@@ -54,13 +54,14 @@ describe("each provider's categories.json", () => {
       const starter = PROVIDERS[id].starterCategories;
       expect(Object.keys(starter).filter((path) => !paths.has(path))).toEqual([]);
       const byPath = MANIFESTS[id].capabilities.categoryIds === "path";
-      // As routes/categories.ts takes them: paths of non-blank names, or positive whole numbers of up to 16 digits.
+      // As routes/categories.ts takes them: paths of non-blank names, or positive whole numbers of up to 20 digits, kept
+      // as their digits.
       const valid = (siteId: number | string) =>
         byPath
           ? String(siteId)
               .split("/")
               .every((part) => part && part.trim() === part)
-          : /^[1-9]\d{0,15}$/.test(String(siteId)) && Number.isSafeInteger(Number(siteId));
+          : /^[1-9]\d{0,19}$/.test(String(siteId));
       expect(Object.values(starter).filter((ids) => !ids.length)).toEqual([]);
       expect(
         Object.values(starter)

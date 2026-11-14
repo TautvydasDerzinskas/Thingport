@@ -29,6 +29,10 @@ there, or pick **eufyMake likes** in the sync dialog's Browse tab.
 eufyMake turns away more than a few requests a second; Thingport waits and tries again, and reports a rate limit when
 that isn't enough.
 
+Its print files are eufyMake Studio projects, and its models' own 3MFs mostly Bambu Studio ones; other slicers open them
+as [adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's Download once you
+allow Grab there, saves one made for yours, without your sign-in.
+
 ## Setup: your sign-in
 
 Per-user (**Configuration → Providers → eufyMake**), only for your likes. Opening makeitreal.eufymake.com signed in,

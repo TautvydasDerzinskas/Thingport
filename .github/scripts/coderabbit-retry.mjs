@@ -1,5 +1,7 @@
-// Asks CodeRabbit for the reviews a pull request is owed. Run by coderabbit-retry.yml every 30 minutes: a run asks for
-// what's due and stops, leaving the rest to a later run.
+// Asks CodeRabbit for the reviews a pull request is owed. Run by coderabbit-retry.yml whenever a CodeRabbit check
+// finishes or a pull request is pushed to: a run asks for what's due, then waits in the run for what comes next (the
+// allowance back, a check that should have started, a review settling) for up to RUN_MINUTES, and starts the next run
+// if something is still to come. A newer run replaces a waiting one.
 //
 // For each open pull request (drafts, paused ones and ones whose description says `@coderabbitai ignore` aside), the
 // newest thing since its head commit decides:
@@ -16,8 +18,9 @@
 // CodeRabbit doesn't answer commands from bot accounts (github-actions[bot] was ignored), so the asks are posted with
 // ASK_TOKEN, an ordinary account's token; an ask it leaves unanswered isn't repeated for that commit.
 //
-// Usage: node coderabbit-retry.mjs, with GH_TOKEN (reads), ASK_TOKEN (posts), GITHUB_API_URL and GITHUB_REPOSITORY
-// set. Without ASK_TOKEN, or with DRY_RUN=true, it only says what it would ask and when.
+// Usage: node coderabbit-retry.mjs, with GH_TOKEN (reads, and starts the next run), ASK_TOKEN (posts), GITHUB_API_URL,
+// GITHUB_REPOSITORY and RUN_MINUTES (0, the default, asks what's due and stops) set. Without ASK_TOKEN, or with
+// DRY_RUN=true, it only says what it would ask and when.
 
 import { pathToFileURL } from "node:url";
 
@@ -49,6 +52,9 @@ const MISSED_HEAD_MS = 15 * MINUTE;
 const STUCK_REVIEW_MS = 60 * MINUTE;
 // A review CodeRabbit has just finished may still be posting its comments.
 const SETTLE_MS = 3 * MINUTE;
+// A waiting run looks again just after the time it waited for, and never sooner than this after its last look.
+const WAKE_MARGIN_MS = 1000;
+const MIN_PAUSE_MS = 30_000;
 
 const time = (iso) => Date.parse(iso);
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z");
@@ -133,13 +139,14 @@ export function noticesFrom(comments, now) {
 }
 
 /**
- * Whether a pull request is waiting for an ask. Returns { waiting: false, reason } or { waiting: true, since,
- * notBefore, why, ask, limited }: since orders the queue, notBefore is the earliest time this pull request's own
- * notices allow an ask, why says which rule for the log, ask is the command, and limited says its head was rate
- * limited, so its summary's notice holds back every ask.
+ * Whether a pull request is waiting for an ask. Returns { waiting: false, reason, recheck? } or { waiting: true,
+ * since, notBefore, why, ask, limited }: since orders the queue, notBefore is the earliest time this pull request's
+ * own notices allow an ask, why says which rule for the log, ask is the command, and limited says its head was rate
+ * limited, so its summary's notice holds back every ask. recheck is when a pull request not waiting may be, with
+ * nothing new happening: a check that should have started, an answer that should have come, a review settling.
  */
 export function pullState({ pull, checkRuns, headDate, comments, reviews = [], now, asker }) {
-  const no = (reason) => ({ waiting: false, reason });
+  const no = (reason, recheck) => (recheck ? { waiting: false, reason, recheck } : { waiting: false, reason });
   const wait = ({ since, notBefore = since, why, ask, limited = false }) => ({
     waiting: true,
     since,
@@ -156,7 +163,9 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
     return no(`paused by @${lastSwitch.user.login} at ${lastSwitch.created_at}`);
   }
   const check = latestCheck(checkRuns);
-  if (check && check.status !== "completed" && !stuck(check, now)) return no("CodeRabbit is reviewing it");
+  if (check && check.status !== "completed" && !stuck(check, now)) {
+    return no("CodeRabbit is reviewing it", time(check.started_at) + STUCK_REVIEW_MS);
+  }
   const ourAsks = comments.filter((c) => c.user?.login === asker && isAsk(c) && time(c.created_at) > headDate);
   if (ourAsks.length >= MAX_ASKS_PER_COMMIT) return no(`asked ${ourAsks.length} times for this commit already`);
 
@@ -183,7 +192,9 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
 
   if (last?.kind === "review") return no(`CodeRabbit reviewed it at ${iso(last.at)}`);
   if (last?.kind === "ask") {
-    if (now - last.at < ANSWER_GRACE_MS) return no(`asked at ${last.comment.created_at}, no answer yet`);
+    if (now - last.at < ANSWER_GRACE_MS) {
+      return no(`asked at ${last.comment.created_at}, no answer yet`, last.at + ANSWER_GRACE_MS);
+    }
     return no(`CodeRabbit didn't answer the ask at ${last.comment.created_at}`);
   }
   if (last?.kind === "reply") {
@@ -212,18 +223,22 @@ export function pullState({ pull, checkRuns, headDate, comments, reviews = [], n
     if (full) return no(`CodeRabbit took the full review asked for at ${ask.created_at}`);
     // A plain review it finished: with a review posted that would be the newest thing, so this one found nothing.
     if (!/finished/i.test(plain(reply.body))) {
-      if (now - last.at < STUCK_REVIEW_MS) return no(`CodeRabbit took the ask at ${reply.created_at}`);
+      if (now - last.at < STUCK_REVIEW_MS) {
+        return no(`CodeRabbit took the ask at ${reply.created_at}`, last.at + STUCK_REVIEW_MS);
+      }
       return wait({ since: last.at, why: `the review taken at ${reply.created_at} never finished`, ask: ASK });
     }
     const done = time(reply.updated_at);
-    if (now - done < SETTLE_MS) return no("CodeRabbit only just finished");
+    if (now - done < SETTLE_MS) return no("CodeRabbit only just finished", done + SETTLE_MS);
     return wait({ since: done, why: "the review asked for found nothing to say", ask: FULL_ASK });
   }
 
   // Nothing since the push.
-  if (!check && now - headDate < MISSED_HEAD_MS) return no("no CodeRabbit check on its head yet");
+  if (!check && now - headDate < MISSED_HEAD_MS) {
+    return no("no CodeRabbit check on its head yet", headDate + MISSED_HEAD_MS);
+  }
   if (check?.status === "completed" && now - time(check.completed_at) < SETTLE_MS) {
-    return no("CodeRabbit only just finished");
+    return no("CodeRabbit only just finished", time(check.completed_at) + SETTLE_MS);
   }
   if (check?.conclusion === "success") {
     const since = time(check.completed_at);
@@ -273,7 +288,8 @@ function client({ apiUrl, repository, token }) {
       },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${options.method ?? "GET"} ${path}`);
-    return res.json();
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   }
   async function user() {
     const res = await fetch(`${apiUrl}/user`, {
@@ -340,8 +356,9 @@ export function banner(repository) {
 }
 
 /**
- * One run: asks for each pull request that's due, one at a time, and returns once the next isn't due yet. It never
- * waits for the allowance; only for CodeRabbit's answer to an ask, which comes within seconds.
+ * One run: asks for each pull request that's due, one at a time, looking again after each ask, and waits in between
+ * for the next ask or recheck until `until`. Returns { at } when the next of those comes later than that, so another
+ * run has to look then, or {} when nothing is to come.
  */
 export async function askDue({
   github,
@@ -349,6 +366,7 @@ export async function askDue({
   asker,
   dryRun,
   footer = "",
+  until = 0,
   clock = Date.now,
   pause = sleep,
   log = console.log,
@@ -363,10 +381,32 @@ export async function askDue({
     }
     if (hold > now) log(`CodeRabbit's allowance is back at ${iso(hold)}`);
     const next = nextAsk(waiting, hold, now);
-    if (!next.pull && !next.at) return log("Nothing to ask for.");
-    if (next.at) return log(`Next ask is due at ${iso(next.at)}; the first run after that asks.`);
+    if (!next.pull) {
+      const wake = Math.min(next.at ?? Infinity, ...states.map((state) => state.recheck ?? Infinity));
+      if (wake === Infinity) {
+        log("Nothing to ask for.");
+        return {};
+      }
+      const what = wake === next.at ? "Next ask is due" : "Looking again";
+      if (wake > until) {
+        if (now >= until) {
+          log(`${what} at ${iso(wake)}, after this run's time.`);
+          return { at: wake };
+        }
+        // Looks once more at the end of its time, so a run hands over at most once in that time.
+        log(`${what} at ${iso(wake)}; looking again at the end of this run, ${iso(until)}.`);
+        await pause(Math.max(until - now, MIN_PAUSE_MS));
+        continue;
+      }
+      log(`${what} at ${iso(wake)}; waiting.`);
+      await pause(Math.max(wake - now + WAKE_MARGIN_MS, MIN_PAUSE_MS));
+      continue;
+    }
     const { number, ask: command } = next.pull;
-    if (dryRun) return log(`Would post "${command}" on #${number} now.`);
+    if (dryRun) {
+      log(`Would post "${command}" on #${number} now.`);
+      return {};
+    }
     const ask = await poster.request(`issues/${number}/comments`, {
       method: "POST",
       body: JSON.stringify({ body: footer ? `${command}\n\n${footer}` : command }),
@@ -379,13 +419,23 @@ export async function askDue({
       log(`::warning::CodeRabbit didn't answer @${asker}'s ask on #${number}; it isn't repeated for this commit`);
     }
     // Accepted: the allowance may cover another, so on to the next pull request. Refused: the refusal holds every ask
-    // back, and a later run reads it.
-    if (outcome !== "accepted") return;
+    // back until the time it gives, which the next look reads.
   }
+  log(`::warning::Asked ${MAX_ASKS_PER_RUN} times in this run; the next run goes on.`);
+  return {};
 }
 
 async function main() {
-  const { GITHUB_API_URL = "https://api.github.com", GITHUB_REPOSITORY, GH_TOKEN, ASK_TOKEN, DRY_RUN } = process.env;
+  const {
+    GITHUB_API_URL = "https://api.github.com",
+    GITHUB_REPOSITORY,
+    GITHUB_REF_NAME,
+    GITHUB_WORKFLOW_REF,
+    GH_TOKEN,
+    ASK_TOKEN,
+    DRY_RUN,
+    RUN_MINUTES,
+  } = process.env;
   if (!GITHUB_REPOSITORY || !GH_TOKEN) {
     console.log("::error::GH_TOKEN and GITHUB_REPOSITORY are needed");
     process.exit(1);
@@ -395,7 +445,20 @@ async function main() {
   const asker = poster ? (await poster.user()).login : null;
   if (!poster) console.log("::warning::No ASK_TOKEN (the CODERABBIT_ASK_TOKEN secret), so nothing is posted.");
   else console.log(`Asking as @${asker}.`);
-  await askDue({ github, poster, asker, dryRun: DRY_RUN === "true" || !poster, footer: banner(GITHUB_REPOSITORY) });
+  const dryRun = DRY_RUN === "true" || !poster;
+  // A dry run only says what's due; a real one waits for what comes within its time.
+  const minutes = Number(RUN_MINUTES) || 0;
+  const until = dryRun || minutes <= 0 ? 0 : Date.now() + minutes * MINUTE;
+  const { at } = await askDue({ github, poster, asker, dryRun, footer: banner(GITHUB_REPOSITORY), until });
+  // Only a run that had time hands over: it waited all of it first, so runs can't start each other in a loop. Nothing
+  // else may start one by then, as GitHub fires few of the scheduled runs.
+  if (!at || !until || !GITHUB_WORKFLOW_REF) return;
+  const workflow = GITHUB_WORKFLOW_REF.split("@")[0].split("/").pop();
+  await github.request(`actions/workflows/${workflow}/dispatches`, {
+    method: "POST",
+    body: JSON.stringify({ ref: GITHUB_REF_NAME }),
+  });
+  console.log(`Started the next run, for ${iso(at)}.`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

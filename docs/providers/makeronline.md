@@ -27,6 +27,10 @@ puzzle on the page you're importing from, as its Download button does; solve it 
 for Grab can't show one, as nobody asked for them on that page: if one stops at a puzzle, import a model from its page,
 solve the puzzle there, then reload.
 
+Its print profiles are Anycubic Slicer Next projects; other slicers open them as
+[adapted 3MFs](../features/adapted-3mf.md), and Grab's **Download adapted**, under a model's Download, saves one made for
+yours. Like the site's own Download, it needs your MakerOnline sign-in.
+
 ## Setup: your sign-in
 
 Per-user (**Configuration → Providers → MakerOnline**), only for your likes and private collections. Opening

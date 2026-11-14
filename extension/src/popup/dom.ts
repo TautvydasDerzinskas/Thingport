@@ -6,11 +6,7 @@ function byId<T extends HTMLElement>(id: string): T {
 
 export const els = {
   headerIcon: byId("header-icon"),
-  languagePicker: byId("language-picker"),
-  languageSelect: byId<HTMLSelectElement>("language-select"),
   languageTrigger: byId<HTMLButtonElement>("language-trigger"),
-  languageValue: byId("language-value"),
-  languageList: byId<HTMLUListElement>("language-list"),
   instanceRow: byId("instance-row"),
   instanceLink: byId<HTMLAnchorElement>("instance-link"),
   editInstanceBtn: byId<HTMLButtonElement>("edit-instance-btn"),
@@ -41,6 +37,20 @@ export const els = {
   viewedClear: byId<HTMLButtonElement>("viewed-clear"),
   historyError: byId("history-error"),
   normalizeSwitch: byId<HTMLInputElement>("normalize-switch"),
+  // Adapt 3MFs' row and its views (popup/adapt.ts).
+  adaptSetup: byId("adapt-setup"),
+  adaptSettingsBtn: byId<HTMLButtonElement>("adapt-settings-btn"),
+  adaptView: byId("adapt-view"),
+  adaptViewSwitch: byId<HTMLInputElement>("adapt-view-switch"),
+  adaptSections: byId("adapt-sections"),
+  adaptError: byId("adapt-error"),
+  addPrinterView: byId("add-printer-view"),
+  addPrinterTitle: byId("add-printer-title"),
+  addPrinterCount: byId("add-printer-count"),
+  addPrinterSearch: byId<HTMLInputElement>("add-printer-search"),
+  addPrinterStatus: byId("add-printer-status"),
+  addPrinterBody: byId("add-printer-body"),
+  addPrinterError: byId("add-printer-error"),
   // Thingiverse's offline features (providers/thingiverse/index.ts), switched in the popup with the others.
   thingiverseDarkSwitch: byId<HTMLInputElement>("thingiverse-dark-switch"),
   thingiverseAdsSwitch: byId<HTMLInputElement>("thingiverse-ads-switch"),

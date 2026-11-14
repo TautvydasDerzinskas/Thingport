@@ -13,6 +13,7 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "elegooslicer", label: "Elegoo Slicer" },
   { id: "snapmaker-orca", label: "Snapmaker Orca" },
   { id: "eufystudio3d", label: "eufyMake Studio" },
+  { id: "qidistudio", label: "QIDI Studio" },
   { id: "other", label: "Other / Manual" },
 ];
 

@@ -137,6 +137,11 @@
     "group": "providers"
   },
   {
+    "value": "builtin:providers/qidimaker",
+    "name": "QIDI Maker",
+    "group": "providers"
+  },
+  {
     "value": "builtin:ai/ai21",
     "name": "AI21",
     "group": "ai"

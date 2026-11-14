@@ -26,10 +26,11 @@ export function detectLocale(languages: readonly string[] = navigator.languages)
   return "en";
 }
 
+export const isLocale = (value: unknown): value is Locale =>
+  typeof value === "string" && (LOCALES as readonly string[]).includes(value);
+
 export function localeOf(value: unknown, languages?: readonly string[]): Locale {
-  return typeof value === "string" && (LOCALES as readonly string[]).includes(value)
-    ? (value as Locale)
-    : detectLocale(languages);
+  return isLocale(value) ? value : detectLocale(languages);
 }
 
 export function setLocale(locale: Locale): void {

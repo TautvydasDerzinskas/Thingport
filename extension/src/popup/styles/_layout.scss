@@ -13,34 +13,33 @@
 }
 
 body {
-  // Four compact tabs, a full language name and the enabled switch must coexist without squeezing the masthead.
-  width: 420px;
+  // Wide enough for two columns of providers, so the list of them doesn't run past the height a browser
+  // gives a popup (see popup/sites.ts).
+  width: 380px;
   margin: 0;
+  padding: t.$space-4;
   font-family: t.$font-stack;
   font-size: t.$font-size;
   color: t.c("text");
-  background: t.c("page");
+  background: t.c("surface");
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: t.$space-3;
-  min-height: 64px;
-  padding: t.$space-3 t.$space-4;
-  color: t.c("brand-text");
-  background: t.c("brand-surface");
+  gap: 10px;
+  margin-bottom: 14px;
 
   &--seasonal {
-    padding-top: t.$space-4;
+    padding-top: 6px;
   }
 
   &__icon {
     position: relative;
     display: block;
     flex-shrink: 0;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
   &__season {
@@ -49,12 +48,13 @@ body {
 
   &__icon svg {
     display: block;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
 
-    // The icon's hexagon outline is near-black in the source SVG -- follow the masthead text instead.
+    // The icon's hexagon outline is near-black in the source SVG -- follow the text color instead,
+    // so it doesn't vanish on the dark theme.
     [stroke] {
-      stroke: t.c("brand-text");
+      stroke: t.c("text");
     }
   }
 
@@ -65,137 +65,10 @@ body {
 
   &__title {
     margin: 0;
-    overflow: hidden;
-    font-family: t.$font-display;
-    font-size: 17px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 700;
     line-height: 1.2;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    color: t.c("brand-text");
   }
-}
-
-.language-picker {
-  position: relative;
-  flex: 0 0 124px;
-  width: 124px;
-}
-
-.language-select {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 32px;
-  padding: 4px 8px 4px 10px;
-  overflow: hidden;
-  border: 1px solid t.c("brand-border");
-  border-radius: 6px;
-  font: 500 t.$font-size-sm t.$font-stack;
-  color: t.c("brand-text");
-  background-color: t.c("brand-panel");
-  cursor: pointer;
-  @include m.focus-ring;
-
-  &:hover {
-    border-color: t.c("brand-muted");
-  }
-
-  &__value {
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  &__chevron {
-    flex: none;
-    width: 16px;
-    height: 16px;
-    margin-left: t.$space-1;
-    color: t.c("brand-muted");
-    transition: transform 0.15s ease;
-  }
-}
-
-.language-picker--open .language-select__chevron {
-  transform: rotate(180deg);
-}
-
-.language-list {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 6px);
-  right: 0;
-  width: 156px;
-  margin: 0;
-  padding: t.$space-1;
-  overflow: hidden;
-  list-style: none;
-  border: 1px solid t.c("brand-border");
-  border-radius: t.r("md");
-  background: t.c("brand-panel");
-  box-shadow: 0 10px 24px t.c("shadow");
-  animation: language-list-in 0.12s ease-out;
-
-  &[hidden] {
-    display: none;
-  }
-
-  &__option {
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 6px 24px 6px t.$space-2;
-    border-radius: t.r("sm");
-    font-size: t.$font-size-sm;
-    line-height: 1.25;
-    color: t.c("brand-muted");
-    cursor: pointer;
-
-    &--active {
-      background: rgba(255, 255, 255, 0.08);
-      color: t.c("brand-text");
-    }
-
-    &[aria-selected="true"] {
-      color: t.c("brand-text");
-      font-weight: 600;
-
-      &::after {
-        position: absolute;
-        right: 9px;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: t.c("accent");
-        content: "";
-      }
-    }
-  }
-}
-
-@keyframes language-list-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .language-list {
-    animation: none;
-  }
-
-  .language-select__chevron {
-    transition: none;
-  }
-}
-
-main {
-  padding: t.$space-4;
 }
 
 .instance {
@@ -213,14 +86,14 @@ main {
     white-space: nowrap;
     text-overflow: ellipsis;
     text-decoration: none;
-    color: t.c("brand-muted");
+    color: t.c("text-muted");
     transition: color 0.15s ease;
     @include m.focus-ring;
 
     &:hover,
     &:focus-visible {
       text-decoration: underline;
-      color: t.c("brand-text");
+      color: t.c("text");
     }
   }
 }
@@ -279,20 +152,6 @@ main {
   }
 }
 
-.header .icon-btn {
-  color: t.c("brand-muted");
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: t.c("brand-text");
-  }
-
-  &--danger:hover {
-    background: t.c("danger-soft");
-    color: #ff8a8a;
-  }
-}
-
 .section {
   margin-top: t.$space-3;
   padding-top: t.$space-3;
@@ -318,7 +177,8 @@ main {
 .sites {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: t.$space-1;
+  column-gap: t.$space-2;
+  row-gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -347,11 +207,11 @@ main {
     align-items: center;
     gap: 6px;
     width: 100%;
-    min-height: 32px;
+    min-height: 30px;
     padding: 4px 6px;
-    border: 1px solid t.c("border-soft");
-    border-radius: t.r("sm");
-    background: t.c("surface");
+    border: 0;
+    border-radius: t.$radius-sm;
+    background: transparent;
     font: inherit;
     color: inherit;
     text-align: left;
@@ -372,8 +232,7 @@ main {
 
     &:hover:not(:disabled),
     &:focus-visible {
-      border-color: t.c("border");
-      background: t.c("accent-soft");
+      background: t.c("hover");
 
       .site__plus {
         border-color: t.c("accent");
@@ -442,7 +301,7 @@ main {
     @include m.button-primary;
     width: auto;
     padding: 3px 10px;
-    border-radius: t.r("sm");
+    border-radius: t.$radius-sm;
     font-size: t.$font-size-xs;
   }
 
@@ -477,8 +336,8 @@ main {
   margin-bottom: t.$space-3;
   padding: 10px;
   border: 1px solid var(--site-accent-line, #{t.c("border")});
-  border-radius: t.r("md");
-  background: var(--site-accent-wash, #{t.c("surface-sunken")});
+  border-radius: t.$radius-md;
+  background: linear-gradient(135deg, var(--site-accent-wash, transparent), transparent 72%), t.c("surface-sunken");
   animation: featured-in 0.22s ease-out;
 
   &__logo {
@@ -488,7 +347,7 @@ main {
     justify-content: center;
     width: 26px;
     height: 26px;
-    border-radius: t.r("sm");
+    border-radius: t.$radius-sm;
     background: t.c("surface");
     box-shadow: 0 1px 3px t.c("shadow");
     // Black-and-white logos take the text colour.
@@ -624,8 +483,8 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: t.$space-2;
-  margin: 0 t.$space-4;
-  padding: t.$space-2 0 t.$space-3;
+  margin-top: t.$space-3;
+  padding-top: t.$space-2;
   border-top: 1px solid t.c("border");
   font-size: t.$font-size-xs;
   color: t.c("text-muted");

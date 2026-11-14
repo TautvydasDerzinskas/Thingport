@@ -73,6 +73,9 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // signed in, so they're read on every visit: a signed-out one clears the sign-in Grab sent, as signing out there
   // revokes it.
   threedexport: syncSession,
+  // Its sign-in reads the user's own collections and likes. Only a signed-in visitor has its cookie, so it's read on
+  // every visit: a signed-out one clears the sign-in Grab sent.
+  qidimaker: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

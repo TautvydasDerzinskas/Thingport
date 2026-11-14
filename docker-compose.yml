@@ -63,6 +63,8 @@ services:
       # Optional consume folder: files and folders dropped in it are imported automatically
       # (Administration -> Storage -> Consume Folder). Uncomment and point it at a host folder.
       # - ./data/consume:/app/consume
+      # Optional: another Thingport instance's database dump and storage folder, read by Administration -> Migrate.
+      # - ./data/migrate:/app/migrate:ro
     networks:
       - app-net
 

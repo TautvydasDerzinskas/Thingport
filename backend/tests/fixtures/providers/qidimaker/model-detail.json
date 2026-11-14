@@ -1,0 +1,109 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": "2094485343639777281",
+    "collectId": null,
+    "userId": "1000000000000000001",
+    "classifyId": "1985613162231930881",
+    "tags": ["flexi", "filament", "clip", "universal", "true", "tangle", "free", "spool", "storage", "organizer"],
+    "translatedTags": [
+      "flexion",
+      "filament",
+      "clip",
+      "universal",
+      "true",
+      "tangle",
+      "free",
+      "spool",
+      "storage",
+      "organizer"
+    ],
+    "modelName": "True Flexi Filament Clip ⧸ Tangle Free Storage",
+    "translatedModelName": "True Flexi Filament Clip ⧸ Tangle Free Storage",
+    "modelDescription": "<p>An innovative but simple filament clip designed for secure storage without unnecessary stress on your filament.</p><p><br></p><h2>Compatibility</h2><p><strong>Standard (56 mm - 65 mm Inner Spool Width) v2</strong></p><p><strong>Tested with:</strong></p><p>Prusament, SUNLU V1, V2 and V3, Bambu Lab, Bambu Lab Clear, Bambu Lab HT, Bambu Lab HT Cardboard, GratKit Cardboard, ELEGOO, Anycubic, ACCCREATE, Filamentwerk and Polymaker Cardboard.</p><p><br></p><p><strong>Small (48 mm to 56 mm Inner Spool Width) v2</strong></p><p>For all smaller spools like some cardboard spools.</p><p><br></p><h2>How it works</h2><p>I had been using this type of Filament Clip for quite a while and really liked the concept. After printing dozens of them, I started wondering how I would design such a clip today. Instead of modifying an existing model, I designed a completely new version from scratch in OpenSCAD with a focus on improved usability, flexibility and compatibility.</p><p>The biggest change is the flex mechanism. Since the bending of a printed spring is carried almost entirely by the perimeters, infill contributes very little to the compliance of the flex arm. Instead of relying on a single continuous spring, the flex arm is split into two independently deforming sections. This distributes the deformation across multiple flex zones, resulting in a more compliant mechanism with lower stress concentration while maintaining excellent durability.</p><p> </p><p>The model also features a refined filament path for a secure friction fit, increased grip height for more comfortable handling, optimized tooth geometry, consistent chamfers throughout the design and a fully parametric OpenSCAD source that generates every size individually instead of scaling the model.</p><p>One thing that was important to me was avoiding any attachment method that secures the filament end to the wound filament itself, since this can increase the risk of accidental tangles.</p><p>Instead, the filament is secured close to the spool core without introducing unnecessary bending stress. This also helps prevent brittle filament from breaking after long term storage, something commonly seen with PLA when the filament is threaded through spool holes or attached with rim mounted clips.</p><p>Mounting the clip between the spool flanges provides another practical benefit. The spool remains completely free to rotate during filament drying, and multiple spools can be stacked for storage without the clip getting in the way.</p><p> </p><h2>Material</h2><p>PETG works perfectly for everyday use.</p><p>For elevated temperatures or frequent filament drying I recommend ASA or PC.</p>",
+    "translatedModelDescription": "<p>An innovative but simple filament clip designed for secure storage without unnecessary stress on your filament.</p><p><br></p><h2>Compatibility</h2><p><strong>Standard (56 mm - 65 mm Inner Spool Width) v2</strong></p><p><strong>Tested with:</strong></p><p>Prusament, SUNLU V1, V2 and V3, Bambu Lab, Bambu Lab Clear, Bambu Lab HT, Bambu Lab HT Cardboard, GratKit Cardboard, ELEGOO, Anycubic, ACCCREATE, Filamentwerk and Polymaker Cardboard.</p><p><br></p><p><strong>Small (48 mm to 56 mm Inner Spool Width) v2</strong></p><p>For all smaller spools like some cardboard spools.</p><p><br></p><h2>How it works</h2><p>I had been using this type of Filament Clip for quite a while and really liked the concept. After printing dozens of them, I started wondering how I would design such a clip today. Instead of modifying an existing model, I designed a completely new version from scratch in OpenSCAD with a focus on improved usability, flexibility and compatibility.</p><p>The biggest change is the flex mechanism. Since the bending of a printed spring is carried almost entirely by the perimeters, infill contributes very little to the compliance of the flex arm. Instead of relying on a single continuous spring, the flex arm is split into two independently deforming sections. This distributes the deformation across multiple flex zones, resulting in a more compliant mechanism with lower stress concentration while maintaining excellent durability.</p><p> </p><p>The model also features a refined filament path for a secure friction fit, increased grip height for more comfortable handling, optimized tooth geometry, consistent chamfers throughout the design and a fully parametric OpenSCAD source that generates every size individually instead of scaling the model.</p><p>One thing that was important to me was avoiding any attachment method that secures the filament end to the wound filament itself, since this can increase the risk of accidental tangles.</p><p>Instead, the filament is secured close to the spool core without introducing unnecessary bending stress. This also helps prevent brittle filament from breaking after long term storage, something commonly seen with PLA when the filament is threaded through spool holes or attached with rim mounted clips.</p><p>Mounting the clip between the spool flanges provides another practical benefit. The spool remains completely free to rotate during filament drying, and multiple spools can be stacked for storage without the clip getting in the way.</p><p> </p><h2>Material</h2><p>PETG works perfectly for everyday use.</p><p>For elevated temperatures or frequent filament drying I recommend ASA or PC.</p>",
+    "modelUrl": "https://public-cdn.qidimaker.com/community/models/stl/2094485343639777281/all_stls.zip",
+    "modelPrintConfiguration": "[Q2, Q2C, X_PLUS4, X_MAX4, X_PLUS5]",
+    "modelUpvote": 150,
+    "modelCollect": 241,
+    "modelAssistance": null,
+    "modelDownloads": 494,
+    "modelPrint": 94,
+    "exclusive": null,
+    "publishTime": "2026-08-31 13:08:23",
+    "modelResource": "original",
+    "license": "STANDARD",
+    "secondaryCreationUrl": "",
+    "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260831/piwb8xy309/2026-08-31_00d4f2faf885c3.gif",
+    "modelPictureApp": "https://maker-cdn.qidimaker.com/model/picture/20260831/eeujcway7o/2026-08-31_eb5c5f939e33ef.gif",
+    "adaptedShared": 1,
+    "commercialUse": 1,
+    "redistribute": 1,
+    "attributionShare": 1,
+    "updateTime": null,
+    "visibility": 0,
+    "status": 3,
+    "modelDisplay": null,
+    "displayOrder": null,
+    "recommend": null,
+    "failureReason": null,
+    "translatedFailureReason": null,
+    "uploadType": null,
+    "liked": false,
+    "collected": false,
+    "isSelf": false,
+    "reviewCount": 1,
+    "lookCount": null,
+    "modelConfigurationCount": null,
+    "sliceModelUserVO": {
+      "userId": "1000000000000000001",
+      "uuidName": "user_0000000001",
+      "nickname": "Maker 1",
+      "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-1.png",
+      "level": 9,
+      "fans": 44,
+      "likes": 246,
+      "modelNumber": 25,
+      "modelDisplayVo": []
+    },
+    "sliceClassifyListVO": {
+      "id": "1985611396065067009",
+      "classifyName": "3D Printer",
+      "classifyNameEn": null,
+      "classifySort": 1,
+      "classifyUrl": null,
+      "sliceClassifyVOList": [
+        {
+          "id": "1985613162231930881",
+          "classifyName": "3D Printer Accessories",
+          "classifyPid": 1985611396065067009,
+          "classifySort": 0
+        }
+      ]
+    },
+    "sliceModelPictureUrlVO": [
+      {
+        "associationId": "2094485343639777281",
+        "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260831/qgm9gu6v0n/2026-08-31_5fd6877486ac7c.jpg"
+      },
+      {
+        "associationId": "2094485343639777281",
+        "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260831/0xzuu3r6ze/2026-08-31_cd9c25dbfd8fd6.jpg"
+      },
+      {
+        "associationId": "2094485343639777281",
+        "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260831/kqmw7egsx0/2026-08-31_8b8a2120ef44b7.jpg"
+      },
+      {
+        "associationId": "2094485343639777281",
+        "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260831/2m7twuaa5j/2026-08-31_5a505d02afa6eb.jpg"
+      },
+      {
+        "associationId": "2094485343639777281",
+        "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260831/4a6rgj2p7d/2026-08-31_536413f39e6323.jpg"
+      }
+    ]
+  },
+  "timestamp": 1794600000000
+}

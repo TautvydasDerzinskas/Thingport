@@ -6,12 +6,12 @@ import { ctx } from "../context";
 import { escapeHtml } from "../runtime";
 import { pageImage, pageTitle } from "../pageModel";
 import { modelKey } from "../../shared/urls";
-import { manifestOf } from "../../providers/index.generated";
+import { manifestOf, type ProviderId } from "../../providers/index.generated";
 import { t } from "../../shared/i18n";
 
 /** The provider's logo, drawn as the popup's provider list draws it. */
-function providerMarkHtml(): string {
-  const { logo } = manifestOf(ctx().classification.provider).brand;
+function providerMarkHtml(provider: ProviderId): string {
+  const { logo } = manifestOf(provider).brand;
   const layers = (logo.layers ?? [])
     .map(
       (l) =>
@@ -41,13 +41,23 @@ export function modelTitle(): string | null {
  * another page's request) simply uncovers the mark, with no script to run and nothing to measure.
  */
 export function modelHeadHtml(eyebrow: string): string {
-  const key = modelKey(ctx().url);
+  const { classification, url } = ctx();
+  return headHtml(classification.provider, url, modelTitle(), eyebrow);
+}
+
+/** The same header for a page Grab isn't importing from (Download adapted's own panel), named as the page shows it. */
+export function pageHeadHtml(provider: ProviderId, url: string, eyebrow: string): string {
+  const key = modelKey(url);
+  return headHtml(provider, url, key ? pageTitle(key) : null, eyebrow);
+}
+
+function headHtml(provider: ProviderId, url: string, name: string | null, eyebrow: string): string {
+  const key = modelKey(url);
   const image = key ? pageImage(key) : null;
-  const name = modelTitle();
   return `
     <div class="tg-head">
       <span class="tg-head__thumb">
-        ${providerMarkHtml()}
+        ${providerMarkHtml(provider)}
         ${image ? `<img class="tg-head__img" src="${escapeHtml(image)}" alt="" referrerpolicy="no-referrer" />` : ""}
       </span>
       <span class="tg-head__text">

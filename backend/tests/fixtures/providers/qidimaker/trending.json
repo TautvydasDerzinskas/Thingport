@@ -1,0 +1,91 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "records": [
+      {
+        "id": "2077275848848752642",
+        "modelName": "Q2 Waste barrel 2",
+        "translatedModelName": "Q2 Waste barrel 2",
+        "modelUpvote": 183,
+        "modelCollect": null,
+        "modelDownloads": 1947,
+        "exclusive": null,
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260715/crxb9bcpw5/2026-07-15_d31e5bad43b6e3.jpg",
+        "modelPictureApp": "",
+        "updateTime": null,
+        "recommend": null,
+        "liked": false,
+        "collected": false,
+        "sliceModelUserVO": {
+          "userId": "1000000000000000005",
+          "uuidName": "user_0000000005",
+          "nickname": "Maker 5",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-5.png",
+          "level": 10,
+          "fans": 94,
+          "likes": 326,
+          "modelNumber": 12,
+          "modelDisplayVo": []
+        }
+      },
+      {
+        "id": "2077310993416896514",
+        "modelName": "Is This the Lightest Flying 3D Print? 3g < 10 Min",
+        "translatedModelName": "Is This the Lightest Flying 3D Print? 3g < 10 Min",
+        "modelUpvote": 102,
+        "modelCollect": null,
+        "modelDownloads": 1383,
+        "exclusive": null,
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260715/s80ox99yvh/2026-07-15_abfd87a0883614.png",
+        "modelPictureApp": "",
+        "updateTime": null,
+        "recommend": null,
+        "liked": false,
+        "collected": false,
+        "sliceModelUserVO": {
+          "userId": "1000000000000000006",
+          "uuidName": "user_0000000006",
+          "nickname": "Maker 6",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-6.png",
+          "level": 11,
+          "fans": 57,
+          "likes": 404,
+          "modelNumber": 172,
+          "modelDisplayVo": []
+        }
+      },
+      {
+        "id": "2066425706105061378",
+        "modelName": "Cute Octopus, Flexi, Articulated",
+        "translatedModelName": "Cute Octopus, Flexi, Articulated",
+        "modelUpvote": 77,
+        "modelCollect": null,
+        "modelDownloads": 1071,
+        "exclusive": null,
+        "modelPictureWeb": "https://maker-cdn.qidimaker.com/model/picture/20260615/qvb9wu1aa7/2026-06-15_248945275560ab.png",
+        "modelPictureApp": "",
+        "updateTime": null,
+        "recommend": null,
+        "liked": false,
+        "collected": false,
+        "sliceModelUserVO": {
+          "userId": "1000000000000000007",
+          "uuidName": "user_0000000007",
+          "nickname": "Maker 7",
+          "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-7.png",
+          "level": 12,
+          "fans": 90,
+          "likes": 464,
+          "modelNumber": 162,
+          "modelDisplayVo": []
+        }
+      }
+    ],
+    "total": 3771,
+    "size": 3,
+    "current": 1,
+    "pages": 755
+  },
+  "timestamp": 1794600000000
+}

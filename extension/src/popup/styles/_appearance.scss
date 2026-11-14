@@ -19,7 +19,7 @@
   min-width: 0;
   padding: 5px;
   border: 1px solid t.c("border");
-  border-radius: t.r("md");
+  border-radius: t.$radius-md;
   background: transparent;
   font: inherit;
   color: inherit;
@@ -41,10 +41,12 @@
 
   &__swatch {
     position: relative;
+    // The bubble drawn in it keeps the page's z-index: held in here, under the language menu.
+    isolation: isolate;
     display: block;
     height: 56px;
     overflow: hidden;
-    border-radius: t.r("sm");
+    border-radius: t.$radius-sm;
     background: t.c("surface-sunken");
   }
 
@@ -129,10 +131,11 @@
 // bar as the top corners sit below a site's header.
 .spots {
   position: relative;
+  isolation: isolate;
   height: 104px;
   overflow: hidden;
   border: 1px solid t.c("border");
-  border-radius: t.r("md");
+  border-radius: t.$radius-md;
   background: t.c("surface-sunken");
 
   &::before {
@@ -275,4 +278,82 @@
   color: t.c("text-muted");
   font-size: 10px;
   font-weight: 600;
+}
+
+// The language (popup/language.ts): a field drawn like the setup form's inputs, opening the popup's menu.
+.field-select {
+  @include m.text-input;
+  display: flex;
+  align-items: center;
+  gap: t.$space-2;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: t.c("text-muted");
+  }
+
+  // The input's ring is for typing into it; a click on a button needn't show one.
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  &__value {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  &__hint {
+    min-width: 0;
+    overflow: hidden;
+    color: t.c("text-muted");
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__chevron {
+    display: flex;
+    margin-left: auto;
+    color: t.c("text-muted");
+    transition: transform 0.15s ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &[aria-expanded="true"] &__chevron {
+    transform: rotate(180deg);
+  }
+}
+
+.flag {
+  flex: none;
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px t.c("border");
+  object-fit: cover;
+}
+
+.globe {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  width: 18px;
+  color: t.c("text-muted");
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-select,
+  .field-select__chevron {
+    transition: none;
+  }
 }

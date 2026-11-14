@@ -1,9 +1,9 @@
-import { t } from "../../shared/i18n";
 // Every provider's model pages import directly but MakerWorld's, which go through /import/inspect first, like the web
 // app's useUploadImport.tsx. MakerOnline's files are signed on its own page first (see providers/makeronline/background.ts).
 // MakerWorld's downloads resolve in the page (providers/makerworld/downloadResolver.ts), at steps of the panel's import
 // flow below, which is every provider's.
 
+import { t } from "../../shared/i18n";
 import type { FillGapsResult, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
 import { IMPORT_PAUSED, request } from "../../shared/messages";
 import { ctx } from "../context";

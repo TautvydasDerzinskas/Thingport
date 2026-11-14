@@ -33,7 +33,7 @@ const EXTENSION_DIR = path.join(ROOT, "dist", "chrome");
 const OUT_DIR = path.join(ROOT, "docs", "screenshots");
 const PAGE_VIEWPORT = { width: 1280, height: 800 };
 const DEMO_HOST = "thingport.home.arpa";
-const POPUP_WIDTH = 420;
+const POPUP_WIDTH = 380;
 const NEW_COLLECTION_NAME = "Desk organizers";
 const PRINTABLES_COLLECTION = "https://www.printables.com/@Thinkable/collections/342542";
 const MAKERWORLD_COLLECTION = "https://makerworld.com/en/collections/15756490-little-coin";
@@ -345,7 +345,7 @@ async function undressSeason(page: Page): Promise<void> {
   });
 }
 
-/** `tab`: the popup's tab to show, when not the first. `openLanguage`: keep its menu open in the shot. */
+/** `tab`: the popup's tab to show, when not the first. `openLanguage`: keep the language menu (Appearance) open. */
 async function screenshotPopup(
   context: BrowserContext,
   extensionId: string,
@@ -541,8 +541,8 @@ async function main(): Promise<void> {
   try {
     await screenshotPopup(context, extensionId, "popup-setup.png", "light");
     await screenshotPopup(context, extensionId, "popup-setup-dark.png", "dark");
-    await screenshotPopup(context, extensionId, "popup-language-menu.png", "light", undefined, true);
-    await screenshotPopup(context, extensionId, "popup-language-menu-dark.png", "dark", undefined, true);
+    await screenshotPopup(context, extensionId, "popup-language-menu.png", "light", "#tab-appearance", true);
+    await screenshotPopup(context, extensionId, "popup-language-menu-dark.png", "dark", "#tab-appearance", true);
 
     const modelShots =
       Boolean(CORNERS_DIR) ||

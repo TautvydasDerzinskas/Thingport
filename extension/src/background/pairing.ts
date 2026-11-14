@@ -7,6 +7,7 @@ import type { LoginResult } from "../shared/api";
 import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type PendingPairing } from "../shared/storage";
 import { fetchInstance, storeApprovedConnection } from "./api";
 import { getStoredConfig } from "./config";
+import { carryAdaptPicks } from "./adaptSettings";
 import { backgroundText } from "./localize";
 
 // Long enough to sign in through a provider on the way.
@@ -108,6 +109,7 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
   await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
   try {
     await claim(pending, code);
+    void carryAdaptPicks();
     await chrome.tabs.remove(tabId).catch(() => undefined);
   } catch (err) {
     const error = new URL(`${pending.instanceUrl}/connect-grab`);

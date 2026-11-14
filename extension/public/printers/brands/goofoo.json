@@ -1,0 +1,17 @@
+{"version":1,
+"processes":[
+[{"name":"0.20mm Standard @Goofoo GP1","layerHeight":0.2}],
+[{"name":"0.20mm Standard @Goofoo TurboM","layerHeight":0.2}],
+[{"name":"0.10mm Standard @Goofoo Velo+","layerHeight":0.1}],
+[{"name":"0.20mm Standard @Goofoo Velo+","layerHeight":0.2}],
+[{"name":"0.30mm Standard @Goofoo Velo+","layerHeight":0.3}]
+],
+"filaments":[
+
+],
+"printers":{
+"goofoo-gp1":{"extruders":1,"bed":{"shape":"rectangle","x":250,"y":250,"origin":[0,0]},"height":250,"slicers":{"orcaslicer":[{"model":"Goofoo GP1","presets":{"0.4":[{"name":"Goofoo GP1 0.4 nozzle","defaultProcess":"0.20mm Standard @Goofoo GP1","processes":0}]}}]}},
+"goofoo-turbom":{"extruders":1,"bed":{"shape":"rectangle","x":230,"y":200,"origin":[0,0]},"height":200,"slicers":{"orcaslicer":[{"model":"Goofoo TurboM","presets":{"0.4":[{"name":"Goofoo TurboM 0.4 nozzle","defaultProcess":"0.20mm Standard @Goofoo TurboM","processes":1}]}}]}},
+"goofoo-veloplus":{"extruders":1,"bed":{"shape":"rectangle","x":600,"y":500,"origin":[0,0]},"height":600,"slicers":{"orcaslicer":[{"model":"Goofoo Velo+","presets":{"0.2":[{"name":"Goofoo Velo+ 0.2 nozzle","defaultProcess":"0.10mm Standard @Goofoo Velo+","processes":2}],"0.4":[{"name":"Goofoo Velo+ 0.4 nozzle","defaultProcess":"0.20mm Standard @Goofoo Velo+","processes":3}],"0.6":[{"name":"Goofoo Velo+ 0.6 nozzle","defaultProcess":"0.30mm Standard @Goofoo Velo+","processes":4}]}}]}},
+"goofoo-veloplustool":{"extruders":2,"bed":{"shape":"rectangle","x":300,"y":300,"origin":[0,0]},"height":600,"slicers":{"orcaslicer":[{"model":"Goofoo Velo+ Tool","presets":{"0.4":[{"name":"Goofoo Velo+ Tool 0.4","defaultProcess":"0.20mm Standard @Goofoo Velo+","processes":3}]}}]}}
+}}

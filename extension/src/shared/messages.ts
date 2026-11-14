@@ -1,6 +1,10 @@
 // Typed runtime messages between the content script/popup and the background. Replies use a
 // `{ ok, data } | { ok: false, error }` envelope: `send` returns it, `request` throws on error.
 
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { PrinterRecipe } from "../adapter/printer.generated";
+import type { AdaptPlacement, AdaptSettings } from "./adaptSettings";
+import type { AdaptTarget } from "./adaptTargets";
 import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
@@ -27,6 +31,53 @@ export type ExtensionState = {
   bubble: BubbleLook;
   /** The configured catalog, or the browser language resolved to a supported catalog. */
   locale: Locale;
+  /** The language picked in the popup; null while it follows the browser. */
+  localeChoice: Locale | null;
+  /** Where Download adapted's copies go: beside the site's own button, or in the bubble. */
+  adaptPlacement: AdaptPlacement;
+};
+
+/** One of the user's printers in their Thingport instance (Configuration → Printers there), as it describes it. */
+export type ThingportPrinter = {
+  id: string;
+  brandName: string;
+  model: string;
+  nozzle: string;
+  bed: { shape: "rectangle" | "circle" | "polygon"; x: number; y: number } | null;
+  height: number | null;
+  extruders: number;
+};
+
+/** The slicers and printers the user's Thingport instance has for them, which take the place of Grab's own once
+ *  connected. */
+export type ThingportAdapt = {
+  slicers: string[];
+  /** Null on an instance from before printers, which leaves Grab's own in use. */
+  printers: ThingportPrinter[] | null;
+  /** The printer each slicer's copies are made for; a slicer not listed asks which. */
+  slicerPrinters: Record<string, string>;
+  /** The slicers whose files the user wants as they are. */
+  unadapted: string[];
+  /** Set where the instance couldn't be asked now: this is what it said last, and this is why. */
+  remembered?: string;
+};
+
+/** What Adapt 3MFs goes by: Grab's own settings, and the instance's once connected (`thingport` is null while not
+ *  connected; `error` says why an instance that couldn't be asked wasn't, where it has never answered). `instanceUrl`
+ *  is empty while not connected. */
+export type AdaptView = {
+  own: AdaptSettings;
+  thingport: ThingportAdapt | { error: string } | null;
+  instanceUrl: string;
+};
+
+/** What a model page offers: the copies Download adapted makes (shared/adaptTargets.ts), where its button goes, and
+ *  the copy last made, which the button makes again. */
+export type AdaptOffer = {
+  targets: AdaptTarget[];
+  placement: AdaptPlacement;
+  lastKey: string | null;
+  connected: boolean;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -155,8 +206,23 @@ export type BackgroundMessages = {
   SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
   /** Changes the floating bubble's style, its place, or both. */
   SET_BUBBLE: { payload: Partial<BubbleLook>; result: null };
-  /** Changes the extension's runtime catalog. */
-  SET_LOCALE: { payload: { locale: Locale }; result: null };
+  /** Changes the extension's language; null follows the browser's. */
+  SET_LOCALE: { payload: { locale: Locale | null }; result: null };
+  /** Adapt 3MFs' settings, the Thingport instance's slicers and printers among them once connected. */
+  GET_ADAPT_SETTINGS: { payload: void; result: AdaptView };
+  /** Changes Grab's own Adapt 3MFs settings, and gives them back as stored. */
+  SET_ADAPT_SETTINGS: { payload: Partial<AdaptSettings>; result: AdaptSettings };
+  /** On a model page: the copies Download adapted makes, and where its button goes. */
+  GET_ADAPT_OFFER: { payload: void; result: AdaptOffer };
+  /** The copy last made, which the button then makes by default. */
+  SET_ADAPT_LAST: { payload: { key: string }; result: null };
+  /** What a copy for a printer names in a slicer, from Grab's printer catalogue; null where it has nothing for them. */
+  GET_PRINTER_RECIPE: {
+    payload: { slicer: string; printerId: string; nozzle: string };
+    result: { choice: PrinterChoice; recipe: PrinterRecipe } | null;
+  };
+  /** Opens the popup at Adapt 3MFs' settings, or the same page in a tab where the browser won't open the popup. */
+  OPEN_ADAPT_SETTINGS: { payload: void; result: "popup" | "tab" };
   /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
   START_PAIRING: { payload: { instanceUrl: string }; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };
@@ -180,6 +246,12 @@ export type BackgroundMessages = {
   };
   /** On any MakerOnline page: import what waits on the instance for Grab. How many came in. */
   RUN_MAKERONLINE_WAITING: { payload: void; result: number };
+  /** On a MakerOnline model page, for Download adapted: one 3MF's link, signed in the page as its own Download does.
+   *  `fileType` 2 is a print profile, `id` its id; 1 is a model file, `id` the model's. */
+  SIGN_MAKERONLINE_FILE: { payload: { key: string; fileType: 1 | 2; id: number; name: string }; result: string };
+  /** On a MakerOnline model page: keep the print profile and model file it picks on <html> (providers/makeronline/
+   *  pick.ts) as they change. False while the page's store isn't there yet. */
+  WATCH_MAKERONLINE_PICK: { payload: void; result: boolean };
   /** On an OwlCAD model page: export it in OwlCAD's editor, then import it. A library part needs no export, and is
    *  imported as any link is. */
   IMPORT_OWLCAD_MODEL: {

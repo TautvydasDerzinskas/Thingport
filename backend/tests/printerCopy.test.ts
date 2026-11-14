@@ -56,7 +56,16 @@ describe("a copy's presets", () => {
     expect(chooseProcess(RECIPE, "0.25mm Draft @BBL A1M", 0.25)).toBe("0.28mm Extra Draft @BBL X1C");
     // A name without a height goes by the layer height; neither, the printer's default.
     expect(chooseProcess(RECIPE, "Designer's tweaks", 0.08)).toBe("0.08mm Extra Fine @BBL X1C");
-    expect(chooseProcess({ ...RECIPE, processes: [] }, "Designer's tweaks", null)).toBe("0.20mm Standard @BBL X1C");
+    expect(chooseProcess(RECIPE, "Designer's tweaks", null)).toBe("0.20mm Standard @BBL X1C");
+  });
+
+  it("names only a process the printer's preset lists", () => {
+    // A default the slicer has since renamed, or another nozzle's: Standard among those listed instead.
+    const stale = { ...RECIPE, defaultProcess: "0.20mm Standard @BBL X1C 0.4 nozzle" };
+    expect(chooseProcess(stale, "Designer's tweaks", null)).toBe("0.20mm Standard @BBL X1C");
+    // None listed: nothing, so the designer's process stays.
+    expect(chooseProcess({ ...RECIPE, processes: [] }, "Designer's tweaks", null)).toBeNull();
+    expect(chooseProcess({ ...RECIPE, processes: [] }, "0.20mm Strength @BBL A1M", 0.2)).toBeNull();
   });
 
   it("names a filament by its product, whatever printer it was tuned for, and falls back to its type", () => {
