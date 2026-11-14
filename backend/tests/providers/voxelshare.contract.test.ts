@@ -339,6 +339,8 @@ describe("VoxelShare specifics", () => {
       const held = await prisma.collectionSync.findUniqueOrThrow({ where: { id: sync.id } });
       expect(held.lastError).toBe("VoxelShare sign-in ran out");
       expect(await getVoxelshareConnection(ctx.userId)).toBe("connected");
+      // The one sent meanwhile, not the one turned down.
+      expect(await getUserVoxelshareToken(ctx.userId)).toBe(NEWER);
     } finally {
       await prisma.collectionSync.delete({ where: { id: sync.id } }).catch(() => undefined);
       await prisma.collection.delete({ where: { id: collection.id } }).catch(() => undefined);

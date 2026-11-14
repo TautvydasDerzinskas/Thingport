@@ -30,3 +30,11 @@ export async function loadVoxelshareProfileIds(
   if (!parsed || !model) return null;
   return (scope) => voxelshareProfileIds(model.profiles, scope, shownProfileId(url));
 }
+
+/** The link naming the profile the page shows, which its address never does: picked in its list, it stays as it was.
+ *  The link as it is where it names that one already, or the page marks none. */
+export function shownVoxelshareProfileUrl(url: string, root: ParentNode = document): string {
+  const shown = shownProfileId(url, root);
+  if (!shown || shown === parseVoxelshareModelUrl(url)?.requestedProfileId) return url;
+  return `${url.split("#")[0]}#profileId-${shown}`;
+}
