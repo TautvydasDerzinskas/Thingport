@@ -141,6 +141,8 @@ export async function probePairing(rawInstanceUrl: string): Promise<boolean | nu
     const res = await fetch(apiUrl(normalizeInstanceUrl(rawInstanceUrl), "/health"), {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
+    // An error, say a proxy's with a JSON body of its own, says nothing of what the instance can do.
+    if (!res.ok) return null;
     const health = (await res.json()) as { grab_pairing?: boolean } | null;
     return health ? health.grab_pairing === true : null;
   } catch {

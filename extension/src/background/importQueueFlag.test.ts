@@ -321,5 +321,8 @@ describe("asking an address whether it pairs by approval, for the popup", () => 
 
     health = new Response("<html>proxy</html>", { status: 502 });
     await expect(probePairing(INSTANCE)).resolves.toBeNull();
+
+    health = answered({ error: "upstream unavailable" }, 502);
+    await expect(probePairing(INSTANCE)).resolves.toBeNull();
   });
 });
