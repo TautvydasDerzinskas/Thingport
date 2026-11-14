@@ -50,7 +50,8 @@ const PROVIDER = manifest.id;
 
 const CODE_OK = 200;
 const CODE_UNAUTHORIZED = 110002;
-const CODE_NOT_FOUND = 603000;
+// Both codes it answers a model that isn't there with.
+const NOT_FOUND = new Set([712001, 603000]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -225,7 +226,7 @@ export function snapmakerMetaFromDetail(
 export async function fetchSnapmakerDetail(externalId: string): Promise<Record<string, unknown> | null> {
   const { region, id: modelId } = snapmakerSiteIdOf(externalId);
   const { code, data } = await fetchApi(`/model/detail/${encodeURIComponent(modelId)}`, null, region);
-  if (code === CODE_NOT_FOUND) return null;
+  if (code !== null && NOT_FOUND.has(code)) return null;
   if (code !== CODE_OK || !isRecord(data)) throw new Error(`Couldn't read this Snapmaker model (code ${code})`);
   return data;
 }
@@ -250,7 +251,7 @@ function fileName(value: unknown, fallback: string): string {
 export async function fetchSnapmakerDownloads(externalId: string, token: string): Promise<SnapmakerDownloads | null> {
   const { region, id: modelId } = snapmakerSiteIdOf(externalId);
   const { code, data } = await fetchApi(`/model/download/${encodeURIComponent(modelId)}`, token, region);
-  if (code === CODE_NOT_FOUND) return null;
+  if (code !== null && NOT_FOUND.has(code)) return null;
   if (code !== CODE_OK || !isRecord(data)) throw new Error(`Couldn't get this Snapmaker model's files (code ${code})`);
   const modelFiles = Array.isArray(data.modelFiles)
     ? data.modelFiles.flatMap((file, index) =>
