@@ -4,6 +4,7 @@ import { crealityprint } from "./crealityprint";
 import { cura } from "./cura";
 import { elegooslicer } from "./elegooslicer";
 import { eufystudio3d } from "./eufystudio3d";
+import { orcaFlashforge } from "./orcaFlashforge";
 import { orcaslicer } from "./orcaslicer";
 import { prusaslicer } from "./prusaslicer";
 import { qidistudio } from "./qidistudio";
@@ -25,6 +26,7 @@ export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.f
     snapmakerOrca,
     eufystudio3d,
     qidistudio,
+    orcaFlashforge,
   ].map((profile) => [profile.id, profile]),
 );
 

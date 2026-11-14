@@ -11,4 +11,5 @@ export const SLICER_LABELS: Readonly<Record<string, string>> = {
   "snapmaker-orca": "Snapmaker Orca",
   eufystudio3d: "eufyMake Studio",
   qidistudio: "QIDI Studio",
+  "orca-flashforge": "Flash Studio",
 };

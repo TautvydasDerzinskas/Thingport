@@ -39,8 +39,8 @@ tab, which lists your own collections, your **My Collection** among them.
 A sync of a private collection waits for your sign-in rather than reading it without, as VoxelShare may show its details
 to anyone but not all of its models.
 
-Its print profiles are OrcaSlicer-style projects for Flashforge printers; other slicers open them as
-[adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's **Open in Flash
+Its print profiles are OrcaSlicer-style projects for Flashforge printers, which Flash Studio and OrcaSlicer open as
+they are; other slicers open them as [adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's **Open in Flash
 Studio Desktop** once you allow Grab there, saves a copy of the picked profile made for yours, without your sign-in.
 
 ## Setup: your sign-in

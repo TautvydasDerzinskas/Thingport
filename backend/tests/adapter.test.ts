@@ -532,6 +532,33 @@ describe("planAdaptation", () => {
     expect(planKey(planAdaptation(format(), slicerProfile("bambustudio"), q1)!)).toBe("bambu-for-qidi-q1pro-0.4");
   });
 
+  it("questions nothing Flash Studio takes as its own, and retags what its OrcaSlicer 2.3.2 would warn about", () => {
+    const flash = slicerProfile("orca-flashforge");
+    const own = format({ appVersion: "01.10.01.50", orcaTag: "2.3.2", dialect: "orca" });
+    expect(plan("orca-flashforge", own)).toBeNull();
+    // A newer OrcaSlicer's project, and a recent Bambu Studio one, past its 2.3.2.
+    const orca25 = format({ appVersion: "02.08.01.55", orcaTag: "2.5.0", dialect: "orca" });
+    expect(plan("orca-flashforge", orca25)).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: true,
+      dialect: null,
+    });
+    expect(plan("orca-flashforge")).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: false,
+      dialect: "orca",
+    });
+    // An OrcaSlicer project as old as its own opens as it is.
+    expect(plan("orca-flashforge", format({ app: "OrcaSlicer", appVersion: "2.3.0", dialect: "orca" }))).toBeNull();
+    // A copy for the user's Flashforge printer names its own presets.
+    const ad5m = { id: "flashforge-adventurer5m", nozzle: "0.4", preset: "Flashforge Adventurer 5M 0.4 Nozzle" };
+    expect(planAdaptation(own, flash, ad5m)).toMatchObject({ printer: ad5m, tag: null });
+    expect(planAdaptation({ ...own, printer: ad5m.preset }, flash, ad5m)).toBeNull();
+    expect(planKey(planAdaptation(own, flash, ad5m)!)).toBe("bambu-for-flashforge-adventurer5m-0.4");
+  });
+
   it("keeps another maker's project foreign to Creality Print, which asks for a printer", () => {
     expect(plan("crealityprintlink")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("crealityprintlink", format({ dialect: "orca" }))).toBeNull();

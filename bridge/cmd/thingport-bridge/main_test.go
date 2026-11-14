@@ -287,6 +287,9 @@ func TestFindWindowsCommandResolvesBridgeableSlicers(t *testing.T) {
 		{"crealityprintlink", "ProgramFiles", "Creality Print 5.1/CrealityPrint.exe"},
 		{"elegooslicer", "ProgramFiles", "ElegooSlicer/elegoo-slicer.exe"},
 		{"snapmaker-orca", "ProgramFiles", "Snapmaker_Orca/snapmaker-orca.exe"},
+		// Flash Studio's installer doesn't say its folder: the one its maker and product names make, and its CPack one.
+		{"orca-flashforge", "ProgramFiles", "Flashforge/Flash Studio Desktop/flash studio.exe"},
+		{"orca-flashforge", "ProgramFiles", "Orca-Flashforge/flash studio.exe"},
 		{"eufystudio3d", "LOCALAPPDATA", "eufyMake Studio 3D/eufymake studio.exe"},
 		{"eufystudio3d", "LOCALAPPDATA", "AnkerMake Studio/AnkerMake Studio.exe"},
 	}

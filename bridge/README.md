@@ -17,8 +17,8 @@ handlers won't take a link straight from a self-hosted Thingport instance:
   OrcaSlicer's own `orcaslicer://` protocol instead of one of its own -- with both installed, only
   one of them gets those links. The Bridge launches it by path, so the slicer you picked opens.
 
-OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio take a link from any
-address and download it themselves, so Thingport hands them the link directly. When one can't
+OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca, eufyMake Studio and Flash Studio take a link from
+any address and download it themselves, so Thingport hands them the link directly. When one can't
 download from your instance (it doesn't trust the instance's certificate, say), the user can send
 it through the Bridge instead: right-click it in Thingport's **Configuration → Slicer** and switch
 on **Through Thingport Bridge**.
@@ -254,6 +254,7 @@ Only when sent through the Bridge (see above):
 - elegooslicer (Elegoo Slicer)
 - snapmaker-orca (Snapmaker Orca)
 - eufystudio3d (eufyMake Studio)
+- orca-flashforge (Flash Studio, Flashforge's slicer, whose own links are `orcaflashforge://`)
 
 Cura's AppImage and Flatpak builds aren't on `PATH` and won't be auto-detected. If "Open in Cura"
 falls back to opening with your OS default app, add a `cura` entry to `config.json` (see
@@ -268,16 +269,22 @@ QIDI Studio for Linux comes only as an AppImage, which the Bridge finds once it'
 `qidi-studio`. Otherwise add a `qidistudio` entry to `config.json` or set
 `THINGPORT_SLICER_QIDISTUDIO=/path/to/QIDIStudio.AppImage`.
 
+Flash Studio's Windows installer doesn't say which folder it installs to, so the Bridge tries the ones its maker's
+and product's names make (below). If it isn't found there, add an `orca-flashforge` entry to `config.json` or set
+`THINGPORT_SLICER_ORCA_FLASHFORGE=/path/to/flash studio.exe`. Its Linux builds on GitHub are AppImages, found once
+they're on `PATH` as `FlashStudio`.
+
 Where the others are looked for, as their official installers put them:
 
-| Slicer          | Windows                                                                                                                                                                 | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                              | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
-| QIDI Studio     | `Program Files\QIDIStudio\qidi-studio.exe`                                                                                                                              | `QIDIStudio.app`                                                        | `qidi-studio`                                                                         |
-| Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
-| Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                          | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
-| Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                       | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |
-| eufyMake Studio | `%LOCALAPPDATA%\eufyMake Studio 3D\eufymake studio.exe`, or `AnkerMake Studio` before it was renamed                                                                    | `eufyMake Studio 3D.app`, `eufyMake Studio.app`, `AnkerMake Studio.app` | none (no Linux build)                                                                 |
+| Slicer          | Windows                                                                                                                                                                                      | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                                                   | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
+| QIDI Studio     | `Program Files\QIDIStudio\qidi-studio.exe`                                                                                                                                                   | `QIDIStudio.app`                                                        | `qidi-studio`                                                                         |
+| Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found                      | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
+| Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                                               | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
+| Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                                            | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |
+| Flash Studio    | `Program Files\Flashforge\Flash Studio Desktop\flash studio.exe`, or another `Program Files\Flashforge\Flash Studio*` folder, `Program Files\Flash Studio*`, `Program Files\Orca-Flashforge` | `Flash Studio.app`                                                      | `flash-slicer`, `FlashStudio`                                                         |
+| eufyMake Studio | `%LOCALAPPDATA%\eufyMake Studio 3D\eufymake studio.exe`, or `AnkerMake Studio` before it was renamed                                                                                         | `eufyMake Studio 3D.app`, `eufyMake Studio.app`, `AnkerMake Studio.app` | none (no Linux build)                                                                 |
 
 eufyMake Studio 1.5.26 for Windows installed to `%LOCALAPPDATA%\eufyMake Studio`, which is also
 where eufyMake's app for its UV printer goes, so that folder isn't used. With that version, set
