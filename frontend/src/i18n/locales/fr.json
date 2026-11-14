@@ -3043,6 +3043,7 @@
           "merged_one": "{{count}} fusionné avec un compte ici",
           "merged_many": "{{count}} d’utilisateurs fusionnés avec des comptes ici",
           "merged_other": "{{count}} fusionnés avec des comptes ici",
+          "peopleMerged": "{{people}}, {{merged}}",
           "readyLine_one": "Vérifiée : {{people}}, {{count}} modèle. Elle attend que vous la lanciez.",
           "readyLine_many": "Vérifiée : {{people}}, {{count}} de modèles. Elle attend que vous la lanciez.",
           "readyLine_other": "Vérifiée : {{people}}, {{count}} modèles. Elle attend que vous la lanciez.",

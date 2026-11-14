@@ -5,17 +5,18 @@ import be from "./locales/be.json";
 import es from "./locales/es.json";
 import fr from "./locales/fr.json";
 import lt from "./locales/lt.json";
+import zh from "./locales/zh.json";
 
 // Runtime catalogs are deliberately independent of WebExtension `_locales`: Chrome does not
 // support Belarusian (`be`), while every choice must work in Chrome, Edge and Firefox.
 
-export const LOCALES = ["en", "ru", "uk", "be", "es", "fr", "lt"] as const;
+export const LOCALES = ["en", "ru", "uk", "be", "es", "fr", "lt", "zh"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export type TranslationValues = Record<string, string | number>;
 type Messages = Record<string, string>;
 
-export const catalogs: Record<Locale, Messages> = { en, ru, uk, be, es, fr, lt };
+export const catalogs: Record<Locale, Messages> = { en, ru, uk, be, es, fr, lt, zh };
 let activeLocale: Locale = "en";
 
 export function detectLocale(languages: readonly string[] = navigator.languages): Locale {

@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Thingport Grab"
+  },
+  "extensionDescription": {
+    "message": "从 MakerWorld、Printables、Thingiverse 及另外 18 个网站将模型导入 Thingport，并为其他切片软件适配 3MF 文件。"
+  }
+}

@@ -319,7 +319,7 @@ export const DOCS = [
     title: "Themes, colours and languages",
     nav: "Themes and languages",
     description:
-      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian or Belarusian.",
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian or Simplified Chinese.",
   },
   {
     slug: "guides/system-health",

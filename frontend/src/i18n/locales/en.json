@@ -2949,6 +2949,7 @@
           "people_other": "{{count}} people",
           "merged_one": "{{count}} merged into an account here",
           "merged_other": "{{count}} merged into accounts here",
+          "peopleMerged": "{{people}}, {{merged}}",
           "readyLine_one": "Checked: {{people}}, {{count}} model. Waiting for you to start it.",
           "readyLine_other": "Checked: {{people}}, {{count}} models. Waiting for you to start it.",
           "doneLine_one": "{{count}} model for {{people}}",
