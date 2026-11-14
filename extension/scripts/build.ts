@@ -87,6 +87,8 @@ function staticFilesPlugin(
         if (result.errors.length) return;
         await cp(path.join(ROOT, "public"), outdir, { recursive: true });
         await cp(path.join(SRC, "popup", "popup.html"), path.join(outdir, "popup.html"));
+        // The flags are bundled into popup.js, and their licence asks for its notice to go with them.
+        await cp(path.join(SRC, "assets", "flags", "LICENSE"), path.join(outdir, "licenses", "flags.txt"));
         await writeFile(path.join(outdir, "manifest.json"), `${JSON.stringify(buildManifest(target, pkg), null, 2)}\n`);
       });
     },
