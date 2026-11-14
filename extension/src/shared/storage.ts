@@ -142,7 +142,6 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.normalizeMakerworld,
   STORAGE_KEYS.isAdmin,
   STORAGE_KEYS.importQueue,
-  STORAGE_KEYS.locale,
 ];
 
 /** Adapt 3MFs' settings: open pages offer the copies anew once they've settled, a hidden one once it's shown. Not the

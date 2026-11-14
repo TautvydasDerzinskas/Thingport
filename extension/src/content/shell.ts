@@ -86,6 +86,7 @@ export function unmountHost(): void {
   fabBodyEl = null;
   fabEl = null;
   panelOpen = false;
+  panelLoaded = false;
   window.clearTimeout(closeTimer);
   panelEl = null;
   contentEl = null;
@@ -195,12 +196,11 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   panelEl = panel;
   contentEl = content;
   extraEl = extra;
-  let loaded = false;
   return () => {
     const open = !panelOpen;
     setPanelOpen(open);
-    if (open && !loaded) {
-      loaded = true;
+    if (open && !panelLoaded) {
+      panelLoaded = true;
       onFirstOpen();
     }
   };
@@ -210,6 +210,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
 const CLOSE_MS = 200;
 
 let panelOpen = false;
+let panelLoaded = false;
 let closeTimer: number | undefined;
 
 const stillMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -273,6 +274,11 @@ export function setPanelNote(html: string | null, tone?: "shared" | "withheld"):
   }
   noteEl.className = tone ? `tg-panel-note tg-panel-note--${tone}` : "tg-panel-note";
   noteEl.innerHTML = html;
+}
+
+/** Opened since the page last started: what it holds, an import under way say, a fresh start would lose. */
+export function isPanelInUse(): boolean {
+  return panelLoaded;
 }
 
 export function isPanelMounted(): boolean {
