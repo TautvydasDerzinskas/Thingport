@@ -1,14 +1,23 @@
 // Full-page overlays for the guided MakerWorld import and the collection scan. They cover the whole
-// page on purpose: there's nothing to do meanwhile but wait or abort.
+// page on purpose: there's nothing to do meanwhile but wait or abort, or solve MakerWorld's puzzle, which shows above.
 
-import type { MakerworldJob } from "../shared/messages";
+import type { MakerworldJob, ResolvedDownload } from "../shared/messages";
 import { send } from "../shared/messages";
+import { type PuzzleOutcome, solvePausedStep } from "../providers/makerworld/puzzle";
+import { puzzleBox } from "../providers/makerworld/puzzleBox";
 import { fillIcons } from "../shared/icon";
 import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
 
 // Long enough never to show during a normal step, short enough for a stuck one.
 const JOB_STUCK_REVEAL_MS = 20000;
+// How long "Solved" shows before the step carries on.
+const SOLVED_MS = 900;
+// Between the card and MakerWorld's puzzle, and from the window's edge.
+const SPOTLIGHT_GAP = 14;
+const SPOTLIGHT_MARGIN = 16;
+// Where the puzzle isn't showing yet: its box is about this tall, centred on the page.
+const PUZZLE_HEIGHT = 390;
 
 function overlayHtml(title: string, countHtml: string, extra = ""): string {
   return `
@@ -44,7 +53,8 @@ function wireAbort(overlay: HTMLElement): void {
   });
 }
 
-/** Keeps keyboard focus on a full-page blocking overlay; the docked CAPTCHA card deliberately does not use this. */
+/** Keeps keyboard focus on a full-page blocking overlay; the puzzle's spotlight and the docked CAPTCHA card deliberately
+ *  do not use this. */
 function focusBlockingOverlay(overlay: HTMLElement, preferred?: HTMLElement): void {
   const card = overlay.querySelector<HTMLElement>(".tg-overlay__card")!;
   (preferred ?? card).focus();
@@ -134,8 +144,137 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   tick();
 }
 
-/** Docked rather than full-page: the user has to reach MakerWorld's own CAPTCHA underneath. */
+/** The puzzle being cleared for a paused step, shared by the cards a re-render mounts for it, so none opens a second. */
+let solving: { step: string; outcome: Promise<PuzzleOutcome> } | null = null;
+
+function resume(resolved: ResolvedDownload | null): void {
+  void send("RESUME_MAKERWORLD_JOB", { resolved });
+}
+
+function stepKey(job: MakerworldJob): string {
+  return `${job.runId}:${job.index}:${job.profiles?.done ?? 0}`;
+}
+
+/** MakerWorld wants its puzzle solved: it opens on the page straight away, MakerWorld's own, and once it's solved the
+ *  step carries on with the file it got. Closed, it offers to open again; where the page can't show one, it's left to
+ *  the user as before. */
 export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
+  let current: HTMLElement | null = null;
+  const show = (overlay: HTMLElement) => {
+    current?.remove();
+    current = overlay;
+    fillIcons(overlay);
+    root.appendChild(overlay);
+  };
+  const attempt = async () => {
+    const key = stepKey(job);
+    if (solving?.step !== key) {
+      solving = { step: key, outcome: solvePausedStep(location.href, job.profiles?.ids[0] ?? null) };
+    }
+    const mine = solving;
+    const spotlight = mountSpotlight(job);
+    show(spotlight);
+    const outcome = await mine.outcome;
+    // Torn down meanwhile by a re-render, whose own card takes the outcome.
+    if (current !== spotlight || !spotlight.isConnected) return;
+    if (solving === mine) solving = null;
+    if (outcome.kind === "clear") resume(outcome.resolved);
+    else if (outcome.kind === "solved") {
+      show(solvedCard(job));
+      setTimeout(() => resume(outcome.resolved), SOLVED_MS);
+    } else if (outcome.kind === "closed") show(closedCard(job, () => void attempt()));
+    else show(byHandCard(job));
+  };
+  void attempt();
+}
+
+/** The dimmed page with the run's card beside MakerWorld's puzzle, which sits a z-index above it. Not modal: the
+ *  puzzle is the page's, and Tab has to reach it. */
+function mountSpotlight(job: MakerworldJob): HTMLElement {
+  const overlay = document.createElement("div");
+  overlay.className = "tg-overlay";
+  overlay.setAttribute("role", "region");
+  overlay.setAttribute("aria-labelledby", "tg-overlay-title");
+  overlay.innerHTML = `
+    <div class="tg-overlay__card tg-spotlight" tabindex="-1">
+      <span class="tg-overlay__icon" data-icon></span>
+      <div class="tg-spotlight__text" role="status">
+        <div class="tg-overlay__title" id="tg-overlay-title">${escapeHtml(t("solveMakerworldPuzzle"))}</div>
+        <div class="tg-overlay__count">${escapeHtml(t("puzzleProgress", { imported: job.imported, total: job.total }))}</div>
+      </div>
+      <button class="tg-btn tg-btn--secondary" type="button" data-action="resume" hidden>${escapeHtml(t("resume"))}</button>
+      <button class="tg-btn tg-btn--danger" type="button" data-action="abort">${escapeHtml(t("abort"))}</button>
+      <span class="tg-spotlight__arrow" aria-hidden="true"></span>
+    </div>`;
+  wireAbort(overlay);
+  const card = overlay.querySelector<HTMLElement>(".tg-spotlight")!;
+  const resumeBtn = overlay.querySelector<HTMLButtonElement>("[data-action=resume]")!;
+  resumeBtn.addEventListener("click", () => {
+    resumeBtn.disabled = true;
+    resumeBtn.textContent = t("resuming");
+    resume(null);
+  });
+  // Above the puzzle where there's room, below it where there isn't. Until it shows, where it will.
+  let seen = false;
+  const place = () => {
+    if (!card.isConnected) return;
+    const box = puzzleBox()?.getBoundingClientRect();
+    seen ||= Boolean(box);
+    const height = card.offsetHeight;
+    const top = box?.top ?? (innerHeight - PUZZLE_HEIGHT) / 2;
+    const bottom = box?.bottom ?? (innerHeight + PUZZLE_HEIGHT) / 2;
+    const below = top - height - SPOTLIGHT_GAP < SPOTLIGHT_MARGIN;
+    card.classList.toggle("tg-spotlight--below", below);
+    card.style.top = `${Math.max(SPOTLIGHT_MARGIN, below ? bottom + SPOTLIGHT_GAP : top - height - SPOTLIGHT_GAP)}px`;
+    if (box) card.style.left = `${box.left + box.width / 2}px`;
+  };
+  const watch = setInterval(() => (card.isConnected ? place() : clearInterval(watch)), 250);
+  requestAnimationFrame(place);
+  // A puzzle that never shows (its script blocked, say) leaves nothing to solve: the step can be asked again by hand.
+  setTimeout(() => {
+    if (!seen && card.isConnected) resumeBtn.hidden = false;
+  }, JOB_STUCK_REVEAL_MS);
+  return overlay;
+}
+
+function blockingCard(title: string, extra: string): HTMLElement {
+  const overlay = document.createElement("div");
+  overlay.className = "tg-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "tg-overlay-title");
+  overlay.innerHTML = overlayHtml("", "", extra);
+  overlay.querySelector("#tg-overlay-title")!.innerHTML = title;
+  return overlay;
+}
+
+function solvedCard(job: MakerworldJob): HTMLElement {
+  const overlay = blockingCard(
+    `<span class="tg-overlay__tick" aria-hidden="true">✓</span>${escapeHtml(t("puzzleSolved"))}`,
+    progressHtml(job),
+  );
+  overlay.querySelector("#tg-overlay-title")!.setAttribute("role", "status");
+  queueMicrotask(() => overlay.querySelector<HTMLElement>(".tg-overlay__card")?.focus());
+  return overlay;
+}
+
+function closedCard(job: MakerworldJob, again: () => void): HTMLElement {
+  const overlay = blockingCard(
+    escapeHtml(t("puzzleClosed")),
+    `${progressHtml(job)}
+     <div class="tg-overlay__text">${escapeHtml(t("puzzleWaits"))}</div>
+     <button class="tg-btn" type="button" data-action="again">${escapeHtml(t("showPuzzle"))}</button>
+     <button class="tg-btn tg-btn--danger" type="button" data-action="abort">${escapeHtml(t("abort"))}</button>`,
+  );
+  wireAbort(overlay);
+  const againBtn = overlay.querySelector<HTMLButtonElement>("[data-action=again]")!;
+  againBtn.addEventListener("click", again);
+  queueMicrotask(() => focusBlockingOverlay(overlay, againBtn));
+  return overlay;
+}
+
+/** Docked rather than full-page: with no puzzle to open, the user brings up MakerWorld's own underneath. */
+function byHandCard(job: MakerworldJob): HTMLElement {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay tg-overlay--docked";
   overlay.setAttribute("role", "region");
@@ -147,20 +286,20 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
      <button class="tg-btn" type="button" data-action="resume">${escapeHtml(t("resume"))}</button>
      <button class="tg-btn tg-btn--danger" type="button" data-action="abort">${escapeHtml(t("abort"))}</button>`,
   );
-  fillIcons(overlay);
-  root.appendChild(overlay);
-  // In place of the import's overlay, whose Abort had the focus: removing it left the focus nowhere. Not modal, so
-  // the CAPTCHA underneath stays in reach, and focus the user put on the page stays there.
-  if (!document.activeElement || document.activeElement === document.body) {
-    overlay.querySelector<HTMLElement>(".tg-overlay__card")!.focus({ preventScroll: true });
-  }
+  // Not modal, so the CAPTCHA underneath stays in reach, and focus the user put on the page stays there.
+  queueMicrotask(() => {
+    if (!document.activeElement || document.activeElement === document.body) {
+      overlay.querySelector<HTMLElement>(".tg-overlay__card")?.focus({ preventScroll: true });
+    }
+  });
   wireAbort(overlay);
   const resumeBtn = overlay.querySelector<HTMLButtonElement>("[data-action=resume]")!;
   resumeBtn.addEventListener("click", () => {
     resumeBtn.disabled = true;
     resumeBtn.textContent = t("resuming");
-    void send("RESUME_MAKERWORLD_JOB");
+    void send("RESUME_MAKERWORLD_JOB", {});
   });
+  return overlay;
 }
 
 export type ScanOverlay = { update(count: number, total?: number | null): void; remove(): void };

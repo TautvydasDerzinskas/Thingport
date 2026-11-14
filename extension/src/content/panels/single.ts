@@ -5,7 +5,7 @@
 
 import { t } from "../../shared/i18n";
 import type { FillGapsResult, ImportStatus, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
-import { IMPORT_PAUSED, request } from "../../shared/messages";
+import { IMPORT_PAUSED, request, type ResolvedDownload } from "../../shared/messages";
 import { ctx } from "../context";
 import {
   isMakerworldBlockingError,
@@ -13,6 +13,7 @@ import {
   resolveMakerworldProfileDownload,
 } from "../../providers/makerworld/downloadResolver";
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
+import { withMakerworldPuzzle } from "../../providers/makerworld/puzzle";
 import { CONTENT_MODULES, type ProfileScope, type ScriptState } from "../../providers/content";
 import { missingOf, profileUrl, withoutHeld, type MissingProfiles } from "../profiles";
 import { api, escapeHtml, importKey, isImporting, sleep, whileImporting } from "../runtime";
@@ -417,12 +418,15 @@ async function importChosen(
   }
   const { instanceUrl, classification, title } = ctx();
   const url = selectedProfileUrl();
-  renderFunStatus(importingPhrases(classification.provider));
+  const importing = () => renderFunStatus(importingPhrases(classification.provider));
+  importing();
   const collectionId = await collectionIdFor(choice);
   try {
     const resolved =
       classification.provider === MANIFESTS.makerworld.id && classification.kind === "single"
-        ? await resolveMakerworldDownloadUrl(url).catch(nullUnlessBlocking)
+        ? await withPuzzle(() => resolveMakerworldDownloadUrl(url, { puzzles: true }), importing).catch(
+            nullUnlessBlocking,
+          )
         : null;
     // One message so import and collection filing finish even if the page is gone.
     const print = await request("IMPORT_SINGLE", { url, entries: opts?.entries, collectionId, resolved, title });
@@ -492,6 +496,18 @@ function renderBlockedError(err: unknown, scope: ProfileScope, collectionId: str
   onPanelAction("queue", () => void runQueueImport(scope, collectionId));
 }
 
+/** MakerWorld's own puzzle where it wants one solved, the panel saying so meanwhile: the import goes on with the file
+ *  once it's solved, and stops on the CAPTCHA as before where it's closed. `resume` puts the panel's progress back. */
+function withPuzzle(
+  resolve: () => Promise<ResolvedDownload | null>,
+  resume: () => void,
+): Promise<ResolvedDownload | null> {
+  return withMakerworldPuzzle(resolve, {
+    onOpen: () => renderPanel(statusHtml(t("solvePuzzleToCarryOn"))),
+    onSolved: resume,
+  });
+}
+
 /** Null lets the backend resolve it; a CAPTCHA or the download limit would stop it too. */
 function nullUnlessBlocking(err: unknown): null {
   if (isMakerworldBlockingError(err)) throw err;
@@ -544,7 +560,10 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
     // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
     try {
       const resolved = makerworld
-        ? await resolveMakerworldProfileDownload(url, instanceId).catch(nullUnlessBlocking)
+        ? await withPuzzle(
+            () => resolveMakerworldProfileDownload(url, instanceId, { puzzles: true }),
+            () => renderPanel(progress),
+          ).catch(nullUnlessBlocking)
         : null;
       const print = await request("IMPORT_SINGLE", {
         // Named even where it's the page's own: a MakerWorld link naming none means the default profile to the

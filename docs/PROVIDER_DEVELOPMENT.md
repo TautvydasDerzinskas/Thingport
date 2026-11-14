@@ -199,7 +199,10 @@ Rules of thumb:
   `normalizeFolder` (`utils/fileFolder.ts`), and the folders every file of a model shares are dropped. A file's name is
   then unique within its folder, not the model.
 - **MakerWorld** imports through the shared link import in `services/importService.ts`, which every page link of no
-  provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
+  provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`). Grab
+  clears one on the page for an import started there: the refusal (HTTP 418) names a Geetest `captchaId`, which the
+  site's own `window.onRetry` shows, putting the answer in a header to send the refused request again with
+  (`extension/src/providers/makerworld/puzzle.ts`). It also paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw
   files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab offers them converted for other slicers
   (`adapted3mfs`); the app reads what kind of 3MF each file is itself.

@@ -1,5 +1,5 @@
-// Full-page covers (see overlays.ts): the guided MakerWorld import's progress and the collection
-// scan.
+// Full-page covers (see overlays.ts): the guided MakerWorld import's progress, MakerWorld's puzzle when it wants one
+// solved, and the collection scan.
 @use "../../styles/tokens" as t;
 @use "../../styles/mixins" as m;
 
@@ -59,6 +59,93 @@
   &--docked {
     inset: auto 16px 16px auto;
     background: none;
+  }
+
+  &__tick {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    margin-right: t.$space-1;
+    border-radius: 50%;
+    background: t.c("accent");
+    color: t.c("on-accent");
+    font-size: 12px;
+    vertical-align: -3px;
+    animation: tg-tick-in 0.3s ease-out;
+  }
+}
+
+// MakerWorld's own puzzle shows over the dimmed page, a z-index above it; the run's card sits beside it and points at
+// it (see mountPausedJobOverlay), placed from the puzzle's box.
+.tg-spotlight {
+  position: absolute;
+  left: 50%;
+  flex-direction: row;
+  gap: t.$space-3;
+  width: 420px;
+  padding: t.$space-3 t.$space-4;
+  text-align: left;
+  transform: translateX(-50%);
+  animation: tg-spotlight-in 0.2s ease-out;
+
+  .tg-overlay__icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tg-btn {
+    flex: none;
+    width: auto;
+    margin-top: 0;
+    padding: 7px 14px;
+  }
+
+  &__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__arrow {
+    position: absolute;
+    bottom: -7px;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    background: t.c("surface-raised");
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  &--below &__arrow {
+    top: -7px;
+    bottom: auto;
+  }
+}
+
+@keyframes tg-spotlight-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+
+@keyframes tg-tick-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-spotlight,
+  .tg-overlay__tick {
+    animation: none;
   }
 }
 
