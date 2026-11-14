@@ -140,3 +140,9 @@ export function htmlToMarkdown(html: string): string | null {
   turndown ??= createTurndown();
   return tidy(turndown.turndown(html));
 }
+
+/** A description from a site that gives HTML for some models and plain text for others: the HTML converted, the plain
+ *  text kept as it is, line breaks and all. */
+export function markdownFromDescription(text: string): string | null {
+  return /<[a-z!/]/i.test(text) ? htmlToMarkdown(text) : tidy(text.replace(/\r\n?/g, "\n"));
+}

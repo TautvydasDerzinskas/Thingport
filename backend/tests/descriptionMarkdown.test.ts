@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { htmlToMarkdown } from "../src/services/descriptionMarkdown";
+import { htmlToMarkdown, markdownFromDescription } from "../src/services/descriptionMarkdown";
 import { cleanThingiverseMarkdown } from "../src/providers/thingiverse/markdown";
+
+describe("markdownFromDescription", () => {
+  it("converts a description that's HTML, and keeps one that's plain text as it is, line breaks and all", () => {
+    expect(markdownFromDescription("<p>Print <strong>flat</strong>.</p><p>No supports.</p>")).toBe(
+      "Print **flat**.\n\nNo supports.",
+    );
+    expect(markdownFromDescription("Print flat.\r\nNo supports.\n\n\n\nEnjoy  ")).toBe(
+      "Print flat.\nNo supports.\n\nEnjoy",
+    );
+  });
+});
 
 describe("htmlToMarkdown", () => {
   it("keeps headings, emphasis, lists and step images from a MakerWorld summary", () => {

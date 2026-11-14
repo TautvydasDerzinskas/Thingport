@@ -176,6 +176,15 @@ describe("QIDI Maker specifics", () => {
     expect(await ctx.prints()).toHaveLength(0);
   });
 
+  it("keeps the site's HTML description as Markdown", async () => {
+    ctx.stub("ok");
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    expect(print.notes).toContain("## Compatibility");
+    expect(print.notes).toContain("**Standard (56 mm - 65 mm Inner Spool Width) v2**");
+    expect(print.notes).not.toMatch(/<\/?(p|h2|strong|br)\b/);
+  });
+
   it("imports the profile a link names, someone else's too", async () => {
     ctx.stub("ok");
     expectStatus(await ctx.importUrl(`${MODEL_URL}?profile_id=${COMMUNITY}`), 200);

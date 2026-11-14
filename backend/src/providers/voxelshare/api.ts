@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { credentialRequest } from "../credentialRequest";
 import { IMPORT_BROWSER_USER_AGENT, IMPORT_TIMEOUT_SECONDS } from "../../config";
-import { htmlToMarkdown } from "../../services/descriptionMarkdown";
+import { htmlToMarkdown, markdownFromDescription } from "../../services/descriptionMarkdown";
 import type { ImportedAuthorInfo, ImportedPageMetadata } from "../../services/importResolvers";
 import type { ProviderCollectionCard } from "../../services/providerCollectionCard";
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
@@ -297,13 +297,15 @@ function escapeHtml(text: string): string {
 /** The model's description as Markdown, with where it was first published after it when VoxelShare copied it from
  *  elsewhere. The site keeps it as HTML. */
 function descriptionOf(detail: Record<string, unknown>): string | null {
-  const description = str(detail.content) ?? str(detail.originalContent) ?? "";
+  const content = str(detail.content) ?? str(detail.originalContent);
   const origin = voxelshareOriginOf(detail);
   const credit = origin
-    ? `<p>Originally published on ${escapeHtml(origin.site)}: ` +
-      `<a href="${escapeHtml(origin.url)}">${escapeHtml(origin.url)}</a></p>`
-    : "";
-  return htmlToMarkdown(`${description}\n${credit}`);
+    ? htmlToMarkdown(
+        `<p>Originally published on ${escapeHtml(origin.site)}: ` +
+          `<a href="${escapeHtml(origin.url)}">${escapeHtml(origin.url)}</a></p>`,
+      )
+    : null;
+  return [content && markdownFromDescription(content), credit].filter(Boolean).join("\n\n") || null;
 }
 
 // Flashforge's printer list, on the same API as the site's, which takes its sign-in: what Flash Studio asks for, as
