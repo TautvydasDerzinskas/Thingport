@@ -57,6 +57,12 @@ $palette-light: (
   "backdrop": rgba(0, 0, 0, 0.5),
   "backdrop-strong": rgba(0, 0, 0, 0.75),
   "shadow": rgba(0, 0, 0, 0.25),
+  // The footer's heart, and the two ways to support Thingport in their own colours.
+  "love": #e5484d,
+  "coffee": #ffdd00,
+  "on-coffee": #0d0c22,
+  "coffee-icon": #ffffff,
+  "sponsors": #db61a2,
 );
 
 // Thingport's dark theme (frontend/src/theme.ts): navy panels on a deeper navy page.
@@ -77,6 +83,8 @@ $palette-dark: map.merge(
     "danger-soft": rgba(239, 107, 107, 0.12),
     "switch-off": #434b6b,
     "shadow": rgba(5, 8, 20, 0.6),
+    "love": #ff6b70,
+    "sponsors": #ea7ab8,
   )
 );
 

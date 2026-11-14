@@ -17,6 +17,7 @@ import { clearError, els, opensInTab, showError } from "./dom";
 import { loadRecentImports } from "./recentImports";
 import { loadRecentlyViewed } from "./recentlyViewed";
 import { loadSites } from "./sites";
+import "./support";
 import "./styles/popup.scss";
 
 // When opened as a tab from a page's setup dialog, return there once saved.

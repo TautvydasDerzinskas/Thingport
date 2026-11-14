@@ -191,8 +191,11 @@ body {
     margin-bottom: t.$space-2;
   }
 
+  // Lines of a fixed height here and in the footer and tabs: a CJK fallback font's taller ones would push the tiles
+  // past the popup's height.
   &__count {
     font-size: t.$font-size-xs;
+    line-height: 1.2;
     color: t.c("text-muted");
   }
 
@@ -203,6 +206,7 @@ body {
     gap: 6px;
     margin: 10px 0 0;
     font-size: t.$font-size-xs;
+    line-height: 1.2;
     color: t.c("text-muted");
   }
 
@@ -227,6 +231,7 @@ body {
   &__legend-link {
     flex-shrink: 0;
     font-size: t.$font-size-xs;
+    line-height: 1.2;
 
     &::after {
       content: " ›";
@@ -602,15 +607,16 @@ body {
   }
 }
 
+// thingport.net, then the way to the ways to support it, and the version on the right.
 .footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: t.$space-2;
   margin-top: t.$space-3;
   padding-top: t.$space-2;
   border-top: 1px solid t.c("border");
   font-size: t.$font-size-xs;
+  line-height: 1.2;
   color: t.c("text-muted");
 
   &__link {
@@ -621,5 +627,66 @@ body {
       color: t.c("text");
       text-decoration: underline;
     }
+  }
+
+  &__sep {
+    color: t.c("border");
+  }
+
+  &__love {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    @include m.focus-ring;
+
+    svg {
+      flex-shrink: 0;
+      width: 11px;
+      height: 11px;
+      color: t.c("love");
+      transition: transform 0.15s ease;
+    }
+
+    span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: t.c("text");
+
+      span {
+        text-decoration: underline;
+      }
+
+      svg {
+        transform: scale(1.15);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      svg {
+        transition: none;
+      }
+
+      &:hover svg,
+      &:focus-visible svg {
+        transform: none;
+      }
+    }
+  }
+
+  &__version {
+    flex-shrink: 0;
+    margin-left: auto;
   }
 }

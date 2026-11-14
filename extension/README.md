@@ -275,6 +275,9 @@ your browser's extension settings.
 Opened on a page of a site Grab runs on, the popup leads with that site's card: its logo, a couple of sentences on
 what the site is, and its tick.
 
+The footer's **Like the extension? Show your love!** opens the ways to support Thingport: Buy Me a Coffee and GitHub
+Sponsors, each in a new tab.
+
 Opening MyMiniFactory while signed in also connects your MyMiniFactory account to Thingport, so the models you
 bought, and free ones that only download when signed in, import from your library. On a paid model you haven't
 bought, the panel says so instead of offering an import.

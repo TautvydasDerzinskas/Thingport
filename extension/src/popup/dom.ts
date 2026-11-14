@@ -12,6 +12,13 @@ export const els = {
   editInstanceBtn: byId<HTMLButtonElement>("edit-instance-btn"),
   disconnectBtn: byId<HTMLButtonElement>("disconnect-btn"),
   confirmDialog: byId<HTMLDialogElement>("confirm-dialog"),
+  // The footer's link to the ways to support Thingport, and the dialog it opens.
+  loveBtn: byId<HTMLButtonElement>("love-btn"),
+  loveDialog: byId<HTMLDialogElement>("love-dialog"),
+  loveClose: byId<HTMLButtonElement>("love-close"),
+  loveLater: byId<HTMLButtonElement>("love-later"),
+  loveCoffee: byId<HTMLAnchorElement>("love-coffee"),
+  loveSponsors: byId<HTMLAnchorElement>("love-sponsors"),
   confirmTitle: byId("confirm-title"),
   confirmText: byId("confirm-text"),
   confirmCancel: byId<HTMLButtonElement>("confirm-cancel"),
