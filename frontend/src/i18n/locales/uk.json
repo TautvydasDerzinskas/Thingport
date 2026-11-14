@@ -7575,20 +7575,32 @@
           "Або вручну: увійдіть на space.snapmaker.com і відкрийте інструменти розробника браузера (F12).",
           "У розділі Application (Chrome, Edge) або Storage (Firefox) → Cookies → space.snapmaker.com скопіюйте значення login_access_token та вставте його нижче. Вручну він діє день."
         ],
-        "placeholder": "Значення login_access_token або весь заголовок Cookie"
+        "placeholder": "Значення login_access_token або весь заголовок Cookie",
+        "cn": {
+          "steps": [
+            "Найпростіше: увійдіть на space.snapmaker.cn і відкрийте його з Thingport Grab. Він підключить обліковий запис і оновлюватиме дані входу, адже вхід Snapmaker діє лише день.",
+            "Або вручну: увійдіть на space.snapmaker.cn і відкрийте інструменти розробника браузера (F12).",
+            "У розділі Application (Chrome, Edge) або Storage (Firefox) → Cookies → space.snapmaker.cn скопіюйте значення login_access_token та вставте його нижче. Вручну він діє день."
+          ],
+          "placeholder": "Значення login_access_token або весь заголовок Cookie"
+        }
       },
       "status": {
         "notConnected": "Snapmaker віддає файли лише користувачам, які ввійшли в обліковий запис. Підключіть його, щоб імпортувати моделі, вподобання та закладки.",
         "expired": "Строк дії входу завершився. Відкрийте space.snapmaker.com із Thingport Grab або знову підключіть Snapmaker Space в Налаштування → Провайдери.",
         "expiredStatus": "Строк дії входу завершився",
-        "disabledReason": "Snapmaker Space: підключіть обліковий запис у Налаштування → Провайдери"
+        "disabledReason": "Snapmaker Space: підключіть обліковий запис у Налаштування → Провайдери",
+        "cn": {
+          "expired": "Строк дії входу на китайський сайт завершився. Увійдіть на space.snapmaker.cn із Thingport Grab або знову підключіть китайський сайт Snapmaker Space у Налаштування → Провайдери.",
+          "expiredStatus": "Вхід на китайський сайт завершився"
+        }
       },
       "about": {
         "summary": "Платформа моделей Snapmaker, побудована навколо його принтера U1. Рекомендовані моделі тестують друком, а їхні профілі налаштовано для багатоколірного друку.",
         "signIn": "Ваш вхід в обліковий запис. Він діє день.",
         "grab": "Лише він продовжує дію входу. Без нього доведеться вставляти новий щодня.",
         "setup": [
-          "Установіть Thingport Grab, увімкніть його для Snapmaker Space та відкрийте space.snapmaker.com, увійшовши в обліковий запис.",
+          "Установіть Thingport Grab, увімкніть його для Snapmaker Space та відкрийте space.snapmaker.com, увійшовши в обліковий запис (для китайського облікового запису — space.snapmaker.cn).",
           "Поки браузер відкрито, Grab оновлюватиме дані входу.",
           "Вручну: вставте cookie login_access_token у Налаштування → Провайдери. Він діє день."
         ]

@@ -1,0 +1,325 @@
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "id": "3335",
+    "title": "小火车",
+    "description": "<p>一列<strong>小火车</strong>。</p>",
+    "coverUrl": "https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/model-0.jpg",
+    "images": [
+      "https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/model-1.gif",
+      "https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/model-2.jpg"
+    ],
+    "tags": ["火车"],
+    "categoryId": 170,
+    "categoryNameKey": "拼装玩具",
+    "categoryTree": {
+      "id": 1,
+      "parentId": null,
+      "nameKey": "场景分类",
+      "children": [
+        {
+          "id": 112,
+          "parentId": 1,
+          "nameKey": "玩具与游戏",
+          "children": [
+            {
+              "id": 170,
+              "parentId": 112,
+              "nameKey": "拼装玩具",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "licenseId": 6,
+    "copyright": {
+      "id": 6,
+      "name": "CC BY-NC-ND 4.0",
+      "nameKey": "cc-by-nc-nd",
+      "desc": "本作品依据 <a href=\"https://creativecommons.org/licenses/by-nc-nd/4.0/\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>CC BY-NC-ND</strong></a> 许可。",
+      "iconUrl": "https://cdn-model.snapmaker.com/snapmaker/license/cc-by-nc-nd.svg",
+      "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/"
+    },
+    "status": 30,
+    "fileUrl": null,
+    "fileName": "",
+    "fileStructure": {
+      "folders": [],
+      "rootFiles": []
+    },
+    "likeCount": 1,
+    "downloadCount": 1,
+    "collectCount": 1,
+    "creatorId": "9990001",
+    "creatorName": "Maker 1",
+    "creatorAvatar": "https://cdn-model.snapmaker.cn/snapmaker/avatar/9990001/avatar.jpg",
+    "isPublic": true,
+    "isNsfw": false,
+    "translatedTitle": "小火车",
+    "translatedDescription": "<p>一列<strong>小火车</strong>。</p>",
+    "translatedTags": ["火车"],
+    "tagsTranslationStatus": null,
+    "translatedLang": "zh",
+    "originalLanguage": "und",
+    "translationStatus": 30,
+    "isAutoTranslated": false,
+    "isOfficialPick": true,
+    "badges": ["official_pick"],
+    "printProfiles": [
+      {
+        "id": "5001",
+        "title": "火车_1_Snapmaker_U1",
+        "fileUrl": "https://cdn-model-private.snapmaker.cn/snapmaker/model-file/20261110/9990001/train-1.3mf",
+        "gcodeUrl": "https://cdn-model-private.snapmaker.cn/cloud-slice-prod-oss/results/9000/9000.gcode.3mf",
+        "fileName": "train-1.3mf",
+        "fileSize": 7852508,
+        "pictures": ["https://cdn-model.snapmaker.cn/snapmaker/profile/20261110/9990001/profile-0.jpg"],
+        "description": "",
+        "nozzle": [0.4, 0.4, 0.4, 0.4],
+        "weight": 70.9,
+        "secs": 9905,
+        "filaments": [
+          {
+            "type": "PLA",
+            "color": "#0000A0",
+            "used_g": 34.71,
+            "used_mm": 10932.81
+          },
+          {
+            "type": "PLA",
+            "color": "#FF0000",
+            "used_g": 19.3,
+            "used_mm": 6080.34
+          },
+          {
+            "type": "PLA",
+            "color": "#DBDB00",
+            "used_g": 12,
+            "used_mm": 3780.31
+          },
+          {
+            "type": "PLA",
+            "color": "#FFFFFF",
+            "used_g": 4.88,
+            "used_mm": 1536.12
+          }
+        ],
+        "partitions": [
+          {
+            "id": 1,
+            "name": "Plate 1",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/plate-1.png"],
+            "secs": 5141,
+            "weight": 34.71,
+            "filaments": [
+              {
+                "id": 2,
+                "type": "PLA",
+                "color": "#0000A0",
+                "used_g": 34.71,
+                "used_mm": 10932.81
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "Plate 2",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/plate-2.png"],
+            "secs": 2604,
+            "weight": 19.3,
+            "filaments": [
+              {
+                "id": 1,
+                "type": "PLA",
+                "color": "#FF0000",
+                "used_g": 19.3,
+                "used_mm": 6080.34
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "name": "Plate 3",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/plate-3.png"],
+            "secs": 1400,
+            "weight": 12,
+            "filaments": [
+              {
+                "id": 4,
+                "type": "PLA",
+                "color": "#DBDB00",
+                "used_g": 12,
+                "used_mm": 3780.31
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "name": "Plate 4",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261110/9990001/plate-4.png"],
+            "secs": 760,
+            "weight": 4.88,
+            "filaments": [
+              {
+                "id": 3,
+                "type": "PLA",
+                "color": "#FFFFFF",
+                "used_g": 4.88,
+                "used_mm": 1536.12
+              }
+            ]
+          }
+        ],
+        "status": 30,
+        "isPublic": true,
+        "isNsfw": false,
+        "creatorId": "9990001",
+        "creatorName": "Maker 1",
+        "creatorAvatar": null,
+        "downloadCount": 1,
+        "createdAt": "2026-11-10T15:03:54.443Z",
+        "printCount": 1,
+        "translatedTitle": "火车_1_Snapmaker_U1",
+        "translatedDescription": "",
+        "translatedTags": null,
+        "tagsTranslationStatus": null,
+        "translatedLang": "zh",
+        "originalLanguage": "und",
+        "translationStatus": 20,
+        "isAutoTranslated": true
+      },
+      {
+        "id": "5002",
+        "title": "火车_2_Snapmaker_U1",
+        "fileUrl": "https://cdn-model-private.snapmaker.cn/snapmaker/model-file/20261110/9990001/train-2.3mf",
+        "gcodeUrl": "https://cdn-model-private.snapmaker.cn/cloud-slice-prod-oss/results/9001/9001.gcode.3mf",
+        "fileName": "train-2.3mf",
+        "fileSize": 5167443,
+        "pictures": ["https://cdn-model.snapmaker.cn/snapmaker/profile/20261110/9990001/profile-0.jpg"],
+        "description": "",
+        "nozzle": [0.4, 0.4, 0.4, 0.4],
+        "weight": 94.74,
+        "secs": 12741,
+        "filaments": [
+          {
+            "type": "PLA",
+            "color": "#FFFFFF",
+            "used_g": 19.24,
+            "used_mm": 6058.8
+          },
+          {
+            "type": "PLA",
+            "color": "#0000A0",
+            "used_g": 41.14,
+            "used_mm": 12956.39
+          },
+          {
+            "type": "PLA",
+            "color": "#FF0000",
+            "used_g": 28.11,
+            "used_mm": 8854.75
+          },
+          {
+            "type": "PLA",
+            "color": "#D0D000",
+            "used_g": 6.25,
+            "used_mm": 1969.19
+          }
+        ],
+        "partitions": [
+          {
+            "id": 1,
+            "name": "Plate 1",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261111/9990001/plate-5.png"],
+            "secs": 2624,
+            "weight": 19.24,
+            "filaments": [
+              {
+                "id": 3,
+                "type": "PLA",
+                "color": "#FFFFFF",
+                "used_g": 19.24,
+                "used_mm": 6058.8
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "Plate 2",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261111/9990001/plate-6.png"],
+            "secs": 5571,
+            "weight": 41.14,
+            "filaments": [
+              {
+                "id": 2,
+                "type": "PLA",
+                "color": "#0000A0",
+                "used_g": 41.14,
+                "used_mm": 12956.39
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "name": "Plate 3",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261111/9990001/plate-7.png"],
+            "secs": 3950,
+            "weight": 28.11,
+            "filaments": [
+              {
+                "id": 1,
+                "type": "PLA",
+                "color": "#FF0000",
+                "used_g": 28.11,
+                "used_mm": 8854.75
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "name": "Plate 4",
+            "pics": ["https://cdn-model.snapmaker.cn/snapmaker/model/20261111/9990001/plate-8.png"],
+            "secs": 596,
+            "weight": 6.25,
+            "filaments": [
+              {
+                "id": 4,
+                "type": "PLA",
+                "color": "#D0D000",
+                "used_g": 6.25,
+                "used_mm": 1969.19
+              }
+            ]
+          }
+        ],
+        "status": 30,
+        "isPublic": true,
+        "isNsfw": false,
+        "creatorId": "9990002",
+        "creatorName": "Maker 2",
+        "creatorAvatar": null,
+        "downloadCount": 1,
+        "createdAt": "2026-11-11T12:00:43.485Z",
+        "printCount": 1,
+        "translatedTitle": "火车_2_Snapmaker_U1",
+        "translatedDescription": "",
+        "translatedTags": null,
+        "tagsTranslationStatus": null,
+        "translatedLang": "zh",
+        "originalLanguage": "und",
+        "translationStatus": 30,
+        "isAutoTranslated": false
+      }
+    ],
+    "modelPrintCount": 1,
+    "documents": [],
+    "remixType": 0,
+    "derivationSources": [],
+    "remixSources": [],
+    "publishedAt": "2026-11-11T03:19:45.042Z",
+    "createdAt": "2026-11-10T15:03:54.443Z",
+    "updatedAt": "2026-11-11T08:19:02.674Z"
+  }
+}

@@ -37,4 +37,15 @@ describe("a Snapmaker Space download link", () => {
     expect(onSite("https://example.com/a.3mf")).toBeNull();
     expect(onSite("not a link")).toBeNull();
   });
+
+  it("is fetched on the China site's own pages, or from its file store, which lets them read it", () => {
+    expect(onSite("https://models.snapmaker.cn/models/download/a/b.3mf?sign=1", "cn")).toBe(
+      "https://space.snapmaker.cn/models/download/a/b.3mf?sign=1",
+    );
+    const stored = "https://cdn-model-private.snapmaker.cn/snapmaker/model-file/a.3mf?Expires=1&Signature=x";
+    expect(onSite(stored, "cn")).toBe(stored);
+    // Each site's links only on its own pages.
+    expect(onSite(stored)).toBeNull();
+    expect(onSite("https://models.snapmaker.com/models/download/a.3mf", "cn")).toBeNull();
+  });
 });

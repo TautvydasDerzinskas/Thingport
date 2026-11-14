@@ -7311,20 +7311,32 @@
           "Ou manuellement : connectez-vous à space.snapmaker.com et ouvrez les outils de développement de votre navigateur (F12).",
           "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → space.snapmaker.com, copiez la valeur de login_access_token et collez-la ci-dessous. Collée à la main, elle reste valable un jour."
         ],
-        "placeholder": "Valeur de login_access_token, ou l’en-tête Cookie complet"
+        "placeholder": "Valeur de login_access_token, ou l’en-tête Cookie complet",
+        "cn": {
+          "steps": [
+            "Le plus simple : avec Thingport Grab, il suffit d’ouvrir space.snapmaker.cn en étant connecté. Votre compte est relié et la connexion reste à jour, car celle de Snapmaker ne dure qu’un jour.",
+            "Ou manuellement : connectez-vous à space.snapmaker.cn et ouvrez les outils de développement de votre navigateur (F12).",
+            "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → space.snapmaker.cn, copiez la valeur de login_access_token et collez-la ci-dessous. Collée à la main, elle reste valable un jour."
+          ],
+          "placeholder": "Valeur de login_access_token, ou l’en-tête Cookie complet"
+        }
       },
       "status": {
         "notConnected": "Snapmaker ne remet ses fichiers qu’aux utilisateurs connectés. Reliez votre compte pour importer ses modèles, ainsi que vos « J’aime » et favoris.",
         "expired": "La connexion a expiré. Visitez space.snapmaker.com avec Thingport Grab, ou reconnectez Snapmaker Space dans Configuration → Fournisseurs.",
         "expiredStatus": "Connexion expirée",
-        "disabledReason": "Snapmaker Space : connectez votre compte dans Configuration → Fournisseurs"
+        "disabledReason": "Snapmaker Space : connectez votre compte dans Configuration → Fournisseurs",
+        "cn": {
+          "expired": "La connexion au site chinois a expiré. Connectez-vous à space.snapmaker.cn avec Thingport Grab, ou reconnectez le site chinois de Snapmaker Space dans Configuration → Fournisseurs.",
+          "expiredStatus": "Connexion au site chinois expirée"
+        }
       },
       "about": {
         "summary": "La plateforme de modèles de Snapmaker, conçue autour de son imprimante U1. Les modèles mis en avant sont testés à l’impression, avec des profils optimisés pour l’impression multicolore.",
         "signIn": "Votre propre connexion. Elle dure un jour.",
         "grab": "Le seul moyen de renouveler la connexion. Sans lui, vous en collez une nouvelle chaque jour.",
         "setup": [
-          "Installez Thingport Grab, activez-le sur Snapmaker Space et ouvrez space.snapmaker.com en étant connecté.",
+          "Installez Thingport Grab, activez-le sur Snapmaker Space et ouvrez space.snapmaker.com en étant connecté (space.snapmaker.cn pour un compte chinois).",
           "Grab garde ensuite la connexion à jour tant que votre navigateur est ouvert.",
           "Manuellement : collez le cookie login_access_token dans Configuration → Fournisseurs. Il dure un jour."
         ]

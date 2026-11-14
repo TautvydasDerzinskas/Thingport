@@ -242,7 +242,7 @@ export const cults3dLists: ProviderLists = {
 /** Read only with the user's own API key: one turned down stops only their models. */
 export const cults3dDetails: ProviderDetails = {
   async read(userId, slug) {
-    const credentials = await cults3dImport.requireAuth(userId);
+    const credentials = await cults3dImport.requireAuth(userId, slug);
     try {
       return detailsOf(await resolveCults3dModel(slug, credentials));
     } catch (err) {

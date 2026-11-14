@@ -1308,7 +1308,7 @@ async function importSourced(
   body: ImportRequestBody,
   impl: SourcedImport,
 ): Promise<ImportResult> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, linked.externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(linked.externalId, auth);
@@ -1364,7 +1364,7 @@ async function addSourcedProfile(
   }
   const userId = existing.print.userId;
   const externalId = existing.print.sourceExternalId!;
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let profile: NewPlateInput | null;
   let model: ResolvedModel | null = resolved;
   try {
@@ -1551,7 +1551,7 @@ export async function downloadSourcedModelFiles(
   externalId: string,
   impl: SourcedImport,
 ): Promise<DownloadedModelFiles> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(externalId, auth);

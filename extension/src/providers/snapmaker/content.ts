@@ -1,22 +1,27 @@
-// Snapmaker Space's own model data, as its pages read it: which print profiles a model has, and whose they are.
+// Snapmaker Space's own model data, as its pages read it: which print profiles a model has, and whose they are. Its
+// China site's pages read its own API.
 
 import { request } from "../../shared/messages";
 import { parseSnapmakerModelUrl } from "./urls.generated";
-import { MANIFESTS } from "../index.generated";
+import { MANIFESTS, type RegionId } from "../index.generated";
 
 export type SnapmakerProfileScope = "url" | "designer" | "all";
 
 type Profile = { id: string; creatorId: string | null };
 type Model = { creatorId: string | null; profiles: Profile[] };
 
-const API = MANIFESTS.snapmaker.endpoints.api;
+/** A site's API: null its main one. */
+export const snapmakerApi = (region: RegionId | null) =>
+  region ? MANIFESTS.snapmaker.regions[0].endpoints.api : MANIFESTS.snapmaker.endpoints.api;
 
 const asId = (value: unknown) => (value == null ? null : String(value));
 
 /** The model's print profiles, from the same public API the page calls. Null when it can't be read. */
-async function loadModel(modelId: string): Promise<Model | null> {
+async function loadModel(modelId: string, region: RegionId | null): Promise<Model | null> {
   try {
-    const res = await fetch(`${API}/model/detail/${encodeURIComponent(modelId)}`, { credentials: "omit" });
+    const res = await fetch(`${snapmakerApi(region)}/model/detail/${encodeURIComponent(modelId)}`, {
+      credentials: "omit",
+    });
     const body = (await res.json()) as { code?: number; data?: Record<string, unknown> };
     if (body.code !== 200 || !body.data) return null;
     const profiles = Array.isArray(body.data.printProfiles)
@@ -44,13 +49,13 @@ function profileIds(model: Model, scope: SnapmakerProfileScope, requested: strin
 /** Profile ids for each scope, for the panel's picker and its import. Null when the model can't be read. */
 export async function loadSnapmakerProfiles(url: string): Promise<((scope: SnapmakerProfileScope) => string[]) | null> {
   const parsed = parseSnapmakerModelUrl(url);
-  const model = parsed ? await loadModel(parsed.modelId) : null;
+  const model = parsed ? await loadModel(parsed.modelId, parsed.region) : null;
   if (!parsed || !model) return null;
   return (scope) => profileIds(model, scope, parsed.requestedProfileId);
 }
 
-/** Who's signed in on Snapmaker, so likes and bookmarks are only offered on their own page. */
-export async function snapmakerUserId(): Promise<string | null> {
-  const res = await request("SYNC_PROVIDER_SESSION", { provider: MANIFESTS.snapmaker.id }).catch(() => null);
+/** Who's signed in on a Snapmaker site, so likes and bookmarks are only offered on their own page. */
+export async function snapmakerUserId(region: RegionId | null = null): Promise<string | null> {
+  const res = await request("SYNC_PROVIDER_SESSION", { provider: MANIFESTS.snapmaker.id, region }).catch(() => null);
   return res?.userId ?? null;
 }

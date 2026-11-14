@@ -7298,20 +7298,32 @@
           "O manualmente: inicia sesión en space.snapmaker.com y abre las herramientas de desarrollador de tu navegador (F12).",
           "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → space.snapmaker.com, copia el valor de login_access_token y pégalo abajo. Pegado a mano, dura un día."
         ],
-        "placeholder": "Valor de login_access_token o toda la cabecera Cookie"
+        "placeholder": "Valor de login_access_token o toda la cabecera Cookie",
+        "cn": {
+          "steps": [
+            "Lo más fácil: con Thingport Grab, basta con abrir space.snapmaker.cn con la sesión iniciada. Conecta tu cuenta y mantiene el inicio de sesión actualizado, ya que el de Snapmaker dura solo un día.",
+            "O manualmente: inicia sesión en space.snapmaker.cn y abre las herramientas de desarrollador de tu navegador (F12).",
+            "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → space.snapmaker.cn, copia el valor de login_access_token y pégalo abajo. Pegado a mano, dura un día."
+          ],
+          "placeholder": "Valor de login_access_token o toda la cabecera Cookie"
+        }
       },
       "status": {
         "notConnected": "Snapmaker solo entrega sus archivos a usuarios con sesión iniciada. Conecta tu cuenta para importar sus modelos, además de tus me gusta y marcadores.",
         "expired": "El inicio de sesión ha caducado. Visita space.snapmaker.com con Thingport Grab o vuelve a conectar Snapmaker Space en Configuración → Proveedores.",
         "expiredStatus": "Inicio de sesión caducado",
-        "disabledReason": "Snapmaker Space: conecta tu cuenta en Configuración → Proveedores"
+        "disabledReason": "Snapmaker Space: conecta tu cuenta en Configuración → Proveedores",
+        "cn": {
+          "expired": "El inicio de sesión del sitio de China ha caducado. Inicia sesión en space.snapmaker.cn con Thingport Grab o vuelve a conectar el sitio de China de Snapmaker Space en Configuración → Proveedores.",
+          "expiredStatus": "Inicio de sesión de China caducado"
+        }
       },
       "about": {
         "summary": "La plataforma de modelos de Snapmaker, creada en torno a su impresora U1. Los modelos destacados se prueban impresos, con perfiles ajustados para impresiones multicolor.",
         "signIn": "Tu propio inicio de sesión. Dura un día.",
         "grab": "Lo único que renueva el inicio de sesión. Sin él, tienes que pegar uno nuevo cada día.",
         "setup": [
-          "Instala Thingport Grab, actívalo en Snapmaker Space y abre space.snapmaker.com con la sesión iniciada.",
+          "Instala Thingport Grab, actívalo en Snapmaker Space y abre space.snapmaker.com con la sesión iniciada (space.snapmaker.cn para una cuenta de China).",
           "Grab mantiene entonces el inicio de sesión al día mientras tu navegador está abierto.",
           "Manualmente: pega la cookie login_access_token en Configuración → Proveedores. Dura un día."
         ]

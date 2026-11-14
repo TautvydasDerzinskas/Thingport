@@ -129,6 +129,7 @@ describe("importPrintFromUrl -- Snapmaker Space", () => {
     global.fetch = originalFetch;
     vi.restoreAllMocks();
     await setUserSnapmakerToken(userId, null);
+    await setUserSnapmakerToken(userId, null, "cn");
     await prisma.print.deleteMany({ where: { userId, sourceProvider: "snapmaker" } });
   });
 
@@ -245,5 +246,66 @@ describe("importPrintFromUrl -- Snapmaker Space", () => {
     expect(await getUserSnapmakerToken(userId)).toBeNull();
     await setUserSnapmakerToken(userId, token());
     expect(await getUserSnapmakerToken(userId)).not.toBeNull();
+  });
+
+  describe("its China site", () => {
+    const CN_API = "https://api-models.snapmaker.cn/api";
+    const CN_URL = `https://space.snapmaker.cn/zh/model/${MODEL_ID}`;
+    const CN_3MF = "https://cdn-model-private.snapmaker.cn/snapmaker/model-file/cn.3mf?Expires=1&Signature=x";
+
+    /** The China site, whose model of the same id is another one, beside the main site's. */
+    function mockBothSites(): typeof fetch {
+      const main = mockSnapmaker();
+      return vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
+        const url = String(input);
+        if (url === `${CN_API}/model/detail/${MODEL_ID}`) {
+          return apiResponse(200, { ...detail([{ id: "601", title: "U1", creatorId: "777" }]), title: "小火车" });
+        }
+        if (url === `${CN_API}/model/download/${MODEL_ID}`) {
+          const auth = new Headers(init?.headers).get("Authorization");
+          if (auth !== "Bearer cn-token") return apiResponse(110002);
+          return apiResponse(200, {
+            modelFiles: [],
+            printProfiles: [{ profileId: "601", fileName: "train.3mf", downloadUrl: CN_3MF }],
+          });
+        }
+        if (url === CN_3MF) return new Response("cn 3mf", { status: 200 });
+        return main(input, init);
+      }) as unknown as typeof fetch;
+    }
+
+    const chinaToken = () => ({ ...token(), token: token().token.replace(/sig$/, "cn"), userId: "9990001" });
+
+    it("needs the China site's own sign-in: the main site's doesn't open it", async () => {
+      await setUserSnapmakerToken(userId, token());
+      global.fetch = mockBothSites();
+      await expect(importPrintFromUrl(userId, CN_URL, { url: CN_URL, tags: [] })).rejects.toThrow(
+        /space\.snapmaker\.cn/,
+      );
+    });
+
+    it("imports a China model under its cn- id, with the China sign-in, apart from the main site's of that id", async () => {
+      await setUserSnapmakerToken(userId, { ...chinaToken(), token: "cn-token" }, "cn");
+      await setUserSnapmakerToken(userId, token());
+      global.fetch = mockBothSites();
+      const china = await importPrintFromUrl(userId, CN_URL, { url: CN_URL, tags: [] });
+      expect(china.print.sourceExternalId).toBe(`cn-${MODEL_ID}`);
+      expect(china.print.title).toBe("小火车");
+      expect(china.plates.map((plate) => plate.sourceInstanceId)).toEqual(["601"]);
+      const main = await importPrintFromUrl(userId, MODEL_URL, { url: MODEL_URL, tags: [] });
+      expect(main.alreadyImported).toBe(false);
+      expect(main.print.id).not.toBe(china.print.id);
+    });
+
+    it("remembers a China sign-in the China site turns down, and leaves the main one be", async () => {
+      await setUserSnapmakerToken(userId, { ...chinaToken(), token: "stale-cn-token" }, "cn");
+      await setUserSnapmakerToken(userId, token());
+      global.fetch = mockBothSites();
+      await expect(importPrintFromUrl(userId, CN_URL, { url: CN_URL, tags: [] })).rejects.toThrow(
+        /didn't accept your sign-in.*space\.snapmaker\.cn/,
+      );
+      expect(await getSnapmakerConnection(userId, "cn")).toBe("expired");
+      expect(await getSnapmakerConnection(userId)).toBe("connected");
+    });
   });
 });

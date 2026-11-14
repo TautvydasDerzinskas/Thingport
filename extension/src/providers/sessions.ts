@@ -10,7 +10,7 @@ import { makeronlineSession } from "./makeronline/background";
 import { myminifactorySession } from "./myminifactory/session";
 import { nexprintSession } from "./nexprint/session";
 import { pinshapeSession } from "./pinshape/session";
-import { snapmakerSession } from "./snapmaker/session";
+import { snapmakerChinaSession, snapmakerSession } from "./snapmaker/session";
 import { thangsSession } from "./thangs/session";
 import { makerablesSession } from "./makerables/session";
 import { toymakr3dSession } from "./toymakr3d/session";
@@ -26,6 +26,7 @@ import { voxelshareChinaSession, voxelshareSession } from "./voxelshare/session"
 export const SESSION_SOURCES: Partial<Record<SessionKey, SessionSource>> = {
   myminifactory: myminifactorySession,
   snapmaker: snapmakerSession,
+  "snapmaker:cn": snapmakerChinaSession,
   makeronline: makeronlineSession,
   crealitycloud: crealitycloudSession,
   nexprint: nexprintSession,

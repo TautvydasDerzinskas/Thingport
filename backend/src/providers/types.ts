@@ -56,8 +56,9 @@ export type ImportTarget = { userId: string; externalId: string };
 
 /** A provider whose model files the server downloads, as the user it holds credentials for. */
 export type SourcedImport<Auth = unknown, Model extends ResolvedModel = ResolvedModel> = {
-  /** The user's credentials, or the HttpError (400 with the manifest's session code) that says to connect. */
-  requireAuth(userId: string): Promise<Auth>;
+  /** The user's credentials for the model `externalId` names (a region's are that site's), or the HttpError (400 with
+   *  the manifest's session code) that says to connect. */
+  requireAuth(userId: string, externalId: string): Promise<Auth>;
   resolveModel(externalId: string, auth: Auth): Promise<Model | null>;
   /** The id a model is kept under, where it isn't the one its link has (Creality Cloud's alias, for a link by id). */
   canonicalId?(model: Model): string;

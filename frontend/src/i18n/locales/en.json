@@ -6988,20 +6988,32 @@
           "Or by hand: sign in at space.snapmaker.com and open your browser's developer tools (F12).",
           "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.com, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
         ],
-        "placeholder": "login_access_token value, or the whole Cookie header"
+        "placeholder": "login_access_token value, or the whole Cookie header",
+        "cn": {
+          "steps": [
+            "Easiest: with Thingport Grab, just open space.snapmaker.cn while signed in. It connects your account and keeps the sign-in fresh, since Snapmaker's lasts only a day.",
+            "Or by hand: sign in at space.snapmaker.cn and open your browser's developer tools (F12).",
+            "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → space.snapmaker.cn, copy the value of login_access_token and paste it below. Pasted by hand, it lasts a day."
+          ],
+          "placeholder": "login_access_token value, or the whole Cookie header"
+        }
       },
       "status": {
         "notConnected": "Snapmaker gives its files to signed-in users only. Connect your account to import its models, and your likes and bookmarks.",
         "expired": "Sign-in expired. Visit space.snapmaker.com with Thingport Grab, or connect Snapmaker Space again in Configuration → Providers.",
         "expiredStatus": "Sign-in expired",
-        "disabledReason": "Snapmaker Space: connect your account in Configuration → Providers"
+        "disabledReason": "Snapmaker Space: connect your account in Configuration → Providers",
+        "cn": {
+          "expired": "China sign-in expired. Sign in on space.snapmaker.cn with Thingport Grab, or connect Snapmaker Space's China site again in Configuration → Providers.",
+          "expiredStatus": "China sign-in expired"
+        }
       },
       "about": {
         "summary": "Snapmaker's model platform, built around its U1 printer. Featured models are test-printed, with profiles tuned for multi-colour prints.",
         "signIn": "Your own sign-in. It lasts a day.",
         "grab": "The only thing that renews the sign-in. Without it, you paste a new one every day.",
         "setup": [
-          "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in.",
+          "Install Thingport Grab, enable it on Snapmaker Space and open space.snapmaker.com signed in (space.snapmaker.cn for a China account).",
           "Grab then keeps the sign-in fresh while your browser is open.",
           "By hand: paste the login_access_token cookie in Configuration → Providers. It lasts a day."
         ]

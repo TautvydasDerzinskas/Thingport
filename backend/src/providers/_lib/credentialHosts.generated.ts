@@ -25,10 +25,10 @@ export const CREDENTIAL_HOSTS = {
     exact: ["www.myminifactory.com"],
   },
   "snapmaker-api": {
-    exact: ["api-models.snapmaker.com"],
+    exact: ["api-models.snapmaker.com", "api-models.snapmaker.cn"],
   },
   "snapmaker-id": {
-    exact: ["id.snapmaker.com"],
+    exact: ["id.snapmaker.com", "id.snapmaker.cn"],
   },
   "makeronline-api": {
     exact: ["www.makeronline.com"],

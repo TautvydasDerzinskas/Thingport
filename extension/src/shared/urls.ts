@@ -1,7 +1,14 @@
 // Which provider page a URL is, for the content script and the popup. The parsing is the providers' own
 // (providers/<id>/urls.ts), the same the backend and the web app use.
 
-import { type ListKind, parseListUrl, parseModelUrl, type ProviderId, MANIFESTS } from "../providers/index.generated";
+import {
+  type ListKind,
+  parseListUrl,
+  parseModelUrl,
+  type ProviderId,
+  type RegionId,
+  MANIFESTS,
+} from "../providers/index.generated";
 import { parseSnapmakerListUrl as parseSnapmakerListLink } from "../providers/snapmaker/urls.generated";
 
 export type Provider = ProviderId;
@@ -15,10 +22,13 @@ export { hostIs } from "../providers/index.generated";
 export { snapmakerListUrl } from "../providers/snapmaker/urls.generated";
 
 /** The user's likes and bookmarks share one page, `/creator/<id>?tab=interactions`, whose address stays the same
- *  whichever is shown, so a page without `list` opens on likes, as the site does; the panel switches between them. */
-export function parseSnapmakerListUrl(url: string): { userId: string; list: SnapmakerList } | null {
+ *  whichever is shown, so a page without `list` opens on likes, as the site does; the panel switches between them.
+ *  `region`: which of its sites, each with its own user ids. */
+export function parseSnapmakerListUrl(
+  url: string,
+): { userId: string; region: RegionId | null; list: SnapmakerList } | null {
   const parsed = parseSnapmakerListLink(url);
-  return parsed && { userId: parsed.userId, list: parsed.list ?? "likes" };
+  return parsed && { userId: parsed.userId, region: parsed.region, list: parsed.list ?? "likes" };
 }
 
 /** Null keeps the icon hidden. "single" pages get a dedup check; "batch" pages always show it. */

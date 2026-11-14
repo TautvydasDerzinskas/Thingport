@@ -38,11 +38,11 @@ function wireSnapmakerListSwitch(): void {
   for (const { list } of SNAPMAKER_LISTS) {
     onPanelAction(`list-${list}`, () => {
       const current = ctx();
-      const userId = parseSnapmakerListUrl(current.url)?.userId;
-      if (!userId || (current.classification.kind === "batch" && current.classification.type === list)) return;
+      const parsed = parseSnapmakerListUrl(current.url);
+      if (!parsed || (current.classification.kind === "batch" && current.classification.type === list)) return;
       setContext({
         ...current,
-        url: snapmakerListUrl(userId, list),
+        url: snapmakerListUrl(parsed.userId, list, parsed.region),
         classification: { kind: "batch", provider: MANIFESTS.snapmaker.id, type: list },
       });
       void loadBatchEntries();

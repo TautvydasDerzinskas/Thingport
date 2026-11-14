@@ -7466,20 +7466,32 @@
           "Arba rankiniu būdu: prisijunkite prie space.snapmaker.com ir atverkite naršyklės kūrėjo įrankius (F12).",
           "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → space.snapmaker.com nukopijuokite login_access_token reikšmę ir įklijuokite ją žemiau. Įklijuotas rankiniu būdu, jis galioja parą."
         ],
-        "placeholder": "login_access_token reikšmė arba visa Cookie antraštė"
+        "placeholder": "login_access_token reikšmė arba visa Cookie antraštė",
+        "cn": {
+          "steps": [
+            "Paprasčiausia: su Thingport Grab tiesiog atverkite space.snapmaker.cn prisijungę. Jis prijungs jūsų paskyrą ir palaikys prisijungimą galiojantį, nes Snapmaker prisijungimas galioja tik parą.",
+            "Arba rankiniu būdu: prisijunkite prie space.snapmaker.cn ir atverkite naršyklės kūrėjo įrankius (F12).",
+            "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → space.snapmaker.cn nukopijuokite login_access_token reikšmę ir įklijuokite ją žemiau. Įklijuotas rankiniu būdu, jis galioja parą."
+          ],
+          "placeholder": "login_access_token reikšmė arba visa Cookie antraštė"
+        }
       },
       "status": {
         "notConnected": "Snapmaker failus duoda tik prisijungusiems naudotojams. Prijunkite paskyrą, kad galėtumėte importuoti jo modelius bei savo pamėgtus ir pažymėtus modelius.",
         "expired": "Prisijungimo galiojimas baigėsi. Atverkite space.snapmaker.com su Thingport Grab arba vėl prijunkite Snapmaker Space skiltyje Konfigūracija → Šaltiniai.",
         "expiredStatus": "Prisijungimas nebegalioja",
-        "disabledReason": "Snapmaker Space: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+        "disabledReason": "Snapmaker Space: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
+        "cn": {
+          "expired": "Kinijos svetainės prisijungimo galiojimas baigėsi. Prisijunkite space.snapmaker.cn su Thingport Grab arba vėl prijunkite Snapmaker Space Kinijos svetainę skiltyje Konfigūracija → Šaltiniai.",
+          "expiredStatus": "Kinijos prisijungimas nebegalioja"
+        }
       },
       "about": {
         "summary": "Snapmaker modelių platforma, sukurta jos U1 spausdintuvui. Rekomenduojami modeliai išbandomi spausdinant, profiliai suderinti spalvotam spausdinimui.",
         "signIn": "Jūsų prisijungimas. Jis galioja parą.",
         "grab": "Tik jis atnaujina prisijungimą. Be jo naują tektų įklijuoti kasdien.",
         "setup": [
-          "Įdiekite Thingport Grab, įjunkite jį Snapmaker Space ir atverkite space.snapmaker.com prisijungę.",
+          "Įdiekite Thingport Grab, įjunkite jį Snapmaker Space ir atverkite space.snapmaker.com prisijungę (Kinijos paskyrai – space.snapmaker.cn).",
           "Tada Grab palaiko prisijungimą galiojantį, kol naršyklė atverta.",
           "Rankiniu būdu: įklijuokite login_access_token slapuką skiltyje Konfigūracija → Šaltiniai. Jis galioja parą."
         ]
