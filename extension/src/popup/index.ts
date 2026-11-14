@@ -116,10 +116,10 @@ function displayInstanceUrl(instanceUrl: string): string {
 }
 
 let localeRevision = 0;
+/** The choice stored, which a failed save goes back to (null: follow the browser). */
+let savedLanguage: Locale | null = null;
 
-/** Shows Grab in `locale` at once, and saves the choice (null: follow the browser). */
-async function chooseLanguage(choice: Locale | null): Promise<void> {
-  localeRevision++;
+function showLanguage(choice: Locale | null): void {
   const locale = choice ?? detectLocale();
   setLocale(locale);
   document.documentElement.lang = locale;
@@ -127,8 +127,22 @@ async function chooseLanguage(choice: Locale | null): Promise<void> {
   applyTranslations();
   labelTabs(!els.configuredView.hidden);
   localizeDynamicContent();
+}
+
+/** Shown at once, and put back if it can't be saved. */
+async function chooseLanguage(choice: Locale | null): Promise<void> {
+  const revision = ++localeRevision;
+  clearError(els.appearanceError);
+  showLanguage(choice);
   const res = await send("SET_LOCALE", { locale: choice });
-  if (!res?.ok) showError(res?.error ?? t("saveFailed"), els.configuredView.hidden ? els.error : els.configuredError);
+  if (res?.ok) {
+    savedLanguage = choice;
+    return;
+  }
+  // A later pick has replaced this one already.
+  if (revision !== localeRevision) return;
+  showLanguage(savedLanguage);
+  showError(res?.error ?? t("saveFailed"), els.appearanceError);
 }
 
 setUpLanguage((choice) => void chooseLanguage(choice));
@@ -259,6 +273,7 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
     return;
   }
   if (localeAtRequest === localeRevision) {
+    savedLanguage = res.data.localeChoice;
     setLocale(res.data.locale);
     document.documentElement.lang = res.data.locale;
     renderLanguage(res.data.localeChoice);
