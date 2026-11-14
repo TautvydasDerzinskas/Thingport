@@ -20,6 +20,7 @@ Supported slicers:
 - Snapmaker Orca
 - eufyMake Studio
 - QIDI Studio
+- Flash Studio (Flashforge's Flash Studio Desktop)
 
 Switch on the ones you have installed under **Configuration → Slicer**, from the user menu: double-click a slicer, or
 right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the
@@ -34,7 +35,8 @@ Thingport and opens the file in the slicer. Download it from Thingport's **Downl
 [update it](../../bridge/README.md#update), install the new version over the old one; a notification tells you when
 there's a newer one.
 
-OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio download the link themselves. When one
+OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca, eufyMake Studio and Flash Studio download the link
+themselves. When one
 can't, for instance because it doesn't trust your instance's certificate, send it through the Bridge too: right-click
 it under **Configuration → Slicer** and switch on **Through Thingport Bridge**. Every way of opening a model in that
 slicer then goes through the Bridge, which downloads the file and hands it over. Slicers that open through the Bridge

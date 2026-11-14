@@ -1,7 +1,8 @@
 // Each slicer's mark, for the apps that show the slicers: the web app and Thingport Grab, which both take this folder
 // already. Drawn on a white tile. Bambu Studio, Anycubic and Elegoo use their makers' Simple Icons glyphs (CC0);
 // OrcaSlicer, PrusaSlicer, Cura, Creality Print, Snapmaker Orca and eufyMake Studio come from each project's own app
-// icon, without its background, and QIDI Studio's keeps its blue one. "Other" is a generic layers glyph.
+// icon, without its background, and QIDI Studio's keeps its blue one. Flash Studio's is its icon's diamond, its blue
+// gradient a flat blue. "Other" is a generic layers glyph.
 
 export type SlicerMark = { viewBox: string; paths: { d: string; fill: string }[] };
 
@@ -121,6 +122,16 @@ export const SLICER_MARKS: Readonly<Record<string, SlicerMark>> = {
       {
         fill: "#fff",
         d: "m198.3 108.9-8.8 5.1v49.6c0 2.3-1.2 4.4-3.2 5.5l-41.3 23.8v10c.1 4.8 5.2 7.9 9.5 5.7l5.4-3.1 44.9-26c2-1.2 3.2-3.3 3.2-5.6v-59.4c0-5-5.4-8.1-9.7-5.6Z",
+      },
+    ],
+  },
+  "orca-flashforge": {
+    viewBox: "0 0 200.25 200.25",
+    paths: [
+      { fill: "#000", d: "M100.125 0 0 100.125l100.125 100.125 100.125-100.125z" },
+      {
+        fill: "#00BEEA",
+        d: "M100.125 150.188v42.553l92.616-92.616-92.616-92.616v42.553L75.094 75.094v50.062l50.062-50.062v50.062z",
       },
     ],
   },

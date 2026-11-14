@@ -50,4 +50,14 @@ describe("slicerLaunchUrl", () => {
   it("opens the others by their own scheme", () => {
     expect(slicerLaunchUrl("orcaslicer", FILE)).toBe(`orcaslicer://open?file=${encodeURIComponent(FILE)}`);
   });
+
+  it("opens Flash Studio by the scheme it registers, which isn't its id, or through the Bridge by its id", () => {
+    expect(slicerLaunchUrl("orca-flashforge", FILE, "a.3mf")).toBe(
+      `orcaflashforge://open?file=${encodeURIComponent(FILE)}`,
+    );
+    expect(isBridgedSlicer("orca-flashforge")).toBe(false);
+    expect(slicerLaunchUrl("orca-flashforge", FILE, "a.3mf", ["orca-flashforge"])).toBe(
+      `thingport://open?url=${encodeURIComponent(FILE)}&slicer=orca-flashforge&filename=a.3mf`,
+    );
+  });
 });

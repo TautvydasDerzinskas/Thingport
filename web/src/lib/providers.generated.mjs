@@ -736,7 +736,7 @@ export const PROVIDER_PAGES = [
       likes: true,
       sync: true,
       profiles: true,
-      slicers: [],
+      slicers: ["Flash Studio"],
       adaptedCopies: true,
       trending: "trending",
       categories: true,

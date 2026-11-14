@@ -186,7 +186,7 @@ Rules of thumb:
   user's own sign-in, where its own open or download button is, and how its theme shows. MakerWorld's and
   Printables' and the others are in their `providers/<id>/adaptSite.ts`, and a test holds the two lists to each other.
   Where the site's files come from one app (Creality Print, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next, QIDI
-  Studio), the site gives a typical file of it (`formats`: `orcaFamilyFormat` for an app that writes OrcaSlicer's names
+  Studio, Flash Studio), the site gives a typical file of it (`formats`: `orcaFamilyFormat` for an app that writes OrcaSlicer's names
   for settings, `bambuFamilyFormat` for QIDI Studio, which keeps Bambu Studio's), so each slicer is offered a copy only where it needs one; where the page
   picks the print profile, the site says which (`selected`). MakerOnline keeps its pick only in its page's own store,
   so Grab puts a watcher there (`WATCH_MAKERONLINE_PICK`) that copies it onto the page for `selected` to read.

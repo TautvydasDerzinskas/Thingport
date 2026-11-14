@@ -13,6 +13,7 @@ export const SLICER_IDS = [
   "snapmaker-orca",
   "eufystudio3d",
   "qidistudio",
+  "orca-flashforge",
   "other",
 ] as const;
 export type SlicerId = (typeof SLICER_IDS)[number];
@@ -25,6 +26,7 @@ export const BRIDGEABLE_SLICER_IDS = [
   "elegooslicer",
   "snapmaker-orca",
   "eufystudio3d",
+  "orca-flashforge",
 ] as const satisfies readonly SlicerId[];
 
 /** `slicer` is the one a model's main button opens (the last one used), `slicers` the ones installed, `bridged` those

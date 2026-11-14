@@ -66,8 +66,8 @@ export const VOXELSHARE_ADAPT: AdaptSite = {
   get filesAre() {
     return t("adaptSite.filesAreProjects", { site: NAME, slicer: "Flash Studio" });
   },
-  // Flash Studio, Flashforge's slicer, an OrcaSlicer of its own that tags its projects as Bambu Studio's.
-  formats: [orcaFamilyFormat("BambuStudio", "02.06.00.51")],
+  // Flash Studio's, Flashforge's slicer: an OrcaSlicer 2.3.2 that tags its projects as Bambu Studio's, the tag beside.
+  formats: [orcaFamilyFormat("BambuStudio", "01.10.01.50", "2.3.2")],
 
   async files(pageUrl) {
     return (await readFiles(pageUrl)).map(({ link: _link, ...file }) => file);

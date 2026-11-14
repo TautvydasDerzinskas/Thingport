@@ -454,6 +454,14 @@ func windowsCandidates() map[string][]string {
 		},
 		"elegooslicer":   {"ElegooSlicer/elegoo-slicer.exe"},
 		"snapmaker-orca": {"Snapmaker_Orca/snapmaker-orca.exe"},
+		// Flash Studio's launcher beside Orca-Flashforge.dll. Its installer (Advanced Installer) doesn't say where it
+		// puts it, so the folders its maker and product names would make, and the one its CPack script names.
+		"orca-flashforge": {
+			"Flashforge/Flash Studio Desktop/flash studio.exe",
+			"Flashforge/Flash Studio*/flash studio.exe",
+			"Flash Studio*/flash studio.exe",
+			"Orca-Flashforge/flash studio.exe",
+		},
 		// Under LOCALAPPDATA. Not "eufyMake Studio\eufyMake Studio.exe": 1.5.26 used it, but so does
 		// eufyMake's separate app for its UV printer.
 		"eufystudio3d": {"eufyMake Studio 3D/eufymake studio.exe", "AnkerMake Studio/AnkerMake Studio.exe"},
@@ -487,6 +495,8 @@ func linuxCandidates() map[string][]string {
 		"crealityprintlink":  {"CrealityPrint", "creality-print", "io.github.crealityofficial.CrealityPrint"},
 		"elegooslicer":       {"elegoo-slicer"},
 		"snapmaker-orca":     {"snapmaker-orca", "io.github.Snapmaker.Snapmaker_Orca"},
+		// Its packaged launcher, then its binary. Its GitHub builds are AppImages, which need a config.json entry.
+		"orca-flashforge": {"flash-slicer", "FlashStudio"},
 	}
 }
 
@@ -501,6 +511,7 @@ func macCandidates() map[string][]string {
 		"crealityprintlink":  {"/Applications/Creality Print.app"},
 		"elegooslicer":       {"/Applications/ElegooSlicer.app"},
 		"snapmaker-orca":     {"/Applications/Snapmaker Orca.app"},
+		"orca-flashforge":    {"/Applications/Flash Studio.app"},
 		// Its earlier names after them. Its UV printer's app is "Anker Make Studio.app", with a space.
 		"eufystudio3d": {
 			"/Applications/eufyMake Studio 3D.app",

@@ -29,6 +29,7 @@ export default {
   auth: [{ slot: "default", scope: "user", fields: [{ name: "token", multiline: true }] }],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
+  slicers: ["orca-flashforge"],
   capabilities: {
     collections: true,
     likes: true,
