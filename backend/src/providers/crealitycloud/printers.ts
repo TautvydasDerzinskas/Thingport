@@ -11,5 +11,5 @@ export const crealitycloudPrinters = ownedPrintersOf<CrealitycloudAuth>({
     return models && brandOwnedPrinters("creality", models);
   },
   isRejection: (err) => err instanceof CrealitycloudAuthError,
-  markRejected: (userId) => markCrealitycloudSessionRejected(userId),
+  markRejected: (userId, auth) => markCrealitycloudSessionRejected(userId, auth.token),
 });

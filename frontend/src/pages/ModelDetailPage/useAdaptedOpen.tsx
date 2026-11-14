@@ -158,6 +158,8 @@ export function useAdaptedOpen(
             if (!mounted.current) return false;
             ({ status } = await adapt());
           }
+          // Left the page meanwhile, a cached copy's too: nothing is fetched or saved after that.
+          if (!mounted.current) return false;
           if (status === "failed") throw new Error("Adapting failed");
           url = target.fileUrl;
           // The adapted link serves the plate itself where no copy is needed: then it's named as the plate is.
@@ -166,8 +168,10 @@ export function useAdaptedOpen(
         const res = await fetch(printsApi.fileUrl(url));
         if (res.status === 401) throw new UnauthorizedError();
         if (!res.ok) throw new Error("Download failed");
+        const blob = await res.blob();
+        if (!mounted.current) return false;
         // Named here: the server names a copy after its plate, as the original's own download is.
-        await saveBlobToDisk(await res.blob(), filename);
+        await saveBlobToDisk(blob, filename);
         onDownloaded?.();
         return true;
       } catch (err) {

@@ -75,8 +75,9 @@ export async function setUserCrealitycloudSession(
   return Boolean(session);
 }
 
-export async function markCrealitycloudSessionRejected(userId: string): Promise<void> {
-  await rejectConnection(userId, ID);
+/** With `token`, only while it's still the one stored: Grab may have sent a new one since it was read. */
+export async function markCrealitycloudSessionRejected(userId: string, token?: string): Promise<void> {
+  await rejectConnection(userId, ID, "default", token ? ({ token } satisfies Secret) : undefined);
 }
 
 export type CrealitycloudConnection = ConnectionState;

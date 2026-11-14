@@ -141,8 +141,13 @@ export function htmlToMarkdown(html: string): string | null {
   return tidy(turndown.turndown(html));
 }
 
+// A tag a description's HTML is written with, or a comment. Not just any `<word`: plain text has `<https://…>` and
+// `<name@example.com>`, which conversion would drop as unknown tags.
+const HTML_MARKUP =
+  /<\/?(?:a|b|i|u|s|p|br|hr|em|strong|span|div|img|ul|ol|li|dl|dt|dd|h[1-6]|table|thead|tbody|tr|td|th|blockquote|pre|code|figure|figcaption|iframe|video|sup|sub|del|strike|small|font|center|section|article)\b[^<>]*>|<!--/i;
+
 /** A description from a site that gives HTML for some models and plain text for others: the HTML converted, the plain
  *  text kept as it is, line breaks and all. */
 export function markdownFromDescription(text: string): string | null {
-  return /<[a-z!/]/i.test(text) ? htmlToMarkdown(text) : tidy(text.replace(/\r\n?/g, "\n"));
+  return HTML_MARKUP.test(text) ? htmlToMarkdown(text) : tidy(text.replace(/\r\n?/g, "\n"));
 }

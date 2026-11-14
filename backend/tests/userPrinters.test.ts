@@ -4,8 +4,10 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { getCrealitycloudConnection, setUserCrealitycloudSession } from "../src/providers/crealitycloud/session";
 import { getMakerworldConnection, setUserMakerworldCookie } from "../src/providers/makerworld/session";
+import { getMakeronlineConnection, setUserMakeronlineToken } from "../src/providers/makeronline/session";
+import { getSnapmakerConnection, setUserSnapmakerToken } from "../src/providers/snapmaker/session";
 
-// Neither the Bambu account nor Creality Cloud is asked: their answers stand in here.
+// No account is asked: their answers stand in here. An answer may be a function, run when the account is asked.
 const bound = vi.hoisted(() => ({ answer: null as unknown, calls: [] as string[] }));
 vi.mock("../src/providers/makerworld/api", async (importOriginal) => {
   const real = await importOriginal<typeof import("../src/providers/makerworld/api")>();
@@ -17,14 +19,42 @@ vi.mock("../src/providers/makerworld/api", async (importOriginal) => {
     },
   };
 });
+const answerOf = vi.hoisted(
+  () => async (answer: unknown) => (typeof answer === "function" ? await (answer as () => unknown)() : answer),
+);
 const creality = vi.hoisted(() => ({ answer: null as unknown }));
 vi.mock("../src/providers/crealitycloud/api", async (importOriginal) => {
   const real = await importOriginal<typeof import("../src/providers/crealitycloud/api")>();
   return {
     ...real,
     fetchCrealitycloudDeviceModels: async () => {
-      if (creality.answer === "rejected") throw new real.CrealitycloudAuthError();
-      return creality.answer;
+      const answer = await answerOf(creality.answer);
+      if (answer === "rejected") throw new real.CrealitycloudAuthError();
+      return answer;
+    },
+  };
+});
+const snapmaker = vi.hoisted(() => ({ answer: null as unknown }));
+vi.mock("../src/providers/snapmaker/api", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../src/providers/snapmaker/api")>();
+  return {
+    ...real,
+    fetchSnapmakerDeviceModels: async () => {
+      const answer = await answerOf(snapmaker.answer);
+      if (answer === "rejected") throw new real.SnapmakerAuthError();
+      return answer;
+    },
+  };
+});
+const makeronline = vi.hoisted(() => ({ answer: null as unknown }));
+vi.mock("../src/providers/makeronline/api", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../src/providers/makeronline/api")>();
+  return {
+    ...real,
+    fetchMakeronlineProfilePrinter: async () => {
+      const answer = await answerOf(makeronline.answer);
+      if (answer === "rejected") throw new real.MakeronlineAuthError();
+      return answer;
     },
   };
 });
@@ -220,6 +250,37 @@ describe("printers from the user's accounts", () => {
     expect(await getMakerworldConnection(otherId)).toBe("connected");
     bound.answer = null;
     creality.answer = null;
+  });
+
+  it("don't mark Creality Cloud's, Snapmaker's or MakerOnline's either, and mark the one that was turned down", async () => {
+    await setUserCrealitycloudSession(otherId, { token: "cc-old", userId: "42", expiresAt: null });
+    await setUserSnapmakerToken(otherId, { token: "sm-old", expiresAt: null, userId: null });
+    await setUserMakeronlineToken(otherId, { token: "mo-old", expiresAt: null, userId: null });
+    const renewed = (save: () => Promise<unknown>) => async () => {
+      await save();
+      return "rejected";
+    };
+    creality.answer = renewed(() =>
+      setUserCrealitycloudSession(otherId, { token: "cc-new", userId: "42", expiresAt: null }),
+    );
+    snapmaker.answer = renewed(() =>
+      setUserSnapmakerToken(otherId, { token: "sm-new", expiresAt: null, userId: null }),
+    );
+    makeronline.answer = renewed(() =>
+      setUserMakeronlineToken(otherId, { token: "mo-new", expiresAt: null, userId: null }),
+    );
+    const turnedDown = { crealitycloud: ["expired", 0], snapmaker: ["expired", 0], makeronline: ["expired", 0] };
+    expect(state((await find()).body)).toEqual({ makerworld: ["failed", 0], ...turnedDown });
+    expect(await getCrealitycloudConnection(otherId)).toBe("connected");
+    expect(await getSnapmakerConnection(otherId)).toBe("connected");
+    expect(await getMakeronlineConnection(otherId)).toBe("connected");
+
+    creality.answer = snapmaker.answer = makeronline.answer = "rejected";
+    expect(state((await find()).body)).toEqual({ makerworld: ["failed", 0], ...turnedDown });
+    expect(await getCrealitycloudConnection(otherId)).toBe("expired");
+    expect(await getSnapmakerConnection(otherId)).toBe("expired");
+    expect(await getMakeronlineConnection(otherId)).toBe("expired");
+    creality.answer = snapmaker.answer = makeronline.answer = null;
   });
 });
 

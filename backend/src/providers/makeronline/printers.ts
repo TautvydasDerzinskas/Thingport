@@ -13,5 +13,5 @@ export const makeronlinePrinters = ownedPrintersOf<string>({
     return printer ? brandOwnedPrinters("anycubic", [[printer]]) : [];
   },
   isRejection: (err) => err instanceof MakeronlineAuthError,
-  markRejected: (userId) => markMakeronlineTokenRejected(userId),
+  markRejected: (userId, token) => markMakeronlineTokenRejected(userId, token),
 });

@@ -12,5 +12,5 @@ export const snapmakerPrinters = ownedPrintersOf<string>({
     return models && brandOwnedPrinters("snapmaker", models);
   },
   isRejection: (err) => err instanceof SnapmakerAuthError,
-  markRejected: (userId) => markSnapmakerTokenRejected(userId),
+  markRejected: (userId, token) => markSnapmakerTokenRejected(userId, token),
 });

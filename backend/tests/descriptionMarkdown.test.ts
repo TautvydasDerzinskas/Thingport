@@ -11,6 +11,17 @@ describe("markdownFromDescription", () => {
       "Print flat.\nNo supports.\n\nEnjoy",
     );
   });
+
+  it("keeps a plain text's links and addresses in angle brackets, which aren't HTML", () => {
+    expect(markdownFromDescription("Assembly guide:\n<https://example.com/guide>")).toBe(
+      "Assembly guide:\n<https://example.com/guide>",
+    );
+    expect(markdownFromDescription("Questions: <maker@example.com>")).toBe("Questions: <maker@example.com>");
+    expect(markdownFromDescription("Print <b>flat</b>.<br/>No supports.")).toBe("Print **flat**.\nNo supports.");
+    expect(markdownFromDescription('<a href="https://example.com/guide">Guide</a>')).toBe(
+      "[Guide](https://example.com/guide)",
+    );
+  });
 });
 
 describe("htmlToMarkdown", () => {
