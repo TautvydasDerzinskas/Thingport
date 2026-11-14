@@ -31,14 +31,18 @@ const NARROW_WRAP = {
 const TONES = { preparing: "info", ready: "info", running: "info", done: "success", failed: "error" } as const;
 
 /** What one from another Thingport instance is doing, or did, with its people. */
-function thingportLine(t: TFunction, run: ThingportRun, when: string): string {
+export function thingportLine(t: TFunction, run: ThingportRun, when: string): string {
   const people = run.options?.people.length ?? run.plan.counts?.people ?? 0;
   const merged = (run.plan.people ?? []).filter(
     (person) => person.merge && (!run.options || run.options.people.includes(person.id)),
   ).length;
-  const peopleLine = [t(k("runs.people"), { count: people }), merged ? t(k("runs.merged"), { count: merged }) : null]
-    .filter(Boolean)
-    .join(", ");
+  // Not a list: the merged ones are some of the people, and "3 people and 1 merged" would sound like four.
+  const peopleLine = merged
+    ? t(k("runs.peopleMerged"), {
+        people: t(k("runs.people"), { count: people }),
+        merged: t(k("runs.merged"), { count: merged }),
+      })
+    : t(k("runs.people"), { count: people });
   if (run.status === "preparing") return t(k(`check.steps.${run.progress?.step ?? "restoring"}`));
   if (run.status === "running") {
     const step = run.progress?.step ?? "people";

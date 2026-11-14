@@ -1,19 +1,22 @@
 import i18next from "i18next";
 import { describe, expect, it, vi } from "vitest";
 import en from "../../i18n/locales/en.json";
+import lt from "../../i18n/locales/lt.json";
+import zh from "../../i18n/locales/zh.json";
 import type { AdminUser } from "../../api/admin";
-import type { MigrateCounts, MigrateRun, ThingportRun } from "../../api/migrate";
+import type { MigrateCounts, MigratePerson, MigrateRun, ThingportRun } from "../../api/migrate";
 import { canStart, checkPassed } from "./CheckStep";
 import { guessUser, manyfoldLines } from "./ManyfoldMigrateDialog";
+import { thingportLine } from "./MigrationRow";
 import { errorDetails, errorText, followRun, formatBytes, repeat, runTitle } from "./parts";
 
-// The English the page shows, as the app's own i18next would give it.
+// The English the page shows, as the app's own i18next would give it, and two languages that word things differently.
 const i18n = i18next.createInstance();
 await i18n.init({
   lng: "en",
   ns: ["app"],
   defaultNS: "app",
-  resources: { en: { app: en.app } },
+  resources: { en: { app: en.app }, lt: { app: lt.app }, zh: { app: zh.app } },
   interpolation: { escapeValue: false },
 });
 const { t } = i18n;
@@ -147,6 +150,35 @@ describe("migrate page helpers", () => {
     expect(errorText(t, { code: "manyfold_key", message: "x" })).toMatch(/^Manyfold turned the API key down\./);
     expect(errorText(t, { code: "manyfold_no_owner", message: "", values: { username: "robin" } })).toBe(
       "robin owns no models on Manyfold.",
+    );
+  });
+
+  it("counts the people merged into accounts here among a run's people, not beside them", () => {
+    const person = (id: string, merge: MigratePerson["merge"]): MigratePerson => ({
+      id,
+      email: `${id}@example.com`,
+      name: id,
+      role: "MEMBER",
+      owner: false,
+      models: 4,
+      merge,
+    });
+    const counts = countsOf({ people: 3, models: 12 });
+    const people = [person("p1", { id: "u1", name: "Alex" }), person("p2", null), person("p3", null)];
+    const ready = run({ plan: { counts, people } }) as ThingportRun;
+    expect(thingportLine(t, ready, "")).toBe(
+      "Checked: 3 people, 1 merged into an account here, 12 models. Waiting for you to start it.",
+    );
+    // A Lithuanian list would put "ir" (and) before the merged one, as if it were a fourth person.
+    expect(thingportLine(i18n.getFixedT("lt"), ready, "")).toBe(
+      "Patikrinta: 3 žmonės, 1 sujungtas su čia esančia paskyra, 12 modelių. Laukia, kol pradėsite.",
+    );
+    expect(thingportLine(i18n.getFixedT("zh"), ready, "")).toBe(
+      "已检查：3 人，其中 1 人合并到这里的已有账号，12 个模型。等待你开始。",
+    );
+    const noneMerged = run({ plan: { counts, people: [person("p1", null), person("p2", null), person("p3", null)] } });
+    expect(thingportLine(t, noneMerged as ThingportRun, "")).toBe(
+      "Checked: 3 people, 12 models. Waiting for you to start it.",
     );
   });
 });

@@ -3085,6 +3085,7 @@
           "merged_few": "{{count}} sujungti su čia esančiomis paskyromis",
           "merged_many": "{{count}} sujungta su čia esančiomis paskyromis",
           "merged_other": "{{count}} sujungta su čia esančiomis paskyromis",
+          "peopleMerged": "{{people}}, {{merged}}",
           "readyLine_one": "Patikrinta: {{people}}, {{count}} modelis. Laukia, kol pradėsite.",
           "readyLine_few": "Patikrinta: {{people}}, {{count}} modeliai. Laukia, kol pradėsite.",
           "readyLine_many": "Patikrinta: {{people}}, {{count}} modelio. Laukia, kol pradėsite.",

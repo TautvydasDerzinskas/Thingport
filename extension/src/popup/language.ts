@@ -8,6 +8,7 @@ import by from "../assets/flags/BY.svg";
 import es from "../assets/flags/ES.svg";
 import fr from "../assets/flags/FR.svg";
 import lt from "../assets/flags/LT.svg";
+import cn from "../assets/flags/CN.svg";
 import { detectLocale, t, type Locale } from "../shared/i18n";
 import { el, icon } from "./adaptTiles";
 import { els } from "./dom";
@@ -22,6 +23,7 @@ const LANGUAGES: { code: Locale; name: string; english: string; flag: string }[]
   { code: "es", name: "Español", english: "Spanish", flag: es },
   { code: "fr", name: "Français", english: "French", flag: fr },
   { code: "lt", name: "Lietuvių", english: "Lithuanian", flag: lt },
+  { code: "zh", name: "简体中文", english: "Chinese (Simplified)", flag: cn },
 ];
 
 const GLOBE = [
