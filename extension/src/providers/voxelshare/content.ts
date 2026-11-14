@@ -1,6 +1,6 @@
 // VoxelShare's own model data, as its pages read it: which print profiles a model has, and whose they are.
 
-import { loadVoxelshareModel, pageProfileId, type VoxelshareProfile } from "./api";
+import { loadVoxelshareModel, shownProfileId, type VoxelshareProfile } from "./api";
 import { parseVoxelshareModelUrl } from "./urls.generated";
 
 export type VoxelshareProfileScope = "url" | "designer" | "all";
@@ -20,13 +20,13 @@ export function voxelshareProfileIds(
   return [primary, ...profiles.map((p) => p.id).filter((id) => id !== primary)];
 }
 
-/** Profile ids for each scope, for the panel's picker and its import: the one a link names, else the one the page
- *  shows. Null when the model can't be read. */
+/** Profile ids for each scope, for the panel's picker and its import: the one the page shows, else the one a link
+ *  names. Null when the model can't be read. */
 export async function loadVoxelshareProfileIds(
   url: string,
 ): Promise<((scope: VoxelshareProfileScope) => string[]) | null> {
   const parsed = parseVoxelshareModelUrl(url);
   const model = parsed ? await loadVoxelshareModel(parsed.modelId) : null;
   if (!parsed || !model) return null;
-  return (scope) => voxelshareProfileIds(model.profiles, scope, parsed.requestedProfileId ?? pageProfileId());
+  return (scope) => voxelshareProfileIds(model.profiles, scope, shownProfileId(url));
 }

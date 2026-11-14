@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { loadVoxelshareModel, pageProfileId, voxelshareModelFrom } from "./api";
+import { loadVoxelshareModel, pageProfileId, shownProfileId, voxelshareModelFrom } from "./api";
 import { pickedProfile, profileFiles } from "./adaptSite";
 import { voxelshareProfileIds } from "./content";
 
@@ -85,6 +85,13 @@ describe("a VoxelShare model's profiles", () => {
     expect(pickedProfile(`${page}#profileId-1502105`, files, pageShowing(null))).toBe(files[1]);
     expect(pickedProfile(`${page}#profileId-1502105`, files, pageShowing("1502104"))).toBe(files[0]);
     expect(pageProfileId(pageShowing("not a number"))).toBeNull();
+  });
+
+  it("are taken the same way by the import panel: the page's pick first, which a link's fragment never follows", () => {
+    const page = "https://www.voxelshare.com/en/models/8242660-flexi-mechanical-dragon";
+    expect(shownProfileId(`${page}#profileId-1502105`, pageShowing("1502106"))).toBe("1502106");
+    expect(shownProfileId(`${page}#profileId-1502105`, pageShowing(null))).toBe("1502105");
+    expect(shownProfileId(page, pageShowing(null))).toBeNull();
   });
 
   it("are offered for import as the backend picks them, the page's own first", () => {

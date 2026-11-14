@@ -42,6 +42,7 @@ import { getUserVoxelshareToken, markVoxelshareSessionRejected, VOXELSHARE_CONNE
 const SESSION_CODE = MANIFESTS.voxelshare.errorCodes.session;
 const BLOCKED =
   "VoxelShare blocked the file download (rate limit). This usually clears after a while -- wait, then retry the same import.";
+const FILE_FAILED = "VoxelShare didn't hand over one of this model's files. Try the import again in a while.";
 
 /** One print profile's 3MF, tagged with the profile; null when the model has no such profile. */
 async function downloadProfile(
@@ -60,13 +61,17 @@ async function downloadProfile(
 }
 
 /** The model's own files, which only a model without print profiles needs, each in the folder the designer put it in.
- *  Those kept zipped one by one are unpacked. */
+ *  Those kept zipped one by one are unpacked. One that doesn't download fails the import, rather than leave the model
+ *  in the library without it, looking whole. */
 async function downloadModelFiles(resolved: VoxelshareModelResolution, kit: ImportKit): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
     for (const file of resolved.files) {
       if (!kit.isImportableFile(file.name) && !/\.zip$/i.test(file.name)) continue;
-      for (const input of (await kit.downloadSignedFile(file, isVoxelshareFileHost, BLOCKED)) ?? []) {
+      // Null when it didn't download at all, as against a zip with nothing in it worth importing.
+      const downloaded = await kit.downloadSignedFile(file, isVoxelshareFileHost, BLOCKED);
+      if (downloaded === null) throw new HttpError(502, FILE_FAILED);
+      for (const input of downloaded) {
         input.folder = joinFolders(file.folder, input.folder);
         inputs.push(input);
       }

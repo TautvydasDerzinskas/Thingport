@@ -4,6 +4,7 @@ import { createApp } from "../../src/app";
 import { prisma } from "../../src/db";
 import {
   getUserVoxelshareToken,
+  getVoxelshareAccountName,
   getVoxelshareConnection,
   normalizeVoxelshareSession,
   setUserVoxelshareSession,
@@ -49,14 +50,15 @@ const COLLECTED = ["10602179", "9610105", "9578063", "9560984"];
 const LIKED = COLLECTED.slice(1);
 const TITLE = "Flexi mechanical dragon";
 
-type Model = "several" | "bare" | "folder";
+type Model = "several" | "bare" | "folder" | "hidden";
 
 /** The model's print profiles: the recorded one, with a second of the designer's and one of someone else's after it,
- *  as the site lists several. */
+ *  as the site lists several; for "hidden", the recorded one made private, as its page leaves it out. */
 function profiles(model: Model) {
   const recorded = loadFixture("voxelshare", "profiles");
   if (model === "bare" || model === "folder") return loadFixture("voxelshare", "profiles-none");
   const [first] = recorded.data.items;
+  if (model === "hidden") return { ...recorded, data: { items: [{ ...first, privateFlag: true }] } };
   const other = (id: string, designer: boolean) => ({
     ...first,
     id,
@@ -67,12 +69,14 @@ function profiles(model: Model) {
   return { ...recorded, data: { items: [first, other(DESIGNER_SECOND, true), other(COMMUNITY, false)] } };
 }
 
-/** The model the stub serves: the dragon with its profiles, or the highland cow without profiles, its file
- *  kept zipped on its own, or in a folder of loose files. */
+/** The model the stub serves: the dragon with its profiles, or the highland cow without profiles (or with only a
+ *  hidden one), its file kept zipped on its own, or in a folder of loose files. The "fileDown" scenario's image host
+ *  turns the files away, and "likesDown"'s API fails the likes. */
 function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
   return async ({ url, json: body, headers }) => {
     if (url.hostname === "webimage.voxelshare.com") {
       assertThat(url.searchParams.get("sign"), "a file is fetched by its signed link");
+      if (scenario === "fileDown" && !/\.(png|jpe?g|webp)$/i.test(url.pathname)) return json({}, 404);
       if (url.pathname.endsWith(".3mf")) return binary(await threeMf(url.pathname.split("/").pop()!));
       if (url.pathname.endsWith(".stl.zip")) return binary(await zip("cow", { "highland.stl": stl("cow") }));
       if (url.pathname.endsWith(".stl")) return binary(stl(url.pathname));
@@ -81,7 +85,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
     if (url.hostname !== "api.voxelshare.com" || !url.pathname.startsWith(API)) return undefined;
     const signedIn = headers.authorization === `Bearer ${TOKEN}`;
     if (scenario === "outage") return json({ code: 500, msg: "system error" }, 500);
-    const bare = model === "bare" || model === "folder";
+    const bare = model !== "several";
     switch (url.pathname.slice(API.length)) {
       case "model/detail/info":
         if (scenario === "missing") return json(loadFixture("voxelshare", "model-missing"));
@@ -108,6 +112,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       case "model/creator/like_list":
         assertThat(signedIn || scenario === "rejected", "the likes are read with the user's sign-in");
         if (scenario === "rejected") return json(loadFixture("voxelshare", "unauthorized"), 401);
+        if (scenario === "likesDown") return json({ code: 500, msg: "system error" }, 500);
         return json(loadFixture("voxelshare", "likes"));
       case "creator/self/profile":
         if (!signedIn) return json(loadFixture("voxelshare", "unauthorized"), 401);
@@ -213,6 +218,20 @@ describe("VoxelShare specifics", () => {
     );
   });
 
+  it("imports a model's own files where none of its profiles is shown", async () => {
+    ctx.install(handlerFor("ok", "hidden"));
+    expectStatus(await ctx.importUrl(`https://www.voxelshare.com/en/models/${BARE_ID}`), 200);
+    expect((await plateRows()).map((plate) => plate.filename)).toEqual(["highland.stl"]);
+  });
+
+  it("fails an import whose file doesn't download, rather than keep the model without it", async () => {
+    ctx.install(handlerFor("fileDown", "bare"));
+    const res = await ctx.importUrl(`https://www.voxelshare.com/en/models/${BARE_ID}`);
+    expect(res.status).toBe(502);
+    expect(res.body.detail).toMatch(/didn't hand over one of this model's files/);
+    expect(await ctx.prints()).toHaveLength(0);
+  });
+
   it("imports the files of a model's folder", async () => {
     ctx.install(handlerFor("ok", "folder"));
     expectStatus(await ctx.importUrl(`https://www.voxelshare.com/en/models/${BARE_ID}`), 200);
@@ -276,6 +295,10 @@ describe("VoxelShare specifics", () => {
       ["61700000000000001", "Printer upgrades", false, 4],
     ]);
     expect(cards[2].thumbnails).toHaveLength(3);
+
+    // A likes read that fails is a failure, not an empty list.
+    ctx.stub("likesDown");
+    await expect(voxelshareBrowse.cards(ctx.userId)).rejects.toThrow("Couldn't read your likes on VoxelShare");
 
     await spec.disconnect(ctx.userId);
     await expect(voxelshareBrowse.cards(ctx.userId)).rejects.toMatchObject({ status: 409 });
@@ -358,6 +381,27 @@ describe("VoxelShare sign-in", () => {
 
       // Disconnecting in Thingport clears whatever is there.
       expect((await patch({ token: null })).body).toEqual({ configured: false });
+    } finally {
+      await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+    }
+  });
+
+  it("keeps whose the sign-in is through a renewal, and forgets it for another account's", async () => {
+    const app = createApp();
+    const res = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Whose", email: `voxel-whose-${Date.now()}@example.com`, password: "password123" });
+    const userId: string = res.body.user.id;
+    const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
+    const renewed = `${part({ alg: "RS256" })}.${part({ sub: "1", exp: 4102444800 })}.c2lnbmF0dXJl`;
+    try {
+      await setUserVoxelshareSession(userId, TOKEN, { id: "a1", name: "Maker 1" });
+      // Grab sends the token the site renewed, saying nothing of whose it is.
+      await setUserVoxelshareSession(userId, renewed);
+      expect(await getVoxelshareAccountName(userId)).toBe("Maker 1");
+      // Someone else signed in there.
+      await setUserVoxelshareSession(userId, NEWER);
+      expect(await getVoxelshareAccountName(userId)).toBeNull();
     } finally {
       await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
     }
