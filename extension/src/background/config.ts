@@ -3,6 +3,7 @@ import {
   STORAGE_KEYS,
   normalizeInstanceUrl,
   offlineFeatureOn,
+  pairingFresh,
   type OfflineFeature,
   type StoredConfig,
 } from "../shared/storage";
@@ -50,7 +51,7 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
-    pairing: Boolean(config.pendingPairing),
+    pairing: pairingFresh(config.pendingPairing),
     pairingInstanceUrl: config.pendingPairing?.instanceUrl || config.pairingIntent?.instanceUrl || "",
     offlineFeatures: Object.fromEntries(
       (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [

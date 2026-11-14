@@ -15,7 +15,7 @@ function valuesFor(keys: string | string[]): Record<string, unknown> {
   return Object.fromEntries(wanted.filter((key) => key in store).map((key) => [key, store[key]]));
 }
 
-vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0" });
+vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/130.0", languages: ["en-US"] });
 vi.stubGlobal("fetch", async (input: string | URL | Request) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   fetchUrls.push(url);
@@ -78,6 +78,7 @@ vi.stubGlobal("chrome", {
 });
 
 const { onPairingTabUrl, resumePairingIntent } = await import("./pairing");
+const { getState } = await import("./config");
 
 function intent(instanceUrl = "https://thingport.example.com"): PairingIntent {
   return { instanceUrl, startedAt: Date.now() };
@@ -165,6 +166,39 @@ describe("pairing permission continuity", () => {
 
     expect(store[STORAGE_KEYS.pairingIntent]).toBeUndefined();
     expect(operations).toEqual([`remove:${STORAGE_KEYS.pairingIntent}`]);
+  });
+
+  it("starts over where the approval tab left behind is past its time", async () => {
+    store[STORAGE_KEYS.pairingIntent] = intent();
+    store[STORAGE_KEYS.pendingPairing] = {
+      instanceUrl: "https://thingport.example.com",
+      verifier: "secret",
+      tabId: 9,
+      startedAt: Date.now() - 16 * 60 * 1000,
+    } satisfies PendingPairing;
+    permissionGranted = true;
+
+    await resumePairingIntent();
+
+    expect((store[STORAGE_KEYS.pendingPairing] as PendingPairing).tabId).toBe(nextTabId);
+    expect(operations).toContain("create:about:blank:false");
+  });
+
+  it("tells the popup a pairing is waiting only while it's in time", async () => {
+    const pending = {
+      instanceUrl: "https://thingport.example.com",
+      verifier: "secret",
+      tabId: 9,
+      startedAt: Date.now(),
+    } satisfies PendingPairing;
+    store[STORAGE_KEYS.pendingPairing] = pending;
+    await expect(getState()).resolves.toMatchObject({ pairing: true });
+
+    store[STORAGE_KEYS.pendingPairing] = { ...pending, startedAt: Date.now() - 16 * 60 * 1000 };
+    await expect(getState()).resolves.toMatchObject({
+      pairing: false,
+      pairingInstanceUrl: "https://thingport.example.com",
+    });
   });
 
   it("restores the address and removes the placeholder tab when navigation fails", async () => {

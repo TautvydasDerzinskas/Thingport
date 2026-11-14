@@ -6,6 +6,7 @@ import { send, type Connection } from "../shared/messages";
 import { fillIcons } from "../shared/icon";
 import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
+import { getShadowRoot } from "./shell";
 
 type Disconnected = Extract<Connection, { connected: false }>;
 
@@ -132,11 +133,14 @@ export function whenSetupModalClosed(show: () => void): void {
   else show();
 }
 
-/** Closed by the user: what waited for that comes now. */
+/** Closed by the user: what waited for that comes now, and gets the focus the replaced icon was given back. */
 function dismiss(): void {
   const onClosed = open?.onClosed;
+  const hadFocus = open?.returnFocus != null;
   closeSetupModal();
-  onClosed?.();
+  if (!onClosed) return;
+  onClosed();
+  if (hadFocus) getShadowRoot()?.querySelector<HTMLElement>("button")?.focus();
 }
 
 export function closeSetupModal(): void {

@@ -126,6 +126,14 @@ export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature):
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
 export type PairingIntent = { instanceUrl: string; startedAt: number };
 
+// Long enough to sign in through a provider on the way.
+export const PAIRING_TTL_MS = 15 * 60 * 1000;
+
+/** Still in time to finish; an older one is left over (its tab gone unnoticed) and mustn't hold the popup up. */
+export function pairingFresh<T extends { startedAt: number }>(pairing: T | undefined): pairing is T {
+  return pairing != null && Date.now() - pairing.startedAt <= PAIRING_TTL_MS;
+}
+
 /** Where each sign-in sent was remembered before lastSyncedSessions; dropped on update, so each is sent once more. */
 export const LEGACY_SESSION_KEYS = [
   "lastSyncedMyminifactorySession",

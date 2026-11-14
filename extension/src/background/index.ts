@@ -98,6 +98,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onStartup.addListener(() => {
   void checkConnection();
   void forgetProviderTabs();
+  // Tab ids start over with the browser, so an approval tab from the last session can't be finished or told apart.
+  void chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
 });
 chrome.runtime.onInstalled.addListener(() => {
   void checkConnection();

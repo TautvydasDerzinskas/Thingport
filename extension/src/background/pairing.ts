@@ -4,14 +4,11 @@
 // the secret for a connection token, and closes the tab. The code is worthless without the secret.
 
 import type { LoginResult } from "../shared/api";
-import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type PendingPairing } from "../shared/storage";
+import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, pairingFresh, type PendingPairing } from "../shared/storage";
 import { fetchInstance, storeApprovedConnection } from "./api";
 import { getStoredConfig } from "./config";
 import { carryAdaptPicks } from "./adaptSettings";
 import { backgroundText } from "./localize";
-
-// Long enough to sign in through a provider on the way.
-const PAIRING_TTL_MS = 15 * 60 * 1000;
 
 let resuming: Promise<null> | null = null;
 let rerunRequested = false;
@@ -98,11 +95,11 @@ async function attemptPairingIntentResume(): Promise<null> {
   const config = await getStoredConfig();
   const intent = config.pairingIntent;
   if (!intent) return null;
-  if (Date.now() - intent.startedAt > PAIRING_TTL_MS) {
+  if (!pairingFresh(intent)) {
     await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     return null;
   }
-  if (config.pendingPairing) {
+  if (pairingFresh(config.pendingPairing)) {
     await chrome.storage.local.remove(STORAGE_KEYS.pairingIntent);
     return null;
   }
@@ -144,7 +141,7 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
   if (claimingTabs.has(tabId)) return;
   const { pendingPairing: pending } = await getStoredConfig();
   if (!pending || pending.tabId !== tabId) return;
-  if (Date.now() - pending.startedAt > PAIRING_TTL_MS) {
+  if (!pairingFresh(pending)) {
     await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
     return;
   }
