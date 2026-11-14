@@ -4793,17 +4793,18 @@
       "suggestedProjects_one": "{{count}} of your projects is made for it",
       "suggestedProjects_other": "{{count}} of your projects are made for it",
       "empty": "Add the printers you print on, and models open in your slicer made for them.",
-      "bambu": {
-        "region": "Your Bambu Lab account",
-        "question": "Find your printers in your Bambu Lab account?",
+      "accounts": {
+        "region": "Your accounts on printer makers' sites",
+        "question": "Find your printers in your accounts?",
         "find": "Find them",
         "later": "Not now",
-        "found_one": "Added {{count}} printer from your Bambu Lab account.",
-        "found_other": "Added {{count}} printers from your Bambu Lab account.",
-        "none": "Your Bambu Lab account has no printers Thingport knows.",
-        "expired": "Your MakerWorld sign-in has expired. Sign in again under Providers.",
-        "signedOut": "Sign in to MakerWorld under Providers first.",
-        "failed": "Bambu Lab didn't list your printers. Try again later."
+        "found_one": "Added {{count}} printer from {{sites}}.",
+        "found_other": "Added {{count}} printers from {{sites}}.",
+        "none": "{{sites}}: no printers Thingport knows.",
+        "expired_one": "Your {{sites}} sign-in has expired. Sign in again under Providers.",
+        "expired_other": "Your {{sites}} sign-ins have expired. Sign in again under Providers.",
+        "failed": "{{sites}} didn't list your printers. Try again later.",
+        "error": "Couldn't find your printers. Try again later."
       },
       "menu": {
         "nozzle": "Nozzle",

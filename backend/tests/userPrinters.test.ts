@@ -2,9 +2,10 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { getCrealitycloudConnection, setUserCrealitycloudSession } from "../src/providers/crealitycloud/session";
 import { getMakerworldConnection, setUserMakerworldCookie } from "../src/providers/makerworld/session";
 
-// The Bambu account is never asked: its answer stands in here.
+// Neither the Bambu account nor Creality Cloud is asked: their answers stand in here.
 const bound = vi.hoisted(() => ({ answer: null as unknown, calls: [] as string[] }));
 vi.mock("../src/providers/makerworld/api", async (importOriginal) => {
   const real = await importOriginal<typeof import("../src/providers/makerworld/api")>();
@@ -13,6 +14,17 @@ vi.mock("../src/providers/makerworld/api", async (importOriginal) => {
     fetchBoundPrinters: async (token: string) => {
       bound.calls.push(token);
       return typeof bound.answer === "function" ? await (bound.answer as () => Promise<unknown>)() : bound.answer;
+    },
+  };
+});
+const creality = vi.hoisted(() => ({ answer: null as unknown }));
+vi.mock("../src/providers/crealitycloud/api", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../src/providers/crealitycloud/api")>();
+  return {
+    ...real,
+    fetchCrealitycloudDeviceModels: async () => {
+      if (creality.answer === "rejected") throw new real.CrealitycloudAuthError();
+      return creality.answer;
     },
   };
 });
@@ -64,8 +76,8 @@ async function printWith(data: { sliced?: string; projects?: { printer: string; 
 }
 
 describe("a user's printers", () => {
-  it("start with none, and no Bambu account to look in", async () => {
-    expect(await mine()).toEqual({ printers: [], suggestions: [], bambu: false });
+  it("start with none, and no account to look in", async () => {
+    expect(await mine()).toEqual({ printers: [], suggestions: [], accounts: [] });
   });
 
   it("are added from the catalogue with a nozzle it has, the nearest one if not", async () => {
@@ -127,53 +139,76 @@ describe("printer suggestions", () => {
   });
 });
 
-describe("printers from the Bambu account", () => {
+describe("printers from the user's accounts", () => {
   let other: string;
   let otherId: string;
 
   beforeAll(async () => {
     const res = await request(app)
       .post("/api/register")
-      .send({ displayName: "Bambu", email: `printers-bambu-${stamp}@example.com`, password: "password123" });
+      .send({ displayName: "Accounts", email: `printers-accounts-${stamp}@example.com`, password: "password123" });
     other = res.body.token;
     otherId = res.body.user.id;
   });
 
   const as = (t: string) => ({ Authorization: `Bearer ${t}` });
+  const find = () => request(app).post("/api/me/printers/accounts").set(as(other));
+  const offered = async () => (await request(app).get("/api/me/printers").set(as(other))).body.accounts;
+  const state = (body: { accounts: { provider: string; state: string; found: number }[] }) =>
+    Object.fromEntries(body.accounts.map((a) => [a.provider, [a.state, a.found]]));
 
-  it("are offered with a MakerWorld sign-in and no printers yet, and need one", async () => {
-    expect((await request(app).post("/api/me/printers/bambu").set(as(other))).body.code).toBe("makerworld_signed_out");
+  it("are offered from the accounts signed in to, while the user has no printers", async () => {
+    expect(await offered()).toEqual([]);
+    expect((await find()).body).toEqual({ printers: [], accounts: [] });
     await setUserMakerworldCookie(otherId, "token=abc123");
-    expect((await request(app).get("/api/me/printers").set(as(other))).body.bambu).toBe(true);
+    await setUserCrealitycloudSession(otherId, { token: "cc-token", userId: "42", expiresAt: null });
+    expect((await offered()).toSorted()).toEqual(["crealitycloud", "makerworld"]);
   });
 
-  it("are added when asked, those the catalogue knows, and the offer goes", async () => {
+  it("are added when asked, those the catalogue knows from every account, and the offer goes", async () => {
     bound.answer = [
       { model: "C12", product: "P1S", nozzle: 0.4 },
       { model: "ZZ99", product: "Printer of the future", nozzle: 0.4 },
       { model: null, product: "A1 mini", nozzle: 0.2 },
     ];
-    const res = await request(app).post("/api/me/printers/bambu").set(as(other));
+    creality.answer = [["K1C"], ["Nothing it knows", "Creality Ender-3 V3 KE"], ["Printer of the future"]];
+    const res = await find();
     expect(res.status).toBe(200);
     expect(bound.calls.at(-1)).toBe("abc123");
-    expect(res.body.printers.map((p: { printer: { id: string }; nozzle: string }) => [p.printer.id, p.nozzle])).toEqual(
-      [
-        ["bambulab-p1s", "0.4"],
-        ["bambulab-a1mini", "0.2"],
-      ],
-    );
-    expect((await request(app).get("/api/me/printers").set(as(other))).body.bambu).toBe(false);
+    expect(
+      res.body.printers.map((p: { printer: { id: string }; nozzle: string }) => [p.printer.id, p.nozzle]).toSorted(),
+    ).toEqual([
+      ["bambulab-a1mini", "0.2"],
+      ["bambulab-p1s", "0.4"],
+      ["creality-ender3v3ke", "0.4"],
+      ["creality-k1c", "0.4"],
+    ]);
+    expect(state(res.body)).toEqual({ makerworld: ["ok", 2], crealitycloud: ["ok", 2] });
+    expect(await offered()).toEqual([]);
   });
 
-  it("say so when the sign-in has expired, and mark it so", async () => {
+  it("say which account turned its sign-in down, mark it so, and still add the others'", async () => {
+    await prisma.userPrinter.deleteMany({ where: { userId: otherId } });
     bound.answer = "rejected";
-    const res = await request(app).post("/api/me/printers/bambu").set(as(other));
-    expect(res.status).toBe(409);
-    expect(res.body.code).toBe("makerworld_rejected");
+    creality.answer = [["K1C"]];
+    const res = await find();
+    expect(res.status).toBe(200);
+    expect(state(res.body)).toEqual({ makerworld: ["expired", 0], crealitycloud: ["ok", 1] });
+    expect(res.body.printers.map((p: { printer: { id: string } }) => p.printer.id)).toEqual(["creality-k1c"]);
     expect(await getMakerworldConnection(otherId)).toBe("expired");
-    bound.answer = null;
+    expect(await getCrealitycloudConnection(otherId)).toBe("connected");
+  });
+
+  it("say which couldn't say, and which turned down a sign-in it threw for", async () => {
+    await prisma.userPrinter.deleteMany({ where: { userId: otherId } });
     await setUserMakerworldCookie(otherId, "token=abc123", { verified: true });
-    expect((await request(app).post("/api/me/printers/bambu").set(as(other))).status).toBe(502);
+    bound.answer = null;
+    creality.answer = "rejected";
+    const res = await find();
+    expect(state(res.body)).toEqual({ makerworld: ["failed", 0], crealitycloud: ["expired", 0] });
+    expect(await getCrealitycloudConnection(otherId)).toBe("expired");
+    // Expired now, so it's no longer asked.
+    expect(await offered()).toEqual(["makerworld"]);
   });
 
   it("don't mark a sign-in given while the old one was being turned down", async () => {
@@ -181,9 +216,10 @@ describe("printers from the Bambu account", () => {
       await setUserMakerworldCookie(otherId, "token=newer456");
       return "rejected";
     };
-    expect((await request(app).post("/api/me/printers/bambu").set(as(other))).status).toBe(409);
+    expect(state((await find()).body)).toEqual({ makerworld: ["expired", 0] });
     expect(await getMakerworldConnection(otherId)).toBe("connected");
     bound.answer = null;
+    creality.answer = null;
   });
 });
 

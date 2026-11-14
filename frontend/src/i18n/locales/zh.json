@@ -4601,16 +4601,16 @@
       "suggestedSliced_other": "你有 {{count}} 个打印文件是为它切片的",
       "suggestedProjects_other": "你有 {{count}} 个项目是为它制作的",
       "empty": "添加你用来打印的打印机，模型就会以专为它们制作的版本在切片软件中打开。",
-      "bambu": {
-        "region": "你的 Bambu Lab 账号",
-        "question": "要在你的 Bambu Lab 账号中查找打印机吗？",
+      "accounts": {
+        "region": "你在打印机厂商网站上的账号",
+        "question": "要在你的账号中查找打印机吗？",
         "find": "查找",
         "later": "以后再说",
-        "found_other": "已从你的 Bambu Lab 账号添加 {{count}} 台打印机。",
-        "none": "你的 Bambu Lab 账号中没有 Thingport 认识的打印机。",
-        "expired": "你的 MakerWorld 登录信息已过期。请在“模型网站”中重新登录。",
-        "signedOut": "请先在“模型网站”中登录 MakerWorld。",
-        "failed": "Bambu Lab 没有列出你的打印机。请稍后重试。"
+        "found_other": "已从 {{sites}} 添加 {{count}} 台打印机。",
+        "none": "{{sites}}：没有 Thingport 认识的打印机。",
+        "expired_other": "你在 {{sites}} 的登录信息已过期。请在“模型网站”中重新登录。",
+        "failed": "未能从 {{sites}} 获取你的打印机列表。请稍后重试。",
+        "error": "未能查找你的打印机。请稍后重试。"
       },
       "menu": {
         "nozzle": "喷嘴",

@@ -306,6 +306,30 @@ function descriptionOf(detail: Record<string, unknown>): string | null {
   return htmlToMarkdown(`${description}\n${credit}`);
 }
 
+// Flashforge's printer list, on the same API as the site's, which takes its sign-in: what Flash Studio asks for, as
+// its Mac app (app 31, platform 15).
+const DEVICE_LIST = { currentPage: 1, pageSize: 100, appId: 31, platform: 15 };
+
+/** Each printer of a device list's answer by the name of its model, as Flash Studio shows it. Nothing else of a
+ *  printer is read. */
+export function voxelshareDeviceModels(data: unknown): string[][] {
+  const devices = isRecord(data) && Array.isArray(data.detail) ? data.detail : [];
+  return devices.flatMap((device) => {
+    const model = isRecord(device) ? str(device.model) : null;
+    return model ? [[model]] : [];
+  });
+}
+
+/** The printers bound to the account on a site, by `voxelshareDeviceModels`; null when it can't say. Throws when it
+ *  turns the sign-in down. */
+export async function fetchVoxelshareDeviceModels(
+  token: string,
+  region: VoxelshareRegion = null,
+): Promise<string[][] | null> {
+  const res = await fetchApi("GET", "v2/external/truck/device/list", DEVICE_LIST, token, region);
+  return res.code === CODE_OK ? voxelshareDeviceModels(res.data) : null;
+}
+
 /** The model's print profiles from its list of them, in the site's order. One that's private, or not shown, is left
  *  out, as its page leaves it. */
 export function voxelshareProfilesFrom(items: unknown, fileName: string): VoxelshareProfile[] {

@@ -92,9 +92,11 @@ to open another slicer's project, which it would put on the printer selected in 
 **Configuration → Printer** shows your printers as tiles: double-click one to add or remove it, and right-click it for
 its nozzle and the slicers it's used with. **Add** lists every printer the slicers know, with their pictures. Printers
 your library points at are suggested beside yours: those your prints were sliced for, and those several of your
-projects are made for. Turn one down with **Not mine** and it stays there, dimmed. Signed in to MakerWorld, which is
-your Bambu Lab account, you're asked whether to find your printers there; Thingport reads the account's printer list
-only when you say yes, takes only each printer's model and nozzle, and keeps nothing else of it.
+projects are made for. Turn one down with **Not mine** and it stays there, dimmed. Signed in to a printer maker's
+site, you're asked whether to find your printers in your accounts: those bound to your Bambu Lab account (MakerWorld's
+sign-in), Creality Cloud, Snapmaker and Flashforge (VoxelShare) accounts, and the printer your MakerOnline profile
+names. Thingport reads them only when you say yes, takes only each printer's model and nozzle, and keeps nothing else
+of them.
 
 Creality Print asks which printer to use itself, and PrusaSlicer, eufyMake Studio and Cura put a copy on the printer
 you have selected in them, so their copies don't change with your printer. The printer's own settings, its start

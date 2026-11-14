@@ -6,10 +6,9 @@ import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { printerBrands, printerCoverFile, printerSummaries } from "../printers/catalogue";
 import {
-  addBambuAccountPrinters,
-  BambuAccountError,
+  addAccountPrinters,
   listUserPrinters,
-  offersBambuAccount,
+  printerAccounts,
   printerSuggestions,
   putUserPrinter,
   removeUserPrinter,
@@ -54,7 +53,7 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const [printers, suggestions] = await Promise.all([listUserPrinters(req.userId!), printerSuggestions(req.userId!)]);
-    res.json({ printers, suggestions, bambu: await offersBambuAccount(req.userId!, printers.length) });
+    res.json({ printers, suggestions, accounts: await printerAccounts(req.userId!, printers.length) });
   }),
 );
 
@@ -101,21 +100,14 @@ router.delete(
   }),
 );
 
-// Asked for by the user: reads the printers bound to the Bambu account their MakerWorld sign-in is, and adds them.
+// Asked for by the user: reads the printers their accounts on printer makers' sites have, and adds them. Each
+// account's answer is in `accounts`, one that turned the sign-in down or couldn't say among them, so the answer is a
+// 200 whichever answered.
 router.post(
-  "/me/printers/bambu",
+  "/me/printers/accounts",
   requireAuth,
   asyncHandler(async (req, res) => {
-    try {
-      res.json({ printers: await addBambuAccountPrinters(req.userId!) });
-    } catch (err) {
-      if (!(err instanceof BambuAccountError)) throw err;
-      if (err.reason === "signed-out")
-        throw new HttpError(409, "Sign in to MakerWorld first.", "makerworld_signed_out");
-      if (err.reason === "rejected")
-        throw new HttpError(409, "Your MakerWorld sign-in has expired.", "makerworld_rejected");
-      throw new HttpError(502, "Bambu Lab didn't list your printers. Try again later.");
-    }
+    res.json(await addAccountPrinters(req.userId!));
   }),
 );
 

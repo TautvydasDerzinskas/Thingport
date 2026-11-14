@@ -142,6 +142,11 @@ import { toymakr3dBrowse } from "./toymakr3d/browse";
 import { makerablesBrowse } from "./makerables/browse";
 import { cgtraderBrowse } from "./cgtrader/browse";
 import { grabcadBrowse } from "./grabcad/browse";
+import { crealitycloudPrinters } from "./crealitycloud/printers";
+import { makeronlinePrinters } from "./makeronline/printers";
+import { makerworldPrinters } from "./makerworld/printers";
+import { snapmakerPrinters } from "./snapmaker/printers";
+import { voxelsharePrinters } from "./voxelshare/printers";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -149,6 +154,7 @@ import type {
   ProviderBrowse,
   ProviderDetails,
   ProviderLists,
+  ProviderOwnedPrinters,
   ProviderSync,
   ProviderTrending,
   SourcedImport,
@@ -209,6 +215,8 @@ export type ProviderBackend = {
   browse?: ProviderBrowse;
   /** Its list for the dashboard's trending panel, where its manifest says it has one. */
   trending?: ProviderTrending;
+  /** The printers the user's account there has, where its printer maker's cloud lists them (Find my printers). */
+  ownedPrinters?: ProviderOwnedPrinters;
   /** How a model's details are read without its files. */
   details: ProviderDetails;
   /** The links of the print profiles a scope picks from the model a link is of, for a provider whose models import by
@@ -306,6 +314,7 @@ export const PROVIDERS = {
     sync: makerworldSync,
     browse: makerworldBrowse,
     trending: makerworldTrending,
+    ownedPrinters: makerworldPrinters,
     details: makerworldDetails,
     license: readMakerworldLicense,
     profileFacts: makerworldProfileFacts,
@@ -374,6 +383,7 @@ export const PROVIDERS = {
     sync: snapmakerSync,
     browse: snapmakerBrowse,
     trending: snapmakerTrending,
+    ownedPrinters: snapmakerPrinters,
     details: snapmakerDetails,
     profileFacts: snapmakerProfileFacts,
   },
@@ -392,6 +402,7 @@ export const PROVIDERS = {
     sync: makeronlineSync,
     browse: makeronlineBrowse,
     trending: makeronlineTrending,
+    ownedPrinters: makeronlinePrinters,
     details: makeronlineDetails,
     profileFacts: makeronlineProfileFacts,
   },
@@ -404,6 +415,7 @@ export const PROVIDERS = {
     sync: crealitycloudSync,
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
+    ownedPrinters: crealitycloudPrinters,
     details: crealitycloudDetails,
     license: readCrealitycloudLicense,
     profileFacts: crealitycloudProfileFacts,
@@ -629,6 +641,7 @@ export const PROVIDERS = {
     sync: voxelshareSync,
     browse: voxelshareBrowse,
     trending: voxelshareTrending,
+    ownedPrinters: voxelsharePrinters,
     details: voxelshareDetails,
     // From the model's details alone, without its print profiles' list.
     license: readVoxelshareLicense,

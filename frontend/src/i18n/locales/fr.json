@@ -5001,18 +5001,20 @@
       "suggestedProjects_many": "{{count}} de vos projets sont faits pour elle",
       "suggestedProjects_other": "{{count}} de vos projets sont faits pour elle",
       "empty": "Ajoutez les imprimantes sur lesquelles vous imprimez : les modèles s’ouvrent alors dans votre slicer préparés pour elles.",
-      "bambu": {
-        "region": "Votre compte Bambu Lab",
-        "question": "Trouver vos imprimantes dans votre compte Bambu Lab ?",
+      "accounts": {
+        "region": "Vos comptes sur les sites des fabricants d’imprimantes",
+        "question": "Trouver vos imprimantes dans vos comptes ?",
         "find": "Les trouver",
         "later": "Pas maintenant",
-        "found_one": "{{count}} imprimante ajoutée depuis votre compte Bambu Lab.",
-        "found_many": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
-        "found_other": "{{count}} imprimantes ajoutées depuis votre compte Bambu Lab.",
-        "none": "Votre compte Bambu Lab n’a aucune imprimante que Thingport connaît.",
-        "expired": "Votre connexion à MakerWorld a expiré. Reconnectez-vous dans Fournisseurs.",
-        "signedOut": "Connectez-vous d’abord à MakerWorld dans Fournisseurs.",
-        "failed": "Bambu Lab n’a pas listé vos imprimantes. Réessayez plus tard."
+        "found_one": "{{count}} imprimante ajoutée depuis {{sites}}.",
+        "found_many": "{{count}} imprimantes ajoutées depuis {{sites}}.",
+        "found_other": "{{count}} imprimantes ajoutées depuis {{sites}}.",
+        "none": "{{sites}} : aucune imprimante que Thingport connaît.",
+        "expired_one": "Votre connexion à {{sites}} a expiré. Reconnectez-vous dans Fournisseurs.",
+        "expired_many": "Vos connexions à {{sites}} ont expiré. Reconnectez-vous dans Fournisseurs.",
+        "expired_other": "Vos connexions à {{sites}} ont expiré. Reconnectez-vous dans Fournisseurs.",
+        "failed": "Impossible d’obtenir la liste des imprimantes de {{sites}}. Réessayez plus tard.",
+        "error": "Impossible de trouver vos imprimantes. Réessayez plus tard."
       },
       "menu": {
         "nozzle": "Buse",

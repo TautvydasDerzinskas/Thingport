@@ -5101,18 +5101,20 @@
       "suggestedProjects_few": "jam skirti {{count}} jūsų projektai",
       "suggestedProjects_other": "jam skirta {{count}} jūsų projektų",
       "empty": "Pridėkite spausdintuvus, kuriais spausdinate, ir modeliai jūsų pjaustyklėje atsivers pritaikyti jiems.",
-      "bambu": {
-        "region": "Jūsų Bambu Lab paskyra",
-        "question": "Rasti jūsų spausdintuvus Bambu Lab paskyroje?",
+      "accounts": {
+        "region": "Jūsų paskyros spausdintuvų gamintojų svetainėse",
+        "question": "Rasti jūsų spausdintuvus jūsų paskyrose?",
         "find": "Rasti",
         "later": "Ne dabar",
-        "found_one": "Pridėtas {{count}} spausdintuvas iš jūsų Bambu Lab paskyros.",
-        "found_few": "Pridėti {{count}} spausdintuvai iš jūsų Bambu Lab paskyros.",
-        "found_other": "Pridėta {{count}} spausdintuvų iš jūsų Bambu Lab paskyros.",
-        "none": "Jūsų Bambu Lab paskyroje nėra Thingport žinomų spausdintuvų.",
-        "expired": "Jūsų MakerWorld prisijungimas nebegalioja. Prisijunkite iš naujo skiltyje „Šaltiniai“.",
-        "signedOut": "Pirmiausia prisijunkite prie MakerWorld skiltyje „Šaltiniai“.",
-        "failed": "Bambu Lab nepateikė jūsų spausdintuvų. Bandykite vėliau."
+        "found_one": "Pridėtas {{count}} spausdintuvas iš paskyrų: {{sites}}.",
+        "found_few": "Pridėti {{count}} spausdintuvai iš paskyrų: {{sites}}.",
+        "found_other": "Pridėta {{count}} spausdintuvų iš paskyrų: {{sites}}.",
+        "none": "{{sites}}: nėra Thingport žinomų spausdintuvų.",
+        "expired_one": "Jūsų {{sites}} prisijungimas nebegalioja. Prisijunkite iš naujo skiltyje „Šaltiniai“.",
+        "expired_few": "Jūsų {{sites}} prisijungimai nebegalioja. Prisijunkite iš naujo skiltyje „Šaltiniai“.",
+        "expired_other": "Jūsų {{sites}} prisijungimai nebegalioja. Prisijunkite iš naujo skiltyje „Šaltiniai“.",
+        "failed": "{{sites}} nepateikė jūsų spausdintuvų. Bandykite vėliau.",
+        "error": "Nepavyko rasti jūsų spausdintuvų. Bandykite vėliau."
       },
       "menu": {
         "nozzle": "Antgalis",

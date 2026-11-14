@@ -4988,18 +4988,20 @@
       "suggestedProjects_many": "{{count}} de tus proyectos están hechos para ella",
       "suggestedProjects_other": "{{count}} de tus proyectos están hechos para ella",
       "empty": "Añade las impresoras en las que imprimes y los modelos se abrirán en tu slicer preparados para ellas.",
-      "bambu": {
-        "region": "Tu cuenta de Bambu Lab",
-        "question": "¿Buscar tus impresoras en tu cuenta de Bambu Lab?",
+      "accounts": {
+        "region": "Tus cuentas en sitios de fabricantes de impresoras",
+        "question": "¿Buscar tus impresoras en tus cuentas?",
         "find": "Buscarlas",
         "later": "Ahora no",
-        "found_one": "Se añadió {{count}} impresora de tu cuenta de Bambu Lab.",
-        "found_many": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
-        "found_other": "Se añadieron {{count}} impresoras de tu cuenta de Bambu Lab.",
-        "none": "Tu cuenta de Bambu Lab no tiene impresoras que Thingport conozca.",
-        "expired": "Tu sesión de MakerWorld ha caducado. Vuelve a iniciarla en Proveedores.",
-        "signedOut": "Inicia sesión en MakerWorld en Proveedores primero.",
-        "failed": "Bambu Lab no listó tus impresoras. Inténtalo más tarde."
+        "found_one": "Se añadió {{count}} impresora de {{sites}}.",
+        "found_many": "Se añadieron {{count}} impresoras de {{sites}}.",
+        "found_other": "Se añadieron {{count}} impresoras de {{sites}}.",
+        "none": "{{sites}}: ninguna impresora que Thingport conozca.",
+        "expired_one": "Tu sesión de {{sites}} ha caducado. Vuelve a iniciarla en Proveedores.",
+        "expired_many": "Tus sesiones de {{sites}} han caducado. Vuelve a iniciarlas en Proveedores.",
+        "expired_other": "Tus sesiones de {{sites}} han caducado. Vuelve a iniciarlas en Proveedores.",
+        "failed": "No se pudo obtener la lista de impresoras de {{sites}}. Inténtalo más tarde.",
+        "error": "No se pudieron buscar tus impresoras. Inténtalo más tarde."
       },
       "menu": {
         "nozzle": "Boquilla",

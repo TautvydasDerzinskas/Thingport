@@ -1,23 +1,15 @@
-// The printers a user prints on (Configuration > Printers), from the printer catalogue: adapted copies can be made
+// The printers a user prints on (Configuration > Printer), from the printer catalogue: adapted copies can be made
 // for them (src/adapter/printer.ts). Suggestions come from the user's own library: the printer each of their prints
-// was sliced for, and the one each 3MF project names. Their Bambu account's printers are read only when they ask.
+// was sliced for, and the one each 3MF project names. Those their accounts on printer makers' sites have (Bambu Lab's,
+// Creality's...) are read only when they ask.
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import {
-  printerBrands,
-  printerForName,
-  printersForBambuCode,
-  printerSummary,
-  type PrinterSummary,
-} from "../printers/catalogue";
+import { printerBrands, printerForName, printerSummary, type PrinterSummary } from "../printers/catalogue";
 import { printerPresetNames } from "../printers/targets";
-import { extractMakerworldBearerToken, fetchBoundPrinters } from "../providers/makerworld/api";
-import {
-  getMakerworldConnection,
-  getUserMakerworldCookie,
-  markMakerworldCookieRejected,
-} from "../providers/makerworld/session";
+import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
+import { PROVIDERS } from "../providers/registry";
+import { getDisabledProviders } from "./providerSettingsService";
 import { SLICER_IDS } from "./slicerPreferenceService";
 
 export type UserPrinterView = {
@@ -179,43 +171,62 @@ export async function printerSuggestions(userId: string): Promise<PrinterSuggest
     });
 }
 
-/** Whether to offer finding their printers in their Bambu account: signed in to MakerWorld, which is that account,
- *  and with no printer chosen yet. */
-export async function offersBambuAccount(userId: string, printers: number): Promise<boolean> {
-  return printers === 0 && (await getMakerworldConnection(userId)) === "connected";
+/** The accounts Find my printers asks: those of the providers that list a user's printers, turned on here and signed
+ *  in to. Offered while the user has no printer yet. */
+export async function printerAccounts(userId: string, printers: number): Promise<ProviderId[]> {
+  if (printers > 0) return [];
+  const disabled = await getDisabledProviders();
+  const offered = await Promise.all(
+    PROVIDER_IDS.map(async (id) => {
+      const owned = PROVIDERS[id].ownedPrinters;
+      return owned && !disabled.has(id) && (await owned.connected(userId)) ? id : null;
+    }),
+  );
+  return offered.filter((id): id is ProviderId => id !== null);
 }
 
-export class BambuAccountError extends Error {
-  constructor(readonly reason: "signed-out" | "rejected" | "unavailable") {
-    super(reason);
-  }
-}
+/** How one account answered: "expired" when it turned the sign-in down or there was none by then, "failed" when it
+ *  couldn't say. `found` counts the printers it has that the catalogue knows. */
+export type PrinterAccountResult = { provider: ProviderId; state: "ok" | "expired" | "failed"; found: number };
 
-/** Adds the printers bound to the user's Bambu account (those the catalogue knows) and returns them, ones they had
- *  already among them. Nothing about a printer but its model and nozzle is read. */
-export async function addBambuAccountPrinters(userId: string): Promise<UserPrinterView[]> {
-  const cookie = await getUserMakerworldCookie(userId);
-  const token = extractMakerworldBearerToken(cookie);
-  if (!cookie || !token) throw new BambuAccountError("signed-out");
-  const bound = await fetchBoundPrinters(token);
-  if (bound === "rejected") {
-    await markMakerworldCookieRejected(userId, cookie);
-    throw new BambuAccountError("rejected");
-  }
-  if (!bound) throw new BambuAccountError("unavailable");
+/** Adds the printers the user's accounts have (those the catalogue knows), every account asked at once, and returns
+ *  them, ones they had already among them, with how each account answered. Nothing about a printer but its model and
+ *  nozzle is read. */
+export async function addAccountPrinters(
+  userId: string,
+): Promise<{ printers: UserPrinterView[]; accounts: PrinterAccountResult[] }> {
+  const providers = await printerAccounts(userId, 0);
+  const answers = await Promise.all(
+    providers.map(async (provider) => {
+      try {
+        return { provider, answer: await PROVIDERS[provider].ownedPrinters!.read(userId) };
+      } catch {
+        return { provider, answer: null };
+      }
+    }),
+  );
   const added = new Map<string, UserPrinterView>();
-  for (const device of bound) {
-    const summary =
-      printersForBambuCode(device.model)[0] ??
-      (device.product ? printerForName(`Bambu Lab ${device.product}`)?.printer : undefined);
-    if (!summary || added.has(summary.id)) continue;
-    const existing = await prisma.userPrinter.findUnique({
-      where: { userId_printerId: { userId, printerId: summary.id } },
-    });
-    added.set(
-      summary.id,
-      existing ? view(summary, existing.nozzle) : await putUserPrinter(userId, summary.id, String(device.nozzle ?? "")),
-    );
+  const accounts: PrinterAccountResult[] = [];
+  for (const { provider, answer } of answers) {
+    if (!Array.isArray(answer)) {
+      accounts.push({ provider, state: answer === null ? "failed" : "expired", found: 0 });
+      continue;
+    }
+    const found = new Set(answer.map((owned) => owned.printerId));
+    accounts.push({ provider, state: "ok", found: found.size });
+    for (const owned of answer) {
+      const summary = printerSummary(owned.printerId);
+      if (!summary || added.has(owned.printerId)) continue;
+      const existing = await prisma.userPrinter.findUnique({
+        where: { userId_printerId: { userId, printerId: owned.printerId } },
+      });
+      added.set(
+        owned.printerId,
+        existing
+          ? view(summary, existing.nozzle)
+          : await putUserPrinter(userId, owned.printerId, owned.nozzle === null ? null : String(owned.nozzle)),
+      );
+    }
   }
-  return [...added.values()];
+  return { printers: [...added.values()], accounts };
 }
