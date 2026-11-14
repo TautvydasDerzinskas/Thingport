@@ -1,13 +1,14 @@
 # <img src="../assets/providers/voxelshare.svg" alt="" width="36" height="36" align="absmiddle"> VoxelShare
 
 Flashforge's model community, at [www.voxelshare.com](https://www.voxelshare.com), for its Adventurer and Creator
-printers. Many of its models come with print profiles for those printers, made in Flash Studio, Flashforge's own slicer.
-Its models, their files and anyone's public collections need nothing; your own collections and likes need your sign-in.
+printers, and at [www.voxelshare.cn](https://www.voxelshare.cn) in China. Many of its models come with print profiles
+for those printers, made in Flash Studio, Flashforge's own slicer. Its models, their files and anyone's public
+collections need nothing; your own collections and likes need your sign-in.
 
 | At a glance    |                                                                                                                                              |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sign-in        | None to import; your own sign-in for your collections and likes                                                                              |
-| Thingport Grab | Recommended -- it sends your sign-in as you visit www.voxelshare.com                                                                         |
+| Thingport Grab | Recommended -- it sends your sign-in as you visit www.voxelshare.com or www.voxelshare.cn                                                    |
 | FlareSolverr   | Not used                                                                                                                                     |
 | Imports        | Models with their print profiles, with their category and licence; collections and your likes, [synced](../guides/synced-collections.md) too |
 
@@ -43,6 +44,20 @@ Its print profiles are OrcaSlicer-style projects for Flashforge printers, which 
 they are; other slicers open them as [adapted 3MFs](../features/adapted-3mf.md). Thingport Grab's **Download adapted**, under a model's **Open in Flash
 Studio Desktop** once you allow Grab there, saves a copy of the picked profile made for yours, without your sign-in.
 
+## Its China site
+
+[www.voxelshare.cn](https://www.voxelshare.cn) works the same, from its own links: a model, a collection or your likes
+there import and sync from it. It has uploads, a trending list and accounts of its own, so:
+
+- Thingport keeps what it reads from there apart from the main site's, so its links go back to www.voxelshare.cn. A
+  model imported from both sites is two models.
+- Your likes there are a list of their own, **VoxelShare China likes**, and the Browse tab lists each signed-in
+  site's lists.
+- Its sign-in is one of its own: connect it as below, with **China** picked at the top of the form, or open
+  www.voxelshare.cn signed in with Grab. Either site's sign-in connects the VoxelShare tile, and its menu offers the
+  other.
+- The dashboard's trending card shows its trending list to someone signed in there and not on the main site.
+
 ## Setup: your sign-in
 
 Per-user (**Configuration → Providers → VoxelShare**), only for your own collections and likes. Opening
@@ -59,7 +74,8 @@ The sign-in is the site's `token` cookie, which lasts 31 days. By hand:
    eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl
    ```
 
-5. Right-click **VoxelShare** in **Configuration → Providers**, choose **Connect** and paste it.
+5. Right-click **VoxelShare** in **Configuration → Providers**, choose **Connect** and paste it. For the China site,
+   copy it from `https://www.voxelshare.cn` instead and pick **China** at the top of the form.
 
 The whole `Cookie` header of a signed-in www.voxelshare.com request works too, as does the `Authorization` header of one
 of its API requests, or the cookie's row copied from the developer tools' cookie table. Thingport never uses the

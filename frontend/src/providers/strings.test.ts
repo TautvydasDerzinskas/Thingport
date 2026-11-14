@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LOCALES } from "../constants/languages";
-import { type AuthSlot, MANIFESTS, PROVIDER_IDS, type ProviderId } from "./index.generated";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS, type ProviderId, manifestOf } from "./index.generated";
 
 const camelCase = (name: string) => name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
 
@@ -17,9 +17,14 @@ function requiredKeys(id: ProviderId): string[] {
     if (own.scope === "instance") keys.push("connect.shared", "status.adminOnly");
     else keys.push("status.expired", "status.expiredStatus");
   }
+  const regions = new Set<string>(manifestOf(id).regions?.map((region) => region.id));
   for (const extra of auth.filter((a) => a.slot !== "default")) {
     if (extra.scope === "instance") keys.push("admin.key.heading", "admin.keyStatus.set", "admin.keyStatus.missing");
-    else keys.push(...["title", "paste", "save", "placeholder", "steps"].map((k) => `connect.${extra.slot}.${k}`));
+    // Another site's sign-in, the tile's own on its connect form's toggle: its steps, and its words for running out.
+    else if (regions.has(extra.slot)) {
+      keys.push(`connect.${extra.slot}.steps`, `connect.${extra.slot}.placeholder`);
+      keys.push(`status.${extra.slot}.expired`, `status.${extra.slot}.expiredStatus`);
+    } else keys.push(...["title", "paste", "save", "placeholder", "steps"].map((k) => `connect.${extra.slot}.${k}`));
   }
   if (own?.scope === "instance") keys.push("admin.key.heading", "admin.keyStatus.set", "admin.keyStatus.missing");
   if (manifest.capabilities.ownLists === "username") {

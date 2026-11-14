@@ -39,9 +39,9 @@ export function pickedProfile(href: string, files: AdaptFile[], root: ParentNode
 }
 
 async function readFiles(pageUrl: string): Promise<Linked[]> {
-  const modelId = parseVoxelshareModelUrl(pageUrl)?.modelId;
-  const model = modelId ? await loadVoxelshareModel(modelId) : null;
-  if (modelId && !model) throw new Error(t("adaptSite.noProfileList", { site: NAME }));
+  const parsed = parseVoxelshareModelUrl(pageUrl);
+  const model = parsed ? await loadVoxelshareModel(parsed.modelId, parsed.region) : null;
+  if (parsed && !model) throw new Error(t("adaptSite.noProfileList", { site: NAME }));
   return model ? profileFiles(model) : [];
 }
 

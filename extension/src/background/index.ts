@@ -66,7 +66,7 @@ listen<BackgroundMessages>({
   CLEAR_RECENTLY_VIEWED: () => clearRecentlyViewed(),
   CHECK_CONNECTION: () => checkConnection(),
   REPORT_PROVIDER_ACCOUNT: ({ provider, value }) => reportProviderAccount(provider, value),
-  SYNC_PROVIDER_SESSION: ({ provider }) => syncSession(provider),
+  SYNC_PROVIDER_SESSION: ({ provider, region }) => syncSession(provider, region ?? null),
   OPEN_SETUP: (_payload, sender) => openSetup(sender.tab?.id),
   SET_TAB_ICON_STATE: ({ active }, sender) => setTabIconState(senderTabId(sender), active),
   NOTE_PROVIDER_TAB: ({ provider }, sender) => noteProviderTab(provider, senderTabId(sender)),

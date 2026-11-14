@@ -86,8 +86,8 @@ instance or account, so the new one has to be told.
   only sent again when it changes.
 - **Your QIDI Maker sign-in (its `token` cookie),** as last sent to your Thingport instance, so it's only sent again
   when it changes.
-- **Your VoxelShare sign-in (its `token` cookie),** as last sent to your Thingport instance, so it's only sent again
-  when it changes.
+- **Your VoxelShare sign-in (its `token` cookie),** and your sign-in to its China site, www.voxelshare.cn, as last
+  sent to your Thingport instance, so each is only sent again when it changes.
 - **Which site each tab is on:** for every open tab showing one of the sites above, that site's name and the
   browser's number for the tab, so the popup can put the site you're looking at first -- it can't read the
   address of your tab itself. No address is kept, only which of the supported sites it is. A tab's entry is
@@ -226,7 +226,9 @@ from the image servers of the sites you viewed them on, without saying which pag
   need no sign-in. Its models and their files are read without it.
 - If you're signed in to VoxelShare in this browser, and have allowed the extension there: your VoxelShare sign-in (its
   `token` cookie), when you open a VoxelShare page and it changed since last sent; when you've signed out there, the
-  extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your likes and your
+  extension tells your instance to forget the one it sent. Its China site, www.voxelshare.cn, has accounts of its own:
+  your sign-in there is read from its `token` cookie when you open one of its pages, and sent and forgotten the same
+  way. Your Thingport instance uses it to read your likes and your
   own collections there, and sends it to VoxelShare with every collection it reads, so your own private ones read in
   full; anyone's public collections need no sign-in. Its models and their files are read without it.
 - On MakerOnline: the download links MakerOnline gives the page for the files of a model you import, or of the models

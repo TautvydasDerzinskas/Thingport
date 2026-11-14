@@ -49,7 +49,7 @@ import { qidimakerBrowse } from "./qidimaker/browse";
 import { qidimakerProfileFacts } from "./qidimaker/profileFacts";
 import { readQidimakerLicense } from "./qidimaker/license";
 import { voxelshareImport, voxelshareTrending, voxelshareLists, voxelshareDetails } from "./voxelshare";
-import { voxelshareConnection } from "./voxelshare/connection";
+import { voxelshareChinaConnection, voxelshareConnection } from "./voxelshare/connection";
 import { voxelshareSync } from "./voxelshare/sync";
 import { voxelshareBrowse } from "./voxelshare/browse";
 import { voxelshareProfileFacts } from "./voxelshare/profileFacts";
@@ -621,7 +621,7 @@ export const PROVIDERS = {
   },
   voxelshare: {
     starterCategories: voxelshareCategories,
-    connection: { default: voxelshareConnection },
+    connection: { default: voxelshareConnection, cn: voxelshareChinaConnection },
     // Only the user's own collections and likes are read with the sign-in; its models and their files need none.
     authStopText: grabSignInStop("voxelshare"),
     sourcedImport: voxelshareImport,

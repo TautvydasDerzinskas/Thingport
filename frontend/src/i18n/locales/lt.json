@@ -3708,11 +3708,15 @@
       "title": "Šaltiniai",
       "subtitle": "Svetainės, iš kurių importuojate modelius. Spustelėkite dešiniuoju pelės mygtuku, kad prijungtumėte, atjungtumėte ar sužinotumėte daugiau.",
       "connected": "Prijungta",
+      "connectedSites": "Prijungta · {{sites}}",
       "notConnected": "Neprijungta",
       "connect": "Prijungti",
+      "connectSite": "Prijungti: {{site}}",
       "connecting": "Jungiama…",
       "disconnect": "Atjungti",
       "connectTitle": "Prijungti {{name}}",
+      "site": "Svetainė",
+      "regions": { "main": "Tarptautinė", "cn": "Kinija" },
       "disconnectTitle": "Atjungti {{name}}?",
       "disconnectMessage": "Jūsų {{name}} raktas bus pašalintas, o importavimas iš {{name}} neveiks, kol vėl prijungsite.",
       "disconnectMessageShared": "{{name}} raktas bus pašalintas visiems šio Thingport serverio naudotojams, o importavimas iš {{name}} neveiks, kol jis vėl bus prijungtas.",
@@ -8049,21 +8053,33 @@
           "Arba rankiniu būdu: prisijunkite prie www.voxelshare.com ir atverkite naršyklės kūrėjo įrankius (F12).",
           "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → https://www.voxelshare.com nukopijuokite slapuko token reikšmę ir įklijuokite ją žemiau."
         ],
-        "placeholder": "Slapuko token reikšmė"
+        "placeholder": "Slapuko token reikšmė",
+        "cn": {
+          "steps": [
+            "Paprasčiausia: su Thingport Grab tiesiog atverkite www.voxelshare.cn prisijungę. Jis prijungs jūsų paskyrą ir atsiųs naują prisijungimą kaskart, kai ten vėl prisijungsite.",
+            "Arba rankiniu būdu: prisijunkite prie www.voxelshare.cn ir atverkite naršyklės kūrėjo įrankius (F12).",
+            "Skiltyje Application (Chrome, Edge) arba Storage (Firefox) → Cookies → https://www.voxelshare.cn nukopijuokite slapuko token reikšmę ir įklijuokite ją žemiau."
+          ],
+          "placeholder": "Slapuko token reikšmė"
+        }
       },
       "status": {
         "notConnected": "Prijunkite paskyrą, kad Thingport matytų jūsų pamėgtus VoxelShare modelius ir privačias kolekcijas. Modeliai ir bet kieno viešos kolekcijos importuojami ir be jos.",
         "expired": "Prisijungimo galiojimas baigėsi. Prisijunkite www.voxelshare.com su Thingport Grab arba vėl prijunkite VoxelShare skiltyje Konfigūracija → Šaltiniai.",
         "expiredStatus": "Prisijungimas nebegalioja",
-        "disabledReason": "VoxelShare: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai"
+        "disabledReason": "VoxelShare: prijunkite paskyrą skiltyje Konfigūracija → Šaltiniai",
+        "cn": {
+          "expired": "Kinijos svetainės prisijungimo galiojimas baigėsi. Prisijunkite www.voxelshare.cn su Thingport Grab arba vėl prijunkite VoxelShare Kinijos svetainę skiltyje Konfigūracija → Šaltiniai.",
+          "expiredStatus": "Kinijos prisijungimas nebegalioja"
+        }
       },
       "about": {
         "summary": "Flashforge modelių bendruomenė jos Adventurer ir Creator spausdintuvams, su Flash Studio sukurtais spausdinimo profiliais.",
         "signIn": "Importuoti nereikia; prisijungimas prideda jūsų kolekcijas ir pamėgtus modelius.",
-        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės www.voxelshare.com.",
+        "grab": "Atsiunčia jūsų prisijungimą, kai lankotės www.voxelshare.com arba jos Kinijos svetainėje www.voxelshare.cn.",
         "setup": [
           "Importuokite bet kurio modelio nuorodą; prisijungti nereikia.",
-          "Jūsų kolekcijoms ir pamėgtiems modeliams: įdiekite Thingport Grab, įjunkite jį VoxelShare ir atverkite www.voxelshare.com prisijungę."
+          "Jūsų kolekcijoms ir pamėgtiems modeliams: įdiekite Thingport Grab, įjunkite jį VoxelShare ir atverkite www.voxelshare.com prisijungę (Kinijos paskyrai – www.voxelshare.cn)."
         ]
       },
       "admin": {

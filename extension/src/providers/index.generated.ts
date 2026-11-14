@@ -2,7 +2,7 @@
 // change providers/ and run npm run providers:sync.
 
 import { hostIs } from "./_lib/hosts.generated";
-import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types.generated";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls, RegionId } from "./_lib/types.generated";
 import makerworld from "./makerworld/manifest.generated";
 import { urls as makerworldUrls } from "./makerworld/urls.generated";
 import printables from "./printables/manifest.generated";
@@ -61,10 +61,13 @@ export type {
   Need,
   ProviderManifest,
   ProviderUrls,
+  Region,
+  RegionId,
   SignIn,
 } from "./_lib/types.generated";
 export { hostIs } from "./_lib/hosts.generated";
 export { LIKES_ID_PREFIX } from "./_lib/lists.generated";
+export { regionalId, splitRegionalId } from "./_lib/regions.generated";
 
 /** Every provider, in the order lists show them. */
 export const PROVIDER_IDS = [
@@ -236,6 +239,22 @@ export function manifestOf(id: ProviderId): ProviderManifest {
 /** The provider whose site `hostname` is, subdomains included; null for any other site. */
 export function providerOfHost(hostname: string): ProviderId | null {
   return PROVIDER_IDS.find((id) => MANIFESTS[id].hosts.some((domain) => hostIs(hostname, domain))) ?? null;
+}
+
+/** The region of a provider's site `hostname` is on, subdomains included: one of its manifest's `regions`, or null
+ *  for its main site. */
+export function regionOfHost(provider: ProviderId, hostname: string): RegionId | null {
+  const regions = manifestOf(provider).regions ?? [];
+  return regions.find((region) => region.hosts.some((domain) => hostIs(hostname, domain)))?.id ?? null;
+}
+
+/** The region of a provider's site a link is on; null for its main site, or what isn't a link. */
+export function regionOfUrl(provider: ProviderId, url: string): RegionId | null {
+  try {
+    return regionOfHost(provider, new URL(url).hostname);
+  } catch {
+    return null;
+  }
 }
 
 /** The provider whose links a URL's host is, as its parsers read them (narrower than providerOfHost: Snapmaker's

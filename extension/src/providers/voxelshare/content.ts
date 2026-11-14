@@ -26,7 +26,7 @@ export async function loadVoxelshareProfileIds(
   url: string,
 ): Promise<((scope: VoxelshareProfileScope) => string[]) | null> {
   const parsed = parseVoxelshareModelUrl(url);
-  const model = parsed ? await loadVoxelshareModel(parsed.modelId) : null;
+  const model = parsed ? await loadVoxelshareModel(parsed.modelId, parsed.region) : null;
   if (!parsed || !model) return null;
   return (scope) => voxelshareProfileIds(model.profiles, scope, shownProfileId(url));
 }
