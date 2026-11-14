@@ -3437,7 +3437,7 @@
         "appearance": "Appearance",
         "providers": "Providers",
         "slicer": "Slicer",
-        "printers": "Printers"
+        "printers": "Printer"
       }
     },
     "providers": {

@@ -73,7 +73,7 @@ printer you print on. Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, A
 then open it on the designer's printer, or on one they build from the file if they don't have it, and QIDI Studio on the printer
 selected in it.
 
-Add your printers under **Configuration → Printers**, and their copies are made for your printer instead:
+Add your printers under **Configuration → Printer**, and their copies are made for your printer instead:
 
 - The copy names the printer, process and filament presets your slicer has for it. The printer is exactly as your
   slicer has it. The process is the one at the height and quality the designer's started from ("0.20mm Strength"),
@@ -89,7 +89,7 @@ for one of your printers, and remembers your answer for that slicer unless you u
 isn't made for a printer. A project made for the very preset you'd pick needs no copy for it, unless QIDI Studio is
 to open another slicer's project, which it would put on the printer selected in it.
 
-**Configuration → Printers** shows your printers as tiles: double-click one to add or remove it, and right-click it for
+**Configuration → Printer** shows your printers as tiles: double-click one to add or remove it, and right-click it for
 its nozzle and the slicers it's used with. **Add** lists every printer the slicers know, with their pictures. Printers
 your library points at are suggested beside yours: those your prints were sliced for, and those several of your
 projects are made for. Turn one down with **Not mine** and it stays there, dimmed. Signed in to MakerWorld, which is

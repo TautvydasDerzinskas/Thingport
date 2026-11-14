@@ -41,7 +41,7 @@ export type ExtensionState = {
   adaptPlacement: AdaptPlacement;
 };
 
-/** One of the user's printers in their Thingport instance (Configuration → Printers there), as it describes it. */
+/** One of the user's printers in their Thingport instance (Configuration → Printer there), as it describes it. */
 export type ThingportPrinter = {
   id: string;
   brandName: string;
