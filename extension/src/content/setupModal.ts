@@ -48,10 +48,11 @@ let open: {
   returnFocus: HTMLElement | null;
 } | null = null;
 
-/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed. */
+/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed; `refocus` says the icon the
+ *  dialog was opened from had the focus, for the one that replaces it. */
 export function openSetupModal(
   root: ShadowRoot,
-  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: () => void },
+  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: (options: { refocus: boolean }) => void },
 ): void {
   if (open) return;
   const returnFocus = root.activeElement instanceof HTMLElement ? root.activeElement : null;
@@ -88,8 +89,9 @@ export function openSetupModal(
   });
 
   backdrop.querySelector("[data-action=retry]")?.addEventListener("click", () => {
+    const refocus = open?.returnFocus != null;
     closeSetupModal();
-    disconnected?.onRetry();
+    disconnected?.onRetry({ refocus });
   });
 
   const onKeydown = (event: KeyboardEvent) => {
