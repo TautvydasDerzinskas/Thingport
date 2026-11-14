@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadVoxelshareModel, pageProfileId, shownProfileId, voxelshareModelFrom } from "./api";
 import { pickedProfile, profileFiles } from "./adaptSite";
-import { voxelshareProfileIds } from "./content";
+import { shownVoxelshareProfileUrl, voxelshareProfileIds } from "./content";
 
 const FILES = "https://webimage.voxelshare.com/voxelshare/orca/run_flash/284e9b6c92974fe2f24708db6e6b1e16/";
 
@@ -92,6 +92,20 @@ describe("a VoxelShare model's profiles", () => {
     expect(shownProfileId(`${page}#profileId-1502105`, pageShowing("1502106"))).toBe("1502106");
     expect(shownProfileId(`${page}#profileId-1502105`, pageShowing(null))).toBe("1502105");
     expect(shownProfileId(page, pageShowing(null))).toBeNull();
+  });
+
+  it("are imported as the one the page shows, which its link names only where it differs", () => {
+    const page = "https://www.voxelshare.com/de/models/8242660-flexi-mechanical-dragon";
+    expect(shownVoxelshareProfileUrl(page, pageShowing("1502106"))).toBe(`${page}#profileId-1502106`);
+    expect(shownVoxelshareProfileUrl(`${page}#profileId-1502105`, pageShowing("1502106"))).toBe(
+      `${page}#profileId-1502106`,
+    );
+    // The link already names it, or the page marks none: as it is.
+    expect(shownVoxelshareProfileUrl(`${page}#profileId-1502106`, pageShowing("1502106"))).toBe(
+      `${page}#profileId-1502106`,
+    );
+    expect(shownVoxelshareProfileUrl(`${page}#profileId-1502105`, pageShowing(null))).toBe(`${page}#profileId-1502105`);
+    expect(shownVoxelshareProfileUrl(page, pageShowing(null))).toBe(page);
   });
 
   it("are offered for import as the backend picks them, the page's own first", () => {

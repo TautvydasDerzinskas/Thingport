@@ -15,7 +15,7 @@ import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } 
 import { loadEufymakeProfiles } from "./eufymake/content";
 import { loadNexprintProfiles } from "./nexprint/content";
 import { loadQidimakerProfileIds } from "./qidimaker/content";
-import { loadVoxelshareProfileIds } from "./voxelshare/content";
+import { loadVoxelshareProfileIds, shownVoxelshareProfileUrl } from "./voxelshare/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
 import { t } from "../shared/i18n";
@@ -34,6 +34,9 @@ export type ContentModule = {
   loadProfiles?(url: string): Promise<((scope: ProfileScope) => string[]) | null>;
   /** A link to one of the model's print profiles, where it isn't `#profileId-<id>`. */
   profileUrl?(url: string, profileId: string): string;
+  /** The page's link naming the print profile it shows, where its address doesn't follow the one picked there; the
+   *  link as it is otherwise. */
+  shownProfileUrl?(url: string): string;
   /** Why the model on this page can't be imported, or null when it can, or that can't be told. */
   blockReason?(url: string): Promise<ImportBlock | null>;
   /** What the panel says of a list's model the instance marks as one the user can't import, by its reason. */
@@ -206,5 +209,5 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and
   // their private collections their own too, read with their sign-in. Its page keeps the profile it shows to itself, so
   // the panel takes the one picked in its list.
-  voxelshare: { loadProfiles: loadVoxelshareProfileIds },
+  voxelshare: { loadProfiles: loadVoxelshareProfileIds, shownProfileUrl: shownVoxelshareProfileUrl },
 };
