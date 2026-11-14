@@ -2,6 +2,7 @@
 // `{code, msg, data}`, code 0 when it went well. Models and their print profiles need no sign-in, so none is sent.
 
 import { MANIFESTS } from "../index.generated";
+import { parseVoxelshareModelUrl } from "./urls.generated";
 
 const API = MANIFESTS.voxelshare.endpoints.api;
 const CODE_OK = 0;
@@ -71,4 +72,10 @@ export async function loadVoxelshareModel(modelId: string): Promise<VoxelshareMo
 export function pageProfileId(root: ParentNode = document): string | null {
   const id = root.querySelector<HTMLElement>(".list-container .list-item.active")?.dataset.configKey ?? "";
   return /^\d{1,20}$/.test(id) ? id : null;
+}
+
+/** The profile to take on a model's page, for its import and its Download adapted alike: the one the page marks, else
+ *  the `#profileId-` of a link Thingport made, which the page never updates as another is picked. */
+export function shownProfileId(href: string, root: ParentNode = document): string | null {
+  return pageProfileId(root) ?? parseVoxelshareModelUrl(href)?.requestedProfileId ?? null;
 }

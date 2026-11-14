@@ -409,12 +409,15 @@ export async function fetchVoxelshareFiles(modelId: string): Promise<Record<stri
 }
 
 /** By its id. Null for a model it doesn't have or shows nobody. Its own files are only read where it has no print
- *  profiles, as only then are they imported. */
+ *  profile to import, none listed or none shown, as only then are they imported. */
 export async function resolveVoxelshareModel(modelId: string): Promise<VoxelshareModelResolution | null> {
   const detail = await fetchVoxelshareDetail(modelId);
   if (!detail) return null;
-  const profiles = await fetchVoxelshareProfiles(modelId);
-  return voxelshareMetaFromDetail(detail, profiles, profiles.length ? [] : await fetchVoxelshareFiles(modelId));
+  const resolution = voxelshareMetaFromDetail(detail, await fetchVoxelshareProfiles(modelId));
+  if (resolution && !resolution.profiles.length) {
+    resolution.files = voxelshareFilesFrom(await fetchVoxelshareFiles(modelId));
+  }
+  return resolution;
 }
 
 // ---- Lists ----------------------------------------------------------------------------------------------------------
@@ -566,12 +569,13 @@ export async function listVoxelshareCollections(token: string): Promise<Provider
     token,
   );
   const liked = asRecord(likes.data);
+  if (likes.code !== CODE_OK || !liked) throw failure("your likes", likes);
   const likesCard: ProviderCollectionCard = {
     id: VOXELSHARE_LIKES_KEY,
     name: VOXELSHARE_LIKES_NAME,
     url: VOXELSHARE_LIKES_URL,
-    modelCount: asCount(liked?.total) ?? 0,
-    thumbnails: recordsOf(liked?.items).flatMap((model) => webImage(asRecord(model.mainImage)?.url) ?? []),
+    modelCount: asCount(liked.total) ?? 0,
+    thumbnails: recordsOf(liked.items).flatMap((model) => webImage(asRecord(model.mainImage)?.url) ?? []),
     private: true,
     owner: null,
   };

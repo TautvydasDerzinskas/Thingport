@@ -8,7 +8,7 @@ import { orcaFamilyFormat } from "../../content/adapted/formats";
 import { pickById, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { t } from "../../shared/i18n";
-import { loadVoxelshareModel, pageProfileId, type VoxelshareModel } from "./api";
+import { loadVoxelshareModel, shownProfileId, type VoxelshareModel } from "./api";
 import { parseVoxelshareModelUrl } from "./urls.generated";
 
 const NAME = "VoxelShare";
@@ -35,7 +35,7 @@ export function profileFiles(model: VoxelshareModel): Linked[] {
 /** The profile the page shows: the one marked in its list, else the `#profileId-` of a link Thingport made; "other"
  *  where that names one with no 3MF here. */
 export function pickedProfile(href: string, files: AdaptFile[], root: ParentNode = document) {
-  return pickById(files, pageProfileId(root) ?? parseVoxelshareModelUrl(href)?.requestedProfileId);
+  return pickById(files, shownProfileId(href, root));
 }
 
 async function readFiles(pageUrl: string): Promise<Linked[]> {

@@ -44,14 +44,26 @@ export function normalizeVoxelshareSession(raw: string | null | undefined): stri
   return TOKEN.test(value) ? value : null;
 }
 
+/** What the token says of itself, unchecked: it's only shown, or compared with another of the site's. */
+function claims(token: string): { exp?: unknown; sub?: unknown } {
+  try {
+    const payload: unknown = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+    return payload && typeof payload === "object" ? payload : {};
+  } catch {
+    return {};
+  }
+}
+
 /** When the token runs out, as it says itself; null where it doesn't say. */
 export function voxelshareTokenExpiry(token: string): Date | null {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8")) as { exp?: unknown };
-    return typeof payload.exp === "number" && Number.isFinite(payload.exp) ? new Date(payload.exp * 1000) : null;
-  } catch {
-    return null;
-  }
+  const { exp } = claims(token);
+  return typeof exp === "number" && Number.isFinite(exp) ? new Date(exp * 1000) : null;
+}
+
+/** Whose the token is, by the account number it names; null where it names none. */
+export function voxelshareTokenAccount(token: string): string | null {
+  const { sub } = claims(token);
+  return typeof sub === "string" && sub ? sub : typeof sub === "number" ? String(sub) : null;
 }
 
 /** The user's token until VoxelShare turns it down or it runs out; null without one. */
@@ -59,17 +71,26 @@ export async function getUserVoxelshareToken(userId: string): Promise<string | n
   return usableSecret(await readConnection<Secret>(userId, ID), true)?.token ?? null;
 }
 
-/** A new token clears an earlier rejection. Whose it is, where known, is kept beside it; on disconnect it stays. */
+/** A new token clears an earlier rejection. Whose it is, where known, is kept beside it; on disconnect it stays. A
+ *  token saved without saying whose it is (Grab sends each new one so) keeps the name only while it's the same
+ *  account's as the token it replaces: a renewal, not someone else signing in. */
 export async function setUserVoxelshareSession(
   userId: string,
   token: string | null,
   account: { id: string; name: string | null } | null = null,
 ): Promise<boolean> {
+  let whose: { accountId?: string | null; accountName?: string | null } = {};
+  if (account) whose = { accountId: account.id, accountName: account.name };
+  else if (token) {
+    const stored = (await readConnection<Secret>(userId, ID))?.secret?.token;
+    const sameAccount = Boolean(stored) && voxelshareTokenAccount(stored!) === voxelshareTokenAccount(token);
+    if (!sameAccount || !voxelshareTokenAccount(token)) whose = { accountId: null, accountName: null };
+  }
   await writeConnection<Secret>(userId, ID, {
     secret: token ? { token } : null,
     expiresAt: token ? voxelshareTokenExpiry(token) : null,
     rejectedAt: null,
-    ...(account ? { accountId: account.id, accountName: account.name } : {}),
+    ...whose,
   });
   return Boolean(token);
 }
