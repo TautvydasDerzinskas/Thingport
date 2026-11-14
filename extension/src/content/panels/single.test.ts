@@ -448,6 +448,27 @@ describe("the single-model panel", () => {
 
       expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-2`]);
       expect(last()).toContain("Print profiles imported: 1, 1 already on the model.");
+      // The import filed it into the collection.
+      expect(asked("/collection/col1/items/print1")).toBe(false);
+    });
+
+    it("files the model into the picked collection when every profile turned out to be on it", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1", "2"] };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: true,
+        print_id: "print1",
+        imported_profile_ids: ["1", "2"],
+      };
+      answers["POST /collection/col1/items/print1"] = { ok: true };
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([]);
+      expect(asked("/collection/col1/items/print1")).toBe(true);
+      expect(last()).toContain("Print profiles imported: 0, 2 already on the model.");
+      expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
     });
 
     it("leaves nothing out of a fresh model, which the instance says has no profiles", async () => {

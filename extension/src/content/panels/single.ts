@@ -522,6 +522,8 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   let lastError: unknown = null;
   let printId: string | null = null;
   let fetchedOne = false;
+  // The import files the model into the collection; one left out, every one, doesn't.
+  let filed = false;
   for (const [index, instanceId] of wanted.entries()) {
     const progress = statusHtml(t("importingPrintProfile", { current: index + 1, total: wanted.length }));
     runProgress.set(importKey(url), progress);
@@ -552,6 +554,7 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
         title,
       });
       printId = print?.id ?? printId;
+      filed ||= Boolean(print?.id);
       if (print?.import_outcome === "already_imported") already++;
       else added++;
     } catch (err) {
@@ -569,6 +572,8 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
     renderBlockedError(lastError ?? new Error(t("importFailed")), scope, collectionId);
     return;
   }
+  // Best effort, as the import's own filing is.
+  if (collectionId && !filed) await api("POST", `/collection/${collectionId}/items/${printId}`).catch(() => undefined);
   const parts = [t("printProfilesImported", { count: added })];
   if (already) parts.push(t("profilesAlreadyOnModelCount", { count: already }));
   if (failed) parts.push(t("profilesFailed", { count: failed }));
