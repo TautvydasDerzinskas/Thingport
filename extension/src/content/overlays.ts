@@ -48,7 +48,14 @@ function wireAbort(overlay: HTMLElement): void {
 function focusBlockingOverlay(overlay: HTMLElement, preferred?: HTMLElement): void {
   const card = overlay.querySelector<HTMLElement>(".tg-overlay__card")!;
   (preferred ?? card).focus();
-  overlay.addEventListener("keydown", (event) => {
+  // On the document, not the overlay: focus can slip out to the page without a Tab (Chrome drops it from a button
+  // that disables itself when pressed, a click on the backdrop lands on the body), and the overlay never hears the
+  // next Tab from there.
+  const onKeydown = (event: KeyboardEvent) => {
+    if (!overlay.isConnected) {
+      document.removeEventListener("keydown", onKeydown, true);
+      return;
+    }
     if (event.key !== "Tab") return;
     const buttons = [...overlay.querySelectorAll<HTMLButtonElement>("button:not([disabled])")].filter(
       (button) => !button.hidden,
@@ -69,7 +76,8 @@ function focusBlockingOverlay(overlay: HTMLElement, preferred?: HTMLElement): vo
       event.preventDefault();
       (event.shiftKey ? last : first).focus();
     }
-  });
+  };
+  document.addEventListener("keydown", onKeydown, true);
 }
 
 /** Counts down the wait between models, then asks the background to start this one. */
