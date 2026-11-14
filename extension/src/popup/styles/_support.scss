@@ -1,0 +1,145 @@
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+
+// "Show your love": the confirmation's dialog, a little wider, with the two ways side by side and Buy Me a Coffee the
+// larger, in its own yellow.
+.love {
+  position: relative;
+  max-width: 340px;
+  padding: 18px t.$space-4 t.$space-3;
+  text-align: center;
+
+  &__close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+  }
+
+  &__heart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: t.$space-2;
+    border-radius: 50%;
+    background: color-mix(in srgb, #{t.c("love")} 14%, transparent);
+    color: t.c("love");
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  &__title {
+    font-size: 16px;
+  }
+
+  &__text {
+    margin-inline: auto;
+    max-width: 34ch;
+  }
+
+  &__ways {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: t.$space-2;
+    margin-top: t.$space-4;
+  }
+
+  &__way {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 14px 8px;
+    border: 1px solid t.c("border");
+    border-radius: t.$radius-lg;
+    background: t.c("surface-sunken");
+    color: t.c("text");
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease,
+      background 0.15s ease;
+    @include m.focus-ring;
+
+    &:hover,
+    &:focus-visible {
+      border-color: t.c("text-muted");
+      transform: translateY(-1px);
+    }
+
+    &--coffee {
+      border-color: t.c("coffee");
+      background: t.c("coffee");
+      color: t.c("on-coffee");
+
+      &:hover,
+      &:focus-visible {
+        border-color: t.c("on-coffee");
+      }
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin-bottom: 2px;
+    border-radius: 9px;
+    background: color-mix(in srgb, #{t.c("sponsors")} 16%, transparent);
+    color: t.c("sponsors");
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .love__way--coffee & {
+      background: t.c("coffee-icon");
+      color: t.c("on-coffee");
+    }
+  }
+
+  &__name {
+    max-width: 100%;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  &__host {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: t.$font-size-xs;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: t.c("text-muted");
+
+    .love__way--coffee & {
+      color: color-mix(in srgb, #{t.c("on-coffee")} 70%, transparent);
+    }
+  }
+
+  &__later {
+    margin-top: t.$space-3;
+    font-size: t.$font-size-sm;
+    color: t.c("text-muted");
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__way {
+      transition: none;
+
+      &:hover,
+      &:focus-visible {
+        transform: none;
+      }
+    }
+  }
+}
