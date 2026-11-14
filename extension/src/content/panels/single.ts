@@ -4,7 +4,7 @@
 // flow below, which is every provider's.
 
 import { t } from "../../shared/i18n";
-import type { FillGapsResult, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
+import type { FillGapsResult, ImportStatus, InspectResult, SourceGap, ZipEntriesResult } from "../../shared/api";
 import { IMPORT_PAUSED, request } from "../../shared/messages";
 import { ctx } from "../context";
 import {
@@ -15,7 +15,7 @@ import {
 import { currentMakerworldProfileTitle } from "../../providers/makerworld/pageData";
 import { CONTENT_MODULES, type ProfileScope, type ScriptState } from "../../providers/content";
 import { missingOf, profileUrl, withoutHeld, type MissingProfiles } from "../profiles";
-import { api, escapeHtml } from "../runtime";
+import { api, escapeHtml, importKey, isImporting, sleep, whileImporting } from "../runtime";
 import { onPanelAction, panelQuery, panelQueryAll, renderPanel, setPanelNote } from "../shell";
 import { modelHeadHtml, modelTitle } from "./modelHead";
 import { collectionIdFor, collectionPickerHtml, readCollectionChoice, wireCollectionPicker } from "./collectionPicker";
@@ -152,9 +152,20 @@ function onQueueAction(): void {
   });
 }
 
+/** What an import under way on this page last said of its progress, by importKey, for a panel drawn again before it's
+ *  done. None while it shows a rotating status. */
+const runProgress = new Map<string, string>();
+
 export async function loadSingleItem(): Promise<void> {
-  const { library } = ctx();
+  const { library, url, classification } = ctx();
   startScriptNote();
+  // The run, rather than an offer to import what it's still bringing in: the library it was drawn from is behind it.
+  if (isImporting(url)) {
+    const progress = runProgress.get(importKey(url));
+    if (progress) renderPanel(progress);
+    else renderFunStatus(importingPhrases(classification.provider));
+    return;
+  }
   // A MakerWorld profile is always one 3MF, so inspecting would only cost a download resolution.
   if (library?.state === "complete") {
     renderPanel(completeHtml());
@@ -374,9 +385,24 @@ async function loadZipEntries(): Promise<void> {
 }
 
 async function runDirectImport(opts?: { entries?: string[] }): Promise<void> {
+  const { url } = ctx();
+  // One at a time: a second run of the model would race the first for the same files, each a download from its site.
+  if (isImporting(url)) return;
   // Captured up front: SPA navigation clears the context mid-import.
   const choice = readCollectionChoice();
   const profiles = selectedProfileChoice();
+  try {
+    await whileImporting(url, () => importChosen(choice, profiles, opts));
+  } finally {
+    runProgress.delete(importKey(url));
+  }
+}
+
+async function importChosen(
+  choice: ReturnType<typeof readCollectionChoice>,
+  profiles: ProfileChoice,
+  opts?: { entries?: string[] },
+): Promise<void> {
   if (ctx().classification.provider === MANIFESTS.makeronline.id) {
     await runMakeronlineImport(scopeOf(profiles), await collectionIdFor(choice));
     return;
@@ -495,9 +521,22 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
   let failed = 0;
   let lastError: unknown = null;
   let printId: string | null = null;
+  let fetchedOne = false;
   for (const [index, instanceId] of wanted.entries()) {
-    renderPanel(statusHtml(t("importingPrintProfile", { current: index + 1, total: wanted.length })));
-    if (index > 0) await new Promise((resolve) => setTimeout(resolve, PROFILE_GAP_MS));
+    const progress = statusHtml(t("importingPrintProfile", { current: index + 1, total: wanted.length }));
+    runProgress.set(importKey(url), progress);
+    renderPanel(progress);
+    // Asked again before each one, the first too, as the model may have it by now (from another tab, say), and on
+    // MakerWorld it would be downloaded before the instance could say so.
+    const now = await heldProfilesNow(url);
+    if (now && !withoutHeld([instanceId], now.held).length) {
+      printId ??= now.printId;
+      already++;
+      continue;
+    }
+    // The gap is between two of the site's downloads: one left out asked it nothing.
+    if (fetchedOne) await sleep(PROFILE_GAP_MS);
+    fetchedOne = true;
     // Each profile is picked on the page, then downloaded with its own button: the one the page shows needn't be the
     // first of these. Snapmaker's and Creality Cloud's the instance fetches itself.
     try {
@@ -547,6 +586,17 @@ async function runProfilesImport(choice: Exclude<ProfileChoice, "url">, collecti
       failed ? t("partlyImported") : addedTitle,
     ),
   );
+}
+
+/** The print profiles the library's model has now, and which model that is. Null where the instance can't say: no
+ *  answer, or one from before 1.6.0. */
+async function heldProfilesNow(url: string): Promise<{ held: string[]; printId: string | null } | null> {
+  try {
+    const status = await api<ImportStatus>("GET", `/import/status?url=${encodeURIComponent(url)}`);
+    return status.imported_profile_ids ? { held: status.imported_profile_ids, printId: status.print_id ?? null } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Sends the link to the import queue with the panel's collection and profile choices. No download
