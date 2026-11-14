@@ -45,7 +45,7 @@
   "connectionIntro": "Connect to your Thingport instance to import models with one click.",
   "instanceUrl": "Thingport instance URL",
   "pairWithThingport": "Pair with Thingport",
-  "pairNote": "Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.",
+  "pairNote": "Opens Thingport in a tab to approve this browser. The connection it hands back is kept instead of a password.",
   "pairPending": "Finish connecting in the Thingport tab that just opened.",
   "enterCredentials": "Enter credentials",
   "email": "Email",

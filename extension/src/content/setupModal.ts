@@ -6,6 +6,7 @@ import { send, type Connection } from "../shared/messages";
 import { fillIcons } from "../shared/icon";
 import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
+import { getShadowRoot } from "./shell";
 
 type Disconnected = Extract<Connection, { connected: false }>;
 
@@ -40,15 +41,21 @@ function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): strin
       <div class="tg-hint tg-modal__detail">${escapeHtml(problem.detail)}</div>`;
 }
 
-let open: { backdrop: HTMLElement; onKeydown: (event: KeyboardEvent) => void; onClosed: (() => void) | null } | null =
-  null;
+let open: {
+  backdrop: HTMLElement;
+  onKeydown: (event: KeyboardEvent) => void;
+  onClosed: (() => void) | null;
+  returnFocus: HTMLElement | null;
+} | null = null;
 
-/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed. */
+/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed; `refocus` says the icon the
+ *  dialog was opened from had the focus, for the one that replaces it. */
 export function openSetupModal(
   root: ShadowRoot,
-  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: () => void },
+  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: (options: { refocus: boolean }) => void },
 ): void {
   if (open) return;
+  const returnFocus = root.activeElement instanceof HTMLElement ? root.activeElement : null;
   const backdrop = document.createElement("div");
   backdrop.className = "tg-modal-backdrop";
   backdrop.innerHTML = `
@@ -82,12 +89,32 @@ export function openSetupModal(
   });
 
   backdrop.querySelector("[data-action=retry]")?.addEventListener("click", () => {
+    const refocus = open?.returnFocus != null;
     closeSetupModal();
-    disconnected?.onRetry();
+    disconnected?.onRetry({ refocus });
   });
 
   const onKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") dismiss();
+    if (event.key === "Escape") {
+      dismiss();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...backdrop.querySelectorAll<HTMLElement>("button:not([disabled])")];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1)!;
+    const active = root.activeElement;
+    if (!(active instanceof HTMLElement) || !focusable.includes(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   };
   document.addEventListener("keydown", onKeydown, true);
   backdrop.querySelector(".tg-close")!.addEventListener("click", dismiss);
@@ -96,7 +123,7 @@ export function openSetupModal(
   });
 
   root.appendChild(backdrop);
-  open = { backdrop, onKeydown, onClosed: null };
+  open = { backdrop, onKeydown, onClosed: null, returnFocus };
   openBtn.focus();
 }
 
@@ -108,16 +135,22 @@ export function whenSetupModalClosed(show: () => void): void {
   else show();
 }
 
-/** Closed by the user: what waited for that comes now. */
+/** Closed by the user: what waited for that comes now, and gets the focus the replaced icon was given back. */
 function dismiss(): void {
   const onClosed = open?.onClosed;
+  const hadFocus = open?.returnFocus != null;
   closeSetupModal();
-  onClosed?.();
+  if (!onClosed) return;
+  onClosed();
+  // The icon itself: the panel that comes with it, close button and all, is still hidden.
+  if (hadFocus) getShadowRoot()?.querySelector<HTMLElement>(".tg-fab")?.focus();
 }
 
 export function closeSetupModal(): void {
   if (!open) return;
-  document.removeEventListener("keydown", open.onKeydown, true);
-  open.backdrop.remove();
+  const { backdrop, onKeydown, returnFocus } = open;
+  document.removeEventListener("keydown", onKeydown, true);
+  backdrop.remove();
   open = null;
+  if (returnFocus?.isConnected) returnFocus.focus();
 }

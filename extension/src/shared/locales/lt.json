@@ -45,7 +45,7 @@
   "connectionIntro": "Prisijunkite prie savo Thingport serverio, kad vienu spustelėjimu importuotumėte modelius.",
   "instanceUrl": "Thingport serverio URL",
   "pairWithThingport": "Suporuoti su Thingport",
-  "pairNote": "Atidaro Thingport naujame skirtuke, kad patvirtintumėte šią naršyklę. Čia saugomas tik Thingport grąžintas ryšys.",
+  "pairNote": "Atidaro Thingport naujame skirtuke, kad patvirtintumėte šią naršyklę. Vietoj slaptažodžio išsaugomas Thingport grąžintas ryšys.",
   "pairPending": "Užbaikite prisijungimą Thingport skirtuke, kuris ką tik atsidarė.",
   "enterCredentials": "Įveskite prisijungimo duomenis",
   "email": "El. paštas",

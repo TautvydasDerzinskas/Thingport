@@ -45,7 +45,7 @@
   "connectionIntro": "Connectez-vous à votre instance Thingport pour importer des modèles en un clic.",
   "instanceUrl": "URL de l’instance Thingport",
   "pairWithThingport": "Appairer avec Thingport",
-  "pairNote": "Ouvre Thingport dans un onglet pour approuver ce navigateur. Rien n'est enregistré ici sauf la connexion qu'il retourne.",
+  "pairNote": "Ouvre Thingport dans un onglet pour approuver ce navigateur. La connexion qu'il retourne est enregistrée à la place d'un mot de passe.",
   "pairPending": "Terminez la connexion dans l'onglet Thingport qui vient de s'ouvrir.",
   "enterCredentials": "Entrez les identifiants",
   "email": "Adresse e-mail",

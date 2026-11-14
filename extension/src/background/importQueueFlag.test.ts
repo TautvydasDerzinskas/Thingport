@@ -43,7 +43,8 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { disconnect, learnImportQueue, loginAndStoreToken, storeApprovedConnection } = await import("./api");
+const { disconnect, learnImportQueue, loginAndStoreToken, probePairing, storeApprovedConnection } =
+  await import("./api");
 const { getState, saveConfig } = await import("./config");
 
 const healthCalls = () => fetches.filter(({ url }) => url.endsWith("/api/health"));
@@ -303,5 +304,25 @@ describe("what getState makes of it", () => {
     await getState();
     await new Promise((resolve) => setTimeout(resolve));
     expect(healthCalls()).toEqual([]);
+  });
+});
+
+describe("asking an address whether it pairs by approval, for the popup", () => {
+  it("says yes, no, or nothing to go by", async () => {
+    health = answered({ ok: true, grab_pairing: true });
+    await expect(probePairing(`${INSTANCE}/`)).resolves.toBe(true);
+    expect(healthCalls().at(-1)?.url).toBe(`${INSTANCE}/api/health`);
+
+    health = answered({ ok: true });
+    await expect(probePairing(INSTANCE)).resolves.toBe(false);
+
+    health = "unreachable";
+    await expect(probePairing(INSTANCE)).resolves.toBeNull();
+
+    health = new Response("<html>proxy</html>", { status: 502 });
+    await expect(probePairing(INSTANCE)).resolves.toBeNull();
+
+    health = answered({ error: "upstream unavailable" }, 502);
+    await expect(probePairing(INSTANCE)).resolves.toBeNull();
   });
 });
