@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const store: Record<string, unknown> = {};
 
@@ -15,7 +15,10 @@ const { backgroundText } = await import("./localize");
 describe("background localization", () => {
   beforeEach(() => {
     for (const key of Object.keys(store)) delete store[key];
+    // Node fills navigator.languages from the machine's own language.
+    vi.stubGlobal("navigator", { languages: ["en-US"] });
   });
+  afterAll(() => vi.unstubAllGlobals());
 
   it("falls back to English when saved locale storage is missing or invalid", async () => {
     store.locale = "not-a-locale";
@@ -29,10 +32,6 @@ describe("background localization", () => {
 
   it("uses browser languages before a manual choice is saved", async () => {
     vi.stubGlobal("navigator", { languages: ["ru-RU"] });
-    try {
-      await expect(backgroundText("importFailed")).resolves.toBe("Импорт не выполнен");
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    await expect(backgroundText("importFailed")).resolves.toBe("Импорт не выполнен");
   });
 });
