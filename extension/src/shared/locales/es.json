@@ -45,7 +45,7 @@
   "connectionIntro": "Conecta tu instancia de Thingport para importar modelos con un solo clic.",
   "instanceUrl": "URL de la instancia de Thingport",
   "pairWithThingport": "Emparejar con Thingport",
-  "pairNote": "Abre Thingport en una pestaña para aprobar este navegador. Aquí no se guarda nada aparte de la conexión que devuelve.",
+  "pairNote": "Abre Thingport en una pestaña para aprobar este navegador. Se guarda la conexión que devuelve en lugar de una contraseña.",
   "pairPending": "Finalice la conexión en la pestaña Thingport que acaba de abrirse.",
   "enterCredentials": "Ingrese credenciales",
   "email": "Correo electrónico",
