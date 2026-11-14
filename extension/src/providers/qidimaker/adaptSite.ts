@@ -7,6 +7,7 @@ import { fetchFile, safeFilename } from "../../content/adapted/download";
 import { bambuFamilyFormat } from "../../content/adapted/formats";
 import { pickById, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { loadQidimakerModel, type QidimakerModel } from "./api";
 import { parseQidimakerModelUrl } from "./urls.generated";
 
@@ -38,7 +39,7 @@ const links = new Map<string, string>();
 async function readFiles(pageUrl: string): Promise<Linked[]> {
   const modelId = parseQidimakerModelUrl(pageUrl)?.modelId;
   const model = modelId ? await loadQidimakerModel(modelId) : null;
-  if (modelId && !model) throw new Error(`${NAME} didn't say which profiles this model has. Try again in a moment.`);
+  if (modelId && !model) throw new Error(t("adaptSite.noProfileList", { site: NAME }));
   const files = model ? profileFiles(model) : [];
   for (const file of files) links.set(file.id, file.link);
   return files;
@@ -47,7 +48,9 @@ async function readFiles(pageUrl: string): Promise<Linked[]> {
 export const QIDIMAKER_ADAPT: AdaptSite = {
   id: "qidimaker",
   name: NAME,
-  filesAre: "QIDI Maker's files are QIDI Studio projects",
+  get filesAre() {
+    return t("adaptSite.filesAreProjects", { site: NAME, slicer: "QIDI Studio" });
+  },
   formats: [bambuFamilyFormat("QIDIStudio", "02.07.02.10")],
 
   async files(pageUrl) {
@@ -65,8 +68,7 @@ export const QIDIMAKER_ADAPT: AdaptSite = {
     } finally {
       stop();
     }
-    if (!link)
-      throw new Error(`Couldn't find this profile among the model's on ${NAME}. Reload the page, then try again.`);
+    if (!link) throw new Error(t("adaptSite.profileNotFound", { site: NAME }));
     const { bytes } = await fetchFile(link, NAME, progress, { init: { credentials: "omit" } });
     return { bytes, filename: safeFilename(file.name) };
   },

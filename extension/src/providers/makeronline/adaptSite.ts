@@ -14,6 +14,7 @@ import {
   type AdaptSite,
 } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { request } from "../../shared/messages";
 import { MANIFESTS } from "../index.generated";
 import { MAKERONLINE_PICK } from "./pick";
@@ -132,7 +133,9 @@ export function resetPickWatch(): void {
 export const MAKERONLINE_ADAPT: AdaptSite = {
   id: "makeronline",
   name: NAME,
-  filesAre: "MakerOnline's print profiles are Anycubic Slicer Next projects",
+  get filesAre() {
+    return t("adaptSite.printProfilesAreProjects", { site: NAME, slicer: "Anycubic Slicer Next" });
+  },
   // Built on OrcaSlicer 2.3.1, it writes `BambuStudio-` as its app (adapter/slicers/anycubicslicernext.ts).
   formats: [orcaFamilyFormat("BambuStudio", "2.3.1")],
 
@@ -166,8 +169,7 @@ export const MAKERONLINE_ADAPT: AdaptSite = {
     if (!pageCookie(ACCESS_COOKIE)) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const sign = signing.get(file.id);
-    if (!sign)
-      throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
+    if (!sign) throw new Error(t("adaptSite.fileNotFound", { site: NAME }));
     const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const signed = await request("SIGN_MAKERONLINE_FILE", {
       key: sign.key,

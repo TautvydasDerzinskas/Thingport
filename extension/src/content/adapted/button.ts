@@ -13,6 +13,7 @@ import {
   targetName,
   type AdaptTarget,
 } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import { createIcon } from "../../shared/icon";
 import { send } from "../../shared/messages";
 import css from "../styles/adapted.scss?inline";
@@ -22,7 +23,6 @@ import { ICONS, element, placeFixed, shownName, sizeText, svg, targetPicture } f
 import type { AdaptFile, PageAdapt } from "./site";
 
 const HOST_ID = "thingport-grab-adapted";
-const LABEL = "Download adapted";
 const DONE_RESET_MS = 3000;
 const NOTE_SHOW_MS = 10000;
 // How long the site's own button may take to show before the copies are offered in Grab's bubble instead.
@@ -250,7 +250,10 @@ function settingsRow(shared: Shared, closeMenu: () => void): HTMLElement {
   const gear = element("span", "ndm__art ndm__art--glyph");
   gear.append(svg(ICONS.gear));
   // Nothing picked yet: the one thing to do is pick a slicer.
-  row.append(gear, rowText(beforeSlicerPicked(shared.targets) ? "Pick your slicer…" : "Adapt settings…", ""));
+  row.append(
+    gear,
+    rowText(t(beforeSlicerPicked(shared.targets) ? "adaptPage.pickYourSlicer" : "adaptPage.adaptSettings"), ""),
+  );
   row.addEventListener("click", () => {
     closeMenu();
     void send("OPEN_ADAPT_SETTINGS");
@@ -308,10 +311,10 @@ type Control = { host: HTMLElement; stop(): void };
 /** The menu's heading for the copies of the file the page picked, or what there is to do where none is made. */
 const copyOf = (file: AdaptFile | "other" | "unread") =>
   file === "other"
-    ? "Pick one of its 3MFs on the page"
+    ? t("adaptPage.pickFormatOnPage", { format: "3MF" })
     : file === "unread"
-      ? "Reading the file picked on the page…"
-      : `Copy of ${shownName(file)}`;
+      ? t("adaptPage.readingPagePick")
+      : t("adaptPage.copyOf", { file: shownName(file) });
 
 function mainButton(shared: Shared): Control {
   const { host, root } = shadowHost(shared);
@@ -334,7 +337,7 @@ function mainButton(shared: Shared): Control {
   const logo = element("span", "nd__logo");
   logo.append(createIcon());
   const text = element("span", "nd__text");
-  const title = element("span", "nd__title", LABEL);
+  const title = element("span", "nd__title", t("downloadAdapted"));
   const line = element("span", "nd__line");
   const fileLine = element("span", "nd__file");
   const targetLineEl = element("span", "nd__target");
@@ -347,9 +350,7 @@ function mainButton(shared: Shared): Control {
   more.type = "button";
   more.setAttribute(
     "aria-label",
-    several
-      ? "Choose the file and the copy, or Grab's settings for them"
-      : "Choose the copy, or Grab's settings for it",
+    t(several ? "adaptPage.chooseFileAndCopy" : "adaptPage.chooseCopy", { grab: "Grab" }),
   );
   more.append(svg(ICONS.caret));
   split.append(main, more);
@@ -359,8 +360,12 @@ function mainButton(shared: Shared): Control {
   const show = () => {
     fileLine.textContent = shownName(shared.file);
     targetLineEl.textContent = targetLine(shared.target);
-    const what = several ? `${shownName(shared.file)}, ${targetLine(shared.target)}` : targetLine(shared.target);
-    main.setAttribute("aria-label", `${LABEL}: ${what}`);
+    main.setAttribute(
+      "aria-label",
+      several
+        ? t("adaptPage.mainNameWithFile", { file: shownName(shared.file), copy: targetLine(shared.target) })
+        : t("adaptPage.mainName", { copy: targetLine(shared.target) }),
+    );
     main.disabled = shared.busy;
     more.disabled = shared.busy;
   };
@@ -394,14 +399,14 @@ function mainButton(shared: Shared): Control {
       {
         progress: (status) => (title.textContent = status),
         done: (note) => {
-          title.textContent = "Downloaded";
+          title.textContent = t("downloaded");
           info.replaceChildren(svg(ICONS.check));
           if (note) bubble.show(note, { hold: NOTE_SHOW_MS });
         },
         failed: (message) => bubble.show(message, { error: true, hold: NOTE_SHOW_MS }),
         reset: () => {
           info.replaceChildren(svg(ICONS.bulb));
-          title.textContent = LABEL;
+          title.textContent = t("downloadAdapted");
         },
       },
       { host, returnTo, hadFocus },
@@ -424,12 +429,13 @@ function mainButton(shared: Shared): Control {
       return row;
     });
   const copies = () => copyRows(shared, (target) => make(target, more));
-  const menu = menuFor(host, root, more, split, several ? "Files and copies to download" : "Copies to download", () => [
+  const menuLabel = t(several ? "adaptPage.filesAndCopies" : "adaptPage.copiesToDownload");
+  const menu = menuFor(host, root, more, split, menuLabel, () => [
     ...(several
       ? [
-          menuGroup("tg-ndm-files", "3MF file", fileRows()),
+          menuGroup("tg-ndm-files", t("adaptPage.fileGroup", { format: "3MF" }), fileRows()),
           separator(),
-          menuGroup("tg-ndm-copies", "Copy for", copies()),
+          menuGroup("tg-ndm-copies", t("adaptPage.copyFor"), copies()),
         ]
       : selected
         ? [menuGroup("tg-ndm-copies", copyOf(current()), copies())]
@@ -456,12 +462,12 @@ function rowButton(shared: Shared, file: AdaptFile): Control {
   host.dataset.row = "";
   const button = element("button", "ndr");
   button.type = "button";
-  button.setAttribute("aria-label", `Download ${shownName(file)} adapted`);
+  button.setAttribute("aria-label", t("adaptPage.downloadFileAdapted", { file: shownName(file) }));
   const logo = element("span", "ndr__logo");
   logo.append(createIcon());
   const end = element("span", "ndr__end");
   end.append(svg(ICONS.caret));
-  button.append(logo, element("span", "ndr__label", "Adapted"), end);
+  button.append(logo, element("span", "ndr__label", t("adaptPage.adapted")), end);
   root.append(button);
   const bubble = bubbleFor(root, button, "tg-ndr-status", true);
 
@@ -482,7 +488,7 @@ function rowButton(shared: Shared, file: AdaptFile): Control {
         progress: (status) => bubble.show(status),
         done: (note) => {
           end.replaceChildren(svg(ICONS.check));
-          bubble.show(note ?? "Downloaded", { hold: note ? NOTE_SHOW_MS : DONE_RESET_MS });
+          bubble.show(note ?? t("downloaded"), { hold: note ? NOTE_SHOW_MS : DONE_RESET_MS });
         },
         failed: (message) => bubble.show(message, { error: true, hold: NOTE_SHOW_MS }),
         reset: () => end.replaceChildren(svg(ICONS.caret)),
@@ -490,8 +496,9 @@ function rowButton(shared: Shared, file: AdaptFile): Control {
       { host, returnTo: button, hadFocus },
     );
   };
-  const menu = menuFor(host, root, button, button, `Adapted copies of ${shownName(file)}`, () => [
-    menuGroup("tg-ndr-copies", LABEL, copyRows(shared, make)),
+  const menuLabel = t("adaptPage.adaptedCopiesOf", { file: shownName(file) });
+  const menu = menuFor(host, root, button, button, menuLabel, () => [
+    menuGroup("tg-ndr-copies", t("downloadAdapted"), copyRows(shared, make)),
     separator(),
     settingsRow(shared, () => menu.close(false)),
   ]);

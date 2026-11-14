@@ -5,6 +5,7 @@
 // same wall.
 
 import type { ResolvedDownload } from "../../shared/messages";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "./urls.generated";
@@ -47,28 +48,20 @@ function extractDownloadUrl(data: unknown): string | null {
   return null;
 }
 
-export const MAKERWORLD_CAPTCHA_MESSAGE =
-  'MakerWorld is asking for a CAPTCHA ("confirm you are not a robot"). Open any model on MakerWorld, ' +
-  'click the arrow next to "Open in Bambu Studio", choose "Download 3MF" and solve the puzzle, then ' +
-  "retry the import.";
-
 /** MakerWorld's anti-bot layer answers with HTTP 418 (sometimes 200) and a body naming a captcha.
  *  Thrown rather than returned as null so it isn't reported as "no file found". */
 export class MakerworldCaptchaError extends Error {
   constructor() {
-    super(MAKERWORLD_CAPTCHA_MESSAGE);
+    super(t("makerworldCaptchaMessage"));
     this.name = "MakerworldCaptchaError";
   }
 }
-
-export const MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE =
-  "MakerWorld daily download limit reached for this account. Try again tomorrow.";
 
 /** The per-account daily cap: HTTP 400 with {"code":-1,"error":"You've reached your daily download
  *  limit."}. Every later download fails the same way until it resets. */
 export class MakerworldDownloadLimitError extends Error {
   constructor() {
-    super(MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE);
+    super(t("makerworldDownloadLimit"));
     this.name = "MakerworldDownloadLimitError";
   }
 }

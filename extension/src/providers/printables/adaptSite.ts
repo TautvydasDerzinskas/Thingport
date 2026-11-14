@@ -6,6 +6,7 @@
 import { MAX_BYTES, fetchFile, sourceFilename, tooBig } from "../../content/adapted/download";
 import { placeAfter, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { MANIFESTS } from "../index.generated";
 import { printablesToken } from "./content";
@@ -26,7 +27,7 @@ async function ask(query: string, variables: Record<string, unknown>, token: str
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) throw new Error(`Printables answered HTTP ${res.status}. Try again in a moment.`);
+  if (!res.ok) throw new Error(t("adaptSite.answeredHttp", { site: "Printables", status: res.status }));
   return (await res.json()) as Answer;
 }
 
@@ -35,7 +36,7 @@ async function graphql(query: string, variables: Record<string, unknown>): Promi
   const token = await printablesToken();
   let answer = await ask(query, variables, token).catch((err: unknown) => (token ? null : Promise.reject(err)));
   if (token && !answer?.data) answer = await ask(query, variables, null);
-  if (!answer?.data) throw new Error(answer?.errors?.[0]?.message || "Printables answered without data");
+  if (!answer?.data) throw new Error(answer?.errors?.[0]?.message || t("printablesNoData"));
   return answer.data;
 }
 
@@ -70,7 +71,13 @@ export function matchFileRows<T>(
 export const PRINTABLES_ADAPT: AdaptSite = {
   id: "printables",
   name: "Printables",
-  filesAre: "Printables' 3MFs come from PrusaSlicer, Bambu Studio and other apps",
+  get filesAre() {
+    return t("adaptSite.threeMfsComeFrom", {
+      site: "Printables",
+      slicer: "PrusaSlicer",
+      otherSlicer: "Bambu Studio",
+    });
+  },
 
   async files(pageUrl) {
     const modelId = parsePrintablesModelUrl(pageUrl)?.modelId;
@@ -80,7 +87,7 @@ export const PRINTABLES_ADAPT: AdaptSite = {
   async download(pageUrl, file, progress) {
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, "Printables");
     const printId = parsePrintablesModelUrl(pageUrl)?.modelId;
-    if (!printId) throw new Error("Couldn't tell which Printables model this page is.");
+    if (!printId) throw new Error(t("adaptSite.unknownModel", { site: "Printables" }));
     const stop = rotatePhrases(gettingFilePhrases("Printables"), progress);
     const data = await graphql(LINK_MUTATION, {
       printId,
@@ -96,8 +103,9 @@ export const PRINTABLES_ADAPT: AdaptSite = {
     if (!answer?.ok || !link || !link.startsWith("https://")) {
       const why = answer?.errors?.flatMap((error) => error.messages ?? []).join(" ");
       throw new Error(
-        `Printables didn't give this file${why ? ` (${why})` : ""}. Make sure you're signed in to Printables with ` +
-          "an account that may download it, then try again.",
+        why
+          ? t("adaptSite.fileNotGivenSignInReason", { site: "Printables", reason: why })
+          : t("adaptSite.fileNotGivenSignIn", { site: "Printables" }),
       );
     }
     const { res, bytes } = await fetchFile(link, "Printables", progress);

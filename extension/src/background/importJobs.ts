@@ -2,6 +2,7 @@ import type { ImportJob, Print, QueueImportResult } from "../shared/api";
 import { IMPORT_PAUSED, type ImportSinglePayload, type QueueImportPayload } from "../shared/messages";
 import { apiCall } from "./api";
 import { recordRecentImport } from "./recentImports";
+import { backgroundText } from "./localize";
 
 const JOB_POLL_INTERVAL_MS = 1000;
 
@@ -49,7 +50,7 @@ export async function importSingle(
   if (entries) {
     const { job_id } = await apiCall<{ job_id: string }>("POST", "/import/zip", { url, entries, ...extra });
     const job = await pollJobToCompletion(job_id);
-    if (job.status === "ERROR") throw new Error(job.error_message || "Import failed");
+    if (job.status === "ERROR") throw new Error(job.error_message || (await backgroundText("importFailed")));
     if (job.status !== "DONE") throw new Error(IMPORT_PAUSED);
     print = job.result_print_id ? { id: job.result_print_id } : null;
   } else {

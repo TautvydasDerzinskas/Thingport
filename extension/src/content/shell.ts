@@ -4,6 +4,7 @@ import { DEFAULT_BUBBLE, type BubbleLook } from "../shared/bubble";
 import { createIcon } from "../shared/icon";
 import { send } from "../shared/messages";
 import { dressMark } from "../shared/seasonalMark";
+import { t } from "../shared/i18n";
 import { attachMagnet } from "./magnet";
 import css from "./styles/content.scss?inline";
 
@@ -39,14 +40,18 @@ export function setBubbleLook(next: BubbleLook): void {
 }
 
 // The pill's word, by what clicking it does.
-const PILL_WORDS: Record<NonNullable<FabOptions["variant"]> | "import", string> = {
-  import: "Grab",
-  "in-library": "In library",
-  complete: "Imported",
-  inactive: "Set up",
-  disconnected: "Sign in",
-  adapt: "Adapt",
-};
+function pillWord(variant: NonNullable<FabOptions["variant"]> | "import"): string {
+  return t(
+    {
+      import: "fabGrab",
+      "in-library": "fabInLibrary",
+      complete: "fabImported",
+      inactive: "fabSetUp",
+      disconnected: "fabSignIn",
+      adapt: "fabAdapt",
+    }[variant],
+  );
+}
 
 /** Its name, with the pill's word in front where it shows and the name doesn't already start with it: what's
  *  read out should hold what's seen, for anyone who says it to click it. */
@@ -81,6 +86,7 @@ export function unmountHost(): void {
   fabBodyEl = null;
   fabEl = null;
   panelOpen = false;
+  panelLoaded = false;
   window.clearTimeout(closeTimer);
   panelEl = null;
   contentEl = null;
@@ -101,7 +107,7 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   button.type = "button";
   button.className = variant ? `tg-fab tg-fab--${variant}` : "tg-fab";
   button.dataset.name = label;
-  button.dataset.word = PILL_WORDS[variant ?? "import"];
+  button.dataset.word = pillWord(variant ?? "import");
   button.setAttribute("aria-label", fabName(button));
   if (title) button.title = title;
   // The button stays put as the hit area; its body leans toward the pointer (see magnet.ts), the blob behind the
@@ -171,7 +177,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   const closeBtn = document.createElement("button");
   closeBtn.className = "tg-close";
   closeBtn.type = "button";
-  closeBtn.setAttribute("aria-label", "Close");
+  closeBtn.setAttribute("aria-label", t("close"));
   closeBtn.textContent = "×";
   closeBtn.addEventListener("click", () => setPanelOpen(false));
   panel.appendChild(closeBtn);
@@ -190,12 +196,11 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   panelEl = panel;
   contentEl = content;
   extraEl = extra;
-  let loaded = false;
   return () => {
     const open = !panelOpen;
     setPanelOpen(open);
-    if (open && !loaded) {
-      loaded = true;
+    if (open && !panelLoaded) {
+      panelLoaded = true;
       onFirstOpen();
     }
   };
@@ -205,6 +210,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
 const CLOSE_MS = 200;
 
 let panelOpen = false;
+let panelLoaded = false;
 let closeTimer: number | undefined;
 
 const stillMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -268,6 +274,11 @@ export function setPanelNote(html: string | null, tone?: "shared" | "withheld"):
   }
   noteEl.className = tone ? `tg-panel-note tg-panel-note--${tone}` : "tg-panel-note";
   noteEl.innerHTML = html;
+}
+
+/** Opened since the page last started: what it holds, an import under way say, a fresh start would lose. */
+export function isPanelInUse(): boolean {
+  return panelLoaded;
 }
 
 export function isPanelMounted(): boolean {

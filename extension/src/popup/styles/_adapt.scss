@@ -432,6 +432,12 @@ button.st {
       width: 26px;
       height: 26px;
     }
+
+    // Words, not a printer's name: on two lines in a language where they're long, rather than cut short.
+    .pt__model {
+      white-space: normal;
+      hyphens: auto;
+    }
   }
 }
 
@@ -623,7 +629,7 @@ button.pt {
   margin: t.$space-2 0 0;
 }
 
-// ---- A tile's menu ----------------------------------------------------------------------------------------------
+// ---- A tile's or a field's menu (popup/menu.ts) ---------------------------------------------------------------------
 
 .menu {
   position: fixed;
@@ -646,6 +652,7 @@ button.pt {
   &__item {
     display: flex;
     align-items: center;
+    gap: t.$space-2;
     width: 100%;
     padding: 6px 8px;
     border: 0;
@@ -670,6 +677,16 @@ button.pt {
         background: t.c("danger-soft");
       }
     }
+  }
+
+  &__icon {
+    display: flex;
+    flex: none;
+  }
+
+  &__hint {
+    color: t.c("text-muted");
+    font-size: t.$font-size-xs;
   }
 
   &__tick {

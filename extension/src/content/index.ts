@@ -6,6 +6,7 @@
 import type { ImportStatus } from "../shared/api";
 import { listen, send, type ContentMessages } from "../shared/messages";
 import { bubbleLookOf } from "../shared/bubble";
+import { localeOf, setLocale, t, type Locale } from "../shared/i18n";
 import { ADAPT_CHANGE_KEYS, CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
 import { classifyUrl } from "../shared/urls";
 import { libraryStateOf, setContext, type LibraryState } from "./context";
@@ -37,11 +38,14 @@ import {
   SHARED_SCRIPT_NOTE_HTML,
   WITHHELD_SCRIPT_EXPLAINER,
   WITHHELD_SCRIPT_NOTE_HTML,
+  refreshScriptNoteTexts,
 } from "./scriptNote";
+import { refreshFunStatusPhrases } from "./panels/funStatus";
 import {
   mountFab,
   mountFabNote,
   mountHost,
+  isPanelInUse,
   mountPanel,
   renderPanel,
   setBubbleLook,
@@ -65,6 +69,9 @@ let initToken = 0;
 const BUBBLE_WAIT_MS = 6000;
 // Not set up, with the copies in the bubble: how long its icon waits for them, rather than showing without them first.
 const SETUP_ICON_WAIT_MS = 1000;
+// How long a guided import's overlay waits for the language stored: a first login to an instance that doesn't answer
+// mustn't keep its Abort and Resume from the page.
+const JOB_STATE_WAIT_MS = 1500;
 // Adapt 3MFs' settings change a click at a time as they're picked: how long a page waits for the next before it
 // offers the copies anew.
 const ADAPT_SETTLE_MS = 400;
@@ -93,6 +100,19 @@ function unmount(): void {
 let adaptChanged = false;
 let adaptSettle: ReturnType<typeof setTimeout> | undefined;
 
+function showInLocale(locale: Locale): void {
+  setLocale(locale);
+  refreshScriptNoteTexts();
+  refreshFunStatusPhrases();
+}
+
+/** A new language: the page starts over in it, unless its panel has been opened, as an import running there (and
+ *  its progress) would go with it. That one goes on, drawing in the new language from here on. */
+function relocalize(stored: unknown): void {
+  if (isPanelInUse()) showInLocale(localeOf(stored));
+  else reinit();
+}
+
 function reinit(): void {
   adaptChanged = false;
   clearTimeout(adaptSettle);
@@ -113,9 +133,16 @@ async function init(): Promise<void> {
   const isStale = () => myToken !== initToken;
 
   // A guided collection import takes over the whole page.
+  const statePromise = send("GET_STATE");
   const jobRes = await send("GET_MAKERWORLD_JOB");
   if (isStale()) return;
   if (jobRes?.ok && jobRes.data.job) {
+    const quickState = await Promise.race([
+      statePromise,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), JOB_STATE_WAIT_MS)),
+    ]);
+    if (isStale()) return;
+    if (quickState?.ok) showInLocale(quickState.data.locale);
     const job = jobRes.data.job;
     if (job.paused) mountPausedJobOverlay(mountHost(), job);
     else mountJobOverlay(mountHost(), job);
@@ -123,8 +150,9 @@ async function init(): Promise<void> {
     return;
   }
 
-  const stateRes = await send("GET_STATE");
+  const stateRes = await statePromise;
   if (isStale()) return;
+  if (stateRes?.ok) showInLocale(stateRes.data.locale);
   if (!stateRes?.ok || stateRes.data.disabled) {
     reportTabIconState(false);
     return;
@@ -189,8 +217,8 @@ async function init(): Promise<void> {
           unmountHost();
           const root = mountHost();
           mountAdaptBubble(root, classification.provider, url, offered, {
-            text: "Want it in your Thingport library as well? ",
-            action: "Set up Grab",
+            text: t("adaptSetUpPrompt"),
+            action: t("adaptSetUpAction"),
             onClick: () => openSetupModal(root),
           });
         });
@@ -201,8 +229,8 @@ async function init(): Promise<void> {
         const root = mountHost();
         mountFab(root, {
           variant: "inactive",
-          label: "Set up Thingport Grab to import this",
-          title: "Thingport Grab isn't set up yet",
+          label: t("fabSetUpToImport"),
+          title: t("fabNotSetUp"),
           onClick: () => openSetupModal(root),
         });
         adaptHost = adaptBubble;
@@ -241,8 +269,8 @@ async function init(): Promise<void> {
       const root = mountHost();
       mountFab(root, {
         variant: "disconnected",
-        label: "Thingport Grab can't sign in to your Thingport instance",
-        title: "Thingport Grab can't sign in to your Thingport instance",
+        label: t("fabCannotSignIn"),
+        title: t("fabCannotSignIn"),
         onClick: () => signIn(root),
       });
       // Only where the site's button never shows: the copies, with the way to sign in again under them.
@@ -252,8 +280,8 @@ async function init(): Promise<void> {
           unmountHost();
           const adaptRoot = mountHost();
           mountAdaptBubble(adaptRoot, classification.provider, url, page, {
-            text: "Thingport Grab can't sign in to your Thingport instance. ",
-            action: "Sign in again",
+            text: t("adaptSignInPrompt"),
+            action: t("adaptSignInAction"),
             onClick: () => signIn(adaptRoot),
           });
         });
@@ -325,14 +353,14 @@ async function init(): Promise<void> {
       // A plus while there's something to add to the library's model, a tick once there's nothing.
       variant: !library ? undefined : library.state === "complete" ? "complete" : "in-library",
       label: !library
-        ? "Import to Thingport"
+        ? t("importToThingport")
         : library.state === "complete"
-          ? "Imported to Thingport: open it there"
+          ? t("fabImportedOpen")
           : missingProfiles
-            ? `Add the ${missingProfiles} missing print profile${missingProfiles === 1 ? "" : "s"} to Thingport`
+            ? t("fabAddMissingProfiles", { count: missingProfiles })
             : library.state === "imported"
-              ? "Fetch this model's missing details into Thingport"
-              : "Add this print profile to Thingport",
+              ? t("fabFetchMissingDetails")
+              : t("fabAddPrintProfile"),
       onClick: togglePanel,
     });
     reportTabIconState(true);
@@ -356,7 +384,7 @@ async function init(): Promise<void> {
     if (jobRes?.ok && jobRes.data.error) {
       const { message, imported, total } = jobRes.data.error;
       setPanelOpen(true);
-      renderPanel(errorHtml(new Error(`Guided import stopped after ${imported} of ${total} models: ${message}`)));
+      renderPanel(errorHtml(new Error(t("guidedImportStopped", { imported, total, message }))));
     }
   } finally {
     bubbleSettled();
@@ -395,6 +423,7 @@ if (!window.thingportGrabInjected) {
       );
     }
     if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) reinit();
+    else if (STORAGE_KEYS.locale in changes) relocalize(changes[STORAGE_KEYS.locale].newValue);
     else if (ADAPT_CHANGE_KEYS.some((key) => key in changes)) reinitForAdapt();
   });
 

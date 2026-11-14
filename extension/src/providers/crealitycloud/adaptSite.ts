@@ -15,6 +15,7 @@ import {
   type AdaptSite,
 } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { CXY_HEADERS } from "./content";
 import { parseCrealitycloudModelUrl } from "./urls.generated";
@@ -37,7 +38,7 @@ async function cxy(path: string, body: Record<string, unknown>, auth?: { token: 
     body: JSON.stringify(body),
     credentials: "omit",
   });
-  if (!res.ok) throw new Error(`${NAME} answered HTTP ${res.status}. Try again in a moment.`);
+  if (!res.ok) throw new Error(t("adaptSite.answeredHttp", { site: NAME, status: res.status }));
   return (await res.json()) as Answer;
 }
 
@@ -75,7 +76,9 @@ const modelOf = new Map<string, string>();
 export const CREALITYCLOUD_ADAPT: AdaptSite = {
   id: "crealitycloud",
   name: NAME,
-  filesAre: "Creality Cloud's files are Creality Print projects",
+  get filesAre() {
+    return t("adaptSite.filesAreProjects", { site: NAME, slicer: "Creality Print" });
+  },
   formats: [orcaFamilyFormat("Creality_Print", "7.2.1.5476")],
 
   async files(pageUrl) {
@@ -113,7 +116,11 @@ export const CREALITYCLOUD_ADAPT: AdaptSite = {
     if (link.code === INVALID_TOKEN) throw signInFirst(NAME);
     const url = link.result?.downloadUrl;
     if (link.code !== 0 || typeof url !== "string" || !url.startsWith("https://")) {
-      throw new Error(`${NAME} didn't give this file${link.msg ? ` (${link.msg})` : ""}. Try again in a moment.`);
+      throw new Error(
+        link.msg
+          ? t("adaptSite.fileNotGivenReason", { site: NAME, reason: link.msg })
+          : t("adaptSite.fileNotGiven", { site: NAME }),
+      );
     }
     // Its file host lets any page read a file, but not the name it's given: that comes from the profile's details.
     const { bytes } = await fetchFile(url, NAME, progress, { init: { credentials: "omit" } });

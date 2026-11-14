@@ -9,6 +9,7 @@ import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
+import type { Locale } from "./i18n";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
@@ -28,6 +29,10 @@ export type ExtensionState = {
   offlineFeatures: Record<OfflineFeature, boolean>;
   /** How the floating bubble on model pages looks and where it sits. */
   bubble: BubbleLook;
+  /** The configured catalog, or the browser language resolved to a supported catalog. */
+  locale: Locale;
+  /** The language picked in the popup; null while it follows the browser. */
+  localeChoice: Locale | null;
   /** Where Download adapted's copies go: beside the site's own button, or in the bubble. */
   adaptPlacement: AdaptPlacement;
 };
@@ -201,6 +206,8 @@ export type BackgroundMessages = {
   SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
   /** Changes the floating bubble's style, its place, or both. */
   SET_BUBBLE: { payload: Partial<BubbleLook>; result: null };
+  /** Changes the extension's language; null follows the browser's. */
+  SET_LOCALE: { payload: { locale: Locale | null }; result: null };
   /** Adapt 3MFs' settings, the Thingport instance's slicers and printers among them once connected. */
   GET_ADAPT_SETTINGS: { payload: void; result: AdaptView };
   /** Changes Grab's own Adapt 3MFs settings, and gives them back as stored. */

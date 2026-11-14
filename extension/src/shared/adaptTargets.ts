@@ -5,6 +5,7 @@
 
 import { slicerProfile } from "../adapter/slicers/index.generated";
 import type { AdaptPrinter } from "./adaptSettings";
+import { t } from "./i18n";
 import type { AdaptView, ThingportPrinter } from "./messages";
 import type { ArtPrinter } from "./printerArt";
 import { SLICER_LABELS } from "./slicers";
@@ -94,13 +95,14 @@ export function targetName(target: AdaptTarget): { name: string; sub: string } {
   if (target.printer) {
     return { name: `${target.printer.brandName} ${target.printer.model}`.trim(), sub: slicerName(target.slicer!) };
   }
-  if (target.slicer) return { name: slicerName(target.slicer), sub: "Your own printer and settings" };
-  return { name: "PrusaSlicer and the like", sub: "Your own printer and settings" };
+  const sub = t("grabBackground.ownPrinterAndSettings");
+  if (target.slicer) return { name: slicerName(target.slicer), sub };
+  return { name: t("grabBackground.slicerAndTheLike", { slicer: "PrusaSlicer" }), sub };
 }
 
 /** The line under the button's label: which copy a click makes. */
 export function targetLine(target: AdaptTarget): string {
   if (target.printer) return `${target.printer.brandName} ${target.printer.model} · ${slicerName(target.slicer!)}`;
   if (target.slicer) return slicerName(target.slicer);
-  return "For PrusaSlicer · pick your slicer";
+  return t("grabBackground.forSlicerPickYours", { slicer: "PrusaSlicer" });
 }

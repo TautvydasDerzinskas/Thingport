@@ -15,6 +15,7 @@ import {
   type AdaptSite,
 } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { parseNexprintModelUrl } from "./urls.generated";
 
@@ -37,7 +38,9 @@ export function profileFiles(data: Record<string, unknown> | null | undefined): 
     if (typeof s?.settingOutId !== "string" || s.open === false || s.isInvalid === true) return [];
     if (file?.fileId == null || typeof file.fileName !== "string" || s.id == null) return [];
     const english = (s.settingNameTranslateMap as Record<string, unknown> | undefined)?.en;
-    const title = [english, s.settingName].find((t): t is string => typeof t === "string" && Boolean(t.trim()));
+    const title = [english, s.settingName].find(
+      (text): text is string => typeof text === "string" && Boolean(text.trim()),
+    );
     const size = Number(file.fileSize);
     return [
       {
@@ -107,7 +110,9 @@ function layOut(): void {
 export const NEXPRINT_ADAPT: AdaptSite = {
   id: "nexprint",
   name: NAME,
-  filesAre: "NexPrint's files are Elegoo Slicer projects",
+  get filesAre() {
+    return t("adaptSite.filesAreProjects", { site: NAME, slicer: "Elegoo Slicer" });
+  },
   formats: [orcaFamilyFormat("ElegooSlicer", "1.5.3.5", "2.4.2")],
 
   async files(pageUrl) {
@@ -131,8 +136,7 @@ export const NEXPRINT_ADAPT: AdaptSite = {
     if (!auth) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const sign = signing.get(file.id);
-    if (!sign)
-      throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
+    if (!sign) throw new Error(t("adaptSite.fileNotFound", { site: NAME }));
     const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const answer = await providerCredentialRequest(
       "nexprint-api",
@@ -149,7 +153,11 @@ export const NEXPRINT_ADAPT: AdaptSite = {
     if (answer.code === SIGNED_OUT) throw signInFirst(NAME);
     const signed = (answer.data?.fileInfoList as Record<string, unknown>[] | undefined)?.[0]?.resultUrl;
     if (answer.code !== 0 || typeof signed !== "string" || !signed.startsWith("https://")) {
-      throw new Error(`${NAME} didn't give this file${answer.msg ? ` (${answer.msg})` : ""}. Try again in a moment.`);
+      throw new Error(
+        answer.msg
+          ? t("adaptSite.fileNotGivenReason", { site: NAME, reason: answer.msg })
+          : t("adaptSite.fileNotGiven", { site: NAME }),
+      );
     }
     // Its file host lets any page read a file, but not the name it's given: that's the profile's file name.
     const { bytes } = await fetchFile(signed, NAME, progress, { init: { credentials: "omit" } });

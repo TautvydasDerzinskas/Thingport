@@ -17,6 +17,10 @@ export async function signInPage(
   cookieName: string,
   allowedHosts: readonly string[],
   puzzleMs: number,
+  messages: { notOnSite: string; requestFailed: string } = {
+    notOnSite: "Not on MakerOnline",
+    requestFailed: "Request failed",
+  },
 ): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (
@@ -50,7 +54,7 @@ export async function signInPage(
     }
     try {
       if (location.protocol !== "https:" || location.port || !allowedHosts.includes(location.hostname)) {
-        throw new Error("Not on MakerOnline");
+        throw new Error(messages.notOnSite);
       }
       const res = await fetch(new URL("/api/file/download", location.origin).href, {
         method: "POST",
@@ -73,7 +77,7 @@ export async function signInPage(
         data: body?.data ?? null,
       };
     } catch (err) {
-      return { code: null, message: err instanceof Error ? err.message : "Request failed", data: null };
+      return { code: null, message: err instanceof Error ? err.message : messages.requestFailed, data: null };
     }
   };
   /** The site's own puzzle at `level`, solved: its answer, or null once `puzzleMs` is up. The site never says when

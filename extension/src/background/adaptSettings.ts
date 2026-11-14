@@ -17,6 +17,7 @@ import type { AdaptOffer, AdaptView, ThingportAdapt, ThingportPrinter } from "..
 import { STORAGE_KEYS, type StoredConfig } from "../shared/storage";
 import { ApiError, apiCall } from "./api";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
+import { backgroundText } from "./localize";
 
 // Long enough for an instance that's up; past it, Grab's own settings stand in, as for one out of reach.
 const INSTANCE_WAIT_MS = 5000;
@@ -81,7 +82,10 @@ async function thingportPrinters(account?: ConfiguredConfig): Promise<ThingportP
 async function thingportAdapt(): Promise<ThingportAdapt> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error("it didn't answer in time")), INSTANCE_WAIT_MS);
+    timer = setTimeout(
+      () => void backgroundText("grabBackground.instanceAnswerTimedOut").then((text) => reject(new Error(text))),
+      INSTANCE_WAIT_MS,
+    );
   });
   const [settings, printers] = await Promise.race([Promise.all([slicerSettings(), thingportPrinters()]), late]).finally(
     () => clearTimeout(timer),

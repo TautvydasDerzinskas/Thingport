@@ -208,6 +208,15 @@ describe("the guided MakerWorld collection import", () => {
     expect(store.makerworldJobError).toMatchObject({ message: expect.stringMatching(/print profiles/), imported: 0 });
   });
 
+  it("stores a guided-import error in the saved locale", async () => {
+    store.locale = "uk";
+    page.READ_MAKERWORLD_PROFILES = () => ({ ok: true, data: null });
+    await start([MODEL_A], "designer");
+    await step();
+
+    expect(store.makerworldJobError).toMatchObject({ message: expect.stringMatching(/профілі друку/) });
+  });
+
   it("stays stopped when aborted while the library is asked about the model", async () => {
     let letThrough!: () => void;
     libraryGate = new Promise((resolve) => (letThrough = resolve));

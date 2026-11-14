@@ -63,7 +63,7 @@ describe("Download adapted's copies of Printables' files", () => {
 
   it("say the copy is made from whichever kind the file is, or is the file itself", () => {
     const bambu = explanation(PRINTABLES_ADAPT, target("bambustudio"));
-    expect(bambu).toMatch(/^Printables' 3MFs come from PrusaSlicer, Bambu Studio and other apps\. /);
+    expect(bambu).toMatch(/^3MFs on Printables come from PrusaSlicer, Bambu Studio and other apps\. /);
     expect(bambu).toContain("a copy Bambu Studio opens as its own project");
     expect(bambu).toContain("Where Bambu Studio opens the file as it is, you get the file itself.");
     expect(explanation(PRINTABLES_ADAPT, target("orcaslicer", P1S))).toContain(

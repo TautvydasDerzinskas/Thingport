@@ -2,6 +2,7 @@
 // daily downloads, so the panel can say why before an import is tried.
 
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
+import { t } from "../../shared/i18n";
 
 import { parseThangsModelUrl } from "./urls.generated";
 
@@ -35,11 +36,11 @@ export async function thangsDownloadBlock(url: string): Promise<ThangsBlock | nu
     const json = (await res.json()) as { canDownload?: boolean; disabledCode?: string | null };
     if (json.canDownload !== false) return null;
     if (json.disabledCode === "PrintOnly") {
-      return { title: "Sold as a print", hint: "Its designer sells it printed only: Thangs doesn't offer its files." };
+      return { title: t("soldAsPrint"), hint: t("thangsPrintOnly") };
     }
     return {
-      title: "Paid model",
-      hint: "Buy it on Thangs, or join the designer's membership that includes it. Then Thingport can import it.",
+      title: t("paidModel"),
+      hint: t("buyOnThangs"),
     };
   } catch {
     return null;

@@ -1,25 +1,44 @@
-// A small menu under a tile (a printer's nozzle and Remove): arrow keys move through it and Enter picks. Escape closes
-// it and gives focus back to the tile; Tab or a click elsewhere closes it and leaves focus where it went.
+// A small menu under a tile or a field (a printer's nozzle and Remove, the language): arrow keys move through it and
+// Enter picks. Escape closes it and gives focus back to what opened it; Tab or a click elsewhere closes it and leaves
+// focus where it went.
 
 import { el, icon, ICONS } from "./adaptTiles";
 
+/** `icon` goes before the label and `hint`, in muted text, after it. */
 export type MenuEntry =
-  { heading: string } | "separator" | { label: string; checked?: boolean; danger?: boolean; select: () => void };
+  | { heading: string }
+  | "separator"
+  | { label: string; hint?: string; icon?: Node; checked?: boolean; danger?: boolean; select: () => void };
 
-let open: { menu: HTMLElement; anchor: HTMLElement; dismiss: (event: Event) => void } | null = null;
+/** `width`: at least this wide, to line up with a field. `onClose`: however it closes. */
+export type MenuOptions = { width?: number; onClose?: () => void };
+
+let open: {
+  menu: HTMLElement;
+  anchor: HTMLElement;
+  dismiss: (event: Event) => void;
+  onClose?: () => void;
+} | null = null;
 
 export function closeMenu({ refocus = true } = {}): void {
   if (!open) return;
-  const { menu, anchor, dismiss } = open;
+  const { menu, anchor, dismiss, onClose } = open;
   open = null;
   menu.remove();
   document.removeEventListener("pointerdown", dismiss, true);
+  onClose?.();
   if (refocus) anchor.focus();
 }
 
-export function openMenu(anchor: HTMLElement, label: string, entries: MenuEntry[]): void {
+export function openMenu(
+  anchor: HTMLElement,
+  label: string,
+  entries: MenuEntry[],
+  { width: minWidth, onClose }: MenuOptions = {},
+): void {
   closeMenu({ refocus: false });
   const menu = el("div", "menu");
+  if (minWidth) menu.style.minWidth = `${minWidth}px`;
   menu.setAttribute("role", "menu");
   menu.setAttribute("aria-label", label);
   const items: HTMLButtonElement[] = [];
@@ -31,7 +50,10 @@ export function openMenu(anchor: HTMLElement, label: string, entries: MenuEntry[
     } else if ("heading" in entry) {
       menu.append(el("div", "menu__heading", entry.heading));
     } else {
-      const item = el("button", `menu__item${entry.danger ? " menu__item--danger" : ""}`, entry.label);
+      const item = el("button", `menu__item${entry.danger ? " menu__item--danger" : ""}`);
+      if (entry.icon) item.append(el("span", "menu__icon", entry.icon));
+      item.append(el("span", "menu__label", entry.label));
+      if (entry.hint) item.append(el("span", "menu__hint", entry.hint));
       item.type = "button";
       item.tabIndex = -1;
       if (entry.checked !== undefined) {
@@ -73,6 +95,6 @@ export function openMenu(anchor: HTMLElement, label: string, entries: MenuEntry[
     if (!menu.contains(event.target as Node)) closeMenu({ refocus: false });
   };
   document.addEventListener("pointerdown", dismiss, true);
-  open = { menu, anchor, dismiss };
+  open = { menu, anchor, dismiss, onClose };
   (items.find((item) => item.getAttribute("aria-checked") === "true") ?? items[0])?.focus();
 }

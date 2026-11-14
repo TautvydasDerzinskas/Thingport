@@ -17,6 +17,7 @@ import {
   type AdaptSite,
 } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { MANIFESTS } from "../index.generated";
 import { parseSnapmakerModelUrl } from "./urls.generated";
@@ -35,7 +36,9 @@ export function profileFiles(data: Record<string, unknown> | null | undefined): 
   const profiles = Array.isArray(data?.printProfiles) ? (data.printProfiles as Record<string, unknown>[]) : [];
   return profiles.flatMap((p) => {
     if (p?.id == null || !p.gcodeUrl || typeof p.fileName !== "string") return [];
-    const title = [p.translatedTitle, p.title].find((t): t is string => typeof t === "string" && Boolean(t.trim()));
+    const title = [p.translatedTitle, p.title].find(
+      (text): text is string => typeof text === "string" && Boolean(text.trim()),
+    );
     const size = Number(p.fileSize);
     return [{ id: String(p.id), name: p.fileName, title: title?.trim(), size: size > 0 ? size : null }];
   });
@@ -57,7 +60,9 @@ export function onSite(link: string): string | null {
 export const SNAPMAKER_ADAPT: AdaptSite = {
   id: "snapmaker",
   name: NAME,
-  filesAre: "Snapmaker Space's files are Snapmaker Orca projects",
+  get filesAre() {
+    return t("adaptSite.filesAreProjects", { site: NAME, slicer: "Snapmaker Orca" });
+  },
   formats: [orcaFamilyFormat("Snapmaker_Orca", "2.4.0")],
 
   async files(pageUrl) {
@@ -79,7 +84,7 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
     if (!token) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
     const modelId = parseSnapmakerModelUrl(pageUrl)?.modelId;
-    if (!modelId) throw new Error(`Couldn't tell which ${NAME} model this page is.`);
+    if (!modelId) throw new Error(t("adaptSite.unknownModel", { site: NAME }));
     const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
     const answer = await providerCredentialRequest("snapmaker-api", `${API}/model/download/${modelId}`, {
       headers: {
@@ -92,16 +97,18 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
     })
       .then((res) => res.json() as Promise<{ code?: number; msg?: string; data?: Record<string, unknown> }>)
       .finally(stop);
-    if (answer.code === UNAUTHORIZED) {
-      throw new Error(`${NAME} didn't take your sign-in: it may have run out. Reload the page, then try again.`);
-    }
+    if (answer.code === UNAUTHORIZED) throw new Error(t("adaptSite.signInExpired", { site: NAME }));
     const profiles = Array.isArray(answer.data?.printProfiles)
       ? (answer.data.printProfiles as Record<string, unknown>[])
       : [];
     const link = profiles.find((p) => String(p?.profileId) === file.id)?.downloadUrl;
     const url = typeof link === "string" ? onSite(link) : null;
     if (answer.code !== OK || !url) {
-      throw new Error(`${NAME} didn't give this file${answer.msg ? ` (${answer.msg})` : ""}. Try again in a moment.`);
+      throw new Error(
+        answer.msg
+          ? t("adaptSite.fileNotGivenReason", { site: NAME, reason: answer.msg })
+          : t("adaptSite.fileNotGiven", { site: NAME }),
+      );
     }
     // A link it doesn't take answers 200 with a short plain-text note rather than the file.
     const { bytes } = await fetchFile(url, NAME, progress, {

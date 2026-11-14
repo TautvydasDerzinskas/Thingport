@@ -17,6 +17,7 @@ import { loadNexprintProfiles } from "./nexprint/content";
 import { loadQidimakerProfileIds } from "./qidimaker/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
+import { t } from "../shared/i18n";
 
 export type ProfileScope = "url" | "designer" | "all";
 
@@ -46,20 +47,30 @@ export type ContentModule = {
 };
 
 const PIXUP3D_PAID: ImportBlock = {
-  title: "Paid model",
-  hint: "Buy it on PIXUP first. Once it's in your library, Thingport imports it.",
+  get title() {
+    return t("paidModel");
+  },
+  get hint() {
+    return t("buyOnPixup");
+  },
 };
 
 const MESHY_BLOCKS: Record<MeshyPlanLock, ImportBlock> = {
   community: {
-    title: "Needs Meshy Pro",
-    hint:
-      "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan, " +
-      "unless its AI agent made them.",
+    get title() {
+      return t("needsMeshyPro");
+    },
+    get hint() {
+      return t("meshyCommunityLocked");
+    },
   },
   own: {
-    title: "Needs a paid Meshy plan",
-    hint: "Meshy keeps the models its AI agent made for paid plans, even yours.",
+    get title() {
+      return t("needsPaidMeshyPlan");
+    },
+    get hint() {
+      return t("meshyOwnLocked");
+    },
   },
 };
 
@@ -82,8 +93,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       return document.querySelector('[data-component-name="DownloadButton"]')
         ? null
         : {
-            title: "Paid model",
-            hint: "Buy it on MyMiniFactory first. Once it's in your library, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnMyMiniFactory"),
           };
     },
   },
@@ -131,8 +142,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     async blockReason(url) {
       return (await isUnboughtCgtraderModel(url))
         ? {
-            title: "Paid model",
-            hint: "Buy it on CGTrader first. Once it's in your purchases, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnCgtrader"),
           }
         : null;
     },
@@ -146,8 +157,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     async blockReason(url) {
       return (await isUnboughtCults3dModel(url))
         ? {
-            title: "Paid model",
-            hint: "Buy it on Cults3D first. Once it's in your downloads, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnCults3d"),
           }
         : null;
     },
@@ -177,9 +188,7 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // imported once bought, so one their page offers to sell them isn't tried.
   threedexport: {
     async blockReason(url) {
-      return isUnboughtThreedexportModel(url)
-        ? { title: "Paid model", hint: "Buy it on 3DExport first. Once it's yours, Thingport imports it." }
-        : null;
+      return isUnboughtThreedexportModel(url) ? { title: t("paidModel"), hint: t("buyOnThreedexport") } : null;
     },
   },
   // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and

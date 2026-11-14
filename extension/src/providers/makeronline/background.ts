@@ -14,6 +14,7 @@ import { MANIFESTS } from "../index.generated";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 import { MAKERONLINE_PICK } from "./pick";
 import { type DownloadRequest, type SignAnswer, signInPage } from "./signInPage";
+import { backgroundText } from "../../background/localize";
 
 const SITE = MANIFESTS.makeronline.site;
 const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;
@@ -63,6 +64,9 @@ function signedUrl(data: unknown): string | null {
  *  own. */
 class RunStoppedError extends Error {}
 
+/** Signing cannot succeed for this or any later waiting item until the page state changes. */
+class SigningBlockedError extends Error {}
+
 /** The files a link needs, signed in `tabId`, a makeronline.com tab. Throws with a reason the user can act on.
  *  `puzzles` where the user just asked for them on that page: then a puzzle MakerOnline wants solved first is shown
  *  there, as its own Download shows it, rather than turning the import down. */
@@ -81,7 +85,9 @@ export async function resolveMakeronlineFiles(
   } catch (err) {
     // fetch rejects with a TypeError when the instance can't be reached; an answer it gave is about the model.
     if (err instanceof TypeError)
-      throw new RunStoppedError(`Couldn't reach Thingport (${err.message})`, { cause: err });
+      throw new RunStoppedError(await backgroundText("makeronlineCouldNotReachThingport", { detail: err.message }), {
+        cause: err,
+      });
     throw err;
   }
   return signRequests(tabId, plan.requests, puzzles);
@@ -93,18 +99,30 @@ async function signRequests(
   puzzles: boolean,
 ): Promise<MakeronlineSignedFile[]> {
   let answers: SignAnswer[];
+  const messages = {
+    notOnSite: await backgroundText("makeronlineNotOnSite"),
+    requestFailed: await backgroundText("requestFailedGeneric"),
+  };
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
       world: "MAIN",
       func: signInPage,
-      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE, CREDENTIAL_HOSTS["makeronline-site"].exact, puzzles ? PUZZLE_MS : 0],
+      args: [
+        requests,
+        SIGN_GAP_MS,
+        ACCESS_COOKIE,
+        CREDENTIAL_HOSTS["makeronline-site"].exact,
+        puzzles ? PUZZLE_MS : 0,
+        messages,
+      ],
     });
     answers = (result?.result as SignAnswer[] | undefined) ?? [];
   } catch (err) {
     throw new RunStoppedError(
-      `Couldn't ask MakerOnline for the files on this page (${err instanceof Error ? err.message : String(err)}). ` +
-        "Reload it and try again; Firefox needs version 128 or newer for this.",
+      await backgroundText("makeronlineCouldNotAskFiles", {
+        detail: err instanceof Error ? err.message : String(err),
+      }),
       { cause: err },
     );
   }
@@ -112,20 +130,20 @@ async function signRequests(
   for (const [index, answer] of answers.entries()) {
     const request = requests[index];
     if (answer.code === CODE_CAPTCHA && answer.unsolved) {
-      throw new Error(
-        "MakerOnline hands over its files once its puzzle is solved. Try again, and solve the puzzle it shows.",
-      );
+      throw new SigningBlockedError(await backgroundText("makeronlinePuzzleUnsolved"));
     }
     if (answer.code === CODE_CAPTCHA) {
-      throw new Error(
-        "MakerOnline wants a captcha before it hands over files. Download one file from a model page by hand, " +
-          "solve the puzzle, then try again.",
-      );
+      throw new SigningBlockedError(await backgroundText("makeronlineCaptcha"));
     }
-    if (answer.code === CODE_SIGNED_OUT) throw new Error("Sign in to MakerOnline in this browser, then try again.");
+    if (answer.code === CODE_SIGNED_OUT) throw new SigningBlockedError(await backgroundText("makeronlineSignIn"));
     const link = answer.code === CODE_OK ? signedUrl(answer.data) : null;
     if (!link)
-      throw new Error(`MakerOnline didn't hand over "${request.name}"${answer.message ? `: ${answer.message}` : ""}`);
+      throw new Error(
+        await backgroundText("makeronlineNoFile", {
+          name: request.name,
+          detail: answer.message ? `: ${answer.message}` : "",
+        }),
+      );
     files.push({ url: link, name: request.name, profile_id: request.profile_id });
   }
   return files;
@@ -138,7 +156,7 @@ export async function signMakeronlineFile(
   { key, fileType, id, name }: BackgroundMessages["SIGN_MAKERONLINE_FILE"]["payload"],
 ): Promise<string> {
   if (typeof key !== "string" || !key || (fileType !== 1 && fileType !== 2) || !Number.isSafeInteger(id)) {
-    throw new Error("That isn't one of this model's files on MakerOnline");
+    throw new Error(await backgroundText("grabBackground.notModelFileOnSite", { site: "MakerOnline" }));
   }
   const payload = {
     key,
@@ -238,12 +256,11 @@ async function runWaiting(tabId: number): Promise<number> {
     } catch (err) {
       // Not the model's fault: it waits for the next run as it is.
       if (err instanceof RunStoppedError) break;
-      const error = err instanceof Error ? err.message : "Couldn't get the files signed";
+      const error = err instanceof Error ? err.message : await backgroundText("makeronlineCouldNotSignFiles");
       await apiCall("POST", `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}/failed`, { error }).catch(
         () => undefined,
       );
-      // A captcha or a lost sign-in fails every later one too.
-      if (/captcha|sign in/i.test(error)) break;
+      if (err instanceof SigningBlockedError) break;
       continue;
     }
     try {

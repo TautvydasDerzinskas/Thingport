@@ -20,6 +20,8 @@ export const STORAGE_KEYS = {
   // The popup's Bubble tab (see shared/bubble.ts); unset means today's white bubble, bottom right.
   bubbleStyle: "bubbleStyle",
   bubblePlace: "bubblePlace",
+  // The explicit UI language. When absent, runtime catalogs follow the browser language.
+  locale: "locale",
   // Adapt 3MFs' own settings (see shared/adaptSettings.ts), used while not connected.
   adaptSlicers: "adaptSlicers",
   adaptPrinters: "adaptPrinters",
@@ -71,6 +73,7 @@ export type StoredConfig = {
   thingiverseHideAds?: boolean;
   bubbleStyle?: string;
   bubblePlace?: string;
+  locale?: string;
   adaptSlicers?: string[];
   adaptPrinters?: { id: string; nozzle: string }[];
   adaptPlacement?: string;

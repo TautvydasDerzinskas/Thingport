@@ -12,6 +12,7 @@ import {
   type AdaptSettings,
 } from "../shared/adaptSettings";
 import { adaptInUse, type AdaptInUse, type TargetPrinter } from "../shared/adaptTargets";
+import { t } from "../shared/i18n";
 import { send, type AdaptView } from "../shared/messages";
 import { OPTIONAL_SITES, siteEnabled } from "../shared/optionalSites";
 import { SLICER_LABELS } from "../shared/slicers";
@@ -34,16 +35,10 @@ import { nameMatches, nameWords } from "./printerSearch";
 import { providerLogo } from "./sites";
 import { isOpen, openView } from "./subview";
 
-const TIPS = {
-  slicer: "The slicers you open models in. A copy is made for one: they read 3MFs differently.",
-  printers: "Your printers. A copy for one names that slicer's presets for it and lays its plates out on its bed.",
-  button: "Where Download adapted goes on a model's page.",
-  sites: "The sites it works on. Some need your browser's permission first, which Allow asks for.",
-};
-
-const PLACE_LABELS: Record<AdaptPlacement, string> = {
-  beside: "Beside the site's button",
-  bubble: "In Grab's bubble",
+// Keys, looked up as they're drawn: the popup's language is set after this module loads.
+const PLACE_LABEL_KEYS: Record<AdaptPlacement, string> = {
+  beside: "adaptPopup.placeBeside",
+  bubble: "adaptPopup.placeBubble",
 };
 
 // Most people's printers are among these; the rest are a click away.
@@ -92,19 +87,13 @@ const inUse = (current: AdaptView): AdaptInUse => adaptInUse(current, describeOw
 /** Why the instance's slicers and printers aren't the ones shown, where they would be. */
 function noteOf(use: AdaptInUse): { text: string; retry: boolean } | null {
   if (use.remembered) {
-    return {
-      text: `Couldn't reach your Thingport instance (${use.remembered}), so Grab goes by what it said last.`,
-      retry: true,
-    };
+    return { text: t("adaptPopup.unreachable", { error: use.remembered }), retry: true };
   }
   if (use.fallback === "no-printers") {
-    return { text: "Your Thingport instance doesn't keep printers yet, so Grab uses its own.", retry: false };
+    return { text: t("adaptPopup.noPrinters"), retry: false };
   }
   if (use.fallback === "unreachable") {
-    return {
-      text: `Couldn't reach your Thingport instance (${use.error}), so Grab uses its own slicers and printers.`,
-      retry: true,
-    };
+    return { text: t("adaptPopup.unreachableOwn", { error: use.error ?? "" }), retry: true };
   }
   return null;
 }
@@ -118,7 +107,8 @@ function redraw(container: HTMLElement, draw: () => void): void {
   }
 }
 
-function renderAll(): void {
+/** Draws what's showing again, as after the language changes. */
+export function renderAll(): void {
   renderSetup();
   if (isOpen(els.adaptView)) redraw(els.adaptSections, renderSettings);
   if (isOpen(els.addPrinterView)) redraw(els.addPrinterBody, renderAddPrinter);
@@ -147,7 +137,7 @@ async function save(change: Partial<AdaptSettings>, errorEl: HTMLElement = els.a
   }
   view = { ...view, own: before };
   renderAll();
-  showError(res?.error ?? "Couldn't save", errorEl);
+  showError(res?.error ?? t("saveFailed"), errorEl);
 }
 
 // ---- The row ----------------------------------------------------------------------------------------------------
@@ -160,14 +150,14 @@ function renderSetup(): void {
   const use = inUse(view);
   if (!use.slicers.length && use.slicersFromThingport) {
     // Connected, they're picked in Thingport.
-    const link = el("a", "text-btn adapt-setup__nudge", "Pick your slicer in Thingport", icon(ICONS.open));
+    const link = el("a", "text-btn adapt-setup__nudge", t("adaptPopup.pickSlicerInThingport"), icon(ICONS.open));
     link.href = `${view.instanceUrl}/?configuration=slicer`;
     link.dataset.key = "adapt-nudge";
     els.adaptSetup.replaceChildren(opensInTab(link));
     return;
   }
   if (!use.slicers.length) {
-    const nudge = el("button", "text-btn adapt-setup__nudge", "Pick your slicer", icon(ICONS.chevron));
+    const nudge = el("button", "text-btn adapt-setup__nudge", t("adaptPopup.pickSlicer"), icon(ICONS.chevron));
     nudge.type = "button";
     nudge.dataset.key = "adapt-nudge";
     nudge.addEventListener("click", () => openSettings(nudge, { toSlicers: true }));
@@ -206,22 +196,22 @@ function section(title: string, tip: string, body: Node[], aside: Node[] = []): 
 
 /** "From Thingport" and a link to where it's managed there. */
 function fromThingport(tab: "slicer" | "printers"): Node[] {
-  const link = el("a", "text-btn sv-manage", "Manage", icon(ICONS.open));
+  const link = el("a", "text-btn sv-manage", t("adaptPopup.manage"), icon(ICONS.open));
   link.href = `${view?.instanceUrl ?? ""}/?configuration=${tab}`;
-  link.title = `Opens your Thingport instance's ${tab === "slicer" ? "Slicer" : "Printers"} settings`;
-  return [el("span", "sv-from", "From Thingport"), opensInTab(link)];
+  link.title = t(tab === "slicer" ? "adaptPopup.manageSlicerTitle" : "adaptPopup.managePrintersTitle");
+  return [el("span", "sv-from", t("adaptPopup.fromThingport")), opensInTab(link)];
 }
 
 function slicerSection(use: AdaptInUse): HTMLElement {
   if (use.slicersFromThingport) {
     const body = use.slicers.length
       ? [el("div", "st-grid", ...use.slicers.map((id) => slicerTile(id)))]
-      : [el("p", "sv-empty", "No slicers picked in Thingport yet.")];
-    return section("Slicer", TIPS.slicer, body, fromThingport("slicer"));
+      : [el("p", "sv-empty", t("adaptPopup.noSlicersInThingport"))];
+    return section(t("adaptPopup.slicer"), t("adaptPopup.tipSlicer"), body, fromThingport("slicer"));
   }
   const grid = el("div", "st-grid");
   grid.setAttribute("role", "group");
-  grid.setAttribute("aria-label", "Your slicers");
+  grid.setAttribute("aria-label", t("adaptPopup.yourSlicers"));
   for (const id of Object.keys(SLICER_LABELS)) {
     const on = use.slicers.includes(id);
     const tile = slicerTile(id, on);
@@ -232,7 +222,7 @@ function slicerSection(use: AdaptInUse): HTMLElement {
     });
     grid.append(tile);
   }
-  return section("Slicer", TIPS.slicer, [grid]);
+  return section(t("adaptPopup.slicer"), t("adaptPopup.tipSlicer"), [grid]);
 }
 
 /** The settings' control with `key`, as they're drawn now. */
@@ -244,13 +234,13 @@ function printerMenu(tile: HTMLElement, printer: ShownPrinter): void {
   openMenu(tile, `${printer.brandName} ${printer.model}`, [
     { heading: `${printer.brandName} ${printer.model}`.trim() },
     ...nozzles.map((nozzle) => ({
-      label: `${nozzle} mm nozzle`,
+      label: t("adaptPopup.nozzle", { nozzle }),
       checked: nozzle === printer.nozzle,
       select: () => void save({ printers: own.map((mine) => (mine.id === printer.id ? { ...mine, nozzle } : mine)) }),
     })),
     "separator",
     {
-      label: "Remove",
+      label: t("adaptPopup.remove"),
       danger: true,
       select: () => {
         // Its tile goes with it, drawn away before the change is saved: focus goes to the next printer's, else the
@@ -274,8 +264,8 @@ function printerSection(use: AdaptInUse): HTMLElement {
   if (use.printersFromThingport) {
     const body = use.printers.length
       ? [el("div", "pt-grid", ...use.printers.map((printer) => printerTile(printer, { button: false })))]
-      : [el("p", "sv-empty", "No printers in Thingport yet.")];
-    return section("Printers", TIPS.printers, body, fromThingport("printers"));
+      : [el("p", "sv-empty", t("adaptPopup.noPrintersInThingport"))];
+    return section(t("adaptPopup.printers"), t("adaptPopup.tipPrinters"), body, fromThingport("printers"));
   }
   const grid = el("div", "pt-grid");
   for (const printer of use.printers) {
@@ -293,15 +283,15 @@ function printerSection(use: AdaptInUse): HTMLElement {
   add.dataset.key = "add-printer";
   add.addEventListener("click", () => openAddPrinter(add));
   grid.append(add);
-  return section("Printers", TIPS.printers, [grid]);
+  return section(t("adaptPopup.printers"), t("adaptPopup.tipPrinters"), [grid]);
 }
 
 function placementSection(current: AdaptPlacement): HTMLElement {
   const group = el("div", "seg");
   group.setAttribute("role", "radiogroup");
-  group.setAttribute("aria-label", "Where Download adapted goes");
+  group.setAttribute("aria-label", t("adaptPopup.placementLabel"));
   for (const place of ADAPT_PLACEMENTS) {
-    const option = el("button", "seg__opt", PLACE_LABELS[place]);
+    const option = el("button", "seg__opt", t(PLACE_LABEL_KEYS[place]));
     option.type = "button";
     option.setAttribute("role", "radio");
     option.setAttribute("aria-checked", String(place === current));
@@ -318,8 +308,8 @@ function placementSection(current: AdaptPlacement): HTMLElement {
     // Saving has drawn the sections anew already, this group with them.
     els.adaptSections.querySelector<HTMLElement>(`[data-key="place:${next}"]`)?.focus();
   });
-  const note = el("p", "sv-note", "Where a site's own button can't be found, it goes in the bubble.");
-  return section("Button", TIPS.button, [group, note]);
+  const note = el("p", "sv-note", t("adaptPopup.placementNote"));
+  return section(t("adaptPopup.button"), t("adaptPopup.tipButton"), [group, note]);
 }
 
 function sitesSection(): HTMLElement {
@@ -329,12 +319,14 @@ function sitesSection(): HTMLElement {
     const name = MANIFESTS[id].name;
     const row = el("li", "sv-site", el("span", "sv-site__logo", providerLogo(id)), el("span", "sv-site__name", name));
     if (!optional || siteOn.get(id)) {
-      row.append(el("span", "sv-site__on", icon(ICONS.check), optional ? "On" : "Always on"));
+      row.append(
+        el("span", "sv-site__on", icon(ICONS.check), t(optional ? "adaptPopup.siteOn" : "adaptPopup.siteAlwaysOn")),
+      );
     } else {
-      const allow = el("button", "text-btn sv-site__allow", "Allow");
+      const allow = el("button", "text-btn sv-site__allow", t("adaptPopup.allow"));
       allow.type = "button";
       allow.dataset.key = `site:${id}`;
-      allow.setAttribute("aria-label", `Allow Thingport Grab on ${name}`);
+      allow.setAttribute("aria-label", t("adaptPopup.allowOn", { site: name }));
       allow.addEventListener("click", async () => {
         clearError(els.adaptError);
         allow.disabled = true;
@@ -345,7 +337,7 @@ function sitesSection(): HTMLElement {
             renderAll();
             return;
           }
-          showError(`Thingport Grab needs your browser's permission to run on ${name}.`, els.adaptError);
+          showError(t("enablePermission", { site: name }), els.adaptError);
         } catch (err) {
           showError(err instanceof Error ? err.message : String(err), els.adaptError);
         }
@@ -355,13 +347,13 @@ function sitesSection(): HTMLElement {
     }
     list.append(row);
   }
-  return section("Sites", TIPS.sites, [list]);
+  return section(t("adaptPopup.sites"), t("adaptPopup.tipSites"), [list]);
 }
 
 function noteBlock(note: { text: string; retry: boolean }): HTMLElement {
   const block = el("p", note.retry ? "sv-alert sv-alert--problem" : "sv-alert", note.text);
   if (note.retry) {
-    const retry = el("button", "text-btn", "Try again");
+    const retry = el("button", "text-btn", t("retry"));
     retry.type = "button";
     retry.addEventListener("click", () => void loadAdapt());
     block.append(" ", retry);
@@ -371,8 +363,8 @@ function noteBlock(note: { text: string; retry: boolean }): HTMLElement {
 
 /** The last read failing, with a way to read again. */
 function readFailedBlock(message: string): HTMLElement {
-  const note = el("p", "sv-alert sv-alert--problem", `Couldn't read the settings: ${message}`);
-  const retry = el("button", "text-btn", "Try again");
+  const note = el("p", "sv-alert sv-alert--problem", t("adaptPopup.readFailed", { message }));
+  const retry = el("button", "text-btn", t("retry"));
   retry.type = "button";
   retry.dataset.key = "read-again";
   retry.addEventListener("click", () => void loadAdapt());
@@ -449,7 +441,7 @@ function makerRow(brand: CatalogueBrand): HTMLButtonElement {
   );
   row.type = "button";
   row.dataset.key = `maker:${brand.id}`;
-  row.setAttribute("aria-label", `${brand.name}, ${brand.printers} printer${brand.printers === 1 ? "" : "s"}`);
+  row.setAttribute("aria-label", t("adaptPopup.makerLabel", { maker: brand.name, count: brand.printers }));
   row.addEventListener("click", () => {
     picking = { ...picking, maker: brand.id, query: els.addPrinterSearch.value };
     els.addPrinterSearch.value = "";
@@ -463,24 +455,26 @@ const groupLabel = (label: string, count: number) => el("div", "ap-group", label
 
 function renderAddPrinter(): void {
   if (!index) {
-    els.addPrinterBody.replaceChildren(el("p", "sv-empty", "Grab's list of printers didn't load."));
+    els.addPrinterBody.replaceChildren(el("p", "sv-empty", t("adaptPopup.catalogueFailed")));
     return;
   }
   const query = nameWords(els.addPrinterSearch.value);
   const maker = picking.maker ? brands.get(picking.maker) : undefined;
   const total = maker ? maker.printers : index.printers.length;
-  els.addPrinterTitle.textContent = maker ? maker.name : "Add printer";
-  els.addPrinterCount.textContent = `${total} printer${total === 1 ? "" : "s"}`;
-  els.addPrinterSearch.placeholder = maker ? `Search ${maker.name}` : `Search ${total} printers`;
+  els.addPrinterTitle.textContent = maker ? maker.name : t("adaptPopup.addPrinter");
+  els.addPrinterCount.textContent = t("adaptPopup.printerCount", { count: total });
+  els.addPrinterSearch.placeholder = maker
+    ? t("adaptPopup.searchMaker", { maker: maker.name })
+    : t("adaptPopup.searchAll", { count: total });
   els.addPrinterSearch.setAttribute("aria-label", els.addPrinterSearch.placeholder);
 
   if (maker) {
     const listed = index.printers.filter((p) => p.brand === maker.id && matches(p, query));
-    els.addPrinterStatus.textContent = `${listed.length} printer${listed.length === 1 ? "" : "s"}`;
+    els.addPrinterStatus.textContent = t("adaptPopup.printerCount", { count: listed.length });
     els.addPrinterBody.replaceChildren(
       listed.length
         ? el("div", "pt-grid", ...listed.map(pickTile))
-        : el("p", "sv-empty", `No ${maker.name} printer is called that.`),
+        : el("p", "sv-empty", t("adaptPopup.noMakerMatch", { maker: maker.name })),
     );
     return;
   }
@@ -491,9 +485,10 @@ function renderAddPrinter(): void {
     const shown = found.slice(0, SEARCH_LIMIT);
     const byMaker = new Map<string, CataloguePrinter[]>();
     for (const printer of shown) byMaker.set(printer.brand, [...(byMaker.get(printer.brand) ?? []), printer]);
-    els.addPrinterStatus.textContent = `${found.length} printer${found.length === 1 ? "" : "s"} found`;
+    els.addPrinterStatus.textContent = t("adaptPopup.printersFound", { count: found.length });
     const parts: Node[] = [];
-    if (makers.length) parts.push(groupLabel("Makers", makers.length), el("div", "ap-brands", ...makers.map(makerRow)));
+    if (makers.length)
+      parts.push(groupLabel(t("adaptPopup.makers"), makers.length), el("div", "ap-brands", ...makers.map(makerRow)));
     for (const [brand, printers] of byMaker) {
       parts.push(
         groupLabel(brands.get(brand)?.name ?? brand, printers.length),
@@ -501,8 +496,8 @@ function renderAddPrinter(): void {
       );
     }
     if (found.length > shown.length)
-      parts.push(el("p", "sv-note", `${found.length - shown.length} more: type more of the name.`));
-    if (!parts.length) parts.push(el("p", "sv-empty", "No printer is called that. Try its maker's name."));
+      parts.push(el("p", "sv-note", t("adaptPopup.moreFound", { count: found.length - shown.length })));
+    if (!parts.length) parts.push(el("p", "sv-empty", t("adaptPopup.noMatch")));
     els.addPrinterBody.replaceChildren(...parts);
     return;
   }
@@ -511,9 +506,12 @@ function renderAddPrinter(): void {
     ? index.brands.toSorted((a, b) => a.name.localeCompare(b.name))
     : COMMON_MAKERS.map((id) => brands.get(id)).filter((brand): brand is CatalogueBrand => Boolean(brand));
   els.addPrinterStatus.textContent = "";
-  const parts: Node[] = [groupLabel("Makers", index.brands.length), el("div", "ap-brands", ...listed.map(makerRow))];
+  const parts: Node[] = [
+    groupLabel(t("adaptPopup.makers"), index.brands.length),
+    el("div", "ap-brands", ...listed.map(makerRow)),
+  ];
   if (!picking.allMakers) {
-    const all = el("button", "text-btn ap-all", `All ${index.brands.length} makers`);
+    const all = el("button", "text-btn ap-all", t("adaptPopup.allMakers", { count: index.brands.length }));
     all.type = "button";
     all.dataset.key = "all-makers";
     all.addEventListener("click", () => {
@@ -598,7 +596,7 @@ export async function loadAdapt(): Promise<void> {
   const [res] = await Promise.all([send("GET_ADAPT_SETTINGS"), loadIndex(), loadSiteStates()]);
   if (read !== reads) return;
   if (!res?.ok) {
-    readFailed = res?.error ?? "Couldn't read Adapt 3MFs' settings";
+    readFailed = res?.error ?? t("adaptPopup.readFailedFallback");
     showError(readFailed, els.offlineError);
     if (isOpen(els.adaptView)) redraw(els.adaptSections, renderSettings);
     return;

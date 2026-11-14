@@ -344,7 +344,7 @@ Open an issue first, then:
    `overrides.ts` entry only if needed. Its text goes under `providers.<id>` in every
    `frontend/src/i18n/locales/*.json`; `frontend/src/providers/strings.test.ts` lists what's missing.
 7. **Grab**, `extension/src/providers/<id>/`: its entry in `CONTENT_MODULES`, and its sign-in in `SESSION_SOURCES` if
-   Grab hands one over. See [extension/CONTRIBUTING.md](../extension/CONTRIBUTING.md#adding-a-provider-site).
+   Grab hands one over. Its `about` is translated as `providerAbout.<id>` in every `extension/src/shared/locales/*.json`. See [extension/CONTRIBUTING.md](../extension/CONTRIBUTING.md#adding-a-provider-site).
 8. **`docs/providers/<docsSlug>.md`**, its own page.
 9. If it serves a GET that a dashboard app would read, give it an API token scope (`services/apiTokenScopes.ts`).
 10. **Its licences** in `backend/src/providers/<id>/license.ts`, set on `meta.license` (see [Licences](#licences)), with

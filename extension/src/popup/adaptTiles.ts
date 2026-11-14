@@ -3,6 +3,7 @@
 // one that only shows what's set is a plain element.
 
 import { slicerMark } from "../adapter/slicers/marks.generated";
+import { t } from "../shared/i18n";
 import { printerArtSvg, type ArtPrinter } from "../shared/printerArt";
 import { SLICER_LABELS } from "../shared/slicers";
 
@@ -85,8 +86,10 @@ function printerParts(printer: ShownPrinter): HTMLElement[] {
   return [art, el("span", "pt__brand", printer.brandName), el("span", "pt__model", printer.model)];
 }
 
-const fullName = (printer: ShownPrinter) =>
-  `${printer.brandName} ${printer.model}${printer.nozzle ? `, ${printer.nozzle} mm nozzle` : ""}`;
+function fullName(printer: ShownPrinter): string {
+  const name = `${printer.brandName} ${printer.model}`;
+  return printer.nozzle ? t("adaptPopup.printerWithNozzle", { printer: name, nozzle: printer.nozzle }) : name;
+}
 
 /** A printer's tile: a button where it does something (`pressed` makes it one that switches), else a plain one. */
 export function printerTile(
@@ -113,7 +116,7 @@ export function addPrinterTile(): HTMLButtonElement {
     "button",
     "pt pt--add",
     el("span", "pt__art", icon(ICONS.plus)),
-    el("span", "pt__model", "Add printer"),
+    el("span", "pt__model", t("adaptPopup.addPrinter")),
   );
   button.type = "button";
   return button;

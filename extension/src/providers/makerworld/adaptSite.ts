@@ -5,11 +5,16 @@
 import { placeAfter, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { fetchFile, sourceFilename } from "../../content/adapted/download";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { resolveMakerworldDownloadUrl } from "./downloadResolver";
 import { DOWNLOAD_3MF, DOWNLOAD_OTHER, DOWNLOAD_STL, OPEN_IN_APP } from "./labels";
 
 // One file: whichever print profile the page has selected when it's downloaded.
-const SELECTED_PROFILE: AdaptFile = { id: "selected-profile", name: "The selected print profile", size: null };
+const selectedProfile = (): AdaptFile => ({
+  id: "selected-profile",
+  name: t("adaptSite.selectedPrintProfile"),
+  size: null,
+});
 
 // MakerWorld's main action: usually the "Open in Bambu Studio" split button, whose menu holds "Download 3MF" and
 // "Download STL/CAD Files". The English patterns also catch app names the translated sets don't list.
@@ -58,19 +63,17 @@ function controlBox(label: HTMLElement): HTMLElement {
 export const MAKERWORLD_ADAPT: AdaptSite = {
   id: "makerworld",
   name: "MakerWorld",
-  filesAre: "MakerWorld's files are Bambu Studio projects",
+  get filesAre() {
+    return t("adaptSite.filesAreProjects", { site: "MakerWorld", slicer: "Bambu Studio" });
+  },
 
-  files: async () => [SELECTED_PROFILE],
+  files: async () => [selectedProfile()],
 
   async download(pageUrl, _file, progress) {
     const stop = rotatePhrases(gettingFilePhrases("MakerWorld"), progress);
     // The adapter reads the 3MF project, never the raw-files zip.
     const resolved = await resolveMakerworldDownloadUrl(pageUrl, { profileOnly: true }).finally(stop);
-    if (!resolved) {
-      throw new Error(
-        "Couldn't get this model's file from MakerWorld. Make sure you're signed in to MakerWorld, then try again.",
-      );
-    }
+    if (!resolved) throw new Error(t("couldNotGetMakerworldFile"));
     const { res, bytes } = await fetchFile(resolved.downloadUrl, "MakerWorld", progress);
     return { bytes, filename: sourceFilename(res, resolved.downloadUrl) };
   },

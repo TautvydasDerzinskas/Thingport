@@ -1,6 +1,7 @@
 // Runs the 3MF adapter in a worker so a big model doesn't freeze the tab. Where the page's CSP won't allow a blob:
 // worker, it runs here instead.
 
+import { t } from "../shared/i18n";
 import { adaptFile, type AdaptOutcome, type AdaptPrinterTarget } from "./run";
 import type { WorkerReply, WorkerRequest } from "./worker";
 import workerSource from "./worker?worker";
@@ -32,7 +33,7 @@ function adaptInWorker(request: WorkerRequest): Promise<AdaptOutcome> {
     });
     worker.addEventListener("error", (event) => {
       worker.terminate();
-      reject(started ? new Error(event.message || "Adapting failed") : new WorkerUnavailable());
+      reject(started ? new Error(event.message || t("adaptSite.adaptingFailed")) : new WorkerUnavailable());
     });
   }).finally(() => URL.revokeObjectURL(url));
 }

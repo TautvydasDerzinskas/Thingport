@@ -13,7 +13,7 @@ import {
   setAdaptSettings,
 } from "./adaptSettings";
 import { apiCall, checkConnection, disconnect } from "./api";
-import { getState, saveConfig, setBubble, setDisabled, setOfflineFeature } from "./config";
+import { getState, saveConfig, setBubble, setDisabled, setLocale, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
 import {
@@ -51,6 +51,7 @@ listen<BackgroundMessages>({
   DISCONNECT: () => disconnect(),
   SET_OFFLINE_FEATURE: ({ feature, enabled }) => setOfflineFeature(feature, enabled),
   SET_BUBBLE: (pick) => setBubble(pick),
+  SET_LOCALE: ({ locale }) => setLocale(locale),
   GET_ADAPT_SETTINGS: () => getAdaptView(),
   SET_ADAPT_SETTINGS: (change) => setAdaptSettings(change),
   GET_ADAPT_OFFER: () => getAdaptOffer(),

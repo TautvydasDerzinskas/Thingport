@@ -6,6 +6,7 @@
 import type { ThreeMfFormat } from "../../adapter/index.generated";
 import type { ProviderId } from "../../providers/index.generated";
 import type { AdaptTarget } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import type { AdaptOffer } from "../../shared/messages";
 
 /** One of a model's 3MFs, by the site's own id for it: its file name, `title` where the site shows it by another (a
@@ -97,5 +98,4 @@ export function pageCookie(name: string): string | null {
 }
 
 /** Downloading needs the user signed in to the site, as its own Download does. */
-export const signInFirst = (site: string) =>
-  new Error(`Sign in to ${site} to download its files, then try again. Its own Download needs that too.`);
+export const signInFirst = (site: string) => new Error(t("adaptPage.signInFirst", { site }));

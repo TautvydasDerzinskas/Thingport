@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TARGET, type TargetPrinter } from "../../shared/adaptTargets";
-import { MAX_BYTES, copyFilename, fetchFile, possessive, readBody, sourceFilename, tooBig } from "./download";
+import { MAX_BYTES, copyFilename, fetchFile, readBody, sourceFilename, tooBig } from "./download";
 
 const printer = (model: string): TargetPrinter => ({
   id: "x",
@@ -47,7 +47,7 @@ describe("a copy's file", () => {
     });
     const said: string[] = [];
     await expect(readBody(new Response(stream), null, "MakerWorld", (text) => said.push(text))).rejects.toThrow(
-      /too big to adapt in the browser \(the limit is 50 MB\)\. Use MakerWorld's regular Download instead\./,
+      /too big to adapt in the browser \(the limit is 50 MB\)\. Use the regular Download on MakerWorld instead\./,
     );
     expect(said.at(-1)).toBe("Downloading 50.0 MB…");
   });
@@ -68,12 +68,12 @@ describe("a site's file", () => {
   it("is refused where the file server says no, or what came isn't the file", async () => {
     served("nope", { status: 403 });
     await expect(fetchFile("https://files.example/a", "Printables", quiet)).rejects.toThrow(
-      "Printables' file server refused the download (403).",
+      "The Printables file server refused the download (403).",
     );
     served("not this link", { headers: { "Content-Type": "text/plain" } });
     await expect(
       fetchFile("https://files.example/a", "Snapmaker Space", quiet, { refused: plainTextNote }),
-    ).rejects.toThrow("Snapmaker Space's file server refused the download (200).");
+    ).rejects.toThrow("The Snapmaker Space file server refused the download (200).");
   });
 
   it("is refused past the size the browser can adapt, as soon as the server says its size", async () => {
@@ -91,9 +91,7 @@ describe("a site's file", () => {
     expect(fetch).toHaveBeenCalledWith("https://files.example/a", { credentials: "omit" });
   });
 
-  it("names a site's own as English does", () => {
-    expect(possessive("MakerWorld")).toBe("MakerWorld's");
-    expect(possessive("Printables")).toBe("Printables'");
-    expect(tooBig(60 * 1024 * 1024, "Printables").message).toContain("Use Printables' regular Download instead.");
+  it("names the site whose Download to use instead", () => {
+    expect(tooBig(60 * 1024 * 1024, "Printables").message).toContain("Use the regular Download on Printables instead.");
   });
 });

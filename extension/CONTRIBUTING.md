@@ -97,7 +97,7 @@ part:
   three. An optional site is listed in the popup under **Providers**, where clicking it, or **Enable all**, asks for
   access to it; once granted, the background registers the content script there. Users who had granted all-sites
   access earlier get it straight away. On the site's own pages the popup leads with its card, which shows the `about`
-  of its `providers/<id>/docs.ts`.
+  of its `providers/<id>/docs.ts`, translated as `providerAbout.<id>` in every `src/shared/locales/*.json`.
 - What Grab does on its pages goes in `src/providers/<id>/`, entered in `CONTENT_MODULES` (`src/providers/content.ts`),
   which tsc insists on for every provider.
 - A sign-in the background sends the instance goes in `SESSION_SOURCES` (`src/providers/sessions.ts`), with
@@ -118,6 +118,12 @@ rejects notes of 2,000 characters or more (`npm run check:edge-notes`).
   event page in Firefox, so keep top-level background code free of anything only one supports.
 - If it changes anything visible, run `npm run screenshots` and commit the updated images.
 - If it adds a runtime message, add it to `src/shared/messages.ts` so both ends stay typed.
+- Text a user reads goes through `t()` (`src/shared/i18n.ts`), or `backgroundText()` in the background, which never
+  sets a language, with its key in every `src/shared/locales/*.json`. Placeholders take single braces (`{site}`) and
+  nothing picks plural forms, so a number goes in as a label (`Printers: {count}`), or the code picks a key's `_one` or
+  `_other` variant itself (`missingProfilesHint_one`). `src/shared/i18n.test.ts` fails on a missing key or a
+  placeholder a translation dropped. Call `t()` when drawing, not at module level: a page's language is set after its
+  modules load.
 - Provider URL patterns live in `providers/<id>/urls.ts` at the repo root, shared with the web app
   and backend: change them there, run `npm run providers:sync` at the root, and add a case to
   `providers/<id>/urls.fixtures.json`.

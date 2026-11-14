@@ -3,6 +3,7 @@
 
 import { slicerMark } from "../../adapter/slicers/marks.generated";
 import type { AdaptTarget } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import { printerArtSvg } from "../../shared/printerArt";
 import type { AdaptFile } from "./site";
 
@@ -65,7 +66,9 @@ const KB = 1024;
 /** "817 kB", "3.6 MB", as Printables writes them; empty when the size isn't known. */
 export function sizeText(bytes: number | null): string {
   if (bytes === null) return "";
-  return bytes < KB * KB ? `${Math.max(1, Math.round(bytes / KB))} kB` : `${(bytes / KB / KB).toFixed(1)} MB`;
+  return bytes < KB * KB
+    ? t("adaptPage.sizeKb", { size: Math.max(1, Math.round(bytes / KB)) })
+    : t("adaptPage.sizeMb", { size: (bytes / KB / KB).toFixed(1) });
 }
 
 /** Puts a `position: fixed` element at a place in the window. A transformed ancestor makes `fixed` count from that

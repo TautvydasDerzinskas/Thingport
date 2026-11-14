@@ -4,6 +4,7 @@
 
 import { adaptBytes } from "../../adapting/adapt";
 import type { AdaptTarget } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import { request } from "../../shared/messages";
 import { adaptingPhrases, rotatePhrases } from "../panels/funStatus";
 import type { AdaptFile, AdaptSite } from "./site";
@@ -12,17 +13,11 @@ import type { AdaptFile, AdaptSite } from "./site";
 export const MAX_BYTES = 50 * 1024 * 1024;
 const MB = 1024 * 1024;
 
-/** "MakerWorld's", "Printables'". */
-export const possessive = (name: string) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
-
 /** A name the downloads folder takes. */
 export const safeFilename = (name: string) => name.replace(/[\\/:*?"<>|]+/g, "_");
 
 export function tooBig(bytes: number, site: string): Error {
-  return new Error(
-    `This file is ${Math.round(bytes / MB)} MB, too big to adapt in the browser (the limit is ${MAX_BYTES / MB} MB). ` +
-      `Use ${possessive(site)} regular Download instead.`,
-  );
+  return new Error(t("adaptPage.tooBig", { size: Math.round(bytes / MB), limit: MAX_BYTES / MB, site }));
 }
 
 /** The body, stopping at MAX_BYTES, with "Downloading 3.1 of 12.0 MB…" as it comes. */
@@ -46,7 +41,11 @@ export async function readBody(
     }
     chunks.push(value);
     const got = (received / MB).toFixed(1);
-    onProgress(declared ? `Downloading ${got} of ${(declared / MB).toFixed(1)} MB…` : `Downloading ${got} MB…`);
+    onProgress(
+      declared
+        ? t("adaptedDownloadProgress", { received: got, total: (declared / MB).toFixed(1) })
+        : t("adaptedDownloadProgressUnknown", { received: got }),
+    );
   }
   return new Blob(chunks as BlobPart[]).arrayBuffer();
 }
@@ -62,7 +61,7 @@ export async function fetchFile(
   const res = await fetch(url, init);
   if (!res.ok || refused?.(res)) {
     void res.body?.cancel();
-    throw new Error(`${possessive(site)} file server refused the download (${res.status}). Try again in a moment.`);
+    throw new Error(t("adaptPage.fileServerRefused", { site, status: res.status }));
   }
   const declared = Number(res.headers.get("Content-Length")) || null;
   if (declared && declared > MAX_BYTES) {
@@ -129,9 +128,7 @@ export async function downloadAdapted(
           printerId: target.printer.id,
           nozzle: target.printer.nozzle,
         }).catch((err: unknown) => {
-          throw new Error("Couldn't read Grab's printer list to make this copy. Try again in a moment.", {
-            cause: err,
-          });
+          throw new Error(t("adaptPage.noPrinterList", { grab: "Grab" }), { cause: err });
         })
       : null;
   const stop = rotatePhrases(adaptingPhrases, progress);
@@ -139,8 +136,7 @@ export async function downloadAdapted(
   try {
     adapted = await adaptBytes(file.bytes, target.slicer, printer).finally(stop);
   } catch (err) {
-    const expected = `a 3MF project ${possessive(site.name)} Download gives`;
-    throw new Error(`Couldn't adapt this file: it doesn't look like ${expected}.`, { cause: err });
+    throw new Error(t("adaptPage.notSiteProject", { format: "3MF", site: site.name }), { cause: err });
   }
   saveFile(adapted.bytes, adapted.output ? copyFilename(file.filename, target) : file.filename);
   const nozzle = printer?.choice.nozzle;

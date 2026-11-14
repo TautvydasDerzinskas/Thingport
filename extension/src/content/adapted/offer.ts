@@ -4,12 +4,13 @@
 import { slicerProfile } from "../../adapter/index.generated";
 import { planFor } from "../../adapting/run";
 import type { AdaptTarget } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import { SLICER_LABELS } from "../../shared/slicers";
 import type { Saved } from "./download";
 import { siteFormats } from "./formats";
 import type { AdaptSite } from "./site";
 
-const MADE = "Made in your browser by Thingport Grab.";
+const made = () => t("adaptPage.madeInBrowser", { grab: "Thingport Grab" });
 
 type Output = NonNullable<ReturnType<typeof planFor>>["output"];
 
@@ -22,6 +23,9 @@ const printerOf = (target: AdaptTarget) => `${target.printer!.brandName} ${targe
 /** A slicer that opens another app's project on the printer selected in it, which a copy only changes for a
  *  printer of the user's (QIDI Studio). */
 const movesOntoItsPrinter = (target: AdaptTarget) => Boolean(slicerProfile(target.slicer)?.ownTag);
+
+/** Whole sentences, one after another. */
+const sentences = (...parts: (string | false)[]) => parts.filter(Boolean).join(" ");
 
 /** The copies a target's click makes of the kinds of 3MF the site has: none where the slicer opens them as they are. */
 export function outputsFor(site: AdaptSite, target: AdaptTarget): Output[] {
@@ -41,20 +45,22 @@ export function savedNote(target: AdaptTarget, saved: Saved): string | null {
   const slicer = slicerName(target) ?? "PrusaSlicer";
   // The printer first: a file downloaded as it is keeps the designer's printer as well, unless the slicer moves it.
   if (saved.printerless && target.printer && movesOntoItsPrinter(target)) {
-    const what = saved.copy ? "this copy" : "the file itself";
-    return `Grab has no ${slicer} preset for the ${printerOf(target)}, so ${slicer} puts ${what} on the printer selected in it. Pick yours there before slicing.`;
+    const values = { grab: "Grab", slicer, printer: printerOf(target) };
+    return t(saved.copy ? "adaptPage.noPresetMovesCopy" : "adaptPage.noPresetMovesFile", values);
   }
   if (saved.printerless && target.printer) {
-    const what = saved.copy ? "this copy keeps" : `the file itself, which ${slicer} opens as it is, keeps`;
-    return `Grab has no ${slicer} preset for the ${printerOf(target)}, so ${what} the designer's printer. Pick yours in ${slicer} before slicing.`;
+    const values = { grab: "Grab", slicer, printer: printerOf(target) };
+    return t(saved.copy ? "adaptPage.noPresetCopy" : "adaptPage.noPresetFile", values);
   }
-  if (!saved.copy) return `Downloaded the file itself: ${slicer} opens it as it is.`;
+  if (!saved.copy) return t("adaptPage.fileItself", { slicer });
   if (!target.printer) return null;
   if (saved.nozzle) {
-    return (
-      `${slicer} has no ${target.printer.nozzle} mm nozzle preset for the ${printerOf(target)}, so this copy names its ` +
-      `${saved.nozzle} mm one. Set your nozzle in ${slicer} before slicing.`
-    );
+    return t("adaptPage.nearestNozzle", {
+      slicer,
+      nozzle: target.printer.nozzle,
+      printer: printerOf(target),
+      named: saved.nozzle,
+    });
   }
   return null;
 }
@@ -62,93 +68,67 @@ export function savedNote(target: AdaptTarget, saved: Saved): string | null {
 /** Why nothing is downloaded for the page's own pick: a file that isn't a 3MF, or a pick that can't be read yet. */
 export const unpickedReason = (pick: "other" | "unread"): string =>
   pick === "unread"
-    ? "Grab is still reading which file the page has picked. Try again in a moment."
-    : "Only a 3MF gets an adapted copy. Pick one of the model's 3MFs on the page, then try again.";
+    ? t("adaptPage.stillReadingPick", { grab: "Grab" })
+    : t("adaptPage.onlyFormatAdapted", { format: "3MF" });
 
 /** What the copy keeps, for the button's explanation. */
 export function explanation(site: AdaptSite, target: AdaptTarget): string {
   return siteFormats(site).length > 1 ? ofSeveral(site, target) : ofOne(site, target);
 }
 
-const PICK = " Pick your slicer in Grab's Adapt 3MFs settings for a copy made for it.";
+const pick = () => t("adaptPage.pickSlicer", { grab: "Grab" });
 
 /** A site whose 3MFs are all one kind: what the copy of one keeps. */
 function ofOne(site: AdaptSite, target: AdaptTarget): string {
   const output = outputsFor(site, target)[0] ?? null;
   const slicer = slicerName(target);
+  const { filesAre } = site;
   if (output === "bambu" && target.printer) {
-    return (
-      `This downloads a copy made for your ${printerOf(target)} with its ${target.printer.nozzle} mm nozzle in ` +
-      `${slicer}: it names ${slicer}'s presets for that printer, keeps the designer's settings on top of them and ` +
-      `lays the plates out on its bed. ${MADE}`
+    return sentences(
+      t("adaptPage.oneForPrinter", { printer: printerOf(target), nozzle: target.printer.nozzle, slicer: slicer ?? "" }),
+      made(),
     );
   }
-  if (output === "bambu" && target.slicer === "crealityprintlink") {
-    return (
-      "This downloads a copy that keeps the parts, plates, painting and the designer's settings, under the names " +
-      `Creality Print gives them. It still asks which of your printers to use. ${MADE}`
-    );
-  }
+  if (output === "bambu" && target.slicer === "crealityprintlink") return t("adaptedDownloadExplanationCreality");
   if (output === "bambu" && movesOntoItsPrinter(target)) {
-    return (
-      "This downloads a copy that keeps the parts, painting and the designer's settings, under the names " +
-      `${slicer} gives them. ${slicer} puts it on the printer selected in it, as it does any project from another ` +
-      `slicer. ${MADE}`
-    );
+    return sentences(t("adaptPage.oneOnItsPrinter", { slicer: slicer ?? "" }), made());
   }
-  if (output === "bambu") {
-    return (
-      `This downloads a copy ${slicer} opens as its own project: parts, plates, painting and the designer's ` +
-      "settings, without questions about the file's version. A setting it names differently is renamed, to the " +
-      `nearest of its choices where it has fewer. ${MADE}`
-    );
-  }
-  if (output === "cura") {
-    return (
-      `${site.filesAre}, which Cura opens without their parts' filaments or the designer's settings. This downloads a ` +
-      "copy whose multi-part objects keep their parts, each on its own extruder, with the designer's walls, top and " +
-      `bottom layers, infill and whether to print supports set on each object. Cura doesn't read painted colors. ${MADE}`
-    );
-  }
-  const who = slicer ? `${slicer} often opens` : "PrusaSlicer, Cura and other slicers often open";
-  return (
-    `${site.filesAre}, which ${who} without their colors or print settings. This downloads a copy that goes into ` +
-    "your own printer, filament and print settings, with the designer's layer height, walls, infill and supports set " +
-    `on each object and the painted colors on your extruders.${slicer ? "" : PICK} ${MADE}`
-  );
+  if (output === "bambu") return t("adaptedDownloadExplanationBambu", { slicer: slicer ?? "" });
+  if (output === "cura") return sentences(t("adaptPage.oneCura", { filesAre, cura: "Cura" }), made());
+  const other = slicer
+    ? t("adaptPage.oneOtherKnown", { filesAre, slicer })
+    : t("adaptPage.oneOtherUnknown", { filesAre, prusaSlicer: "PrusaSlicer", cura: "Cura" });
+  return sentences(other, !slicer && pick(), made());
 }
 
 /** A site with several kinds of 3MF: the copy is made from whichever the file turns out to be, and a file the slicer
  *  opens as it is comes as it is. */
 function ofSeveral(site: AdaptSite, target: AdaptTarget): string {
   const slicer = slicerName(target);
+  const { filesAre } = site;
   // Before a slicer is picked, the copy is PrusaSlicer's.
   const reads = slicerProfile(target.slicer)?.reads ?? "prusa";
   let copy: string;
   if (reads === "bambu" && target.printer) {
-    copy =
-      `a copy made for your ${printerOf(target)} with its ${target.printer.nozzle} mm nozzle in ${slicer}: it names ` +
-      `${slicer}'s presets for that printer, keeps the designer's settings on top of them and lays the plates out on ` +
-      "its bed";
+    copy = t("adaptPage.severalForPrinter", {
+      filesAre,
+      printer: printerOf(target),
+      nozzle: target.printer.nozzle,
+      slicer: slicer ?? "",
+    });
   } else if (reads === "bambu" && movesOntoItsPrinter(target)) {
-    copy =
-      "a copy that keeps the parts, painting and the designer's settings under the names " +
-      `${slicer} gives them, on the printer selected in ${slicer}`;
+    copy = t("adaptPage.severalOnItsPrinter", { filesAre, slicer: slicer ?? "" });
   } else if (reads === "bambu") {
-    copy =
-      `a copy ${slicer} opens as its own project, keeping the parts, plates, painting and the designer's settings ` +
-      `under the names ${slicer} gives them`;
+    copy = t("adaptPage.severalOwnProject", { filesAre, slicer: slicer ?? "" });
   } else if (reads === "cura") {
-    copy =
-      "a copy whose multi-part objects keep their parts, each on its own extruder, with the designer's walls, top " +
-      "and bottom layers, infill and whether to print supports set on each object. Cura doesn't read painted colors";
+    copy = t("adaptPage.severalCura", { filesAre, cura: "Cura" });
   } else {
-    copy =
-      "a copy that goes into your own printer, filament and print settings, with the designer's layer height, walls, " +
-      "infill and supports set on each object and the colors on your extruders";
+    copy = t("adaptPage.severalOther", { filesAre });
   }
-  return (
-    `${site.filesAre}. This downloads ${copy}. Where ${slicer ?? "PrusaSlicer"} opens the file as it is, you get ` +
-    `the file itself.${slicer ? "" : PICK} ${MADE}`
+  return sentences(
+    copy,
+    t("adaptPage.fileItselfWhereOpens", { slicer: slicer ?? "PrusaSlicer" }),
+    !slicer && pick(),
+    made(),
   );
 }

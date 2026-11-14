@@ -312,8 +312,8 @@ describe("the single-model panel", () => {
       await click("import");
 
       expect(importedUrls()).toEqual([`${SNAPMAKER}#profileId-2`]);
-      expect(last()).toContain("Profile added");
-      expect(last()).toContain("1 print profile imported.");
+      expect(last()).toContain("Profiles added");
+      expect(last()).toContain("Print profiles imported: 1.");
       expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
     });
 
@@ -407,7 +407,7 @@ describe("the single-model panel", () => {
       await click("import", 5000); // the pause between two profiles is real
 
       expect(last()).toContain("Partly imported");
-      expect(last()).toContain("1 print profile imported, 2 failed.");
+      expect(last()).toContain("Print profiles imported: 1, 2 failed.");
       expect(last()).toContain("Last error: MakerWorld wants a CAPTCHA");
     });
   });

@@ -4,6 +4,7 @@
 // secondary "Download adapted" under the import, over the panel, as an extra beside it.
 
 import { targetName } from "../../shared/adaptTargets";
+import { t } from "../../shared/i18n";
 import { send } from "../../shared/messages";
 import type { ProviderId } from "../../providers/index.generated";
 import { pageHeadHtml } from "../panels/modelHead";
@@ -50,13 +51,14 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
   };
   if (files.length > 1) {
     const id = `tg-ad-file-${++picks}`;
-    const label = element("label", "tg-label ad-file__label", "3MF file");
+    const label = element("label", "tg-label ad-file__label", t("adaptPage.fileGroup", { format: "3MF" }));
     label.htmlFor = id;
     select = element("select", "tg-select ad-file");
     select.id = id;
     for (const [at, option] of files.entries()) {
       const size = sizeText(option.size);
-      select.append(new Option(size ? `${shownName(option)} (${size})` : shownName(option), String(at)));
+      const name = shownName(option);
+      select.append(new Option(size ? t("adaptPage.fileWithSize", { file: name, size }) : name, String(at)));
     }
     select.value = String(files.indexOf(file));
     select.addEventListener("change", () => {
@@ -84,7 +86,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
     const go = element("span", "ad-item__go");
     go.append(downloadIcon());
     row.append(targetPicture(target, "ad-item__art"), text, go);
-    row.setAttribute("aria-label", `Download adapted: ${name}, ${sub}`);
+    row.setAttribute("aria-label", t("adaptPage.rowName", { name, sub }));
     row.addEventListener("click", async () => {
       if (busy) return;
       // The page's pick may have changed while these were open.
@@ -99,7 +101,7 @@ export function adaptedRows(page: PageAdapt, pageUrl: string, compact = false): 
       void send("SET_ADAPT_LAST", { key: target.key });
       try {
         const saved = await downloadAdapted(site, pageUrl, picked, target, (status) => (subEl.textContent = status));
-        subEl.textContent = "Downloaded";
+        subEl.textContent = t("downloaded");
         const said = savedNote(target, saved);
         note.textContent = said ?? "";
         note.hidden = !said;
@@ -129,11 +131,11 @@ export function adaptedReveal(page: PageAdapt, pageUrl: string): HTMLElement {
   const toggle = element("button", "tg-btn tg-btn--secondary ad-reveal");
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", "false");
-  toggle.append(svg(ICONS.download), element("span", "", "Download adapted"));
+  toggle.append(svg(ICONS.download), element("span", "", t("downloadAdapted")));
   const pop = element("div", "ad-pop");
   pop.id = "tg-adapted-copies";
   pop.setAttribute("role", "group");
-  pop.setAttribute("aria-label", "Copies to download");
+  pop.setAttribute("aria-label", t("adaptPage.copiesToDownload"));
   pop.hidden = true;
   const rows = adaptedRows(page, pageUrl, true);
   pop.append(rows.box);
@@ -205,7 +207,7 @@ export function mountAdaptBubble(
 ): void {
   let rows: AdaptedRows | null = null;
   const toggle = mountPanel(root, () => {
-    renderPanel(pageHeadHtml(provider, pageUrl, "Download adapted"));
+    renderPanel(pageHeadHtml(provider, pageUrl, t("downloadAdapted")));
     const body = element("div", "");
     rows = adaptedRows(page, pageUrl);
     body.append(rows.box);
@@ -214,14 +216,14 @@ export function mountAdaptBubble(
       const action = element("button", "ad-link", foot.action);
       action.type = "button";
       action.addEventListener("click", foot.onClick);
-      line.append(action);
+      line.append(" ", action);
       body.append(line);
     }
     setPanelExtra(body);
   });
   mountFab(root, {
     variant: "adapt",
-    label: "Download adapted copies of this model",
+    label: t("adaptPage.fabLabel"),
     onClick: () => {
       toggle();
       rows?.follow();

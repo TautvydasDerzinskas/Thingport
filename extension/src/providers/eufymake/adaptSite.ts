@@ -6,6 +6,7 @@
 import { MAX_BYTES, fetchFile, safeFilename, tooBig } from "../../content/adapted/download";
 import { placeAfter, visible, type AdaptFile, type AdaptSite } from "../../content/adapted/site";
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
+import { t } from "../../shared/i18n";
 import { parseEufymakeModelUrl } from "./urls.generated";
 
 const API = "https://aiot-wapi-eu.ankermake.com/web/modelbase";
@@ -84,17 +85,18 @@ async function readModel(modelId: string): Promise<Linked[]> {
     msg?: string;
     data?: { model?: Record<string, unknown> } | null;
   } | null;
-  if (res.status === 429 || body?.code === TOO_FAST)
-    throw new Error(`${NAME} asks to slow down. Try again in a moment.`);
+  if (res.status === 429 || body?.code === TOO_FAST) throw new Error(t("adaptSite.slowDown", { site: NAME }));
   if (body?.code === NO_MODEL) return [];
-  if (body?.code !== 0) throw new Error(`${NAME} didn't say which files this model has. Try again in a moment.`);
+  if (body?.code !== 0) throw new Error(t("adaptSite.noFileList", { site: NAME }));
   return modelFiles(body.data?.model);
 }
 
 export const EUFYMAKE_ADAPT: AdaptSite = {
   id: "eufymake",
   name: NAME,
-  filesAre: "eufyMake's 3MFs come from eufyMake Studio, Bambu Studio and other apps",
+  get filesAre() {
+    return t("adaptSite.threeMfsComeFrom", { site: NAME, slicer: "eufyMake Studio", otherSlicer: "Bambu Studio" });
+  },
 
   async files(pageUrl) {
     const modelId = parseEufymakeModelUrl(pageUrl)?.modelId;
@@ -121,8 +123,7 @@ export const EUFYMAKE_ADAPT: AdaptSite = {
     } finally {
       stop();
     }
-    if (!link)
-      throw new Error(`Couldn't find this file among the model's on ${NAME}. Reload the page, then try again.`);
+    if (!link) throw new Error(t("adaptSite.fileNotFound", { site: NAME }));
     // Its file host lets the page read a file, but gives no name: that's the file's own.
     const { bytes } = await fetchFile(link, NAME, progress, { init: { credentials: "omit" } });
     return { bytes, filename: safeFilename(file.name) };
