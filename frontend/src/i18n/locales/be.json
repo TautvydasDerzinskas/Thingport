@@ -2218,7 +2218,12 @@
         "error": "Памылка",
         "partial": "Не ўсё ўдалося імпартаваць",
         "done": "Гатова",
-        "unknown": "Невядома"
+        "unknown": "Невядома",
+        "grabWaiting": "Чакае праверкі",
+        "grabWaitingSome_one": "{{count}} чакае праверкі",
+        "grabWaitingSome_few": "{{count}} чакаюць праверкі",
+        "grabWaitingSome_many": "{{count}} чакаюць праверкі",
+        "grabWaitingSome_other": "{{count}} чакаюць праверкі"
       },
       "statusHint": {
         "running": "Імпарт выконваецца.",
@@ -2230,7 +2235,11 @@
         "partialModels": "Завершана, але некаторыя мадэлі не ўдалося імпартаваць.",
         "done": "Усе спасылкі імпартаваны.",
         "doneModels": "Усе мадэлі імпартаваны.",
-        "unknown": "Гэта версія Thingport не ведае такога стану."
+        "unknown": "Гэта версія Thingport не ведае такога стану.",
+        "grabWaiting_one": "Сайт просіць прайсці праверку. Thingport Grab завершыць імпарт там, або паўтарыце, калі абмежаванне знікне.",
+        "grabWaiting_few": "Сайт просіць прайсці праверку. Thingport Grab завершыць іх там, або паўтарыце, калі абмежаванне знікне.",
+        "grabWaiting_many": "Сайт просіць прайсці праверку. Thingport Grab завершыць іх там, або паўтарыце, калі абмежаванне знікне.",
+        "grabWaiting_other": "Сайт просіць прайсці праверку. Thingport Grab завершыць іх там, або паўтарыце, калі абмежаванне знікне."
       },
       "progress": "{{processed}} з {{total}}",
       "progressFailed": "{{processed}} з {{total}}, не ўдалося: {{failed}}",
@@ -2319,7 +2328,27 @@
         "finishedManyFailed_one": "Завершаны {{count}} імпарт, з праблемамі.",
         "finishedManyFailed_few": "Завершаны {{count}} імпарты, з праблемамі.",
         "finishedManyFailed_many": "Завершана {{count}} імпартаў, некаторыя з праблемамі.",
-        "finishedManyFailed_other": "Завершана {{count}} імпарту, некаторыя з праблемамі."
+        "finishedManyFailed_other": "Завершана {{count}} імпарту, некаторыя з праблемамі.",
+        "finishedGrabWaiting": "«{{name}}» чакае Thingport Grab",
+        "finishedGrabWaitingSome_one": "«{{name}}»: {{count}} чакае Thingport Grab",
+        "finishedGrabWaitingSome_few": "«{{name}}»: {{count}} чакаюць Thingport Grab",
+        "finishedGrabWaitingSome_many": "«{{name}}»: {{count}} чакаюць Thingport Grab",
+        "finishedGrabWaitingSome_other": "«{{name}}»: {{count}} чакаюць Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} з {{total}}, {{count}} чакае Grab",
+      "progressGrabWaiting_few": "{{processed}} з {{total}}, {{count}} чакаюць Grab",
+      "progressGrabWaiting_many": "{{processed}} з {{total}}, {{count}} чакаюць Grab",
+      "progressGrabWaiting_other": "{{processed}} з {{total}}, {{count}} чакаюць Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} імпарт чакае праверкі {{site}}",
+        "title_few": "{{count}} імпарты чакаюць праверкі {{site}}",
+        "title_many": "{{count}} імпартаў чакаюць праверкі {{site}}",
+        "title_other": "{{count}} імпарту чакаюць праверкі {{site}}",
+        "text_one": "Thingport Grab завершыць яго на {{host}}.",
+        "text_few": "Thingport Grab завершыць іх на {{host}}.",
+        "text_many": "Thingport Grab завершыць іх на {{host}}.",
+        "text_other": "Thingport Grab завершыць іх на {{host}}.",
+        "solve": "Прайсці на {{site}}"
       }
     },
     "tools": {

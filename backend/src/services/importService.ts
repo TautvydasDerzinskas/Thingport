@@ -56,6 +56,7 @@ import {
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
   MakerworldCaptchaError,
+  MAKERWORLD_CAPTCHA_CODE,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
@@ -394,7 +395,7 @@ async function tryMakerworldCloudApi(url: string, body: ImportRequestBody): Prom
     );
     return resolved;
   } catch (err) {
-    if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message);
+    if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message, MAKERWORLD_CAPTCHA_CODE);
     if (err instanceof MakerworldDownloadLimitError) {
       throw new HttpError(429, err.message, MAKERWORLD_DOWNLOAD_LIMIT_CODE);
     }
@@ -510,7 +511,7 @@ export async function openImportResponse(
         try {
           resolved = await resolveMakerworldDownloadUrl(html, finalUrl, makerworldCookie, requestedInstanceId);
         } catch (err) {
-          if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message);
+          if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message, MAKERWORLD_CAPTCHA_CODE);
           if (err instanceof MakerworldDownloadLimitError) {
             throw new HttpError(429, err.message, MAKERWORLD_DOWNLOAD_LIMIT_CODE);
           }
@@ -1406,9 +1407,10 @@ export async function importPrintFromUrl(
   const result = await importNewOrExisting(userId, url, body);
   // However it came in, nothing need wait for Grab to bring it.
   const provider = result.print.sourceProvider;
-  const grabQueue = isProviderId(provider) ? PROVIDERS[provider].grabQueue : undefined;
-  if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
-    await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
+  const backend = isProviderId(provider) ? PROVIDERS[provider] : undefined;
+  const waiting = backend?.grabQueue ?? backend?.grabFallback;
+  if (!keepGrabImports && waiting && result.print.sourceExternalId) {
+    await waiting.clear(userId, result.print.sourceExternalId).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);

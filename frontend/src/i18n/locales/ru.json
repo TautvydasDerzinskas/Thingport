@@ -2224,7 +2224,12 @@
         "error": "Ошибка",
         "partial": "Не всё удалось импортировать",
         "done": "Готово",
-        "unknown": "Неизвестно"
+        "unknown": "Неизвестно",
+        "grabWaiting": "Ждёт проверки",
+        "grabWaitingSome_one": "{{count}} ждёт проверки",
+        "grabWaitingSome_few": "{{count}} ждут проверки",
+        "grabWaitingSome_many": "{{count}} ждут проверки",
+        "grabWaitingSome_other": "{{count}} ждут проверки"
       },
       "statusHint": {
         "running": "Импорт выполняется.",
@@ -2236,7 +2241,11 @@
         "partialModels": "Завершено, но некоторые модели не удалось импортировать.",
         "done": "Все ссылки импортированы.",
         "doneModels": "Все модели импортированы.",
-        "unknown": "Эта версия Thingport не знает такого состояния."
+        "unknown": "Эта версия Thingport не знает такого состояния.",
+        "grabWaiting_one": "Сайт просит пройти проверку. Thingport Grab завершит импорт там, или повторите, когда ограничение пройдёт.",
+        "grabWaiting_few": "Сайт просит пройти проверку. Thingport Grab завершит их там, или повторите, когда ограничение пройдёт.",
+        "grabWaiting_many": "Сайт просит пройти проверку. Thingport Grab завершит их там, или повторите, когда ограничение пройдёт.",
+        "grabWaiting_other": "Сайт просит пройти проверку. Thingport Grab завершит их там, или повторите, когда ограничение пройдёт."
       },
       "progress": "{{processed}} из {{total}}",
       "progressFailed": "{{processed}} из {{total}}, не удалось: {{failed}}",
@@ -2325,7 +2334,27 @@
         "finishedManyFailed_one": "Завершён {{count}} импорт, с проблемами.",
         "finishedManyFailed_few": "Завершены {{count}} импорта, с проблемами.",
         "finishedManyFailed_many": "Завершено {{count}} импортов, некоторые с проблемами.",
-        "finishedManyFailed_other": "Завершено {{count}} импорта, некоторые с проблемами."
+        "finishedManyFailed_other": "Завершено {{count}} импорта, некоторые с проблемами.",
+        "finishedGrabWaiting": "«{{name}}» ждёт Thingport Grab",
+        "finishedGrabWaitingSome_one": "«{{name}}»: {{count}} ждёт Thingport Grab",
+        "finishedGrabWaitingSome_few": "«{{name}}»: {{count}} ждут Thingport Grab",
+        "finishedGrabWaitingSome_many": "«{{name}}»: {{count}} ждут Thingport Grab",
+        "finishedGrabWaitingSome_other": "«{{name}}»: {{count}} ждут Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} из {{total}}, {{count}} ждёт Grab",
+      "progressGrabWaiting_few": "{{processed}} из {{total}}, {{count}} ждут Grab",
+      "progressGrabWaiting_many": "{{processed}} из {{total}}, {{count}} ждут Grab",
+      "progressGrabWaiting_other": "{{processed}} из {{total}}, {{count}} ждут Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} импорт ждёт проверки {{site}}",
+        "title_few": "{{count}} импорта ждут проверки {{site}}",
+        "title_many": "{{count}} импортов ждут проверки {{site}}",
+        "title_other": "{{count}} импорта ждут проверки {{site}}",
+        "text_one": "Thingport Grab завершит его на {{host}}.",
+        "text_few": "Thingport Grab завершит их на {{host}}.",
+        "text_many": "Thingport Grab завершит их на {{host}}.",
+        "text_other": "Thingport Grab завершит их на {{host}}.",
+        "solve": "Пройти на {{site}}"
       }
     },
     "tools": {

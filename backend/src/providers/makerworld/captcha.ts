@@ -1,4 +1,5 @@
 import { MANIFESTS } from "../index.generated";
+import { HttpError } from "../../utils/fileUtils";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -77,6 +78,15 @@ export function isDownloadLimitReply(data: unknown): boolean {
 
 export const MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE =
   "MakerWorld daily download limit reached for this account. Try again tomorrow.";
+
+// The HttpError code of a CAPTCHA, which Thingport Grab can clear with MakerWorld's own puzzle on its site, so an import
+// it stopped can wait for Grab (grabImports.ts) rather than fail.
+export const MAKERWORLD_CAPTCHA_CODE = "MAKERWORLD_CAPTCHA";
+
+/** What Grab can clear: MakerWorld's CAPTCHA, whether thrown here or turned into the import's HTTP error. */
+export function isMakerworldCaptchaFailure(err: unknown): boolean {
+  return err instanceof MakerworldCaptchaError || (err instanceof HttpError && err.code === MAKERWORLD_CAPTCHA_CODE);
+}
 
 // The HttpError code, so batch runners can tell it from a CAPTCHA (both are 429).
 export const MAKERWORLD_DOWNLOAD_LIMIT_CODE = MANIFESTS.makerworld.errorCodes.downloadLimit;

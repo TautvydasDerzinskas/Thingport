@@ -254,7 +254,9 @@ from the image servers of the sites you viewed them on, without saying which pag
   starts; that download is cancelled and removed from your download history straight away, so no
   file is saved. Where MakerWorld wants a puzzle solved first, during an import you started on its page, the
   extension shows MakerWorld's own puzzle on that page, as its Download button does, and sends MakerWorld the
-  puzzle's answer with the next ask.
+  puzzle's answer with the next ask. On any MakerWorld page it asks your Thingport instance whether imports you
+  started there wait for MakerWorld's puzzle; if they do, it offers them, and only once you click **Solve** does it
+  open the puzzle and ask MakerWorld for their download links, the same way, sending the links to your instance.
 - When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint,
   MakerOnline, eufyMake, QIDI Maker or VoxelShare model page, the extension
   downloads that model's file from the site, as the page's own Download button would, converts it inside your

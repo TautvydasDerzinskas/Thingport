@@ -801,7 +801,9 @@
         "error": "错误",
         "partial": "部分失败",
         "done": "已完成",
-        "unknown": "未知"
+        "unknown": "未知",
+        "grabWaiting": "等待验证",
+        "grabWaitingSome_other": "{{count}} 个等待验证"
       },
       "statusHint": {
         "running": "正在导入。",
@@ -813,7 +815,8 @@
         "partialModels": "已完成，但部分模型失败。",
         "done": "所有链接均已导入。",
         "doneModels": "所有模型均已导入。",
-        "unknown": "此版本的 Thingport 无法识别这个状态。"
+        "unknown": "此版本的 Thingport 无法识别这个状态。",
+        "grabWaiting_other": "网站要求先完成验证。Thingport Grab 会在网站上完成导入，或等限制解除后重试。"
       },
       "progress": "{{processed}}/{{total}}",
       "progressFailed": "{{processed}}/{{total}}，{{failed}} 个失败",
@@ -869,7 +872,15 @@
         "finishedExistingFailed": "{{alreadyInLibrary}} 个已在你的模型库中，{{failedCount}} 个失败。",
         "finishedOnlyExisting": "{{alreadyInLibrary}} 个已在你的模型库中。",
         "finishedMany_other": "{{count}} 个导入已完成。",
-        "finishedManyFailed_other": "{{count}} 个导入已完成，但存在问题。"
+        "finishedManyFailed_other": "{{count}} 个导入已完成，但存在问题。",
+        "finishedGrabWaiting": "“{{name}}”等待 Thingport Grab",
+        "finishedGrabWaitingSome_other": "“{{name}}”：{{count}} 个等待 Thingport Grab"
+      },
+      "progressGrabWaiting_other": "{{processed}}/{{total}}，{{count}} 个等待 Grab",
+      "grabWaiting": {
+        "title_other": "{{count}} 个导入等待 {{site}} 的验证",
+        "text_other": "Thingport Grab 会在 {{host}} 上完成导入。",
+        "solve": "在 {{site}} 上完成验证"
       }
     },
     "dashboard": {
