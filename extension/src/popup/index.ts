@@ -169,14 +169,19 @@ function showConfiguredView(state: ExtensionState): void {
 }
 
 /** `credentials`: open with the password form already out, for someone coming back to fix one. */
-function showSetupForm(prefillUrl = "", prefillEmail = "", { credentials = false } = {}): void {
+/** `cancellable`: there's a connection to go back to; an address kept from a pairing has none. */
+function showSetupForm(
+  prefillUrl = "",
+  prefillEmail = "",
+  { credentials = false, cancellable = Boolean(prefillUrl) } = {},
+): void {
   labelTabs(false);
   els.recentSection.hidden = true;
   els.configuredView.hidden = true;
   els.instanceRow.hidden = true;
   els.enabledToggle.hidden = true;
   els.setupForm.hidden = false;
-  els.cancelBtn.hidden = !prefillUrl;
+  els.cancelBtn.hidden = !cancellable;
   els.instanceUrlInput.value = prefillUrl;
   els.emailInput.value = prefillEmail;
   els.passwordInput.value = "";
@@ -294,7 +299,7 @@ async function refresh({ checkConnection = true } = {}): Promise<void> {
   // Its slicers and printers are the instance's once connected, so it's read again whenever this is.
   void loadAdapt();
   if (!res.data.configured) {
-    showSetupForm(res.data.pairingInstanceUrl);
+    showSetupForm(res.data.pairingInstanceUrl, "", { cancellable: false });
     setPairing(res.data.pairing);
     els.pairPending.hidden = !res.data.pairing;
     return;
