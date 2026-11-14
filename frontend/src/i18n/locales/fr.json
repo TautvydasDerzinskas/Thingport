@@ -5966,6 +5966,10 @@
       "openInSlicer": "Ouvrir dans {{slicer}}",
       "openInStudio": "Ouvrir dans Thingport Studio",
       "openAdaptedInSlicer": "Ouvrir la version adaptée dans {{slicer}}",
+      "adaptedFor": "adapté pour {{target}}",
+      "adaptedForYourPrinter": "adapté pour votre imprimante",
+      "downloadAdapted": "Télécharger la version adaptée",
+      "adaptedActions": "Ouvrir ou télécharger la copie adaptée",
       "adaptedInfo": {
         "prusa": "Une copie faite pour {{slicer}} : elle rejoint vos propres réglages d’imprimante, de filament et d’impression, avec la hauteur de couche, les parois, le remplissage et les supports du créateur réglés sur chaque objet, et les couleurs peintes sur vos extrudeurs. Le fichier stocké n’est pas modifié.",
         "cura": "Une copie faite pour {{slicer}}, un projet Cura pour n’importe quelle imprimante : ouvert comme UCP, la hauteur de couche, l’adhérence et le type de supports du créateur rejoignent les réglages de votre imprimante, et chaque objet garde son extrudeur. Les objets en plusieurs pièces gardent leurs pièces, et les parois, couches supérieures et inférieures, remplissage et supports du créateur sont réglés sur chaque objet. Cura ne lit pas les couleurs peintes. Le fichier stocké n’est pas modifié.",

@@ -174,7 +174,11 @@ export default function ModelSidePanel({
   // The provider whose own category this maps from, when it isn't AI's answer.
   const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = viewer?.avatar_url;
-  const { downloading, downloadFile, downloadAllZip, recordUse } = useDownloadPrint(print, onUnauthorized, onUpdated);
+  const { downloading, downloadFile, downloadAllZip, recordUse, recordDownload } = useDownloadPrint(
+    print,
+    onUnauthorized,
+    onUpdated,
+  );
 
   const { slicerOption, slicerOptions, files, canOpen, adaptedTargetFor } = useOpenInSlicer(print);
   // Every action below applies to this file; until one is picked, the first profile (the designer's, where there is
@@ -194,7 +198,7 @@ export default function ModelSidePanel({
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
   const studio = useOpenInStudio(print, onUnauthorized);
   const studioPlate = studio.files.find((plate) => plate.id === selectedFile?.plate?.id) ?? null;
-  const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized);
+  const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized, recordDownload);
   // Opened from the button below rather than a menu, so there is no menu to close.
   const customize = useCustomize(print, () => {}, onUnauthorized);
   // Another user's model, from one of their public collections.
@@ -585,11 +589,13 @@ export default function ModelSidePanel({
         )}
         {slicerOption && adaptedTarget && (
           <AdaptedOpenButton
-            targets={[adaptedTarget]}
+            target={adaptedTarget}
             slicerLabel={slicerOption.label}
-            stateOf={adapted.stateOf}
-            open={adapted.open}
-            onPick={() => {}}
+            state={adapted.stateOf(adaptedTarget)}
+            printerName={adapted.printerName(adaptedTarget)}
+            onOpen={() => void adapted.open(adaptedTarget)}
+            downloading={adapted.downloading}
+            onDownload={() => void adapted.download(adaptedTarget)}
           />
         )}
         {adapted.dialog}

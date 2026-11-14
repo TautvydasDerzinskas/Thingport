@@ -5520,6 +5520,10 @@
       "openInSlicer": "在 {{slicer}} 中打开",
       "openInStudio": "在 Thingport Studio 中打开",
       "openAdaptedInSlicer": "在 {{slicer}} 中打开适配版",
+      "adaptedFor": "已适配 {{target}}",
+      "adaptedForYourPrinter": "已适配你的打印机",
+      "downloadAdapted": "下载适配版",
+      "adaptedActions": "打开或下载适配版",
       "adaptedInfo": {
         "prusa": "为 {{slicer}} 制作的副本：使用你自己的打印机、耗材和打印设置，在每个对象上设置设计者的层高、墙、填充和支撑，涂色则分配到你的挤出机上。存储的文件不会被更改。",
         "cura": "为 {{slicer}} 制作的副本，是适用于任何打印机的 Cura 项目：以 UCP 方式打开时，设计者的层高、附着方式和支撑类型会应用到你的打印机设置上，每个对象保留其挤出机。多零件对象保留各自的零件，设计者的墙、顶层和底层、填充和支撑设置在每个对象上。Cura 不读取涂色。存储的文件不会被更改。",

@@ -5953,6 +5953,10 @@
       "openInSlicer": "Abrir en {{slicer}}",
       "openInStudio": "Abrir en Thingport Studio",
       "openAdaptedInSlicer": "Abrir versión adaptada en {{slicer}}",
+      "adaptedFor": "adaptado para {{target}}",
+      "adaptedForYourPrinter": "adaptado para tu impresora",
+      "downloadAdapted": "Descargar versión adaptada",
+      "adaptedActions": "Abrir o descargar la copia adaptada",
       "adaptedInfo": {
         "prusa": "Una copia hecha para {{slicer}}: entra en tus propios ajustes de impresora, filamento e impresión, con la altura de capa, las paredes, el relleno y los soportes del diseñador en cada objeto, y los colores pintados en tus extrusores. El archivo guardado no cambia.",
         "cura": "Una copia hecha para {{slicer}}, un proyecto de Cura para cualquier impresora: abierto como UCP, la altura de capa, la adherencia y el tipo de soportes del diseñador pasan a los ajustes de tu impresora, y cada objeto conserva su extrusor. Los objetos con varias piezas conservan sus piezas, y las paredes, capas superiores e inferiores, relleno y soportes del diseñador se ajustan en cada objeto. Cura no lee los colores pintados. El archivo guardado no cambia.",

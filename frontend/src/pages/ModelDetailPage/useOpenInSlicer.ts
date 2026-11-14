@@ -30,6 +30,8 @@ export type SlicerTarget = ModelFile & { href: string };
 export type AdaptedTarget = SlicerTarget & {
   plan: AdaptPlan;
   printer: PrinterChoice | null;
+  /** The copy's own link, relative like `plate.url`, for downloading it. */
+  fileUrl: string;
   ask?: boolean;
   withPrinter?: (printer: UserPrinter) => AdaptedTarget | SlicerTarget | null;
 };
@@ -111,7 +113,15 @@ export function adaptedTargetsFor(
     const printer = plan.output === "bambu" && plan.printer ? choice : null;
     const adaptedUrl = printsApi.adaptedPlateUrl(plate, slicerId, printer);
     const href = slicerLaunchUrl(slicerId, printsApi.slicerFileUrl(adaptedUrl), file.filename, bridged);
-    return { ...file, key: `adapted-${file.key}`, launchFilename: file.filename, plan, printer, href };
+    return {
+      ...file,
+      key: `adapted-${file.key}`,
+      launchFilename: file.filename,
+      plan,
+      printer,
+      href,
+      fileUrl: adaptedUrl,
+    };
   };
 
   return files.flatMap((file) => {

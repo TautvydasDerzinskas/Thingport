@@ -5736,6 +5736,10 @@
       "openInSlicer": "Open in {{slicer}}",
       "openInStudio": "Open in Thingport Studio",
       "openAdaptedInSlicer": "Open adapted in {{slicer}}",
+      "adaptedFor": "adapted for {{target}}",
+      "adaptedForYourPrinter": "adapted for your printer",
+      "downloadAdapted": "Download adapted",
+      "adaptedActions": "Open or download the adapted copy",
       "adaptedInfo": {
         "prusa": "A copy made for {{slicer}}: it goes into your own printer, filament and print settings, with the designer's layer height, walls, infill and supports set on each object and the painted colors on your extruders. The stored file isn't changed.",
         "cura": "A copy made for {{slicer}}, a Cura project for any printer: opened as UCP, the designer's layer height, adhesion and kind of supports go onto your printer's settings, and every object keeps its extruder. Multi-part objects keep their parts, and the designer's walls, top and bottom layers, infill and supports are set on each object. Cura doesn't read painted colors. The stored file isn't changed.",
