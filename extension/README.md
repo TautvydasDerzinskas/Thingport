@@ -423,7 +423,8 @@ above it.
 
 VoxelShare's models, their print profiles and anyone's public collections import without a sign-in. Its sign-in, its
 `token` cookie, is read when you open www.voxelshare.com signed in, and sent whenever the site renews it; signing out
-there makes Thingport forget the one Grab sent. Thingport needs it only for your own private collections and your likes
+there makes Thingport forget the one Grab sent. Its China site, www.voxelshare.cn, has accounts of its own: its sign-in
+is read from its own pages and sent as a second one, and its models import from there the same way. Thingport needs it only for your own private collections and your likes
 (`/en/print_list?recordTab=like`), which import from their pages and can be kept in sync. The page keeps the print
 profile you pick to itself, so the panel imports the one picked in its list. **Download adapted** sits under its **Open
 in Flash Studio Desktop**, for that profile.

@@ -1,6 +1,7 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
 import type { ProviderId } from "../providers/index.generated";
+import type { SessionKey } from "../background/sessionSync";
 import type { ThingportAdapt } from "./messages";
 
 export const STORAGE_KEYS = {
@@ -92,7 +93,7 @@ export type StoredConfig = {
   loginVerifiedAt?: number;
   lastSyncedMakerworldCookie?: string;
   /** `account` is the Thingport instance and email it was sent to. */
-  lastSyncedSessions?: Partial<Record<ProviderId, { account: string; value: string }>>;
+  lastSyncedSessions?: Partial<Record<SessionKey, { account: string; value: string }>>;
   /** `account` is the Thingport instance and email they were sent to. */
   lastSentProviderAccounts?: { account: string; values: Record<string, string> };
   lastPrintablesPushAt?: number;

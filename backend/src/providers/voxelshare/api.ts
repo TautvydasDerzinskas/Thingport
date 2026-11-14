@@ -6,39 +6,55 @@ import type { ProviderCollectionCard } from "../../services/providerCollectionCa
 import { asCount, asRecord, asText, recordsOf, webImage, type TrendingModel } from "../../services/trendingModel";
 import { sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
-import { MANIFESTS, providerOfHost } from "../index.generated";
+import { MANIFESTS, providerOfHost, regionalId, splitRegionalId, type RegionId } from "../index.generated";
 import {
-  VOXELSHARE_LIKES_KEY,
-  VOXELSHARE_LIKES_URL,
   isVoxelshareLikesUrl,
   parseVoxelshareCollectionUrl,
   parseVoxelshareModelUrl,
   voxelshareCollectionUrl,
+  voxelshareLikesKey,
+  voxelshareLikesRegion,
+  voxelshareLikesUrl,
   voxelshareModelUrl,
   voxelshareUserUrl,
 } from "./urls.generated";
 import manifest from "./manifest.generated";
 import { voxelshareLicenseFrom } from "./license";
 export {
-  VOXELSHARE_LIKES_KEY,
-  VOXELSHARE_LIKES_URL,
   isVoxelshareLikesUrl,
   parseVoxelshareCollectionUrl,
   parseVoxelshareModelUrl,
   voxelshareCollectionUrl,
+  voxelshareLikesKey,
+  voxelshareLikesUrl,
   voxelshareModelUrl,
 };
 
+/** Which of its sites: its main one (null), or its China one. */
+export type VoxelshareRegion = RegionId | null;
+
 // VoxelShare has no public API, so this is the one its own pages call, on api.voxelshare.com: JSON answered with
 // `{code, msg, data}`, code 0 when it went well, and mostly HTTP 200 whatever the code. Nothing is signed and no header
-// is required; the ones sent are those its pages send.
+// is required; the ones sent are those its pages send. Its China site's pages call the same API on api.voxelshare.cn,
+// which has its uploads, its trending list and its accounts; models and collections share their ids between the two.
 //
 // Models, their print profiles and files, listings and public collections need no sign-in. The user's own
 // collections and likes need the `token` cookie, sent as a Bearer token. Files are signed links on its image host that
 // anyone may download: the site's own Download then reports the download to count it, and Thingport doesn't, to keep
 // a sync's downloads out of the user's download history there.
-const SITE_ORIGIN = manifest.site;
-const API_BASE = manifest.endpoints.api;
+const CHINA = manifest.regions[0];
+/** Each site's API, the origin its pages call it from, and the language they're in. */
+const SITES: Readonly<Record<"main" | RegionId, { api: string; origin: string; lang: string }>> = {
+  main: { api: manifest.endpoints.api, origin: manifest.site, lang: "en" },
+  cn: { api: CHINA.endpoints.api, origin: CHINA.site, lang: "zh" },
+};
+const siteOf = (region: VoxelshareRegion) => SITES[region ?? "main"];
+
+/** A site's pages' host, as messages name it: www.voxelshare.com, or www.voxelshare.cn. */
+export function voxelshareSiteHost(region: VoxelshareRegion): string {
+  return new URL(siteOf(region).origin).hostname;
+}
+
 const FILES_HOST = new URL(manifest.endpoints.files).hostname;
 const API_TIMEOUT_MS = IMPORT_TIMEOUT_SECONDS * 1000;
 const PROVIDER = manifest.id;
@@ -60,10 +76,10 @@ const RATE_LIMIT_WAIT_MS = 1500;
 const MODEL_SHOWN = 1;
 
 export class VoxelshareAuthError extends Error {
-  constructor() {
+  constructor(readonly region: VoxelshareRegion = null) {
     super(
-      "VoxelShare didn't accept your sign-in; it may have expired. Visit www.voxelshare.com signed in with Thingport " +
-        "Grab, or connect it again in Configuration > Providers.",
+      `VoxelShare didn't accept your sign-in; it may have expired. Visit ${voxelshareSiteHost(region)} signed in ` +
+        "with Thingport Grab, or connect it again in Configuration > Providers.",
     );
     this.name = "VoxelshareAuthError";
   }
@@ -90,10 +106,12 @@ async function call(
   path: string,
   params: Record<string, unknown>,
   token: string | null,
+  region: VoxelshareRegion,
 ): Promise<Answer> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-  const url = new URL(`${API_BASE}/${path}`);
+  const site = siteOf(region);
+  const url = new URL(`${site.api}/${path}`);
   if (method === "GET") {
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
   }
@@ -103,11 +121,12 @@ async function call(
       headers: {
         Accept: "application/json, text/plain, */*",
         "User-Agent": IMPORT_BROWSER_USER_AGENT,
-        Origin: SITE_ORIGIN,
-        Referer: `${SITE_ORIGIN}/`,
-        // In English, translated where the designer wrote in another language, as its English pages show it.
-        "Accept-Language": "en",
-        "Translate-Language": "en",
+        Origin: site.origin,
+        Referer: `${site.origin}/`,
+        // In the site's own language, English or Chinese, translated where the designer wrote in another, as its
+        // pages show it.
+        "Accept-Language": site.lang,
+        "Translate-Language": site.lang,
         did: DEVICE_ID,
         "X-Log-Token": LOG_TOKEN,
         ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
@@ -129,21 +148,23 @@ async function call(
   }
 }
 
-/** One call's answer, a burst past its limit waited out a few times, then a 429. A sign-in it turns down throws. */
+/** One call's answer from a site, a burst past its limit waited out a few times, then a 429. A sign-in it turns down
+ *  throws. */
 async function fetchApi(
   method: "GET" | "POST",
   path: string,
   params: Record<string, unknown>,
   token: string | null,
+  region: VoxelshareRegion = null,
 ): Promise<Answer> {
-  let res = await call(method, path, params, token);
+  let res = await call(method, path, params, token, region);
   for (let retry = 1; retry <= RATE_LIMIT_RETRIES && res.status === 429; retry++) {
     await sleep(RATE_LIMIT_WAIT_MS * retry);
-    res = await call(method, path, params, token);
+    res = await call(method, path, params, token, region);
   }
   if (res.status === 429) throw new HttpError(429, "VoxelShare rate-limited this request. Wait a bit and try again.");
   if (token && (res.status === 401 || res.code === CODE_AUTH || res.code === CODE_REGION))
-    throw new VoxelshareAuthError();
+    throw new VoxelshareAuthError(region);
   return res;
 }
 
@@ -153,12 +174,13 @@ function failure(what: string, res: Answer): Error {
   );
 }
 
-/** Who the sign-in belongs to, or "rejected"/"unreachable". */
+/** Who a site's sign-in belongs to, or "rejected"/"unreachable". */
 export async function checkVoxelshareAuth(
   token: string,
+  region: VoxelshareRegion = null,
 ): Promise<{ userId: string; name: string | null } | "rejected" | "unreachable"> {
   try {
-    const res = await fetchApi("GET", "v3/creator/self/profile", {}, token);
+    const res = await fetchApi("GET", "v3/creator/self/profile", {}, token, region);
     // Only a refusal says the sign-in is bad; any other answer is VoxelShare's own trouble.
     if (res.code !== CODE_OK) return "unreachable";
     const user = isRecord(res.data) ? res.data : null;
@@ -188,6 +210,7 @@ export type VoxelshareModelFile = VoxelshareFile & { folder: string | null };
 export type VoxelshareModelResolution = {
   meta: Partial<ImportedPageMetadata>;
   galleryImages: { url: string; filename: string }[];
+  /** The id it's kept under, which names the site it's on (`cn-123` the China one's). */
   modelId: string;
   /** Its print profiles, in the site's order. */
   profiles: VoxelshareProfile[];
@@ -228,7 +251,7 @@ function nameFromUrl(url: string, fallback: string): string {
   }
 }
 
-function authorOf(user: unknown): ImportedAuthorInfo | null {
+function authorOf(user: unknown, region: VoxelshareRegion): ImportedAuthorInfo | null {
   if (!isRecord(user)) return null;
   const userId = str(user.id) ?? str(user.userId);
   const name = str(user.nickname);
@@ -240,7 +263,7 @@ function authorOf(user: unknown): ImportedAuthorInfo | null {
     handle: str(user.customUid),
     bio: null,
     bioTranslated: null,
-    links: [voxelshareUserUrl(userId)],
+    links: [voxelshareUserUrl(userId, region)],
     avatarUrl: originalImage(user.avatar),
     backgroundUrl: null,
   };
@@ -319,14 +342,16 @@ export function voxelshareFilesFrom(items: unknown): VoxelshareModelFile[] {
 }
 
 /** The metadata mapping, apart from the fetches so it can be tested on its own: the model's details, its list of
- *  print profiles and its own files. Null for a model its page shows nobody. */
+ *  print profiles and its own files, from one of its sites. Null for a model its page shows nobody. */
 export function voxelshareMetaFromDetail(
   detail: Record<string, unknown>,
   profileItems: unknown = [],
   fileItems: unknown = [],
+  region: VoxelshareRegion = null,
 ): VoxelshareModelResolution | null {
-  const modelId = voxelshareId(detail.modelId);
-  if (!modelId || (detail.status !== undefined && detail.status !== MODEL_SHOWN)) return null;
+  const siteId = voxelshareId(detail.modelId);
+  if (!siteId || (detail.status !== undefined && detail.status !== MODEL_SHOWN)) return null;
+  const modelId = regionalId(region, siteId);
   const meta: Partial<ImportedPageMetadata> = {};
   const title = str(detail.modelName) ?? str(detail.originalName);
   if (title) meta.title = title;
@@ -345,7 +370,7 @@ export function voxelshareMetaFromDetail(
     ]),
   ].filter((url): url is string => !!url);
   if (images[0]) meta.previewImageUrl = images[0];
-  const author = authorOf(detail.creator);
+  const author = authorOf(detail.creator, region);
   if (author) {
     meta.author = author;
     meta.creator = author.name;
@@ -358,7 +383,7 @@ export function voxelshareMetaFromDetail(
   }
   meta.license = voxelshareLicenseFrom(detail.license);
   // A profile's file has no name of its own (its link names it by when it was uploaded): it's the model's.
-  const fileName = `${title ?? modelId}.3mf`;
+  const fileName = `${title ?? siteId}.3mf`;
   return {
     meta,
     galleryImages: images.map((url, index) => ({ url, filename: nameFromUrl(url, `image-${index}.jpg`) })),
@@ -385,44 +410,73 @@ export function selectVoxelshareProfiles(
   return pick ? [pick.id] : [];
 }
 
-/** The model's details as the site answers them, by its id. Null for a model it doesn't have; throws when it doesn't
- *  answer. */
-export async function fetchVoxelshareDetail(modelId: string): Promise<Record<string, unknown> | null> {
-  const res = await fetchApi("GET", "v3/model/detail/info", { modelId }, null);
+/** The model's details as a site answers them, by its id there. Null for a model it doesn't have; throws when it
+ *  doesn't answer. */
+export async function fetchVoxelshareDetail(
+  modelId: string,
+  region: VoxelshareRegion = null,
+): Promise<Record<string, unknown> | null> {
+  const res = await fetchApi("GET", "v3/model/detail/info", { modelId }, null, region);
   if (res.code === CODE_NOT_FOUND) return null;
   if (res.code !== CODE_OK) throw failure("this model", res);
   return isRecord(res.data) ? res.data : null;
 }
 
-/** The model's print profiles as the site lists them; none for a model it doesn't have. */
-export async function fetchVoxelshareProfiles(modelId: string): Promise<Record<string, unknown>[]> {
-  const res = await fetchApi("GET", "v3/model/detail/print_configs", { modelId }, null);
+/** The model's print profiles as a site lists them; none for a model it doesn't have. */
+export async function fetchVoxelshareProfiles(
+  modelId: string,
+  region: VoxelshareRegion = null,
+): Promise<Record<string, unknown>[]> {
+  const res = await fetchApi("GET", "v3/model/detail/print_configs", { modelId }, null, region);
   if (res.code !== CODE_OK) throw failure("this model's print profiles", res);
   return recordsOf(asRecord(res.data)?.items);
 }
 
-/** The model's own files as the site lists them, folders holding theirs. */
-export async function fetchVoxelshareFiles(modelId: string): Promise<Record<string, unknown>[]> {
-  const res = await fetchApi("GET", "v3/model/detail/source_files", { modelId }, null);
+/** The model's own files as a site lists them, folders holding theirs. */
+export async function fetchVoxelshareFiles(
+  modelId: string,
+  region: VoxelshareRegion = null,
+): Promise<Record<string, unknown>[]> {
+  const res = await fetchApi("GET", "v3/model/detail/source_files", { modelId }, null, region);
   if (res.code !== CODE_OK) throw failure("this model's files", res);
   return recordsOf(asRecord(res.data)?.items);
 }
 
-/** By its id. Null for a model it doesn't have or shows nobody. Its own files are only read where it has no print
- *  profile to import, none listed or none shown, as only then are they imported. */
-export async function resolveVoxelshareModel(modelId: string): Promise<VoxelshareModelResolution | null> {
-  const detail = await fetchVoxelshareDetail(modelId);
+/** A kept id's site, and the model's id there: `cn-123` is 123 on the China site. */
+export function voxelshareSiteIdOf(externalId: string): { region: VoxelshareRegion; id: string } {
+  return splitRegionalId(externalId, manifest.regions);
+}
+
+/** The site whose likes a kept id is, `likes` the main one's and `cn-likes` the China one's; undefined for a
+ *  collection's. */
+export function voxelshareLikesSiteOf(externalId: string): VoxelshareRegion | undefined {
+  const { region, id } = voxelshareSiteIdOf(externalId);
+  return id === "likes" ? region : undefined;
+}
+
+/** Its sites, the main one first. */
+export const VOXELSHARE_SITES: readonly VoxelshareRegion[] = [null, ...manifest.regions.map((region) => region.id)];
+
+/** By the id it's kept under, from the site that names. Null for a model it doesn't have or shows nobody. Its own
+ *  files are only read where it has no print profile to import, none listed or none shown, as only then are they
+ *  imported. */
+export async function resolveVoxelshareModel(externalId: string): Promise<VoxelshareModelResolution | null> {
+  const { region, id } = voxelshareSiteIdOf(externalId);
+  const detail = await fetchVoxelshareDetail(id, region);
   if (!detail) return null;
-  const resolution = voxelshareMetaFromDetail(detail, await fetchVoxelshareProfiles(modelId));
+  const resolution = voxelshareMetaFromDetail(detail, await fetchVoxelshareProfiles(id, region), [], region);
   if (resolution && !resolution.profiles.length) {
-    resolution.files = voxelshareFilesFrom(await fetchVoxelshareFiles(modelId));
+    resolution.files = voxelshareFilesFrom(await fetchVoxelshareFiles(id, region));
   }
   return resolution;
 }
 
 // ---- Lists ----------------------------------------------------------------------------------------------------------
 
-export const VOXELSHARE_LIKES_NAME = "VoxelShare likes";
+/** A site's likes, as Thingport names them: "VoxelShare likes", or "VoxelShare China likes". */
+export function voxelshareLikesName(region: VoxelshareRegion): string {
+  return region ? `${manifest.name} ${CHINA.name} likes` : `${manifest.name} likes`;
+}
 
 export type VoxelshareModelSummary = { modelId: string; title: string; cover: string | null };
 export type VoxelshareListing = { entries: VoxelshareModelSummary[]; total: number; truncated: boolean };
@@ -432,12 +486,13 @@ const PAGE_SIZE = 50;
 const LISTING_MAX_ENTRIES = 600;
 const CARD_THUMBNAILS = 4;
 
-function summaryOf(model: Record<string, unknown>): VoxelshareModelSummary | null {
-  const modelId = voxelshareId(model.modelId);
-  if (!modelId) return null;
+/** A list's model by the id it's kept under, for the site the list is on. */
+function summaryOf(model: Record<string, unknown>, region: VoxelshareRegion): VoxelshareModelSummary | null {
+  const siteId = voxelshareId(model.modelId);
+  if (!siteId) return null;
   return {
-    modelId,
-    title: str(model.modelName) ?? `Model ${modelId}`,
+    modelId: regionalId(region, siteId),
+    title: str(model.modelName) ?? `Model ${siteId}`,
     cover: webImage(asRecord(model.mainImage)?.url),
   };
 }
@@ -447,6 +502,7 @@ async function readPages(
   what: string,
   page: (pageNumber: number, pageSize: number) => Promise<Answer>,
   maxItems: number,
+  region: VoxelshareRegion,
 ): Promise<VoxelshareListing> {
   const entries: VoxelshareModelSummary[] = [];
   const seen = new Set<string>();
@@ -460,7 +516,7 @@ async function readPages(
     const models = recordsOf(data.items);
     const before = entries.length;
     for (const model of models) {
-      const summary = summaryOf(model);
+      const summary = summaryOf(model, region);
       if (!summary || seen.has(summary.modelId)) continue;
       seen.add(summary.modelId);
       entries.push(summary);
@@ -485,21 +541,23 @@ function collectionInfoOf(collection: Record<string, unknown>): VoxelshareCollec
 async function fetchCollectionInfo(
   collectionId: string,
   token: string | null,
+  region: VoxelshareRegion,
 ): Promise<VoxelshareCollectionInfo | null> {
-  const res = await fetchApi("GET", "v3/model/collection/detail", { id: collectionId }, token);
+  const res = await fetchApi("GET", "v3/model/collection/detail", { id: collectionId }, token, region);
   if (res.code === CODE_NOT_FOUND) return null;
   if (res.code !== CODE_OK || !isRecord(res.data)) throw failure("this collection", res);
   return collectionInfoOf(res.data);
 }
 
-/** A collection and its models, by its id. Null where the site has no such collection. Read without a sign-in, a
- *  private one answers "private": the site may show a stranger its details without all its models. */
+/** A collection and its models, by its id on a site. Null where the site has no such collection. Read without a
+ *  sign-in, a private one answers "private": the site may show a stranger its details without all its models. */
 export async function fetchVoxelshareCollection(
   collectionId: string,
   token: string | null,
   maxItems: number = LISTING_MAX_ENTRIES,
+  region: VoxelshareRegion = null,
 ): Promise<(VoxelshareListing & { info: VoxelshareCollectionInfo }) | null | "private"> {
-  const info = await fetchCollectionInfo(collectionId, token);
+  const info = await fetchCollectionInfo(collectionId, token, region);
   if (!info) return null;
   if (info.private && !token) return "private";
   const listing = await readPages(
@@ -510,27 +568,32 @@ export async function fetchVoxelshareCollection(
         "v3/model/collection/model/list",
         { did: DEVICE_ID, requestId: randomUUID(), userId: "", collectionId, pageNumber, pageSize, keyword: "" },
         token,
+        region,
       ),
     maxItems,
+    region,
   );
   return { ...listing, info: { ...info, modelCount: Math.max(info.modelCount, listing.total) } };
 }
 
-/** The user's likes, the latest first. */
+/** The user's likes on a site, the latest first. */
 export async function fetchVoxelshareLikes(
   token: string,
   maxItems: number = LISTING_MAX_ENTRIES,
+  region: VoxelshareRegion = null,
 ): Promise<VoxelshareListing> {
   return readPages(
     "your likes",
-    (pageNumber, pageSize) => fetchApi("GET", "v3/model/creator/like_list", { pageNumber, pageSize }, token),
+    (pageNumber, pageSize) => fetchApi("GET", "v3/model/creator/like_list", { pageNumber, pageSize }, token, region),
     maxItems,
+    region,
   );
 }
 
-function card(collection: Record<string, unknown>): ProviderCollectionCard | null {
-  const id = voxelshareId(collection.id);
-  if (!id) return null;
+function card(collection: Record<string, unknown>, region: VoxelshareRegion): ProviderCollectionCard | null {
+  const siteId = voxelshareId(collection.id);
+  if (!siteId) return null;
+  const id = regionalId(region, siteId);
   const info = collectionInfoOf(collection);
   return {
     id,
@@ -547,15 +610,24 @@ function card(collection: Record<string, unknown>): ProviderCollectionCard | nul
 
 const OWN_COLLECTIONS_MAX = 200;
 
-/** The user's likes and their own collections, the default one among them, as the sync dialog's Browse tab shows
- *  them. Collections they follow are someone else's, and are left to their links. */
-export async function listVoxelshareCollections(token: string): Promise<ProviderCollectionCard[]> {
-  const self = await fetchApi("GET", "v3/creator/self/profile", {}, token);
+/** The user's likes and their own collections on a site, the default one among them, as the sync dialog's Browse tab
+ *  shows them. Collections they follow are someone else's, and are left to their links. */
+export async function listVoxelshareCollections(
+  token: string,
+  region: VoxelshareRegion = null,
+): Promise<ProviderCollectionCard[]> {
+  const self = await fetchApi("GET", "v3/creator/self/profile", {}, token, region);
   const userId = str(asRecord(self.data)?.userId);
   if (self.code !== CODE_OK || !userId) throw failure("your account", self);
   const own: Record<string, unknown>[] = [];
   for (let pageNumber = 1; own.length < OWN_COLLECTIONS_MAX; pageNumber++) {
-    const res = await fetchApi("POST", "v3/model/collection/list", { userId, pageNumber, pageSize: PAGE_SIZE }, token);
+    const res = await fetchApi(
+      "POST",
+      "v3/model/collection/list",
+      { userId, pageNumber, pageSize: PAGE_SIZE },
+      token,
+      region,
+    );
     const data = asRecord(res.data);
     if (res.code !== CODE_OK || !data) throw failure("your collections", res);
     const items = recordsOf(data.items);
@@ -567,27 +639,31 @@ export async function listVoxelshareCollections(token: string): Promise<Provider
     "v3/model/creator/like_list",
     { pageNumber: 1, pageSize: CARD_THUMBNAILS },
     token,
+    region,
   );
   const liked = asRecord(likes.data);
   if (likes.code !== CODE_OK || !liked) throw failure("your likes", likes);
   const likesCard: ProviderCollectionCard = {
-    id: VOXELSHARE_LIKES_KEY,
-    name: VOXELSHARE_LIKES_NAME,
-    url: VOXELSHARE_LIKES_URL,
+    id: voxelshareLikesKey(region),
+    name: voxelshareLikesName(region),
+    url: voxelshareLikesUrl(region),
     modelCount: asCount(liked.total) ?? 0,
     thumbnails: recordsOf(liked.items).flatMap((model) => webImage(asRecord(model.mainImage)?.url) ?? []),
     private: true,
     owner: null,
   };
-  return [likesCard, ...own.flatMap((collection) => card(collection) ?? [])];
+  return [likesCard, ...own.flatMap((collection) => card(collection, region) ?? [])];
 }
 
 // ---- Trending -------------------------------------------------------------------------------------------------------
 
 const TRENDING_MAX = 30;
 
-/** Its home page's Trending feed. Public; no sign-in. */
-export async function fetchVoxelshareTrending(limit: number): Promise<TrendingModel[]> {
+/** A site's home page Trending feed. Public; no sign-in. */
+export async function fetchVoxelshareTrending(
+  limit: number,
+  region: VoxelshareRegion = null,
+): Promise<TrendingModel[]> {
   const res = await fetchApi(
     "POST",
     "v3/model/recommend",
@@ -601,16 +677,18 @@ export async function fetchVoxelshareTrending(limit: number): Promise<TrendingMo
       pageId: "home-page",
     },
     null,
+    region,
   );
   if (res.code !== CODE_OK) throw failure("its trending models", res);
   return recordsOf(asRecord(res.data)?.items).flatMap((item) => {
     const model = asRecord(item.itemData);
-    const modelId = voxelshareId(model?.modelId);
-    if (!model || !modelId) return [];
+    const siteId = voxelshareId(model?.modelId);
+    if (!model || !siteId) return [];
+    const modelId = regionalId(region, siteId);
     return [
       {
         id: modelId,
-        title: asText(model.modelName) ?? modelId,
+        title: asText(model.modelName) ?? siteId,
         url: voxelshareModelUrl(modelId),
         image: webImage(asRecord(model.mainImage)?.url),
         likes: asCount(model.likeCount),
@@ -621,9 +699,12 @@ export async function fetchVoxelshareTrending(limit: number): Promise<TrendingMo
   });
 }
 
-/** Whether a link is to the user's likes or to a collection, for the list import. */
-export function voxelshareListOf(url: string): { likes: true } | { collectionId: string } | null {
-  if (isVoxelshareLikesUrl(url)) return { likes: true };
-  const collectionId = parseVoxelshareCollectionUrl(url);
-  return collectionId ? { collectionId } : null;
+/** Whether a link is to the user's likes or to a collection, on which site, for the list import. */
+export function voxelshareListOf(
+  url: string,
+): { likes: true; region: VoxelshareRegion } | { collectionId: string; region: VoxelshareRegion } | null {
+  const likes = voxelshareLikesRegion(url);
+  if (likes !== undefined) return { likes: true, region: likes };
+  const collection = parseVoxelshareCollectionUrl(url);
+  return collection ? { collectionId: collection.collectionId, region: collection.region } : null;
 }

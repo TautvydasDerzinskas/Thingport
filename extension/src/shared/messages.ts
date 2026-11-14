@@ -11,7 +11,7 @@ import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
 import type { Locale } from "./i18n";
 import type { Provider } from "./urls";
-import type { MANIFESTS, ProviderId } from "../providers/index.generated";
+import type { MANIFESTS, ProviderId, RegionId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
 
 export type ExtensionState = {
@@ -237,8 +237,12 @@ export type BackgroundMessages = {
   GET_PRINTABLES_TOKEN: { payload: void; result: string | null };
   /** Who the user is signed in as on a provider, read from its pages. */
   REPORT_PROVIDER_ACCOUNT: { payload: { provider: AccountProvider; value: string }; result: null };
-  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell. */
-  SYNC_PROVIDER_SESSION: { payload: { provider: Provider }; result: { userId: string | null } };
+  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell.
+   *  `region`: the provider's site the page is on, where it has several with accounts of their own. */
+  SYNC_PROVIDER_SESSION: {
+    payload: { provider: Provider; region?: RegionId | null };
+    result: { userId: string | null };
+  };
   /** On a MakerOnline model page: get its files signed there, then import it. */
   IMPORT_MAKERONLINE_MODEL: {
     payload: { url: string; scope: "url" | "designer" | "all"; collectionId: string | null; title: string | null };

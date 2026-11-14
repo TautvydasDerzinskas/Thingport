@@ -2892,11 +2892,15 @@
       "title": "Постачальники",
       "subtitle": "Сайти, з яких ви імпортуєте моделі. Клацніть правою кнопкою миші на одному з них, щоб підключити, відключити його або дізнатися про нього більше.",
       "connected": "Підключено",
+      "connectedSites": "Підключено · {{sites}}",
       "notConnected": "Не підключено",
       "connect": "Підключити",
+      "connectSite": "Підключити: {{site}}",
       "connecting": "Підключення…",
       "disconnect": "Відключити",
       "connectTitle": "Підключити {{name}}",
+      "site": "Сайт",
+      "regions": { "main": "Міжнародний", "cn": "Китай" },
       "disconnectTitle": "Відключити {{name}}?",
       "disconnectMessage": "Ваш ключ {{name}} видалено, і імпорт із {{name}} не працюватиме, доки ви не підключите його знову.",
       "disconnectMessageShared": "Токен {{name}} видалено для всіх у цьому примірнику Thingport, і імпорт із {{name}} не працюватиме, доки його знову не підключать.",
@@ -8158,21 +8162,33 @@
           "Або вручну: увійдіть на www.voxelshare.com і відкрийте інструменти розробника браузера (F12).",
           "У розділі Application (Chrome, Edge) або Storage (Firefox) → Cookies → https://www.voxelshare.com скопіюйте значення cookie token та вставте нижче."
         ],
-        "placeholder": "Значення cookie token"
+        "placeholder": "Значення cookie token",
+        "cn": {
+          "steps": [
+            "Найпростіше: із Thingport Grab просто відкрийте www.voxelshare.cn, увійшовши в обліковий запис. Він підключить ваш обліковий запис і передасть нові дані входу під час наступного входу на сайт.",
+            "Або вручну: увійдіть на www.voxelshare.cn і відкрийте інструменти розробника браузера (F12).",
+            "У розділі Application (Chrome, Edge) або Storage (Firefox) → Cookies → https://www.voxelshare.cn скопіюйте значення cookie token та вставте нижче."
+          ],
+          "placeholder": "Значення cookie token"
+        }
       },
       "status": {
         "notConnected": "Підключіть обліковий запис, щоб читати свої вподобання та приватні колекції VoxelShare. Моделі й чужі публічні колекції імпортуються і без нього.",
         "expired": "Строк дії входу завершився. Увійдіть на www.voxelshare.com із Thingport Grab або знову підключіть VoxelShare у Налаштування → Провайдери.",
         "expiredStatus": "Строк дії входу завершився",
-        "disabledReason": "VoxelShare: підключіть обліковий запис у Налаштування → Провайдери"
+        "disabledReason": "VoxelShare: підключіть обліковий запис у Налаштування → Провайдери",
+        "cn": {
+          "expired": "Строк дії входу на китайський сайт завершився. Увійдіть на www.voxelshare.cn із Thingport Grab або знову підключіть китайський сайт VoxelShare у Налаштування → Провайдери.",
+          "expiredStatus": "Вхід на китайський сайт завершився"
+        }
       },
       "about": {
         "summary": "Спільнота моделей Flashforge для її принтерів Adventurer і Creator, із профілями друку з Flash Studio.",
         "signIn": "Для імпорту не потрібен; ваш вхід додає ваші колекції та вподобання.",
-        "grab": "Передає дані входу, коли ви відвідуєте www.voxelshare.com.",
+        "grab": "Передає дані входу, коли ви відвідуєте www.voxelshare.com або його китайський сайт www.voxelshare.cn.",
         "setup": [
           "Імпортуйте посилання на будь-яку модель — вхід не потрібен.",
-          "Для ваших колекцій і вподобань: установіть Thingport Grab, увімкніть його для VoxelShare й відкрийте www.voxelshare.com, увійшовши в обліковий запис."
+          "Для ваших колекцій і вподобань: установіть Thingport Grab, увімкніть його для VoxelShare й відкрийте www.voxelshare.com, увійшовши в обліковий запис (для китайського облікового запису — www.voxelshare.cn)."
         ]
       },
       "admin": {

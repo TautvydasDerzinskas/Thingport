@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   originalImage,
   voxelshareFilesFrom,
+  voxelshareLikesSiteOf,
+  voxelshareListOf,
   voxelshareMetaFromDetail,
   voxelshareOriginOf,
+  voxelshareSiteIdOf,
 } from "../../src/providers/voxelshare/api";
 import { voxelshareProfileFactsFrom } from "../../src/providers/voxelshare/profileFacts";
 import { loadFixture } from "./support";
@@ -18,6 +21,37 @@ describe("VoxelShare metadata", () => {
     expect(resolved.galleryImages.map((image) => image.filename)).toEqual(["0.png", "2.jpg", "1.png"]);
     expect(resolved.galleryImages[0].url).toMatch(/\/images\/0\.png\?t=[0-9a-f]+&sign=[0-9a-f]+$/);
     expect(resolved.meta.author).toMatchObject({ externalId: "284e9b6c92974fe2f24708db6e6b1e16", name: "Maker 6" });
+  });
+
+  it("keeps a model read from the China site under its cn- id, its maker linked there", () => {
+    const resolved = voxelshareMetaFromDetail(loadFixture("voxelshare", "model-detail").data, [], [], "cn")!;
+    expect(resolved.modelId).toBe("cn-8242660");
+    expect(resolved.meta.author?.links).toEqual([
+      "https://www.voxelshare.cn/zh/profile/284e9b6c92974fe2f24708db6e6b1e16",
+    ]);
+    const main = voxelshareMetaFromDetail(loadFixture("voxelshare", "model-detail").data)!;
+    expect(main.modelId).toBe("8242660");
+    expect(main.meta.author?.links).toEqual(["https://www.voxelshare.com/en/profile/284e9b6c92974fe2f24708db6e6b1e16"]);
+  });
+
+  it("tells a kept id's site, and the lists a link is of on either site", () => {
+    expect(voxelshareSiteIdOf("cn-8242660")).toEqual({ region: "cn", id: "8242660" });
+    expect(voxelshareSiteIdOf("8242660")).toEqual({ region: null, id: "8242660" });
+    expect(voxelshareLikesSiteOf("likes")).toBeNull();
+    expect(voxelshareLikesSiteOf("cn-likes")).toBe("cn");
+    expect(voxelshareLikesSiteOf("cn-664950")).toBeUndefined();
+    expect(voxelshareListOf("https://www.voxelshare.cn/zh/print_list?recordTab=like")).toEqual({
+      likes: true,
+      region: "cn",
+    });
+    expect(voxelshareListOf("https://www.voxelshare.com/en/collection/664950-a")).toEqual({
+      collectionId: "664950",
+      region: null,
+    });
+    expect(voxelshareListOf("https://www.voxelshare.cn/zh/collection/664950-a")).toEqual({
+      collectionId: "664950",
+      region: "cn",
+    });
   });
 
   it("names where a copied model was first published, by Thingport's provider or the site's host", () => {

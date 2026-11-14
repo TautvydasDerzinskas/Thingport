@@ -3443,11 +3443,15 @@
       "title": "Providers",
       "subtitle": "The sites you import models from. Right-click one to connect it, disconnect it or read about it.",
       "connected": "Connected",
+      "connectedSites": "Connected · {{sites}}",
       "notConnected": "Not connected",
       "connect": "Connect",
+      "connectSite": "Connect {{site}}",
       "connecting": "Connecting…",
       "disconnect": "Disconnect",
       "connectTitle": "Connect {{name}}",
+      "site": "Site",
+      "regions": { "main": "International", "cn": "China" },
       "disconnectTitle": "Disconnect {{name}}?",
       "disconnectMessage": "Your {{name}} key is removed, and imports from {{name}} stop working until you connect it again.",
       "disconnectMessageShared": "The {{name}} token is removed for everyone on this Thingport instance, and imports from {{name}} stop working until it's connected again.",
@@ -7571,21 +7575,33 @@
           "Or by hand: sign in at www.voxelshare.com and open your browser's developer tools (F12).",
           "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → https://www.voxelshare.com, copy the value of the token cookie and paste it below."
         ],
-        "placeholder": "The value of the token cookie"
+        "placeholder": "The value of the token cookie",
+        "cn": {
+          "steps": [
+            "Easiest: with Thingport Grab, just open www.voxelshare.cn while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+            "Or by hand: sign in at www.voxelshare.cn and open your browser's developer tools (F12).",
+            "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → https://www.voxelshare.cn, copy the value of the token cookie and paste it below."
+          ],
+          "placeholder": "The value of the token cookie"
+        }
       },
       "status": {
         "notConnected": "Connect your account to read your VoxelShare likes and private collections. Its models and anyone's public collections import without it.",
         "expired": "Sign-in expired. Sign in on www.voxelshare.com with Thingport Grab, or connect VoxelShare again in Configuration → Providers.",
         "expiredStatus": "Sign-in expired",
-        "disabledReason": "VoxelShare: connect your account in Configuration → Providers"
+        "disabledReason": "VoxelShare: connect your account in Configuration → Providers",
+        "cn": {
+          "expired": "China sign-in expired. Sign in on www.voxelshare.cn with Thingport Grab, or connect VoxelShare's China site again in Configuration → Providers.",
+          "expiredStatus": "China sign-in expired"
+        }
       },
       "about": {
         "summary": "Flashforge's model community for its Adventurer and Creator printers, with print profiles made in Flash Studio.",
         "signIn": "None to import; your sign-in adds your own collections and likes.",
-        "grab": "Sends your sign-in as you visit www.voxelshare.com.",
+        "grab": "Sends your sign-in as you visit www.voxelshare.com, or its China site, www.voxelshare.cn.",
         "setup": [
           "Import any model link; no sign-in is needed.",
-          "For your own collections and likes: install Thingport Grab, enable it on VoxelShare and open www.voxelshare.com signed in."
+          "For your own collections and likes: install Thingport Grab, enable it on VoxelShare and open www.voxelshare.com signed in (www.voxelshare.cn for a China account)."
         ]
       },
       "admin": {

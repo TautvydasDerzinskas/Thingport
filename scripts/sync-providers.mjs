@@ -93,6 +93,8 @@ async function loadManifests() {
     manifest.capabilities.trending ? [manifest.capabilities.trending.rank] : [],
   );
   if (new Set(ranks).size !== ranks.length) throw new Error(`Two providers share a trending rank: ${ranks.join(", ")}`);
+  const regionProblems = manifests.flatMap(regionProblemsOf);
+  if (regionProblems.length) throw new Error(`Provider regions are wrong:\n  ${regionProblems.join("\n  ")}`);
   const destinations = new Set();
   for (const manifest of manifests) {
     for (const [destination, rule] of Object.entries(manifest.credentialHosts ?? {})) {
@@ -106,6 +108,44 @@ async function loadManifests() {
     }
   }
   return manifests;
+}
+
+/** What's wrong with a manifest's `regions`, if anything: each needs hosts of the provider's own, a site on them, and
+ *  a user's sign-in slot named after it; a trending list of its own is on them too, beside the provider's. */
+function regionProblemsOf(manifest) {
+  const problems = [];
+  const coveredBy = (host, domains) => domains.some((domain) => host === domain || host.endsWith(`.${domain}`));
+  const ids = new Set();
+  for (const region of manifest.regions ?? []) {
+    const at = `${manifest.id}'s region ${JSON.stringify(region.id)}`;
+    if (ids.has(region.id)) problems.push(`${at} is listed twice`);
+    ids.add(region.id);
+    if (!region.hosts?.length) problems.push(`${at} has no hosts`);
+    for (const host of region.hosts ?? []) {
+      if (!coveredBy(host, manifest.hosts)) problems.push(`${at}'s host ${host} isn't among the provider's hosts`);
+    }
+    let siteHost = "";
+    try {
+      siteHost = new URL(region.site).hostname;
+    } catch {}
+    if (!coveredBy(siteHost, region.hosts ?? [])) problems.push(`${at}'s site isn't on its own hosts`);
+    if (region.trending) {
+      let moreHost = "";
+      try {
+        moreHost = new URL(region.trending.moreUrl).hostname;
+      } catch {}
+      if (!manifest.capabilities.trending) problems.push(`${at} has a trending list, but the provider has none`);
+      if (!coveredBy(moreHost, region.hosts ?? [])) problems.push(`${at}'s trending page isn't on its own hosts`);
+    }
+    const slot = manifest.auth.find((auth) => auth.slot === region.id);
+    if (!slot || slot.scope !== "user") problems.push(`${at} has no user's sign-in slot named after it`);
+  }
+  for (const auth of manifest.auth) {
+    if (!["default", "browser", "instance"].includes(auth.slot) && !ids.has(auth.slot)) {
+      problems.push(`${manifest.id}'s ${auth.slot} sign-in is no region of its`);
+    }
+  }
+  return problems;
 }
 
 function credentialHosts(manifests) {
@@ -142,7 +182,7 @@ function index(manifests) {
     .map((manifest) => manifest.id);
   return `${header("providers/*/")}
 import { hostIs } from "./_lib/hosts.generated";
-import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types.generated";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls, RegionId } from "./_lib/types.generated";
 ${ids.map((id) => `import ${id} from "./${id}/manifest.generated";\nimport { urls as ${id}Urls } from "./${id}/urls.generated";`).join("\n")}
 
 export type {
@@ -156,10 +196,13 @@ export type {
   Need,
   ProviderManifest,
   ProviderUrls,
+  Region,
+  RegionId,
   SignIn,
 } from "./_lib/types.generated";
 export { hostIs } from "./_lib/hosts.generated";
 export { LIKES_ID_PREFIX } from "./_lib/lists.generated";
+export { regionalId, splitRegionalId } from "./_lib/regions.generated";
 
 /** Every provider, in the order lists show them. */
 export const PROVIDER_IDS = [${ids.map((id) => JSON.stringify(id)).join(", ")}] as const;
@@ -193,6 +236,22 @@ export function manifestOf(id: ProviderId): ProviderManifest {
 /** The provider whose site \`hostname\` is, subdomains included; null for any other site. */
 export function providerOfHost(hostname: string): ProviderId | null {
   return PROVIDER_IDS.find((id) => MANIFESTS[id].hosts.some((domain) => hostIs(hostname, domain))) ?? null;
+}
+
+/** The region of a provider's site \`hostname\` is on, subdomains included: one of its manifest's \`regions\`, or null
+ *  for its main site. */
+export function regionOfHost(provider: ProviderId, hostname: string): RegionId | null {
+  const regions = manifestOf(provider).regions ?? [];
+  return regions.find((region) => region.hosts.some((domain) => hostIs(hostname, domain)))?.id ?? null;
+}
+
+/** The region of a provider's site a link is on; null for its main site, or what isn't a link. */
+export function regionOfUrl(provider: ProviderId, url: string): RegionId | null {
+  try {
+    return regionOfHost(provider, new URL(url).hostname);
+  } catch {
+    return null;
+  }
 }
 
 /** The provider whose links a URL's host is, as its parsers read them (narrower than providerOfHost: Snapmaker's

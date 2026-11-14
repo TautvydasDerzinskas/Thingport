@@ -120,4 +120,17 @@ describe("a VoxelShare model's profiles", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("are read from the API of the site the page is on", async () => {
+    const fetch = answering(200);
+    try {
+      vi.stubGlobal("fetch", fetch);
+      await loadVoxelshareModel(DETAIL.modelId);
+      await loadVoxelshareModel(DETAIL.modelId, "cn");
+      const hosts = fetch.mock.calls.map(([url]) => new URL(url).host);
+      expect(hosts).toEqual(["api.voxelshare.com", "api.voxelshare.com", "api.voxelshare.cn", "api.voxelshare.cn"]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

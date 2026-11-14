@@ -1,19 +1,35 @@
 [
   {
     "url": "https://www.voxelshare.com/en/models/8242660-flexi-mechanical-dragon",
-    "expect": { "provider": "voxelshare", "kind": "model", "externalId": "8242660" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "8242660"
+    }
   },
   {
     "url": "https://www.voxelshare.com/ja/models/60664434930245633-the-sword-and-blade-merged-as-the-fish-hid-the-sword",
-    "expect": { "provider": "voxelshare", "kind": "model", "externalId": "60664434930245633" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "60664434930245633"
+    }
   },
   {
     "url": "https://www.voxelshare.com/models/8242660",
-    "expect": { "provider": "voxelshare", "kind": "model", "externalId": "8242660" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "8242660"
+    }
   },
   {
     "url": "https://voxelshare.com/en/models/8242660-flexi-mechanical-dragon/",
-    "expect": { "provider": "voxelshare", "kind": "model", "externalId": "8242660" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "8242660"
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/models/8242660-flexi-mechanical-dragon#profileId-1502104",
@@ -26,34 +42,108 @@
   },
   {
     "url": "https://www.voxelshare.com/en/collection/664950-must-have-high-quality-models",
-    "expect": { "provider": "voxelshare", "kind": "list", "externalId": "664950", "listKind": "collection" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "664950",
+      "listKind": "collection"
+    }
   },
   {
     "url": "https://www.voxelshare.com/de/profile/5f3ebf55bacf4115a5a8e93aac648b77/collection/664950",
-    "expect": { "provider": "voxelshare", "kind": "list", "externalId": "664950", "listKind": "collection" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "664950",
+      "listKind": "collection"
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/print_list?recordTab=collection&subTab=myCollection&collectionId=61696524861853703",
-    "expect": { "provider": "voxelshare", "kind": "list", "externalId": "61696524861853703", "listKind": "collection" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "61696524861853703",
+      "listKind": "collection"
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/print_list?recordTab=like",
-    "expect": { "provider": "voxelshare", "kind": "list", "externalId": "likes", "listKind": "likes" }
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "likes",
+      "listKind": "likes"
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/print_list?recordTab=collection&subTab=modelList",
-    "expect": { "provider": null, "kind": null }
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/profile/5f3ebf55bacf4115a5a8e93aac648b77",
-    "expect": { "provider": null, "kind": null }
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
   },
   {
     "url": "https://www.voxelshare.com/en/3d-models?categoryId=85",
-    "expect": { "provider": null, "kind": null }
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
   },
   {
     "url": "https://www.notvoxelshare.com/en/models/8242660-flexi-mechanical-dragon",
-    "expect": { "provider": null, "kind": null }
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.voxelshare.cn/zh/models/53695950661103616-132",
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "cn-53695950661103616"
+    }
+  },
+  {
+    "url": "https://www.voxelshare.cn/models/8242660#profileId-1502104",
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "model",
+      "externalId": "cn-8242660",
+      "requestedProfileId": "1502104"
+    }
+  },
+  {
+    "url": "https://www.voxelshare.cn/zh/collection/664950-must-have-high-quality-models",
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "cn-664950",
+      "listKind": "collection"
+    }
+  },
+  {
+    "url": "https://www.voxelshare.cn/zh/print_list?recordTab=like",
+    "expect": {
+      "provider": "voxelshare",
+      "kind": "list",
+      "externalId": "cn-likes",
+      "listKind": "likes"
+    }
+  },
+  {
+    "url": "https://voxelshare.cn.example.com/zh/models/8242660",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
   }
 ]

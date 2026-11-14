@@ -21,10 +21,9 @@ import type {
   ProviderTrending,
   SourcedImport,
 } from "../types";
-import { MANIFESTS } from "../index.generated";
+import { MANIFESTS, regionalId } from "../index.generated";
 import { detailsOf } from "../details";
 import {
-  VOXELSHARE_LIKES_NAME,
   VoxelshareAuthError,
   type VoxelshareModelResolution,
   fetchVoxelshareLikes,
@@ -33,11 +32,18 @@ import {
   parseVoxelshareModelUrl,
   resolveVoxelshareModel,
   selectVoxelshareProfiles,
+  voxelshareLikesName,
   voxelshareListOf,
   voxelshareModelUrl,
+  voxelshareSiteHost,
 } from "./api";
 import { readVoxelshareCollection } from "./lists";
-import { getUserVoxelshareToken, markVoxelshareSessionRejected, VOXELSHARE_CONNECT } from "./session";
+import {
+  getUserVoxelshareToken,
+  getVoxelshareConnection,
+  markVoxelshareSessionRejected,
+  voxelshareConnectText,
+} from "./session";
 
 const SESSION_CODE = MANIFESTS.voxelshare.errorCodes.session;
 const BLOCKED =
@@ -105,7 +111,7 @@ export const voxelshareImport: SourcedImport<null, VoxelshareModelResolution> = 
     async listUrls(url, scope) {
       const parsed = parseVoxelshareModelUrl(url);
       if (!parsed) throw new HttpError(400, "Not a VoxelShare model link");
-      const resolved = await resolveVoxelshareModel(parsed.modelId);
+      const resolved = await resolveVoxelshareModel(regionalId(parsed.region, parsed.modelId));
       if (!resolved) throw new HttpError(404, voxelshareImport.missingMessage);
       // None for a model without profiles: a queued link of it imports its own files, a job for its profiles fails.
       const profileIds = selectVoxelshareProfiles(resolved, scope, parsed.requestedProfileId);
@@ -117,32 +123,41 @@ export const voxelshareImport: SourcedImport<null, VoxelshareModelResolution> = 
   },
 };
 
-export const voxelshareTrending: ProviderTrending = { fetch: (_userId, limit) => fetchVoxelshareTrending(limit) };
+/** Its home page's Trending feed: the China site's for someone signed in there and not on the main site, who's likely
+ *  in China and sees that one there, else the main site's. */
+export const voxelshareTrending: ProviderTrending = {
+  async region(userId) {
+    const [main, china] = await Promise.all([getVoxelshareConnection(userId), getVoxelshareConnection(userId, "cn")]);
+    return main === "disconnected" && china !== "disconnected" ? "cn" : null;
+  },
+  fetch: (_userId, limit, region) => fetchVoxelshareTrending(limit, region),
+};
 
 /** The user's likes, or a collection, from its link. */
 async function listOf(userId: string, url: string): Promise<ProviderList & { title: string }> {
   const list = voxelshareListOf(url);
   if (!list) throw new HttpError(400, "Not a link to a VoxelShare collection, or to your likes");
   if ("likes" in list) {
-    const token = await getUserVoxelshareToken(userId);
-    if (!token) throw new HttpError(400, VOXELSHARE_CONNECT, SESSION_CODE);
+    const token = await getUserVoxelshareToken(userId, list.region);
+    if (!token) throw new HttpError(400, voxelshareConnectText(list.region), SESSION_CODE);
     try {
-      const likes = await fetchVoxelshareLikes(token);
-      return { ...likes, title: VOXELSHARE_LIKES_NAME, entries: entriesOf(likes.entries) };
+      const likes = await fetchVoxelshareLikes(token, undefined, list.region);
+      return { ...likes, title: voxelshareLikesName(list.region), entries: entriesOf(likes.entries) };
     } catch (err) {
       if (err instanceof VoxelshareAuthError) {
-        await markVoxelshareSessionRejected(userId, token);
+        await markVoxelshareSessionRejected(userId, token, list.region);
         // 400, not 401: the frontend treats any 401 as an expired Thingport session.
         throw new HttpError(400, err.message, SESSION_CODE);
       }
       throw err;
     }
   }
-  const collection = await readVoxelshareCollection(userId, list.collectionId);
+  const collection = await readVoxelshareCollection(userId, regionalId(list.region, list.collectionId));
   if (collection === "signIn") {
     throw new HttpError(
       400,
-      "That collection is private: if it's one of yours, connect VoxelShare first, or visit it with Thingport Grab.",
+      `That collection is private: if it's one of yours, connect VoxelShare${list.region ? " China" : ""} first, ` +
+        `or visit ${voxelshareSiteHost(list.region)} with Thingport Grab.`,
       SESSION_CODE,
     );
   }
@@ -160,8 +175,9 @@ export const voxelshareLists: ProviderLists = {
     if (!list.entries.length) throw new HttpError(400, `"${list.title}" is empty`);
     return list;
   },
+  // Its models' ids, the China site's kept as `cn-<id>`.
   modelIds: z
-    .array(z.string().regex(/^\d{1,20}$/))
+    .array(z.string().regex(/^(?:cn-)?\d{1,20}$/))
     .min(1)
     .max(1000),
   async start(userId, url) {

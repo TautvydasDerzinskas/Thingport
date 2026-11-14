@@ -10,9 +10,22 @@ export default {
   order: 23,
   site: "https://www.voxelshare.com",
   docsSlug: "voxelshare",
-  hosts: ["voxelshare.com"],
-  // Its pages' API, which the sign-in goes to; the files are signed links on its image host, which need none.
-  credentialHosts: { "voxelshare-api": { exact: ["api.voxelshare.com"] } },
+  hosts: ["voxelshare.com", "voxelshare.cn"],
+  // Its China site: the same pages and the same model and collection ids, but its own uploads, trending list,
+  // API and accounts. Both sites' files are on the main site's image host.
+  regions: [
+    {
+      id: "cn",
+      name: "China",
+      site: "https://www.voxelshare.cn",
+      hosts: ["voxelshare.cn"],
+      endpoints: { api: "https://api.voxelshare.cn/api" },
+      trending: { moreUrl: "https://www.voxelshare.cn/zh/home" },
+    },
+  ],
+  // Its pages' API on each site, which that site's sign-in goes to; the files are signed links on its image host,
+  // which need none.
+  credentialHosts: { "voxelshare-api": { exact: ["api.voxelshare.com", "api.voxelshare.cn"] } },
   endpoints: { api: "https://api.voxelshare.com/api", files: "https://webimage.voxelshare.com" },
   brand: {
     logo: {
@@ -26,9 +39,13 @@ export default {
   // Its models, their print profiles and files, its listings and anyone's public collections are anyone's to read;
   // the user's own collections and likes need their sign-in.
   signIn: "userOptional",
-  // The site's sign-in is this one cookie, a token good for 31 days that its pages send as a Bearer token.
+  // The site's sign-in is this one cookie, a token good for 31 days that its pages send as a Bearer token. Each site
+  // has its own accounts, so the China site's is a sign-in of its own.
   sessionCookies: { token: "token" },
-  auth: [{ slot: "default", scope: "user", fields: [{ name: "token", multiline: true }] }],
+  auth: [
+    { slot: "default", scope: "user", fields: [{ name: "token", multiline: true }] },
+    { slot: "cn", scope: "user", fields: [{ name: "token", multiline: true }] },
+  ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
   slicers: ["orca-flashforge"],
@@ -49,5 +66,5 @@ export default {
     browse: "https://www.voxelshare.com/en/print_list",
   },
   errorCodes: { session: "voxelshare_session" },
-  extension: { site: "optional", origins: ["*://www.voxelshare.com/*"] },
+  extension: { site: "optional", origins: ["*://www.voxelshare.com/*", "*://www.voxelshare.cn/*"] },
 } as const satisfies ProviderManifest;

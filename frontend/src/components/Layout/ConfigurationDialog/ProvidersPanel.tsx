@@ -24,9 +24,10 @@ import { AppGrid, AppTile, menuPosition, reopenContextMenuBelow, TileMenuHeader 
 import { PanelHeader } from "./parts";
 import { COMING_SOON_PROVIDERS, ProviderLogo, type ProviderId } from "./providerLogos";
 import { refreshProviders, useProviders } from "../../../hooks/useProviders";
-import { type AuthSlot, MANIFESTS, PROVIDER_IDS } from "../../../providers/index.generated";
-import { PROVIDER_UI } from "../../../providers/overrides";
+import { type AuthSlot, MANIFESTS, PROVIDER_IDS, manifestOf } from "../../../providers/index.generated";
+import { expiredSite, expiredTexts, missingOf as missingFor, signInStatus } from "../../../providers/overrides";
 import { useProviderAbout } from "../../providerAbout/ProviderAboutProvider";
+import Segmented from "../../controls/Segmented";
 
 const PROVIDERS: { id: ProviderId; name: string }[] = [
   ...PROVIDER_IDS.map((id) => ({ id, name: MANIFESTS[id].name })),
@@ -38,8 +39,15 @@ const authOf = (id: ProviderId) => MANIFESTS[id].auth as readonly AuthSlot[];
 const defaultAuth = (id: ProviderId) => authOf(id).find((auth) => auth.slot === "default");
 /** One credential for the whole instance, which only an admin sets. */
 const isShared = (id: ProviderId) => defaultAuth(id)?.scope === "instance";
-/** The user's other credentials, besides the one the tile connects (Cults3D's browser sign-in). */
-const extraAuths = (id: ProviderId) => authOf(id).filter((auth) => auth.slot !== "default" && auth.scope === "user");
+/** Its other sites with accounts of their own (VoxelShare's China one), each signed in to in the slot named after it. */
+const regionsOf = (id: ProviderId) => manifestOf(id).regions ?? [];
+const isRegionSlot = (id: ProviderId, slot: string) => regionsOf(id).some((region) => region.id === slot);
+/** The sign-ins the tile connects, one per site, its connect form switching between them: its own and its regions'. */
+const siteAuths = (id: ProviderId) =>
+  authOf(id).filter((auth) => auth.slot === "default" || isRegionSlot(id, auth.slot));
+/** The user's other credentials, besides those the tile connects (Cults3D's browser sign-in). */
+const extraAuths = (id: ProviderId) =>
+  authOf(id).filter((auth) => auth.slot !== "default" && auth.scope === "user" && !isRegionSlot(id, auth.slot));
 const forget = (auth: AuthSlot) => Object.fromEntries(auth.fields.map((field) => [field.name, null]));
 
 type Props = {
@@ -64,18 +72,50 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
   }, []);
 
   const stateOf = (id: ProviderId): ProviderState | undefined => providers?.find((p) => p.id === id);
+  // Any of its sites' sign-ins connects the tile.
+  const statusOf = (id: ProviderId) => {
+    const state = stateOf(id);
+    return state ? signInStatus(state) : undefined;
+  };
   /** Null until known, so a non-admin doesn't briefly see a shared one locked. */
   const isConnected = (id: ProviderId): boolean | null => {
     if (isComingSoon(id)) return false;
     if (!defaultAuth(id)) return true;
-    const status = stateOf(id)?.slots.default?.status;
+    const status = statusOf(id);
     return status ? status !== "disconnected" : null;
   };
-  const isExpired = (id: ProviderId) => stateOf(id)?.slots.default?.status === "expired";
-  /** Connected, but not all its imports need: half connected. */
+  // No site's sign-in left that works, and one was turned down.
+  const isExpired = (id: ProviderId) => statusOf(id) === "expired";
+  /** What says which site's sign-in ran out, as a tooltip and as a menu's status. */
+  const expiredOf = (id: ProviderId) => {
+    const state = stateOf(id);
+    return expiredTexts(id, (state && expiredSite(state)) ?? "default", t);
+  };
+  /** Connected, but not all its imports need, or another site's sign-in ran out: half connected. */
   const missingOf = (id: ProviderId) => {
     const state = stateOf(id);
-    return state && isConnected(id) && !isExpired(id) ? PROVIDER_UI[id]?.missing?.(state, t) : undefined;
+    return state && isConnected(id) && !isExpired(id) ? missingFor(state, t) : undefined;
+  };
+  /** Its sites' names, as its connect form's toggle shows them: "International" for its main site. */
+  const siteName = (id: ProviderId, slot: string) =>
+    slot === "default"
+      ? t("providers.regions.main")
+      : t(`providers.regions.${slot}`, { defaultValue: regionsOf(id).find((region) => region.id === slot)?.name });
+  /** "Connected", and for a provider with several sites, through which. */
+  const connectedText = (id: ProviderId) => {
+    const state = stateOf(id);
+    if (!state || !regionsOf(id).length) return t("providers.connected");
+    const sites = siteAuths(id).filter((auth) => state.slots[auth.slot]?.status === "connected");
+    return t("providers.connectedSites", { sites: sites.map((auth) => siteName(id, auth.slot)).join(", ") });
+  };
+  /** The tile's sites not connected yet, which its menu offers to connect besides those that are. */
+  const unconnectedSites = (id: ProviderId) =>
+    regionsOf(id).length ? siteAuths(id).filter((auth) => stateOf(id)?.slots[auth.slot]?.status !== "connected") : [];
+  /** The sign-in a connect starts on: the one that ran out, else the tile's own. */
+  const firstAuth = (id: ProviderId) => {
+    const state = stateOf(id);
+    const expired = state && expiredSite(state);
+    return siteAuths(id).find((auth) => auth.slot === expired) ?? defaultAuth(id);
   };
   const nameOf = (id: ProviderId) => PROVIDERS.find((provider) => provider.id === id)?.name ?? id;
   // Why this user can't connect or disconnect it, if they can't.
@@ -86,21 +126,22 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
     return null;
   };
 
-  /** Saves a credential, or forgets it with null: the tile's credential takes the user's others with it, so
-   *  disconnecting leaves Thingport nothing of the account. */
+  /** Saves a credential, or forgets it with null: the tile's credential takes the user's others with it, its other
+   *  sites' too, so disconnecting leaves Thingport nothing of the account. */
   const save = async (id: ProviderId, auth: AuthSlot, values: Record<string, string> | null) => {
     if (values) {
       await providersApi.saveConnection(id, auth.slot, values);
     } else {
       if (auth.slot === "default") {
-        for (const extra of extraAuths(id)) await providersApi.saveConnection(id, extra.slot, forget(extra));
+        const others = [...extraAuths(id), ...siteAuths(id).filter((site) => site.slot !== "default")];
+        for (const other of others) await providersApi.saveConnection(id, other.slot, forget(other));
       }
       await providersApi.saveConnection(id, auth.slot, forget(auth));
     }
     await refreshProviders();
   };
 
-  const startConnect = (id: ProviderId, auth = defaultAuth(id)) => {
+  const startConnect = (id: ProviderId, auth = firstAuth(id)) => {
     if (!auth) return;
     setError(null);
     setNotice(null);
@@ -153,6 +194,8 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
   const menuExpired = menuId ? isExpired(menuId) : false;
   const menuLocked = menuId ? lockedReason(menuId) : null;
   const menuMissing = menuId ? missingOf(menuId) : undefined;
+  // Another of its sites to connect, besides the one it's connected through.
+  const menuMoreSites = menuId && menuConnected && !menuExpired ? unconnectedSites(menuId) : [];
 
   return (
     <>
@@ -170,11 +213,11 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
             : missing
               ? missing.tooltip
               : tileExpired
-                ? t(`providers:${id}.status.expired`)
+                ? expiredOf(id).tooltip
                 : isShared(id) && locked && !connected
                   ? locked
                   : connected
-                    ? t("providers.connected")
+                    ? connectedText(id)
                     : t(`providers:${id}.status.notConnected`, { defaultValue: t("providers.notConnected") });
           return (
             <AppTile
@@ -185,7 +228,7 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
               badge={status === null || isComingSoon(id) ? undefined : status}
               highlighted={connecting?.id === id || menuId === id}
               tooltip={status === null ? undefined : tooltip}
-              ariaLabel={`${name}: ${tileExpired ? t(`providers:${id}.status.expired`) : connected ? t("providers.connected") : t("providers.notConnected")}`}
+              ariaLabel={`${name}: ${tileExpired ? tooltip : connected ? connectedText(id) : t("providers.notConnected")}`}
               onContextMenu={(event) => openMenu(id, event)}
               onActivate={() => activate(id)}
             />
@@ -209,11 +252,11 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
               isComingSoon(menuId)
                 ? t("providers.comingSoon")
                 : menuExpired
-                  ? t(`providers:${menuId}.status.expiredStatus`)
+                  ? expiredOf(menuId).status
                   : menuMissing
                     ? menuMissing.status
                     : menuConnected
-                      ? t("providers.connected")
+                      ? connectedText(menuId)
                       : t("providers.notConnected")
             }
           />
@@ -233,6 +276,21 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
             <ListItemText>{t("providers.connect")}</ListItemText>
           </MenuItem>
         )}
+        {menuId &&
+          menuMoreSites.map((auth) => (
+            <MenuItem
+              key={auth.slot}
+              onClick={() => {
+                setMenu(null);
+                startConnect(menuId, auth);
+              }}
+            >
+              <ListItemIcon>
+                <LinkIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("providers.connectSite", { site: siteName(menuId, auth.slot) })}</ListItemText>
+            </MenuItem>
+          ))}
         {menuId &&
           menuConnected &&
           !menuExpired &&
@@ -294,10 +352,16 @@ export default function ProvidersPanel({ isAdmin, onUnauthorized }: Props) {
           key={`${connecting.id}-${connecting.auth.slot}`}
           id={connecting.id}
           auth={connecting.auth}
+          sites={
+            isRegionSlot(connecting.id, connecting.auth.slot) || connecting.auth.slot === "default"
+              ? siteAuths(connecting.id)
+              : []
+          }
+          siteName={(slot) => siteName(connecting.id, slot)}
           name={nameOf(connecting.id)}
           onCancel={() => setConnecting(null)}
-          onConnect={async (values) => {
-            await save(connecting.id, connecting.auth, values);
+          onConnect={async (auth, values) => {
+            await save(connecting.id, auth, values);
             setConnecting(null);
           }}
           onUnauthorized={onUnauthorized}
@@ -328,24 +392,46 @@ function AboutMenuItem({ id, onClick }: { id: ProviderId; onClick: () => void })
 
 type ConnectBoxProps = {
   id: ProviderId;
-  /** The credential to connect: the tile's, or another of the user's (Cults3D's browser sign-in). */
+  /** The credential to connect first: the tile's, or another of the user's (Cults3D's browser sign-in). */
   auth: AuthSlot;
+  /** For a provider with several sites, each one's sign-in, which a toggle at the top switches between; else none. */
+  sites: readonly AuthSlot[];
+  siteName: (slot: string) => string;
   name: string;
   onCancel: () => void;
-  /** Each field's value, by the name the API takes it under. */
-  onConnect: (values: Record<string, string>) => Promise<void>;
+  /** The credential and each field's value, by the name the API takes it under. */
+  onConnect: (auth: AuthSlot, values: Record<string, string>) => Promise<void>;
   onUnauthorized?: () => void;
 };
 
 const camelCase = (name: string) => name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase());
 
-function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: ConnectBoxProps) {
+/** A site's own host, as its toggle names it beside the site: voxelshare.cn. */
+function siteHost(id: ProviderId, slot: string): string {
+  const manifest = manifestOf(id);
+  const site = slot === "default" ? manifest.site : manifest.regions?.find((region) => region.id === slot)?.site;
+  return site ? new URL(site).hostname.replace(/^www\./, "") : "";
+}
+
+function ConnectBox({ id, auth: first, sites, siteName, name, onCancel, onConnect, onUnauthorized }: ConnectBoxProps) {
   const { t } = useTranslation(["app", "common"]);
-  const [drafts, setDrafts] = React.useState<string[]>(() => auth.fields.map(() => ""));
+  const [auth, setAuth] = React.useState(first);
+  const [drafts, setDrafts] = React.useState<string[]>(() => first.fields.map(() => ""));
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const extra = auth.slot !== "default";
-  const keyPrefix = extra ? `providers:${id}.connect.${auth.slot}` : `providers:${id}.connect`;
+  const site = sites.some((s) => s.slot === auth.slot);
+  // Another credential of the user's, with words of its own; another site's sign-in is the tile's, worded as it is.
+  const extra = auth.slot !== "default" && !site;
+  const keyPrefix = auth.slot !== "default" ? `providers:${id}.connect.${auth.slot}` : `providers:${id}.connect`;
+
+  /** Another site: what's typed stays where the fields are the same. */
+  const switchSite = (slot: string) => {
+    const next = sites.find((s) => s.slot === slot);
+    if (!next || next.slot === auth.slot) return;
+    setDrafts((current) => next.fields.map((field, i) => (auth.fields[i]?.name === field.name ? current[i] : "")));
+    setError(null);
+    setAuth(next);
+  };
   const steps = t(`${keyPrefix}.steps`, { returnObjects: true }) as string[];
   // Where there are several, each says what it is.
   const labelled = auth.fields.length > 1;
@@ -362,7 +448,7 @@ function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: Con
     setSaving(true);
     setError(null);
     try {
-      await onConnect(Object.fromEntries(auth.fields.map((field, i) => [field.name, drafts[i].trim()])));
+      await onConnect(auth, Object.fromEntries(auth.fields.map((field, i) => [field.name, drafts[i].trim()])));
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : t("providers.failed"));
@@ -385,6 +471,17 @@ function ConnectBox({ id, auth, name, onCancel, onConnect, onUnauthorized }: Con
           <CloseIcon fontSize="small" />
         </IconButton>
       </Stack>
+      {sites.length > 1 && (
+        <Box sx={{ mb: 1.5 }}>
+          <Segmented
+            value={auth.slot}
+            options={sites.map((s) => ({ value: s.slot, label: `${siteName(s.slot)} · ${siteHost(id, s.slot)}` }))}
+            onChange={switchSite}
+            label={t("providers.site")}
+            disabled={saving}
+          />
+        </Box>
+      )}
       <Box
         component="ol"
         sx={{ m: 0, mb: 1.5, pl: 2.5, color: "text.secondary", fontSize: "0.75rem", "& li": { mb: 0.5 } }}
