@@ -4,6 +4,7 @@ import {
   fetchSnapmakerList,
   parseSnapmakerListUrl,
   parseSnapmakerModelUrl,
+  resolveSnapmakerModel,
   selectSnapmakerProfiles,
   SnapmakerAuthError,
   snapmakerMetaFromDetail,
@@ -187,8 +188,19 @@ describe("Snapmaker downloads", () => {
   it("throws SnapmakerAuthError for a token Snapmaker turns down, and gives null for a missing model", async () => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(110002, null, "Missing authorization")));
     await expect(fetchSnapmakerDownloads("36590", "expired")).rejects.toBeInstanceOf(SnapmakerAuthError);
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(603000, null, "Model not found")));
-    expect(await fetchSnapmakerDownloads("1", "token")).toBeNull();
+    for (const code of [712001, 603000]) {
+      vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(code, null, "Model not found")));
+      expect(await fetchSnapmakerDownloads("1", "token")).toBeNull();
+    }
+  });
+
+  it("gives null for a model that isn't there, by either code Snapmaker has answered with", async () => {
+    for (const code of [712001, 603000]) {
+      vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(code, null, "Model not found")));
+      expect(await resolveSnapmakerModel("1")).toBeNull();
+    }
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(500000, null, "error")));
+    await expect(resolveSnapmakerModel("1")).rejects.toThrow("code 500000");
   });
 });
 
