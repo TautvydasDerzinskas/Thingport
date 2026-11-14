@@ -101,7 +101,7 @@ vi.stubGlobal("chrome", {
   },
 });
 
-const { onPairingStorageChanged, onPairingTabUrl, resumePairingIntent } = await import("./pairing");
+const { onPairingStorageChanged, onPairingTabClosed, onPairingTabUrl, resumePairingIntent } = await import("./pairing");
 const { getState } = await import("./config");
 
 function intent(instanceUrl = "https://thingport.example.com"): PairingIntent {
@@ -345,6 +345,33 @@ describe("pairing permission continuity", () => {
     expect(store[STORAGE_KEYS.pendingPairing]).toBeUndefined();
     expect(store[STORAGE_KEYS.connectionToken]).toBeUndefined();
     expect(operations).toContain("update:/connect-grab:undefined");
+  });
+
+  it("leaves a pairing started after its tab was closed alone when its code is refused", async () => {
+    store[STORAGE_KEYS.pendingPairing] = {
+      instanceUrl: "https://thingport.example.com",
+      verifier: "first",
+      tabId: 7,
+      startedAt: Date.now(),
+    } satisfies PendingPairing;
+    let releaseClaim!: () => void;
+    claimHeld = new Promise<void>((resolve) => (releaseClaim = resolve));
+    const claiming = onPairingTabUrl(7, "https://thingport.example.com/connect-grab#grab_code=approved");
+    await vi.waitFor(() => expect(fetchUrls.some((url) => url.endsWith("/api/grab/pairings/claim"))).toBe(true));
+
+    await onPairingTabClosed(7);
+    const next = {
+      instanceUrl: "https://thingport.example.com",
+      verifier: "second",
+      tabId: 8,
+      startedAt: Date.now(),
+    } satisfies PendingPairing;
+    store[STORAGE_KEYS.pendingPairing] = next;
+    claimRefused = true;
+    releaseClaim();
+    await claiming;
+
+    expect(store[STORAGE_KEYS.pendingPairing]).toEqual(next);
   });
 
   it("leaves an address saved during the permission check to its own pass", async () => {

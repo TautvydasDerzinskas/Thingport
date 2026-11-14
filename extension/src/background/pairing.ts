@@ -212,13 +212,19 @@ export async function onPairingTabUrl(tabId: number, url: string | undefined): P
     void carryAdaptPicks();
     await chrome.tabs.remove(tabId).catch(() => undefined);
   } catch (err) {
-    await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing).catch(() => undefined);
+    await forgetPairing(pending).catch(() => undefined);
     const error = new URL(`${pending.instanceUrl}/connect-grab`);
     error.searchParams.set("error", err instanceof Error ? err.message : String(err));
     await chrome.tabs.update(tabId, { url: error.href }).catch(() => undefined);
   } finally {
     claimingTabs.delete(tabId);
   }
+}
+
+/** This pairing only: its tab may have been closed during the claim, and another one started since. */
+async function forgetPairing(pending: PendingPairing): Promise<void> {
+  const { pendingPairing: current } = await getStoredConfig();
+  if (current?.verifier === pending.verifier) await chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
 }
 
 export async function onPairingTabClosed(tabId: number): Promise<void> {
