@@ -626,6 +626,7 @@ describe("a sync's model links", () => {
       fab365: "428",
       threedexport: "667112",
       qidimaker: "2077275848848752642",
+      voxelshare: "8242660",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

@@ -1,0 +1,39 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "id": "664950",
+    "name": "Must-have high-quality models",
+    "slug": "must-have-high-quality-models",
+    "description": "Covering popular categories like toys, tools, and home items, each one is a top-rated choice that lets you start using them right away without any issues.",
+    "collectCount": 480,
+    "itemCount": 18,
+    "coverUrls": [
+      {
+        "url": "https://webimage.voxelshare.com/models/a788c00971f80477/images/0.jpg?t=6af88b45&sign=00f3f1f8e2b850d86cfa793a7da26e9c&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.1
+      },
+      {
+        "url": "https://webimage.voxelshare.com/models/faca136cca52c1cb/images/0.webp?t=6af88b45&sign=e886ec9e3d85509b922d441bbb05a0a3&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.0
+      },
+      {
+        "url": "https://webimage.voxelshare.com/models/0dc7f44a531114ed/images/0.webp?t=6af88b45&sign=7fe8639937e28e99b21f7784a8fb0ad5&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.0
+      }
+    ],
+    "collected": false,
+    "url": "https://www.voxelshare.com/en/collection/664950-must-have-high-quality-models",
+    "likeCount": 0,
+    "source": "voxelshare",
+    "creator": {
+      "id": "0df34be31f9b508be639b4cf08df984e",
+      "nickname": "Maker 1",
+      "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+      "followed": false
+    },
+    "defaultFlag": false,
+    "privateFlag": false,
+    "status": 1
+  }
+}

@@ -23,6 +23,7 @@ import { parsePixup3dWishlistUrl } from "../src/providers/pixup3d/api";
 import { isFab365LikesUrl } from "../src/providers/fab365/api";
 import { isThreedexportDefaultUrl } from "../src/providers/threedexport/api";
 import { isQidimakerLikesUrl, parseQidimakerModelUrl } from "../src/providers/qidimaker/api";
+import { isVoxelshareLikesUrl, parseVoxelshareModelUrl } from "../src/providers/voxelshare/api";
 
 type Expected = {
   provider: string | null;
@@ -51,6 +52,7 @@ function profileOf(provider: string, url: string): string | null {
   if (provider === "nexprint") return parseNexprintModelUrl(url)?.requestedProfileId ?? null;
   if (provider === "eufymake") return parseEufymakeModelUrl(url)?.requestedProfileId ?? null;
   if (provider === "qidimaker") return parseQidimakerModelUrl(url)?.requestedProfileId ?? null;
+  if (provider === "voxelshare") return parseVoxelshareModelUrl(url)?.requestedProfileId ?? null;
   return null;
 }
 
@@ -73,7 +75,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
     (provider === "grabcad" && parseGrabcadLikesUrl(url)) ||
     (provider === "pixup3d" && parsePixup3dWishlistUrl(url)) ||
     (provider === "fab365" && isFab365LikesUrl(url)) ||
-    (provider === "qidimaker" && isQidimakerLikesUrl(url))
+    (provider === "qidimaker" && isQidimakerLikesUrl(url)) ||
+    (provider === "voxelshare" && isVoxelshareLikesUrl(url))
   )
     return "likes";
   return "collection";
@@ -81,8 +84,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(183);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(22);
+    expect(cases).toHaveLength(196);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(23);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

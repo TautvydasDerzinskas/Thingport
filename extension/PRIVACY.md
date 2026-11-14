@@ -1,9 +1,9 @@
 # Thingport Grab privacy policy
 
-_Effective 13 November 2026._
+_Effective 14 November 2026._
 
 Thingport Grab is a browser extension that imports 3D-printing models from MakerWorld, Printables,
-Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
+Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker, VoxelShare and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
 other slicers in your browser. It has no servers of its own: the
 extension's developer never receives any of your data, and nothing is shared with anyone else.
 
@@ -86,6 +86,8 @@ instance or account, so the new one has to be told.
   only sent again when it changes.
 - **Your QIDI Maker sign-in (its `token` cookie),** as last sent to your Thingport instance, so it's only sent again
   when it changes.
+- **Your VoxelShare sign-in (its `token` cookie),** as last sent to your Thingport instance, so it's only sent again
+  when it changes.
 - **Which site each tab is on:** for every open tab showing one of the sites above, that site's name and the
   browser's number for the tab, so the popup can put the site you're looking at first -- it can't read the
   address of your tab itself. No address is kept, only which of the supported sites it is. A tab's entry is
@@ -132,7 +134,7 @@ from the image servers of the sites you viewed them on, without saying which pag
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
 - When a model page opens on a site **Download adapted** works on (MakerWorld, Printables, Creality Cloud, Snapmaker
-  Space, NexPrint, MakerOnline, eufyMake or QIDI Maker) with Adapt 3MFs on, and when you open the toolbar popup: a request for your
+  Space, NexPrint, MakerOnline, eufyMake, QIDI Maker or VoxelShare) with Adapt 3MFs on, and when you open the toolbar popup: a request for your
   slicers and printers in your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they
   decide whether **Download adapted** is shown and which copies it makes. While the instance can't be reached, what
   it said last for the account stands in, or Adapt 3MFs' own if it has never answered; an instance from before
@@ -222,6 +224,11 @@ from the image servers of the sites you viewed them on, without saying which pag
   extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your likes there, and
   sends it to QIDI Maker with every collection it reads, so your own private ones read too; anyone's public collections
   need no sign-in. Its models and their files are read without it.
+- If you're signed in to VoxelShare in this browser, and have allowed the extension there: your VoxelShare sign-in (its
+  `token` cookie), when you open a VoxelShare page and it changed since last sent; when you've signed out there, the
+  extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your likes and your
+  own collections there, and sends it to VoxelShare with every collection it reads, so your own private ones read in
+  full; anyone's public collections need no sign-in. Its models and their files are read without it.
 - On MakerOnline: the download links MakerOnline gives the page for the files of a model you import, or of the models
   waiting on your Thingport instance for the extension (it asks your instance for that list on each MakerOnline page).
   Your instance downloads the files from those links.
@@ -233,7 +240,7 @@ from the image servers of the sites you viewed them on, without saying which pag
   included), the models you liked there, and the models in the private collections you sync. Only
   you can see these on Printables, so this is how Thingport can sync them.
 
-**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker and OwlCAD:**
+**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker, VoxelShare and OwlCAD:**
 
 - On MakerWorld, to find a model's download link, the extension asks MakerWorld's own website for
   it, the same way the page does when you click Download, using your existing MakerWorld session.
@@ -241,7 +248,7 @@ from the image servers of the sites you viewed them on, without saying which pag
   starts; that download is cancelled and removed from your download history straight away, so no
   file is saved.
 - When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint,
-  MakerOnline, eufyMake or QIDI Maker model page, the extension
+  MakerOnline, eufyMake, QIDI Maker or VoxelShare model page, the extension
   downloads that model's file from the site, as the page's own Download button would, converts it inside your
   browser for the slicer and printer you chose, using the printer list it carries, and saves the result to your
   downloads. The file isn't sent anywhere else.
@@ -266,6 +273,11 @@ from the image servers of the sites you viewed them on, without saying which pag
   API which print profiles the model has, the same way the page does, without your sign-in. When you click **Download
   adapted** there, it downloads the picked profile's file from QIDI Maker's file host, also without your sign-in, so
   the download isn't counted on your account there.
+- On a VoxelShare model page you allowed the extension on, while Adapt 3MFs is on, the extension asks VoxelShare's own
+  API (api.voxelshare.com) which print profiles the model has, the same way the page does, without your sign-in, and
+  reads which one you picked from the page's own list. When you click **Download adapted** there, it asks again for a
+  fresh link and downloads the profile's file from VoxelShare's image host, also without your sign-in, so the download
+  isn't reported to your account there.
 - On a MakerWorld collection import, the extension moves your tab from one model page to the next,
   just as if you were clicking through them.
 - On Printables, once per open tab, the extension asks Printables' own API which account you're

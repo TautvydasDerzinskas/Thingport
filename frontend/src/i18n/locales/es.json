@@ -7873,6 +7873,37 @@
       "sync": {
         "notConnected": "Conecta QIDI Maker en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus colecciones y tus me gusta."
       }
+    },
+    "voxelshare": {
+      "connect": {
+        "steps": [
+          "Lo más fácil: con Thingport Grab, basta con abrir www.voxelshare.com con la sesión iniciada. Conecta tu cuenta y envía un nuevo inicio de sesión cada vez que vuelvas a iniciarla allí.",
+          "O manualmente: inicia sesión en www.voxelshare.com y abre las herramientas de desarrollador de tu navegador (F12).",
+          "En Application (Chrome, Edge) o Storage (Firefox) → Cookies → https://www.voxelshare.com, copia el valor de la cookie token y pégalo abajo."
+        ],
+        "placeholder": "El valor de la cookie token"
+      },
+      "status": {
+        "notConnected": "Conecta tu cuenta para leer tus me gusta y tus colecciones privadas de VoxelShare. Sus modelos y las colecciones públicas de cualquiera se importan sin ella.",
+        "expired": "El inicio de sesión ha caducado. Inicia sesión en www.voxelshare.com con Thingport Grab o vuelve a conectar VoxelShare en Configuración → Proveedores.",
+        "expiredStatus": "Inicio de sesión caducado",
+        "disabledReason": "VoxelShare: conecta tu cuenta en Configuración → Proveedores"
+      },
+      "about": {
+        "summary": "La comunidad de modelos de Flashforge para sus impresoras Adventurer y Creator, con perfiles de impresión hechos en Flash Studio.",
+        "signIn": "Ninguno para importar; tu inicio de sesión añade tus colecciones y tus me gusta.",
+        "grab": "Envía tu inicio de sesión cuando visitas www.voxelshare.com.",
+        "setup": [
+          "Importa cualquier enlace de modelo; no hace falta iniciar sesión.",
+          "Para tus colecciones y tus me gusta: instala Thingport Grab, actívalo en VoxelShare y abre www.voxelshare.com con la sesión iniciada."
+        ]
+      },
+      "admin": {
+        "description": "Modelos con sus perfiles de impresión, colecciones (las propias de cada usuario y las públicas de cualquiera) y los me gusta de cada usuario. Los modelos y las colecciones públicas se importan sin iniciar sesión; los me gusta y las colecciones privadas necesitan la del propio usuario."
+      },
+      "sync": {
+        "notConnected": "Conecta VoxelShare en Configuración > Proveedores, o visítalo con Thingport Grab, para ver aquí tus colecciones y tus me gusta."
+      }
     }
   }
 }

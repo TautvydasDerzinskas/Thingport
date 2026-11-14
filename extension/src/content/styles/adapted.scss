@@ -195,6 +195,23 @@
 
 // Under a full-width button, like MakerWorld's split "Open in Bambu Studio" one. Its spacing is set on the host
 // itself (site.ts placeAfter), where a page's reset can't undo it.
+// VoxelShare's: its blue, text a shade darker so it reads on white, its own type and the 4px corners of its Open in
+// Flash Studio Desktop. It shows no dark theme.
+:host([data-site="voxelshare"]) {
+  --nd-accent: #00afe9;
+  --nd-text: #007da9;
+  --nd-hover: rgba(0, 175, 233, 0.08);
+  --nd-surface: #ffffff;
+  --nd-border: #dcdfe6;
+  --nd-ink: #303133;
+  --nd-muted: #909399;
+  --nd-row-hover: #f5f7fa;
+  --nd-shadow: rgba(0, 0, 0, 0.14);
+  --nd-font: HS_Regular, -apple-system, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  --nd-radius: 4px;
+  --nd-line: 1px;
+}
+
 :host([data-below]) {
   display: flex;
 }

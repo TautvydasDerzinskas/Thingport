@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "userId": "ae43340df96c2a4c09504a31e61887fc",
+    "customUid": "user_100000000000001",
+    "nickname": "Maker 1",
+    "avatar": {
+      "url": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+      "aspectRatio": 1.0
+    },
+    "stats": {
+      "followerCount": 0,
+      "followingCount": 0,
+      "likeCount": 3,
+      "downloadCount": 0,
+      "collectCount": 4,
+      "publishCount": 0
+    },
+    "status": 0
+  }
+}

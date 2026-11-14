@@ -15,6 +15,7 @@ import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } 
 import { loadEufymakeProfiles } from "./eufymake/content";
 import { loadNexprintProfiles } from "./nexprint/content";
 import { loadQidimakerProfileIds } from "./qidimaker/content";
+import { loadVoxelshareProfileIds } from "./voxelshare/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
 import { t } from "../shared/i18n";
@@ -202,4 +203,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       return named.toString();
     },
   },
+  // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and
+  // their private collections their own too, read with their sign-in. Its page keeps the profile it shows to itself, so
+  // the panel takes the one picked in its list.
+  voxelshare: { loadProfiles: loadVoxelshareProfileIds },
 };

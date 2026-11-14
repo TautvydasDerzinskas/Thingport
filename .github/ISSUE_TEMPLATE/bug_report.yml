@@ -51,6 +51,7 @@ body:
         - Fab365
         - 3DExport
         - QIDI Maker
+        - VoxelShare
         # /providers:bug-form
   - type: input
     id: backend_version

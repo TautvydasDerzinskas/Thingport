@@ -47,6 +47,8 @@ import threedexport from "./threedexport/manifest.generated";
 import { urls as threedexportUrls } from "./threedexport/urls.generated";
 import qidimaker from "./qidimaker/manifest.generated";
 import { urls as qidimakerUrls } from "./qidimaker/urls.generated";
+import voxelshare from "./voxelshare/manifest.generated";
+import { urls as voxelshareUrls } from "./voxelshare/urls.generated";
 
 export type {
   AuthField,
@@ -88,6 +90,7 @@ export const PROVIDER_IDS = [
   "fab365",
   "threedexport",
   "qidimaker",
+  "voxelshare",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -114,6 +117,7 @@ export const MANIFESTS = {
   fab365,
   threedexport,
   qidimaker,
+  voxelshare,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -163,6 +167,8 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "One of the oldest 3D model marketplaces, open since 2004 and based in San Jose: game and film assets, textures and a large 3D printing catalogue, sold by their designers and some given away free.",
   qidimaker:
     "QIDI Maker is the model community of QIDI Tech, the Chinese maker of the X-Plus, X-Max and Q printers. It opened in 2026, and its models come with print profiles made in QIDI Studio for those printers.",
+  voxelshare:
+    "VoxelShare is the model community of Flashforge, the Chinese maker of the Adventurer and Creator printers. Its models come with print profiles for those printers, made in Flash Studio, Flashforge's own slicer.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -188,6 +194,7 @@ export const TRENDING_PROVIDER_IDS = [
   "fab365",
   "threedexport",
   "qidimaker",
+  "voxelshare",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -214,6 +221,7 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   fab365: fab365Urls,
   threedexport: threedexportUrls,
   qidimaker: qidimakerUrls,
+  voxelshare: voxelshareUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {

@@ -93,5 +93,8 @@ export const CREDENTIAL_HOSTS = {
   "qidimaker-api": {
     exact: ["www.qidimaker.com"],
   },
+  "voxelshare-api": {
+    exact: ["api.voxelshare.com"],
+  },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;
