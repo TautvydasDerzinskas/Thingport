@@ -7563,6 +7563,37 @@
       "sync": {
         "notConnected": "Connect QIDI Maker in Configuration > Providers, or visit it with Thingport Grab, to see your collections and likes here."
       }
+    },
+    "voxelshare": {
+      "connect": {
+        "steps": [
+          "Easiest: with Thingport Grab, just open www.voxelshare.com while signed in. It connects your account, and sends a new sign-in whenever you sign in there again.",
+          "Or by hand: sign in at www.voxelshare.com and open your browser's developer tools (F12).",
+          "Under Application (Chrome, Edge) or Storage (Firefox) → Cookies → https://www.voxelshare.com, copy the value of the token cookie and paste it below."
+        ],
+        "placeholder": "The value of the token cookie"
+      },
+      "status": {
+        "notConnected": "Connect your account to read your VoxelShare likes and private collections. Its models and anyone's public collections import without it.",
+        "expired": "Sign-in expired. Sign in on www.voxelshare.com with Thingport Grab, or connect VoxelShare again in Configuration → Providers.",
+        "expiredStatus": "Sign-in expired",
+        "disabledReason": "VoxelShare: connect your account in Configuration → Providers"
+      },
+      "about": {
+        "summary": "Flashforge's model community for its Adventurer and Creator printers, with print profiles made in Flash Studio.",
+        "signIn": "None to import; your sign-in adds your own collections and likes.",
+        "grab": "Sends your sign-in as you visit www.voxelshare.com.",
+        "setup": [
+          "Import any model link; no sign-in is needed.",
+          "For your own collections and likes: install Thingport Grab, enable it on VoxelShare and open www.voxelshare.com signed in."
+        ]
+      },
+      "admin": {
+        "description": "Models with their print profiles, collections (each user's own and anyone's public ones) and each user's likes. Models and public collections import without a sign-in; likes and private collections need the user's own."
+      },
+      "sync": {
+        "notConnected": "Connect VoxelShare in Configuration > Providers, or visit it with Thingport Grab, to see your collections and likes here."
+      }
     }
   }
 }

@@ -25,6 +25,7 @@ import pixup3dCategories from "./pixup3d/categories.json";
 import fab365Categories from "./fab365/categories.json";
 import threedexportCategories from "./threedexport/categories.json";
 import qidimakerCategories from "./qidimaker/categories.json";
+import voxelshareCategories from "./voxelshare/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
@@ -47,6 +48,12 @@ import { qidimakerSync } from "./qidimaker/sync";
 import { qidimakerBrowse } from "./qidimaker/browse";
 import { qidimakerProfileFacts } from "./qidimaker/profileFacts";
 import { readQidimakerLicense } from "./qidimaker/license";
+import { voxelshareImport, voxelshareTrending, voxelshareLists, voxelshareDetails } from "./voxelshare";
+import { voxelshareConnection } from "./voxelshare/connection";
+import { voxelshareSync } from "./voxelshare/sync";
+import { voxelshareBrowse } from "./voxelshare/browse";
+import { voxelshareProfileFacts } from "./voxelshare/profileFacts";
+import { readVoxelshareLicense } from "./voxelshare/license";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -611,6 +618,21 @@ export const PROVIDERS = {
     // From the model's details alone, without its print profiles' list.
     license: readQidimakerLicense,
     profileFacts: qidimakerProfileFacts,
+  },
+  voxelshare: {
+    starterCategories: voxelshareCategories,
+    connection: { default: voxelshareConnection },
+    // Only the user's own collections and likes are read with the sign-in; its models and their files need none.
+    authStopText: grabSignInStop("voxelshare"),
+    sourcedImport: voxelshareImport,
+    lists: voxelshareLists,
+    sync: voxelshareSync,
+    browse: voxelshareBrowse,
+    trending: voxelshareTrending,
+    details: voxelshareDetails,
+    // From the model's details alone, without its print profiles' list.
+    license: readVoxelshareLicense,
+    profileFacts: voxelshareProfileFacts,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

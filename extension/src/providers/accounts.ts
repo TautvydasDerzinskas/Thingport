@@ -76,6 +76,9 @@ export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   // Its sign-in reads the user's own collections and likes. Only a signed-in visitor has its cookie, so it's read on
   // every visit: a signed-out one clears the sign-in Grab sent.
   qidimaker: syncSession,
+  // Its sign-in reads the user's own collections and likes. Only a signed-in visitor has its cookie, and the site
+  // renews it as it's used, so it's read on every visit: a signed-out one clears the sign-in Grab sent.
+  voxelshare: syncSession,
   printables: () => void syncPrintables(),
   myminifactory: captureMyminifactoryAccount,
   thingiverse: captureThingiverseAccount,

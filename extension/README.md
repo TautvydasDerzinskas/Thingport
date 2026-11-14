@@ -3,14 +3,14 @@
 A browser extension for Chrome, Edge and Firefox that imports models into your self-hosted Thingport instance without
 leaving the site they're on: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
 Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP,
-Fab365, 3DExport and QIDI Maker.
+Fab365, 3DExport, QIDI Maker and VoxelShare.
 Visiting a model page, or a collection or likes page, shows a floating Thingport icon. Clicking it opens the import
 panel: the model's picture and name as the page shows them, and one box that picks one of your collections or makes a
 new one as you type (on a list's page, the models it lists instead). It imports the same way Thingport's own
 "Add > Import" does.
 
 It's useful without Thingport too: on MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline,
-eufyMake and QIDI Maker model pages it adds a **Download adapted**
+eufyMake, QIDI Maker and VoxelShare model pages it adds a **Download adapted**
 button that saves the model's 3MF as a copy made for your slicer and printer, picked in its popup (or your
 Thingport instance's, once connected). See [Download adapted](#download-adapted-no-thingport-needed).
 It can also give Thingiverse a [dark theme and hide its ads](#thingiverse-dark-mode-and-hidden-ads-no-thingport-needed).
@@ -136,7 +136,7 @@ OrcaSlicer often open without their colors, parts or print settings, or with que
 Printables' 3MFs come from PrusaSlicer as often as from Bambu Studio, and the Bambu family opens a PrusaSlicer project
 with none of its settings, colors or beds. Creality Cloud's are Creality Print projects, Snapmaker Space's Snapmaker Orca
 ones, NexPrint's Elegoo Slicer ones and MakerOnline's Anycubic Slicer Next ones, eufyMake's print files are eufyMake
-Studio projects and QIDI Maker's QIDI Studio ones, which other slicers question or mis-read in the same ways. A project made for
+Studio projects, QIDI Maker's QIDI Studio ones and VoxelShare's Flash Studio ones, which other slicers question or mis-read in the same ways. A project made for
 someone else's printer also opens on theirs. On a model page of any of these sites, the extension adds **Download
 adapted**: it downloads the model's 3MF (the print profile picked on the page, or on Printables the 3MF you pick) and
 saves a copy made for your slicer and, where your slicer loads a printer's presets by name, for your printer: that
@@ -159,8 +159,8 @@ slicer's presets for it, the designer's settings on top and the plates laid out 
   **Download adapted** under the import shows them when clicked.
 - **Who sees it:** everyone, whether or not the extension is connected to a Thingport instance, while the popup's
   **Adapt 3MFs** switch is on, under **Offline features** (**Extra features** once connected), on a model with a 3MF,
-  on a site the extension runs on (Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake and QIDI Maker once
-  you allow them). A paid model you
+  on a site the extension runs on (Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake, QIDI Maker and
+  VoxelShare once you allow them). A paid model you
   haven't bought, or one for a site's members, gets none, as the site offers no download of it either. A
   slicer that opens every kind of 3MF the site has as it is gets no copy unless one is made for a printer, and a file
   your slicer opens as it is downloads as it is. Connected, nor does a slicer whose **Open adapted** you switched off in
@@ -417,6 +417,15 @@ whenever it changes; signing out there makes Thingport forget the one Grab sent.
 private collections and your likes (`/en/my/collections/detail?type=1`), which import from their pages and can be kept
 in sync. On a model page, **Download adapted** sits under its **Open in QIDI Studio**, for the print profile picked
 above it.
+
+### VoxelShare: a sign-in only for your own lists
+
+VoxelShare's models, their print profiles and anyone's public collections import without a sign-in. Its sign-in, its
+`token` cookie, is read when you open www.voxelshare.com signed in, and sent whenever the site renews it; signing out
+there makes Thingport forget the one Grab sent. Thingport needs it only for your own private collections and your likes
+(`/en/print_list?recordTab=like`), which import from their pages and can be kept in sync. The page keeps the print
+profile you pick to itself, so the panel imports the one picked in its list. **Download adapted** sits under its **Open
+in Flash Studio Desktop**, for that profile.
 
 ## What counts as "importable"
 

@@ -7886,6 +7886,37 @@
       "sync": {
         "notConnected": "Connectez QIDI Maker dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos collections et vos « J’aime » ici."
       }
+    },
+    "voxelshare": {
+      "connect": {
+        "steps": [
+          "Le plus simple : avec Thingport Grab, il suffit d’ouvrir www.voxelshare.com en étant connecté. Votre compte est relié, et une nouvelle connexion est envoyée chaque fois que vous vous y reconnectez.",
+          "Ou manuellement : connectez-vous à www.voxelshare.com et ouvrez les outils de développement de votre navigateur (F12).",
+          "Sous Application (Chrome, Edge) ou Stockage (Firefox) → Cookies → https://www.voxelshare.com, copiez la valeur du cookie token et collez-la ci-dessous."
+        ],
+        "placeholder": "La valeur du cookie token"
+      },
+      "status": {
+        "notConnected": "Reliez votre compte pour lire vos « J’aime » et vos collections privées VoxelShare. Ses modèles et les collections publiques de chacun s’importent sans lui.",
+        "expired": "La connexion a expiré. Connectez-vous à www.voxelshare.com avec Thingport Grab, ou reconnectez VoxelShare dans Configuration → Fournisseurs.",
+        "expiredStatus": "Connexion expirée",
+        "disabledReason": "VoxelShare : connectez votre compte dans Configuration → Fournisseurs"
+      },
+      "about": {
+        "summary": "La communauté de modèles de Flashforge pour ses imprimantes Adventurer et Creator, avec des profils d’impression faits dans Flash Studio.",
+        "signIn": "Aucune pour importer ; votre connexion ajoute vos collections et vos « J’aime ».",
+        "grab": "Envoie votre connexion lorsque vous visitez www.voxelshare.com.",
+        "setup": [
+          "Importez n’importe quel lien de modèle ; aucune connexion n’est nécessaire.",
+          "Pour vos collections et vos « J’aime » : installez Thingport Grab, activez-le sur VoxelShare et ouvrez www.voxelshare.com en étant connecté."
+        ]
+      },
+      "admin": {
+        "description": "Les modèles avec leurs profils d’impression, les collections (celles de chaque utilisateur et les collections publiques de chacun) et les « J’aime » de chaque utilisateur. Les modèles et les collections publiques s’importent sans connexion ; les « J’aime » et les collections privées demandent celle de l’utilisateur."
+      },
+      "sync": {
+        "notConnected": "Connectez VoxelShare dans Configuration > Fournisseurs, ou visitez-le avec Thingport Grab, pour voir vos collections et vos « J’aime » ici."
+      }
     }
   }
 }

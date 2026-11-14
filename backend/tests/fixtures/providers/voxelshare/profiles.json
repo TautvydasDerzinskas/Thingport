@@ -1,0 +1,129 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "items": [
+      {
+        "id": "1502104",
+        "name": "0.2mm layer, 2 walls, 15% infill",
+        "modelId": "8242660",
+        "deviceModels": "C5,C5P,AD5X,AD5M Pro,AD5M,G3U",
+        "mainImage": {
+          "url": "https://webimage.voxelshare.com/models/f5d3fd99d338ca4b/images/0.png?t=6af88b3f&sign=411029b35943c4667a0a4f1cb9be0c22&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+          "aspectRatio": 1.3350717079530638
+        },
+        "mainImageInfo": {
+          "key": "models/f5d3fd99d338ca4b/images/0.png",
+          "bucket": "iecrawl-1349496149",
+          "source": "tencent",
+          "aspectRatio": 0.0
+        },
+        "plateCount": 1,
+        "consumablesCount": 38,
+        "filaments": [
+          {
+            "type": "PLA",
+            "color": "#F2754E",
+            "weight": 38.43,
+            "nozzleSize": "0.4",
+            "id": 0
+          }
+        ],
+        "fullFilaments": [
+          {
+            "type": "PLA",
+            "color": "#F2754E",
+            "id": 0
+          }
+        ],
+        "nozzle": [
+          {
+            "size": 0.4
+          }
+        ],
+        "publishTime": 1777400573,
+        "printDuration": 8003,
+        "printCount": 7375,
+        "downloadCount": 3983,
+        "plateInfos": [
+          {
+            "name": "",
+            "filaments": [
+              {
+                "type": "PLA",
+                "color": "#F2754E",
+                "weight": 38.43,
+                "nozzleSize": "0.4mm",
+                "id": 0
+              }
+            ],
+            "printDuration": 8003.0,
+            "image": "https://webimage.voxelshare.com/voxelshare/orca/3mfextract/284e9b6c92974fe2f24708db6e6b1e16/20260429022252/platte_1.png?t=6af88b3f&sign=f50062df0a8c79b111205a47095c73e2&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "modelCount": 1,
+            "dimension": {
+              "x": 211.2270336206501,
+              "y": 59.8920779752934,
+              "z": 29.937999725341797
+            },
+            "plateNumber": 1
+          }
+        ],
+        "tmfDownloadUrl": "https://webimage.voxelshare.com/voxelshare/orca/run_flash/284e9b6c92974fe2f24708db6e6b1e16/20260429022114_b319ca9e.3mf?t=6af96c3f&sign=8023cb0aa08ee7c0c107d82685bc847b",
+        "tmfFileInfo": {
+          "key": "voxelshare/orca/run_flash/284e9b6c92974fe2f24708db6e6b1e16/20260429022114_b319ca9e.3mf",
+          "bucket": "iecrawl-1349496149",
+          "source": "tencent",
+          "size": 7537644.0
+        },
+        "creator": {
+          "id": "284e9b6c92974fe2f24708db6e6b1e16",
+          "nickname": "Maker 6",
+          "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+          "followed": false
+        },
+        "privateFlag": false,
+        "modelCreator": true,
+        "status": 1,
+        "content": "",
+        "rate": 5.0,
+        "fullDeviceModels": "Creator 5,Creator 5 Pro,AD5X,Adventurer 5M Pro,Adventurer 5M,Guider 3 Ultra",
+        "commentCount": 21,
+        "oneClickPrint": true,
+        "makeFrom": 1,
+        "heatBeds": [
+          {
+            "deviceName": "1",
+            "heatedBedName": "PEI Coating sheet",
+            "heatedBedImage": "https://ie-backend-1349496149.cos.na-siliconvalley.myqcloud.com/static/heatedbed/20260414-192449.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDiKl13tVt2xe8OPCl7GBscKyRtGSTJvLX%26q-sign-time%3D1794644511%3B1794666111%26q-key-time%3D1794644511%3B1794666111%26q-header-list%3Dhost%26q-url-param-list%3Dimagemogr2%252fformat%252fwebp%26q-signature%3D8ec1b9c09fbd7eaf9ec41b36a6867f66502f72d8&imageMogr2%2Fformat%2Fwebp="
+          },
+          {
+            "deviceName": "2",
+            "heatedBedName": "PEI Coating sheet",
+            "heatedBedImage": "https://ie-backend-1349496149.cos.na-siliconvalley.myqcloud.com/static/heatedbed/20260414-192449.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDiKl13tVt2xe8OPCl7GBscKyRtGSTJvLX%26q-sign-time%3D1794644511%3B1794666111%26q-key-time%3D1794644511%3B1794666111%26q-header-list%3Dhost%26q-url-param-list%3Dimagemogr2%252fformat%252fwebp%26q-signature%3D8ec1b9c09fbd7eaf9ec41b36a6867f66502f72d8&imageMogr2%2Fformat%2Fwebp="
+          },
+          {
+            "deviceName": "4",
+            "heatedBedName": "PEI Sticker sheet",
+            "heatedBedImage": "https://webimage.voxelshare.com/voxelshare/banner/20260724/915f141333e44aa394baf85b25b899dd.png?t=6af86e7f&sign=731533466c79132ddee6c8aea7ab6b94&imageMogr2%2Fformat%2Fwebp"
+          },
+          {
+            "deviceName": "5",
+            "heatedBedName": "PEI Sticker sheet",
+            "heatedBedImage": "https://ie-backend-1349496149.cos.na-siliconvalley.myqcloud.com/static/heatedbed/20260414-192814.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDiKl13tVt2xe8OPCl7GBscKyRtGSTJvLX%26q-sign-time%3D1794644511%3B1794666111%26q-key-time%3D1794644511%3B1794666111%26q-header-list%3Dhost%26q-url-param-list%3Dimagemogr2%252fformat%252fwebp%26q-signature%3Dea18f2fb5f08e82a36aa74d4d098efcec4c379b8&imageMogr2%2Fformat%2Fwebp="
+          },
+          {
+            "deviceName": "9",
+            "heatedBedName": "PEI Coating sheet",
+            "heatedBedImage": "https://ie-backend-1349496149.cos.na-siliconvalley.myqcloud.com/static/heatedbed/20260414-192449.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDiKl13tVt2xe8OPCl7GBscKyRtGSTJvLX%26q-sign-time%3D1794644511%3B1794666111%26q-key-time%3D1794644511%3B1794666111%26q-header-list%3Dhost%26q-url-param-list%3Dimagemogr2%252fformat%252fwebp%26q-signature%3D8ec1b9c09fbd7eaf9ec41b36a6867f66502f72d8&imageMogr2%2Fformat%2Fwebp="
+          },
+          {
+            "deviceName": "10",
+            "heatedBedName": "PEI Coating sheet",
+            "heatedBedImage": "https://ie-backend-1349496149.cos.na-siliconvalley.myqcloud.com/static/heatedbed/20260414-192449.png?sign=q-sign-algorithm%3Dsha1%26q-ak%3DAKIDiKl13tVt2xe8OPCl7GBscKyRtGSTJvLX%26q-sign-time%3D1794644511%3B1794666111%26q-key-time%3D1794644511%3B1794666111%26q-header-list%3Dhost%26q-url-param-list%3Dimagemogr2%252fformat%252fwebp%26q-signature%3D8ec1b9c09fbd7eaf9ec41b36a6867f66502f72d8&imageMogr2%2Fformat%2Fwebp="
+          }
+        ],
+        "fileExtractStatus": 1
+      }
+    ]
+  }
+}

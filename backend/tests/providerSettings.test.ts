@@ -50,6 +50,7 @@ afterAll(async () => {
     "fab365",
     "threedexport",
     "qidimaker",
+    "voxelshare",
   ] as const)
     await setProviderEnabled(provider, true);
 });
@@ -81,6 +82,7 @@ describe("turning providers off", () => {
       fab365: true,
       threedexport: true,
       qidimaker: true,
+      voxelshare: true,
     });
 
     expect(
@@ -115,6 +117,7 @@ describe("turning providers off", () => {
       fab365: true,
       threedexport: true,
       qidimaker: true,
+      voxelshare: true,
     });
   });
 

@@ -191,6 +191,15 @@ export const PROVIDER_DOCS = [
     description:
       "Import models from QIDI Maker with their QIDI Studio print profiles, anyone's public collections, and your own collections and likes with your sign-in.",
   },
+  {
+    slug: "providers/voxelshare",
+    source: "docs/providers/voxelshare.md",
+    group: "Providers",
+    title: "VoxelShare",
+    nav: "VoxelShare",
+    description:
+      "Import models from VoxelShare with their print profiles for Flashforge printers, anyone's public collections, and your own collections and likes with your sign-in.",
+  },
 ];
 
 /** What each provider's page shows besides its Markdown and the comparison table, from its manifest and docs.ts: a
@@ -710,6 +719,29 @@ export const PROVIDER_PAGES = [
       categories: true,
     },
   },
+  {
+    docsSlug: "voxelshare",
+    accent: "#00A0E9",
+    highlight: {
+      title: "Flashforge profiles, for any printer",
+      text: "Each print profile, a project for a Flashforge printer, comes in as a plate of its own. On the model's page, Thingport Grab's Download adapted makes a copy of the picked profile for your slicer and printer.",
+      link: "features/adapted-3mf#without-thingport",
+    },
+    facts: {
+      signIn: "userOptional",
+      grab: "recommended",
+      grabSite: "optional",
+      flaresolverr: "none",
+      collections: true,
+      likes: true,
+      sync: true,
+      profiles: true,
+      slicers: [],
+      adaptedCopies: true,
+      trending: "trending",
+      categories: true,
+    },
+  },
 ];
 
 /** The comparison table of docs/PROVIDER_SETUP.md, for the foot of each provider's page: the columns' headings, a row
@@ -995,6 +1027,19 @@ export const PROVIDER_COMPARISON = {
     {
       docsSlug: "qidimaker",
       name: "QIDI Maker",
+      cells: [
+        { text: "Yours, for your collections and likes" },
+        { need: "recommended" },
+        { need: "none" },
+        { yes: true },
+        { yes: true },
+        { yes: true },
+        { yes: true },
+      ],
+    },
+    {
+      docsSlug: "voxelshare",
+      name: "VoxelShare",
       cells: [
         { text: "Yours, for your collections and likes" },
         { need: "recommended" },

@@ -29,6 +29,7 @@ how to connect it:
 - <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md) -- your own sign-in, for the files and your favourites; its models read without one.
 - <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md) -- your own sign-in, for the files and your own collections; anyone's public collections read without it.
 - <img src="assets/providers/qidimaker.svg" alt="" width="18" height="18" align="absmiddle"> [QIDI Maker](providers/qidimaker.md) -- no sign-in to import; yours adds your own collections and likes.
+- <img src="assets/providers/voxelshare.svg" alt="" width="18" height="18" align="absmiddle"> [VoxelShare](providers/voxelshare.md) -- no sign-in to import; yours adds your own collections and likes.
 
 <!-- /providers:list -->
 
@@ -64,6 +65,7 @@ badge, shows the same in short.
 | <img src="assets/providers/fab365.svg" alt="" width="18" height="18" align="absmiddle"> [Fab365](providers/fab365.md)                            | Yours, for the files                  | Recommended    |              |                        | ✓⁷    | ✓    |                |
 | <img src="assets/providers/3dexport.svg" alt="" width="18" height="18" align="absmiddle"> [3DExport](providers/3dexport.md)                      | Yours, for the files                  | Recommended    |              | Bookmark collections   |       | ✓    |                |
 | <img src="assets/providers/qidimaker.svg" alt="" width="18" height="18" align="absmiddle"> [QIDI Maker](providers/qidimaker.md)                  | Yours, for your collections and likes | Recommended    |              | ✓                      | ✓     | ✓    | ✓              |
+| <img src="assets/providers/voxelshare.svg" alt="" width="18" height="18" align="absmiddle"> [VoxelShare](providers/voxelshare.md)                | Yours, for your collections and likes | Recommended    |              | ✓                      | ✓     | ✓    | ✓              |
 
 1. Your private Printables collections and your likes are read by Grab, while you're on Printables.
 2. Snapmaker's sign-in lasts a day and only Grab renews it; without Grab you paste a new one every day.
