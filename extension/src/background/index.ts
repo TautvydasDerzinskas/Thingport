@@ -12,7 +12,7 @@ import {
   setAdaptLast,
   setAdaptSettings,
 } from "./adaptSettings";
-import { apiCall, checkConnection, disconnect } from "./api";
+import { apiCall, checkConnection, disconnect, probePairing } from "./api";
 import { getState, saveConfig, setBubble, setDisabled, setLocale, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
@@ -59,6 +59,7 @@ listen<BackgroundMessages>({
   GET_PRINTER_RECIPE: ({ slicer, printerId, nozzle }) => printerRecipeFor(slicer, printerId, nozzle),
   OPEN_ADAPT_SETTINGS: () => openAdaptSettings(),
   RESUME_PAIRING: () => resumePairingIntent(true),
+  PROBE_PAIRING: ({ instanceUrl }) => probePairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
   GET_SEASONAL_ICON: () => seasonalIcon(),
   RECORD_VIEWED_MODEL: (model) => recordViewedModel(model),

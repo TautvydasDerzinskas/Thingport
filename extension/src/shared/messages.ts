@@ -227,6 +227,8 @@ export type BackgroundMessages = {
   };
   /** Opens the popup at Adapt 3MFs' settings, or the same page in a tab where the browser won't open the popup. */
   OPEN_ADAPT_SETTINGS: { payload: void; result: "popup" | "tab" };
+  /** Whether the instance at this address can pair by approval; null when it can't be asked. */
+  PROBE_PAIRING: { payload: { instanceUrl: string }; result: boolean | null };
   /** Continues the pairing intent saved before the browser's host-permission prompt. */
   RESUME_PAIRING: { payload: void; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };

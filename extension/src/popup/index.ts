@@ -7,7 +7,7 @@ import { fillIcons } from "../shared/icon";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { dressMark } from "../shared/seasonalMark";
 import { send, type Connection, type ExtensionState } from "../shared/messages";
-import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
+import { STORAGE_KEYS, normalizeInstanceUrl, type OfflineFeature } from "../shared/storage";
 import { applyTranslations, detectLocale, setLocale, t, type Locale } from "../shared/i18n";
 import { loadAdapt, renderAll as renderAdapt } from "./adapt";
 import { refreshAppearance, showAppearance } from "./appearance";
@@ -250,18 +250,11 @@ async function probeInstance(rawUrl: string): Promise<void> {
   const looksLikeUrl = /^https?:\/\/[^/]+/i.test(instanceUrl);
   setPairable(looksLikeUrl);
   if (!looksLikeUrl) return;
-  try {
-    // Health answers any origin, so this works before the instance's permission is granted.
-    const res = await fetch(apiUrl(instanceUrl, "/health"), {
-      signal: AbortSignal.timeout(4000),
-    });
-    const health = (await res.json()) as { grab_pairing?: boolean };
-    if (probe !== instanceProbe || health.grab_pairing === true) return;
-    setPairable(false, "pairUnsupported");
-    showCredentials();
-  } catch {
-    // Unreachable from here, or still being typed: leave pairing on offer rather than guess.
-  }
+  const res = await send("PROBE_PAIRING", { instanceUrl });
+  // Unreachable, or still being typed (null): leave pairing on offer rather than guess.
+  if (probe !== instanceProbe || !res?.ok || res.data !== false) return;
+  setPairable(false, "pairUnsupported");
+  showCredentials();
 }
 
 function connectionProblem(connection: Extract<Connection, { connected: false }>): string {
