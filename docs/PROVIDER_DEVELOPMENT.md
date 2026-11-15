@@ -71,7 +71,8 @@ A table of the provider's own is the exception, and it goes in `schema.prisma`: 
 ### Regions: a second site with its own accounts
 
 A site that runs a second site for one country, with the same pages but its own API, uploads and accounts
-(VoxelShare's www.voxelshare.cn), is a region of the same provider, not a provider of its own:
+(VoxelShare's www.voxelshare.cn, Snapmaker Space's space.snapmaker.cn), is a region of the same provider, not a provider
+of its own:
 
 - **Manifest:** `regions` lists each, with its `id` (stored, so it never changes), `name`, `site`, `hosts` (among the
   provider's own), `endpoints`, and `trending.moreUrl` where it has a trending list of its own. Its sign-in is a user
@@ -82,14 +83,18 @@ A site that runs a second site for one country, with the same pages but its own 
   site's stay as they are. Authors too, as a region's accounts are its own. `urls.ts` reads either site's links and
   writes each id's back to its own. The same model from both sites is two models, as a print keeps only its provider
   and id.
-- **Backend:** the provider's own code splits the id and reads that site's API with that site's sign-in. Its
-  trending's `region(userId)` picks which site's list a user sees; each is kept apart, with its own "more" link.
+- **Backend:** the provider's own code splits the id and reads that site's API with that site's sign-in; a sourced
+  import's `requireAuth` gets the model's id for that. Its trending's `region(userId)` picks which site's list a user
+  sees; each is kept apart, with its own "more" link. Its `ownedPrinters` asks every site signed in to.
 - **App:** one tile in Configuration → Providers, connected by any site's sign-in (`signInStatus` in
   `frontend/src/providers/overrides.ts`). Its connect form switches between the sites, and its menu offers the ones
   not connected yet. Each region needs `connect.<region>.steps` and `.placeholder`, and `status.<region>.expired` and
-  `.expiredStatus`, under `providers.<id>`.
+  `.expiredStatus`, under `providers.<id>`. A region added to a site Grab already ran on needs a step saying how those
+  who allowed Grab there before allow the region too: the browser's site access, as Grab has no popup control for it.
 - **Grab:** the region's sign-in is `SESSION_SOURCES["<id>:<region>"]`, with its `slot`; a page sends the region it's
-  on (`regionOfHost`) with `SYNC_PROVIDER_SESSION`.
+  on (`regionOfHost`) with `SYNC_PROVIDER_SESSION`. Turning the site on asks for the region's origins too, but the site
+  counts as on with its main site's alone (`shared/optionalSites.ts`), so a region added in an update doesn't switch
+  the site off for those who allowed it before; Grab runs in the region once its origins are allowed as well.
 
 ## Strategies the existing providers use
 

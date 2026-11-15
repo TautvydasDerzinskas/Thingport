@@ -106,8 +106,9 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     loadProfiles: loadSnapmakerProfiles,
     // Likes and bookmarks share one page, whose address doesn't say which: the instance's names it.
     async ownList(url) {
-      const [own, list] = [await snapmakerUserId(), parseSnapmakerListUrl(url)];
-      return own && list && own === list.userId ? snapmakerListUrl(own, list.list) : null;
+      const list = parseSnapmakerListUrl(url);
+      const own = list ? await snapmakerUserId(list.region) : null;
+      return own && list && own === list.userId ? snapmakerListUrl(own, list.list, list.region) : null;
     },
   },
   makeronline: { loadProfiles: loadMakeronlineProfiles },

@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchSnapmakerDownloads,
+  fetchSnapmakerFeatured,
   fetchSnapmakerList,
+  isSnapmakerFileHost,
   parseSnapmakerListUrl,
   parseSnapmakerModelUrl,
   resolveSnapmakerModel,
@@ -9,6 +11,7 @@ import {
   SnapmakerAuthError,
   snapmakerMetaFromDetail,
 } from "../src/providers/snapmaker/api";
+import { loadFixture } from "./providers/support";
 import { modelIdFromUrl, modelUrlFor, parseSyncSource } from "../src/services/collectionSyncService";
 import { normalizeSnapmakerToken } from "../src/providers/snapmaker/session";
 import { buildImportSourceUrl, identifySourceModel } from "../src/services/importService";
@@ -36,16 +39,36 @@ describe("Snapmaker Space URLs", () => {
   it("recognizes model pages, with a slug, without one, and with a print profile picked", () => {
     expect(parseSnapmakerModelUrl("https://space.snapmaker.com/en/model/33595-sugar-skull-princess")).toEqual({
       modelId: "33595",
+      region: null,
       requestedProfileId: null,
     });
     expect(parseSnapmakerModelUrl("https://space.snapmaker.com/model/33595")).toEqual({
       modelId: "33595",
+      region: null,
       requestedProfileId: null,
     });
     expect(parseSnapmakerModelUrl("https://space.snapmaker.com/en/model/33595#profileId-37940")).toEqual({
       modelId: "33595",
+      region: null,
       requestedProfileId: "37940",
     });
+  });
+
+  it("reads the China site's links as its own, under its language", () => {
+    expect(parseSnapmakerModelUrl("https://space.snapmaker.cn/zh/model/3335-u1#profileId-3264")).toEqual({
+      modelId: "3335",
+      region: "cn",
+      requestedProfileId: "3264",
+    });
+    expect(parseSnapmakerModelUrl("https://space.snapmaker.cn/en/model/3335")?.region).toBe("cn");
+    expect(parseSnapmakerListUrl("https://space.snapmaker.cn/zh/creator/9858?tab=interactions&list=likes")).toEqual({
+      userId: "9858",
+      region: "cn",
+      list: "likes",
+    });
+    // Its shop, forum and sign-in aren't Snapmaker Space.
+    expect(parseSnapmakerModelUrl("https://www.snapmaker.cn/model/3335")).toBeNull();
+    expect(parseSnapmakerModelUrl("https://id.snapmaker.cn/model/3335")).toBeNull();
   });
 
   it("ignores other pages and other sites", () => {
@@ -57,11 +80,12 @@ describe("Snapmaker Space URLs", () => {
   it("tells the likes and bookmarks lists apart on the shared interactions page", () => {
     expect(parseSnapmakerListUrl("https://space.snapmaker.com/en/creator/183998?tab=interactions")).toEqual({
       userId: "183998",
+      region: null,
       list: null,
     });
     expect(
       parseSnapmakerListUrl("https://space.snapmaker.com/en/creator/183998?tab=interactions&list=bookmarks"),
-    ).toEqual({ userId: "183998", list: "bookmarks" });
+    ).toEqual({ userId: "183998", region: null, list: "bookmarks" });
     expect(parseSnapmakerListUrl("https://space.snapmaker.com/en/creator/183998")).toBeNull();
   });
 
@@ -70,6 +94,21 @@ describe("Snapmaker Space URLs", () => {
     expect(source).toEqual({ provider: "snapmaker", externalId: "33595" });
     expect(buildImportSourceUrl("snapmaker", "33595")).toBe("https://space.snapmaker.com/en/model/33595");
     expect(modelIdFromUrl("snapmaker", modelUrlFor("snapmaker", "33595"))).toBe("33595");
+  });
+
+  it("keeps the China site's models under cn- ids, as the same number is another model on each site", () => {
+    expect(identifySourceModel("https://space.snapmaker.cn/zh/model/3335-u1")).toEqual({
+      provider: "snapmaker",
+      externalId: "cn-3335",
+    });
+    expect(buildImportSourceUrl("snapmaker", "cn-3335")).toBe("https://space.snapmaker.cn/zh/model/3335");
+    expect(buildImportSourceUrl("snapmaker", "3335")).toBe("https://space.snapmaker.com/en/model/3335");
+    expect(modelIdFromUrl("snapmaker", modelUrlFor("snapmaker", "cn-3335"))).toBe("cn-3335");
+    expect(parseSyncSource("https://space.snapmaker.cn/zh/creator/9858?tab=interactions&list=bookmarks")).toEqual({
+      provider: "snapmaker",
+      externalId: "cn-bookmarks-9858",
+      url: "https://space.snapmaker.cn/zh/creator/9858?tab=interactions&list=bookmarks",
+    });
   });
 
   it("syncs the user's likes and bookmarks as two sources, but not the page without a list", () => {
@@ -161,6 +200,60 @@ describe("Snapmaker model details", () => {
     expect(selectSnapmakerProfiles(resolution, "designer", null)).toEqual(["37940"]);
     expect(selectSnapmakerProfiles(resolution, "all", null)).toEqual(["37940", "40001"]);
     expect(selectSnapmakerProfiles({ creatorId: "1", profiles: [] }, "url", null)).toEqual([]);
+  });
+});
+
+describe("Snapmaker Space China", () => {
+  it("reads a China model from its own API, its designer kept as the China site's", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json(loadFixture("snapmaker", "model-detail-cn")));
+    vi.stubGlobal("fetch", fetchMock);
+    const resolved = await resolveSnapmakerModel("cn-3335");
+    expect(String(fetchMock.mock.calls[0][0])).toBe("https://api-models.snapmaker.cn/api/model/detail/3335");
+    expect(resolved?.meta.title).toBe("小火车");
+    expect(resolved?.meta.author).toMatchObject({
+      externalId: "cn-9990001",
+      links: ["https://space.snapmaker.cn/zh/creator/9990001"],
+    });
+    // Its categories and licences have the main site's ids.
+    expect(resolved?.meta.siteCategoryIds).toEqual([170, 112]);
+    expect(resolved?.meta.license?.id).toBe("CC-BY-NC-ND-4.0");
+    expect(resolved?.profiles.map((profile) => profile.id)).toEqual(["5001", "5002"]);
+    expect(selectSnapmakerProfiles(resolved!, "url", null)).toEqual(["5001"]);
+  });
+
+  it("downloads with the China sign-in from the China API, and says which site turned it down", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(apiResponse(200, { modelFiles: [], printProfiles: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchSnapmakerDownloads("cn-3335", "cn-token");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api-models.snapmaker.cn/api/model/download/3335");
+    expect((init as RequestInit).headers).toMatchObject({ Authorization: "Bearer cn-token" });
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(apiResponse(110002, null, "Missing authorization")));
+    const err = await fetchSnapmakerDownloads("cn-3335", "expired").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SnapmakerAuthError);
+    expect((err as SnapmakerAuthError).region).toBe("cn");
+    expect((err as Error).message).toContain("space.snapmaker.cn");
+  });
+
+  it("keeps the China site's likes and featured models under cn- ids", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>(async () => apiResponse(200, { total: 1, list: [{ id: "3335", title: "U1" }] })),
+    );
+    const { entries } = await fetchSnapmakerList("likes", "cn-token", 600, "cn");
+    expect(entries.map((entry) => entry.modelId)).toEqual(["cn-3335"]);
+    const featured = await fetchSnapmakerFeatured(10, "cn");
+    expect(featured[0]).toMatchObject({ id: "cn-3335", url: "https://space.snapmaker.cn/zh/model/3335" });
+  });
+
+  it("takes files from the China site's hosts, its private file store too, but no other", () => {
+    expect(isSnapmakerFileHost("cdn-model-private.snapmaker.cn")).toBe(true);
+    expect(isSnapmakerFileHost("models.snapmaker.cn")).toBe(true);
+    expect(isSnapmakerFileHost("models.snapmaker.com")).toBe(true);
+    expect(isSnapmakerFileHost("cdn-model-private.snapmaker.com")).toBe(false);
+    expect(isSnapmakerFileHost("evil.snapmaker.cn")).toBe(false);
   });
 });
 

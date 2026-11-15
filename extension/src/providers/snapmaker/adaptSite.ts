@@ -19,17 +19,24 @@ import {
 import { gettingFilePhrases, rotatePhrases } from "../../content/panels/funStatus";
 import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
-import { MANIFESTS } from "../index.generated";
+import { MANIFESTS, type RegionId } from "../index.generated";
+import { snapmakerApi } from "./content";
 import { parseSnapmakerModelUrl } from "./urls.generated";
 
-const API = MANIFESTS.snapmaker.endpoints.api;
 const NAME = "Snapmaker Space";
 const OK = 200;
 // Its answer to a missing or expired token.
 const UNAUTHORIZED = 110002;
-// Where its download links point first; they redirect, without the headers a page's fetch needs, to the site itself.
-const LINK_HOST = "models.snapmaker.com";
-const SITE = "https://space.snapmaker.com";
+/** Each site's pages, where its download links point first (they redirect, without the headers a page's fetch needs,
+ *  to the site itself), and the China site's private file store, which lets its pages read its files straight. */
+const SITES = {
+  main: { site: MANIFESTS.snapmaker.site, linkHost: "models.snapmaker.com", store: null },
+  cn: {
+    site: MANIFESTS.snapmaker.regions[0].site,
+    linkHost: "models.snapmaker.cn",
+    store: "https://cdn-model-private.snapmaker.cn",
+  },
+} as const;
 
 /** The profiles its model detail lists, as files: those with a file to download, shown by their titles. */
 export function profileFiles(data: Record<string, unknown> | null | undefined): AdaptFile[] {
@@ -44,8 +51,10 @@ export function profileFiles(data: Record<string, unknown> | null | undefined): 
   });
 }
 
-/** A download link as the page itself would end up fetching it: on the site, where the page may read it. */
-export function onSite(link: string): string | null {
+/** A download link as the page itself would end up fetching it: on the site (`region`'s), where the page may read it,
+ *  or on the China site's file store. */
+export function onSite(link: string, region: RegionId | null = null): string | null {
+  const { site, linkHost, store } = SITES[region ?? "main"];
   let url: URL;
   try {
     url = new URL(link);
@@ -53,8 +62,8 @@ export function onSite(link: string): string | null {
     return null;
   }
   if (url.protocol !== "https:") return null;
-  if (url.hostname === LINK_HOST) return `${SITE}${url.pathname}${url.search}`;
-  return url.origin === SITE ? url.href : null;
+  if (url.hostname === linkHost) return `${site}${url.pathname}${url.search}`;
+  return url.origin === site || url.origin === store ? url.href : null;
 }
 
 export const SNAPMAKER_ADAPT: AdaptSite = {
@@ -66,9 +75,11 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
   formats: [orcaFamilyFormat("Snapmaker_Orca", "2.4.0")],
 
   async files(pageUrl) {
-    const modelId = parseSnapmakerModelUrl(pageUrl)?.modelId;
-    if (!modelId) return [];
-    const res = await fetch(`${API}/model/detail/${encodeURIComponent(modelId)}`, { credentials: "omit" });
+    const parsed = parseSnapmakerModelUrl(pageUrl);
+    if (!parsed) return [];
+    const res = await fetch(`${snapmakerApi(parsed.region)}/model/detail/${encodeURIComponent(parsed.modelId)}`, {
+      credentials: "omit",
+    });
     const body = (await res.json()) as { code?: number; data?: Record<string, unknown> };
     return body.code === OK ? profileFiles(body.data) : [];
   },
@@ -83,18 +94,23 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
     const token = pageCookie("login_access_token");
     if (!token) throw signInFirst(NAME);
     if (file.size && file.size > MAX_BYTES) throw tooBig(file.size, NAME);
-    const modelId = parseSnapmakerModelUrl(pageUrl)?.modelId;
-    if (!modelId) throw new Error(t("adaptSite.unknownModel", { site: NAME }));
+    const parsed = parseSnapmakerModelUrl(pageUrl);
+    if (!parsed) throw new Error(t("adaptSite.unknownModel", { site: NAME }));
+    const { modelId, region } = parsed;
     const stop = rotatePhrases(gettingFilePhrases(NAME), progress);
-    const answer = await providerCredentialRequest("snapmaker-api", `${API}/model/download/${modelId}`, {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "x-custom-site": "Web-Space",
-        Authorization: `Bearer ${token}`,
+    const answer = await providerCredentialRequest(
+      "snapmaker-api",
+      `${snapmakerApi(region)}/model/download/${modelId}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "x-custom-site": "Web-Space",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "omit",
       },
-      credentials: "omit",
-    })
+    )
       .then((res) => res.json() as Promise<{ code?: number; msg?: string; data?: Record<string, unknown> }>)
       .finally(stop);
     if (answer.code === UNAUTHORIZED) throw new Error(t("adaptSite.signInExpired", { site: NAME }));
@@ -102,7 +118,7 @@ export const SNAPMAKER_ADAPT: AdaptSite = {
       ? (answer.data.printProfiles as Record<string, unknown>[])
       : [];
     const link = profiles.find((p) => String(p?.profileId) === file.id)?.downloadUrl;
-    const url = typeof link === "string" ? onSite(link) : null;
+    const url = typeof link === "string" ? onSite(link, region) : null;
     if (answer.code !== OK || !url) {
       throw new Error(
         answer.msg

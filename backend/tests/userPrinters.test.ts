@@ -34,14 +34,19 @@ vi.mock("../src/providers/crealitycloud/api", async (importOriginal) => {
     },
   };
 });
-const snapmaker = vi.hoisted(() => ({ answer: null as unknown }));
+// Snapmaker's answer may also be a function of the site asked: null its main one, "cn" its China one.
+const snapmaker = vi.hoisted(() => ({ answer: null as unknown, calls: [] as [string, string | null][] }));
 vi.mock("../src/providers/snapmaker/api", async (importOriginal) => {
   const real = await importOriginal<typeof import("../src/providers/snapmaker/api")>();
   return {
     ...real,
-    fetchSnapmakerDeviceModels: async () => {
-      const answer = await answerOf(snapmaker.answer);
-      if (answer === "rejected") throw new real.SnapmakerAuthError();
+    fetchSnapmakerDeviceModels: async (token: string, region: "cn" | null = null) => {
+      snapmaker.calls.push([token, region]);
+      const answer =
+        typeof snapmaker.answer === "function"
+          ? await (snapmaker.answer as (site: string | null) => unknown)(region)
+          : snapmaker.answer;
+      if (answer === "rejected") throw new real.SnapmakerAuthError(region);
       return answer;
     },
   };
@@ -281,6 +286,50 @@ describe("printers from the user's accounts", () => {
     expect(await getSnapmakerConnection(otherId)).toBe("expired");
     expect(await getMakeronlineConnection(otherId)).toBe("expired");
     creality.answer = snapmaker.answer = makeronline.answer = null;
+  });
+});
+
+describe("printers from Snapmaker's two sites", () => {
+  let other: string;
+  let otherId: string;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post("/api/register")
+      .send({ displayName: "Snapmaker", email: `printers-snapmaker-${stamp}@example.com`, password: "password123" });
+    other = res.body.token;
+    otherId = res.body.user.id;
+  });
+
+  const find = async () => {
+    const res = await request(app)
+      .post("/api/me/printers/accounts")
+      .set({ Authorization: `Bearer ${other}` });
+    return res.body;
+  };
+
+  it("are asked of the China site's account alone, with its own sign-in", async () => {
+    await setUserSnapmakerToken(otherId, { token: "sm-cn", expiresAt: null, userId: null }, "cn");
+    snapmaker.calls = [];
+    snapmaker.answer = (site: string | null) => (site === "cn" ? [["U1"]] : "rejected");
+    const body = await find();
+    expect(body.accounts).toEqual([{ provider: "snapmaker", state: "ok", found: 1 }]);
+    expect(body.printers.map((p: { printer: { id: string } }) => p.printer.id)).toEqual(["snapmaker-u1"]);
+    expect(snapmaker.calls).toEqual([["sm-cn", "cn"]]);
+  });
+
+  it("come from the site that answers, marking only the one that turned its sign-in down", async () => {
+    await prisma.userPrinter.deleteMany({ where: { userId: otherId } });
+    await setUserSnapmakerToken(otherId, { token: "sm-main", expiresAt: null, userId: null });
+    const body = await find();
+    expect(body.accounts).toEqual([{ provider: "snapmaker", state: "ok", found: 1 }]);
+    expect(await getSnapmakerConnection(otherId)).toBe("expired");
+    expect(await getSnapmakerConnection(otherId, "cn")).toBe("connected");
+
+    snapmaker.answer = "rejected";
+    expect((await find()).accounts).toEqual([{ provider: "snapmaker", state: "expired", found: 0 }]);
+    expect(await getSnapmakerConnection(otherId, "cn")).toBe("expired");
+    snapmaker.answer = null;
   });
 });
 

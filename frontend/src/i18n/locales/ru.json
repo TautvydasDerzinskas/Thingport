@@ -7575,20 +7575,33 @@
           "Или вручную: войдите на space.snapmaker.com и откройте инструменты разработчика браузера (F12).",
           "В разделе Application (Chrome, Edge) или Storage (Firefox) → Cookies → space.snapmaker.com скопируйте значение login_access_token и вставьте его ниже. Вручную он действует день."
         ],
-        "placeholder": "Значение login_access_token или весь заголовок Cookie"
+        "placeholder": "Значение login_access_token или весь заголовок Cookie",
+        "cn": {
+          "steps": [
+            "Проще всего: войдите на space.snapmaker.cn и откройте его с Thingport Grab. Он подключит аккаунт и будет обновлять данные входа, поскольку вход Snapmaker действует лишь день.",
+            "Разрешили Grab на Snapmaker Space ещё до того, как он узнал о китайском сайте? Тогда разрешите его и на space.snapmaker.cn и id.snapmaker.cn в настройках расширений браузера (доступ к сайтам).",
+            "Или вручную: войдите на space.snapmaker.cn и откройте инструменты разработчика браузера (F12).",
+            "В разделе Application (Chrome, Edge) или Storage (Firefox) → Cookies → space.snapmaker.cn скопируйте значение login_access_token и вставьте его ниже. Вручную он действует день."
+          ],
+          "placeholder": "Значение login_access_token или весь заголовок Cookie"
+        }
       },
       "status": {
         "notConnected": "Snapmaker отдаёт файлы только вошедшим пользователям. Подключите аккаунт, чтобы импортировать модели, лайки и закладки.",
         "expired": "Срок действия входа истёк. Откройте space.snapmaker.com с Thingport Grab или снова подключите Snapmaker Space в Настройки → Провайдеры.",
         "expiredStatus": "Срок действия входа истёк",
-        "disabledReason": "Snapmaker Space: подключите аккаунт в Настройки → Провайдеры"
+        "disabledReason": "Snapmaker Space: подключите аккаунт в Настройки → Провайдеры",
+        "cn": {
+          "expired": "Срок действия входа на китайский сайт истёк. Войдите на space.snapmaker.cn с Thingport Grab или снова подключите китайский сайт Snapmaker Space в Настройки → Провайдеры.",
+          "expiredStatus": "Вход на китайский сайт истёк"
+        }
       },
       "about": {
         "summary": "Платформа моделей Snapmaker, построенная вокруг его принтера U1. Рекомендованные модели тестируют на печати, а их профили настроены для многоцветной печати.",
         "signIn": "Ваш вход в аккаунт. Он действует день.",
         "grab": "Только он продлевает вход в аккаунт. Без него придётся вставлять новый каждый день.",
         "setup": [
-          "Установите Thingport Grab, включите его для Snapmaker Space и откройте space.snapmaker.com, войдя в аккаунт.",
+          "Установите Thingport Grab, включите его для Snapmaker Space и откройте space.snapmaker.com, войдя в аккаунт (для китайского аккаунта — space.snapmaker.cn).",
           "Пока браузер открыт, Grab будет обновлять данные входа.",
           "Вручную: вставьте cookie login_access_token в Настройки → Провайдеры. Он действует день."
         ]

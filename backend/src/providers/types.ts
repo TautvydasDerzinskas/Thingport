@@ -56,13 +56,15 @@ export type ImportTarget = { userId: string; externalId: string };
 
 /** A provider whose model files the server downloads, as the user it holds credentials for. */
 export type SourcedImport<Auth = unknown, Model extends ResolvedModel = ResolvedModel> = {
-  /** The user's credentials, or the HttpError (400 with the manifest's session code) that says to connect. */
-  requireAuth(userId: string): Promise<Auth>;
+  /** The user's credentials for the model `externalId` names (a region's are that site's), or the HttpError (400 with
+   *  the manifest's session code) that says to connect. */
+  requireAuth(userId: string, externalId: string): Promise<Auth>;
   resolveModel(externalId: string, auth: Auth): Promise<Model | null>;
   /** The id a model is kept under, where it isn't the one its link has (Creality Cloud's alias, for a link by id). */
   canonicalId?(model: Model): string;
-  /** The provider's errors as the HttpErrors an import reports, remembering a rejected sign-in; others as they are. */
-  mapError(userId: string, err: unknown): Promise<unknown>;
+  /** The provider's errors as the HttpErrors an import reports, remembering a rejected sign-in (`auth`, the one the
+   *  failed call used); others as they are. */
+  mapError(userId: string, err: unknown, auth?: Auth): Promise<unknown>;
   /** The 404 for a model it doesn't know, or doesn't show. */
   missingMessage: string;
   /** The 400 for a model with nothing to import. */

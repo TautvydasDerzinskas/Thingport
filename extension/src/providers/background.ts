@@ -18,13 +18,16 @@ export const PROVIDER_HANDLERS: Partial<Handlers<BackgroundMessages>> = {
 };
 
 /** On every wake of the background, and whenever site access changes. Snapmaker's sign-in lasts a day: renewed on a
- *  timer too, so syncs keep working on days Snapmaker isn't visited. */
+ *  timer too, so syncs keep working on days Snapmaker isn't visited, on each of its sites. */
 export function onProvidersWake(): void {
   void scheduleSnapmakerRenewal();
 }
 
 export function onProviderAlarm(name: string): void {
-  if (name === SNAPMAKER_ALARM) void syncSession(MANIFESTS.snapmaker.id);
+  if (name === SNAPMAKER_ALARM) {
+    void syncSession(MANIFESTS.snapmaker.id);
+    void syncSession(MANIFESTS.snapmaker.id, MANIFESTS.snapmaker.regions[0].id);
+  }
 }
 
 /** A page finished loading: it wakes a suspended background to drive MakerWorld's guided import. */

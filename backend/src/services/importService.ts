@@ -1308,12 +1308,12 @@ async function importSourced(
   body: ImportRequestBody,
   impl: SourcedImport,
 ): Promise<ImportResult> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, linked.externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(linked.externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   const source = { provider: linked.provider, externalId: impl.canonicalId?.(resolved) ?? linked.externalId };
@@ -1332,7 +1332,7 @@ async function importSourced(
       IMPORT_KIT,
     );
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   // A folder every file shares says nothing of which is which.
@@ -1364,7 +1364,7 @@ async function addSourcedProfile(
   }
   const userId = existing.print.userId;
   const externalId = existing.print.sourceExternalId!;
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let profile: NewPlateInput | null;
   let model: ResolvedModel | null = resolved;
   try {
@@ -1374,7 +1374,7 @@ async function addSourcedProfile(
     }
     profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!profile) throw new HttpError(404, profiles.missingMessage);
   // Without its details the profile still comes in, only not named or pictured apart.
@@ -1551,19 +1551,19 @@ export async function downloadSourcedModelFiles(
   externalId: string,
   impl: SourcedImport,
 ): Promise<DownloadedModelFiles> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   let downloaded: NewPlateInput[];
   try {
     downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });

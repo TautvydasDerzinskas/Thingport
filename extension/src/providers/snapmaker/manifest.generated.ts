@@ -1,7 +1,8 @@
 // GENERATED from providers/snapmaker/manifest.ts by scripts/sync-providers.mjs. Don't edit it here:
 // change providers/ and run npm run providers:sync.
 // A white S on a black disc; the S is cut out instead, so the disc can take the text colour.
-// id.snapmaker.com renews the sign-in (Grab's snapmakerSession.ts); Grab's panel only ever shows on Snapmaker Space.
+// id.snapmaker.com renews the sign-in (Grab's snapmakerSession.ts), id.snapmaker.cn the China site's; Grab's panel only
+// ever shows on Snapmaker Space.
 import type { ProviderManifest } from "../_lib/types.generated";
 
 export default {
@@ -10,10 +11,22 @@ export default {
   order: 5,
   site: "https://space.snapmaker.com",
   docsSlug: "snapmaker-space",
-  hosts: ["snapmaker.com"],
+  hosts: ["snapmaker.com", "snapmaker.cn"],
+  // Its China site: the same pages and API, but its own models (whose ids the main site uses for others), featured
+  // list and accounts, with sign-ins renewed by its own id.snapmaker.cn.
+  regions: [
+    {
+      id: "cn",
+      name: "China",
+      site: "https://space.snapmaker.cn",
+      hosts: ["snapmaker.cn"],
+      endpoints: { api: "https://api-models.snapmaker.cn/api", token: "https://id.snapmaker.cn/api/oauth2/token" },
+      trending: { moreUrl: "https://space.snapmaker.cn/zh" },
+    },
+  ],
   credentialHosts: {
-    "snapmaker-api": { exact: ["api-models.snapmaker.com"] },
-    "snapmaker-id": { exact: ["id.snapmaker.com"] },
+    "snapmaker-api": { exact: ["api-models.snapmaker.com", "api-models.snapmaker.cn"] },
+    "snapmaker-id": { exact: ["id.snapmaker.com", "id.snapmaker.cn"] },
   },
   endpoints: { api: "https://api-models.snapmaker.com/api", token: "https://id.snapmaker.com/api/oauth2/token" },
   brand: {
@@ -34,6 +47,7 @@ export default {
       fields: [{ name: "token" }],
       legacyEndpoint: { path: "snapmaker-session", method: "PATCH" },
     },
+    { slot: "cn", scope: "user", fields: [{ name: "token" }] },
   ],
   modelNoun: "models",
   helpers: { grab: "recommended", flaresolverr: "none" },
@@ -55,5 +69,13 @@ export default {
   },
   errorCodes: { session: "snapmaker_session" },
   legacy: { lists: [{ path: "snapmaker-list", idsField: "model_ids" }], profiles: "snapmaker-profiles" },
-  extension: { site: "optional", origins: ["*://space.snapmaker.com/*", "*://id.snapmaker.com/*"] },
+  extension: {
+    site: "optional",
+    origins: [
+      "*://space.snapmaker.com/*",
+      "*://id.snapmaker.com/*",
+      "*://space.snapmaker.cn/*",
+      "*://id.snapmaker.cn/*",
+    ],
+  },
 } as const satisfies ProviderManifest;

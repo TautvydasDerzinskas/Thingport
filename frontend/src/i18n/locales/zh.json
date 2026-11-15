@@ -6686,20 +6686,33 @@
           "或手动操作：登录 space.snapmaker.com，然后打开浏览器的开发者工具（F12）。",
           "在 Chrome、Edge 的应用（Application）或 Firefox 的存储（Storage）→ Cookie → space.snapmaker.com 中，复制 login_access_token 的值，粘贴到下方。手动粘贴的登录信息只能保持一天。"
         ],
-        "placeholder": "login_access_token 的值，或完整的 Cookie 请求头"
+        "placeholder": "login_access_token 的值，或完整的 Cookie 请求头",
+        "cn": {
+          "steps": [
+            "最简单的方法：装好 Thingport Grab 后，在已登录状态下打开 space.snapmaker.cn 即可。它会连接你的账号并持续更新登录信息，因为 Snapmaker 的登录信息只能保持一天。",
+            "如果你在 Grab 支持中国站之前就已允许它访问 Snapmaker Space，还需在浏览器的扩展设置（网站访问权限）中允许它访问 space.snapmaker.cn 和 id.snapmaker.cn。",
+            "或手动操作：登录 space.snapmaker.cn，然后打开浏览器的开发者工具（F12）。",
+            "在 Chrome、Edge 的应用（Application）或 Firefox 的存储（Storage）→ Cookie → space.snapmaker.cn 中，复制 login_access_token 的值，粘贴到下方。手动粘贴的登录信息只能保持一天。"
+          ],
+          "placeholder": "login_access_token 的值，或完整的 Cookie 请求头"
+        }
       },
       "status": {
         "notConnected": "Snapmaker 只向已登录用户提供文件。连接账号后，即可导入其模型以及你的点赞和书签。",
         "expired": "登录信息已过期。请在装有 Thingport Grab 的浏览器中访问 space.snapmaker.com，或在“配置 → 模型网站”中重新连接 Snapmaker Space。",
         "expiredStatus": "登录信息已过期",
-        "disabledReason": "Snapmaker Space：请在“配置 → 模型网站”中连接你的账号"
+        "disabledReason": "Snapmaker Space：请在“配置 → 模型网站”中连接你的账号",
+        "cn": {
+          "expired": "中国站的登录信息已过期。请在装有 Thingport Grab 的浏览器中登录 space.snapmaker.cn，或在“配置 → 模型网站”中重新连接 Snapmaker Space 中国站。",
+          "expiredStatus": "中国站的登录信息已过期"
+        }
       },
       "about": {
         "summary": "Snapmaker 的模型平台，围绕其 U1 打印机打造。精选模型都经过试打，并附带为多色打印调校的配置。",
         "signIn": "你自己的登录信息，有效期一天。",
         "grab": "唯一能续期登录信息的方式。没有它，你每天都得粘贴新的登录信息。",
         "setup": [
-          "安装 Thingport Grab，在 Snapmaker Space 上启用它，然后在已登录状态下打开 space.snapmaker.com。",
+          "安装 Thingport Grab，在 Snapmaker Space 上启用它，然后在已登录状态下打开 space.snapmaker.com（中国站账号请打开 space.snapmaker.cn）。",
           "之后只要浏览器开着，Grab 就会持续更新登录信息。",
           "手动操作：在“配置 → 模型网站”中粘贴 login_access_token Cookie，有效期一天。"
         ]

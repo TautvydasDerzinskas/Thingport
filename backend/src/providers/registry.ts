@@ -107,7 +107,7 @@ import { toymakr3dConnection } from "./toymakr3d/connection";
 import { makerablesConnection } from "./makerables/connection";
 import { cgtraderConnection } from "./cgtrader/connection";
 import { grabcadConnection } from "./grabcad/connection";
-import { snapmakerConnection } from "./snapmaker/connection";
+import { snapmakerChinaConnection, snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
 import { makerworldSync } from "./makerworld/sync";
@@ -376,8 +376,8 @@ export const PROVIDERS = {
   },
   snapmaker: {
     starterCategories: snapmakerCategories,
-    connection: { default: snapmakerConnection },
-    authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} with Thingport Grab, then retry`,
+    connection: { default: snapmakerConnection, cn: snapmakerChinaConnection },
+    authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} (space.snapmaker.cn for a China account) with Thingport Grab, then retry`,
     sourcedImport: snapmakerImport,
     lists: snapmakerLists,
     sync: snapmakerSync,
