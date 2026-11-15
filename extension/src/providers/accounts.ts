@@ -6,7 +6,6 @@ import { regionOfHost, type ProviderId } from "./index.generated";
 import { cults3dSignedIn } from "./cults3d/content";
 import { grabcadSignedIn } from "./grabcad/content";
 import { syncMakeronline } from "./makeronline/content";
-import { offerMakerworldWaiting } from "./makerworld/waiting";
 import { syncOwlcad } from "./owlcad/content";
 import { captureMyminifactoryAccount } from "./myminifactory/account";
 import { pinshapeSignedIn } from "./pinshape/content";
@@ -24,8 +23,6 @@ function syncSession(provider: ProviderId): void {
 /** What a page of each provider's sends on, once per tab. */
 export const CAPTURE: Partial<Record<ProviderId, (id: ProviderId) => void>> = {
   makeronline: () => void syncMakeronline(),
-  // Its sign-in goes to the instance by the background; a visit is the cue to offer the imports waiting for its puzzle.
-  makerworld: () => void offerMakerworldWaiting(),
   // It has no sign-in to send on: a visit is only the cue to export the CAD projects waiting for Grab.
   owlcad: () => void syncOwlcad(),
   // Its sign-in downloads the files and reads the likes; a new one comes with each sign-in there.

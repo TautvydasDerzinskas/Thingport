@@ -107,6 +107,7 @@ function showOffer(waiting: WaitingImport[]): void {
 /** Hands a resolved file to the instance, and waits for its import: true once it's in. False once `stopped` says so,
  *  or the import takes too long; either goes on on the instance. */
 async function bringIn(row: WaitingImport, resolved: ResolvedDownload, stopped: () => boolean): Promise<boolean> {
+  if (stopped()) return false;
   try {
     const { task_id } = await api<{ task_id: string }>("POST", `/import/${PROVIDER}/waiting/${row.id}?async=1`, {
       resolved_download_url: resolved.downloadUrl,
@@ -180,6 +181,8 @@ async function run(waiting: WaitingImport[]): Promise<void> {
     for (const [index, row] of waiting.entries()) {
       if (stopped) return;
       if (index > 0) await sleep(GAP_MS);
+      // Stopped, or Grab turned off, while anything here waited: nothing more goes to MakerWorld or the instance.
+      if (stopped) return;
       const progress = progressOverlay(
         t("waitingImportingTitle"),
         t("waitingImportingLine", { current: index + 1, total: waiting.length }),
@@ -192,6 +195,7 @@ async function run(waiting: WaitingImport[]): Promise<void> {
       try {
         resolved = await resolveMakerworldViaApi(row.url, instanceId);
       } catch (err) {
+        if (stopped) return;
         if (!(err instanceof MakerworldCaptchaError)) {
           // The daily download limit, say: the rest would only meet it too.
           reportFailed(row, err instanceof Error ? err.message : String(err));
@@ -232,6 +236,7 @@ async function run(waiting: WaitingImport[]): Promise<void> {
           await sleep(PUZZLE_SOLVED_MS);
         }
       }
+      if (stopped) return;
       if (!resolved) {
         reportFailed(row, t("waitingNoFile"));
         failed++;

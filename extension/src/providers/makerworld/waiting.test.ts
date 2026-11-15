@@ -142,7 +142,7 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
 
   it("are offered by the icon, and nothing opens until asked", async () => {
     await freshOffer();
-    expect(calls.callout?.title).toBe("2 imports wait for MakerWorld's puzzle");
+    expect(calls.callout).toMatchObject({ title: "2 imports wait for MakerWorld's puzzle" });
     expect(calls.shown).toEqual([]);
     expect(calls.api.filter(({ method }) => method === "POST")).toEqual([]);
   });
@@ -271,5 +271,49 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
     expect(posts).toEqual(["/import/makerworld/waiting/w1?async=1"]);
     expect(calls.shown).not.toContain("done");
+  });
+
+  it("send nothing on for a model being resolved when Grab is turned off", async () => {
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    let release!: () => void;
+    calls.resolve = async (url, instanceId) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      return fileOf(url, instanceId);
+    };
+    await waiting.offerMakerworldWaiting();
+    calls.callout!.primary();
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    waiting.stopMakerworldWaiting();
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(calls.api.filter(({ method }) => method === "POST")).toEqual([]);
+  });
+
+  it("go no further than the model before the pause between them when Grab is turned off", async () => {
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    // The pause before the second model.
+    calls.onSleep = () => waiting.stopMakerworldWaiting();
+    await waiting.offerMakerworldWaiting();
+    calls.callout!.primary();
+    await vi.waitFor(() => expect(calls.removed).toBe(1));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
+    expect(posts).toEqual(["/import/makerworld/waiting/w1?async=1"]);
+  });
+
+  it("are offered again once Grab is turned on again", async () => {
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    await waiting.offerMakerworldWaiting();
+    expect(calls.callout).not.toBeNull();
+    waiting.stopMakerworldWaiting();
+    calls.callout = null;
+
+    await waiting.offerMakerworldWaiting();
+    expect(calls.callout).toMatchObject({ title: "2 imports wait for MakerWorld's puzzle" });
   });
 });

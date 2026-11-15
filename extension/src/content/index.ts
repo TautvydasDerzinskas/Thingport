@@ -17,7 +17,7 @@ import {
   resolveMakerworldProfileDownload,
 } from "../providers/makerworld/downloadResolver";
 import { notePuzzle } from "../providers/makerworld/puzzle";
-import { stopMakerworldWaiting } from "../providers/makerworld/waiting";
+import { offerMakerworldWaiting, stopMakerworldWaiting } from "../providers/makerworld/waiting";
 import {
   adaptedReveal,
   loadPageAdapt,
@@ -169,6 +169,8 @@ async function init(): Promise<void> {
   setBubbleLook(stateRes.data.bubble);
   // On every page, importable or not: the header shows who's signed in everywhere.
   if (stateRes.data.configured) captureProviderAccount(location.hostname);
+  // Not with the sign-in, which goes once per tab: the offer comes back once Grab is turned on again.
+  if (stateRes.data.configured && providerOfHost(location.hostname) === "makerworld") void offerMakerworldWaiting();
 
   const url = location.href;
   const classification = classifyUrl(url);
