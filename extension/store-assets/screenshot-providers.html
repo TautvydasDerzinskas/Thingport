@@ -83,13 +83,11 @@
         left: -33px;
         top: -33px;
       }
+      /* Placed by render(): under the logo, or beside it on the hub's side, or above it, wherever it's clear. */
       .site__name {
         position: absolute;
-        top: 40px;
-        left: -70px;
-        width: 140px;
-        text-align: center;
         font-size: 14px;
+        line-height: 18px;
         font-weight: 500;
         color: #d6d9e0;
         white-space: nowrap;
@@ -155,7 +153,7 @@
     <header>
       <div class="eyebrow">Thingport Grab</div>
       <h1><span id="count">17</span> model sites, <em>one library of your own</em></h1>
-      <p>Import from the sites you browse into your self-hosted Thingport, with the files, photos and details.</p>
+      <p>Import from the sites you browse into your own Thingport instance, with the files, photos and details.</p>
     </header>
     <div class="orbit" id="orbit">
       <svg class="links" id="links" width="1280" height="800"></svg>
@@ -193,9 +191,10 @@
     <p class="fine">Not affiliated with or endorsed by the sites shown.</p>
     <script>
       // Every site on an ellipse round the hub, evenly spaced along it, the first at the top.
-      const CENTER = { x: 640, y: 425 };
-      // Wide enough that 21 sites' names don't run under their neighbours' tiles at the sides.
-      const RADIUS = { x: 545, y: 198 };
+      const CENTER = { x: 640, y: 416 };
+      const RADIUS = { x: 548, y: 202 };
+      const CHIP = 66;
+      const PAGE = { left: 10, right: 1270, top: 166, bottom: 682 };
       const SVG_NS = "http://www.w3.org/2000/svg";
 
       function ellipsePoints(count) {
@@ -225,6 +224,7 @@
         const links = document.getElementById("links");
         const defs = document.createElementNS(SVG_NS, "defs");
         links.append(defs);
+        const sites = [];
         ellipsePoints(providers.length).forEach((point, i) => {
           const provider = providers[i];
           // A line from the site to the hub, fading as it reaches the site, with a dot partway along.
@@ -276,8 +276,56 @@
           site.innerHTML = `<div class="site__chip chip">${provider.logo}</div><div class="site__name"></div>`;
           site.querySelector(".site__name").textContent = provider.name;
           orbit.append(site);
+          sites.push({ site, point });
         });
+        placeNames(sites);
       };
+
+      const overlap = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+      /** Each name where it covers no logo, no other name and no part of the hub, and stays on the picture. */
+      function placeNames(sites) {
+        const taken = sites.map(({ point }) => ({
+          left: point.x - CHIP / 2 - 2,
+          right: point.x + CHIP / 2 + 2,
+          top: point.y - CHIP / 2 - 2,
+          bottom: point.y + CHIP / 2 + 2,
+        }));
+        taken.push({ left: CENTER.x - 120, right: CENTER.x + 120, top: CENTER.y - 110, bottom: CENTER.y + 100 });
+        for (const { site, point } of sites) {
+          const name = site.querySelector(".site__name");
+          const width = name.getBoundingClientRect().width;
+          const height = 18;
+          const inward = point.x > CENTER.x ? -1 : 1;
+          const options = [
+            { x: -width / 2, y: CHIP / 2 + 7 },
+            { x: inward > 0 ? CHIP / 2 + 9 : -CHIP / 2 - 9 - width, y: -height / 2 },
+            { x: -width / 2, y: -CHIP / 2 - 7 - height },
+          ];
+          const fits = (o) => {
+            const box = {
+              left: point.x + o.x,
+              right: point.x + o.x + width,
+              top: point.y + o.y,
+              bottom: point.y + o.y + height,
+            };
+            const inside =
+              box.left >= PAGE.left && box.right <= PAGE.right && box.top >= PAGE.top && box.bottom <= PAGE.bottom;
+            return inside && !taken.some((t) => overlap(t, box)) ? box : null;
+          };
+          const chosen = options.find(fits) ?? options[0];
+          const box = fits(chosen) ?? {
+            left: point.x + chosen.x,
+            right: point.x + chosen.x + width,
+            top: point.y + chosen.y,
+            bottom: point.y + chosen.y + height,
+          };
+          if (!fits(chosen)) console.warn(`No clear place for ${name.textContent}`);
+          name.style.left = `${chosen.x}px`;
+          name.style.top = `${chosen.y}px`;
+          taken.push(box);
+        }
+      }
     </script>
   </body>
 </html>

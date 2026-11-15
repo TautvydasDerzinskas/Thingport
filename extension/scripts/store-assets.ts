@@ -1,18 +1,20 @@
 // Renders the store listing images from the HTML templates in store-assets/ into docs/store/:
 //
-//   npm run store-assets [-- --out=<dir> --corners=<dir>]
+//   npm run store-assets [-- --out=<dir> --corners=<dir> --adapted=<dir> --only=<template>,...]
 //
 //   logo.png        300x300    store logo (Edge Add-ons "Extension logo")
 //   store-icon.png  128x128    Chrome Web Store icon (transparent, 96px artwork + 16px padding)
 //   tile-small.png  440x280    small promotional tile
 //   tile-large.png  1400x560   large promotional tile (the extension's real panel on a placeholder page)
 //   screenshots/1-providers.png  1280x800  the logo among every site Grab works on, and what it does
-//   screenshots/2-popup.png      1280x800  the popup: not connected yet, and each tab once it is
-//   screenshots/3-sites.png      1280x800  a model page's corner on each site, with Grab's button or panel
+//   screenshots/2-popup.png      1280x800  the popup: not connected yet, and its tabs once it is
+//   screenshots/3-features.png   1280x800  Extra features: Download adapted on each site it works on, a dark Thingiverse
+//   screenshots/4-sites.png      1280x800  a model page's corner on each site, with Grab's button or panel
 //
-// 1280x800 PNG is what the Chrome Web Store, Edge Add-ons and Firefox Add-ons all take. The popup pictures come from
-// docs/screenshots/popup-*.png and the corners from docs/store/corners/ (or --corners=<dir>): run
-// `npm run screenshots -- --corners` first to refresh them. A site with no corner is left out of the mosaic.
+// 1280x800 PNG is what the Chrome Web Store, Edge Add-ons and Firefox Add-ons all take; Chrome takes five at most. The
+// popup pictures come from docs/screenshots/popup-*.png, the corners from docs/store/corners/ (or --corners=<dir>) and
+// the Download adapted pictures from docs/store/adapted/ (or --adapted=<dir>): run
+// `npm run screenshots -- --corners --adapted` first to refresh them. A site with none is left out.
 //
 // Needs Playwright's Chromium once: `npx playwright install chromium`.
 
@@ -35,6 +37,9 @@ function argValue(name: string): string | undefined {
 
 const OUT_DIR = path.resolve(argValue("out") ?? path.join(ROOT, "docs", "store"));
 const CORNERS_DIR = path.resolve(argValue("corners") ?? path.join(ROOT, "docs", "store", "corners"));
+const ADAPTED_DIR = path.resolve(argValue("adapted") ?? path.join(ROOT, "docs", "store", "adapted"));
+// Templates to render, by name without .html; all of them when not given.
+const ONLY = argValue("only")?.split(",").filter(Boolean) ?? [];
 
 // The content script's stylesheet, with `:host` properties re-scoped to `.tg-scope`. Transitions
 // are off so buttons aren't captured mid-fade.
@@ -49,8 +54,9 @@ const ASSETS = [
   { template: "tile-large.html", out: "tile-large.png", width: 1400, height: 560 },
   { template: "screenshot-providers.html", out: "screenshots/1-providers.png", ...STORE_SCREENSHOT },
   { template: "screenshot-popup.html", out: "screenshots/2-popup.png", ...STORE_SCREENSHOT },
-  { template: "screenshot-sites.html", out: "screenshots/3-sites.png", ...STORE_SCREENSHOT },
-];
+  { template: "screenshot-features.html", out: "screenshots/3-features.png", ...STORE_SCREENSHOT },
+  { template: "screenshot-sites.html", out: "screenshots/4-sites.png", ...STORE_SCREENSHOT },
+].filter((asset) => !ONLY.length || ONLY.includes(asset.template.replace(/\.html$/, "")));
 
 const rule = (value?: string) => (value ? ` fill-rule="${value}"` : "");
 
@@ -79,7 +85,7 @@ const data = {
   providers,
   popups: Object.fromEntries(
     await Promise.all(
-      ["setup", "connected", "appearance", "features", "history"].map(async (name) => [
+      ["setup", "connected", "appearance", "features", "adapt", "history"].map(async (name) => [
         name,
         await fileUrl(path.join(SCREENSHOTS_DIR, `popup-${name}.png`)),
       ]),
@@ -94,9 +100,24 @@ const data = {
       panel: await fileUrl(path.join(CORNERS_DIR, `${id}-panel.jpg`)),
     })),
   ),
+  // The sites Download adapted works on, each with the part of a model page around Grab's button.
+  adapted: await Promise.all(
+    providers
+      .filter(({ id }) => (MANIFESTS[id].capabilities as { adapted3mfs?: readonly string[] }).adapted3mfs?.length)
+      .map(async ({ id, name, logo }) => ({
+        id,
+        name,
+        logo,
+        src: await fileUrl(path.join(ADAPTED_DIR, `${id}.jpg`)),
+      })),
+  ),
+  adaptedMenu: await fileUrl(path.join(ADAPTED_DIR, "makerworld-menu.jpg")),
+  thingiverseDark: await fileUrl(path.join(ADAPTED_DIR, "thingiverse-dark.jpg")),
 };
 const missing = data.corners.filter((corner) => !corner.button).map((corner) => corner.id);
 if (missing.length) console.warn(`No corner for ${missing.join(", ")}: left out of the mosaic.`);
+const unshot = data.adapted.filter((site) => !site.src).map((site) => site.id);
+if (unshot.length) console.warn(`No Download adapted picture for ${unshot.join(", ")}: left out.`);
 
 await mkdir(path.join(OUT_DIR, "screenshots"), { recursive: true });
 const browser = await chromium.launch();

@@ -215,12 +215,15 @@ templates in `store-assets/` (styled like the website's social card):
 | `tile-small.png`              | 440x280  | Small promotional tile                                                                               |
 | `tile-large.png`              | 1400x560 | Large promotional tile -- the extension's real panel (its compiled stylesheet) on a placeholder page |
 | `screenshots/1-providers.png` | 1280x800 | The logo among every site Grab works on, and what it does                                            |
-| `screenshots/2-popup.png`     | 1280x800 | The popup: not connected yet, and each tab once it is                                                |
-| `screenshots/3-sites.png`     | 1280x800 | A model page's corner on each site, with Grab's button or panel                                      |
+| `screenshots/2-popup.png`     | 1280x800 | The popup: not connected yet, then its Providers, Appearance and History tabs                        |
+| `screenshots/3-features.png`  | 1280x800 | Extra features: Download adapted beside each site's own button, and Thingiverse's dark theme         |
+| `screenshots/4-sites.png`     | 1280x800 | Every site's logo, over five model pages' corners with Grab's button or panel                        |
 
-The popup pictures come from `docs/screenshots/popup-*.png` and the corners from `npm run screenshots -- --corners`,
-which visits a model page on every site, so run those first when the pictures need refreshing. A site added since
-uses the example model its manifest names, unless `CORNER_SITES` in `scripts/screenshots.ts` pins another, and sale
+Chrome takes five screenshots at most. The popup pictures come from `docs/screenshots/popup-*.png`, the corners from
+`npm run screenshots -- --corners`, which visits a model page on every site, and the Download adapted pictures from
+`npm run screenshots -- --adapted`, which visits one on each site it works on until Grab's button shows (a model needs
+a 3MF for one), so run those first when the pictures need refreshing. A site added since uses the example model its
+manifest names, unless `CORNER_SITES` in `scripts/screenshots.ts` pins another or `--<site>=<url>` names one, and sale
 banners are hidden so a picture doesn't date. Store listings can't be changed through the stores' APIs, so these are
 uploaded by hand. They show live provider
 pages, so check them before uploading: a front-page model can be someone else's trademarked
