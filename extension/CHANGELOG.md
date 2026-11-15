@@ -1,5 +1,31 @@
 # Thingport Grab changelog
 
+# [thingport-grab-v1.12.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.11.0...thingport-grab-v1.12.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* **extension:** keep a print profile import's panel until it ends, and skip profiles it has ([#346](https://github.com/TautvydasDerzinskas/Thingport/issues/346)) ([3e9b94c](https://github.com/TautvydasDerzinskas/Thingport/commit/3e9b94c54f1172806c8631cab956b9bf5ccc287d)), closes [#333](https://github.com/TautvydasDerzinskas/Thingport/issues/333) [#profileId](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId)
+* **extension:** preserve Grab pairing across the permission prompt ([#330](https://github.com/TautvydasDerzinskas/Thingport/issues/330)) ([359e101](https://github.com/TautvydasDerzinskas/Thingport/commit/359e1015c42b8bcf3d93391fefa8460f664a39bc))
+* **nexprint:** take the models some have "C" ids for, and their print profiles ([be26167](https://github.com/TautvydasDerzinskas/Thingport/commit/be2616776ff42cafb6c7651e70c0633b5ce70df6))
+
+
+### Features
+
+* add QIDI Studio support ([#326](https://github.com/TautvydasDerzinskas/Thingport/issues/326)) ([531ce39](https://github.com/TautvydasDerzinskas/Thingport/commit/531ce3912d4dbe346c76d47dfd2b2f7bfbb1eb13))
+* **extension:** localize Thingport Grab in every supported language ([#328](https://github.com/TautvydasDerzinskas/Thingport/issues/328)) ([47bbe5c](https://github.com/TautvydasDerzinskas/Thingport/commit/47bbe5c6f2574faf0f27ad02a103c4a09387d0ef))
+* **extension:** open MakerWorld's own puzzle during imports, and carry on once it's solved ([#354](https://github.com/TautvydasDerzinskas/Thingport/issues/354)) ([50448ee](https://github.com/TautvydasDerzinskas/Thingport/commit/50448ee436acb44927106e52fa5feec21150ca08)), closes [#355](https://github.com/TautvydasDerzinskas/Thingport/issues/355)
+* **extension:** show MakerOnline's own puzzle when it wants one solved, then go on ([#321](https://github.com/TautvydasDerzinskas/Thingport/issues/321)) ([b056101](https://github.com/TautvydasDerzinskas/Thingport/commit/b056101f9c4c20b96b9c9154b7d276f9e77667fe))
+* **extension:** show the popup's sites as tiles, and ask for support from its footer ([#352](https://github.com/TautvydasDerzinskas/Thingport/issues/352)) ([69f329e](https://github.com/TautvydasDerzinskas/Thingport/commit/69f329e9adb8571bdced315c34ff50e0b1ff237f))
+* find your printers in Creality, Snapmaker, Flashforge and Anycubic accounts, with two small fixes ([#348](https://github.com/TautvydasDerzinskas/Thingport/issues/348)) ([0794dbe](https://github.com/TautvydasDerzinskas/Thingport/commit/0794dbebab06d891323aa5e100298e1c00e68bb6))
+* Grab's Download adapted, made for your slicer and printer, on more sites ([#311](https://github.com/TautvydasDerzinskas/Thingport/issues/311)) ([ad7ac4d](https://github.com/TautvydasDerzinskas/Thingport/commit/ad7ac4dc9f9a79318d7716ad44977f4c1da9833f)), closes [#313](https://github.com/TautvydasDerzinskas/Thingport/issues/313) [#320](https://github.com/TautvydasDerzinskas/Thingport/issues/320)
+* **i18n:** add Simplified Chinese translation ([#347](https://github.com/TautvydasDerzinskas/Thingport/issues/347)) ([30b5438](https://github.com/TautvydasDerzinskas/Thingport/commit/30b54383bc74cef833b4d5850290bb36fd0d0a58))
+* import eufyMake's print files as print profiles ([#322](https://github.com/TautvydasDerzinskas/Thingport/issues/322)) ([6690fa3](https://github.com/TautvydasDerzinskas/Thingport/commit/6690fa3691bccf728f8aecbc3019eb4be62f45bb))
+* import from QIDI Maker, its QIDI Studio print profiles, collections and likes ([#340](https://github.com/TautvydasDerzinskas/Thingport/issues/340)) ([9357f40](https://github.com/TautvydasDerzinskas/Thingport/commit/9357f4068fa2c88753dd411fdf59a4bcfe8bd67e)), closes [#profileId-](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId-)
+* import from Snapmaker Space's China site ([#350](https://github.com/TautvydasDerzinskas/Thingport/issues/350)) ([305a911](https://github.com/TautvydasDerzinskas/Thingport/commit/305a9112fac981c8547227ea3bafc97d40fcf0ac))
+* import from VoxelShare, with Flash Studio support and its China site ([#343](https://github.com/TautvydasDerzinskas/Thingport/issues/343)) ([3b49cd5](https://github.com/TautvydasDerzinskas/Thingport/commit/3b49cd5eb30623d392d73389c623be1bef32a627)), closes [#profileId-](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId-) [#344](https://github.com/TautvydasDerzinskas/Thingport/issues/344) [#345](https://github.com/TautvydasDerzinskas/Thingport/issues/345) [#347](https://github.com/TautvydasDerzinskas/Thingport/issues/347)
+* let one collection sync with several provider collections, each with its own settings ([#302](https://github.com/TautvydasDerzinskas/Thingport/issues/302)) ([5bd6db8](https://github.com/TautvydasDerzinskas/Thingport/commit/5bd6db89c14712e82a0c612a928e1048b28c5c4b)), closes [#70](https://github.com/TautvydasDerzinskas/Thingport/issues/70)
+
 # [thingport-grab-v1.11.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-grab-v1.10.0...thingport-grab-v1.11.0) (2026-11-10)
 
 
