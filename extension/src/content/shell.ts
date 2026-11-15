@@ -4,6 +4,7 @@ import { DEFAULT_BUBBLE, type BubbleLook } from "../shared/bubble";
 import { createIcon } from "../shared/icon";
 import { send } from "../shared/messages";
 import { dressMark } from "../shared/seasonalMark";
+import { t } from "../shared/i18n";
 import { attachMagnet } from "./magnet";
 import css from "./styles/content.scss?inline";
 
@@ -14,16 +15,20 @@ let stackEl: HTMLDivElement | null = null;
 let fabBodyEl: HTMLElement | null = null;
 let panelEl: HTMLDivElement | null = null;
 let contentEl: HTMLDivElement | null = null;
+// Under the content, for what isn't part of an import flow: Download adapted's copies (content/adapted/).
+let extraEl: HTMLDivElement | null = null;
 let noteEl: HTMLDivElement | null = null;
 let fabEl: HTMLButtonElement | null = null;
 // The bubble's look, as the popup's Appearance tab set it; set before the first mount, and again on every change.
 let look: BubbleLook = DEFAULT_BUBBLE;
+// The page started over from a control that had the focus: the next icon mounted takes it.
+let fabTakesFocus = false;
 
 /** The bubble's style and corner, on the host for the stylesheet to read (styles/_bubble.scss), and its name, which
  *  carries the pill's word. */
 function applyLook(): void {
-  const host = document.getElementById(HOST_ID);
-  if (host) {
+  for (const host of [document.getElementById(HOST_ID), document.getElementById(SIDE_HOST_ID)]) {
+    if (!host) continue;
     host.dataset.style = look.style;
     host.dataset.place = look.place;
   }
@@ -37,13 +42,18 @@ export function setBubbleLook(next: BubbleLook): void {
 }
 
 // The pill's word, by what clicking it does.
-const PILL_WORDS: Record<NonNullable<FabOptions["variant"]> | "import", string> = {
-  import: "Grab",
-  "in-library": "In library",
-  complete: "Imported",
-  inactive: "Set up",
-  disconnected: "Sign in",
-};
+function pillWord(variant: NonNullable<FabOptions["variant"]> | "import"): string {
+  return t(
+    {
+      import: "fabGrab",
+      "in-library": "fabInLibrary",
+      complete: "fabImported",
+      inactive: "fabSetUp",
+      disconnected: "fabSignIn",
+      adapt: "fabAdapt",
+    }[variant],
+  );
+}
 
 /** Its name, with the pill's word in front where it shows and the name doesn't already start with it: what's
  *  read out should hold what's seen, for anyone who says it to click it. */
@@ -71,6 +81,29 @@ export function getShadowRoot(): ShadowRoot | null {
   return shadowRoot;
 }
 
+const SIDE_HOST_ID = "thingport-grab-side";
+
+/** A host beside the main one, with the same stylesheet and the bubble's corner, for what has to outlast the page's
+ *  own start-overs (init unmounts the main host at every one): an offer, or a run, by the floating icon. */
+export function sideHost(): ShadowRoot {
+  const existing = document.getElementById(SIDE_HOST_ID);
+  if (existing?.shadowRoot) return existing.shadowRoot;
+  const host = document.createElement("div");
+  host.id = SIDE_HOST_ID;
+  host.dataset.style = look.style;
+  host.dataset.place = look.place;
+  document.documentElement.appendChild(host);
+  const root = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.textContent = css;
+  root.appendChild(style);
+  return root;
+}
+
+export function removeSideHost(): void {
+  document.getElementById(SIDE_HOST_ID)?.remove();
+}
+
 export function unmountHost(): void {
   document.getElementById(HOST_ID)?.remove();
   shadowRoot = null;
@@ -78,25 +111,32 @@ export function unmountHost(): void {
   fabBodyEl = null;
   fabEl = null;
   panelOpen = false;
+  panelLoaded = false;
   window.clearTimeout(closeTimer);
   panelEl = null;
   contentEl = null;
+  extraEl = null;
   noteEl = null;
 }
 
 type FabOptions = {
-  variant?: "in-library" | "complete" | "inactive" | "disconnected";
+  /** "adapt": not set up for imports, but offering Download adapted's copies, which it opens in the panel. */
+  variant?: "in-library" | "complete" | "inactive" | "disconnected" | "adapt";
   label: string;
   title?: string;
   onClick: () => void;
 };
+
+export function setFabTakesFocus(on: boolean): void {
+  fabTakesFocus = on;
+}
 
 export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: FabOptions): void {
   const button = document.createElement("button");
   button.type = "button";
   button.className = variant ? `tg-fab tg-fab--${variant}` : "tg-fab";
   button.dataset.name = label;
-  button.dataset.word = PILL_WORDS[variant ?? "import"];
+  button.dataset.word = pillWord(variant ?? "import");
   button.setAttribute("aria-label", fabName(button));
   if (title) button.title = title;
   // The button stays put as the hit area; its body leans toward the pointer (see magnet.ts), the blob behind the
@@ -126,6 +166,10 @@ export function mountFab(root: ShadowRoot, { variant, label, title, onClick }: F
   fabEl = button;
   button.addEventListener("click", onClick);
   root.appendChild(button);
+  if (fabTakesFocus) {
+    fabTakesFocus = false;
+    button.focus({ preventScroll: true });
+  }
   attachMagnet(button, body, {
     // The stack, not the panel: the panel itself is never hidden, its column is (see mountPanel).
     paused: () => Boolean(stackEl && !stackEl.hidden),
@@ -166,7 +210,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   const closeBtn = document.createElement("button");
   closeBtn.className = "tg-close";
   closeBtn.type = "button";
-  closeBtn.setAttribute("aria-label", "Close");
+  closeBtn.setAttribute("aria-label", t("close"));
   closeBtn.textContent = "×";
   closeBtn.addEventListener("click", () => setPanelOpen(false));
   panel.appendChild(closeBtn);
@@ -174,18 +218,22 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
   const content = document.createElement("div");
   content.className = "tg-panel__content";
   panel.appendChild(content);
+  const extra = document.createElement("div");
+  extra.className = "tg-panel__extra";
+  extra.hidden = true;
+  panel.appendChild(extra);
   stack.appendChild(panel);
   root.appendChild(stack);
 
   stackEl = stack;
   panelEl = panel;
   contentEl = content;
-  let loaded = false;
+  extraEl = extra;
   return () => {
     const open = !panelOpen;
     setPanelOpen(open);
-    if (open && !loaded) {
-      loaded = true;
+    if (open && !panelLoaded) {
+      panelLoaded = true;
       onFirstOpen();
     }
   };
@@ -195,6 +243,7 @@ export function mountPanel(root: ShadowRoot, onFirstOpen: () => void): () => voi
 const CLOSE_MS = 200;
 
 let panelOpen = false;
+let panelLoaded = false;
 let closeTimer: number | undefined;
 
 const stillMotion = (): boolean => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -260,8 +309,20 @@ export function setPanelNote(html: string | null, tone?: "shared" | "withheld"):
   noteEl.innerHTML = html;
 }
 
+/** Opened since the page last started: what it holds, an import under way say, a fresh start would lose. */
+export function isPanelInUse(): boolean {
+  return panelLoaded;
+}
+
 export function isPanelMounted(): boolean {
   return contentEl !== null;
+}
+
+/** What sits under the panel's content whatever it shows; null takes it away. */
+export function setPanelExtra(node: Node | null): void {
+  if (!extraEl) return;
+  extraEl.replaceChildren(...(node ? [node] : []));
+  extraEl.hidden = !node;
 }
 
 export function renderPanel(html: string): void {

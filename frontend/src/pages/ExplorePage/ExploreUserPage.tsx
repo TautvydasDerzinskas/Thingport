@@ -22,6 +22,8 @@ import { cardGridSx } from "../../components/media/cardGrid";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useScrollRestoreHold } from "../../hooks/useScrollRestoreHold";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
+import AchievementsShowcase from "../../components/achievements/AchievementsShowcase";
+import { knownAchievements } from "../../constants/achievements";
 import UserAvatar from "../../components/UserAvatar";
 import CollectionCard from "../CollectionsPage/CollectionCard";
 import SortTabs from "../ModelsPage/SortTabs";
@@ -273,6 +275,9 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
         bio={page.user.bio}
         bioMarkdown
         links={page.user.links}
+        achievements={
+          page.user.achievements && <AchievementsShowcase items={knownAchievements(page.user.achievements)} />
+        }
       >
         <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 2 }}>
           {page.user.models_public ? (

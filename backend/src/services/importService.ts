@@ -56,6 +56,7 @@ import {
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
   MakerworldCaptchaError,
+  MAKERWORLD_CAPTCHA_CODE,
   MAKERWORLD_DOWNLOAD_LIMIT_CODE,
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
@@ -107,6 +108,7 @@ import {
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
+import { getPhotosPerModel } from "./settingsService";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { sha256OfFile } from "./fileReuse";
 import { DROP } from "./storedContent";
@@ -393,7 +395,7 @@ async function tryMakerworldCloudApi(url: string, body: ImportRequestBody): Prom
     );
     return resolved;
   } catch (err) {
-    if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message);
+    if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message, MAKERWORLD_CAPTCHA_CODE);
     if (err instanceof MakerworldDownloadLimitError) {
       throw new HttpError(429, err.message, MAKERWORLD_DOWNLOAD_LIMIT_CODE);
     }
@@ -509,7 +511,7 @@ export async function openImportResponse(
         try {
           resolved = await resolveMakerworldDownloadUrl(html, finalUrl, makerworldCookie, requestedInstanceId);
         } catch (err) {
-          if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message);
+          if (err instanceof MakerworldCaptchaError) throw new HttpError(429, err.message, MAKERWORLD_CAPTCHA_CODE);
           if (err instanceof MakerworldDownloadLimitError) {
             throw new HttpError(429, err.message, MAKERWORLD_DOWNLOAD_LIMIT_CODE);
           }
@@ -662,8 +664,10 @@ export async function attachImportedPreviewImages(
   let firstAdded = false;
   let stored = 0;
   const urls = orderedUrls.slice(0, PREVIEW_IMAGE_MAX_COUNT);
+  // Administration → Storage's "Photos kept per model"; one that couldn't be fetched doesn't count.
+  const keep = (await getPhotosPerModel()) ?? PREVIEW_IMAGE_MAX_COUNT;
   const delayMs = paceMs ?? IMPORT_PREVIEW_IMAGE_DELAY_MS;
-  for (let i = 0; i < urls.length; i++) {
+  for (let i = 0; i < urls.length && stored < keep; i++) {
     await sleep(delayMs);
     const buf = await fetchImageBytes(urls[i]);
     if (!buf) continue;
@@ -1305,12 +1309,12 @@ async function importSourced(
   body: ImportRequestBody,
   impl: SourcedImport,
 ): Promise<ImportResult> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, linked.externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(linked.externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   const source = { provider: linked.provider, externalId: impl.canonicalId?.(resolved) ?? linked.externalId };
@@ -1329,7 +1333,7 @@ async function importSourced(
       IMPORT_KIT,
     );
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   // A folder every file shares says nothing of which is which.
@@ -1361,7 +1365,7 @@ async function addSourcedProfile(
   }
   const userId = existing.print.userId;
   const externalId = existing.print.sourceExternalId!;
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let profile: NewPlateInput | null;
   let model: ResolvedModel | null = resolved;
   try {
@@ -1371,7 +1375,7 @@ async function addSourcedProfile(
     }
     profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!profile) throw new HttpError(404, profiles.missingMessage);
   // Without its details the profile still comes in, only not named or pictured apart.
@@ -1403,9 +1407,12 @@ export async function importPrintFromUrl(
   const result = await importNewOrExisting(userId, url, body);
   // However it came in, nothing need wait for Grab to bring it.
   const provider = result.print.sourceProvider;
-  const grabQueue = isProviderId(provider) ? PROVIDERS[provider].grabQueue : undefined;
-  if (!keepGrabImports && grabQueue && result.print.sourceExternalId) {
-    await grabQueue.clear(userId, result.print.sourceExternalId).catch(() => undefined);
+  const backend = isProviderId(provider) ? PROVIDERS[provider] : undefined;
+  const modelId = result.print.sourceExternalId;
+  if (!keepGrabImports && backend && modelId) {
+    await backend.grabQueue?.clear(userId, modelId).catch(() => undefined);
+    const profileIds = result.plates.flatMap((plate) => plate.sourceInstanceId ?? []);
+    await backend.grabFallback?.clear(userId, modelId, profileIds, result.print.id).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);
@@ -1548,19 +1555,19 @@ export async function downloadSourcedModelFiles(
   externalId: string,
   impl: SourcedImport,
 ): Promise<DownloadedModelFiles> {
-  const auth = await impl.requireAuth(userId);
+  const auth = await impl.requireAuth(userId, externalId);
   let resolved: ResolvedModel | null;
   try {
     resolved = await impl.resolveModel(externalId, auth);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   let downloaded: NewPlateInput[];
   try {
     downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
   } catch (err) {
-    throw await impl.mapError(userId, err);
+    throw await impl.mapError(userId, err, auth);
   }
   if (!downloaded.length) throw new HttpError(400, impl.noFilesMessage);
   const profiles = profileDetailsOf(resolved.profiles ?? [], { names: impl.profiles?.namedAlike ?? true });

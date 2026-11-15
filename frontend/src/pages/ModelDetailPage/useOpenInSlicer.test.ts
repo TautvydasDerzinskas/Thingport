@@ -79,4 +79,16 @@ describe("the copies a slicer gets", () => {
     expect(forP1s.ask).toBeUndefined();
     expect(adaptedTargetsFor([file], "bambustudio", [], [p1s, h2d], h2d)).toEqual([]);
   });
+
+  it("are made for the printer in QIDI Studio even when another app's project names it", () => {
+    const q1 = { ...printer("qidi-q1pro", null), presets: { qidistudio: "Q1 Pro 0.4 nozzle" } };
+    const forQ1 = { ...plate, format: { ...plate.format!, printer: "Q1 Pro 0.4 nozzle" } };
+    const qidiFile = { ...file, plate: forQ1 };
+    const [remembered] = adaptedTargetsFor([qidiFile], "qidistudio", [], [q1], q1);
+    expect(remembered).toMatchObject({ printer: { id: "qidi-q1pro", nozzle: "0.4" } });
+    expect(remembered.href).toContain("adapted-for-qidistudio-qidi-q1pro-0.4");
+    expect(adaptedTargetsFor([qidiFile], "qidistudio", [], [q1], null)[0]).toMatchObject({ ask: true });
+    const own = { ...qidiFile, plate: { ...forQ1, format: { ...forQ1.format, app: "QIDIStudio" } } };
+    expect(adaptedTargetsFor([own], "qidistudio", [], [q1], q1)).toEqual([]);
+  });
 });

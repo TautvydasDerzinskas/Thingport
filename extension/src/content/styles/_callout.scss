@@ -1,0 +1,108 @@
+// An offer by the floating icon, for something on this site waiting on the user (content/callout.ts): a card above the
+// icon with a tail pointing at it, what it's about, and two buttons. In the side host, which carries the bubble's
+// corner (shell.ts sideHost), so it follows the icon to whichever corner the Appearance tab put it in.
+@use "../../styles/tokens" as t;
+@use "../../styles/mixins" as m;
+
+$above: 72px;
+
+.tg-callout {
+  @include m.isolated(flex);
+  @include m.card(t.r("lg"));
+  position: fixed;
+  right: var(--tg-fab-side);
+  bottom: calc(var(--tg-fab-end) + #{$above});
+  z-index: t.$z-top;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: t.$space-2;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  padding: t.$space-3 t.$space-4;
+  transform-origin: calc(100% - 28px) 100%;
+  animation: tg-callout-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  &__text {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__title {
+    font-weight: 700;
+  }
+
+  &__sub {
+    color: t.c("text-muted");
+    font-size: 12px;
+  }
+
+  .tg-btn {
+    width: auto;
+    margin-top: 0;
+    padding: 7px 14px;
+  }
+
+  &__tail {
+    position: absolute;
+    right: 22px;
+    bottom: -7px;
+    width: 14px;
+    height: 14px;
+    background: t.c("surface-raised");
+    transform: rotate(45deg);
+  }
+}
+
+:host([data-place$="-left"]) .tg-callout {
+  right: auto;
+  left: var(--tg-fab-side);
+  transform-origin: 28px 100%;
+}
+
+:host([data-place$="-left"]) .tg-callout__tail {
+  right: auto;
+  left: 22px;
+}
+
+:host([data-place^="top-"]) .tg-callout {
+  top: calc(var(--tg-fab-end) + #{$above});
+  bottom: auto;
+}
+
+:host([data-place^="top-"]) .tg-callout__tail {
+  top: -7px;
+  bottom: auto;
+}
+
+// A docked card of the run an offer started (providers/makerworld/waiting.ts), in the offer's place above the icon
+// rather than over it.
+.tg-overlay--by-fab {
+  inset: auto var(--tg-fab-side) calc(var(--tg-fab-end) + #{$above}) auto;
+}
+
+:host([data-place$="-left"]) .tg-overlay--by-fab {
+  inset: auto auto calc(var(--tg-fab-end) + #{$above}) var(--tg-fab-side);
+}
+
+:host([data-place="top-right"]) .tg-overlay--by-fab {
+  inset: calc(var(--tg-fab-end) + #{$above}) var(--tg-fab-side) auto auto;
+}
+
+:host([data-place="top-left"]) .tg-overlay--by-fab {
+  inset: calc(var(--tg-fab-end) + #{$above}) auto auto var(--tg-fab-side);
+}
+
+@keyframes tg-callout-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tg-callout {
+    animation: none;
+  }
+}

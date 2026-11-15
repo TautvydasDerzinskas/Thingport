@@ -1,9 +1,8 @@
 // How each provider's sign-in reads from this browser's cookies (eufyMake's from its pages' storage), for
-// background/sessionSync.ts. One without is signed in some other way (an admin's key, the user's own API key or
-// username) or not at all.
+// background/sessionSync.ts, and each of its regions' by `provider:region`. One without is signed in some other way
+// (an admin's key, the user's own API key or username) or not at all.
 
-import type { ProviderId } from "./index.generated";
-import type { SessionSource } from "../background/sessionSync";
+import type { SessionKey, SessionSource } from "../background/sessionSync";
 import { crealitycloudSession } from "./crealitycloud/session";
 import { cults3dSession } from "./cults3d/session";
 import { eufymakeSession } from "./eufymake/session";
@@ -11,7 +10,7 @@ import { makeronlineSession } from "./makeronline/background";
 import { myminifactorySession } from "./myminifactory/session";
 import { nexprintSession } from "./nexprint/session";
 import { pinshapeSession } from "./pinshape/session";
-import { snapmakerSession } from "./snapmaker/session";
+import { snapmakerChinaSession, snapmakerSession } from "./snapmaker/session";
 import { thangsSession } from "./thangs/session";
 import { makerablesSession } from "./makerables/session";
 import { toymakr3dSession } from "./toymakr3d/session";
@@ -21,10 +20,13 @@ import { meshySession } from "./meshy/session";
 import { pixup3dSession } from "./pixup3d/session";
 import { fab365Session } from "./fab365/session";
 import { threedexportSession } from "./threedexport/session";
+import { qidimakerSession } from "./qidimaker/session";
+import { voxelshareChinaSession, voxelshareSession } from "./voxelshare/session";
 
-export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
+export const SESSION_SOURCES: Partial<Record<SessionKey, SessionSource>> = {
   myminifactory: myminifactorySession,
   snapmaker: snapmakerSession,
+  "snapmaker:cn": snapmakerChinaSession,
   makeronline: makeronlineSession,
   crealitycloud: crealitycloudSession,
   nexprint: nexprintSession,
@@ -40,4 +42,7 @@ export const SESSION_SOURCES: Partial<Record<ProviderId, SessionSource>> = {
   pixup3d: pixup3dSession,
   fab365: fab365Session,
   threedexport: threedexportSession,
+  qidimaker: qidimakerSession,
+  voxelshare: voxelshareSession,
+  "voxelshare:cn": voxelshareChinaSession,
 };

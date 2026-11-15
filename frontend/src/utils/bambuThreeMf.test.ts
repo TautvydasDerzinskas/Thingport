@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { unzipSync, strFromU8 } from "fflate";
 import * as THREE from "three";
-import { parseTransform3MF, readBaseMaterials, readTriangleMaterial } from "./bambuThreeMf";
+import {
+  parseTransform3MF,
+  readBaseMaterials,
+  readTriangleMaterial,
+  resolveInternalComponents,
+  type InternalComponentRef,
+} from "./bambuThreeMf";
 import { offToThreeMf } from "../sdk/threeMf";
 
 // Both readers only ever ask a node for an attribute or for its children by tag, so plain objects stand in for
@@ -147,5 +153,116 @@ describe("the customizer's own files", () => {
     const slotOf = readTriangleMaterial(materials, pid);
     const written1 = [...xml.matchAll(/<triangle [^>]*\bp1="([^"]+)"/g)].map((m) => m[1]);
     expect(written1.map((p1) => slotOf(triangle({ p1 })))).toEqual([0, 1]);
+  });
+});
+
+describe("resolveInternalComponents", () => {
+  const mesh = (extruder: number, ownColor = false) => ({
+    vertices: [0, 0, 0, 10, 0, 0, 0, 10, 0],
+    triangles: [0, 1, 2],
+    extruder,
+    ownColor,
+  });
+  const moveX = (x: number) => new THREE.Matrix4().makeTranslation(x, 0, 0);
+
+  it("gives a wrapper the meshes of the object its component names, placed by the component", () => {
+    // Bambu Studio's layout: the mesh is object 1, and the build places object 2, which only wraps it.
+    const objects = new Map([
+      ["1", { meshes: [mesh(0)] }],
+      ["2", { meshes: [] as ReturnType<typeof mesh>[] }],
+    ]);
+    resolveInternalComponents(objects, new Map([["2", [{ refId: "1", transform: moveX(5), extruder: 0 }]]]));
+    expect(objects.get("2")?.meshes.map((placed) => placed.vertices)).toEqual([[5, 0, 0, 15, 0, 0, 5, 10, 0]]);
+    expect(objects.get("1")?.meshes[0].vertices).toEqual([0, 0, 0, 10, 0, 0, 0, 10, 0]);
+  });
+
+  it("keeps a painted mesh's colours, and gives the rest the component's filament", () => {
+    const objects = new Map([
+      ["1", { meshes: [mesh(2, true), mesh(0)] }],
+      ["2", { meshes: [] as ReturnType<typeof mesh>[] }],
+    ]);
+    resolveInternalComponents(objects, new Map([["2", [{ refId: "1", transform: null, extruder: 3 }]]]));
+    expect(objects.get("2")?.meshes.map((placed) => placed.extruder)).toEqual([2, 3]);
+  });
+
+  it("follows a wrapper of a wrapper once, and stops a file that references itself", () => {
+    const objects = new Map([
+      ["1", { meshes: [mesh(0)] }],
+      ["2", { meshes: [] as ReturnType<typeof mesh>[] }],
+      ["3", { meshes: [] as ReturnType<typeof mesh>[] }],
+      ["4", { meshes: [mesh(1)] }],
+    ]);
+    resolveInternalComponents(
+      objects,
+      new Map([
+        ["2", [{ refId: "1", transform: moveX(1), extruder: 0 }]],
+        ["3", [{ refId: "2", transform: moveX(1), extruder: 0 }]],
+        ["4", [{ refId: "4", transform: null, extruder: 1 }]],
+      ]),
+    );
+    expect(objects.get("3")?.meshes.map((placed) => placed.vertices[0])).toEqual([2]);
+    // Its own mesh, then a copy per level of the loop until the depth limit.
+    expect(objects.get("4")?.meshes).toHaveLength(9);
+  });
+
+  it("refuses a chain that copies its meshes past what the browser can hold", () => {
+    const big = {
+      vertices: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      triangles: Array.from({ length: 3_000_000 }, () => 0),
+      extruder: 0,
+    };
+    const objects = new Map([
+      ["1", { meshes: [big] }],
+      ["2", { meshes: [] as (typeof big)[] }],
+    ]);
+    const refs = Array.from({ length: 10 }, () => ({ refId: "1", transform: null, extruder: 0 }));
+    expect(() => resolveInternalComponents(objects, new Map([["2", refs]]))).toThrow(/too many times over/);
+  });
+
+  it("draws a wrapper of a wrapper of a large mesh, charging each wrapper for what it keeps", () => {
+    // 1.5M triangles, wrapped three deep: 4.5M kept in all, though resolving 4 alone copies the mesh three times.
+    const big = {
+      vertices: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      triangles: Array.from({ length: 4_500_000 }, () => 0),
+      extruder: 0,
+    };
+    const objects = new Map([
+      ["1", { meshes: [big] }],
+      ["2", { meshes: [] as (typeof big)[] }],
+      ["3", { meshes: [] as (typeof big)[] }],
+      ["4", { meshes: [] as (typeof big)[] }],
+    ]);
+    const wraps = (refId: string) => [{ refId, transform: null, extruder: 0 }];
+    resolveInternalComponents(
+      objects,
+      new Map([
+        ["2", wraps("1")],
+        ["3", wraps("2")],
+        ["4", wraps("3")],
+      ]),
+    );
+    expect(["2", "3", "4"].map((id) => objects.get(id)?.meshes.length)).toEqual([1, 1, 1]);
+  });
+
+  it("refuses wrappers that each keep a copy, when all of them together are past what the browser can hold", () => {
+    const big = {
+      vertices: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+      triangles: Array.from({ length: 3_000_000 }, () => 0),
+      extruder: 0,
+    };
+    const objects = new Map<string, { meshes: (typeof big)[] }>([["1", { meshes: [big] }]]);
+    const refs = new Map<string, InternalComponentRef[]>();
+    for (let i = 2; i <= 10; i++) {
+      objects.set(String(i), { meshes: [] });
+      refs.set(String(i), [{ refId: "1", transform: null, extruder: 0 }]);
+    }
+    expect(() => resolveInternalComponents(objects, refs)).toThrow(/too many times over/);
+  });
+
+  it("refuses objects of nothing but components naming each other, which spend no triangles however often", () => {
+    // Five components each, to the depth limit: hundreds of thousands of steps, and not one mesh.
+    const objects = new Map([["1", { meshes: [] as ReturnType<typeof mesh>[] }]]);
+    const refs = Array.from({ length: 5 }, () => ({ refId: "1", transform: null, extruder: 0 }));
+    expect(() => resolveInternalComponents(objects, new Map([["1", refs]]))).toThrow(/too many times over/);
   });
 });

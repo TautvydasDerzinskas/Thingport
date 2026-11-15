@@ -5,16 +5,22 @@ import {
   usableSecret,
   writeConnection,
   type ConnectionState,
+  type UserSlot,
 } from "../connections";
+import type { RegionId } from "../index.generated";
 import manifest from "./manifest.generated";
 
 // Per-user: the Snapmaker access token that downloads files and reads the user's likes and bookmarks. It lasts a
 // day. Snapmaker's refresh tokens work once, and using one signs out whoever held it before, so Thingport never
-// refreshes: Thingport Grab keeps the browser's login fresh and sends each new access token here.
+// refreshes: Thingport Grab keeps the browser's login fresh and sends each new access token here. The China site has
+// accounts of its own, so its sign-in is a second one, in the slot named after it.
 
 const ID = manifest.id;
 const ACCESS_COOKIE = manifest.sessionCookies.token;
 type Secret = { token: string };
+type Region = RegionId | null;
+
+const slotOf = (region: Region): UserSlot => region ?? "default";
 
 export type SnapmakerToken = { token: string; expiresAt: Date | null; userId: string | null };
 
@@ -58,38 +64,55 @@ export function normalizeSnapmakerToken(raw: string | null | undefined): Snapmak
   return { token: text, expiresAt: exp, userId };
 }
 
-/** The user's token while it's still valid; null once it has expired or Snapmaker turned it down, so nothing asks
- *  Snapmaker with it in vain. */
-export async function getUserSnapmakerToken(userId: string): Promise<string | null> {
-  return usableSecret(await readConnection<Secret>(userId, ID), true)?.token ?? null;
+/** The user's token for a site (null its main one) while it's still valid; null once it has expired or Snapmaker
+ *  turned it down, so nothing asks Snapmaker with it in vain. */
+export async function getUserSnapmakerToken(userId: string, region: Region = null): Promise<string | null> {
+  return usableSecret(await readConnection<Secret>(userId, ID, slotOf(region)), true)?.token ?? null;
 }
 
-export async function getUserSnapmakerId(userId: string): Promise<string | null> {
-  return (await readConnection(userId, ID))?.accountId ?? null;
+/** Who the user is on a site, by its own user id. */
+export async function getUserSnapmakerId(userId: string, region: Region = null): Promise<string | null> {
+  return (await readConnection(userId, ID, slotOf(region)))?.accountId ?? null;
 }
 
 /** A new token clears an earlier rejection. The Snapmaker user id is kept on disconnect, so syncs stay addressable. */
-export async function setUserSnapmakerToken(userId: string, token: SnapmakerToken | null): Promise<boolean> {
-  await writeConnection<Secret>(userId, ID, {
-    secret: token && { token: token.token },
-    expiresAt: token?.expiresAt ?? null,
-    rejectedAt: null,
-    ...(token?.userId ? { accountId: token.userId } : {}),
-  });
+export async function setUserSnapmakerToken(
+  userId: string,
+  token: SnapmakerToken | null,
+  region: Region = null,
+): Promise<boolean> {
+  await writeConnection<Secret>(
+    userId,
+    ID,
+    {
+      secret: token && { token: token.token },
+      expiresAt: token?.expiresAt ?? null,
+      rejectedAt: null,
+      ...(token?.userId ? { accountId: token.userId } : {}),
+    },
+    slotOf(region),
+  );
   return Boolean(token);
 }
 
-export async function markSnapmakerTokenRejected(userId: string): Promise<void> {
-  await rejectConnection(userId, ID);
+/** With `token`, only while it's still the one stored: Grab may have sent a new one since it was read. */
+export async function markSnapmakerTokenRejected(userId: string, token?: string, region: Region = null): Promise<void> {
+  await rejectConnection(userId, ID, slotOf(region), token ? ({ token } satisfies Secret) : undefined);
 }
 
 export type SnapmakerConnection = ConnectionState;
 
-export async function getSnapmakerConnection(userId: string): Promise<SnapmakerConnection> {
-  return connectionState(await readConnection(userId, ID), true);
+export async function getSnapmakerConnection(userId: string, region: Region = null): Promise<SnapmakerConnection> {
+  return connectionState(await readConnection(userId, ID, slotOf(region)), true);
 }
 
-/** Shown wherever a Snapmaker download needs a login the user hasn't given, or that has run out. */
-export const SNAPMAKER_CONNECT =
-  "Snapmaker only gives its files to a signed-in user: visit space.snapmaker.com with Thingport Grab (it keeps your " +
-  "sign-in fresh), or connect it in Configuration > Providers, then import it again.";
+/** Shown wherever a download from a site needs a login the user hasn't given there, or that has run out. */
+export function snapmakerConnectText(region: Region = null): string {
+  const host = new URL(region ? manifest.regions[0].site : manifest.site).hostname;
+  return (
+    `Snapmaker only gives its files to a signed-in user: visit ${host} with Thingport Grab (it keeps your ` +
+    "sign-in fresh), or connect it in Configuration > Providers, then import it again."
+  );
+}
+
+export const SNAPMAKER_CONNECT = snapmakerConnectText();

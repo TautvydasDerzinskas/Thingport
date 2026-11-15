@@ -869,6 +869,12 @@ export interface SdkBase {
    */
   ui: SdkUi;
   /**
+   * The user's achievements: badges for what they do in Thingport, while an admin has them on.
+   *
+   * @group Interface
+   */
+  achievements: SdkAchievements;
+  /**
    * A library Thingport carries, for a job a script can't fit inside itself. Fetched the first time anything asks
    * and shared with every widget and tool after that, so ask only when the script needs it: a panel drawn in HTML
    * shouldn't wait on a WebAssembly download.
@@ -885,6 +891,23 @@ export interface SdkBase {
    * @group Libraries
    */
   libraries: SdkLibraryName[];
+}
+
+/** What a widget or tool can do with the user's achievements. */
+export interface SdkAchievements {
+  /**
+   * Gives the user a secret badge this widget or tool hides: an easter egg Thingport knows by the script's slug and
+   * `key`. Thingport shows them the badge the first time; asked again, nothing happens. Resolves false when there's no
+   * such secret for this script, when an admin has achievements off, and in an unsaved draft. Never throws, so an
+   * easter egg can't break the script around it; and as Thingport versions before achievements have no
+   * `thingport.achievements`, call it as `thingport.achievements?.unlock(key)`.
+   *
+   * @param key The secret's name, as Thingport's catalogue has it for this script.
+   * @returns Whether the user has it now.
+   * @example
+   * root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
+   */
+  unlock(key: string): Promise<boolean>;
 }
 
 /** The `thingport` object a dashboard widget's default export is called with. */

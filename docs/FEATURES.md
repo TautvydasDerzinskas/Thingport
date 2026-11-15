@@ -2,12 +2,14 @@
 
 Everything Thingport does, each with its page in the docs. The [README](../README.md#features) picks out the highlights.
 
-- **[Import from 21 sites](features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365 and 3DExport
+- **[Import from 23 sites](features/importing.md)** — MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker and VoxelShare
 - **[Your own import queue, in one line that survives a restart](features/importing.md#the-import-queue)**
 - **[Import bookmarklet](guides/bookmarklet.md)**
 - **[Synced collections](guides/synced-collections.md)**
 - **[Bring your existing library](guides/existing-library.md)**
 - **[Consume folder](guides/consume-folder.md)**
+- **[Move from another Thingport instance, any release since 1.0.0](guides/migrate.md)**
+- **[Move from Manyfold](guides/migrate-manyfold.md)**
 - **[3D previews](features/3d-previews.md)**
 - **[Multicolour models in their own colours](features/3d-previews.md)**
 - **[Print quality checks](features/print-quality.md)**
@@ -15,7 +17,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[AI categorization and descriptions, on a local model or Claude](guides/ai.md)**
 - **[Organize, search and bulk-edit](features/organize-and-search.md)**
 - **[Dashboard](features/dashboard.md)**
-- **[Profile and activity](features/profile-and-activity.md)**
+- **[Profile, activity and achievements](features/profile-and-activity.md)**
 - **[Author pages](features/authors.md)**
 - **[Open in your slicer](features/slicers.md)**
 - **[Adapted 3MFs: a model opens in your slicer as if it had been made there, for your printer](features/adapted-3mf.md)**
@@ -25,6 +27,7 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Customize models that came with their OpenSCAD script](features/supporting-files.md#models-you-can-generate-again)**
 - **[Download as ZIP](features/downloads.md)**
 - **[Plain files on your disk](features/storage.md)**
+- **[See what takes the disk, and free up space](features/storage.md#disk-space)**
 - **[Repair models whose files are gone](features/storage.md#when-the-files-are-gone)**
 - **[Multi-user](features/multi-user.md)**
 - **[Social: collections shared with the people you pick or with everyone, public models, Explore, profiles and chats](features/social.md)**
@@ -37,5 +40,5 @@ Everything Thingport does, each with its page in the docs. The [README](../READM
 - **[Custom dashboard widgets](guides/custom-widgets.md)**
 - **[Tools: planners, generators, calculators and a 3MF normalizer](guides/tools.md)**
 - **[Make your own tools, or have an AI write them](guides/tools.md#have-an-ai-write-one)**
-- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian and Belarusian](features/appearance.md)**
+- **[Light and dark themes, accent colours, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese](features/appearance.md)**
 - **[Self-hosted](../README.md#installation)**

@@ -1,0 +1,14 @@
+{"version":1,
+"processes":[
+[{"name":"0.15mm Standard @M3D Enabler D7500","layerHeight":0.15},{"name":"0.20mm Standard @M3D Enabler D7500","layerHeight":0.2}],
+[{"name":"High Detail (0.12mm) @M3D Enabler D8500","layerHeight":0.12},{"name":"0.15mm Standard @M3D Enabler D8500","layerHeight":0.15},{"name":"0.20mm Standard @M3D Enabler D8500","layerHeight":0.2},{"name":"Fuzzy Skin @M3D Enabler D8500","layerHeight":0.2},{"name":"High Strength @M3D Enabler D8500","layerHeight":0.2},{"name":"Mesh Design @M3D Enabler D8500","layerHeight":0.2},{"name":"Vase Mode @M3D Enabler D8500","layerHeight":0.2},{"name":"Rapid Draft (0.28mm) @M3D Enabler D8500","layerHeight":0.32}],
+[{"name":"0.15mm MM @D8500","layerHeight":0.15},{"name":"0.20mm MM @D8500","layerHeight":0.2}]
+],
+"filaments":[
+{"types":{"PLA":"Enabler PLA @M3D"},"products":{"enabler pla":"Enabler PLA @M3D"}}
+],
+"printers":{
+"m3d-enablerd7500":{"extruders":1,"bed":{"shape":"rectangle","x":150,"y":150,"origin":[0,0]},"height":150,"slicers":{"orcaslicer":[{"model":"M3D Enabler D7500","presets":{"0.4":[{"name":"M3D Enabler D7500 0.4 nozzle","defaultProcess":"0.20mm Standard @M3D Enabler D7500","processes":0,"filaments":0}]}}]}},
+"m3d-enablerd8500":{"extruders":2,"bed":{"shape":"rectangle","x":210,"y":150,"origin":[0,0]},"height":150,"slicers":{"orcaslicer":[{"model":"M3D Enabler D8500","presets":{"0.4":[{"name":"M3D Enabler D8500 0.4 nozzle","defaultProcess":"0.20mm Standard @M3D Enabler D8500","processes":1,"filaments":0}]}}]}},
+"m3d-enablerd8500model":{"extruders":2,"bed":{"shape":"rectangle","x":210,"y":150,"origin":[0,0]},"height":null,"slicers":{"elegooslicer":[{"model":"M3D Enabler D8500 MM Model","presets":{"0.4":[{"name":"M3D Enabler D8500 MM","processes":2}]}}]}}
+}}

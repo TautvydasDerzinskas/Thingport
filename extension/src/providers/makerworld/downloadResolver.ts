@@ -2,9 +2,10 @@
 // what trip MakerWorld's account-wide CAPTCHA. Same-origin fetches carry the real session and look
 // like the page's own traffic. Returns null on any failure so the backend can resolve it instead,
 // except a CAPTCHA or the daily download limit, which are thrown: the backend would only hit the
-// same wall.
+// same wall. A CAPTCHA carries the puzzle that clears it (see puzzle.ts).
 
 import type { ResolvedDownload } from "../../shared/messages";
+import { t } from "../../shared/i18n";
 import { providerCredentialRequest } from "../../shared/providerCredentialRequest";
 import { send } from "../../shared/messages";
 import { parseMakerworldModelUrl } from "./urls.generated";
@@ -18,6 +19,8 @@ import {
   type MakerworldDesign,
 } from "./pageData";
 import { MANIFESTS } from "../index.generated";
+import type { PuzzleAnswer, PuzzleChallenge } from "./pagePuzzle";
+import { puzzleOpens, puzzleBox } from "./puzzleBox";
 
 const MAKERWORLD_API = MANIFESTS.makerworld.endpoints.api;
 
@@ -47,28 +50,31 @@ function extractDownloadUrl(data: unknown): string | null {
   return null;
 }
 
-export const MAKERWORLD_CAPTCHA_MESSAGE =
-  'MakerWorld is asking for a CAPTCHA ("confirm you are not a robot"). Open any model on MakerWorld, ' +
-  'click the arrow next to "Open in Bambu Studio", choose "Download 3MF" and solve the puzzle, then ' +
-  "retry the import.";
+/** A request MakerWorld refused with its puzzle. Sent again with the puzzle's answer, it gets the file. */
+export type Refusal = { url: string; nonce: string | null; challenge: PuzzleChallenge };
+/** The profile a download is for, and the design to import it with. */
+export type DownloadTarget = Omit<ResolvedDownload, "downloadUrl">;
+/** The puzzle that clears a CAPTCHA: the one a refused request names (`refused`), or the one MakerWorld's own page
+ *  opened after Grab clicked its download (`onPage`), resolving to the file the page downloads once it's solved, or
+ *  null once it's closed. */
+export type MakerworldPuzzle =
+  { refused: Refusal; target: DownloadTarget } | { onPage: Promise<string | null>; target: DownloadTarget };
 
 /** MakerWorld's anti-bot layer answers with HTTP 418 (sometimes 200) and a body naming a captcha.
- *  Thrown rather than returned as null so it isn't reported as "no file found". */
+ *  Thrown rather than returned as null so it isn't reported as "no file found". `puzzle` is null where the answer
+ *  named none to show. */
 export class MakerworldCaptchaError extends Error {
-  constructor() {
-    super(MAKERWORLD_CAPTCHA_MESSAGE);
+  constructor(readonly puzzle: MakerworldPuzzle | null = null) {
+    super(t("makerworldCaptchaMessage"));
     this.name = "MakerworldCaptchaError";
   }
 }
-
-export const MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE =
-  "MakerWorld daily download limit reached for this account. Try again tomorrow.";
 
 /** The per-account daily cap: HTTP 400 with {"code":-1,"error":"You've reached your daily download
  *  limit."}. Every later download fails the same way until it resets. */
 export class MakerworldDownloadLimitError extends Error {
   constructor() {
-    super(MAKERWORLD_DOWNLOAD_LIMIT_MESSAGE);
+    super(t("makerworldDownloadLimit"));
     this.name = "MakerworldDownloadLimitError";
   }
 }
@@ -91,17 +97,40 @@ function looksLikeCaptcha(data: unknown): boolean {
   return text.includes("captcha") || text.includes("robot");
 }
 
-async function fetchMakerworldApiJson(url: string, nonce: string | null): Promise<unknown> {
+function hosts(value: unknown): string[] | undefined {
+  return Array.isArray(value) ? value.filter((host): host is string => typeof host === "string") : undefined;
+}
+
+/** The puzzle a refusal names, where MakerWorld's own client finds it: `captchaId` at the top of the body. */
+function challengeOf(data: unknown): PuzzleChallenge | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const { captchaId, apiServers, staticServers } = data as Record<string, unknown>;
+  if (typeof captchaId !== "string" || !captchaId) return null;
+  return { captchaId, apiServers: hosts(apiServers), staticServers: hosts(staticServers) };
+}
+
+/** `answer` is a solved puzzle's, for the request it refused. */
+async function fetchMakerworldApiJson(
+  url: string,
+  nonce: string | null,
+  target: DownloadTarget,
+  answer: PuzzleAnswer = null,
+): Promise<unknown> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), MAKERWORLD_API_FETCH_TIMEOUT_MS);
+  const refused = (data: unknown) => {
+    const challenge = challengeOf(data);
+    return new MakerworldCaptchaError(challenge ? { refused: { url, nonce, challenge }, target } : null);
+  };
   try {
     const headers: Record<string, string> = { Accept: "application/json", ...MAKERWORLD_CLIENT_HEADERS };
     if (nonce) headers["X-Nonce"] = nonce;
+    if (answer) headers[answer.header] = answer.value;
     const res = await providerCredentialRequest("makerworld-extension", url, { headers, signal: controller.signal });
-    if (res.status === 418) throw new MakerworldCaptchaError();
+    if (res.status === 418) throw refused(await res.json().catch(() => null));
     const data: unknown = await res.json();
     if (extractDownloadUrl(data)) return data;
-    if (looksLikeCaptcha(data)) throw new MakerworldCaptchaError();
+    if (looksLikeCaptcha(data)) throw refused(data);
     if (looksLikeDownloadLimit(data)) throw new MakerworldDownloadLimitError();
     return res.ok ? data : null;
   } catch (err) {
@@ -112,11 +141,26 @@ async function fetchMakerworldApiJson(url: string, nonce: string | null): Promis
   }
 }
 
+/** The request MakerWorld refused, sent again with its puzzle's answer: the file, or null where it hands none over.
+ *  Throws another refusal where the answer didn't do. */
+export async function answerRefusal(
+  refused: Refusal,
+  target: DownloadTarget,
+  answer: NonNullable<PuzzleAnswer>,
+): Promise<ResolvedDownload | null> {
+  const downloadUrl = extractDownloadUrl(await fetchMakerworldApiJson(refused.url, refused.nonce, target, answer));
+  return downloadUrl ? { ...target, downloadUrl } : null;
+}
+
 const MENU_WAIT_MS = 2000;
 // Matches background/downloadCapture.ts: MakerWorld fetches the file URL before it clicks.
 const CAPTURE_TIMEOUT_MS = 8000;
 // The raw-files dialog loads its file list before showing "Download all".
 const DIALOG_WAIT_MS = 4000;
+// As long as anyone takes over MakerWorld's own puzzle, and then how long its download may take to start once it's
+// solved and gone.
+const PUZZLE_ON_PAGE_MS = 10 * 60 * 1000;
+const AFTER_PUZZLE_MS = 8000;
 
 /** Polls until `find` returns something or `ms` passes; menus and dialogs render asynchronously. */
 async function waitFor<T>(find: () => T | null, ms: number): Promise<T | null> {
@@ -157,14 +201,22 @@ async function armCapture(): Promise<boolean> {
 const FILE_LINK = /\.(3mf|zip|stl|step|stp|obj)$/i;
 
 /** MakerWorld starts a download by clicking a temporary link to the file. Taking that click first
- *  reads the URL with no browser download at all (no download bubble, no "Save as" dialog). */
-function interceptFileLink(timeoutMs: number): { url: Promise<string | null>; stop: () => void } {
+ *  reads the URL with no browser download at all (no download bubble, no "Save as" dialog). One `wanted` no longer
+ *  says is for what was asked (the page went on to another model or profile) is left to download as the user's own. */
+function interceptFileLink(
+  timeoutMs: number,
+  wanted: () => boolean = () => true,
+): { url: Promise<string | null>; stop: () => void } {
   let resolveUrl!: (found: string | null) => void;
   const url = new Promise<string | null>((resolve) => (resolveUrl = resolve));
   const onClick = (event: MouseEvent) => {
     const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
     if (!link || !/^https?:/i.test(link.href)) return;
     if (!link.hasAttribute("download") && !FILE_LINK.test(new URL(link.href).pathname)) return;
+    if (!wanted()) {
+      finish(null);
+      return;
+    }
     event.preventDefault();
     event.stopImmediatePropagation();
     finish(link.href);
@@ -177,6 +229,21 @@ function interceptFileLink(timeoutMs: number): { url: Promise<string | null>; st
   }
   window.addEventListener("click", onClick, true);
   return { url, stop: () => finish(null) };
+}
+
+/** MakerWorld's own puzzle, opened by its download button, until it's gone: the file its download links to once it's
+ *  solved, or null once it's closed, or once `wanted` says the page has gone on to another model or profile. */
+export function puzzleOnPage(wanted: () => boolean = () => true): Promise<string | null> {
+  const link = interceptFileLink(PUZZLE_ON_PAGE_MS, wanted);
+  let goneSince = 0;
+  const watch = setInterval(() => {
+    if (puzzleBox()) goneSince = 0;
+    // Closed, and the page has gone on: nothing of this one's to wait for.
+    else if (!wanted()) link.stop();
+    else if (!goneSince) goneSince = Date.now();
+    else if (Date.now() - goneSince > AFTER_PUZZLE_MS) link.stop();
+  }, 250);
+  return link.url.finally(() => clearInterval(watch));
 }
 
 /** The first URL either source finds, or null once both give up. */
@@ -199,16 +266,19 @@ function closeFilesDialog(): void {
   );
 }
 
+type ClickCapture = { url: string; isProfile: boolean } | { onPage: Promise<string | null>; isProfile: boolean };
+
 /** Clicks through MakerWorld's own download UI the way a person would: "Download 3MF" (the
  *  selected profile) from the menu under "Open in Bambu Studio", else the model's raw files (a
  *  zip, via the dialog's "Download all"), else any other download item. The browser download that
  *  starts is captured and cancelled (see background/downloadCapture.ts). Null means try the API
- *  fallback -- also what a CAPTCHA looks like here, since MakerWorld shows it instead of
- *  downloading. */
+ *  fallback. Where MakerWorld shows its puzzle instead of downloading, `onPage` waits on it for a caller that
+ *  `puzzles` says will take it; for any other the page downloads as it would by hand once it's solved. */
 async function captureViaRealClick(
   profileOnly: boolean,
   stillWanted?: () => boolean,
-): Promise<{ url: string; isProfile: boolean } | null> {
+  puzzles = false,
+): Promise<ClickCapture | null> {
   const arrow = findMenuArrow();
   arrow?.click();
   const fileItem = () => findByLabel(DOWNLOAD_3MF) ?? (profileOnly ? null : findByLabel(DOWNLOAD_STL));
@@ -243,10 +313,15 @@ async function captureViaRealClick(
     }
   }
   const captured = send("AWAIT_DOWNLOAD_CAPTURE").then((res) => (res && res.ok ? res.data : null));
-  const url = await firstUrl([link.url, captured]);
+  let settled = false;
+  const caught = firstUrl([link.url, captured]).finally(() => (settled = true));
+  const puzzle = await Promise.race([caught.then(() => false), puzzleOpens(CAPTURE_TIMEOUT_MS, () => settled)]);
+  const url = puzzle ? null : await caught;
   link.stop();
   // Otherwise the still-armed capture would swallow the user's next real download.
   void send("DISARM_DOWNLOAD_CAPTURE");
+  // Taken over straight away, so the page's download after the puzzle is caught rather than saved.
+  if (puzzle) return puzzles ? { onPage: puzzleOnPage(stillWanted), isProfile } : null;
   if (!isProfile) closeFilesDialog();
   return url ? { url, isProfile } : null;
 }
@@ -264,7 +339,8 @@ function instanceDevModelName(design: MakerworldDesign, instanceId: string): str
 async function fetchInstanceDownloadUrl(design: MakerworldDesign, instanceId: string): Promise<string | null> {
   const devModelName = encodeURIComponent(instanceDevModelName(design, instanceId));
   const apiUrl = `${MAKERWORLD_API}/design-service/instance/${instanceId}/f3mf?type=download&fileType=&devModelName=${devModelName}`;
-  return extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, null));
+  const target = { instanceId, design: makerworldDesignForImport(design) };
+  return extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, null, target));
 }
 
 /** Same two steps as the backend: instance-scoped endpoint, then model-scoped. `picked` is the profile the page showed,
@@ -281,10 +357,9 @@ async function resolveFromPageApi(pageUrl: string, picked: string | null = null)
   }
   // Model-level, i.e. the default profile's file.
   const apiUrl = `${MAKERWORLD_API}/models/${String(design.id)}/download`;
-  const downloadUrl = extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, nonce));
-  return downloadUrl
-    ? { downloadUrl, instanceId: pickMakerworldInstanceId(design, null), design: makerworldDesignForImport(design) }
-    : null;
+  const target = { instanceId: pickMakerworldInstanceId(design, null), design: makerworldDesignForImport(design) };
+  const downloadUrl = extractDownloadUrl(await fetchMakerworldApiJson(apiUrl, nonce, target));
+  return downloadUrl ? { ...target, downloadUrl } : null;
 }
 
 /** The page open now shows `pageUrl`'s model. One the user went on to has profiles of its own, perhaps named alike. */
@@ -293,11 +368,12 @@ function onModelOf(pageUrl: string): boolean {
   return Boolean(wanted && parseMakerworldModelUrl(location.href)?.designId === wanted);
 }
 
-/** `pageUrl` is captured by the caller before any await. */
-/** `profileOnly` skips the raw-files zip, for callers that need the 3MF itself. */
+/** `pageUrl` is captured by the caller before any await. `profileOnly` skips the raw-files zip, for callers that need
+ *  the 3MF itself. `puzzles`: the caller clears a CAPTCHA with MakerWorld's puzzle (see puzzle.ts), so one the page
+ *  opens itself comes with the refusal. */
 export async function resolveMakerworldDownloadUrl(
   pageUrl: string,
-  { profileOnly = false } = {},
+  { profileOnly = false, puzzles = false } = {},
 ): Promise<ResolvedDownload | null> {
   // "Download 3MF" gives the page's selected profile, which follows the URL hash, so it's read before the click and
   // held to; the raw-files zip belongs to no profile. Only on the model's own page: another has its own.
@@ -305,7 +381,7 @@ export async function resolveMakerworldDownloadUrl(
   const onModel = () => onModelOf(pageUrl);
   const picked = page && onModel() ? pageSelectedInstanceId(page.design) : null;
   const stillWanted = () => onModel() && (!page || !picked || pageSelectedInstanceId(page.design) === picked);
-  const viaClick = onModel() ? await captureViaRealClick(profileOnly, stillWanted).catch(() => null) : null;
+  const viaClick = onModel() ? await captureViaRealClick(profileOnly, stillWanted, puzzles).catch(() => null) : null;
   if (viaClick) {
     const requested = parseMakerworldModelUrl(pageUrl)?.requestedInstanceId ?? null;
     const instanceId = !viaClick.isProfile
@@ -313,9 +389,9 @@ export async function resolveMakerworldDownloadUrl(
       : page
         ? (picked ?? pickMakerworldInstanceId(page.design, page.requestedInstanceId))
         : requested;
-    return page
-      ? { downloadUrl: viaClick.url, instanceId, design: makerworldDesignForImport(page.design) }
-      : { downloadUrl: viaClick.url, instanceId };
+    const target = page ? { instanceId, design: makerworldDesignForImport(page.design) } : { instanceId };
+    if ("onPage" in viaClick) throw new MakerworldCaptchaError({ onPage: viaClick.onPage, target });
+    return { ...target, downloadUrl: viaClick.url };
   }
   return resolveFromPageApi(pageUrl, picked).catch((err) => {
     if (isMakerworldBlockingError(err)) throw err;
@@ -380,6 +456,7 @@ async function selectProfileOnPage(design: MakerworldDesign, instanceId: string)
 export async function resolveMakerworldProfileDownload(
   pageUrl: string,
   instanceId: string,
+  { puzzles = false } = {},
 ): Promise<ResolvedDownload | null> {
   const page = await loadMakerworldDesignForPage(pageUrl);
   if (!page) return null;
@@ -389,16 +466,37 @@ export async function resolveMakerworldProfileDownload(
   const viaClick = onModel()
     ? await holdingNavigation(async () =>
         (await selectProfileOnPage(page.design, instanceId))
-          ? captureViaRealClick(true, () => onModel() && pageSelectedInstanceId(page.design) === instanceId).catch(
-              () => null,
-            )
+          ? captureViaRealClick(
+              true,
+              () => onModel() && pageSelectedInstanceId(page.design) === instanceId,
+              puzzles,
+            ).catch(() => null)
           : null,
       )
     : null;
+  if (viaClick && "onPage" in viaClick) {
+    throw new MakerworldCaptchaError({ onPage: viaClick.onPage, target: { instanceId, design } });
+  }
   if (viaClick) return { downloadUrl: viaClick.url, instanceId, design };
   const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId).catch((err) => {
     if (isMakerworldBlockingError(err)) throw err;
     return null;
   });
   return downloadUrl ? { downloadUrl, instanceId, design } : null;
+}
+
+/** The file for the profile a paused run waits on, asked of MakerWorld the way "Download 3MF" asks, without clicking:
+ *  while the block lasts it's refused, naming the puzzle that clears it. `instanceId` null for the page's own. */
+export async function resolveMakerworldViaApi(
+  pageUrl: string,
+  instanceId: string | null,
+): Promise<ResolvedDownload | null> {
+  if (!instanceId) {
+    const page = readMakerworldDesignForPage(pageUrl);
+    return resolveFromPageApi(pageUrl, page && onModelOf(pageUrl) ? pageSelectedInstanceId(page.design) : null);
+  }
+  const page = await loadMakerworldDesignForPage(pageUrl);
+  if (!page) return null;
+  const downloadUrl = await fetchInstanceDownloadUrl(page.design, instanceId);
+  return downloadUrl ? { downloadUrl, instanceId, design: makerworldDesignForImport(page.design) } : null;
 }

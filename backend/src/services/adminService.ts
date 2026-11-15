@@ -1,16 +1,7 @@
 import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  BUNDLES,
-  DESCRIPTION_IMAGES,
-  MODEL_PREVIEWS,
-  ADAPTED_3MFS,
-  PREVIEWS,
-  STORAGE,
-  TAG_MOSAICS,
-  THUMBS,
-} from "../config";
+import { STORAGE } from "../config";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { MANIFESTS } from "../providers/index.generated";
@@ -22,6 +13,8 @@ import { assetOwnerIds, removeAssetHome, removePlatePictures } from "./printServ
 import { loadFullPrint } from "./printLoader";
 import { pruneWhatModelsLeft } from "./printEditService";
 import { removeUserTagMosaics } from "./tagMosaicService";
+import { takeInventory, type StorageInventory, type StorageKindBytes } from "./storageInventory";
+import type { PhotoKeep } from "./settingsService";
 
 export type UserWithPrintCount = {
   id: string;
@@ -160,6 +153,10 @@ export type StorageUsage = {
   pictureBytes: number;
   /** Slicer-ready 3MF copies and download bundles. */
   otherGeneratedBytes: number;
+  /** What's beside the model files, by kind; `other` is the rest of the disk (Studio, icons, avatars, ...). */
+  breakdown: StorageKindBytes & { other: number };
+  /** What each clean-up would free, about; photos for each number kept. */
+  freeable: { old: number; compress: number; slicer: number; photos: Record<PhotoKeep, number> };
 };
 
 /** Bytes under `dir`, following no links; a missing folder counts as empty. */
@@ -183,7 +180,7 @@ async function folderBytes(dir: string): Promise<number> {
   return total;
 }
 
-type DiskUsage = Pick<StorageUsage, "totalBytes" | "pictureBytes" | "otherGeneratedBytes">;
+type DiskUsage = { totalBytes: number; inventory: StorageInventory };
 
 // Walking a large library takes a while, and the overview asks each time it opens: measured at most every few
 // minutes, and one walk shared by requests that overlap it.
@@ -192,24 +189,21 @@ let diskUsage: { at: number; value: Promise<DiskUsage> } | null = null;
 
 function measureDisk(): Promise<DiskUsage> {
   if (diskUsage && Date.now() - diskUsage.at < DISK_USAGE_TTL_MS) return diskUsage.value;
-  const sum = async (dirs: string[]) => (await Promise.all(dirs.map(folderBytes))).reduce((a, b) => a + b, 0);
-  // Each model's pictures folder, beside its files, and the shared folders older ones may still be in.
-  const pictureFolders = prisma.print
-    .findMany({ where: { assetsPath: { not: null } }, select: { assetsPath: true } })
-    .then((prints) => prints.map((print) => path.join(STORAGE, print.assetsPath!)));
-  const value = Promise.all([
-    folderBytes(STORAGE),
-    pictureFolders.then((folders) =>
-      sum([...folders, THUMBS, PREVIEWS, DESCRIPTION_IMAGES, MODEL_PREVIEWS, TAG_MOSAICS]),
-    ),
-    sum([ADAPTED_3MFS, BUNDLES]),
-  ]).then(([totalBytes, pictureBytes, otherGeneratedBytes]) => ({ totalBytes, pictureBytes, otherGeneratedBytes }));
+  const value = Promise.all([folderBytes(STORAGE), takeInventory()]).then(([totalBytes, inventory]) => ({
+    totalBytes,
+    inventory,
+  }));
   diskUsage = { at: Date.now(), value };
   // A failed walk isn't kept, so the next request tries again.
   value.catch(() => {
     if (diskUsage?.value === value) diskUsage = null;
   });
   return value;
+}
+
+/** Measured afresh next time, as after a clean-up. */
+export function forgetStorageUsage(): void {
+  diskUsage = null;
 }
 
 /**
@@ -231,9 +225,21 @@ export async function getStorageUsage(): Promise<StorageUsage> {
     measureDisk(),
   ]);
   const sharedBytes = Number(shared[0]?.bytes ?? 0);
+  const modelBytes = (owned._sum.size ?? 0) + sharedBytes + (files._sum.size ?? 0);
+  const { bytes, compressSaving, photosBeyond } = disk.inventory;
+  const pictureBytes =
+    bytes.previews + bytes.old + bytes.photos + bytes.thumbnails + bytes.description + bytes.tagPictures;
+  const otherGeneratedBytes = bytes.slicer + bytes.bundles;
   return {
-    modelBytes: (owned._sum.size ?? 0) + sharedBytes + (files._sum.size ?? 0),
+    modelBytes,
     modelCount,
-    ...disk,
+    totalBytes: disk.totalBytes,
+    pictureBytes,
+    otherGeneratedBytes,
+    breakdown: {
+      ...bytes,
+      other: Math.max(0, disk.totalBytes - modelBytes - pictureBytes - otherGeneratedBytes),
+    },
+    freeable: { old: bytes.old, compress: compressSaving, slicer: bytes.slicer, photos: photosBeyond },
   };
 }

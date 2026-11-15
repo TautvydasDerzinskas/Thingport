@@ -28,9 +28,16 @@ import {
   fetchSnapmakerList,
   parseSnapmakerListUrl,
   snapmakerListName,
+  snapmakerSiteIdOf,
 } from "./api";
-import { getUserSnapmakerToken, markSnapmakerTokenRejected, SNAPMAKER_CONNECT } from "./session";
+import {
+  getSnapmakerConnection,
+  getUserSnapmakerToken,
+  markSnapmakerTokenRejected,
+  snapmakerConnectText,
+} from "./session";
 import { detailsOf } from "../details";
+import { regionalId } from "../index.generated";
 
 const SESSION_CODE = MANIFESTS.snapmaker.errorCodes.session;
 const BLOCKED =
@@ -42,14 +49,15 @@ function downloadFile(file: SnapmakerFile, kit: ImportKit): Promise<NewPlateInpu
   return kit.downloadSignedFile(file, isSnapmakerFileHost, BLOCKED);
 }
 
-/** Downloads one print profile's 3MF, tagged with the profile; null when the profile isn't among the downloads. */
+/** Downloads one print profile's 3MF, tagged with the profile; null when the profile isn't among the downloads.
+ *  `externalId` is the id Thingport keeps, and `token` its site's. */
 async function downloadProfile(
-  modelId: string,
+  externalId: string,
   profileId: string,
   token: string,
   kit: ImportKit,
 ): Promise<NewPlateInput | null> {
-  const downloads = await fetchSnapmakerDownloads(modelId, token);
+  const downloads = await fetchSnapmakerDownloads(externalId, token);
   if (!downloads) throw new HttpError(404, MISSING);
   const file = downloads.profiles.find((profile) => profile.profileId === profileId);
   if (!file) return null;
@@ -64,17 +72,18 @@ async function downloadProfile(
 
 /** Like MakerWorld: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
  *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
- *  its model files instead. Files only download as the user, so everything needs their Snapmaker sign-in. */
+ *  its model files instead. Files only download as the user, so everything needs their sign-in on the model's site. */
 export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = {
-  async requireAuth(userId) {
-    const token = await getUserSnapmakerToken(userId);
-    if (!token) throw new HttpError(400, SNAPMAKER_CONNECT, SESSION_CODE);
+  async requireAuth(userId, externalId) {
+    const { region } = snapmakerSiteIdOf(externalId);
+    const token = await getUserSnapmakerToken(userId, region);
+    if (!token) throw new HttpError(400, snapmakerConnectText(region), SESSION_CODE);
     return token;
   },
-  resolveModel: (modelId) => resolveSnapmakerModel(modelId),
-  async mapError(userId, err) {
+  resolveModel: (externalId) => resolveSnapmakerModel(externalId),
+  async mapError(userId, err, token) {
     if (err instanceof SnapmakerAuthError) {
-      await markSnapmakerTokenRejected(userId);
+      await markSnapmakerTokenRejected(userId, token, err.region);
       // 400, not 401: see tryMakerworldCloudApi.
       return new HttpError(400, err.message, SESSION_CODE);
     }
@@ -82,16 +91,16 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
   },
   missingMessage: MISSING,
   noFilesMessage: "This Snapmaker model has no files Thingport can import.",
-  async downloadModel({ externalId: modelId }, resolved, token, requested, kit) {
+  async downloadModel({ externalId }, resolved, token, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
       const [profileId] = selectSnapmakerProfiles(resolved, "url", requested);
       if (profileId) {
-        const profile = await downloadProfile(modelId, profileId, token, kit);
+        const profile = await downloadProfile(externalId, profileId, token, kit);
         if (profile) downloaded.push(profile);
       }
       if (!downloaded.length) {
-        const downloads = await fetchSnapmakerDownloads(modelId, token);
+        const downloads = await fetchSnapmakerDownloads(externalId, token);
         if (!downloads) throw new HttpError(404, MISSING);
         for (const file of downloads.modelFiles) downloaded.push(...((await downloadFile(file, kit)) ?? []));
       }
@@ -110,58 +119,68 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
     async listUrls(url, scope) {
       const parsed = parseSnapmakerModelUrl(url);
       if (!parsed) throw new HttpError(400, "Not a Snapmaker model link");
-      const resolved = await resolveSnapmakerModel(parsed.modelId);
+      const externalId = regionalId(parsed.region, parsed.modelId);
+      const resolved = await resolveSnapmakerModel(externalId);
       if (!resolved) throw new HttpError(404, MISSING);
       const profileIds = selectSnapmakerProfiles(resolved, scope, parsed.requestedProfileId);
       if (!profileIds.length) throw new HttpError(400, "This model has no print profiles to import");
       return {
         title: resolved.meta.title ?? null,
-        urls: profileIds.map((profileId) => snapmakerModelUrl(parsed.modelId, profileId)),
+        urls: profileIds.map((profileId) => snapmakerModelUrl(externalId, profileId)),
       };
     },
   },
 };
 
-export const snapmakerTrending: ProviderTrending = { fetch: (_userId, limit) => fetchSnapmakerFeatured(limit) };
+/** Its homepage's featured models: the China site's for someone signed in there and not on the main site, who's likely
+ *  in China and sees that one there, else the main site's. */
+export const snapmakerTrending: ProviderTrending = {
+  async region(userId) {
+    const [main, china] = await Promise.all([getSnapmakerConnection(userId), getSnapmakerConnection(userId, "cn")]);
+    return main === "disconnected" && china !== "disconnected" ? "cn" : null;
+  },
+  fetch: (_userId, limit, region) => fetchSnapmakerFeatured(limit, region),
+};
 
-/** The user's likes or bookmarks, from a link Thingport Grab or the app made (`?tab=interactions&list=...`). */
+/** The user's likes or bookmarks on a site, from a link Thingport Grab or the app made (`?tab=interactions&list=...`). */
 function listOf(url: string) {
   const parsed = parseSnapmakerListUrl(url);
   if (!parsed?.list) throw new HttpError(400, "Not a link to your Snapmaker Space likes or bookmarks");
-  return parsed.list;
+  return { list: parsed.list, region: parsed.region };
 }
 
 /** The user's own likes and bookmarks, read as them: Snapmaker shows them to their owner only. */
 export const snapmakerLists: ProviderLists = {
   async read(userId, url) {
-    const list = listOf(url);
-    const token = await getUserSnapmakerToken(userId);
-    if (!token) throw new HttpError(400, SNAPMAKER_CONNECT, SESSION_CODE);
+    const { list, region } = listOf(url);
+    const token = await getUserSnapmakerToken(userId, region);
+    if (!token) throw new HttpError(400, snapmakerConnectText(region), SESSION_CODE);
     let listing: Awaited<ReturnType<typeof fetchSnapmakerList>>;
     try {
-      listing = await fetchSnapmakerList(list, token);
+      listing = await fetchSnapmakerList(list, token, undefined, region);
     } catch (err) {
       if (err instanceof SnapmakerAuthError) {
-        await markSnapmakerTokenRejected(userId);
+        await markSnapmakerTokenRejected(userId, token, region);
         // 400, not 401: the frontend treats any 401 as an expired Thingport session.
         throw new HttpError(400, err.message, SESSION_CODE);
       }
       throw err;
     }
-    if (!listing.entries.length) throw new HttpError(400, `Your ${snapmakerListName(list)} are empty`);
+    if (!listing.entries.length) throw new HttpError(400, `Your ${snapmakerListName(list, region)} are empty`);
     return {
-      title: snapmakerListName(list),
+      title: snapmakerListName(list, region),
       total: listing.total,
       truncated: listing.truncated,
       entries: listing.entries.map((e) => ({ externalId: e.modelId, title: e.title, cover: e.cover })),
     };
   },
   async start(userId, url) {
-    const name = snapmakerListName(listOf(url));
+    const { list, region } = listOf(url);
+    const name = snapmakerListName(list, region);
     return {
       batch: {
         async ready() {
-          if (!(await getUserSnapmakerToken(userId))) throw new HttpError(503, SNAPMAKER_CONNECT);
+          if (!(await getUserSnapmakerToken(userId, region))) throw new HttpError(503, snapmakerConnectText(region));
         },
         title: async () => name,
         label: () => `your ${name}`,
@@ -172,6 +191,6 @@ export const snapmakerLists: ProviderLists = {
 
 /** Its models' details read without a sign-in, which only their files need. */
 export const snapmakerDetails: ProviderDetails = {
-  read: async (_userId, modelId) => detailsOf(await resolveSnapmakerModel(modelId)),
+  read: async (_userId, externalId) => detailsOf(await resolveSnapmakerModel(externalId)),
   missingMessage: MISSING,
 };

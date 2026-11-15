@@ -52,7 +52,10 @@ and Grab or a fresh paste connects it again.
 
 ## Limits
 
-- A MakerWorld CAPTCHA or daily download limit pauses imports and syncs until it clears.
+- A MakerWorld CAPTCHA or daily download limit pauses imports and syncs until it clears. An import started from Grab
+  on a MakerWorld page, one model or a collection, opens MakerWorld's own puzzle there instead, and carries on once
+  it's solved. An import started in Thingport that the CAPTCHA stops waits for a paired Grab too: the import queue
+  offers **Solve on MakerWorld**, and Grab finishes it on makerworld.com once you solve the puzzle there.
 - A model whose script is shared costs one extra download to import, since the script doesn't come with the print
   profile: MakerWorld only hands out a model's raw files as a separate request.
 - With a solver URL configured, FlareSolverr covers declared MakerWorld page/API routes and can send your session cookie to

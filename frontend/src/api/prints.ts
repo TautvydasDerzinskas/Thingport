@@ -1,4 +1,5 @@
 import type { ThreeMfFormat } from "../adapter/format.generated";
+import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
@@ -493,6 +494,8 @@ export const printsApi = {
       /** What the notification calls it: a model the customizer generated, or one a tool built. Left out for
        *  files the user picked, which is what "uploaded" describes. */
       origin?: "generated" | "created";
+      /** The tool that built it (origin "created"), by slug: kept on the model as what made it. */
+      createdWithTool?: string;
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -506,6 +509,7 @@ export const printsApi = {
     if (opts.mode && files.length > 1) fd.set("mode", opts.mode);
     if (opts.notify === false) fd.set("notify", "false");
     if (opts.origin) fd.set("origin", opts.origin);
+    if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,
@@ -518,6 +522,8 @@ export const printsApi = {
       const message = await readErrorMessage(res, "Upload failed");
       throw new Error(message);
     }
+    // A model a tool made counts towards its achievement.
+    if (opts.createdWithTool) requestAchievementCheck();
     return res.json();
   },
 
@@ -928,6 +934,8 @@ export const printsApi = {
       body: JSON.stringify({ kind }),
     });
     assertOk(res, "Failed to record download");
+    // A download counts towards an achievement; opening it in a slicer doesn't.
+    if (kind === "download") requestAchievementCheck();
     return res.json();
   },
 

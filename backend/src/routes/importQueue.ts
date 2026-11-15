@@ -5,6 +5,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { toQueueOut } from "../dto";
+import { grabFallbackWaiting } from "../providers/registry";
 import {
   clearFinishedJobs,
   deleteQueueJob,
@@ -28,7 +29,8 @@ router.use(requireAuth);
 router.get(
   "/import/queue",
   asyncHandler(async (req, res) => {
-    res.json(toQueueOut(await readOwnQueue(req.userId!)));
+    const [queue, grabWaiting] = await Promise.all([readOwnQueue(req.userId!), grabFallbackWaiting(req.userId!)]);
+    res.json(toQueueOut(queue, grabWaiting));
   }),
 );
 

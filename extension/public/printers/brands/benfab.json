@@ -1,0 +1,13 @@
+{"version":1,
+"processes":[
+[{"name":"0.30mm Fine @BenFab 450 1.0 nozzle","layerHeight":0.3},{"name":"0.40mm Optimal @BenFab 450 1.0 nozzle","layerHeight":0.4},{"name":"0.50mm Standard @BenFab 450 1.0 nozzle","layerHeight":0.5},{"name":"0.60mm Draft @BenFab 450 1.0 nozzle","layerHeight":0.6}],
+[{"name":"0.12mm Fine @BenFab 450 0.4 nozzle","layerHeight":0.12},{"name":"0.16mm Optimal @BenFab 450 0.4 nozzle","layerHeight":0.16},{"name":"0.20mm Standard @BenFab 450 0.4 nozzle","layerHeight":0.2},{"name":"0.20mm Strength @BenFab 450 0.4 nozzle","layerHeight":0.2},{"name":"0.24mm Draft @BenFab 450 0.4 nozzle","layerHeight":0.24},{"name":"0.28mm Extra Draft @BenFab 450 0.4 nozzle","layerHeight":0.28}],
+[{"name":"0.24mm Optimal @BenFab 450 0.6 nozzle","layerHeight":0.24},{"name":"0.30mm Standard @BenFab 450 0.6 nozzle","layerHeight":0.3},{"name":"0.36mm Draft @BenFab 450 0.6 nozzle","layerHeight":0.36},{"name":"0.42mm Extra Draft @BenFab 450 0.6 nozzle","layerHeight":0.42}],
+[{"name":"0.24mm Fine @BenFab 450 0.8 nozzle","layerHeight":0.24},{"name":"0.32mm Optimal @BenFab 450 0.8 nozzle","layerHeight":0.32},{"name":"0.40mm Standard @BenFab 450 0.8 nozzle","layerHeight":0.4},{"name":"0.48mm Draft @BenFab 450 0.8 nozzle","layerHeight":0.48}]
+],
+"filaments":[
+
+],
+"printers":{
+"benfab-450":{"extruders":1,"bed":{"shape":"rectangle","x":426,"y":426,"origin":[0,0]},"height":480,"slicers":{"orcaslicer":[{"model":"BenFab 450","presets":{"1":[{"name":"BenFab 450 1.0 nozzle","defaultProcess":"0.50mm Standard @BenFab 450 1.0 nozzle","processes":0}],"0.4":[{"name":"BenFab 450 0.4 nozzle","defaultProcess":"0.20mm Standard @BenFab 450 0.4 nozzle","processes":1}],"0.6":[{"name":"BenFab 450 0.6 nozzle","defaultProcess":"0.30mm Standard @BenFab 450 0.6 nozzle","processes":2}],"0.8":[{"name":"BenFab 450 0.8 nozzle","defaultProcess":"0.40mm Standard @BenFab 450 0.8 nozzle","processes":3}]}}]}}
+}}

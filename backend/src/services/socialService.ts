@@ -2,10 +2,11 @@ import { Prisma, type Collection, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { toCollectionOut, type CollectionOut, type PrintOut, type UserCardOut } from "../dto";
 import { printOutById, printOutsByIds } from "./printLoader";
-import { getPublicUrl, getSocialSettings } from "./settingsService";
+import { getAchievementSettings, getPublicUrl, getSocialSettings } from "./settingsService";
 import { isFederationLive } from "../federation/settings";
 import { profileOut, type PublicProfileOut } from "./publicProfileService";
 import { avatarUrlOf } from "./avatarService";
+import { achievementsOf, type AchievementOut } from "./achievementService";
 import {
   listPrints,
   ownDesignsWhere,
@@ -156,11 +157,16 @@ export type SocialStatusOut = {
   federation: boolean;
   /** What follows the @ in this instance's handles, while federation is on. */
   instance_host: string | null;
+  /** Achievements are on: badges on My models. Their own switch, apart from social features. */
+  achievements: boolean;
 };
 
 export async function socialStatus(): Promise<SocialStatusOut> {
-  const { enabled, chats } = await getSocialSettings();
-  if (!enabled) return { enabled, explore: false, chats: false, federation: false, instance_host: null };
+  const [{ enabled, chats }, { enabled: achievements }] = await Promise.all([
+    getSocialSettings(),
+    getAchievementSettings(),
+  ]);
+  if (!enabled) return { enabled, explore: false, chats: false, federation: false, instance_host: null, achievements };
   const others = (await prisma.user.count({ take: 2 })) > 1;
   const federation = await isFederationLive();
   const publicUrl = federation ? await getPublicUrl() : "";
@@ -172,6 +178,7 @@ export async function socialStatus(): Promise<SocialStatusOut> {
     chats: chats && (others || federation),
     federation,
     instance_host: publicUrl ? new URL(publicUrl).host : null,
+    achievements,
   };
 }
 
@@ -566,7 +573,10 @@ export const PERSON_COLLECTIONS_PAGE = 24;
 const personCollectionsOrder: Prisma.CollectionOrderByWithRelationInput[] = [{ createdAt: "desc" }, { id: "asc" }];
 
 export type ExploreUserOut = {
-  user: ExplorePersonOut & { joined_at: string } & PublicProfileOut;
+  user: ExplorePersonOut & { joined_at: string } & PublicProfileOut & {
+      /** Their badges, as on their My models; null while achievements are off. */
+      achievements: AchievementOut[] | null;
+    };
   /** The first page of them; the rest from GET /explore/user/:id/collections. */
   collections: CollectionOut[];
   collections_total: number;
@@ -590,17 +600,20 @@ export async function exploreUser(viewerId: string, userId: string): Promise<Exp
     },
   });
   if (!user) return null;
-  const [[person], collections] = await Promise.all([
+  const [[person], collections, achievements] = await Promise.all([
     people([user.id]),
     prisma.collection.findMany({
       where: { userId, ...PUBLIC },
       orderBy: personCollectionsOrder,
       take: PERSON_COLLECTIONS_PAGE,
     }),
+    getAchievementSettings().then(async ({ enabled }) =>
+      enabled ? ((await achievementsOf([userId])).get(userId) ?? []) : null,
+    ),
   ]);
   if (!person || (!collections.length && !person.model_count && userId !== viewerId)) return null;
   return {
-    user: { ...person, joined_at: user.createdAt.toISOString(), ...profileOut(user) },
+    user: { ...person, joined_at: user.createdAt.toISOString(), ...profileOut(user), achievements },
     collections: await collectionOutsFor(viewerId, collections),
     collections_total: person.collection_count,
   };

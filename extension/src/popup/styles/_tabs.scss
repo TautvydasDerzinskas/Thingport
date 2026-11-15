@@ -14,7 +14,8 @@
     padding: t.$space-2 t.$space-1;
     border: 0;
     background: transparent;
-    font: 600 t.$font-size-sm t.$font-stack;
+    // A fixed line height, as the sites' rows have (_layout.scss).
+    font: 600 #{t.$font-size-sm}/ 1.2 t.$font-stack;
     color: t.c("text-muted");
     cursor: pointer;
     transition: color 0.15s ease;

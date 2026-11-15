@@ -1,8 +1,13 @@
 name: CodeRabbit retry
+# Marks a dry run, so a waiting run doesn't stop for one.
+run-name: ${{ inputs.dry-run && 'CodeRabbit retry (dry run)' || github.event.pull_request.title || 'CodeRabbit retry' }}
 
-# CodeRabbit refuses a review once its allowance is used up and never comes back to it, so this asks again
-# (`@coderabbitai review`) when the wait it gave has passed. It starts whenever a CodeRabbit check finishes and waits
-# out the time in the run; the hourly run catches anything missed. See .github/scripts/coderabbit-retry.mjs.
+# Asks CodeRabbit for the reviews a pull request is owed: a push it didn't review, a review its rate limit refused
+# once the wait is over, and a full review where a plain one had nothing to say. The rules are in
+# .github/scripts/coderabbit-retry.mjs. GitHub hardly ever fires this repository's schedules, so a run starts whenever
+# a CodeRabbit check finishes or a pull request into develop is pushed to, and waits in the run for what's due next,
+# for up to two hours; one still waiting then starts the next run. A waiting run stops, with success, once a newer one
+# has started, rather than being cancelled: a cancelled run shows as a failed check on its commit.
 #
 # CodeRabbit ignores commands from github-actions[bot], so the asks are posted by an ordinary GitHub account kept for
 # it: the CODERABBIT_ASK_TOKEN secret holds that account's classic token with only the `public_repo` scope. The account
@@ -11,8 +16,13 @@ name: CodeRabbit retry
 on:
   check_run:
     types: [completed]
+  # The base's side, so pull requests from forks count too; their code is never checked out.
+  pull_request_target:
+    branches: [develop]
+    types: [opened, synchronize, reopened, ready_for_review]
   schedule:
-    - cron: "23 * * * *"
+    # Off the hour, when GitHub delays and drops the most scheduled runs.
+    - cron: "17,47 * * * *"
   workflow_dispatch:
     inputs:
       dry-run:
@@ -21,32 +31,39 @@ on:
         default: false
 
 permissions:
+  # To start the next run.
+  actions: write
   contents: read
   checks: read
   issues: read
   pull-requests: read
 
-# The newest run has the newest view of CodeRabbit's notices, so it replaces one still waiting.
-concurrency:
-  group: coderabbit-retry
-  cancel-in-progress: true
-
 jobs:
   retry:
     if: github.event_name != 'check_run' || github.event.check_run.app.slug == 'coderabbitai'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 160
     steps:
-      - uses: actions/checkout@v4
+      # This run's check shows on the pull request, so it doesn't wait there: it starts a run on develop to do that.
+      - name: Hand over to a run on develop
+        if: github.event_name == 'pull_request_target'
+        run: gh workflow run coderabbit-retry.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      - if: github.event_name != 'pull_request_target'
+        uses: actions/checkout@v4
         with:
           sparse-checkout: .github/scripts
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - if: github.event_name != 'pull_request_target'
+        uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - run: node .github/scripts/coderabbit-retry.mjs
+      - if: github.event_name != 'pull_request_target'
+        run: node .github/scripts/coderabbit-retry.mjs
         env:
           GH_TOKEN: ${{ github.token }}
           ASK_TOKEN: ${{ secrets.CODERABBIT_ASK_TOKEN }}
           DRY_RUN: ${{ inputs.dry-run }}
-          MAX_MINUTES: 75
+          RUN_MINUTES: 120

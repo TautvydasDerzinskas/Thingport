@@ -12,12 +12,17 @@ import { recordRecentImport } from "../../background/recentImports";
 import type { SessionSource } from "../../background/sessionSync";
 import { MANIFESTS } from "../index.generated";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
+import { MAKERONLINE_PICK } from "./pick";
+import { type DownloadRequest, type SignAnswer, signInPage } from "./signInPage";
+import { backgroundText } from "../../background/localize";
 
 const SITE = MANIFESTS.makeronline.site;
 const ACCESS_COOKIE = MANIFESTS.makeronline.sessionCookies.token;
 const TASK_POLL_INTERVAL_MS = 1000;
 // A burst of downloads looks automated to MakerOnline too.
 const SIGN_GAP_MS = 1500;
+// How long the user has to solve the puzzle MakerOnline shows before it hands over a file.
+const PUZZLE_MS = 3 * 60_000;
 
 function tokenUserId(token: string): string | null {
   try {
@@ -36,71 +41,6 @@ export const makeronlineSession: SessionSource = {
     return token ? { value: token, body: { token }, userId: tokenUserId(token) } : undefined;
   },
 };
-
-type DownloadRequest = { payload: Record<string, unknown>; name: string; profile_id: string | null };
-type SignAnswer = { code: number | null; message: string | null; data: unknown };
-
-/** Runs in the page itself (world: "MAIN"), where MakerOnline's script is, so it must stand on its own. Asks the
- *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
- *  from its anti-bot script. */
-async function signInPage(
-  requests: DownloadRequest[],
-  gapMs: number,
-  cookieName: string,
-  allowedHosts: readonly string[],
-): Promise<SignAnswer[]> {
-  type Neg = { getToken: () => Promise<{ token?: string } | null> };
-  const nuxt = (window as unknown as { $nuxt?: { $ensureNeg?: () => Promise<Neg> } }).$nuxt;
-  let neg: Neg | null = null;
-  try {
-    neg = nuxt?.$ensureNeg ? await nuxt.$ensureNeg() : null;
-  } catch {
-    neg = null;
-  }
-  const cookie = document.cookie
-    .split(";")
-    .map((pair) => pair.trim())
-    .find((pair) => pair.startsWith(`${cookieName}=`))
-    ?.slice(cookieName.length + 1);
-  const auth = cookie ? decodeURIComponent(cookie) : "";
-  const answers: SignAnswer[] = [];
-  for (const [index, request] of requests.entries()) {
-    if (index > 0) await new Promise((resolve) => setTimeout(resolve, gapMs));
-    let risk: string | undefined;
-    try {
-      risk = (await neg?.getToken())?.token;
-    } catch {
-      risk = undefined;
-    }
-    try {
-      if (location.protocol !== "https:" || location.port || !allowedHosts.includes(location.hostname)) {
-        throw new Error("Not on MakerOnline");
-      }
-      const res = await fetch(new URL("/api/file/download", location.origin).href, {
-        method: "POST",
-        redirect: "error",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: auth,
-          lang: "en",
-          ...(risk ? { "Risk-Token": risk } : {}),
-        },
-        body: JSON.stringify(request.payload),
-      });
-      const body = (await res.json().catch(() => null)) as { code?: unknown; message?: unknown; data?: unknown } | null;
-      answers.push({
-        code: typeof body?.code === "number" ? body.code : null,
-        message: typeof body?.message === "string" ? body.message : null,
-        data: body?.data ?? null,
-      });
-    } catch (err) {
-      answers.push({ code: null, message: err instanceof Error ? err.message : "Request failed", data: null });
-    }
-  }
-  return answers;
-}
 
 // MakerOnline's own answer codes for the download call.
 const CODE_OK = 0;
@@ -124,11 +64,17 @@ function signedUrl(data: unknown): string | null {
  *  own. */
 class RunStoppedError extends Error {}
 
-/** The files a link needs, signed in `tabId`, a makeronline.com tab. Throws with a reason the user can act on. */
+/** Signing cannot succeed for this or any later waiting item until the page state changes. */
+class SigningBlockedError extends Error {}
+
+/** The files a link needs, signed in `tabId`, a makeronline.com tab. Throws with a reason the user can act on.
+ *  `puzzles` where the user just asked for them on that page: then a puzzle MakerOnline wants solved first is shown
+ *  there, as its own Download shows it, rather than turning the import down. */
 export async function resolveMakeronlineFiles(
   tabId: number,
   url: string,
   scope: "url" | "designer" | "all",
+  { puzzles = false } = {},
 ): Promise<MakeronlineSignedFile[]> {
   let plan: { requests: DownloadRequest[] };
   try {
@@ -139,45 +85,124 @@ export async function resolveMakeronlineFiles(
   } catch (err) {
     // fetch rejects with a TypeError when the instance can't be reached; an answer it gave is about the model.
     if (err instanceof TypeError)
-      throw new RunStoppedError(`Couldn't reach Thingport (${err.message})`, { cause: err });
+      throw new RunStoppedError(await backgroundText("makeronlineCouldNotReachThingport", { detail: err.message }), {
+        cause: err,
+      });
     throw err;
   }
-  return signRequests(tabId, plan.requests);
+  return signRequests(tabId, plan.requests, puzzles);
 }
 
-async function signRequests(tabId: number, requests: DownloadRequest[]): Promise<MakeronlineSignedFile[]> {
+async function signRequests(
+  tabId: number,
+  requests: DownloadRequest[],
+  puzzles: boolean,
+): Promise<MakeronlineSignedFile[]> {
   let answers: SignAnswer[];
+  const messages = {
+    notOnSite: await backgroundText("makeronlineNotOnSite"),
+    requestFailed: await backgroundText("requestFailedGeneric"),
+  };
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
       world: "MAIN",
       func: signInPage,
-      args: [requests, SIGN_GAP_MS, ACCESS_COOKIE, CREDENTIAL_HOSTS["makeronline-site"].exact],
+      args: [
+        requests,
+        SIGN_GAP_MS,
+        ACCESS_COOKIE,
+        CREDENTIAL_HOSTS["makeronline-site"].exact,
+        puzzles ? PUZZLE_MS : 0,
+        messages,
+      ],
     });
     answers = (result?.result as SignAnswer[] | undefined) ?? [];
   } catch (err) {
     throw new RunStoppedError(
-      `Couldn't ask MakerOnline for the files on this page (${err instanceof Error ? err.message : String(err)}). ` +
-        "Reload it and try again; Firefox needs version 128 or newer for this.",
+      await backgroundText("makeronlineCouldNotAskFiles", {
+        detail: err instanceof Error ? err.message : String(err),
+      }),
       { cause: err },
     );
   }
   const files: MakeronlineSignedFile[] = [];
   for (const [index, answer] of answers.entries()) {
     const request = requests[index];
-    if (answer.code === CODE_CAPTCHA) {
-      throw new Error(
-        "MakerOnline wants a captcha before it hands over files. Download one file from a model page by hand, " +
-          "solve the puzzle, then try again.",
-      );
+    if (answer.code === CODE_CAPTCHA && answer.unsolved) {
+      throw new SigningBlockedError(await backgroundText("makeronlinePuzzleUnsolved"));
     }
-    if (answer.code === CODE_SIGNED_OUT) throw new Error("Sign in to MakerOnline in this browser, then try again.");
+    if (answer.code === CODE_CAPTCHA) {
+      throw new SigningBlockedError(await backgroundText("makeronlineCaptcha"));
+    }
+    if (answer.code === CODE_SIGNED_OUT) throw new SigningBlockedError(await backgroundText("makeronlineSignIn"));
     const link = answer.code === CODE_OK ? signedUrl(answer.data) : null;
     if (!link)
-      throw new Error(`MakerOnline didn't hand over "${request.name}"${answer.message ? `: ${answer.message}` : ""}`);
+      throw new Error(
+        await backgroundText("makeronlineNoFile", {
+          name: request.name,
+          detail: answer.message ? `: ${answer.message}` : "",
+        }),
+      );
     files.push({ url: link, name: request.name, profile_id: request.profile_id });
   }
   return files;
+}
+
+/** For Download adapted: one 3MF's link, signed in the page as its own Download does, its puzzle shown there too, as
+ *  the user just clicked on that page. */
+export async function signMakeronlineFile(
+  tabId: number,
+  { key, fileType, id, name }: BackgroundMessages["SIGN_MAKERONLINE_FILE"]["payload"],
+): Promise<string> {
+  if (typeof key !== "string" || !key || (fileType !== 1 && fileType !== 2) || !Number.isSafeInteger(id)) {
+    throw new Error(await backgroundText("grabBackground.notModelFileOnSite", { site: "MakerOnline" }));
+  }
+  const payload = {
+    key,
+    file_type: fileType,
+    is_batch_down: 0,
+    ...(fileType === 2 ? { print_profile_id: id } : { mold_id: id }),
+  };
+  const [file] = await signRequests(
+    tabId,
+    [{ payload, name: String(name), profile_id: fileType === 2 ? String(id) : null }],
+    true,
+  );
+  return file.url;
+}
+
+/** Runs in the page itself (world: "MAIN"), so it must stand on its own. Keeps the print profile and model file the
+ *  page has picked on <html>, from its store, as they change: once per page, however often it's asked. False while
+ *  the store isn't there yet. */
+function watchPickInPage(attribute: string): boolean {
+  type Store = {
+    watch: (read: (state: unknown) => unknown, then: (value: unknown) => void, options: { immediate: boolean }) => void;
+  };
+  const page = window as unknown as { $nuxt?: { $store?: Store }; thingportPickWatched?: boolean };
+  const store = page.$nuxt?.$store;
+  if (typeof store?.watch !== "function") return false;
+  if (page.thingportPickWatched) return true;
+  page.thingportPickWatched = true;
+  store.watch(
+    (state) => {
+      const model = (state as { model?: { print_profile_id?: unknown; model_profile_id?: unknown } } | null)?.model;
+      return `${String(model?.print_profile_id ?? "")}|${String(model?.model_profile_id ?? "")}`;
+    },
+    (value) => document.documentElement.setAttribute(attribute, String(value)),
+    { immediate: true },
+  );
+  return true;
+}
+
+export async function watchMakeronlinePick(tabId: number): Promise<boolean> {
+  const [result] = await chrome.scripting.executeScript({
+    target: { tabId },
+    world: "MAIN",
+    func: watchPickInPage,
+    args: [MAKERONLINE_PICK],
+  });
+  return result?.result === true;
 }
 
 type WaitingImport = { id: string; url: string; scope: string; collection_id: string | null };
@@ -231,12 +256,11 @@ async function runWaiting(tabId: number): Promise<number> {
     } catch (err) {
       // Not the model's fault: it waits for the next run as it is.
       if (err instanceof RunStoppedError) break;
-      const error = err instanceof Error ? err.message : "Couldn't get the files signed";
+      const error = err instanceof Error ? err.message : await backgroundText("makeronlineCouldNotSignFiles");
       await apiCall("POST", `/import/${MANIFESTS.makeronline.id}/waiting/${item.id}/failed`, { error }).catch(
         () => undefined,
       );
-      // A captcha or a lost sign-in fails every later one too.
-      if (/captcha|sign in/i.test(error)) break;
+      if (err instanceof SigningBlockedError) break;
       continue;
     }
     try {
@@ -270,11 +294,13 @@ export async function importMakeronlineModel(
   tabId: number,
   payload: { url: string; scope: "url" | "designer" | "all"; collectionId: string | null; title: string | null },
 ): Promise<Print | null> {
-  const files = await resolveMakeronlineFiles(tabId, payload.url, payload.scope);
+  const files = await resolveMakeronlineFiles(tabId, payload.url, payload.scope, { puzzles: true });
   return importSingle({ url: payload.url, collectionId: payload.collectionId, title: payload.title, files });
 }
 
 export const makeronlineHandlers: Partial<Handlers<BackgroundMessages>> = {
   IMPORT_MAKERONLINE_MODEL: (payload, sender) => importMakeronlineModel(senderTabId(sender), payload),
   RUN_MAKERONLINE_WAITING: (_payload, sender) => runWaitingImports(senderTabId(sender)),
+  SIGN_MAKERONLINE_FILE: (payload, sender) => signMakeronlineFile(senderTabId(sender), payload),
+  WATCH_MAKERONLINE_PICK: (_payload, sender) => watchMakeronlinePick(senderTabId(sender)),
 };

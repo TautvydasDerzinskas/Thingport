@@ -76,7 +76,14 @@ export async function saveStudioDesignToLibrary(
   const stlPath = path.join(os.tmpdir(), `thingport-studio-${crypto.randomBytes(8).toString("hex")}.stl`);
   await fs.writeFile(stlPath, made.stl);
   try {
-    const print = await createUploadedModel(userId, { title: name, notes: await promptsOf(design.id), tags: [] }, [
+    const meta = {
+      title: name,
+      notes: await promptsOf(design.id),
+      tags: [],
+      // What made it, for the model and for achievements: this design, which may change or go after.
+      createdWith: { kind: "studio" as const, ref: design.id },
+    };
+    const print = await createUploadedModel(userId, meta, [
       { path: stlPath, originalname: `${name}.stl`, mimetype: "model/stl" },
     ]);
     if (picture) await addUploadedPreviewImages(print.id, [picture]);

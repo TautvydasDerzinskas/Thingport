@@ -3,9 +3,9 @@
 Thingport keeps a real copy of every model you import: its files, photos, title, description, tags, author and a link
 back to where it came from. If the original page disappears, the model is still in your library.
 
-It imports from 21 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
+It imports from 23 sites: MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality
 Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP,
-Fab365 and 3DExport.
+Fab365, 3DExport, QIDI Maker and VoxelShare.
 
 ## Ways to import
 
@@ -13,17 +13,17 @@ Fab365 and 3DExport.
   Paste several links, one per line, and they join the [import queue](#the-import-queue) as one import. You can also
   paste a link straight into the search bar.
 - **Use Thingport Grab.** The [browser extension](../../extension/README.md) adds a Thingport button to model pages on
-  all 21 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
+  all 23 sites (MakerWorld, Printables and Thingiverse straight away, the others once you allow them, with a single
   click in its popup), so you can import without leaving the page, file the model into a collection or a new one, and
   import whole collections. **Pair with Thingport** in its popup connects it: you approve the browser in Thingport, and
   no password is saved in the extension. This is the recommended way to import.
 - **Or use the bookmarklet.** Without the extension, drag the [bookmarklet](../guides/bookmarklet.md) to your
   bookmarks bar: clicking it on a model's page opens Thingport with the link already in the import dialog.
 - **Import a collection or your likes.** Paste the link of a collection or another list, and pick which models to
-  bring in. Besides collections, your private ones on PIXUP and 3DExport included, that's anyone's likes on
+  bring in. Besides collections, your private ones on PIXUP, 3DExport, QIDI Maker and VoxelShare included, that's anyone's likes on
   Thingiverse, Cults3D, Pinshape and GrabCAD, anyone's PIXUP wishlist, your own likes on Creality Cloud, Thangs,
-  eufyMake, Toymakr3D and CGTrader, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default Collection and
-  the projects you saved on Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's
+  eufyMake, Toymakr3D, CGTrader, QIDI Maker and VoxelShare, your CGTrader wishlist, your Fab365 favourites, your 3DExport Default
+  Collection and the projects you saved on Makerables. MakerWorld collections, and your Snapmaker Space likes and bookmarks from your profile's
   Interactions tab, are imported with Thingport Grab. [Providers](../PROVIDER_SETUP.md#at-a-glance) shows which lists
   each site has.
 - **MakerOnline, and OwlCAD's CAD projects, go through Thingport Grab.** MakerOnline hands out its files only to its
@@ -41,16 +41,16 @@ Fab365 and 3DExport.
   <img src="../../frontend/src/assets/screenshots/light/50_model_print_profiles.png" alt="A model's print profiles as picture tiles, the picked one with its print time, filament, plates, printer and settings" width="100%">
 </picture>
 
-- Its model files, and on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint, its print profiles:
-  the one the link points to, all of the designer's, or the community's too. Each profile becomes its own file on the
-  model. Ones left out, or that failed, can be added later: while the model in your library lacks any of the page's
-  profiles, Thingport Grab shows its icon there and adds just those. Profiles the model has aren't downloaded again,
-  though a file from before Thingport kept track of profiles may be, once, to recognise which profile it is.
-  The model page shows them as profiles, above **Open**: each one's name, whether the designer or the community made
-  it (the designer's come first), its print time, filament by colour, plates, printer and settings, from the site and
-  from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A model imported
-  before Thingport kept these reads them the first time you open it. How they're shown, or whether to show them as
-  plain files instead, is in [Appearance](appearance.md).
+- Its model files, or on MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare its
+  print profiles instead, where it has any: the one the link points to, all of the designer's, or the community's too. Each
+  profile becomes its own file on the model. Ones left out, or that failed, can be added later: while the model in your
+  library lacks any of the page's profiles, Thingport Grab shows its icon there and adds just those. Profiles the model
+  has aren't downloaded again, though a file from before Thingport kept track of profiles may be, once, to recognise
+  which profile it is. The model page shows them as profiles, above **Open**: each one's name, whether the designer or
+  the community made it (the designer's come first), its print time, filament by colour, plates, printer and settings,
+  from the site and from the profile's own 3MF. The [3D preview](3d-previews.md) shows the picked profile's plates. A
+  model imported before Thingport kept these reads them the first time you open it. How they're shown, or whether to
+  show them as plain files instead, is in [Appearance](appearance.md).
 - The folders its files are in, where the designer sorted them into some: the folders on Printables and GrabCAD,
   PIXUP's file groups, MyMiniFactory's archives, Makerables' uploaded zips (each a folder named after it), the folders
   inside any zip a site hands over (Cults3D's, for one), or a model copied from a
@@ -71,7 +71,7 @@ again.
 
 ## Link a model you already have
 
-A model you uploaded yourself can be linked to its page on any of the 21 sites, without importing it again. Choose
+A model you uploaded yourself can be linked to its page on any of the 23 sites, without importing it again. Choose
 **Link to a provider** in the model page's **⋮** menu, or on the Models page with the Folders view on, in a card's **⋮**
 menu or, with exactly one model selected, the selection toolbar. Paste the model's link, check the preview, and link it.
 
@@ -103,7 +103,10 @@ the top of the queue starts another without leaving it.
 
 - **Importing** is what's running. **Pause** stops a list of links after the link it's on. Anything else that's running
   goes on to its end.
-- **Needs attention** is what failed or was cut off, with the reason.
+- **Needs attention** is what failed or was cut off, with the reason. A MakerWorld import its CAPTCHA stopped reads
+  **Waiting for puzzle** instead, if you have [Thingport Grab](../../extension/README.md) paired: a banner over the
+  queue sends you to MakerWorld with **Solve on MakerWorld**, where Grab offers to open MakerWorld's puzzle and then
+  finishes the imports. **Retry** still works once the CAPTCHA clears.
 - **Waiting** is what's **In line**, which starts by itself, and what's **On hold**, which doesn't until you start it.
   **Hold** takes an import out of the line.
 - **Finished** keeps what's done until you clear it.
@@ -173,8 +176,8 @@ on it, restart the server.
 
 ## Before you start
 
-MakerWorld needs your session cookie and Thingiverse an App Token set by an admin, while Printables, eufyMake, OwlCAD
-and Makerables work with no setup. The other sites each need a key or your own sign-in, which Thingport Grab mostly
+MakerWorld needs your session cookie and Thingiverse an App Token set by an admin, while Printables, eufyMake, OwlCAD,
+Makerables, QIDI Maker and VoxelShare work with no setup. The other sites each need a key or your own sign-in, which Thingport Grab mostly
 hands over for you. MakerOnline's files come only through Grab, and CGTrader's downloads also need Grab or
 [FlareSolverr](../PROVIDER_SETUP.md#flaresolverr) to get past its bot check. [Providers](../PROVIDER_SETUP.md) compares
 what each one needs, with a setup page per site. Admins can also

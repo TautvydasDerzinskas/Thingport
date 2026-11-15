@@ -215,13 +215,16 @@ describe("what a sync reads", () => {
 
   it("reads the user's Snapmaker likes or bookmarks with their sign-in", async () => {
     const likes = { userId, provider: "snapmaker", externalId: "likes-12345", sourceUrl: URLS.snapmakerLikes };
-    await expect(fetchListing(likes)).rejects.toBeInstanceOf(SnapmakerAuthError);
+    await expect(fetchListing(likes)).rejects.toThrow("Snapmaker Space isn't connected");
     await connect.snapmaker(userId);
     fns.fetchSnapmakerList.mockResolvedValue(entries(["7"]));
     expect(await fetchListing(likes)).toEqual(["7"]);
-    expect(fns.fetchSnapmakerList).toHaveBeenLastCalledWith("likes", "sm-token");
+    expect(fns.fetchSnapmakerList).toHaveBeenLastCalledWith("likes", "sm-token", undefined, null);
     await fetchListing({ ...likes, externalId: "bookmarks-12345", sourceUrl: URLS.snapmakerBookmarks });
-    expect(fns.fetchSnapmakerList).toHaveBeenLastCalledWith("bookmarks", "sm-token");
+    expect(fns.fetchSnapmakerList).toHaveBeenLastCalledWith("bookmarks", "sm-token", undefined, null);
+    // The China site's are read with its own sign-in, which this user hasn't given.
+    const china = { ...likes, externalId: "cn-likes-9858", sourceUrl: URLS.snapmakerLikes.replace(".com", ".cn") };
+    await expect(fetchListing(china)).rejects.toThrow("Snapmaker Space China isn't connected");
   });
 
   it("reads a MakerOnline collection without a sign-in, its likes only with one", async () => {
@@ -498,7 +501,7 @@ describe("the Browse tab", () => {
     for (const provider of Object.keys(connectFirst) as (keyof typeof connectFirst)[]) {
       expect((await listProviderCollections(userId, provider)).length).toBe(1);
     }
-    expect(fns.listSnapmakerCollections).toHaveBeenCalledWith("sm-token", "12345");
+    expect(fns.listSnapmakerCollections).toHaveBeenCalledWith("sm-token", "12345", null);
     expect(fns.listMakeronlineCollections).toHaveBeenCalledWith("mo-token", "mo-user");
     expect(fns.listCrealitycloudCollections).toHaveBeenCalledWith({ token: "cc-token", userId: "12345" });
     expect(fns.listNexprintCollections).toHaveBeenCalledWith("np-token");
@@ -625,6 +628,8 @@ describe("a sync's model links", () => {
       pixup3d: "427",
       fab365: "428",
       threedexport: "667112",
+      qidimaker: "2077275848848752642",
+      voxelshare: "8242660",
     };
     const readBack = Object.fromEntries(
       PROVIDER_IDS.map((provider) => [provider, modelIdFromUrl(provider, modelUrlFor(provider, ids[provider]))]),

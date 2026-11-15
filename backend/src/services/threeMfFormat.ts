@@ -7,7 +7,7 @@ import type { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import { Prisma, type Plate } from "@prisma/client";
 import { prisma } from "../db";
-import { classify3mf, storedFormat, type PlainModelScan, type ThreeMfFormat } from "../adapter";
+import { classify3mf, plainModelScanner, storedFormat, type PlainModelScan, type ThreeMfFormat } from "../adapter";
 import { listZipEntries, readZipEntry, readZipEntryHead, walkZipEntries } from "../utils/zipReader";
 
 const SMALL_FILE_LIMIT = 16 * 1024 * 1024;
@@ -16,16 +16,11 @@ const MODEL_HEAD_BYTES = 64 * 1024;
 
 // A plain 3MF's colours can be anywhere in its models, after meshes; past this much it's left uncounted.
 const PLAIN_SCAN_BYTES = 512 * 1024 * 1024;
-const COLOUR_RE = /<(?:[\w-]+:)?(?:color\b[^>]*?\bcolor|base\b[^>]*?\bdisplaycolor)\s*=\s*"#?([0-9a-f]{6})/gi;
-const TRIANGLE_RE = /<(?:[\w-]+:)?triangle\b[^>]*>/gi;
-const PAINT_RE = /\b(?:slic3rpe:mmu_segmentation|paint_color)\s*=\s*"[0-9a-f]/i;
 
-/** A plain 3MF's models read through once, the root's and those its objects come from: how many colours they define,
- *  and whether every triangle is painted. Null for one too big to read through. */
+/** A plain 3MF's models read through once, the root's and those its objects come from, by the adapter's scanner
+ *  (src/adapter/plainScan.ts). Null for one too big to read through. */
 async function scanPlainModel(filePath: string): Promise<PlainModelScan | null> {
-  const colours = new Set<string>();
-  let triangles = 0;
-  let painted = 0;
+  const scanner = plainModelScanner();
   let read = 0;
   let tooBig = false;
   await walkZipEntries(
@@ -33,8 +28,6 @@ async function scanPlainModel(filePath: string): Promise<PlainModelScan | null> 
     (entry) => /\.model$/i.test(entry.name),
     async (_entry, stream) => {
       const decoder = new StringDecoder("utf8");
-      // The text after a chunk's last whole tag, read with the next.
-      let carry = "";
       for await (const chunk of stream as AsyncIterable<Buffer>) {
         read += chunk.length;
         if (read > PLAIN_SCAN_BYTES) {
@@ -42,19 +35,12 @@ async function scanPlainModel(filePath: string): Promise<PlainModelScan | null> 
           (stream as Readable).destroy();
           return;
         }
-        const text = carry + decoder.write(chunk);
-        const end = text.lastIndexOf(">") + 1;
-        const whole = text.slice(0, end);
-        carry = text.slice(end);
-        for (const m of whole.matchAll(COLOUR_RE)) colours.add(m[1].toUpperCase());
-        for (const m of whole.matchAll(TRIANGLE_RE)) {
-          triangles++;
-          if (PAINT_RE.test(m[0])) painted++;
-        }
+        scanner.add(decoder.write(chunk));
       }
+      scanner.endFile();
     },
   );
-  return tooBig ? null : { colours: colours.size, painted: triangles > 0 && painted === triangles };
+  return tooBig ? null : scanner.result();
 }
 
 export function isThreeMfFile(filename: string): boolean {

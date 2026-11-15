@@ -18,6 +18,8 @@ export type SlicerProfile = {
   quietUpTo?: Readonly<Record<string, string>>;
   /** The newest `OrcaSlicer` tag it opens without a dialog; unset, it never minds one. */
   orcaTagQuietUpTo?: string;
+  /** Takes a file's `OrcaSlicer` tag as its version where it has one, so `quietUpTo` only counts for a file without. */
+  orcaTagFirst?: boolean;
   /** Whose names it gives settings (Bambu layout only). */
   dialect?: SettingsDialect;
   /** Asks which printer to use for another maker's project and rebases the project on it, so such a project is
@@ -26,4 +28,7 @@ export type SlicerProfile = {
   /** Loads a project's printer, process and filament presets by name, so a copy can name its presets for the
    *  user's printer (printer.ts). */
   targetsPrinter?: boolean;
+  /** The Application its own files carry, for a slicer that moves another app's project onto the printer selected in
+   *  it: a copy for the user's printer carries it, so it opens on the presets it names. */
+  ownTag?: string;
 };

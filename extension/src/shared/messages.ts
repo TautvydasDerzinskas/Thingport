@@ -1,13 +1,19 @@
 // Typed runtime messages between the content script/popup and the background. Replies use a
 // `{ ok, data } | { ok: false, error }` envelope: `send` returns it, `request` throws on error.
 
+import type { PrinterChoice } from "../adapter/plan.generated";
+import type { PrinterRecipe } from "../adapter/printer.generated";
+import type { AdaptPlacement, AdaptSettings } from "./adaptSettings";
+import type { AdaptTarget } from "./adaptTargets";
 import type { Print, QueueImportResult } from "./api";
 import type { BubbleLook } from "./bubble";
 import type { SeasonalIcon } from "./seasonalMark";
 import type { OfflineFeature } from "./storage";
+import type { Locale } from "./i18n";
 import type { Provider } from "./urls";
-import type { MANIFESTS, ProviderId } from "../providers/index.generated";
+import type { MANIFESTS, ProviderId, RegionId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
+import type { PuzzleChallenge } from "../providers/makerworld/pagePuzzle";
 
 export type ExtensionState = {
   configured: boolean;
@@ -20,10 +26,63 @@ export type ExtensionState = {
   email: string;
   /** Connected by approving Grab in Thingport, not with a saved password. */
   connectedByApproval: boolean;
+  /** An approval tab is already open; reopening the popup must not start a second one. */
+  pairing: boolean;
+  /** Kept across Chrome's host-permission prompt, which dismisses an action popup. */
+  pairingInstanceUrl: string;
   /** Work without a Thingport instance. */
   offlineFeatures: Record<OfflineFeature, boolean>;
   /** How the floating bubble on model pages looks and where it sits. */
   bubble: BubbleLook;
+  /** The configured catalog, or the browser language resolved to a supported catalog. */
+  locale: Locale;
+  /** The language picked in the popup; null while it follows the browser. */
+  localeChoice: Locale | null;
+  /** Where Download adapted's copies go: beside the site's own button, or in the bubble. */
+  adaptPlacement: AdaptPlacement;
+};
+
+/** One of the user's printers in their Thingport instance (Configuration → Printer there), as it describes it. */
+export type ThingportPrinter = {
+  id: string;
+  brandName: string;
+  model: string;
+  nozzle: string;
+  bed: { shape: "rectangle" | "circle" | "polygon"; x: number; y: number } | null;
+  height: number | null;
+  extruders: number;
+};
+
+/** The slicers and printers the user's Thingport instance has for them, which take the place of Grab's own once
+ *  connected. */
+export type ThingportAdapt = {
+  slicers: string[];
+  /** Null on an instance from before printers, which leaves Grab's own in use. */
+  printers: ThingportPrinter[] | null;
+  /** The printer each slicer's copies are made for; a slicer not listed asks which. */
+  slicerPrinters: Record<string, string>;
+  /** The slicers whose files the user wants as they are. */
+  unadapted: string[];
+  /** Set where the instance couldn't be asked now: this is what it said last, and this is why. */
+  remembered?: string;
+};
+
+/** What Adapt 3MFs goes by: Grab's own settings, and the instance's once connected (`thingport` is null while not
+ *  connected; `error` says why an instance that couldn't be asked wasn't, where it has never answered). `instanceUrl`
+ *  is empty while not connected. */
+export type AdaptView = {
+  own: AdaptSettings;
+  thingport: ThingportAdapt | { error: string } | null;
+  instanceUrl: string;
+};
+
+/** What a model page offers: the copies Download adapted makes (shared/adaptTargets.ts), where its button goes, and
+ *  the copy last made, which the button makes again. */
+export type AdaptOffer = {
+  targets: AdaptTarget[];
+  placement: AdaptPlacement;
+  lastKey: string | null;
+  connected: boolean;
 };
 
 /** Whether the saved instance URL, email and password still sign in. */
@@ -120,8 +179,12 @@ export type MakerworldJob = {
   stepDelayMs: number;
   /** When the current model's step may start; its page counts down to it. */
   startAt: number;
-  /** MakerWorld wants a CAPTCHA: the run waits on this model until the user resumes it. */
+  /** MakerWorld wants its puzzle solved: the run waits on this model, its page showing the puzzle, until it's solved or
+   *  the user resumes it. */
   paused: boolean;
+  /** The file the page got for the step it paused on, once the puzzle was solved: that step imports it rather than ask
+   *  MakerWorld again. Used once, and only by that step. */
+  handed?: { index: number; profile: number; runId?: string; download: ResolvedDownload } | null;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
   /** Tells this run's steps from those of an earlier run in the same tab. Missing on a run saved by an older version. */
@@ -134,6 +197,10 @@ export type MakerworldJob = {
 };
 
 export type MakerworldJobError = { message: string; imported: number; total: number };
+
+/** RESOLVE_MAKERWORLD_*'s error for a CAPTCHA, in English whatever the language: a reply carries nothing but words, and
+ *  the guided run tells a CAPTCHA, which pauses it, from the rest by them. */
+export const MAKERWORLD_CAPTCHA_REPLY = "MakerWorld wants its CAPTCHA puzzle solved.";
 
 /** IMPORT_SINGLE's error for a job that stopped without finishing. A reply carries nothing but words, so the panel goes
  *  by these to show it as paused rather than failed. */
@@ -152,8 +219,27 @@ export type BackgroundMessages = {
   SET_OFFLINE_FEATURE: { payload: { feature: OfflineFeature; enabled: boolean }; result: null };
   /** Changes the floating bubble's style, its place, or both. */
   SET_BUBBLE: { payload: Partial<BubbleLook>; result: null };
-  /** Opens Thingport to approve this browser's Grab; it finishes in the background once approved. */
-  START_PAIRING: { payload: { instanceUrl: string }; result: null };
+  /** Changes the extension's language; null follows the browser's. */
+  SET_LOCALE: { payload: { locale: Locale | null }; result: null };
+  /** Adapt 3MFs' settings, the Thingport instance's slicers and printers among them once connected. */
+  GET_ADAPT_SETTINGS: { payload: void; result: AdaptView };
+  /** Changes Grab's own Adapt 3MFs settings, and gives them back as stored. */
+  SET_ADAPT_SETTINGS: { payload: Partial<AdaptSettings>; result: AdaptSettings };
+  /** On a model page: the copies Download adapted makes, and where its button goes. */
+  GET_ADAPT_OFFER: { payload: void; result: AdaptOffer };
+  /** The copy last made, which the button then makes by default. */
+  SET_ADAPT_LAST: { payload: { key: string }; result: null };
+  /** What a copy for a printer names in a slicer, from Grab's printer catalogue; null where it has nothing for them. */
+  GET_PRINTER_RECIPE: {
+    payload: { slicer: string; printerId: string; nozzle: string };
+    result: { choice: PrinterChoice; recipe: PrinterRecipe } | null;
+  };
+  /** Opens the popup at Adapt 3MFs' settings, or the same page in a tab where the browser won't open the popup. */
+  OPEN_ADAPT_SETTINGS: { payload: void; result: "popup" | "tab" };
+  /** Whether the instance at this address can pair by approval; null when it can't be asked. */
+  PROBE_PAIRING: { payload: { instanceUrl: string }; result: boolean | null };
+  /** Continues the pairing intent saved before the browser's host-permission prompt. */
+  RESUME_PAIRING: { payload: void; result: null };
   GET_RECENT_IMPORTS: { payload: void; result: RecentImport[] };
   /** Today's edition of the icon, for the floating icon; null on an ordinary day. */
   GET_SEASONAL_ICON: { payload: void; result: SeasonalIcon | null };
@@ -166,8 +252,12 @@ export type BackgroundMessages = {
   GET_PRINTABLES_TOKEN: { payload: void; result: string | null };
   /** Who the user is signed in as on a provider, read from its pages. */
   REPORT_PROVIDER_ACCOUNT: { payload: { provider: AccountProvider; value: string }; result: null };
-  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell. */
-  SYNC_PROVIDER_SESSION: { payload: { provider: Provider }; result: { userId: string | null } };
+  /** On a provider's page: send its sign-in on, if it changed. Says who's signed in there, where its cookies tell.
+   *  `region`: the provider's site the page is on, where it has several with accounts of their own. */
+  SYNC_PROVIDER_SESSION: {
+    payload: { provider: Provider; region?: RegionId | null };
+    result: { userId: string | null };
+  };
   /** On a MakerOnline model page: get its files signed there, then import it. */
   IMPORT_MAKERONLINE_MODEL: {
     payload: { url: string; scope: "url" | "designer" | "all"; collectionId: string | null; title: string | null };
@@ -175,6 +265,12 @@ export type BackgroundMessages = {
   };
   /** On any MakerOnline page: import what waits on the instance for Grab. How many came in. */
   RUN_MAKERONLINE_WAITING: { payload: void; result: number };
+  /** On a MakerOnline model page, for Download adapted: one 3MF's link, signed in the page as its own Download does.
+   *  `fileType` 2 is a print profile, `id` its id; 1 is a model file, `id` the model's. */
+  SIGN_MAKERONLINE_FILE: { payload: { key: string; fileType: 1 | 2; id: number; name: string }; result: string };
+  /** On a MakerOnline model page: keep the print profile and model file it picks on <html> (providers/makeronline/
+   *  pick.ts) as they change. False while the page's store isn't there yet. */
+  WATCH_MAKERONLINE_PICK: { payload: void; result: boolean };
   /** On an OwlCAD model page: export it in OwlCAD's editor, then import it. A library part needs no export, and is
    *  imported as any link is. */
   IMPORT_OWLCAD_MODEL: {
@@ -207,7 +303,13 @@ export type BackgroundMessages = {
     result: null;
   };
   ABORT_MAKERWORLD_COLLECTION_JOB: { payload: void; result: null };
-  RESUME_MAKERWORLD_JOB: { payload: void; result: null };
+  /** `resolved`: the paused step's file, which the page got with the puzzle's answer. Without it the page is loaded
+   *  again and the step asks anew. */
+  /** `step`: the step the page resumes (makerworldStepKey); one the run has moved on from is ignored. */
+  RESUME_MAKERWORLD_JOB: { payload: { resolved?: ResolvedDownload | null; step?: string }; result: null };
+  /** Opens MakerWorld's own puzzle in the page that asks, for a request MakerWorld refused; true when it opened. The
+   *  answer comes to the page itself, on `eventName`. */
+  SHOW_MAKERWORLD_PUZZLE: { payload: { challenge: PuzzleChallenge; eventName: string }; result: boolean };
   MAKERWORLD_JOB_STEP_DUE: { payload: void; result: null };
   FORCE_ADVANCE_MAKERWORLD_JOB: { payload: void; result: null };
   ARM_DOWNLOAD_CAPTURE: { payload: void; result: null };

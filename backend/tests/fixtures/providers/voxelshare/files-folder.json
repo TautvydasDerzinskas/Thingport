@@ -1,0 +1,153 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "items": [
+      {
+        "id": "61672221701324801",
+        "name": "New Folder1",
+        "type": 1,
+        "fileCount": 5,
+        "createdAt": "2026-11-14 05:49:42",
+        "children": [
+          {
+            "id": "61672221701324803",
+            "name": "obj_3_RING + NAIL.stl",
+            "type": 2,
+            "fileCount": 1,
+            "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134744_7e98a94b.png?t=6af88b42&sign=d3df11e65ffab9e6a452c62bc0bf7e53&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "imageInfo": {
+              "key": "voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134744_7e98a94b.png",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "aspectRatio": 0.0
+            },
+            "createdAt": "2026-11-14 05:49:42",
+            "fileInfo": {
+              "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/5395a1c085414f138c36436b63635593.stl?t=6af96c42&sign=4f73a7b7b940fdc19217c25be271a933",
+              "size": 375484.0
+            },
+            "fileInfoResp": {
+              "key": "/voxelshare/model/files/20261114/5395a1c085414f138c36436b63635593.stl",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "size": 375484.0
+            },
+            "thumbStatus": 1
+          },
+          {
+            "id": "61672221701324804",
+            "name": "obj_2_RING + NAIL.stl",
+            "type": 2,
+            "fileCount": 1,
+            "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134803_d1281839.png?t=6af88b42&sign=6a8bc145953ac2e0c5a6cf6399f33dd4&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "imageInfo": {
+              "key": "voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134803_d1281839.png",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "aspectRatio": 0.0
+            },
+            "createdAt": "2026-11-14 05:49:42",
+            "fileInfo": {
+              "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/ea92d8bd2d67404088d45cf810da8ccd.stl?t=6af96c42&sign=dc2085e12b0efffa4e47421307dfa040",
+              "size": 375484.0
+            },
+            "fileInfoResp": {
+              "key": "/voxelshare/model/files/20261114/ea92d8bd2d67404088d45cf810da8ccd.stl",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "size": 375484.0
+            },
+            "thumbStatus": 1
+          },
+          {
+            "id": "61672221701324805",
+            "name": "obj_5_RING + NAIL.stl",
+            "type": 2,
+            "fileCount": 1,
+            "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134747_85901409.png?t=6af88b42&sign=08e2471e1fb4a53797228e01f531dc7b&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "imageInfo": {
+              "key": "voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134747_85901409.png",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "aspectRatio": 0.0
+            },
+            "createdAt": "2026-11-14 05:49:42",
+            "fileInfo": {
+              "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/99b48fe2340448c1aff4f2e2bcad697a.stl?t=6af96c42&sign=cc8690b548d7e2fa6fca9e1371eefe84",
+              "size": 375484.0
+            },
+            "fileInfoResp": {
+              "key": "/voxelshare/model/files/20261114/99b48fe2340448c1aff4f2e2bcad697a.stl",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "size": 375484.0
+            },
+            "thumbStatus": 1
+          },
+          {
+            "id": "61672221701324806",
+            "name": "obj_1_RING + NAIL.stl",
+            "type": 2,
+            "fileCount": 1,
+            "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134745_a9ae252a.png?t=6af88b42&sign=2288b264d35e44ac7532301ac50c2d71&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "imageInfo": {
+              "key": "voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134745_a9ae252a.png",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "aspectRatio": 0.0
+            },
+            "createdAt": "2026-11-14 05:49:42",
+            "fileInfo": {
+              "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/80495881b93f43f9baed41b1c9f89f67.stl?t=6af96c42&sign=c1beb2806654ab2d1dba6726e7913697",
+              "size": 375484.0
+            },
+            "fileInfoResp": {
+              "key": "/voxelshare/model/files/20261114/80495881b93f43f9baed41b1c9f89f67.stl",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "size": 375484.0
+            },
+            "thumbStatus": 1
+          },
+          {
+            "id": "61672221701324807",
+            "name": "obj_4_RING + NAIL.stl",
+            "type": 2,
+            "fileCount": 1,
+            "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134803_1fe6fd4e.png?t=6af88b42&sign=a6336464522ff97fa8adc763adfe3093&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+            "imageInfo": {
+              "key": "voxelshare/orca/model_thumb/3ec12e9651b2e258340aab9216ccb9d6/20261114134803_1fe6fd4e.png",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "aspectRatio": 0.0
+            },
+            "createdAt": "2026-11-14 05:49:42",
+            "fileInfo": {
+              "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/c045bafef7ff49f78db26c0f387e6de1.stl?t=6af96c42&sign=35f234339b3ff0409eb901164087da64",
+              "size": 375484.0
+            },
+            "fileInfoResp": {
+              "key": "/voxelshare/model/files/20261114/c045bafef7ff49f78db26c0f387e6de1.stl",
+              "bucket": "iecrawl-1349496149",
+              "source": "tencent",
+              "size": 375484.0
+            },
+            "thumbStatus": 1
+          }
+        ],
+        "fileInfo": {
+          "url": "https://webimage.voxelshare.com/voxelshare/model/files/20261114/5395a1c085414f138c36436b63635593.stl?t=6af96c42&sign=4f73a7b7b940fdc19217c25be271a933",
+          "size": 1877420.0
+        },
+        "fileInfoResp": {
+          "key": "/voxelshare/model/files/20261114/5395a1c085414f138c36436b63635593.stl",
+          "bucket": "iecrawl-1349496149",
+          "source": "tencent",
+          "size": 1877420.0
+        },
+        "thumbStatus": 1
+      }
+    ]
+  }
+}

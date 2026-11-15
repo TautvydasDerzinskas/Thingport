@@ -23,6 +23,8 @@ import * as meshy from "./meshy/CollectionTile";
 import * as pixup3d from "./pixup3d/CollectionTile";
 import * as fab365 from "./fab365/CollectionTile";
 import * as threedexport from "./threedexport/CollectionTile";
+import * as qidimaker from "./qidimaker/CollectionTile";
+import * as voxelshare from "./voxelshare/CollectionTile";
 
 type Own = { Tile: (props: TileProps) => JSX.Element; TileSkeleton: (props: SkeletonProps) => JSX.Element };
 
@@ -47,4 +49,6 @@ export const COLLECTION_TILES: Partial<Record<BrowsableProvider, Own>> = {
   pixup3d,
   fab365,
   threedexport,
+  qidimaker,
+  voxelshare,
 };

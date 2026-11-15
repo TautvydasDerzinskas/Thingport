@@ -30,10 +30,11 @@ type Config struct {
 	Slicers     map[string]SlicerConfig `json:"slicers,omitempty"`
 }
 
-// For slicers Thingport hands off through the Bridge: bambustudio:// and prusaslicer:// only accept
-// allowlisted domains, QIDI Studio receives the downloaded file by path, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
-// a handler of their own come here only when the user sends them through the Bridge (Configuration >
-// Slicer in Thingport), for when one can't download from the instance itself.
+// For slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only accept
+// allowlisted domains, qidistudio:// asks whether to trust any other site on every link, and Cura's
+// cura:// registration is unreliable. OrcaSlicer and the others with a handler of their own come here
+// only when the user sends them through the Bridge (Configuration > Slicer in Thingport), for when one
+// can't download from the instance itself.
 const scheme = "thingport"
 
 // Release builds set it with -ldflags "-X main.version=...".
@@ -41,8 +42,8 @@ var version = "dev"
 
 func main() {
 	if len(os.Args) < 2 {
-		// Windows/Linux pass protocol URLs as argv[1]. A launch without one is platform-specific:
-		// Windows points to Setup, Linux self-installs, and macOS waits for Apple Events.
+		// macOS delivers URLs as Apple Events; without a URL it needs --install. Windows prints Setup
+		// guidance here, while Linux installs the standalone binary.
 		runDefaultLaunch()
 		return
 	}
@@ -70,7 +71,11 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  thingport-bridge --install")
+	if runtime.GOOS == "windows" {
+		fmt.Println("  Install or update with the Thingport Bridge Setup application.")
+	} else {
+		fmt.Println("  thingport-bridge --install")
+	}
 	fmt.Println("  thingport-bridge --version")
 	fmt.Println("  thingport-bridge <thingport://open?...>")
 }
@@ -453,6 +458,16 @@ func windowsCandidates() map[string][]string {
 		},
 		"elegooslicer":   {"ElegooSlicer/elegoo-slicer.exe"},
 		"snapmaker-orca": {"Snapmaker_Orca/snapmaker-orca.exe"},
+		// Flash Studio's launcher beside Orca-Flashforge.dll. Its installer (Advanced Installer) doesn't say where it
+		// puts it, so the folders its maker and product names would make, under its older product name too, and the
+		// one its CPack script names.
+		"orca-flashforge": {
+			"Flashforge/Flash Studio Desktop/flash studio.exe",
+			"Flashforge/Flash Studio*/flash studio.exe",
+			"Flashforge/Orca-Flashforge/flash studio.exe",
+			"Flash Studio*/flash studio.exe",
+			"Orca-Flashforge/flash studio.exe",
+		},
 		// Under LOCALAPPDATA. Not "eufyMake Studio\eufyMake Studio.exe": 1.5.26 used it, but so does
 		// eufyMake's separate app for its UV printer.
 		"eufystudio3d": {"eufyMake Studio 3D/eufymake studio.exe", "AnkerMake Studio/AnkerMake Studio.exe"},
@@ -486,6 +501,8 @@ func linuxCandidates() map[string][]string {
 		"crealityprintlink":  {"CrealityPrint", "creality-print", "io.github.crealityofficial.CrealityPrint"},
 		"elegooslicer":       {"elegoo-slicer"},
 		"snapmaker-orca":     {"snapmaker-orca", "io.github.Snapmaker.Snapmaker_Orca"},
+		// Its packaged launcher, then its binary. Its GitHub builds are AppImages, which need a config.json entry.
+		"orca-flashforge": {"flash-slicer", "FlashStudio"},
 	}
 }
 
@@ -500,6 +517,7 @@ func macCandidates() map[string][]string {
 		"crealityprintlink":  {"/Applications/Creality Print.app"},
 		"elegooslicer":       {"/Applications/ElegooSlicer.app"},
 		"snapmaker-orca":     {"/Applications/Snapmaker Orca.app"},
+		"orca-flashforge":    {"/Applications/Flash Studio.app"},
 		// Its earlier names after them. Its UV printer's app is "Anker Make Studio.app", with a space.
 		"eufystudio3d": {
 			"/Applications/eufyMake Studio 3D.app",

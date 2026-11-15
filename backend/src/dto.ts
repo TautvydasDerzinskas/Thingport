@@ -295,13 +295,15 @@ export function plateThumbUrl(plateId: string, home: AssetHome): string | null {
   return versionedUrl(plateThumbPath(plateId, home), `/plate/${plateId}/thumb.jpg`);
 }
 
-function previewGlbUrl(plate: Plate): string | null {
-  if (!modelPreviewGlbExists(plate.id)) {
+function previewGlbUrl(plate: Plate, home: AssetHome): string | null {
+  const url = `/plate/${plate.id}/preview.glb`;
+  if (!modelPreviewGlbExists(plate.id, home)) {
     // Hand out the URL even with no cache yet: requesting it is what triggers generation.
-    return plate.filename.toLowerCase().endsWith(".3mf") ? `/plate/${plate.id}/preview.glb` : null;
+    return plate.filename.toLowerCase().endsWith(".3mf") ? url : null;
   }
-  const mtime = fs.statSync(modelPreviewGlbPath(plate.id)).mtimeMs;
-  return `/plate/${plate.id}/preview.glb?v=${mtime}`;
+  // Packing it smaller changes it in place, so the version follows the file; one gone since (moved with its model,
+  // say) is handed out unversioned, as before it was drawn.
+  return versionedUrl(modelPreviewGlbPath(plate.id, home), url) ?? url;
 }
 
 /** The plate's grey render for the browser to tint; unversioned until it exists, as asking for it queues it. */
@@ -323,7 +325,7 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     url: `/print/${printId}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
     thumb_url: plateThumbUrl(plate.id, home),
     thumb_generated: plate.thumbGenerated,
-    preview_glb_url: previewGlbUrl(plate),
+    preview_glb_url: previewGlbUrl(plate, home),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile_id: plate.sourceInstanceId ?? null,
@@ -777,6 +779,8 @@ type QueueJobOut = ImportJobOut & {
   /** Something for its owner to deal with; older failures just count as finished. */
   attention: boolean;
   failure_reason: string | null;
+  /** Its failed links that wait for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). */
+  grab_waiting: number;
   /** How a one-link job came out. */
   outcome: ImportOutcome | null;
   can_start: boolean;
@@ -810,6 +814,7 @@ export function toQueueJobOut(row: QueueJobView): QueueJobOut {
     sync_waiting: row.syncWaiting,
     attention: row.attention,
     failure_reason: message ?? summary ?? row.firstFailure,
+    grab_waiting: row.grabWaiting,
     outcome:
       payload.outcome === "created" || payload.outcome === "profile_added" || payload.outcome === "already_imported"
         ? payload.outcome
@@ -837,14 +842,20 @@ export type QueueOut = {
   finished_total: number;
   line: LineOut;
   settings: QueueSettingsOut;
+  /** Per provider, imports of one's own waiting for Thingport Grab to clear a block on its site, and where to send
+   *  the user to: MakerWorld's when its CAPTCHA stopped them. */
+  grab_waiting: GrabWaitingOut[];
 };
 
-export function toQueueOut(queue: OwnQueue): QueueOut {
+type GrabWaitingOut = { provider: string; count: number; url: string | null };
+
+export function toQueueOut(queue: OwnQueue, grabWaiting: GrabWaitingOut[] = []): QueueOut {
   return {
     jobs: queue.jobs.map(toQueueJobOut),
     finished_total: queue.finishedTotal,
     line: queue.line,
     settings: { start_grab_links: queue.startGrabLinks },
+    grab_waiting: grabWaiting,
   };
 }
 

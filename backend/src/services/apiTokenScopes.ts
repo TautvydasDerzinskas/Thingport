@@ -62,8 +62,8 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
   {
     id: "activity",
     title: "Activity",
-    description: "Your activity heatmap and feed.",
-    paths: ["/activity", "/activity/feed"],
+    description: "Your activity heatmap and feed, and your achievements.",
+    paths: ["/activity", "/activity/feed", "/me/achievements"],
   },
   {
     id: "collections",
@@ -160,10 +160,12 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/import/jobs/active",
       "/import/jobs/:id",
       "/import/jobs/:id/items",
-      // The imports waiting for Thingport Grab (providers/makeronline/routes.ts, providers/owlcad/routes.ts), and
+      // The imports waiting for Thingport Grab (providers/makeronline/routes.ts, providers/makerworld/routes.ts,
+      // providers/owlcad/routes.ts), and
       // what OwlCAD's Grab asks before opening one. Scopes are listed here, one place for every app that reads with
       // a token, rather than by each provider.
       "/import/makeronline/waiting",
+      "/import/makerworld/waiting",
       "/import/owlcad/waiting",
       "/import/owlcad/plan",
     ],

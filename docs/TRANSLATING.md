@@ -68,6 +68,14 @@ from, the same in both. Their placeholders take single braces, such as `{n}`. A 
 per plural form, ending in `.one`, `.few`, `.many` or `.other`, such as `bar.pieces.one`: give the ones your language
 uses, as above. One without your language shows English.
 
+## Thingport Grab
+
+The browser extension's words are in [`extension/src/shared/locales/`](../extension/src/shared/locales), one file per
+language with the same keys as `en.json`. Its placeholders take single braces, such as `{site}`, and it doesn't pick
+plural forms itself: a number mostly goes in as a label, as in `"Printers: {count}"`, and where the code chooses
+between a key's `_one` and `_other` variants, such as `missingProfilesHint_one`, translate both. A language that isn't
+there yet also needs a flag and an entry in Grab's language menu, so ask for it in an issue or your pull request.
+
 ## Keeping up
 
 New features add English text first. Translations catch up whenever someone has time, and until then the new text

@@ -62,7 +62,9 @@ const SAME_HEIGHT = 0.005;
 /**
  * The process preset to put the designer's changes on: the designer's own when the printer can use it, else the
  * printer's process at the height and quality the designer's started from ("0.20mm Strength"), which their changes
- * were made on top of. `layerHeight` stands in for a name that has no height.
+ * were made on top of. `layerHeight` stands in for a name that has no height. Heights are what each process prints
+ * at, which a few slicer profiles' names don't say ("0.24mm Draft" inheriting 0.2 and never changing it). Only a
+ * process the printer's preset lists is named: null when it lists none, and the designer's then stays.
  */
 export function chooseProcess(
   recipe: PrinterRecipe,
@@ -97,7 +99,9 @@ export function chooseProcess(
       return pick(measured.filter((p) => Math.abs(Math.abs((heightOf(p) as number) - height) - nearest) < 1e-9)).name;
     }
   }
-  return recipe.defaultProcess ?? processes[0]?.name ?? null;
+  if (!processes.length) return null;
+  // The printer's default only where it's listed: some printers name a process since renamed, or another nozzle's.
+  return processes.some((p) => p.name === recipe.defaultProcess) ? recipe.defaultProcess : pick(processes).name;
 }
 
 function lookup(map: Record<string, string> | undefined, key: string): string | null {

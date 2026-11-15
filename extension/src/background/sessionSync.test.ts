@@ -96,6 +96,27 @@ describe("syncSession", () => {
     expect(Object.keys(store.lastSyncedSessions as object).toSorted()).toEqual(["crealitycloud", "nexprint"]);
   });
 
+  it("sends each site's sign-in to the credential named after it, and remembers them apart", async () => {
+    const main = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.bWFpbg";
+    const china = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIyIn0.Y2hpbmE";
+    cookies.set("www.voxelshare.com token", main);
+    cookies.set("www.voxelshare.cn token", china);
+    await syncSession("voxelshare");
+    await syncSession("voxelshare", "cn");
+    expect(apiCall).toHaveBeenCalledWith("PATCH", "/providers/voxelshare/connection", { token: main });
+    expect(apiCall).toHaveBeenCalledWith("PATCH", "/providers/voxelshare/connection/cn", { token: china });
+    expect(Object.keys(store.lastSyncedSessions as object).toSorted()).toEqual(["voxelshare", "voxelshare:cn"]);
+
+    // Signing out of the China site clears its sign-in alone.
+    cookies.delete("www.voxelshare.cn token");
+    await syncSession("voxelshare", "cn");
+    expect(apiCall).toHaveBeenLastCalledWith("PATCH", "/providers/voxelshare/connection/cn", {
+      token: null,
+      signed_out_of: china,
+    });
+    expect(Object.keys(store.lastSyncedSessions as object)).toEqual(["voxelshare"]);
+  });
+
   it("does nothing for a provider with no sign-in to send", async () => {
     expect(await syncSession("printables")).toEqual({ userId: null });
     expect(apiCall).not.toHaveBeenCalled();

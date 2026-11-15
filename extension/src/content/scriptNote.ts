@@ -13,16 +13,13 @@
 
 // A sentence each for the card above the panel, where there is room for a line but not a paragraph: the
 // tooltip under the icon still carries the longer version for anyone who wants it.
-export const SHARED_SCRIPT_SHORT = "The author allows it, so the script comes with the model.";
-export const WITHHELD_SCRIPT_SHORT = "The author chose not to share the script, so it can't be imported.";
+import { t } from "../shared/i18n";
+import { escapeHtml } from "./runtime";
 
-export const SHARED_SCRIPT_EXPLAINER =
-  "This model was generated from a script, and its creator shared it — so the script comes along, and you can " +
-  "generate the model again with your own values.";
-
-export const WITHHELD_SCRIPT_EXPLAINER =
-  "This model was generated from a script, but its creator chose not to share it, so the script can't be " +
-  "imported. The model itself comes over as usual — only customising it again isn't possible.";
+export let SHARED_SCRIPT_SHORT = "";
+export let WITHHELD_SCRIPT_SHORT = "";
+export let SHARED_SCRIPT_EXPLAINER = "";
+export let WITHHELD_SCRIPT_EXPLAINER = "";
 
 /** Brows lifted at their inner ends, which is the whole of the sadness; the mouth only agrees with them. */
 const SAD_FACE = `
@@ -81,17 +78,8 @@ const HAPPY_FACE = `
 
 // The two lines. The withheld one leads with a red "No" against the plain name of the thing it hasn't got;
 // the shared one is the name alone, in green, with the exclamation doing the work the "No" does on the other.
-export const WITHHELD_SCRIPT_NOTE_HTML = `
-  ${SAD_FACE}
-  <span aria-hidden="true"><span class="tg-fab-note__no">No</span> <span class="tg-fab-note__label">SCAD</span></span>
-  <span class="tg-visually-hidden">No SCAD. ${WITHHELD_SCRIPT_EXPLAINER}</span>
-`;
-
-export const SHARED_SCRIPT_NOTE_HTML = `
-  ${HAPPY_FACE}
-  <span class="tg-fab-note__yes" aria-hidden="true">SCAD!</span>
-  <span class="tg-visually-hidden">SCAD included. ${SHARED_SCRIPT_EXPLAINER}</span>
-`;
+export let WITHHELD_SCRIPT_NOTE_HTML = "";
+export let SHARED_SCRIPT_NOTE_HTML = "";
 
 /** The card above the panel: the same face and word as the line under the icon, and a sentence of why. */
 const panelNote = (face: string, lead: string, text: string) => `
@@ -99,6 +87,29 @@ const panelNote = (face: string, lead: string, text: string) => `
   <div class="tg-panel-note__text"><span class="tg-panel-note__lead">${lead}</span> ${text}</div>
 `;
 
-export const WITHHELD_SCRIPT_PANEL_NOTE_HTML = panelNote(SAD_FACE, "No SCAD.", WITHHELD_SCRIPT_SHORT);
+export let WITHHELD_SCRIPT_PANEL_NOTE_HTML = "";
+export let SHARED_SCRIPT_PANEL_NOTE_HTML = "";
 
-export const SHARED_SCRIPT_PANEL_NOTE_HTML = panelNote(HAPPY_FACE, "SCAD!", SHARED_SCRIPT_SHORT);
+/** Rebuild live exports after the content script receives its saved locale. */
+export function refreshScriptNoteTexts(): void {
+  SHARED_SCRIPT_SHORT = t("scriptSharedShort");
+  WITHHELD_SCRIPT_SHORT = t("scriptWithheldShort");
+  SHARED_SCRIPT_EXPLAINER = t("scriptSharedExplainer");
+  WITHHELD_SCRIPT_EXPLAINER = t("scriptWithheldExplainer");
+  const noScad = escapeHtml(t("scriptNoScad"));
+  const included = escapeHtml(t("scriptScadIncluded"));
+  WITHHELD_SCRIPT_NOTE_HTML = `
+    ${SAD_FACE}
+    <span aria-hidden="true"><span class="tg-fab-note__no">${noScad}</span> <span class="tg-fab-note__label">SCAD</span></span>
+    <span class="tg-visually-hidden">${noScad}. ${escapeHtml(WITHHELD_SCRIPT_EXPLAINER)}</span>
+  `;
+  SHARED_SCRIPT_NOTE_HTML = `
+    ${HAPPY_FACE}
+    <span class="tg-fab-note__yes" aria-hidden="true">SCAD!</span>
+    <span class="tg-visually-hidden">${included}. ${escapeHtml(SHARED_SCRIPT_EXPLAINER)}</span>
+  `;
+  WITHHELD_SCRIPT_PANEL_NOTE_HTML = panelNote(SAD_FACE, `${noScad} SCAD.`, escapeHtml(WITHHELD_SCRIPT_SHORT));
+  SHARED_SCRIPT_PANEL_NOTE_HTML = panelNote(HAPPY_FACE, "SCAD!", escapeHtml(SHARED_SCRIPT_SHORT));
+}
+
+refreshScriptNoteTexts();

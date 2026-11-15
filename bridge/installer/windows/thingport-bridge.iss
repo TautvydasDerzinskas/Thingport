@@ -43,6 +43,10 @@ VersionInfoProductTextVersion={#MyAppVersion}
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
+[CustomMessages]
+LegacyExeRemovalFailed=The previous Bridge executable could not be removed. Close Thingport Bridge and remove this file manually:
+ru.LegacyExeRemovalFailed=Не удалось удалить предыдущий файл Bridge. Закройте Thingport Bridge и удалите этот файл вручную:
+
 [Files]
 Source: "..\..\dist\thingport-bridge-windows-amd64.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
 Source: "assets\thingport.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -58,13 +62,16 @@ Root: HKCU; Subkey: "Software\Classes\thingport\shell\open\command"; ValueType: 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   LegacyDir: String;
+  LegacyExe: String;
 begin
   if CurStep = ssPostInstall then
   begin
     LegacyDir := ExpandConstant('{localappdata}\Thingport\Bridge');
     if CompareText(LegacyDir, ExpandConstant('{app}')) <> 0 then
     begin
-      DeleteFile(LegacyDir + '\thingport-bridge.exe');
+      LegacyExe := LegacyDir + '\thingport-bridge.exe';
+      if FileExists(LegacyExe) and not DeleteFile(LegacyExe) then
+        MsgBox(CustomMessage('LegacyExeRemovalFailed') + #13#10 + LegacyExe, mbError, MB_OK);
       RemoveDir(LegacyDir);
     end;
   end;

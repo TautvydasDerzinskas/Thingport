@@ -6,6 +6,7 @@ import { crealityprint } from "./crealityprint.generated";
 import { cura } from "./cura.generated";
 import { elegooslicer } from "./elegooslicer.generated";
 import { eufystudio3d } from "./eufystudio3d.generated";
+import { orcaFlashforge } from "./orcaFlashforge.generated";
 import { orcaslicer } from "./orcaslicer.generated";
 import { prusaslicer } from "./prusaslicer.generated";
 import { qidistudio } from "./qidistudio.generated";
@@ -18,7 +19,6 @@ export type { SlicerProfile } from "./types.generated";
 export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.fromEntries(
   [
     bambustudio,
-    qidistudio,
     orcaslicer,
     prusaslicer,
     cura,
@@ -27,6 +27,8 @@ export const SLICER_PROFILES: Readonly<Record<string, SlicerProfile>> = Object.f
     elegooslicer,
     snapmakerOrca,
     eufystudio3d,
+    qidistudio,
+    orcaFlashforge,
   ].map((profile) => [profile.id, profile]),
 );
 

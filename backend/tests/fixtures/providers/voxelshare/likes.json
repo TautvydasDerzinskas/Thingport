@@ -1,0 +1,116 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "pageNumber": 1,
+    "pageSize": 50,
+    "total": 3,
+    "items": [
+      {
+        "modelId": "9610105",
+        "modelName": "Dragon",
+        "slug": "dragon",
+        "source": "Voxelshare",
+        "mainImage": {
+          "url": "https://webimage.voxelshare.com/models/faca136cca52c1cb/images/0.webp?t=6af88b46&sign=a2aef359eb1aae309c58ec40c9847752&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+          "aspectRatio": 1.0,
+          "format": "webp"
+        },
+        "modelUrl": "https://www.voxelshare.com/models/9610105-dragon",
+        "printAdded": false,
+        "free": true,
+        "license": "CC BY",
+        "printCount": 0,
+        "downloadJsId": "voxelshare",
+        "downloadType": "url",
+        "creator": {
+          "id": "8125b4a0aea97a5f979e83f5a740ed66",
+          "nickname": "Maker 3",
+          "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+          "followed": false
+        },
+        "liked": true,
+        "likeCount": 174,
+        "commentCount": 1,
+        "downloadCount": 336,
+        "viewCount": 0,
+        "collectCount": 190,
+        "oneClickPrint": true,
+        "status": 1,
+        "colorType": 1,
+        "colorTypes": [1],
+        "multiColor": false
+      },
+      {
+        "modelId": "9578063",
+        "modelName": "Happy Flowerpot",
+        "slug": "happy-flowerpot",
+        "source": "Voxelshare",
+        "mainImage": {
+          "url": "https://webimage.voxelshare.com/models/0dc7f44a531114ed/images/0.webp?t=6af88b46&sign=b49c8f56cedf77f9168e8f83be831766&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+          "aspectRatio": 1.0,
+          "format": "webp"
+        },
+        "modelUrl": "https://www.voxelshare.com/models/9578063-happy-flowerpot",
+        "printAdded": false,
+        "free": true,
+        "license": "CC0",
+        "printCount": 0,
+        "downloadJsId": "voxelshare",
+        "downloadType": "url",
+        "creator": {
+          "id": "4928764812e20257c7a724a4524c7cbe",
+          "nickname": "Maker 4",
+          "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+          "followed": false
+        },
+        "liked": true,
+        "likeCount": 431,
+        "commentCount": 4,
+        "downloadCount": 274,
+        "viewCount": 0,
+        "collectCount": 363,
+        "oneClickPrint": true,
+        "status": 1,
+        "colorType": 1,
+        "colorTypes": [1],
+        "multiColor": false
+      },
+      {
+        "modelId": "9560984",
+        "modelName": "Dummy 13 Accessories Starter Pack",
+        "slug": "dummy-13-accessories-starter-pack",
+        "source": "Voxelshare",
+        "mainImage": {
+          "url": "https://webimage.voxelshare.com/models/a797c338d8bbbade/images/4.webp?t=6af88b46&sign=fee07839f554192dbfc0a067fa204387&imageMogr2%2Fthumbnail%2F512x%7CimageMogr2%2Fformat%2Fwebp",
+          "aspectRatio": 1.33,
+          "format": "webp"
+        },
+        "modelUrl": "https://www.voxelshare.com/models/9560984-dummy-13-accessories-starter-pack",
+        "printAdded": false,
+        "free": true,
+        "license": "CC BY",
+        "printCount": 0,
+        "downloadJsId": "voxelshare",
+        "downloadType": "url",
+        "creator": {
+          "id": "c2c98f71e8d31e6f4176683a7cf5ddd6",
+          "nickname": "Maker 5",
+          "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+          "followed": false
+        },
+        "liked": true,
+        "likeCount": 98,
+        "commentCount": 1,
+        "downloadCount": 133,
+        "viewCount": 0,
+        "collectCount": 84,
+        "oneClickPrint": true,
+        "status": 1,
+        "colorType": 1,
+        "colorTypes": [1],
+        "multiColor": false
+      }
+    ]
+  }
+}

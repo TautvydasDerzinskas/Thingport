@@ -17,7 +17,7 @@ import type { TrendingSetup } from "../services/providerTrendingService";
 import type { ProviderCollectionCard } from "../services/providerCollectionCard";
 import type { TrendingModel } from "../services/trendingModel";
 import type { HttpError } from "../utils/fileUtils";
-import type { ProviderId } from "./index.generated";
+import type { ProviderId, RegionId } from "./index.generated";
 import type { SyncProblem } from "./syncProblem";
 
 /** A model as its provider describes it. */
@@ -56,13 +56,15 @@ export type ImportTarget = { userId: string; externalId: string };
 
 /** A provider whose model files the server downloads, as the user it holds credentials for. */
 export type SourcedImport<Auth = unknown, Model extends ResolvedModel = ResolvedModel> = {
-  /** The user's credentials, or the HttpError (400 with the manifest's session code) that says to connect. */
-  requireAuth(userId: string): Promise<Auth>;
+  /** The user's credentials for the model `externalId` names (a region's are that site's), or the HttpError (400 with
+   *  the manifest's session code) that says to connect. */
+  requireAuth(userId: string, externalId: string): Promise<Auth>;
   resolveModel(externalId: string, auth: Auth): Promise<Model | null>;
   /** The id a model is kept under, where it isn't the one its link has (Creality Cloud's alias, for a link by id). */
   canonicalId?(model: Model): string;
-  /** The provider's errors as the HttpErrors an import reports, remembering a rejected sign-in; others as they are. */
-  mapError(userId: string, err: unknown): Promise<unknown>;
+  /** The provider's errors as the HttpErrors an import reports, remembering a rejected sign-in (`auth`, the one the
+   *  failed call used); others as they are. */
+  mapError(userId: string, err: unknown, auth?: Auth): Promise<unknown>;
   /** The 404 for a model it doesn't know, or doesn't show. */
   missingMessage: string;
   /** The 400 for a model with nothing to import. */
@@ -97,7 +99,8 @@ export type SourcedImport<Auth = unknown, Model extends ResolvedModel = Resolved
     /** Whether its profile files come named alike, so they're named after their profiles. */
     namedAlike: boolean;
     /** The profiles a scope picks from the model a link is of, as links that each name one, for the batch that
-     *  imports them onto one print. */
+     *  imports them onto one print. None for a model without any: a queued link of it then imports as a plain one,
+     *  and a job for its profiles fails. */
     listUrls(url: string, scope: "designer" | "all"): Promise<{ title: string | null; urls: string[] }>;
   };
 };
@@ -254,10 +257,28 @@ export type ProviderBrowse = {
 
 /** The list for the dashboard's trending panel (the manifest's capabilities.trending says which it is). */
 export type ProviderTrending = {
-  /** Up to `limit` models, or the setup it can't be read without (an admin's token or key, or the user's own). */
-  fetch(userId: string, limit: number): Promise<TrendingModel[] | TrendingSetup>;
+  /** Up to `limit` models, or the setup it can't be read without (an admin's token or key, or the user's own); from
+   *  the region `region` names, where it has lists of its own, else from its main site. */
+  fetch(userId: string, limit: number, region: RegionId | null): Promise<TrendingModel[] | TrendingSetup>;
   /** Read with each user's own key, so one user's list isn't kept for the others. */
   perUser?: boolean;
+  /** Which of its sites' lists the user sees, for a provider with regions that have one of their own (the manifest's
+   *  `regions[].trending`): null for the main site's. Each site's is kept apart. */
+  region?(userId: string): Promise<RegionId | null>;
+};
+
+/** One of the user's own printers, as the printer catalogue has it, with its nozzle in mm where the site says. */
+export type OwnedPrinter = { printerId: string; nozzle: number | null };
+
+/** The printers the user's account on a site has, for Configuration > Printer's Find my printers: a site whose printer
+ *  maker's cloud lists them to the user's sign-in there. Read only when the user asks, and nothing of a printer but its
+ *  model and nozzle: never its serial, name, address or keys. */
+export type ProviderOwnedPrinters = {
+  /** Whether the user has a sign-in there to ask with. */
+  connected(userId: string): Promise<boolean>;
+  /** Those the catalogue knows. "rejected" when the site turned the sign-in down, which is then marked so; null when
+   *  it couldn't say. */
+  read(userId: string): Promise<OwnedPrinter[] | "signed-out" | "rejected" | null>;
 };
 
 export type ConnectionStatus = "connected" | "expired" | "disconnected";

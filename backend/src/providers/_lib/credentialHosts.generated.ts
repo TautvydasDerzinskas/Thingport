@@ -25,10 +25,10 @@ export const CREDENTIAL_HOSTS = {
     exact: ["www.myminifactory.com"],
   },
   "snapmaker-api": {
-    exact: ["api-models.snapmaker.com"],
+    exact: ["api-models.snapmaker.com", "api-models.snapmaker.cn"],
   },
   "snapmaker-id": {
-    exact: ["id.snapmaker.com"],
+    exact: ["id.snapmaker.com", "id.snapmaker.cn"],
   },
   "makeronline-api": {
     exact: ["www.makeronline.com"],
@@ -89,6 +89,12 @@ export const CREDENTIAL_HOSTS = {
   },
   "threedexport-session": {
     exact: ["3dexport.com"],
+  },
+  "qidimaker-api": {
+    exact: ["www.qidimaker.com"],
+  },
+  "voxelshare-api": {
+    exact: ["api.voxelshare.com", "api.voxelshare.cn"],
   },
 } as const;
 export type CredentialDestination = keyof typeof CREDENTIAL_HOSTS;

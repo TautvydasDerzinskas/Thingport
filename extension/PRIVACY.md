@@ -1,9 +1,9 @@
 # Thingport Grab privacy policy
 
-_Effective 10 November 2026._
+_Effective 14 November 2026._
 
 Thingport Grab is a browser extension that imports 3D-printing models from MakerWorld, Printables,
-Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
+Thingiverse and, once you allow them, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker, VoxelShare and OwlCAD into **your own self-hosted Thingport instance**, and converts MakerWorld files for
 other slicers in your browser. It has no servers of its own: the
 extension's developer never receives any of your data, and nothing is shared with anyone else.
 
@@ -20,14 +20,27 @@ instance or account, so the new one has to be told.
   one of two things. If you paired the extension with your instance, the connection your instance issued for this
   browser when you approved it -- a token, with no password. If you entered credentials instead, your email and
   password as you entered them, so the extension can sign in again when its session expires.
-- **A pairing in progress:** while you approve the extension on your instance, a random one-time secret, the address
-  of your instance and the browser's number for the tab the extension opened there. It's deleted once the pairing
-  finishes or is cancelled, or that tab is closed, and it can't finish a pairing more than 15 minutes old.
+- **A pairing in progress:** from when you press **Pair with Thingport**, the address you entered and the time, so the
+  pairing can go on if your browser closes the popup to ask for access to your instance, and so the popup can fill
+  that address in again. It's replaced the next time you press it, deleted once the approval tab opens or you sign in
+  with a password instead, and never resumed once 15 minutes old. Then, while you approve the extension on your
+  instance, a random one-time secret, the address of your instance and the browser's number for the tab the extension
+  opened there. That's deleted once the pairing finishes or is cancelled, or that tab is closed, and it can't finish a
+  pairing more than 15 minutes old.
 - **A session token** your Thingport instance issues when the extension signs in, and when it expires.
-- **Your settings:** whether the extension is switched on, which Offline features are on (the MakerWorld Download
+- **Your settings:** whether the extension is switched on, which Offline features are on (Adapt 3MFs' Download
   adapted button, Thingiverse dark mode and hidden Thingiverse ads), whether your Thingport account is an admin's,
   and whether your instance gives everyone an import queue of their own, so the import panel knows whether to offer
   **Add to the queue**. Which optional sites you turned on is kept by your browser, as the access you granted.
+- **Adapt 3MFs' settings:** the slicers you picked in it, your printers (each by its id in the extension's own printer
+  list, with its nozzle), where its button goes, and for each Thingport instance and email address you connected
+  to, which of them it has given that account (see below), so each account is offered them once. Also which copy
+  (its slicer and printer) **Download adapted** was last asked for, kept as you click, so its button offers that one
+  again; the file itself isn't kept. And for each of those accounts, what its Thingport instance last said of its
+  slicers and printers: the slicers, each printer's id, name, nozzle, bed, height and number of extruders, which
+  printer each slicer's copies are made for, and which slicers get the file as it is, so copies are still made for
+  them while the instance can't be reached. The printer list itself comes with the extension: nothing is downloaded
+  for it.
 - **Recent imports:** the title, a link, the address of the page it was imported from and of that page's picture of
   it, for the last five models you imported through the extension, shown in its toolbar popup. This list is kept in your browser's sync storage, so it
   appears in the extension on your other browsers and devices where you're signed in to the same
@@ -42,8 +55,8 @@ instance or account, so the new one has to be told.
   it's only saved there again when it changes.
 - **Your MyMiniFactory sign-in (its `PHPSESSID` cookie),** as last sent to your Thingport instance, so it's only sent
   again when it changes.
-- **Your Snapmaker Space sign-in (its access token),** as last sent to your Thingport instance, so it's only sent
-  again when it changes.
+- **Your Snapmaker Space sign-in (its access token),** and your sign-in to its China site, space.snapmaker.cn, as
+  last sent to your Thingport instance, so each is only sent again when it changes.
 - **Your MakerOnline sign-in (its access token),** as last sent to your Thingport instance, so it's only sent again
   when it changes.
 - **Your Creality Cloud sign-in (its `model_token` and `model_user_id` cookies),** as last sent to your Thingport
@@ -75,6 +88,10 @@ instance or account, so the new one has to be told.
   to your Thingport instance, so it's only sent again when it changes.
 - **Your 3DExport sign-in (its `nm_userid` and `nm_hash` cookies),** as last sent to your Thingport instance, so it's
   only sent again when it changes.
+- **Your QIDI Maker sign-in (its `token` cookie),** as last sent to your Thingport instance, so it's only sent again
+  when it changes.
+- **Your VoxelShare sign-in (its `token` cookie),** and your sign-in to its China site, www.voxelshare.cn, as last
+  sent to your Thingport instance, so each is only sent again when it changes.
 - **Which site each tab is on:** for every open tab showing one of the sites above, that site's name and the
   browser's number for the tab, so the popup can put the site you're looking at first -- it can't read the
   address of your tab itself. No address is kept, only which of the supported sites it is. A tab's entry is
@@ -90,8 +107,8 @@ instance or account, so the new one has to be told.
 
 The extension only communicates with **your Thingport instance** (the address you entered) and with
 the **provider site you're on**. The one exception: once you've allowed Snapmaker Space, it also renews your
-Snapmaker sign-in at id.snapmaker.com every few hours while the browser is open, even with no Snapmaker page open
-(see below). And when you open the popup's **History** tab, the pictures of your recently viewed models load straight
+Snapmaker sign-in at id.snapmaker.com, and your China site sign-in at id.snapmaker.cn, every few hours while the
+browser is open, even with no Snapmaker page open (see below). And when you open the popup's **History** tab, the pictures of your recently viewed models load straight
 from the image servers of the sites you viewed them on, without saying which page asked for them.
 
 **To your Thingport instance:**
@@ -120,9 +137,16 @@ from the image servers of the sites you viewed them on, without saying which pag
 - On a collection, likes or bookmarks page, when you open the extension's panel: the page's address, to check whether
   that list is synced. When you turn sync on: the list's name and the ids of the models listed in it, so your instance
   knows which models are new later.
-- A request for the slicer picked in your Thingport instance's Configuration, when a MakerWorld model page opens (and
-  again when you click **Download adapted**, if it didn't answer in time): it decides whether the button is shown,
-  which copy it makes, and the slicer its explanation names.
+- When a model page opens on a site **Download adapted** works on (MakerWorld, Printables, Creality Cloud, Snapmaker
+  Space, NexPrint, MakerOnline, eufyMake, QIDI Maker or VoxelShare) with Adapt 3MFs on, and when you open the toolbar popup: a request for your
+  slicers and printers in your Thingport instance's Configuration. Adapt 3MFs uses them in place of its own: they
+  decide whether **Download adapted** is shown and which copies it makes. While the instance can't be reached, what
+  it said last for the account stands in, or Adapt 3MFs' own if it has never answered; an instance from before
+  printers leaves Adapt 3MFs' own printers in use.
+- When you connect the extension to a Thingport account for the first time: the slicers you picked in Adapt 3MFs, if
+  that account has no slicers picked yet, and your printers in it with their nozzles, if it has no printers yet. Once
+  per account, so ones you remove there aren't sent again; what couldn't go then (the instance didn't answer, or
+  doesn't keep printers yet) goes the next time you connect.
 - If you're logged into MakerWorld in this browser: your MakerWorld session cookie, when you import from MakerWorld or
   open the extension's panel on one of its model pages. MakerWorld requires it to download files. The extension also
   saves it to your Thingport account's MakerWorld setting, so imports made from Thingport's own web app work too.
@@ -132,6 +156,8 @@ from the image servers of the sites you viewed them on, without saying which pag
 - If you're signed in to Snapmaker Space in this browser, and have allowed the extension there: your Snapmaker access
   token, when you open a Snapmaker Space page and every few hours while the browser is open, whenever it changed since
   last sent. Your Thingport instance uses it to download Snapmaker models and to read your likes and bookmarks there.
+  Its China site, space.snapmaker.cn, has accounts of its own: your sign-in there is read from that site's cookies
+  and sent, renewed and used the same way, for its own models, likes and bookmarks.
 - If you're signed in to MakerOnline in this browser, and have allowed the extension there: your MakerOnline access
   token, when you open a MakerOnline page and it changed since last sent. Your Thingport instance uses it to read your
   likes and private collections there.
@@ -199,6 +225,18 @@ from the image servers of the sites you viewed them on, without saying which pag
   out there, the extension tells your instance to forget the one it sent. Your Thingport instance uses it to download
   3DExport models, the free ones included, and to read your own collections there; its models and anyone's public
   collections are read without it.
+- If you're signed in to QIDI Maker in this browser, and have allowed the extension there: your QIDI Maker sign-in (its
+  `token` cookie), when you open a QIDI Maker page and it changed since last sent; when you've signed out there, the
+  extension tells your instance to forget the one it sent. Your Thingport instance uses it to read your likes there, and
+  sends it to QIDI Maker with every collection it reads, so your own private ones read too; anyone's public collections
+  need no sign-in. Its models and their files are read without it.
+- If you're signed in to VoxelShare in this browser, and have allowed the extension there: your VoxelShare sign-in (its
+  `token` cookie), when you open a VoxelShare page and it changed since last sent; when you've signed out there, the
+  extension tells your instance to forget the one it sent. Its China site, www.voxelshare.cn, has accounts of its own:
+  your sign-in there is read from its `token` cookie when you open one of its pages, and sent and forgotten the same
+  way. Your Thingport instance uses it to read your likes and your
+  own collections there, and sends it to VoxelShare with every collection it reads, so your own private ones read in
+  full; anyone's public collections need no sign-in. Its models and their files are read without it.
 - On MakerOnline: the download links MakerOnline gives the page for the files of a model you import, or of the models
   waiting on your Thingport instance for the extension (it asks your instance for that list on each MakerOnline page).
   Your instance downloads the files from those links.
@@ -210,16 +248,48 @@ from the image servers of the sites you viewed them on, without saying which pag
   included), the models you liked there, and the models in the private collections you sync. Only
   you can see these on Printables, so this is how Thingport can sync them.
 
-**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport and OwlCAD:**
+**To MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker, VoxelShare and OwlCAD:**
 
 - On MakerWorld, to find a model's download link, the extension asks MakerWorld's own website for
   it, the same way the page does when you click Download, using your existing MakerWorld session.
   It may also click the page's own Download button and read the link from the download that
   starts; that download is cancelled and removed from your download history straight away, so no
-  file is saved.
-- When you click **Download adapted** on a MakerWorld model page, the extension downloads that
-  model's file from MakerWorld, as the page's own Download button would, converts it inside your
-  browser and saves the result to your downloads. The file isn't sent anywhere else.
+  file is saved. Where MakerWorld wants a puzzle solved first, during an import you started on its page, the
+  extension shows MakerWorld's own puzzle on that page, as its Download button does, and sends MakerWorld the
+  puzzle's answer with the next ask. On any MakerWorld page it asks your Thingport instance whether imports you
+  started there wait for MakerWorld's puzzle; if they do, it offers them, and only once you click **Solve** does it
+  open the puzzle and ask MakerWorld for their download links, the same way, sending the links to your instance.
+- When you click **Download adapted** on a MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint,
+  MakerOnline, eufyMake, QIDI Maker or VoxelShare model page, the extension
+  downloads that model's file from the site, as the page's own Download button would, converts it inside your
+  browser for the slicer and printer you chose, using the printer list it carries, and saves the result to your
+  downloads. The file isn't sent anywhere else.
+- On a Printables model page, while Adapt 3MFs is on, the extension asks Printables' own API which 3MFs
+  the model has, the same way the page does, using your existing Printables session if you're signed in. When
+  you click **Download adapted** there, it asks it for that file's download link, as the page's own Download
+  does.
+- On a Creality Cloud, Snapmaker Space or NexPrint model page you allowed the extension on, while Adapt 3MFs is
+  on, the extension asks the site's own API which print profiles the model has, the same way the page does,
+  without your sign-in. When you click **Download adapted** there, it asks the site for that profile's download
+  link with the sign-in the page keeps for itself (its session cookie), as the page's own Download does.
+- On a MakerOnline model page you allowed the extension on, while Adapt 3MFs is on, the extension asks MakerOnline's
+  own API which print profiles and 3MFs the model has, the same way the page does, without your sign-in. It also has
+  the page note on itself which profile you pick, from the page's own state, so the button can follow it. When you
+  click **Download adapted** there, it has the page ask for that file's download link, with the sign-in the page keeps
+  (its session cookie) and the token MakerOnline's own anti-bot script makes, as the page's own Download does.
+- On an eufyMake model page you allowed the extension on, while Adapt 3MFs is on, the extension asks eufyMake's API
+  (aiot-wapi-eu.ankermake.com) which 3MFs the model has, the same way the page does, without your sign-in. When you
+  click **Download adapted** there, it asks again for a fresh link and downloads the file from eufyMake's file host,
+  also without your sign-in.
+- On a QIDI Maker model page you allowed the extension on, while Adapt 3MFs is on, the extension asks QIDI Maker's own
+  API which print profiles the model has, the same way the page does, without your sign-in. When you click **Download
+  adapted** there, it downloads the picked profile's file from QIDI Maker's file host, also without your sign-in, so
+  the download isn't counted on your account there.
+- On a VoxelShare model page you allowed the extension on, while Adapt 3MFs is on, the extension asks VoxelShare's own
+  API (api.voxelshare.com) which print profiles the model has, the same way the page does, without your sign-in, and
+  reads which one you picked from the page's own list. When you click **Download adapted** there, it asks again for a
+  fresh link and downloads the profile's file from VoxelShare's image host, also without your sign-in, so the download
+  isn't reported to your account there.
 - On a MakerWorld collection import, the extension moves your tab from one model page to the next,
   just as if you were clicking through them.
 - On Printables, once per open tab, the extension asks Printables' own API which account you're
@@ -228,13 +298,17 @@ from the image servers of the sites you viewed them on, without saying which pag
   the private collections you sync.
 - On Snapmaker Space, once you've allowed it there: Snapmaker's sign-in lasts a day, so every few hours while the
   browser is open, when it's running out, the extension renews it at Snapmaker's own sign-in service (id.snapmaker.com)
-  the same way the site does, and writes the renewed sign-in back into the site's own cookies, so you stay signed in
-  there. When you open the panel on a model page, it also asks Snapmaker's public model API which print profiles the
+  the same way the site does, sending it the refresh token from the site's cookies, and writes the renewed sign-in
+  back into the site's own cookies, so you stay signed in there. Signed in to its China site too, and allowed there,
+  it renews that sign-in the same way at the China site's own sign-in service (id.snapmaker.cn), into the China
+  site's cookies. When you open the panel on a model page, it also asks Snapmaker's public model API which print profiles the
   model has.
 - On MakerOnline, once you've allowed it there: MakerOnline gives its files only to its own pages, so to import a model
   the extension asks MakerOnline's download service for each file's link from the page itself, the same way the page's
-  own Download button does, with your existing MakerOnline sign-in and the page's own security check. It also asks
-  MakerOnline's public model API which print profiles a model has.
+  own Download button does, with your existing MakerOnline sign-in and the page's own security check. Where
+  MakerOnline wants a puzzle solved first, the extension shows MakerOnline's own puzzle on that page, as its Download
+  button does, and sends MakerOnline the puzzle's answer with the next ask. It also asks MakerOnline's public model API
+  which print profiles a model has.
 - On Creality Cloud, once you've allowed it there: when you open the panel on a model page, the extension asks Creality
   Cloud's public model API which print profiles the model has, the same way the page does, without your sign-in.
 - On NexPrint, once you've allowed it there: when you open the panel on a model page, the extension asks NexPrint's
@@ -269,16 +343,16 @@ websites.
 
 ## Permissions
 
-| Permission                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Storage                                          | Keeps the settings and data listed under "What the extension stores".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Cookies                                          | Reads MakerWorld's, Printables', MyMiniFactory's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, Pinshape's, Toymakr3D's, Makerables', CGTrader's, GrabCAD's, Meshy's, PIXUP's and 3DExport's session cookies (with Cults3D's Cloudflare clearance, CGTrader's bot-check token and Meshy's device id and bot-check token, which are sent to Thingport with those sign-ins, and CGTrader's `user_id` cookie, which is read only to tell whether you're signed in there and is never sent to Thingport), and reads and renews Snapmaker Space's sign-in cookies, only on their sites (see above). |
-| Downloads                                        | Reads the link from the MakerWorld download it starts, then cancels and removes that download.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Scripting                                        | Adds the import button to MyMiniFactory's, Snapmaker Space's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, eufyMake's, Pinshape's, OwlCAD's, Toymakr3D's, Makerables', CGTrader's, GrabCAD's, Meshy's, PIXUP's, Fab365's and 3DExport's pages, and those of sites added later, once you allow them; on MakerOnline it also asks for file links from within the page, on eufyMake and Fab365 it reads the sign-in from the page's own storage, and on OwlCAD it exports a CAD project in an editor tab it opens (see above).                                                                   |
-| Alarms                                           | Renews the Snapmaker Space sign-in every few hours, once you've allowed Snapmaker Space.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and MakerWorld's Download adapted button, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Access to newer model sites (optional)           | Asked for only when you turn sites on under **Providers** in the popup: one at a time by clicking a site, or all of them with **Enable all** (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, and sites added in later updates). You can take this access back in your browser's extension settings.                                                                                                                                                                |
-| Access to your Thingport instance                | Requested for that one address when you set the extension up, so it can talk to your instance and, while you pair it, read the address of the approval page it opens there.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Permission                                       | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage                                          | Keeps the settings and data listed under "What the extension stores".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Cookies                                          | Reads MakerWorld's, Printables', MyMiniFactory's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, Pinshape's, Toymakr3D's, Makerables', CGTrader's, GrabCAD's, Meshy's, PIXUP's, 3DExport's and QIDI Maker's session cookies (with Cults3D's Cloudflare clearance, CGTrader's bot-check token and Meshy's device id and bot-check token, which are sent to Thingport with those sign-ins, and CGTrader's `user_id` cookie, which is read only to tell whether you're signed in there and is never sent to Thingport), and reads and renews Snapmaker Space's sign-in cookies, only on their sites (see above).                          |
+| Downloads                                        | Reads the link from the MakerWorld download it starts, then cancels and removes that download.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Scripting                                        | Adds the import button to MyMiniFactory's, Snapmaker Space's, MakerOnline's, Creality Cloud's, NexPrint's, Thangs', Cults3D's, eufyMake's, Pinshape's, OwlCAD's, Toymakr3D's, Makerables', CGTrader's, GrabCAD's, Meshy's, PIXUP's, Fab365's, 3DExport's and QIDI Maker's pages, and those of sites added later, once you allow them; on MakerOnline it also asks for file links from within the page, on MakerWorld it opens MakerWorld's own puzzle there when an import you started meets one, on eufyMake and Fab365 it reads the sign-in from the page's own storage, and on OwlCAD it exports a CAD project in an editor tab it opens (see above). |
+| Alarms                                           | Renews the Snapmaker Space sign-in every few hours, once you've allowed Snapmaker Space.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Access to MakerWorld, Printables and Thingiverse | Shows the import button, and the Download adapted button on MakerWorld and Printables, on their pages. On Thingiverse it also applies the dark theme and hides ads, while those Offline features are on.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Access to newer model sites (optional)           | Asked for only when you turn sites on under **Providers** in the popup: one at a time by clicking a site, or all of them with **Enable all** (MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D, eufyMake, Pinshape, OwlCAD, Toymakr3D, Makerables, CGTrader, GrabCAD, Meshy, PIXUP, Fab365, 3DExport, QIDI Maker, and sites added in later updates). You can take this access back in your browser's extension settings.                                                                                                                                                                                           |
+| Access to your Thingport instance                | Requested for that one address when you set the extension up, so it can talk to your instance and, while you pair it, read the address of the approval page it opens there.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## Your control over your data
 

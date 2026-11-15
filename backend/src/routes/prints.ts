@@ -71,6 +71,22 @@ function printFiltersFromQuery(req: Request): PrintFilters {
   };
 }
 
+/** The tool a model came from, as the SDK names it for a tool's `models.create` (Print.createdWith): one the user has,
+ *  installed from the repository or their own, by slug. Anything else is left out rather than refused: the model is
+ *  still the model. */
+async function createdWithTool(
+  userId: string,
+  origin: UploadOrigin,
+  slug: string | undefined,
+): Promise<{ kind: "tool"; ref: string } | null> {
+  if (origin !== "created" || !slug || slug.length > 100) return null;
+  const tool = await prisma.tool.findFirst({
+    where: { slug, OR: [{ scope: "repo" }, { scope: userId }] },
+    select: { slug: true },
+  });
+  return tool ? { kind: "tool", ref: tool.slug } : null;
+}
+
 router.post(
   "/upload",
   modelUpload.array("files"),
@@ -101,6 +117,7 @@ router.post(
         tags,
         categoryId: body.category_id || null,
         categorySource: body.category_id ? ("MANUAL" as const) : null,
+        createdWith: await createdWithTool(req.userId!, origin, body.created_with_tool),
       };
 
       const printsOut = [];

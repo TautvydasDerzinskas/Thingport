@@ -5,20 +5,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import type { Bed, FilamentChoices, SlicerEntry } from "../adapter";
+
+// The shapes a recipe reads are the adapter's (src/adapter/recipe.ts), which Thingport Grab reads its copy into too.
+export type { Bed, FilamentChoices, PrinterPreset, ProcessPreset, SlicerEntry } from "../adapter";
 
 const DIR = path.resolve(__dirname, "../../assets/printers");
-
-/** A printable area in mm, its origin the front-left corner's place in the printer's coordinates. */
-export type Bed = {
-  shape: "rectangle" | "circle" | "polygon";
-  x: number;
-  y: number;
-  origin: [number, number];
-  /** A round (delta) bed's diameter. */
-  diameter?: number;
-  /** Any other shape's outline. */
-  points?: [number, number][];
-};
 
 export type PrinterCodes = {
   /** Bambu Lab's model code, as its cloud names a bound printer ("C12" is the P1S). */
@@ -46,35 +38,6 @@ export type PrinterSummary = {
   codes?: PrinterCodes;
   /** Whether covers/<id>.webp exists. */
   cover?: true;
-};
-
-export type ProcessPreset = { name: string; layerHeight: number | null };
-
-/** A slicer's filament presets for a printer: the one to name for each filament type ("PLA"), and for each product,
- *  a preset's name without the printer it's tuned for, in lower case ("bambu pla basic"). */
-export type FilamentChoices = { types: Record<string, string>; products: Record<string, string> };
-
-/** One of a slicer's printer presets for a nozzle, and the process and filament presets it can use. */
-export type PrinterPreset = {
-  name: string;
-  defaultProcess?: string;
-  processes: ProcessPreset[];
-  /** Names the preset had before, which older files still use. */
-  renamedFrom?: string[];
-  /** The filament the slicer starts it with. */
-  defaultFilament?: string;
-  /** The filaments made for it; the slicer's filaments for every printer (slicerFilaments) come after these. */
-  filaments?: FilamentChoices;
-};
-
-/** How a slicer knows a printer: its model and presets by nozzle (a "HF0.4" key for high-flow), or Cura's definition. */
-export type SlicerEntry = {
-  /** A setup the printer is sold in or fitted with ("Combo", "MMU3"), where it has presets of its own. */
-  config?: string;
-  model?: string;
-  presets?: Record<string, PrinterPreset[]>;
-  definition?: string;
-  nozzles?: string[];
 };
 
 export type Printer = Omit<PrinterSummary, "cover"> & {
@@ -164,6 +127,22 @@ export function printerForName(
   const hit = Object.hasOwn(names, key) ? names[key] : undefined;
   const found = hit ? printerSummary(hit[0]) : null;
   return found ? { printer: found, nozzle: hit?.[1] ?? null } : null;
+}
+
+/** A brand's printer by the name a site gives its model, with the brand's name ("Creality K1C") or without it ("K1C"),
+ *  and the nozzle a preset's name says. Null for a name that isn't one of that brand's. */
+export function brandPrinterForName(
+  brandId: string,
+  name: string | null | undefined,
+): { printer: PrinterSummary; nozzle: string | null } | null {
+  const model = String(name ?? "").trim();
+  const brand = printerBrands().find((b) => b.id === brandId);
+  if (!model || !brand) return null;
+  for (const candidate of [model, `${brand.name} ${model}`]) {
+    const hit = printerForName(candidate);
+    if (hit?.printer.brand === brandId) return hit;
+  }
+  return null;
 }
 
 /** The printers of a Bambu Lab model code, as Bambu's cloud lists a bound printer's (`C12`). */

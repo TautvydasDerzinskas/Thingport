@@ -122,6 +122,10 @@ export const SEARCH_PAGES: SearchPage[] = [
     "browse files",
     "stored files",
     "disk",
+    "disk space",
+    "free up space",
+    "clean up",
+    "photos per model",
   ]),
   adminPage("adminAuth", "/admin-auth", "app:adminSettings.auth.heading", [
     "auth",

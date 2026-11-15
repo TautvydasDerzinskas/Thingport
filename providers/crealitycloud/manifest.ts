@@ -52,6 +52,7 @@ export default {
     ownLists: "signIn",
     categoryIds: "number",
     trending: { kind: "recommended", moreUrl: "https://www.crealitycloud.com/", rank: 8 },
+    adapted3mfs: ["bambu"],
   },
   examples: {
     model: "https://www.crealitycloud.com/model-detail/example-model",

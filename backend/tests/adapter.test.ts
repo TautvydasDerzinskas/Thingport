@@ -1,8 +1,9 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   adapt3mf,
   classify3mf,
@@ -473,7 +474,6 @@ describe("planAdaptation", () => {
   });
 
   it("translates its settings' names for the Orca family, and retags it where a version would be questioned", () => {
-    expect(plan("qidistudio")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: null });
     expect(plan("orcaslicer")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("snapmaker-orca")).toEqual({ output: "bambu", tag: null, dropOrcaTag: false, dialect: "orca" });
     expect(plan("elegooslicer")).toEqual({ output: "bambu", tag: COMPATIBLE_TAG, dropOrcaTag: false, dialect: "orca" });
@@ -483,6 +483,84 @@ describe("planAdaptation", () => {
       dropOrcaTag: false,
       dialect: "orca",
     });
+  });
+
+  it("leaves QIDI Studio a Bambu Studio project, which it puts on its own printer, and its own tag on a printer's copy", () => {
+    const q1 = { id: "qidi-q1pro", nozzle: "0.4", preset: "Q1 Pro 0.4 nozzle" };
+    const qidi = slicerProfile("qidistudio");
+    const ownTag = "QIDIStudio-02.01.00.00";
+    expect(plan("qidistudio")).toBeNull();
+    // Any other app's project would open without its settings.
+    const snapmaker = format({ app: "Snapmaker_Orca", appVersion: "2.4.1", dialect: "orca" });
+    expect(plan("qidistudio", snapmaker)).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: false,
+      dialect: "bambu",
+    });
+    expect(planAdaptation(format(), qidi, q1)).toEqual({
+      output: "bambu",
+      tag: ownTag,
+      dropOrcaTag: false,
+      dialect: null,
+      printer: q1,
+    });
+    expect(
+      planAdaptation(format({ app: "QIDIStudio", appVersion: "02.07.02.73", printer: q1.preset }), qidi, q1),
+    ).toBeNull();
+    // Another app's project naming that very printer would still open on the one selected in QIDI Studio.
+    expect(planAdaptation(format({ printer: q1.preset }), qidi, q1)).toEqual({
+      output: "bambu",
+      tag: ownTag,
+      dropOrcaTag: false,
+      dialect: null,
+      printer: q1,
+    });
+    expect(planAdaptation(format({ printer: q1.preset }), qidi)).toBeNull();
+    expect(planAdaptation({ ...snapmaker, printer: q1.preset }, qidi, q1)).toMatchObject({
+      tag: ownTag,
+      dialect: "bambu",
+      printer: q1,
+    });
+    // Bambu Studio opens it on the printer it names.
+    expect(planAdaptation(format({ printer: q1.preset }), slicerProfile("bambustudio"), q1)).toBeNull();
+    const prusa = format({ kind: "prusa", app: "PrusaSlicer", appVersion: "2.9.7", dialect: null });
+    expect(planAdaptation(prusa, qidi)).toMatchObject({ from: "prusa", tag: COMPATIBLE_TAG });
+    expect(planAdaptation(prusa, qidi, q1)).toMatchObject({ from: "prusa", tag: ownTag, printer: q1 });
+    // Bambu Studio's copy for the same printer isn't QIDI Studio's.
+    expect(planKey(planAdaptation(format(), qidi, q1)!)).toBe("bambu-tag-qidistudio-for-qidi-q1pro-0.4");
+    expect(planKey(planAdaptation(format(), slicerProfile("bambustudio"), q1)!)).toBe("bambu-for-qidi-q1pro-0.4");
+  });
+
+  it("questions nothing Flash Studio takes as its own, and retags what its OrcaSlicer 2.3.2 would warn about", () => {
+    const flash = slicerProfile("orca-flashforge");
+    const own = format({ appVersion: "01.10.01.50", orcaTag: "2.3.2", dialect: "orca" });
+    expect(plan("orca-flashforge", own)).toBeNull();
+    // A newer OrcaSlicer's project, and a recent Bambu Studio one, past its 2.3.2.
+    const orca25 = format({ appVersion: "02.08.01.55", orcaTag: "2.5.0", dialect: "orca" });
+    expect(plan("orca-flashforge", orca25)).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: true,
+      dialect: null,
+    });
+    expect(plan("orca-flashforge")).toEqual({
+      output: "bambu",
+      tag: COMPATIBLE_TAG,
+      dropOrcaTag: false,
+      dialect: "orca",
+    });
+    // An OrcaSlicer project as old as its own opens as it is.
+    expect(plan("orca-flashforge", format({ app: "OrcaSlicer", appVersion: "2.3.0", dialect: "orca" }))).toBeNull();
+    // The tag is the version it goes by where there is one, whatever the Bambu Studio version beside it.
+    expect(
+      plan("orca-flashforge", format({ appVersion: "02.08.01.55", orcaTag: "2.3.2", dialect: "orca" })),
+    ).toBeNull();
+    // A copy for the user's Flashforge printer names its own presets.
+    const ad5m = { id: "flashforge-adventurer5m", nozzle: "0.4", preset: "Flashforge Adventurer 5M 0.4 Nozzle" };
+    expect(planAdaptation(own, flash, ad5m)).toMatchObject({ printer: ad5m, tag: null });
+    expect(planAdaptation({ ...own, printer: ad5m.preset }, flash, ad5m)).toBeNull();
+    expect(planKey(planAdaptation(own, flash, ad5m)!)).toBe("bambu-for-flashforge-adventurer5m-0.4");
   });
 
   it("keeps another maker's project foreign to Creality Print, which asks for a printer", () => {
@@ -981,6 +1059,34 @@ describe("adapted3mfFor", () => {
       expect(await readOut(await JSZip.loadAsync(fs.readFileSync(fresh!)), "3D/3dmodel.model")).toMatch(/Test Cube/);
       await deleteAdapted3mfs("plate-d");
     } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it("gives the new copy though an older one can't be removed, and leaves that one", async () => {
+    const { ADAPTED_3MFS } = await import("../src/config");
+    const { ADAPTER_VERSION } = await import("../src/adapter");
+    const { adapted3mfFor, deleteAdapted3mfs } = await import("../src/services/adapted3mfCache");
+    const plan: AdaptPlan = { output: "prusa" };
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-adapt-src-"));
+    const older = path.join(ADAPTED_3MFS, `plate-e.${planKey(plan)}.v${ADAPTER_VERSION - 1}.3mf`);
+    fs.mkdirSync(ADAPTED_3MFS, { recursive: true });
+    fs.writeFileSync(older, "older copy");
+    const realRm = fsPromises.rm;
+    const rm = vi.spyOn(fsPromises, "rm").mockImplementation(async (target, options) => {
+      if (String(target) === older) throw Object.assign(new Error("EBUSY: resource busy"), { code: "EBUSY" });
+      return realRm(target, options);
+    });
+    try {
+      const src = path.join(dir, "model.3mf");
+      fs.writeFileSync(src, await makeBambuZip());
+      const copy = await adapted3mfFor("plate-e", src, plan);
+      expect(copy).not.toBeNull();
+      expect(fs.existsSync(copy!)).toBe(true);
+      expect(fs.existsSync(older)).toBe(true);
+    } finally {
+      rm.mockRestore();
+      await deleteAdapted3mfs("plate-e");
       fs.rmSync(dir, { recursive: true, force: true });
     }
   }, 60_000);

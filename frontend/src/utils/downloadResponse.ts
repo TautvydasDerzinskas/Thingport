@@ -24,7 +24,8 @@ export async function saveBytesToDisk(bytes: Uint8Array, filename: string, type:
   await saveBlobToDisk(new Blob([bytes as BlobPart], { type }), filename);
 }
 
-async function saveBlobToDisk(blob: Blob, filename: string): Promise<void> {
+/** Bytes offered as a file under the name given, whatever the response they came in said. */
+export async function saveBlobToDisk(blob: Blob, filename: string): Promise<void> {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

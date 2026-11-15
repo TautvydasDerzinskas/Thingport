@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type {
   AdminQueueOut,
+  GrabWaitingOut,
   ImportJobItem,
   ImportJobStatus,
   ImportJobType,
@@ -68,6 +69,7 @@ function toQueueJobFields(raw: RawQueueJob) {
     collection_sync_id: textOrNull(raw.collection_sync_id),
     sync_waiting: raw.sync_waiting === true,
     failure_reason: textOrNull(raw.failure_reason) ?? textOrNull(raw.error_message),
+    grab_waiting: numberOr0(raw.grab_waiting),
     outcome: raw.outcome ?? null,
     link_title: textOrNull(raw.link_title),
   };
@@ -139,6 +141,7 @@ export type QueueSnapshot = {
   finishedTotal: number;
   line: LineOut;
   startGrabLinks: boolean;
+  grabWaiting: GrabWaitingOut[];
 };
 
 export function toQueueSnapshot(raw: Partial<QueueOut> | null | undefined, now: number = Date.now()): QueueSnapshot {
@@ -147,7 +150,17 @@ export function toQueueSnapshot(raw: Partial<QueueOut> | null | undefined, now: 
     finishedTotal: numberOr0(raw?.finished_total),
     line: toLine(raw?.line),
     startGrabLinks: raw?.settings?.start_grab_links === true,
+    grabWaiting: toGrabWaiting(raw?.grab_waiting),
   };
+}
+
+function toGrabWaiting(rows: unknown): GrabWaitingOut[] {
+  if (!Array.isArray(rows)) return [];
+  return (rows as Partial<GrabWaitingOut>[]).flatMap((row) =>
+    typeof row?.provider === "string" && numberOr0(row.count) > 0
+      ? [{ provider: row.provider, count: numberOr0(row.count), url: textOrNull(row.url) }]
+      : [],
+  );
 }
 
 export type EveryoneQueue = {
@@ -199,6 +212,11 @@ const isImporting = (job: QueueJob) => job.status === "RUNNING" || isPausing(job
 const isOnHold = (job: QueueJob) => job.status === "PAUSED" && !job.sync_waiting && !job.runner_live;
 
 const hasFailures = (job: QueueJob) => job.failed_count > 0 || job.failed_items_count > 0;
+
+/** Finished, with every link that failed waiting for Thingport Grab to clear the block that stopped it (MakerWorld's
+ *  puzzle): waiting rather than failed, and Grab's banner over the queue says what to do. */
+export const waitsForGrab = (job: QueueJob) =>
+  job.status === "DONE" && job.grab_waiting > 0 && job.grab_waiting >= (job.failed_items_count || job.failed_count);
 
 export function sectionOf(job: QueueJob): QueueSection {
   switch (job.status) {
@@ -254,6 +272,16 @@ const CHIPS: Record<JobState, { tone: ChipTone; live: boolean }> = {
 
 /** The status chip: `live` pulses, while something is still happening. */
 export function jobChip(job: QueueJob, t: TFunction) {
+  if (waitsForGrab(job)) {
+    return {
+      tone: "info" as ChipTone,
+      live: false,
+      label: job.single
+        ? t("importQueue.status.grabWaiting")
+        : t("importQueue.status.grabWaitingSome", { count: job.grab_waiting }),
+      hint: t("importQueue.statusHint.grabWaiting", { count: job.single ? 1 : job.grab_waiting }),
+    };
+  }
   const state = jobState(job);
   // Only link lists have links to speak of, and a single link is one.
   const inModels = (state === "partial" || state === "done") && !hasLinkList(job) && !job.single;
@@ -469,7 +497,7 @@ export type JobBar = {
   value: number;
   /** Running with no total yet, so how far along can't be said. */
   indeterminate: boolean;
-  tone: "accent" | "warning" | "error";
+  tone: "accent" | "warning" | "error" | "info";
   /** Sweeps while it runs. */
   live: boolean;
   text: string | null;
@@ -479,17 +507,20 @@ export function jobBar(job: QueueJob, t: TFunction): JobBar | null {
   const running = job.status === "RUNNING";
   if (job.status === "QUEUED" || job.single || !(job.processed > 0 || isImporting(job))) return null;
   const values = { processed: job.processed, total: job.total, failed: job.failed_count };
+  const grab = waitsForGrab(job);
   return {
     value: job.total > 0 ? Math.min(100, (job.processed / job.total) * 100) : 0,
     indeterminate: running && job.total <= 0,
-    tone: job.status === "ERROR" ? "error" : job.failed_count > 0 ? "warning" : "accent",
+    tone: job.status === "ERROR" ? "error" : grab ? "info" : job.failed_count > 0 ? "warning" : "accent",
     live: running,
     text:
       job.total <= 0
         ? null
-        : job.failed_count > 0
-          ? t("importQueue.progressFailed", values)
-          : t("importQueue.progress", values),
+        : grab
+          ? t("importQueue.progressGrabWaiting", { ...values, count: job.grab_waiting })
+          : job.failed_count > 0
+            ? t("importQueue.progressFailed", values)
+            : t("importQueue.progress", values),
   };
 }
 
@@ -507,9 +538,16 @@ const NO_REQUEST_REASON = "This older import has no saved request";
 const BARE_FAILURE_COUNT = /^\d+ failed — retry them from the import queue\.?$/;
 
 /** Why a job stopped or failed. Nothing while it's on its way again, as a Start or Retry leaves that behind, or once it
- *  finished with nothing failed, as removing the failed links does. */
-export function whyText(job: QueueJob, t: TFunction, viewerId: string | null = null): string | null {
+ *  finished with nothing failed, as removing the failed links does. `grabBanner`: the Grab banner over the queue shows,
+ *  which says what to do for those waiting for Grab, once for all of them. */
+export function whyText(
+  job: QueueJob,
+  t: TFunction,
+  viewerId: string | null = null,
+  { grabBanner = false }: { grabBanner?: boolean } = {},
+): string | null {
   if (isImporting(job) || isInLine(job) || (job.status === "DONE" && !hasFailures(job))) return null;
+  if (grabBanner && waitsForGrab(job)) return null;
   const reason = job.failure_reason;
   if (reason && !BARE_FAILURE_COUNT.test(reason)) {
     if (INTERRUPTED_REASONS.has(reason)) {
@@ -1033,7 +1071,7 @@ export type QueueLocation = { path: string } | { section: QueueSection };
 
 export type FinishToast = {
   message: string;
-  severity: "success" | "warning" | "error";
+  severity: "success" | "warning" | "error" | "info";
   /** Where its Open button leads; none when there's nothing to open. */
   open: QueueLocation | null;
 };
@@ -1101,6 +1139,15 @@ export function finishToastOf(finished: QueueJob[], t: TFunction, beyondList = 0
 
   const [job] = jobs;
   const name = jobLabel(job, t);
+  if (waitsForGrab(job)) {
+    return {
+      message: job.single
+        ? t("importQueue.toast.finishedGrabWaiting", { name })
+        : t("importQueue.toast.finishedGrabWaitingSome", { name, count: job.grab_waiting }),
+      severity: "info",
+      open: { section: sectionOf(job) },
+    };
+  }
   if (job.status === "ERROR" || (job.single && troubled)) {
     return {
       message: t("importQueue.toast.finishFailed", { name }),

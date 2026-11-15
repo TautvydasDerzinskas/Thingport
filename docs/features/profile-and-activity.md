@@ -36,3 +36,33 @@ them. Copies you collected from someone else aren't listed as yours.
 
 If one of the [authors](authors.md) in your library is you, link them to your account: their models then show under
 **My models**, and your profile picks up their bio and cover picture if you haven't set your own.
+
+## Achievements
+
+Badges for what you do in Thingport, at the foot of the left column on **My models**: your best three on a shelf, the
+rest in a strip under them. Only the ones you've earned show. Click one to see it big, with what earned it, when, and how
+far its next tier is; **All** shows every one, grouped.
+
+| Badge                              | Earned by                                                                                                     | Tiers                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Downloader                         | Downloading models (opening one in a slicer doesn't count)                                                    | 1, 10, 100, 200, 500, 1000 |
+| Importer                           | Importing models                                                                                              | 1, 10, 100, 200, 500, 1000 |
+| One for each site                  | Importing models from it                                                                                      | 1, 10, 100                 |
+| One for each tool that makes parts | Saving models made with it                                                                                    | 1, 10, 50                  |
+| Designer                           | Saving [Studio](../guides/studio.md) designs to your library                                                  | 1, 10, 50, 100             |
+| In sync                            | Keeping collections [in sync](../guides/synced-collections.md) with a site                                    | 1, 5, 10, 25               |
+| Many sources                       | Keeping collections in sync from three different sites                                                        | One                        |
+| Regular                            | Using Thingport on more than 20 of the last 30 days. It goes grey when that lapses and comes back when you do | One                        |
+| Secrets                            | A few things to find in the app                                                                               | One                        |
+
+Tiers go bronze, silver, gold, platinum, diamond and holographic, and only ever go up: deleting what earned a badge
+doesn't take it away. A new one shows as a toast and a notification in the bell, and diamond and holographic get a
+moment of their own.
+
+Everyone who can see your profile sees your badges: the others on the instance on [Explore](social.md#explore), and
+people on [connected instances](connected-instances.md). They see the badge and what it's for, not the counts behind it.
+
+Achievements are off by default. An admin turns them on under **Administration → Social → Achievements**, which works
+with social features off. Turning them on gives everyone what they'd already earned, in one notification; turning them
+off hides them and keeps them. Models made with a tool or in Studio before this version were kept as uploads, so they
+don't count towards those badges.

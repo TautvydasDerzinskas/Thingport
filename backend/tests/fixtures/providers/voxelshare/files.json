@@ -1,0 +1,33 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "items": [
+      {
+        "id": "2096263",
+        "name": "highland.stl",
+        "type": 2,
+        "fileCount": 1,
+        "imageUrl": "https://webimage.voxelshare.com/voxelshare/orca/model_thumb/e6a1f5fdebedf4cf38a585de034b6948/20260626070403_11edf0fd.png?t=6af88b41&sign=185de893e3d83a88745782c0f080ccc3&imageMogr2%2Fthumbnail%2F400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+        "imageInfo": {
+          "key": "voxelshare/orca/model_thumb/e6a1f5fdebedf4cf38a585de034b6948/20260626070403_11edf0fd.png",
+          "bucket": "iecrawl-1349496149",
+          "source": "tencent",
+          "aspectRatio": 0.0
+        },
+        "createdAt": "2026-06-25 23:04:04",
+        "fileInfo": {
+          "url": "https://webimage.voxelshare.com/models/a788c00971f80477/files/0_highland.stl.zip?t=6af96c41&sign=2ab7427a5c20a579b62649964ada69a4",
+          "size": 816872.0
+        },
+        "fileInfoResp": {
+          "key": "models/a788c00971f80477/files/0_highland.stl.zip",
+          "bucket": "iecrawl-1349496149",
+          "source": "tencent",
+          "size": 816872.0
+        },
+        "thumbStatus": 1
+      }
+    ]
+  }
+}

@@ -60,7 +60,7 @@ describe("Snapmaker profile facts", () => {
         calls.push({ url, headers: init.headers as Record<string, string> });
         return url.endsWith("/model/detail/45661")
           ? Response.json(recorded)
-          : Response.json({ code: 603000, msg: "not found", data: null });
+          : Response.json({ code: 712001, msg: "Model not found", data: null });
       }),
     );
     expect(Object.keys((await snapmakerProfileFacts("user-1", "45661")) ?? {})).toEqual(["49371", "49504"]);

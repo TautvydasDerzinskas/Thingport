@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "Thingport Grab"
+  },
+  "extensionDescription": {
+    "message": "Імпорт моделей у Thingport із MakerWorld, Printables, Thingiverse та ще 20 сайтів. Адаптація 3MF під ваш слайсер і принтер."
+  }
+}

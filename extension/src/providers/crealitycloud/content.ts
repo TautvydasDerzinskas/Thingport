@@ -11,7 +11,7 @@ type Profile = { id: string; designers: boolean };
 const asId = (value: unknown) => (value == null ? null : String(value));
 
 // Its API answers "Invalid Parameter" to a call without the headers its own pages send.
-const HEADERS = {
+export const CXY_HEADERS = {
   "Content-Type": "application/json",
   __cxy_app_id_: "cxy-gen2",
   __cxy_app_ver_: "7.3.28",
@@ -27,7 +27,7 @@ const HEADERS = {
 async function call(path: string, body: Record<string, unknown>): Promise<Record<string, unknown> | null> {
   const res = await fetch(`/api/cxy${path}`, {
     method: "POST",
-    headers: { ...HEADERS, __cxy_requestid_: crypto.randomUUID() },
+    headers: { ...CXY_HEADERS, __cxy_requestid_: crypto.randomUUID() },
     body: JSON.stringify(body),
     credentials: "omit",
   });

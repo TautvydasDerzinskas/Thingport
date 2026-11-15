@@ -28,6 +28,7 @@ export default {
     ownLists: "username",
     categoryIds: "number",
     trending: { kind: "trending", moreUrl: "https://www.printables.com/model?ordering=trending", rank: 1 },
+    adapted3mfs: ["prusa", "bambu", "plain"],
   },
   examples: {
     model: "https://www.printables.com/model/123456-example-model",

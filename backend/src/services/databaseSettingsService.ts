@@ -3,6 +3,7 @@ import { setActiveClient } from "../db";
 import { createLogger } from "../logger";
 import { hasActiveCollectionSync } from "./collectionSyncRunner";
 import { liveRunnerIds } from "./importJobRunner";
+import { migrationBusy } from "./migrate/busy";
 import { hasRunningImportTasks } from "./importTaskService";
 import {
   beginDatabaseSwitch,
@@ -63,6 +64,15 @@ export function getDatabaseInfo(): DatabaseInfo {
     database: active?.database ?? null,
     user: active?.user ?? null,
   };
+}
+
+export type DatabaseServer = { host: string; port: number; user: string; password: string; database: string };
+
+/** The server the live database is on, and who it's reached as now: for what works beside it on the same server, as
+ *  a migration's working copy (services/migrate/postgres.ts). */
+export function liveDatabaseServer(): DatabaseServer | null {
+  if (!original || !active) return null;
+  return { host: original.host, port: original.port ? Number(original.port) : 5432, ...active };
 }
 
 function buildCandidateUrl(creds: PostgresCredentials): string | null {
@@ -137,6 +147,10 @@ export async function testAndSwitchDatabase(creds: PostgresCredentials): Promise
     if (rows > 0 || inMemoryImportWork()) {
       await candidate.$disconnect().catch(() => undefined);
       throw new Error("Imports are running. Pause them or let them finish, then try again.");
+    }
+    if (migrationBusy()) {
+      await candidate.$disconnect().catch(() => undefined);
+      throw new Error("A migration is under way. Let it finish, then try again.");
     }
     setActiveClient(candidate);
     active = creds;

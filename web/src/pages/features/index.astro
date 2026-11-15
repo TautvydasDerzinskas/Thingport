@@ -21,6 +21,8 @@ import tags from "../../../../frontend/src/assets/screenshots/light/11_tags.png"
 import tagsDark from "../../../../frontend/src/assets/screenshots/dark/11_tags.png";
 import downloads from "../../../../frontend/src/assets/screenshots/light/13_downloads.png";
 import downloadsDark from "../../../../frontend/src/assets/screenshots/dark/13_downloads.png";
+import openAdapted from "../../../../frontend/src/assets/screenshots/light/56_model_open_adapted.png";
+import openAdaptedDark from "../../../../frontend/src/assets/screenshots/dark/56_model_open_adapted.png";
 import profile from "../../../../frontend/src/assets/screenshots/light/14_profile.png";
 import profileDark from "../../../../frontend/src/assets/screenshots/dark/14_profile.png";
 import toolWindow from "../../../../frontend/src/assets/screenshots/light/32_tool_window.png";
@@ -51,10 +53,10 @@ const SECTIONS: FeatureSection[] = [
       "Import whole collections and your likes in one go. What you add in Thingport takes turns in one line that survives a restart, with synced collections in a lane of their own; everyone follows theirs from Add in the top bar, and a notification says when they finish.",
       "A model you already have is never imported twice, so running a collection import again only brings in what's new.",
       "Sync a collection, and models added to it later are imported on their own.",
-      "Bring in a model's print profiles too, from MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint: the designer's own, or all of them. Models with only STL/CAD files come in too.",
+      "Bring in a model's print profiles too, from MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare: the designer's own, or all of them. Models with only STL/CAD files come in too.",
       "The model page shows each profile's print time, filament and plates, in a Picker, a List or Tiles as each person picks in their Appearance settings, or Off for plain files.",
-      "Title, description, tags, photos, author and source link come with the files.",
-      "Printables, eufyMake, Makerables and OwlCAD's library parts import with no setup. Most other sites need a key or your own sign-in, which Thingport Grab mostly hands over for you (see provider setup), and admins can turn off any provider they don't want used.",
+      "Title, description, tags, photos, author and source link come with the files, and the files keep the folders the designer sorted them into.",
+      "Printables, eufyMake, Makerables, QIDI Maker, VoxelShare and OwlCAD's library parts import with no setup. Most other sites need a key or your own sign-in, which Thingport Grab mostly hands over for you (see provider setup), and admins can turn off any provider they don't want used.",
     ],
     link: { label: "Provider setup", href: url("docs/providers/") },
     image: grabMakerworld,
@@ -71,6 +73,7 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "Keep saving models to collections on the sites you browse, even from your phone. They turn up in your library on their own.",
       "Follow someone else's public collection, their likes on Thingiverse, Cults3D, Pinshape or GrabCAD, or their PIXUP wishlist, and get each model they add.",
+      "One collection can follow several lists, on one site or several, such as a MakerWorld collection and a Printables one, each with its own settings.",
       "Checked once a day, or every 6 hours or every hour, with a notification saying what came in, and Sync now for when you can't wait.",
       "New models are imported one at a time, a minute apart, so the provider's limits aren't hit.",
       "Sync only adds: removing a model on the provider never deletes it from Thingport, and a model you deleted isn't brought back.",
@@ -93,6 +96,7 @@ const SECTIONS: FeatureSection[] = [
       "Unpack ZIPs into models and folders, picking which files to keep, or store an archive as it is.",
       "For big libraries and NAS shares, mount a consume folder and copy your library in. Thingport imports files, folder trees and ZIPs on its own, then empties the folder.",
       "Anything that can't be imported is set aside rather than lost, and a notification tells you what went in.",
+      "Moving from another Thingport instance, or from Manyfold? Migrate brings its people and libraries over, online or from a database dump of any Thingport release since 1.0.0.",
     ],
     link: { label: "Bring your existing library", href: url("docs/guides/existing-library/") },
     image: folderImport,
@@ -111,9 +115,11 @@ const SECTIONS: FeatureSection[] = [
       "Choose which print profiles to import, right from the model page, and on a model you already have, add just the ones it's missing.",
       "File the model into a collection, or a new one you name as you type, then jump straight to it with Open in Thingport.",
       "Hands Thingport your sign-in on the sites that need one, MakerWorld's included, so there's no cookie to paste.",
+      "When MakerWorld or MakerOnline wants a puzzle solved before handing over a file, it shows the site's own puzzle and carries on once it's solved.",
       "On a model you already have, its button shows a ✓ with a green ring, or a + while something is still missing, such as a print profile. Pick the button's look and corner under Appearance in its popup, where History keeps your last few imports.",
-      "Useful on its own too: a Download adapted button on MakerWorld makes a copy of the Bambu Studio project in your browser, for the slicer your Thingport instance opens files in or, with no instance, the copy PrusaSlicer and the slicers like it open with its colours and settings.",
-      "Talks only to your own Thingport instance. Nothing goes anywhere else.",
+      "Useful on its own too: a Download adapted button on MakerWorld, Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake, QIDI Maker and VoxelShare makes a copy of the model's 3MF in your browser, made for your slicer and printer, picked in Grab or, once connected, in your Thingport instance.",
+      "In English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese, following your browser or the language you pick.",
+      "Talks only to your own Thingport instance and the sites you use it on, their file hosts included. Nothing goes anywhere else.",
     ],
     link: { label: "Thingport Grab", href: url("docs/grab/") },
     image: grabCollection,
@@ -234,6 +240,7 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "A year-long activity heatmap, like the one on your GitHub profile, with earlier years one click away.",
       "A month-by-month timeline of the models you imported, uploaded, downloaded, opened in a slicer or deleted.",
+      "Achievements: badges for what you do, from your first import to a few secrets, in tiers from bronze to holographic, once an admin turns them on.",
       "Generate an API token to connect dashboards, launchers and scripts to your library, choose what it may read, and revoke it whenever you like.",
       "Ask Claude or another AI assistant about your library over MCP, and let it import models into collections if you allow it.",
     ],
@@ -251,14 +258,32 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "Attach assembly instructions, notes and other supporting files.",
       "Keep a sliced, ready-to-print project next to the source files.",
-      "Open files directly in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura, Creality Print, Anycubic Slicer Next, Elegoo Slicer, Snapmaker Orca or eufyMake Studio, picking the file when a model has several. Thingport Bridge handles the slicers that won't open links from a self-hosted server.",
-      "MakerWorld models are Bambu Studio projects, which other slicers often open without their colours or settings. Open adapted opens a copy made for your slicer instead, with the painted colours, parts, plates and print settings it can read.",
+      "Open files directly in Bambu Studio, OrcaSlicer, PrusaSlicer, Cura, Creality Print, Anycubic Slicer Next, Elegoo Slicer, Snapmaker Orca, eufyMake Studio, QIDI Studio or Flash Studio, picking the file when a model has several. Thingport Bridge handles the slicers that won't open links from a self-hosted server.",
       "Download a model's files one by one or as a ZIP, or a whole category, tag or collection in one archive.",
     ],
     link: { label: "Thingport Bridge", href: url("docs/bridge/") },
     image: downloads,
     dark: downloadsDark,
     alt: "The Downloads page, with Thingport Grab and Thingport Bridge",
+  },
+  {
+    id: "adapted",
+    short: "Adapted 3MFs",
+    icon: "check",
+    title: "Open any 3MF as if it were made in your slicer",
+    intro:
+      "A 3MF is usually its slicer's own project, which another slicer opens without its colours, parts or settings. Thingport opens a copy made for yours, and for the printer you print on.",
+    points: [
+      "Open adapted sits beside the regular Open whenever your slicer would open a file better as a copy: a Bambu Studio project from any site, a PrusaSlicer project, or a plain 3MF in colours.",
+      "Bambu Studio and the slicers built on it open such a project as their own, PrusaSlicer and eufyMake Studio get the designer's settings on each object over your own printer, and Cura a project with every object on its extruder.",
+      "Add your printers under Configuration → Printer, from the 971 the slicers know, suggested from your library or found in your printer makers' accounts, and the copy names your slicer's presets for your printer, its plates moved onto your bed.",
+      "The copy is made on your instance, offline too, and the stored file never changes. Switch it off for any slicer.",
+      "Thingport Grab's Download adapted makes the same copies in your browser on nine sites, with or without an instance.",
+    ],
+    link: { label: "Adapted 3MFs", href: url("docs/features/adapted-3mf/") },
+    image: openAdapted,
+    dark: openAdaptedDark,
+    alt: "A model's side panel offering Open in OrcaSlicer, adapted for a Bambu Lab A1 mini, beside the regular Open",
   },
   {
     id: "tools",
@@ -289,7 +314,8 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "Choose the folder layout, for example category / model / file. Change it later and existing files are moved to match in the background.",
       "Renaming a model renames its file too, so the folders stay readable.",
-      "See how much disk space models, pictures and previews take, and browse the storage folder from the browser.",
+      "See what takes the disk, from model files and 3D previews to photos and slicer copies, and Free up space clears what nothing needs: old previews, slicer copies and, if you choose, extra photos.",
+      "Each model's pictures and 3D previews sit in a folder beside its files, so they move and go with it. Browse the storage folder from the browser.",
       "Back up the storage folder with whatever tool you already use.",
       "A model with a licence gets a LICENSE.txt beside its files, saying what it allows and how to credit it, unless an admin turns them off, and every ZIP download carries one either way.",
       "If models lose their files, say after a move without the storage volume, Thingport offers to fetch them again from their sites, keeping names, tags and collections, or to delete those models.",
@@ -311,9 +337,9 @@ const SECTIONS: FeatureSection[] = [
       "Add someone else's model to a collection of yours and it's your own copy, with its source, print profiles and pictures, in your own category of the same name when you have one, and it stays if theirs goes.",
       "Chats: direct messages and rooms, with models sent in them, all on your own server.",
       "Everyone's profile has a cover, a bio and links, and an avatar they design, upload or take from Gravatar.",
-      "Open sign-up, or invite-only with email invitations. Optional email verification and captcha.",
+      "Open sign-up, or invite-only, with invitations sent by email or as a link you send yourself. Optional email verification and captcha.",
       "Single sign-on with Authentik, Pocket ID, Keycloak or any other OpenID Connect provider, next to email and password.",
-      "Light and dark themes, an accent colour of your own, in English, Spanish, French, Lithuanian, Russian, Ukrainian and Belarusian.",
+      "Light and dark themes, an accent colour of your own, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese.",
       "On a phone, the menu, the top bar and the model filters fit the narrow screen.",
     ],
     link: { label: "Multi-user", href: url("docs/features/multi-user/") },
@@ -352,7 +378,8 @@ const SECTIONS: FeatureSection[] = [
       "System Health checks the database, storage, memory, internet, FlareSolverr, Thingiverse, MyMiniFactory, Thingport Grab, AI and email on demand, and says what to fix.",
       "Choose which providers this Thingport instance imports from. Turn one off and nothing new comes from it for anyone.",
       "Manage users and roles, see how each person signs in, and follow imports and changes in the logs.",
-      "Change the storage folder layout and let Thingport reorganize existing files in the background.",
+      "Change the storage folder layout and let Thingport reorganize existing files in the background, and free up space when the disk fills.",
+      "Bring people and libraries in from another Thingport instance, or from a Manyfold library, under Migrate.",
       "An update check says when newer Thingport images are out, and What's new shows everyone what changed after an update, with earlier releases' notes a click away.",
       "Turn print quality checks on or off, or choose which problems they look for.",
     ],
@@ -366,7 +393,7 @@ const SECTIONS: FeatureSection[] = [
 
 <BaseLayout
   title="Features"
-  description={`Everything Thingport can do: import from MakerWorld, Printables, Thingiverse and ${otherSites} other sites, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, customize generative models, run tools that make new ones, organize with categories, tags and optional AI, and send files to your slicer.`}
+  description={`Everything Thingport can do: import from MakerWorld, Printables, Thingiverse and ${otherSites} other sites, bring in your existing folders and ZIPs, preview STL, 3MF, STEP and OBJ in 3D, customize generative models, run tools that make new ones, organize with categories, tags and optional AI, and open files in your slicer, adapted to it and to your printer.`}
   search
 >
   <div class="container page-head">

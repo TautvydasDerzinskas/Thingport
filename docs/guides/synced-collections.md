@@ -55,6 +55,8 @@ Thingport imports from can be synced except OwlCAD, which has no collections or 
 | PIXUP           | Anyone's collections and wishlists            | Your sign-in, for the files                                                                               |
 | Fab365          | Your favourites                               | Your sign-in, for the list and the files                                                                  |
 | 3DExport        | Collections, your private ones too            | Your sign-in, for the files and your own collections                                                      |
+| QIDI Maker      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
+| VoxelShare      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
 
 A few have more to know:
 
@@ -63,6 +65,9 @@ A few have more to know:
   and Grab sends the new one on your next visit. GrabCAD's lasts two days from its last use, and visiting grabcad.com
   with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model. 3DExport's
   lasts until you sign out of 3dexport.com, in any browser, and Grab sends the new one when you sign in again.
+  QIDI Maker's lasts 90 days; without it, a sync of a private collection of yours waits rather than take it for gone.
+  VoxelShare's lasts 31 days, and Grab sends each new one the site makes as you use it; a sync of a private collection
+  waits for it too.
 - **Left out.** A MyMiniFactory collection's paid models; on Thangs, Cults3D and PIXUP the paid ones you don't own, and
   on Thangs the print-only ones too. CGTrader's and 3DExport's paid ones aren't left out: one you haven't bought is
   refused when the sync reaches it, and counts as failed.
@@ -81,7 +86,8 @@ A few have more to know:
    Pinshape, the collections you subscribed to as well). Or paste the link of any list the site lets Thingport read,
    yours or someone else's.
 4. Pick one and click **Sync**. The dialog opens the new source, where you can change how often it's checked, and for
-   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud and NexPrint which print profiles each new model brings.
+   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare which print profiles each
+   new model brings.
 
 The models already in the list are imported now, one at a time; MakerOnline's wait for Grab, as below. MakerWorld
 rate-limits bulk imports quickly, so there only models added from now on come in. Ones already in your library are
@@ -106,9 +112,10 @@ before Grab has read it, and its models come in on that next visit.
 
 1. Open the list's page on the site, with the site switched on in Grab's popup:
    - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs,
-     Pinshape, Meshy, PIXUP or 3DExport (your **Default Collection** too), or on NexPrint one open on its owner's page;
+     Pinshape, Meshy, PIXUP, 3DExport, QIDI Maker (your **Default Collection** too) or VoxelShare, or on NexPrint one open on its
+     owner's page;
    - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, anyone's wishlist on PIXUP,
-     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake or Toymakr3D;
+     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake, Toymakr3D, QIDI Maker or VoxelShare;
    - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, your favourites on Fab365, or
      your **Interactions** tab on Snapmaker Space, where the panel's switch picks your likes or bookmarks.
 
@@ -153,9 +160,9 @@ linked:
 - **Each source** has a section of its own, named after the provider's list. It shows the chain from that list to
   your collection, when it was last checked and when the next check is due, and a link to the list on the provider's
   site. **Sync now** checks it right away; **Stop syncing** unlinks that source alone. Below that, how often it's
-  checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud
-  and NexPrint it also sets which print profiles each new model brings: the default one, the designer's (the default),
-  or all of them, community ones included. Each source keeps its own settings.
+  checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud,
+  NexPrint, eufyMake and QIDI Maker it also sets which print profiles each new model brings: the default one, the designer's (the
+  default), or all of them, community ones included. Each source keeps its own settings.
 - **Overview**, once a collection follows two or more, lists them with how each is doing; click one to open it.
   **Sync all now** checks every one that can be checked, with a notification for each.
 - **Add source** links another list, as [above](#turn-sync-on-in-thingport).

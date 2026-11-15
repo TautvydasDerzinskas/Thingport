@@ -90,7 +90,7 @@ export const DOCS = [
     group: "Companion apps",
     title: "Thingport Grab browser extension",
     nav: "Thingport Grab",
-    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport instance, and no password is saved.`,
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites, and download 3MFs adapted for your slicer and printer. Pair it with your Thingport instance, and no password is saved.`,
   },
   {
     slug: "grab/privacy",
@@ -108,7 +108,7 @@ export const DOCS = [
     title: "Thingport Bridge",
     nav: "Thingport Bridge",
     description:
-      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
+      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura, Anycubic Slicer Next and QIDI Studio.",
   },
   {
     slug: "guides/existing-library",
@@ -152,7 +152,7 @@ export const DOCS = [
     title: "Synced collections",
     nav: "Synced collections",
     description:
-      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own.",
+      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own. One collection can follow several.",
   },
   {
     slug: "guides/bookmarklet",
@@ -214,7 +214,7 @@ export const DOCS = [
     title: "Profile and activity",
     nav: "Profile and activity",
     description:
-      "A profile with your cover, avatar, bio and links, and a year-long activity heatmap and timeline of everything you've done with your library.",
+      "A profile with your cover, avatar, bio and links, badges for what you do, and a year-long activity heatmap and timeline of everything you've done with your library.",
   },
   {
     slug: "features/authors",
@@ -274,7 +274,7 @@ export const DOCS = [
     title: "Plain files on your disk",
     nav: "Storage",
     description:
-      "Models stored as ordinary files, in a folder layout you choose and can change later, and can be fetched again from their sites if the files go missing.",
+      "Models stored as ordinary files, in a folder layout you choose and can change later. See what takes the disk, free up space, and fetch models again from their sites if their files go missing.",
   },
   {
     slug: "features/multi-user",
@@ -319,7 +319,7 @@ export const DOCS = [
     title: "Themes, colours and languages",
     nav: "Themes and languages",
     description:
-      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian or Belarusian.",
+      "Light, dark or system theme, an accent colour of your own, 3D renders on model cards, in English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian or Simplified Chinese.",
   },
   {
     slug: "guides/system-health",
@@ -356,6 +356,24 @@ export const DOCS = [
     nav: "Set up connected instances",
     description:
       "Turn connected instances on, connect to another instance, answer requests and look after partners, step by step, a home instance behind its router included.",
+  },
+  {
+    slug: "guides/migrate",
+    source: "docs/guides/migrate.md",
+    group: "Administration",
+    title: "Move to another Thingport instance",
+    nav: "Migrate",
+    description:
+      "Bring another Thingport instance's people and libraries into this one: online with a 24-hour token, or from any release since 1.0.0 with a database dump and its storage folder.",
+  },
+  {
+    slug: "guides/migrate-manyfold",
+    source: "docs/guides/migrate-manyfold.md",
+    group: "Administration",
+    title: "Move from Manyfold",
+    nav: "Migrate from Manyfold",
+    description:
+      "Bring a Manyfold library's models, with their files, pictures, tags and licences, and its collections into Thingport, read with an API key made there.",
   },
   {
     slug: "guides/api-token",

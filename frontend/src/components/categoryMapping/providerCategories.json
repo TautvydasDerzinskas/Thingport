@@ -11171,5 +11171,919 @@
       "name": "Terrain",
       "parent": null
     }
+  ],
+  "qidimaker": [
+    {
+      "id": "1985611396065067009",
+      "name": "3D Printer",
+      "parent": null
+    },
+    {
+      "id": "1985613162231930881",
+      "name": "3D Printer Accessories",
+      "parent": "1985611396065067009"
+    },
+    {
+      "id": "1985613209887612930",
+      "name": "3D Printer Parts",
+      "parent": "1985611396065067009"
+    },
+    {
+      "id": "2034573253480591361",
+      "name": "Test Models",
+      "parent": "1985611396065067009"
+    },
+    {
+      "id": "1985612058672824321",
+      "name": "Art",
+      "parent": null
+    },
+    {
+      "id": "1985613281576656898",
+      "name": "2D Art",
+      "parent": "1985612058672824321"
+    },
+    {
+      "id": "1985613340498239489",
+      "name": "Coin & Badges",
+      "parent": "1985612058672824321"
+    },
+    {
+      "id": "1985613385058525186",
+      "name": "Sculptures",
+      "parent": "1985612058672824321"
+    },
+    {
+      "id": "2034573466425405442",
+      "name": "Other Art Models",
+      "parent": "1985612058672824321"
+    },
+    {
+      "id": "2034573769094770690",
+      "name": "Signs & Logos",
+      "parent": "1985612058672824321"
+    },
+    {
+      "id": "1985612088716623874",
+      "name": "Education",
+      "parent": null
+    },
+    {
+      "id": "1985613470349697025",
+      "name": "Biology",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985613498820632578",
+      "name": "Chemistry",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985613528042348545",
+      "name": "Engineering",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985613548942565378",
+      "name": "Geography",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985613569473683458",
+      "name": "Math",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985618108742483969",
+      "name": "Language",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "2034573913705984002",
+      "name": "Physics & Astronomy",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "2034573977824309250",
+      "name": "Other Education Models",
+      "parent": "1985612088716623874"
+    },
+    {
+      "id": "1985612118525542401",
+      "name": "Fashion",
+      "parent": null
+    },
+    {
+      "id": "1985613637194915842",
+      "name": "Bags",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "1985613658162241537",
+      "name": "Clothes",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "1985613681595817985",
+      "name": "Earrings",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "1985617805402030081",
+      "name": "Glasses",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "2034574112369192962",
+      "name": "Footwear",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "2034574170711961602",
+      "name": "Jewelry",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "2034574209475719169",
+      "name": "Rings",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "2048671809493069826",
+      "name": "Other Fashion Models",
+      "parent": "1985612118525542401"
+    },
+    {
+      "id": "1985618181547212801",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "1985618778254041089",
+      "name": "Festivities",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "1985618840874999810",
+      "name": "Garden",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "2048671922445676545",
+      "name": "Decor",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "2048671989093167106",
+      "name": "Office",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "2048672041366777857",
+      "name": "Pets",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "2048672099143315458",
+      "name": "Other House Models",
+      "parent": "1985618181547212801"
+    },
+    {
+      "id": "1985618258235867137",
+      "name": "Microscopic model",
+      "parent": null
+    },
+    {
+      "id": "1985618909007273986",
+      "name": "Animals",
+      "parent": "1985618258235867137"
+    },
+    {
+      "id": "1985618925969039361",
+      "name": "Architecture",
+      "parent": "1985618258235867137"
+    },
+    {
+      "id": "1985618938702946306",
+      "name": "People",
+      "parent": "1985618258235867137"
+    },
+    {
+      "id": "2048672262276575233",
+      "name": "Creatures",
+      "parent": "1985618258235867137"
+    },
+    {
+      "id": "2048672322892656642",
+      "name": "Other Miniatures",
+      "parent": "1985618258235867137"
+    },
+    {
+      "id": "1985619602350809090",
+      "name": "Props & Cosplays",
+      "parent": null
+    },
+    {
+      "id": "1985619676933922818",
+      "name": "Costumes",
+      "parent": "1985619602350809090"
+    },
+    {
+      "id": "1985619711062974466",
+      "name": "Masks & Helmets",
+      "parent": "1985619602350809090"
+    },
+    {
+      "id": "2048672414349455361",
+      "name": "Cosplay Weapons",
+      "parent": "1985619602350809090"
+    },
+    {
+      "id": "2048672495651844098",
+      "name": "Other Props & Cosplays",
+      "parent": "1985619602350809090"
+    },
+    {
+      "id": "2048660225412624385",
+      "name": "Toys & Games",
+      "parent": null
+    },
+    {
+      "id": "2048660400868749314",
+      "name": "Board Games",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048672593823723521",
+      "name": "Characters",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048672646751645698",
+      "name": "Outdoor Toys",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048672689353191426",
+      "name": "Puzzles",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048672776171089922",
+      "name": "Construction Sets",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048672864515715074",
+      "name": "Other Toys & Games",
+      "parent": "2048660225412624385"
+    },
+    {
+      "id": "2048677835776782338",
+      "name": "Tools",
+      "parent": null
+    },
+    {
+      "id": "2048677907721678849",
+      "name": "Gadgets",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048677971609317377",
+      "name": "Hand Tools",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048678012453449729",
+      "name": "Machine Tools",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048678059987496962",
+      "name": "Measure Tools",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048678103193022466",
+      "name": "Medical Tools",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048678151343632385",
+      "name": "Organizers",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048678192095490049",
+      "name": "Other Tools",
+      "parent": "2048677835776782338"
+    },
+    {
+      "id": "2048685298961936385",
+      "name": "Hobby & DIY",
+      "parent": null
+    },
+    {
+      "id": "2048685334470914049",
+      "name": "Electronics",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685371791831042",
+      "name": "Music",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685409620258818",
+      "name": "RC",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685440096071681",
+      "name": "Robotics",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685489911820290",
+      "name": "Sport & Outdoors",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685525894754306",
+      "name": "Vehicles",
+      "parent": "2048685298961936385"
+    },
+    {
+      "id": "2048685600880521218",
+      "name": "Other Hobby & DIY",
+      "parent": "2048685298961936385"
+    }
+  ],
+  "voxelshare": [
+    {
+      "id": "1",
+      "name": "3D Printer Parts & Accessories",
+      "parent": null
+    },
+    {
+      "id": "2",
+      "name": "Accessories",
+      "parent": "1"
+    },
+    {
+      "id": "3",
+      "name": "Parts & Upgrades",
+      "parent": "1"
+    },
+    {
+      "id": "4",
+      "name": "Test Models & Calibration",
+      "parent": "1"
+    },
+    {
+      "id": "5",
+      "name": "Other",
+      "parent": "1"
+    },
+    {
+      "id": "6",
+      "name": "Art",
+      "parent": null
+    },
+    {
+      "id": "7",
+      "name": "2D Art",
+      "parent": "6"
+    },
+    {
+      "id": "8",
+      "name": "Sculptures",
+      "parent": "6"
+    },
+    {
+      "id": "9",
+      "name": "Coins & Badges",
+      "parent": "6"
+    },
+    {
+      "id": "10",
+      "name": "Signs&Logos",
+      "parent": "6"
+    },
+    {
+      "id": "11",
+      "name": "Mathematical Art",
+      "parent": "6"
+    },
+    {
+      "id": "12",
+      "name": "Scans & Replicas",
+      "parent": "6"
+    },
+    {
+      "id": "13",
+      "name": "ART TOOLS",
+      "parent": "6"
+    },
+    {
+      "id": "14",
+      "name": "Other",
+      "parent": "6"
+    },
+    {
+      "id": "15",
+      "name": "Costumes & Cosplay",
+      "parent": null
+    },
+    {
+      "id": "16",
+      "name": "Accessories",
+      "parent": "15"
+    },
+    {
+      "id": "17",
+      "name": "Armor & Props",
+      "parent": "15"
+    },
+    {
+      "id": "18",
+      "name": "Costumes",
+      "parent": "15"
+    },
+    {
+      "id": "19",
+      "name": "Masks & Helmets",
+      "parent": "15"
+    },
+    {
+      "id": "20",
+      "name": "Other",
+      "parent": "15"
+    },
+    {
+      "id": "21",
+      "name": "Education",
+      "parent": null
+    },
+    {
+      "id": "22",
+      "name": "Physics & Astronomy",
+      "parent": "21"
+    },
+    {
+      "id": "23",
+      "name": "Chemistry & Biology",
+      "parent": "21"
+    },
+    {
+      "id": "24",
+      "name": "Geography",
+      "parent": "21"
+    },
+    {
+      "id": "25",
+      "name": "Human Anatomy & Medical",
+      "parent": "21"
+    },
+    {
+      "id": "26",
+      "name": "Engineering",
+      "parent": "21"
+    },
+    {
+      "id": "27",
+      "name": "Math",
+      "parent": "21"
+    },
+    {
+      "id": "28",
+      "name": "Other",
+      "parent": "21"
+    },
+    {
+      "id": "29",
+      "name": "Fashion & Jewelry",
+      "parent": null
+    },
+    {
+      "id": "30",
+      "name": "Bracelets",
+      "parent": "29"
+    },
+    {
+      "id": "31",
+      "name": "Clothing",
+      "parent": "29"
+    },
+    {
+      "id": "32",
+      "name": "Earrings",
+      "parent": "29"
+    },
+    {
+      "id": "33",
+      "name": "Necklaces",
+      "parent": "29"
+    },
+    {
+      "id": "34",
+      "name": "Rings",
+      "parent": "29"
+    },
+    {
+      "id": "35",
+      "name": "Glasses",
+      "parent": "29"
+    },
+    {
+      "id": "36",
+      "name": "Keychains",
+      "parent": "29"
+    },
+    {
+      "id": "37",
+      "name": "Bags & Purses",
+      "parent": "29"
+    },
+    {
+      "id": "38",
+      "name": "Shoes",
+      "parent": "29"
+    },
+    {
+      "id": "39",
+      "name": "Brooches & Badges",
+      "parent": "29"
+    },
+    {
+      "id": "40",
+      "name": "Cufflinks",
+      "parent": "29"
+    },
+    {
+      "id": "41",
+      "name": "Pendants",
+      "parent": "29"
+    },
+    {
+      "id": "42",
+      "name": "Other",
+      "parent": "29"
+    },
+    {
+      "id": "43",
+      "name": "Hobby & DIY",
+      "parent": null
+    },
+    {
+      "id": "44",
+      "name": "Automotive",
+      "parent": "43"
+    },
+    {
+      "id": "45",
+      "name": "Electronics",
+      "parent": "43"
+    },
+    {
+      "id": "46",
+      "name": "Music & Audio",
+      "parent": "43"
+    },
+    {
+      "id": "47",
+      "name": "Outdoor",
+      "parent": "43"
+    },
+    {
+      "id": "48",
+      "name": "Photography & Video",
+      "parent": "43"
+    },
+    {
+      "id": "49",
+      "name": "RC",
+      "parent": "43"
+    },
+    {
+      "id": "50",
+      "name": "Robotics",
+      "parent": "43"
+    },
+    {
+      "id": "51",
+      "name": "Sport & Outdoors",
+      "parent": "43"
+    },
+    {
+      "id": "52",
+      "name": "Other",
+      "parent": "43"
+    },
+    {
+      "id": "53",
+      "name": "Household",
+      "parent": null
+    },
+    {
+      "id": "54",
+      "name": "Bathroom",
+      "parent": "53"
+    },
+    {
+      "id": "55",
+      "name": "Bedroom",
+      "parent": "53"
+    },
+    {
+      "id": "56",
+      "name": "Living Room",
+      "parent": "53"
+    },
+    {
+      "id": "57",
+      "name": "Containers",
+      "parent": "53"
+    },
+    {
+      "id": "58",
+      "name": "Decor",
+      "parent": "53"
+    },
+    {
+      "id": "59",
+      "name": "Office",
+      "parent": "53"
+    },
+    {
+      "id": "60",
+      "name": "Pets",
+      "parent": "53"
+    },
+    {
+      "id": "61",
+      "name": "Replacement Parts",
+      "parent": "53"
+    },
+    {
+      "id": "62",
+      "name": "Organization",
+      "parent": "53"
+    },
+    {
+      "id": "63",
+      "name": "Outdoor & Garden",
+      "parent": "53"
+    },
+    {
+      "id": "64",
+      "name": "Household Supplies",
+      "parent": "53"
+    },
+    {
+      "id": "65",
+      "name": "Kitchen & Dining",
+      "parent": "53"
+    },
+    {
+      "id": "66",
+      "name": "Garage",
+      "parent": "53"
+    },
+    {
+      "id": "67",
+      "name": "Furniture",
+      "parent": "53"
+    },
+    {
+      "id": "68",
+      "name": "Lighting",
+      "parent": "53"
+    },
+    {
+      "id": "69",
+      "name": "Other",
+      "parent": "53"
+    },
+    {
+      "id": "70",
+      "name": "Miniatures",
+      "parent": null
+    },
+    {
+      "id": "71",
+      "name": "Architecture",
+      "parent": "70"
+    },
+    {
+      "id": "72",
+      "name": "Vehicle",
+      "parent": "70"
+    },
+    {
+      "id": "73",
+      "name": "Sci-Fi",
+      "parent": "70"
+    },
+    {
+      "id": "74",
+      "name": "War",
+      "parent": "70"
+    },
+    {
+      "id": "75",
+      "name": "Animals",
+      "parent": "70"
+    },
+    {
+      "id": "76",
+      "name": "Creatures",
+      "parent": "70"
+    },
+    {
+      "id": "77",
+      "name": "People",
+      "parent": "70"
+    },
+    {
+      "id": "78",
+      "name": "Other",
+      "parent": "70"
+    },
+    {
+      "id": "79",
+      "name": "Tools & Organizers",
+      "parent": null
+    },
+    {
+      "id": "80",
+      "name": "Hand Tools",
+      "parent": "79"
+    },
+    {
+      "id": "81",
+      "name": "Machine Tools",
+      "parent": "79"
+    },
+    {
+      "id": "82",
+      "name": "Organizers",
+      "parent": "79"
+    },
+    {
+      "id": "83",
+      "name": "Parts",
+      "parent": "79"
+    },
+    {
+      "id": "84",
+      "name": "Other",
+      "parent": "79"
+    },
+    {
+      "id": "85",
+      "name": "Toys & Games",
+      "parent": null
+    },
+    {
+      "id": "86",
+      "name": "Action Figures & Collectibles",
+      "parent": "85"
+    },
+    {
+      "id": "87",
+      "name": "Articulated",
+      "parent": "85"
+    },
+    {
+      "id": "88",
+      "name": "Board Game",
+      "parent": "85"
+    },
+    {
+      "id": "89",
+      "name": "Educational Toys",
+      "parent": "85"
+    },
+    {
+      "id": "90",
+      "name": "Fidget Toys",
+      "parent": "85"
+    },
+    {
+      "id": "91",
+      "name": "Keychains",
+      "parent": "85"
+    },
+    {
+      "id": "92",
+      "name": "Toys",
+      "parent": "85"
+    },
+    {
+      "id": "93",
+      "name": "Outdoor Toys",
+      "parent": "85"
+    },
+    {
+      "id": "94",
+      "name": "Puzzles",
+      "parent": "85"
+    },
+    {
+      "id": "95",
+      "name": "Other",
+      "parent": "85"
+    },
+    {
+      "id": "96",
+      "name": "Gadgets",
+      "parent": null
+    },
+    {
+      "id": "97",
+      "name": "Audio",
+      "parent": "96"
+    },
+    {
+      "id": "98",
+      "name": "Video Games",
+      "parent": "96"
+    },
+    {
+      "id": "99",
+      "name": "Keychains",
+      "parent": "96"
+    },
+    {
+      "id": "100",
+      "name": "Office",
+      "parent": "96"
+    },
+    {
+      "id": "101",
+      "name": "Photo & Video",
+      "parent": "96"
+    },
+    {
+      "id": "102",
+      "name": "Computers",
+      "parent": "96"
+    },
+    {
+      "id": "103",
+      "name": "Portable Devices",
+      "parent": "96"
+    },
+    {
+      "id": "104",
+      "name": "Other",
+      "parent": "96"
+    },
+    {
+      "id": "113",
+      "name": "Various",
+      "parent": null
+    },
+    {
+      "id": "114",
+      "name": "Seasonal & Celebrations",
+      "parent": "113"
+    },
+    {
+      "id": "115",
+      "name": "Sports & Outdoor",
+      "parent": "113"
+    },
+    {
+      "id": "116",
+      "name": "Prototyping",
+      "parent": "113"
+    },
+    {
+      "id": "117",
+      "name": "Books & Reading",
+      "parent": "113"
+    },
+    {
+      "id": "118",
+      "name": "Recycling & Upcycling",
+      "parent": "113"
+    },
+    {
+      "id": "119",
+      "name": "Health & Fitness",
+      "parent": "113"
+    },
+    {
+      "id": "120",
+      "name": "Functional Prints",
+      "parent": "113"
+    },
+    {
+      "id": "121",
+      "name": "Generative 3D Model",
+      "parent": "113"
+    }
   ]
 }

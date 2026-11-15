@@ -4,6 +4,7 @@ import type { AccentColor, RenderColor, ThemeSelection } from "../constants/sett
 import type { ProviderId } from "../providers/index.generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
+import type { PhotoKeep } from "./admin";
 
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
@@ -499,6 +500,24 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update file reuse settings"));
     return res.json();
+  },
+
+  /** How many photos an import or a re-sync keeps from a model's page; null keeps them all. */
+  getPhotosPerModel: async (): Promise<PhotoKeep | null> => {
+    const res = await fetch(`${apiBase()}/settings/photos-per-model`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the photos setting");
+    return (await res.json()).keep;
+  },
+
+  updatePhotosPerModel: async (keep: PhotoKeep | null): Promise<PhotoKeep | null> => {
+    const res = await fetch(`${apiBase()}/settings/photos-per-model`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ keep }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the photos setting"));
+    return (await res.json()).keep;
   },
 
   /** Goes over the stored files again; refused with the server's message while the switch is off or files are moving. */

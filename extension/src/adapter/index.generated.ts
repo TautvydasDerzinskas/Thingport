@@ -18,7 +18,7 @@ import { writePrusa } from "./writers/prusa.generated";
 import type { WriteOptions, Written } from "./writers/types.generated";
 
 /** Bumped whenever a writer's output changes, so copies made by an older one are made again. */
-export const ADAPTER_VERSION = 4;
+export const ADAPTER_VERSION = 5;
 
 export const ADAPT_ZIP_OPTIONS = { compression: "DEFLATE", compressionOptions: { level: 6 } } as const;
 
@@ -40,10 +40,14 @@ export async function adapt3mf(
 }
 
 export { classify3mf, FORMAT_VERSION, parseGenerator, storedFormat } from "./format.generated";
+export { plainModelScanner } from "./plainScan.generated";
+export type { PlainModelScanner } from "./plainScan.generated";
 export type { PlainModelScan, ThreeMfFiles, ThreeMfFormat, ThreeMfKind } from "./format.generated";
 export { COMPATIBLE_TAG, madeFor, planAdaptation, planKey, versionAtMost } from "./plan.generated";
 export type { AdaptPlan, PrinterChoice } from "./plan.generated";
-export type { FilamentChoices, PrinterRecipe } from "./printer.generated";
+export type { BedBox, FilamentChoices, PrinterRecipe } from "./printer.generated";
+export { bedBox, printerPresetName, printerRecipe } from "./recipe.generated";
+export type { Bed, PrinterPreset, ProcessPreset, RecipePrinter, SlicerEntry } from "./recipe.generated";
 export { SLICER_PROFILES, slicerProfile } from "./slicers/index.generated";
 export type { SlicerProfile } from "./slicers/index.generated";
 export type { AdaptReport, WriteOptions, Written } from "./writers/types.generated";

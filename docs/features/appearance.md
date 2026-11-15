@@ -7,7 +7,7 @@ Make Thingport look the way you like, under **Configuration → Appearance**, fr
   <img src="../../frontend/src/assets/screenshots/light/15_profile_configuration.png" alt="Configuration, Appearance section, with language, theme, accent colour, render colour and model cards" width="100%">
 </picture>
 
-- **Language:** English, Español, Français, Lietuvių, Русский, Українська and Беларуская, and any language someone
+- **Language:** English, Español, Français, Lietuvių, Русский, Українська, Беларуская and 简体中文, and any language someone
   has [translated it into](../TRANSLATING.md).
 - **Theme:** Light, Dark, or **System** to follow your device's setting.
 - **Accent colour:** Thingport green, graphite, or a provider's brand colour: Thingiverse blue, Printables orange,

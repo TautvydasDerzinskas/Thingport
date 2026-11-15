@@ -1,0 +1,41 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": "2119450902810669058",
+    "userId": "10000000000000000010",
+    "tags": [],
+    "translatedTags": [],
+    "favoriteName": "Printer upgrades",
+    "translatedFavoriteName": "Printer upgrades",
+    "favoritePicture": "",
+    "favoriteDescription": "",
+    "translatedFavoriteDescription": null,
+    "visibility": 0,
+    "favoriteDefault": 0,
+    "favoriteType": 4,
+    "modelNumber": null,
+    "isSelf": false,
+    "isFocus": false,
+    "collected": null,
+    "userVo": {
+      "userId": null,
+      "uuidName": null,
+      "nickname": "Maker 9",
+      "avatar": "https://maker-cdn.qidimaker.com/userInfo/avatar/20261031/gg0tntw0cd/2026_10_31_6f0bb853f9064b8eba684ac5162dde52.png",
+      "level": 1,
+      "fans": 0,
+      "likes": 0,
+      "modelNumber": 0,
+      "modelDisplayVo": null
+    },
+    "modelPictureUrls": [
+      "https://maker-cdn.qidimaker.com/model/picture/20261013/huyty636ao/2026-10-12_e30fbf0abf7b64.jpg",
+      "https://maker-cdn.qidimaker.com/model/picture/20260818/sajefp3bnm/2026-08-18_3650c857c03c8d.png",
+      "https://maker-cdn.qidimaker.com/model/picture/20260811/eswdg3tn0e/2026-08-11_d482a4c96dc033.jpg",
+      "https://maker-cdn.qidimaker.com/model/picture/20260731/izz2uy6knk/2026-07-31_1e2732cdacf8b5.png"
+    ],
+    "fans": 0
+  },
+  "timestamp": 1794600000000
+}
