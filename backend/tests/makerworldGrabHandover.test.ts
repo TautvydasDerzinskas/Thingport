@@ -394,4 +394,31 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     });
     expect(told).toHaveLength(1);
   });
+
+  it("keeps a link queued again as its last try in Grab failed, its tries started over", async () => {
+    await pairGrab();
+    await runJob([modelUrl(25)]);
+    const [row] = await waiting();
+    await prisma.grabImport.update({ where: { id: row.id }, data: { attempts: 2 } });
+    // Another import meets the CAPTCHA on the link between the last try's count and its drop.
+    const drop = prisma.grabImport.deleteMany.bind(prisma.grabImport);
+    vi.spyOn(prisma.grabImport, "deleteMany").mockImplementationOnce(async (args) => {
+      await prisma.grabImport.update({
+        where: { id: row.id },
+        data: { attempts: 0, tags: ["newer"], updatedAt: new Date(Date.now() + 1000) },
+      });
+      return drop(args);
+    });
+
+    await request(app)
+      .post(`/api/import/makerworld/waiting/${row.id}/failed`)
+      .set(auth())
+      .send({ error: "no file" })
+      .expect(200);
+    expect((await waiting()).map((left) => [left.id, left.attempts, left.tags])).toEqual([[row.id, 0, ["newer"]]]);
+    const told = await prisma.notification.findMany({
+      where: { userId, externalUrl: row.url, title: { startsWith: "Couldn't import" } },
+    });
+    expect(told).toEqual([]);
+  });
 });
