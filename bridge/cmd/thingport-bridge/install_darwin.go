@@ -12,7 +12,6 @@ import "C"
 import (
 	_ "embed"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -128,6 +127,8 @@ func infoPlist() string {
 	<string>10.13</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>It downloads the models you open in a slicer from your Thingport instance.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -149,9 +150,5 @@ func infoPlist() string {
 func runDefaultLaunch() {
 	cfg, cfgDir := loadConfig()
 	setupLogging(cfg, cfgDir)
-	listenForAppleEventURLs(func(raw string) {
-		if err := handleProtocol(raw, cfg); err != nil {
-			log.Printf("error: %v", err)
-		}
-	})
+	listenForAppleEventURLs(func(raw string) { serveLink(raw, cfg) })
 }
