@@ -131,7 +131,7 @@ export async function dropUnwantedMakerworldGrabImports(userId?: string): Promis
 
 /** A failed try in Grab. The last one drops the model and says why. Counted on the row as it stands, so tries that
  *  fail at once each count; only the one that drops it says so, and only the row as it counted it: queued again since,
- *  its tries start over. */
+ *  its tries start over. By its tries too, as a queue in the same millisecond keeps `updatedAt`. */
 export async function recordMakerworldGrabImportFailure(row: GrabImport, error: string): Promise<void> {
   const tried = await prisma.grabImport
     .update({
@@ -141,7 +141,9 @@ export async function recordMakerworldGrabImportFailure(row: GrabImport, error: 
     })
     .catch(() => null);
   if (!tried || tried.attempts < MAKERWORLD_GRAB_MAX_ATTEMPTS) return;
-  const { count } = await prisma.grabImport.deleteMany({ where: { id: row.id, updatedAt: tried.updatedAt } });
+  const { count } = await prisma.grabImport.deleteMany({
+    where: { id: row.id, updatedAt: tried.updatedAt, attempts: { gte: MAKERWORLD_GRAB_MAX_ATTEMPTS } },
+  });
   if (!count) return;
   await createNotification(row.userId, {
     type: "import",

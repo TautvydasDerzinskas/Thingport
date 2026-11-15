@@ -395,7 +395,10 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     expect(told).toHaveLength(1);
   });
 
-  it("keeps a link queued again as its last try in Grab failed, its tries started over", async () => {
+  it.each([
+    ["a millisecond later", 1],
+    ["in the same millisecond", 0],
+  ])("keeps a link queued again %s as its last try in Grab failed, its tries started over", async (_when, later) => {
     await pairGrab();
     await runJob([modelUrl(25)]);
     const [row] = await waiting();
@@ -403,9 +406,10 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     // Another import meets the CAPTCHA on the link between the last try's count and its drop.
     const drop = prisma.grabImport.deleteMany.bind(prisma.grabImport);
     vi.spyOn(prisma.grabImport, "deleteMany").mockImplementationOnce(async (args) => {
+      const counted = await prisma.grabImport.findUniqueOrThrow({ where: { id: row.id } });
       await prisma.grabImport.update({
         where: { id: row.id },
-        data: { attempts: 0, tags: ["newer"], updatedAt: new Date(Date.now() + 1000) },
+        data: { attempts: 0, tags: ["newer"], updatedAt: new Date(counted.updatedAt.getTime() + later) },
       });
       return drop(args);
     });
