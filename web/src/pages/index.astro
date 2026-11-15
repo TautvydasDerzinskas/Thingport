@@ -137,6 +137,7 @@ const jsonLd = [
       `Import 3D models from ${providerCount} sites, MakerWorld, Printables and Thingiverse among them`,
       "Upload STL, 3MF, STEP and OBJ files, folders and ZIPs",
       "3D preview in the browser",
+      "3MFs adapted to open in your slicer as if made there, for your printer",
       "AI that sorts models into your categories and tidies their descriptions",
       "Studio: change models or design new parts with AI",
       "Tools and an OpenSCAD script customizer that generate models",
@@ -373,8 +374,9 @@ const arrowRight = "M9 5l7 7-7 7";
           <h2 id="keep-title">Keep a 3D model library on your own server, sorted by AI</h2>
           <p>
             Every model is a real copy on your disk, kept even if the site removes it. Preview STL, 3MF, STEP and OBJ
-            files in 3D in the browser, open them straight in your slicer, and find anything again with categories,
-            collections, tags and search.
+            files in 3D in the browser, open them straight in your slicer, <a href={url("docs/features/adapted-3mf/")}
+              >adapted to it and to your printer</a
+            >, and find anything again with categories, collections, tags and search.
           </p>
           <p>
             Turn on AI and new imports are sorted into your own categories, and messy descriptions are tidied and
@@ -634,7 +636,7 @@ const arrowRight = "M9 5l7 7-7 7";
           </div>
         </div>
         <p class="tools-more">
-          <a class="text-link" href={url("community/tools/")}>Browse all tools <Icon name="arrow" size={16} /></a>
+          <a class="text-link" href={url("community/#tools")}>Browse all tools <Icon name="arrow" size={16} /></a>
         </p>
       </div>
     </section>

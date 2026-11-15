@@ -90,7 +90,7 @@ export const DOCS = [
     group: "Companion apps",
     title: "Thingport Grab browser extension",
     nav: "Thingport Grab",
-    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites. Pair it with your Thingport instance, and no password is saved.`,
+    description: `Import models straight from their own pages on all ${PROVIDER_NAMES.length} sites, and download 3MFs adapted for your slicer and printer. Pair it with your Thingport instance, and no password is saved.`,
   },
   {
     slug: "grab/privacy",
@@ -108,7 +108,7 @@ export const DOCS = [
     title: "Thingport Bridge",
     nav: "Thingport Bridge",
     description:
-      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next.",
+      "A small desktop helper that makes “Open in slicer” work for Bambu Studio, PrusaSlicer, Cura, Anycubic Slicer Next and QIDI Studio.",
   },
   {
     slug: "guides/existing-library",
@@ -152,7 +152,7 @@ export const DOCS = [
     title: "Synced collections",
     nav: "Synced collections",
     description:
-      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own.",
+      "Link a collection or a list of likes on MakerWorld, Printables, Thingiverse or almost any other site Thingport imports from, and models added to it later are imported on their own. One collection can follow several.",
   },
   {
     slug: "guides/bookmarklet",
@@ -214,7 +214,7 @@ export const DOCS = [
     title: "Profile and activity",
     nav: "Profile and activity",
     description:
-      "A profile with your cover, avatar, bio and links, and a year-long activity heatmap and timeline of everything you've done with your library.",
+      "A profile with your cover, avatar, bio and links, badges for what you do, and a year-long activity heatmap and timeline of everything you've done with your library.",
   },
   {
     slug: "features/authors",
@@ -274,7 +274,7 @@ export const DOCS = [
     title: "Plain files on your disk",
     nav: "Storage",
     description:
-      "Models stored as ordinary files, in a folder layout you choose and can change later, and can be fetched again from their sites if the files go missing.",
+      "Models stored as ordinary files, in a folder layout you choose and can change later. See what takes the disk, free up space, and fetch models again from their sites if their files go missing.",
   },
   {
     slug: "features/multi-user",

@@ -189,7 +189,8 @@ and says so when every model has its files.
 ## How much space it takes
 
 **Administration → Overview** shows the disk space Thingport uses, split into model files, pictures and previews, and
-other generated files. [System Health](../guides/system-health.md) warns when the storage folder runs low on space or
-can't be written to.
+other generated files. **Administration → Storage** splits it by kind and frees up what isn't needed: see
+[disk space](#disk-space). [System Health](../guides/system-health.md) warns when the storage folder runs low on space
+or can't be written to.
 
 The storage folder is the `thingport_storage` volume, mounted at `/app/storage` in the backend container.
