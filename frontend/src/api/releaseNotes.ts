@@ -27,6 +27,8 @@ export type ReleaseNotes = {
   title: string | null;
   summary: string | null;
   items: ReleaseNoteItem[];
+  /** GitHub usernames of the people who helped with the release. Missing from a backend older than 1.7.0. */
+  contributors?: string[];
   releases_url: string;
   /** Newest first. Missing from a backend older than the archive's menu. */
   earlier?: EarlierRelease[];

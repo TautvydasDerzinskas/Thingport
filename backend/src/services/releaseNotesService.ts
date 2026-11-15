@@ -16,6 +16,8 @@ const LAST_RUN_VERSION_KEY = "last_run_version";
 // Behind the last run after a quiet release, so the next announcement's notes still cover it.
 const LAST_ANNOUNCED_VERSION_KEY = "last_announced_version";
 const SEMVER = /^\d+\.\d+\.\d+$/;
+// GitHub's rule for usernames: letters, digits and single hyphens inside, at most 39 characters.
+const GITHUB_LOGIN = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
 
 export const CURATED_NOTES_PATH = "release-notes/latest-release-notes.json";
 // Earlier releases' curated notes, one file per version, moved here as the next release's are written.
@@ -61,6 +63,8 @@ export type ReleaseNotes = {
   title: string | null;
   summary: string | null;
   items: ReleaseNoteItem[];
+  /** GitHub usernames of the people who helped with the release, thanked under its notes. */
+  contributors: string[];
   releases_url: string;
   /** The releases before this one that have curated notes, newest first, leaving out the ones these notes are. */
   earlier: EarlierRelease[];
@@ -216,6 +220,8 @@ const curatedSchema = z.object({
     )
     .min(1)
     .max(100),
+  // A name that isn't a GitHub username is left out rather than failing the file.
+  contributors: z.array(z.string().trim()).max(100).default([]),
 });
 
 type CuratedNotes = Omit<ReleaseNotes, "releases_url" | "earlier">;
@@ -239,6 +245,17 @@ function servedLocally(url: URL, fileUrl: string): string | null {
   return `/api${LOCAL_FILES_PATH}/${parts.map(encodeURIComponent).join("/")}`;
 }
 
+/** The GitHub usernames among `names`, each once. */
+function githubLogins(names: string[]): string[] {
+  const seen = new Set<string>();
+  return names.filter((name) => {
+    const key = name.toLowerCase();
+    if (!GITHUB_LOGIN.test(name) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /** Null when the file is malformed: the changelog is shown instead. */
 export function parseCuratedNotes(data: unknown, fileUrl: string): CuratedNotes | null {
   const parsed = curatedSchema.safeParse(data);
@@ -253,7 +270,7 @@ export function parseCuratedNotes(data: unknown, fileUrl: string): CuratedNotes 
       return null;
     }
   };
-  const { version, title, summary, items } = parsed.data;
+  const { version, title, summary, items, contributors } = parsed.data;
   return {
     version,
     source: "curated",
@@ -274,6 +291,7 @@ export function parseCuratedNotes(data: unknown, fileUrl: string): CuratedNotes 
         url: item.url ?? null,
       })),
     ),
+    contributors: githubLogins(contributors),
   };
 }
 
@@ -483,6 +501,7 @@ export async function getReleaseNotes(
     title: null,
     summary: null,
     items: [],
+    contributors: [],
     releases_url,
     earlier: [],
   });

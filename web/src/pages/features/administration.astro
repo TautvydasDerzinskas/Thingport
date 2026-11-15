@@ -34,6 +34,8 @@ import tools from "../../../../frontend/src/assets/screenshots/light/30_admin_to
 import toolsDark from "../../../../frontend/src/assets/screenshots/dark/30_admin_tools.png";
 import social from "../../../../frontend/src/assets/screenshots/light/53_admin_social.png";
 import socialDark from "../../../../frontend/src/assets/screenshots/dark/53_admin_social.png";
+import migrate from "../../../../frontend/src/assets/screenshots/light/54_admin_migrate.png";
+import migrateDark from "../../../../frontend/src/assets/screenshots/dark/54_admin_migrate.png";
 
 const SECTIONS: FeatureSection[] = [
   {
@@ -77,16 +79,20 @@ const SECTIONS: FeatureSection[] = [
     id: "storage",
     short: "Storage",
     icon: "server",
-    title: "Lay out the files on disk",
-    intro: "Models are plain files in a folder layout you design, and you can change it at any time.",
+    title: "Lay out the files on disk, and free up space",
+    intro:
+      "Models are plain files in a folder layout you design, and you can change it at any time. Storage also shows what takes the disk, and clears what nothing needs.",
     points: [
+      "See what takes the disk in one bar, by kind: model files, 3D previews and old ones, photos, thumbnails and renders, description images and slicer copies.",
+      "Free up space removes old 3D previews and slicer copies, packs 3D previews to about a fifth of their size and trims each model's photos to the first few, in the background with its progress.",
+      "Photos kept per model sets how many photos imports and re-syncs keep from a model's page.",
       "Build the folder structure from blocks such as category, collection, creator and model name, or type it as text.",
       "Change it and existing files are moved to match in the background, with progress as it goes.",
       "Browse the storage folder from the browser to see where each model's files are now.",
       "Licence files writes a LICENSE.txt beside each licensed model's files. Turn it off and they're removed; ZIP downloads include one either way.",
       "Set up the consume folder: whose library dropped files go to, and whether each file or each folder becomes a model.",
     ],
-    link: { label: "Consume folder", href: url("docs/guides/consume-folder/") },
+    link: { label: "Plain files on your disk", href: url("docs/features/storage/") },
     image: storage,
     dark: storageDark,
     alt: "The Storage page with the folder structure builder",
@@ -100,7 +106,7 @@ const SECTIONS: FeatureSection[] = [
     points: [
       "Single sign-on with any OpenID Connect provider, such as Authentik, Pocket ID, Keycloak or Authelia. Each adds a button to the sign-in page, next to email and password.",
       "Test a provider's sign-in before anyone sees it: Thingport shows which account it would use and everything the provider sent.",
-      "Open registration, or invite-only, with invitations sent by email.",
+      "Open registration, or invite-only, with invitations sent by email, or as a link to send yourself where no email is set up.",
       "Set how long a sign-in lasts, and the public URL used in emails and by single sign-on.",
     ],
     link: { label: "Set up single sign-on", href: url("docs/guides/single-sign-on/") },
@@ -161,6 +167,24 @@ const SECTIONS: FeatureSection[] = [
     alt: "The Users page with roles, model counts and sign-in methods",
   },
   {
+    id: "migrate",
+    short: "Migrate",
+    icon: "import",
+    title: "Move in from another instance",
+    intro: "Bring another Thingport instance's people and libraries into this one, or a Manyfold library.",
+    points: [
+      "Online: the old instance's admin makes a token there, good for 24 hours, and this one copies it over the network.",
+      "Or from its database dump and storage folder, from any release since 1.0.0, with the commands to make them filled in for both servers.",
+      "Everything is checked and merged keeping its ids, so a second run brings nothing twice, and someone with an account here too is merged into it.",
+      "A Manyfold library, 0.149 or later, comes in through its API with a key made there: models with their files, pictures, tags and licences, and its collections.",
+      "Moving away? Create a token here for the instance you're moving to.",
+    ],
+    link: { label: "Move to another Thingport instance", href: url("docs/guides/migrate/") },
+    image: migrate,
+    dark: migrateDark,
+    alt: "Administration → Migrate: a card for Manyfold and one for another Thingport instance, and a token for moving away",
+  },
+  {
     id: "social",
     short: "Social",
     icon: "heart",
@@ -170,6 +194,7 @@ const SECTIONS: FeatureSection[] = [
       "Turn on Social features, and people can keep a collection private, share it with the people they pick or make it public, and find what's shared on Explore.",
       "Turn on Chats under it for direct messages and the rooms admins make.",
       "Connected instances pairs this one with other Thingport instances: answer Requests, check, pause or disconnect Partners, and see the instances you Blocked.",
+      "Turn on Achievements, with social features or without, and everyone gets badges for what they do, starting with what they'd already earned.",
     ],
     link: { label: "Set up connected instances", href: url("docs/guides/connected-instances/") },
     image: social,
@@ -228,7 +253,7 @@ const MORE = [
 
 <BaseLayout
   title="Administration"
-  description="A tour of Thingport's administration: System Health, providers you can turn on and off, storage layout, single sign-on, tools, AI models, users, social features, logs and more."
+  description="A tour of Thingport's administration: System Health, providers you can turn on and off, storage layout and freeing up space, single sign-on, tools, AI models, users and migrating from another instance, social features, logs and more."
   search
 >
   <div class="container page-head">

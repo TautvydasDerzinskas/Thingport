@@ -25,6 +25,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import HistoryIcon from "@mui/icons-material/History";
 import NewReleasesOutlinedIcon from "@mui/icons-material/NewReleasesOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import {
   releaseNotesApi,
@@ -33,8 +34,11 @@ import {
   type ReleaseNoteKind,
   type ReleaseNotes,
 } from "../../api/releaseNotes";
+import { DISPLAY_FONT_STACK } from "../../theme";
 import CodeBlock from "../CodeBlock";
 import { ListRowSkeletons } from "../ListSkeleton";
+import SupportLink from "../SupportLink";
+import ReleaseContributors from "./ReleaseContributors";
 
 export type WhatsNewRequest = {
   /** This instance's version when null. */
@@ -63,6 +67,11 @@ const enter = (index: number) => ({
   animationDelay: `${Math.min(index, 10) * 30}ms`,
   "@media (prefers-reduced-motion: reduce)": { animation: "none" },
 });
+// Once across the top feature's badge, after its card has faded in.
+const sheen = keyframes`
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+`;
 
 function Screenshots({
   item,
@@ -129,14 +138,58 @@ function Screenshots({
   );
 }
 
-/** A release's headline change, above the grouped list. */
+const badgeSx = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 0.5,
+  px: 1,
+  py: 0.25,
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: "0.06em",
+  textTransform: "uppercase",
+} as const;
+
+/** "Top feature" in gold, with a sheen crossing it once. */
+function TopFeatureBadge() {
+  const { t } = useTranslation("app");
+  return (
+    <Box
+      sx={({ thingport: { gold } }) => ({
+        ...badgeSx,
+        position: "relative",
+        overflow: "hidden",
+        fontWeight: 800,
+        color: gold.ink,
+        background: gold.gradient,
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          background: `linear-gradient(100deg, transparent 30%, ${gold.sheen} 50%, transparent 70%)`,
+          animation: `${sheen} 650ms ease-in-out 300ms both`,
+          "@media (prefers-reduced-motion: reduce)": { display: "none" },
+        },
+      })}
+    >
+      <StarRoundedIcon sx={{ fontSize: 14 }} />
+      {t("whatsNew.topFeature")}
+    </Box>
+  );
+}
+
+/** A release's headline change, above the grouped list. `top` is the release's top feature: framed in gold, with a
+ *  larger title. */
 function HighlightCard({
   item,
   index,
+  top = false,
   onZoom,
 }: {
   item: ReleaseNoteItem;
   index: number;
+  top?: boolean;
   onZoom: (image: ReleaseNoteItem["images"][0]) => void;
 }) {
   const { t } = useTranslation("app");
@@ -148,35 +201,37 @@ function HighlightCard({
         ...enter(index),
         p: 2,
         borderRadius: 2,
-        border: `1px solid ${alpha(color(theme), 0.35)}`,
-        background: `linear-gradient(150deg, ${alpha(color(theme), 0.12)} 0%, ${alpha(color(theme), 0.02)} 60%)`,
+        ...(top
+          ? {
+              // The gradient shows only in the transparent border, the paper filling the rest.
+              border: "2px solid transparent",
+              background: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper}) padding-box, ${theme.thingport.gold.gradient} border-box`,
+              boxShadow: `0 10px 30px ${alpha(theme.thingport.gold.glow, theme.palette.mode === "dark" ? 0.18 : 0.28)}`,
+            }
+          : {
+              border: `1px solid ${alpha(color(theme), 0.35)}`,
+              background: `linear-gradient(150deg, ${alpha(color(theme), 0.12)} 0%, ${alpha(color(theme), 0.02)} 60%)`,
+            }),
       })}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.75 }}>
-        <Box
-          sx={(theme) => ({
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.5,
-            px: 1,
-            py: 0.25,
-            borderRadius: 999,
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            color: color(theme),
-            bgcolor: alpha(color(theme), 0.14),
-          })}
-        >
-          <Icon sx={{ fontSize: 13 }} />
-          {t("whatsNew.highlight")}
-        </Box>
+        {top ? (
+          <TopFeatureBadge />
+        ) : (
+          <Box sx={(theme) => ({ ...badgeSx, color: color(theme), bgcolor: alpha(color(theme), 0.14) })}>
+            <Icon sx={{ fontSize: 13 }} />
+            {t("whatsNew.highlight")}
+          </Box>
+        )}
       </Stack>
       <Typography
         variant="subtitle1"
         fontWeight={700}
-        sx={{ lineHeight: 1.3, color: (muiTheme) => muiTheme.thingport.headingText }}
+        sx={{
+          lineHeight: top ? 1.25 : 1.3,
+          color: (muiTheme) => muiTheme.thingport.headingText,
+          ...(top && { fontFamily: DISPLAY_FONT_STACK, fontSize: 20 }),
+        }}
       >
         {item.title}
       </Typography>
@@ -325,6 +380,58 @@ function Section({
   );
 }
 
+/** The notes themselves: the summary, the highlights with the release's top feature in gold, the rest grouped by kind,
+ *  and thanks to whoever helped. */
+export function WhatsNewContent({
+  notes,
+  onZoom,
+}: {
+  notes: ReleaseNotes;
+  onZoom: (image: ReleaseNoteItem["images"][0]) => void;
+}) {
+  const highlights = notes.items.filter((item) => item.highlight);
+  // The first highlighted feature: a breaking change, sorted ahead of it, is no feature.
+  const top = highlights.find((item) => item.kind === "feature");
+  const sections = KINDS.map((kind) => ({
+    kind,
+    items: notes.items.filter((item) => item.kind === kind && !item.highlight),
+  })).filter((section) => section.items.length > 0);
+  const offsets = sections.map((_, index) =>
+    sections
+      .slice(0, index)
+      .reduce((sum, section) => sum + Math.min(section.items.length, FIXES_SHOWN), highlights.length),
+  );
+  return (
+    <Stack spacing={2}>
+      {notes.summary && (
+        <Typography variant="body2" color="text.secondary" sx={enter(0)}>
+          {notes.summary}
+        </Typography>
+      )}
+      {highlights.map((item, index) => (
+        <HighlightCard
+          key={`${notes.version}-${item.title}`}
+          item={item}
+          index={index}
+          top={item === top}
+          onZoom={onZoom}
+        />
+      ))}
+      {sections.map((section, index) => (
+        <Section
+          key={`${notes.version}-${section.kind}`}
+          kind={section.kind}
+          items={section.items}
+          curated={notes.source === "curated"}
+          offset={offsets[index]}
+          onZoom={onZoom}
+        />
+      ))}
+      <ReleaseContributors version={notes.version} logins={notes.contributors ?? []} sx={enter(10)} />
+    </Stack>
+  );
+}
+
 type Props = {
   /** What to show, or null when closed. */
   request: WhatsNewRequest | null;
@@ -380,16 +487,6 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
   const accent = theme.palette.primary.main;
   const loading = !notes && !failed;
   const empty = failed || (notes !== null && notes.items.length === 0);
-  const highlights = notes?.items.filter((item) => item.highlight) ?? [];
-  const sections = KINDS.map((kind) => ({
-    kind,
-    items: notes?.items.filter((item) => item.kind === kind && !item.highlight) ?? [],
-  })).filter((section) => section.items.length > 0);
-  const offsets = sections.map((_, index) =>
-    sections
-      .slice(0, index)
-      .reduce((sum, section) => sum + Math.min(section.items.length, FIXES_SHOWN), highlights.length),
-  );
   // Screenshots need the room; a plain list of changes reads better narrow.
   const wide = notes?.items.some((item) => item.images.length > 0) ?? false;
   const releasesUrl = notes?.releases_url ?? "https://github.com/TautvydasDerzinskas/Thingport/releases";
@@ -489,28 +586,7 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
               </Button>
             </Stack>
           )}
-          {notes && !empty && (
-            <Stack spacing={2}>
-              {notes.summary && (
-                <Typography variant="body2" color="text.secondary" sx={enter(0)}>
-                  {notes.summary}
-                </Typography>
-              )}
-              {highlights.map((item, index) => (
-                <HighlightCard key={`${notes.version}-${item.title}`} item={item} index={index} onZoom={setZoomed} />
-              ))}
-              {sections.map((section, index) => (
-                <Section
-                  key={`${notes.version}-${section.kind}`}
-                  kind={section.kind}
-                  items={section.items}
-                  curated={notes.source === "curated"}
-                  offset={offsets[index]}
-                  onZoom={setZoomed}
-                />
-              ))}
-            </Stack>
-          )}
+          {notes && !empty && <WhatsNewContent notes={notes} onZoom={setZoomed} />}
         </Box>
 
         <Stack
@@ -519,18 +595,30 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
           justifyContent="space-between"
           sx={{ px: 3, py: 1.5, borderTop: 1, borderColor: "divider", flexShrink: 0 }}
         >
-          <Link
-            href={releasesUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="body2"
-            underline="hover"
-            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
-          >
-            {t("whatsNew.allReleases")}
-            <OpenInNewIcon sx={{ fontSize: 14 }} />
-          </Link>
-          <Button variant="contained" onClick={onClose}>
+          <Stack direction="row" alignItems="center" spacing={1.25} useFlexGap sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
+            <Link
+              href={releasesUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              underline="hover"
+              sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+            >
+              {t("whatsNew.allReleases")}
+              <OpenInNewIcon sx={{ fontSize: 14 }} />
+            </Link>
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.disabled"
+              aria-hidden
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              |
+            </Typography>
+            <SupportLink />
+          </Stack>
+          <Button variant="contained" onClick={onClose} sx={{ flexShrink: 0 }}>
             {t("whatsNew.gotIt")}
           </Button>
         </Stack>

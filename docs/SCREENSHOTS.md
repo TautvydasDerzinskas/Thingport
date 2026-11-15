@@ -27,6 +27,10 @@ system's. Click a screenshot to open it full size.
     <td width="33%"><a href="../frontend/src/assets/screenshots/light/52_collection_sharing.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/52_collection_sharing.png"><img src="../frontend/src/assets/screenshots/light/52_collection_sharing.png" width="100%" alt="A collection shared with three people, picked by name"></picture></a><br><sub><b>Share a Collection</b></sub></td>
   </tr>
   <tr>
+    <td width="33%"><a href="../frontend/src/assets/screenshots/light/56_model_open_adapted.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/56_model_open_adapted.png"><img src="../frontend/src/assets/screenshots/light/56_model_open_adapted.png" width="100%" alt="A model's side panel offering Open in OrcaSlicer, adapted for a Bambu Lab A1 mini, beside the regular Open"></picture></a><br><sub><b>Open Adapted</b></sub></td>
+    <td width="33%"><a href="../frontend/src/assets/screenshots/light/55_configuration_printer.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/55_configuration_printer.png"><img src="../frontend/src/assets/screenshots/light/55_configuration_printer.png" width="100%" alt="Configuration, Printer: the printers the library suggests, and Find them in your accounts"></picture></a><br><sub><b>Printers</b></sub></td>
+  </tr>
+  <tr>
     <td width="33%"><a href="../frontend/src/assets/screenshots/light/09_collections.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/09_collections.png"><img src="../frontend/src/assets/screenshots/light/09_collections.png" width="100%" alt="Collections"></picture></a><br><sub><b>Collections</b></sub></td>
     <td width="33%"><a href="../frontend/src/assets/screenshots/light/10_collections_merge.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/10_collections_merge.png"><img src="../frontend/src/assets/screenshots/light/10_collections_merge.png" width="100%" alt="Merge dialog for three selected collections"></picture></a><br><sub><b>Merge Collections</b></sub></td>
     <td width="33%"><a href="../frontend/src/assets/screenshots/light/36_collection_sync.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/36_collection_sync.png"><img src="../frontend/src/assets/screenshots/light/36_collection_sync.png" width="100%" alt="A synced collection's sync configuration, Overview section"></picture></a><br><sub><b>Synced Collection</b></sub></td>
@@ -98,6 +102,7 @@ system's. Click a screenshot to open it full size.
   </tr>
   <tr>
     <td width="33%"><a href="../frontend/src/assets/screenshots/light/53_admin_social.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/53_admin_social.png"><img src="../frontend/src/assets/screenshots/light/53_admin_social.png" width="100%" alt="Administration, Social: social features, chats and connected instances, each with its switch"></picture></a><br><sub><b>Administration — Social</b></sub></td>
+    <td width="33%"><a href="../frontend/src/assets/screenshots/light/54_admin_migrate.png" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../frontend/src/assets/screenshots/dark/54_admin_migrate.png"><img src="../frontend/src/assets/screenshots/light/54_admin_migrate.png" width="100%" alt="The Migrate page: from Manyfold or another Thingport instance, and a token for moving away"></picture></a><br><sub><b>Administration — Migrate</b></sub></td>
   </tr>
 </table>
 
@@ -116,6 +121,9 @@ The [browser extension](../extension/README.md) on the sites it imports from, an
     <td width="33%"><a href="../extension/docs/screenshots/collection-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/collection-makerworld-dark.jpg"><img src="../extension/docs/screenshots/collection-makerworld.jpg" width="100%" alt="Thingport Grab syncing a MakerWorld collection"></picture></a><br><sub><b>Sync a Collection</b></sub></td>
     <td width="33%"><a href="../extension/docs/screenshots/panel-crealitycloud.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/panel-crealitycloud-dark.jpg"><img src="../extension/docs/screenshots/panel-crealitycloud.jpg" width="100%" alt="Thingport Grab on Creality Cloud"></picture></a><br><sub><b>Creality Cloud</b></sub></td>
   </tr>
+  <tr>
+    <td width="33%"><a href="../extension/docs/screenshots/adapted-makerworld.jpg" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/adapted-makerworld-dark.jpg"><img src="../extension/docs/screenshots/adapted-makerworld.jpg" width="100%" alt="Thingport Grab's Download adapted under MakerWorld's own button, its menu offering a copy for each slicer and printer"></picture></a><br><sub><b>Download Adapted</b></sub></td>
+  </tr>
 </table>
 
 <table>
@@ -123,5 +131,6 @@ The [browser extension](../extension/README.md) on the sites it imports from, an
     <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/popup-setup-dark.png"><img src="../extension/docs/screenshots/popup-setup.png" width="260" alt="Thingport Grab popup before an instance is added, with Pair with Thingport"></picture><br><sub><b>Setup</b></sub></td>
     <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/popup-connected-dark.png"><img src="../extension/docs/screenshots/popup-connected.png" width="260" alt="Thingport Grab popup connected to an instance, with the sites it runs on"></picture><br><sub><b>Connected</b></sub></td>
     <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/popup-appearance-dark.png"><img src="../extension/docs/screenshots/popup-appearance.png" width="260" alt="Thingport Grab popup, Appearance tab: the look and corner of its button on a model page"></picture><br><sub><b>Appearance</b></sub></td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="../extension/docs/screenshots/popup-adapt-dark.png"><img src="../extension/docs/screenshots/popup-adapt.png" width="260" alt="Thingport Grab popup, Adapt 3MFs settings: the slicers and printer copies are made for, and where the button goes"></picture><br><sub><b>Adapt 3MFs</b></sub></td>
   </tr>
 </table>

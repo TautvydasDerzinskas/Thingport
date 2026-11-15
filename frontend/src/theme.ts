@@ -29,6 +29,10 @@ declare module "@mui/material/styles" {
       headingText: string;
       /** Charts: hues for categories, in this order and never cycled, and a neutral for "everything else". */
       chart: { series: string[]; other: string };
+      /** The support dialog's heart and the two ways' own brand colours, the same in both themes. */
+      support: SupportColors;
+      /** What's new's top feature, framed in gold the same in both themes. */
+      gold: GoldColors;
     };
   }
   interface ThemeOptions {
@@ -43,9 +47,27 @@ declare module "@mui/material/styles" {
       selectedNavText: string;
       headingText: string;
       chart: { series: string[]; other: string };
+      support: SupportColors;
+      gold: GoldColors;
     };
   }
 }
+
+type SupportColors = { heart: string; coffee: string; onCoffee: string; sponsors: string };
+
+/** Buy Me a Coffee's yellow and GitHub Sponsors' pink are theirs, so they don't follow the theme. */
+const SUPPORT_COLORS: SupportColors = { heart: "#e5484d", coffee: "#ffdd00", onCoffee: "#1b1b1b", sponsors: "#db61a2" };
+
+/** `gradient` is a `background` value, for the frame and the badge; `ink` is text on it, `glow` shades around it and
+ *  `sheen` crosses the badge once. */
+type GoldColors = { gradient: string; ink: string; glow: string; sheen: string };
+
+const GOLD_COLORS: GoldColors = {
+  gradient: "linear-gradient(120deg, #f7dc7a 0%, #e0a526 45%, #f6d063 100%)",
+  ink: "#3a2a00",
+  glow: "#f5c542",
+  sheen: "rgba(255, 255, 255, 0.75)",
+};
 
 type ThemeDef = {
   mode: "light" | "dark";
@@ -279,6 +301,8 @@ export function buildTheme(id: ResolvedTheme, accent: AccentColor = DEFAULT_ACCE
       selectedNavText: d.selectedNavText,
       headingText: d.headingText,
       chart: d.chart,
+      support: SUPPORT_COLORS,
+      gold: GOLD_COLORS,
     },
   };
   return createTheme(options);

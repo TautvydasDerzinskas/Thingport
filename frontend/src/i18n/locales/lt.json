@@ -3905,6 +3905,16 @@
       "yes": "Taip",
       "no": "Ne"
     },
+    "support": {
+      "link": "Patinka Thingport?",
+      "linkLong": "Patinka Thingport? Paremkite projektą",
+      "title": "Patinka Thingport? Paremkite projektą",
+      "text": "Thingport kūrimas ir palaikymas, kad jis veiktų keičiantis svetainėms, iš kurių jis importuoja, reikalauja daug laiko ir pastangų. Svarbi bet kokia parama. Ačiū!",
+      "coffee": "Vienkartinė padėka, kiek tik norite.",
+      "sponsors": "Remkite Thingport kas mėnesį arba vieną kartą.",
+      "later": "Galbūt vėliau",
+      "newTab": "(atsidaro naujame skirtuke)"
+    },
     "whatsNew": {
       "label": "Kas naujo",
       "versionLabel": "Thingport {{version}}",
@@ -3926,7 +3936,10 @@
       "highlight": "Svarbiausia",
       "earlier": "Ankstesnės versijos",
       "backToLatest": "Grįžti į naujausią",
-      "latest": "Naujausia"
+      "latest": "Naujausia",
+      "topFeature": "Pagrindinė naujovė",
+      "thanks": "Ačiū visiems, kurie padėjo kurti {{version}}",
+      "contributor": "{{login}} GitHub paskyra (atsidaro naujame skirtuke)"
     },
     "codeBlock": {
       "copy": "Kopijuoti",

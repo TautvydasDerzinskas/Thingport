@@ -3811,6 +3811,16 @@
       "yes": "Oui",
       "no": "Non"
     },
+    "support": {
+      "link": "Vous aimez Thingport ?",
+      "linkLong": "Vous aimez Thingport ? Montrez votre soutien",
+      "title": "Vous aimez Thingport ? Montrez votre soutien",
+      "text": "Créer Thingport, et le faire fonctionner malgré les changements des sites dont il importe, demande beaucoup de temps et d’efforts. Chaque soutien compte. Merci !",
+      "coffee": "Un merci ponctuel, du montant de votre choix.",
+      "sponsors": "Soutenez Thingport chaque mois, ou une seule fois.",
+      "later": "Plus tard",
+      "newTab": "(s’ouvre dans un nouvel onglet)"
+    },
     "whatsNew": {
       "label": "Nouveautés",
       "versionLabel": "Thingport {{version}}",
@@ -3832,7 +3842,10 @@
       "highlight": "À la une",
       "earlier": "Versions précédentes",
       "backToLatest": "Revenir à la plus récente",
-      "latest": "La plus récente"
+      "latest": "La plus récente",
+      "topFeature": "Nouveauté phare",
+      "thanks": "Merci à toutes les personnes qui ont contribué à la {{version}}",
+      "contributor": "{{login}} sur GitHub (s’ouvre dans un nouvel onglet)"
     },
     "codeBlock": {
       "copy": "Copier",

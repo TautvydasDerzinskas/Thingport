@@ -304,6 +304,42 @@ async function partners(ctx) {
   return instances?.partners ?? [];
 }
 
+/** The account's slicers and printers answered in the browser, so a Bambu Studio project offers Open adapted:
+ *  OrcaSlicer, used last, and PrusaSlicer, with a Bambu Lab P1S and an A1 mini from the printer catalogue. `printerFor`
+ *  is OrcaSlicer's printer, the A1 mini, as a project made for that very printer needs no copy for it; without one,
+ *  opening a model adapted asks which. Nothing is saved on the instance. */
+async function stubAdaptSlicers(page, ctx, { printerFor = "bambulab-a1mini" } = {}) {
+  const catalogue = await ctx.api("GET", "/printers/catalogue");
+  const brandName = (printer) => catalogue.brands.find((brand) => brand.id === printer.brand)?.name ?? printer.brand;
+  const printers = ["bambulab-p1s", "bambulab-a1mini"]
+    .map((id) => catalogue.printers.find((printer) => printer.id === id))
+    .filter(Boolean)
+    .map((printer) => {
+      const name = `${brandName(printer)} ${printer.model} 0.4 nozzle`;
+      return {
+        printer,
+        brandName: brandName(printer),
+        nozzle: "0.4",
+        presets: { orcaslicer: name, bambustudio: name },
+      };
+    });
+  const slicers = {
+    slicer: "orcaslicer",
+    slicers: ["orcaslicer", "prusaslicer"],
+    bridged: [],
+    unadapted: [],
+    printers: printerFor ? { orcaslicer: printerFor } : {},
+  };
+  await page.route(/\/api\/settings\/slicer$/, (route) =>
+    route.request().method() === "GET" ? route.fulfill({ json: slicers }) : route.continue(),
+  );
+  await page.route(/\/api\/me\/printers$/, (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ json: { printers, suggestions: [], accounts: [] } })
+      : route.continue(),
+  );
+}
+
 /** This instance's Public URL shown as confirmed by a partner, as it is on a real one on the internet. */
 async function confirmedPublicUrl(page) {
   await page.route(/\/api\/federation\/settings$/, async (route) => {
@@ -775,6 +811,28 @@ const SHOTS = [
     },
   },
   { name: "53_admin_social", run: (page) => open(page, "/admin-social") },
+  { name: "54_admin_migrate", run: (page) => open(page, "/admin-migrate") },
+  {
+    name: "55_configuration_printer",
+    run: async (page) => {
+      // The account's own printers and the ones its library suggests, as they are on the instance.
+      await open(page, "/?configuration=printers");
+      await page
+        .getByRole("dialog", { name: "Configuration" })
+        .getByRole("button", { name: "Add", exact: true })
+        .waitFor();
+    },
+  },
+  {
+    name: "56_model_open_adapted",
+    optional: "profilesModel",
+    run: async (page, ctx) => {
+      await stubAdaptSlicers(page, ctx);
+      await ctx.api("PATCH", "/settings/print-profiles-view", { view: "picker" });
+      await open(page, `/models/${ctx.profilesModel}`);
+      await page.getByRole("group", { name: "Open or download the adapted copy" }).waitFor({ timeout: 20000 });
+    },
+  },
   {
     name: "guide_consume_settings",
     guide: true,
