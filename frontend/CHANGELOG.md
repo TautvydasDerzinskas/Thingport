@@ -1,5 +1,35 @@
 # Thingport frontend changelog
 
+# [thingport-frontend-v1.7.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.6.0...thingport-frontend-v1.7.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* **i18n:** complete Russian, Ukrainian and Belarusian translations ([#327](https://github.com/TautvydasDerzinskas/Thingport/issues/327)) ([73fe4ed](https://github.com/TautvydasDerzinskas/Thingport/commit/73fe4ed3c3cf81ab1c3160106b426e3522ca6625))
+* **nexprint:** take the models some have "C" ids for, and their print profiles ([be26167](https://github.com/TautvydasDerzinskas/Thingport/commit/be2616776ff42cafb6c7651e70c0633b5ce70df6))
+* turn rotated parts the right way in the 3D preview and pictures ([#309](https://github.com/TautvydasDerzinskas/Thingport/issues/309)) ([d0ee6b6](https://github.com/TautvydasDerzinskas/Thingport/commit/d0ee6b6fc74f4761d6f838e59b413d1b0d2e2534))
+
+
+### Features
+
+* achievements, badges on My models for what people do in Thingport ([#324](https://github.com/TautvydasDerzinskas/Thingport/issues/324)) ([310a841](https://github.com/TautvydasDerzinskas/Thingport/commit/310a8416ac5dd57f2692a83718b537174ec30386))
+* add QIDI Studio support ([#326](https://github.com/TautvydasDerzinskas/Thingport/issues/326)) ([531ce39](https://github.com/TautvydasDerzinskas/Thingport/commit/531ce3912d4dbe346c76d47dfd2b2f7bfbb1eb13))
+* **admin:** migrate from another Thingport or Manyfold instance ([#325](https://github.com/TautvydasDerzinskas/Thingport/issues/325)) ([e00630a](https://github.com/TautvydasDerzinskas/Thingport/commit/e00630ada5c9cbaa68a83653971a14e95af8c9c4)), closes [#331](https://github.com/TautvydasDerzinskas/Thingport/issues/331) [#332](https://github.com/TautvydasDerzinskas/Thingport/issues/332)
+* **extension:** open MakerWorld's own puzzle during imports, and carry on once it's solved ([#354](https://github.com/TautvydasDerzinskas/Thingport/issues/354)) ([50448ee](https://github.com/TautvydasDerzinskas/Thingport/commit/50448ee436acb44927106e52fa5feec21150ca08)), closes [#355](https://github.com/TautvydasDerzinskas/Thingport/issues/355)
+* find your printers in Creality, Snapmaker, Flashforge and Anycubic accounts, with two small fixes ([#348](https://github.com/TautvydasDerzinskas/Thingport/issues/348)) ([0794dbe](https://github.com/TautvydasDerzinskas/Thingport/commit/0794dbebab06d891323aa5e100298e1c00e68bb6))
+* free up space in Administration → Storage, with each model's 3D previews in its folder ([#323](https://github.com/TautvydasDerzinskas/Thingport/issues/323)) ([92ebf97](https://github.com/TautvydasDerzinskas/Thingport/commit/92ebf975f146ded83a6a8f6f0bbaf4d7e4e3f604))
+* Grab's Download adapted, made for your slicer and printer, on more sites ([#311](https://github.com/TautvydasDerzinskas/Thingport/issues/311)) ([ad7ac4d](https://github.com/TautvydasDerzinskas/Thingport/commit/ad7ac4dc9f9a79318d7716ad44977f4c1da9833f)), closes [#313](https://github.com/TautvydasDerzinskas/Thingport/issues/313) [#320](https://github.com/TautvydasDerzinskas/Thingport/issues/320)
+* **i18n:** add Simplified Chinese translation ([#347](https://github.com/TautvydasDerzinskas/Thingport/issues/347)) ([30b5438](https://github.com/TautvydasDerzinskas/Thingport/commit/30b54383bc74cef833b4d5850290bb36fd0d0a58))
+* import eufyMake's print files as print profiles ([#322](https://github.com/TautvydasDerzinskas/Thingport/issues/322)) ([6690fa3](https://github.com/TautvydasDerzinskas/Thingport/commit/6690fa3691bccf728f8aecbc3019eb4be62f45bb))
+* import from QIDI Maker, its QIDI Studio print profiles, collections and likes ([#340](https://github.com/TautvydasDerzinskas/Thingport/issues/340)) ([9357f40](https://github.com/TautvydasDerzinskas/Thingport/commit/9357f4068fa2c88753dd411fdf59a4bcfe8bd67e)), closes [#profileId-](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId-)
+* import from Snapmaker Space's China site ([#350](https://github.com/TautvydasDerzinskas/Thingport/issues/350)) ([305a911](https://github.com/TautvydasDerzinskas/Thingport/commit/305a9112fac981c8547227ea3bafc97d40fcf0ac))
+* import from VoxelShare, with Flash Studio support and its China site ([#343](https://github.com/TautvydasDerzinskas/Thingport/issues/343)) ([3b49cd5](https://github.com/TautvydasDerzinskas/Thingport/commit/3b49cd5eb30623d392d73389c623be1bef32a627)), closes [#profileId-](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId-) [#344](https://github.com/TautvydasDerzinskas/Thingport/issues/344) [#345](https://github.com/TautvydasDerzinskas/Thingport/issues/345) [#347](https://github.com/TautvydasDerzinskas/Thingport/issues/347)
+* keep the folders a model's files came in ([#301](https://github.com/TautvydasDerzinskas/Thingport/issues/301)) ([cc88a34](https://github.com/TautvydasDerzinskas/Thingport/commit/cc88a340233a441bb745b91ee0432ac5bd48730b))
+* let one collection sync with several provider collections, each with its own settings ([#302](https://github.com/TautvydasDerzinskas/Thingport/issues/302)) ([5bd6db8](https://github.com/TautvydasDerzinskas/Thingport/commit/5bd6db89c14712e82a0c612a928e1048b28c5c4b)), closes [#70](https://github.com/TautvydasDerzinskas/Thingport/issues/70)
+* **migrate:** walk through making an old instance's dump and storage copy ([#351](https://github.com/TautvydasDerzinskas/Thingport/issues/351)) ([dbf4031](https://github.com/TautvydasDerzinskas/Thingport/commit/dbf40313905927614d9fc63d8704181c276766a7))
+* put an Open button on the toast after a tool saves a model ([#299](https://github.com/TautvydasDerzinskas/Thingport/issues/299)) ([be3455c](https://github.com/TautvydasDerzinskas/Thingport/commit/be3455c87d17d2db62448fbce99235306938b5fd))
+* tell people when a newer Thingport Bridge is out, and make updating it safe on macOS ([#300](https://github.com/TautvydasDerzinskas/Thingport/issues/300)) ([9dd36de](https://github.com/TautvydasDerzinskas/Thingport/commit/9dd36de9d1260840c8f3d15707986536a7f51119))
+
 # [thingport-frontend-v1.6.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-frontend-v1.5.0...thingport-frontend-v1.6.0) (2026-11-10)
 
 
