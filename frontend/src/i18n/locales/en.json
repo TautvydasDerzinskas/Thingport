@@ -3014,6 +3014,35 @@
           "token": "Token",
           "tokenHelp": "Made on the old instance, under Administration → Migrate. It needs a release with Migrate; an older one comes over with a database dump."
         },
+        "dumpGuide": {
+          "open": "How do I make these?",
+          "title": "Making the dump and storage copy",
+          "steps": {
+            "dump": "Stop and dump",
+            "storage": "Copy storage",
+            "bring": "Bring here",
+            "mount": "Mount"
+          },
+          "dumpLead": "On the old instance's server, from the folder its docker-compose.yml is in. This stops its backend, so nothing changes after the dump: keep it stopped from now on.",
+          "user": "Postgres user",
+          "userHelp": "The old instance's POSTGRES_USER, if you changed it.",
+          "database": "Database",
+          "databaseHelp": "The old instance's POSTGRES_DB, if you changed it.",
+          "storagePath": "Storage path",
+          "storagePathHelp": "The old backend's FILE_STORAGE, if you changed it. A relative one is from /app: ./files is /app/files.",
+          "storageLead": "From the same folder. This copies its storage into old-storage, beside the dump, whether it's a folder or a Docker volume. It needs as much free space as the storage takes. It stops if an earlier try left old-storage there: remove that first, as copying into it would keep files removed since.",
+          "bringLead": "Copy both to this server, or carry them over on a disk. On the same server, move them into the folder instead. Where only root can make the folder, as under /srv, the first line asks for sudo on this server.",
+          "host": "This server's address",
+          "hostHelp": "As the old server reaches it over SSH.",
+          "folder": "Folder on this server",
+          "folderHelp": "Where the dump and old-storage go. This instance's backend reads it as {{root}}. One that's already there is left as it is, except that a thingport.dump or old-storage in it is replaced by the copy, removing what's not in it. The SSH user must be able to reach and write to it, and the backend's user to enter it.",
+          "folderAbsolute": "Give the full path, such as {{example}}.",
+          "folderProtect": "rsync -s needs 3.0 or later on both servers; macOS's own won't do. Without spaces or symbols, any rsync will.",
+          "mountLead": "On this server, from the folder its docker-compose.yml is in: give both to the backend's user, so only it reads the dump, add the entry to the backend's volumes, leaving the ones it has as they are, then restart the backend.",
+          "keepVolumes": "...its own volumes, as they are...",
+          "use": "Use these paths",
+          "guide": "Full guide"
+        },
         "check": {
           "steps": {
             "restoring": "Restoring its database",

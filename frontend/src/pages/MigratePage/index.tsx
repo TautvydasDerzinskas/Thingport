@@ -13,7 +13,14 @@ import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
 import MoveUpOutlinedIcon from "@mui/icons-material/MoveUpOutlined";
 import DriveFileMoveOutlinedIcon from "@mui/icons-material/DriveFileMoveOutlined";
 import { UnauthorizedError } from "../../api/client";
-import { migrateApi, type ExportToken, type ManyfoldRun, type MigrateRun, type ThingportRun } from "../../api/migrate";
+import {
+  migrateApi,
+  type ExportToken,
+  type ManyfoldRun,
+  type MigrateOwner,
+  type MigrateRun,
+  type ThingportRun,
+} from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { ListRowSkeletons } from "../../components/ListSkeleton";
 import ToneChip from "../../components/ToneChip";
@@ -37,6 +44,8 @@ export default function MigratePage({ onUnauthorized }: Props) {
   const [runs, setRuns] = React.useState<MigrateRun[] | null>(null);
   /** Where on the server the old instance's files are read from. */
   const [root, setRoot] = React.useState("/app/migrate");
+  /** Who the backend reads it as. */
+  const [owner, setOwner] = React.useState<MigrateOwner | null>(null);
   const [loadFailed, setLoadFailed] = React.useState(false);
   /** The dialog: a new migration from a source, or one from the list. */
   const [open, setOpen] = React.useState<
@@ -62,6 +71,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
       if (asked !== listAsked.current) return;
       setRuns(listed.runs);
       setRoot(listed.root);
+      setOwner(listed.owner ?? null);
       setLoadFailed(false);
     } catch (err) {
       if (asked !== listAsked.current) return;
@@ -278,6 +288,7 @@ export default function MigratePage({ onUnauthorized }: Props) {
         <ThingportMigrateDialog
           initial={open.run}
           root={root}
+          owner={owner}
           onClose={() => setOpen(null)}
           onChanged={reload}
           onUnauthorized={onUnauthorized}

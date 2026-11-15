@@ -3162,6 +3162,35 @@
           "token": "Raktas",
           "tokenHelp": "Sukuriamas sename egzemplioriuje, skiltyje Administravimas → Perkėlimas. Tam reikia versijos su Perkėlimu; senesnė perkeliama su duomenų bazės kopija."
         },
+        "dumpGuide": {
+          "open": "Kaip jas padaryti?",
+          "title": "Kopijos ir saugyklos paruošimas",
+          "steps": {
+            "dump": "Sustabdyti ir kopijuoti",
+            "storage": "Kopijuoti saugyklą",
+            "bring": "Perkelti čia",
+            "mount": "Prijungti"
+          },
+          "dumpLead": "Seno egzemplioriaus serveryje, aplanke, kuriame yra jo docker-compose.yml. Tai sustabdo jo backend, kad po kopijos niekas nepasikeistų: nuo šiol laikykite jį sustabdytą.",
+          "user": "Postgres naudotojas",
+          "userHelp": "Seno egzemplioriaus POSTGRES_USER, jei jį keitėte.",
+          "database": "Duomenų bazė",
+          "databaseHelp": "Seno egzemplioriaus POSTGRES_DB, jei jį keitėte.",
+          "storagePath": "Saugyklos kelias",
+          "storagePathHelp": "Seno backend FILE_STORAGE, jei jį keitėte. Santykinis skaičiuojamas nuo /app: ./files yra /app/files.",
+          "storageLead": "Tame pačiame aplanke. Tai nukopijuoja jo saugyklą į old-storage šalia kopijos, nesvarbu, ar tai aplankas, ar Docker tomas. Reikia tiek laisvos vietos, kiek užima saugykla. Komanda sustoja, jei old-storage liko nuo ankstesnio bandymo: pirma jį pašalinkite, nes kopijuojant į jį liktų nuo to laiko pašalinti failai.",
+          "bringLead": "Nukopijuokite abi į šį serverį arba perneškite diske. Tame pačiame serveryje tiesiog perkelkite jas į aplanką. Kur aplanką sukurti gali tik root, kaip /srv viduje, pirmoji eilutė šiame serveryje paprašys sudo.",
+          "host": "Šio serverio adresas",
+          "hostHelp": "Kaip senas serveris jį pasiekia per SSH.",
+          "folder": "Aplankas šiame serveryje",
+          "folderHelp": "Kur keliauja kopija ir old-storage. Šio egzemplioriaus backend jį mato kaip {{root}}. Jau esamas aplankas paliekamas kaip yra, tik jame esantys thingport.dump ar old-storage pakeičiami kopija, pašalinant tai, ko joje nėra. SSH naudotojas turi galėti jį pasiekti ir į jį rašyti, o backend naudotojas – į jį patekti.",
+          "folderAbsolute": "Nurodykite visą kelią, pvz., {{example}}.",
+          "folderProtect": "rsync -s reikia 3.0 ar naujesnės versijos abiejuose serveriuose; macOS įtaisytasis netinka. Be tarpų ir simbolių tiks bet kuris rsync.",
+          "mountLead": "Šiame serveryje, aplanke, kuriame yra jo docker-compose.yml: atiduokite abi backend naudotojui, kad kopiją skaitytų tik jis, pridėkite įrašą prie backend tomų, esamus palikdami kaip yra, tada paleiskite backend iš naujo.",
+          "keepVolumes": "...jo esami tomai, kaip yra...",
+          "use": "Naudoti šiuos kelius",
+          "guide": "Visas vadovas"
+        },
         "check": {
           "steps": {
             "restoring": "Atkuriama jo duomenų bazė",

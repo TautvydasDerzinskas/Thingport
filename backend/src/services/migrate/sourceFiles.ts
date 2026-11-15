@@ -97,6 +97,10 @@ export function migrateRoot(): string {
   return path.resolve(process.env.MIGRATE_DIR || "/app/migrate");
 }
 
+/** A file or folder there that this server's user can't read. */
+const unreadable = (given: string) =>
+  new MigrateError("folder_unreadable", `This server can't read ${given}.`, { folder: given });
+
 /** `given` as a real path inside the migrate folder, or why it isn't one. */
 async function insideRoot(given: string): Promise<string> {
   const trimmed = given.trim();
@@ -114,9 +118,13 @@ async function insideRoot(given: string): Promise<string> {
   let real: string;
   try {
     real = await fs.realpath(trimmed);
-  } catch {
-    // Missing, or it doesn't stay inside: told apart only for paths that would have been inside.
-    if (path.resolve(trimmed).startsWith(root + path.sep)) {
+  } catch (err) {
+    // Missing, unreadable, or it doesn't stay inside: told apart only for paths that would have been inside, by the
+    // folder's name or its real path, as where MIGRATE_DIR is a link.
+    const asked = path.resolve(trimmed);
+    if ([root, realRoot].some((base) => asked.startsWith(base + path.sep))) {
+      // A folder on the way this server's user can't enter, as the guide's handover left undone does.
+      if ((err as NodeJS.ErrnoException).code === "EACCES") throw unreadable(trimmed);
       throw new MigrateError("folder_missing", `There's no folder at ${trimmed} on this server.`, { folder: trimmed });
     }
     throw outside;
@@ -136,6 +144,10 @@ export async function checkDumpFile(given: string): Promise<string> {
   if (!(await fs.stat(real)).isFile()) {
     throw new MigrateError("dump_missing", `There's no file at ${given.trim()} on this server.`);
   }
+  // A dump kept private to whoever copied it is there, but this server's user can't read it.
+  await fs.access(real, fsSync.constants.R_OK).catch(() => {
+    throw unreadable(given.trim());
+  });
   return real;
 }
 
@@ -159,7 +171,7 @@ export async function checkFolder(given: string): Promise<string> {
   try {
     await fs.access(real, fsSync.constants.R_OK | fsSync.constants.X_OK);
   } catch {
-    throw new MigrateError("folder_unreadable", `This server can't read ${trimmed}.`, { folder: trimmed });
+    throw unreadable(trimmed);
   }
   return real;
 }

@@ -1,15 +1,19 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ButtonBase from "@mui/material/ButtonBase";
 import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { alpha } from "@mui/material/styles";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import Segmented from "../../components/controls/Segmented";
+import type { MigrateOwner } from "../../api/migrate";
 import HelpTip from "../../components/HelpTip";
+import DumpGuideDialog from "./DumpGuideDialog";
 import { formatBytes, k } from "./parts";
 
 export type SourceInput = {
@@ -46,13 +50,16 @@ type Props = {
   disabled: boolean;
   /** Where on the server both must be. */
   root: string;
+  /** Who the backend reads them as. */
+  owner: MigrateOwner | null;
 };
 
 /** The old instance's database dump, uploaded or already on the server, and its storage folder. */
-export default function SourceStep({ input, onChange, uploading, disabled, root }: Props) {
+export default function SourceStep({ input, onChange, uploading, disabled, root, owner }: Props) {
   const { t, i18n } = useTranslation("app");
   const picker = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
+  const [guiding, setGuiding] = React.useState(false);
   const set = (patch: Partial<SourceInput>) => onChange({ ...input, ...patch });
 
   const pick = () => {
@@ -91,16 +98,21 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
   return (
     <Stack spacing={2.5}>
       <WaySwitch input={input} onChange={onChange} disabled={disabled} />
-      <Segmented
-        label={t(k("source.where"))}
-        value={input.mode}
-        onChange={(mode) => set({ mode })}
-        disabled={disabled}
-        options={[
-          { value: "upload", label: t(k("source.upload")) },
-          { value: "server", label: t(k("source.onServer")) },
-        ]}
-      />
+      <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" useFlexGap gap={1}>
+        <Segmented
+          label={t(k("source.where"))}
+          value={input.mode}
+          onChange={(mode) => set({ mode })}
+          disabled={disabled}
+          options={[
+            { value: "upload", label: t(k("source.upload")) },
+            { value: "server", label: t(k("source.onServer")) },
+          ]}
+        />
+        <Button size="small" startIcon={<MenuBookOutlinedIcon />} onClick={() => setGuiding(true)} disabled={disabled}>
+          {t(k("dumpGuide.open"))}
+        </Button>
+      </Stack>
       {input.mode === "upload" ? (
         <>
           <ButtonBase
@@ -192,6 +204,17 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
         }}
         helperText={`${t(k("source.inside"), { root })} ${t(k("source.untouched"))}`}
       />
+      {guiding && (
+        <DumpGuideDialog
+          root={root}
+          owner={owner}
+          onClose={() => setGuiding(false)}
+          onUse={(paths) => {
+            setGuiding(false);
+            set({ mode: "server", ...paths });
+          }}
+        />
+      )}
     </Stack>
   );
 }

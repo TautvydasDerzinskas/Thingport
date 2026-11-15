@@ -179,9 +179,13 @@ async function send<T>(path: string, init: RequestInit, fallback: string): Promi
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
+/** The user and group ids the backend runs as. */
+export type MigrateOwner = { uid: number; gid: number };
+
 export const migrateApi = {
-  /** The migrations, newest first, and the folder on the server a dump and storage folder are read from. */
-  list: (): Promise<{ runs: MigrateRun[]; root: string }> =>
+  /** The migrations, newest first, the folder on the server a dump and storage folder are read from, and who reads it
+   *  (null where the server has no such ids). */
+  list: (): Promise<{ runs: MigrateRun[]; root: string; owner: MigrateOwner | null }> =>
     send("", { method: "GET" }, "Couldn't load the migrations"),
 
   get: (id: string): Promise<MigrateRun> => send(`/${encodeURIComponent(id)}`, { method: "GET" }, "Couldn't load it"),
