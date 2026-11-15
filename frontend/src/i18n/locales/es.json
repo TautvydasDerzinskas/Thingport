@@ -3829,7 +3829,10 @@
       "highlight": "Destacado",
       "earlier": "Versiones anteriores",
       "backToLatest": "Volver a la más reciente",
-      "latest": "La más reciente"
+      "latest": "La más reciente",
+      "topFeature": "Novedad estrella",
+      "thanks": "Gracias a quienes ayudaron con la {{version}}",
+      "contributor": "{{login}} en GitHub (se abre en una pestaña nueva)"
     },
     "codeBlock": {
       "copy": "Copiar",

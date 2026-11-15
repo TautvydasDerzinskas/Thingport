@@ -2902,7 +2902,10 @@
       "highlight": "Галоўнае",
       "earlier": "Ранейшыя выпускі",
       "backToLatest": "Да апошняга выпуску",
-      "latest": "Апошні"
+      "latest": "Апошні",
+      "topFeature": "Галоўная навінка",
+      "thanks": "Дзякуй усім, хто дапамагаў з выпускам {{version}}",
+      "contributor": "{{login}} на GitHub (адкрыецца ў новай укладцы)"
     },
     "grab": {
       "connect": {

@@ -382,6 +382,7 @@ version inside it: one that names another is never shown. Then replace the file'
   "version": "1.2.0",
   "title": "Optional headline",
   "summary": "Optional sentence or two under it.",
+  "contributors": ["octocat", "monalisa"],
   "items": [
     {
       "type": "feature",
@@ -398,13 +399,16 @@ version inside it: one that names another is never shown. Then replace the file'
 
 - `type` is `breaking`, `feature`, `improvement` or `fix`; the dialog groups them in that order.
 - `highlight: true` shows the item as a large card above the grouped list; keep it to the release's headline
-  features.
+  features. The first feature among them is the release's top feature, framed in gold.
 - `code` is a command shown in a box with a copy button, e.g. how to connect something.
+- `contributors` are the GitHub usernames of everyone who helped with the release, thanked in one box under the notes
+  with their GitHub pictures, so items don't need a thanks of their own. A name that isn't a GitHub username is left
+  out; credit the person behind a bot account rather than the bot.
 - `images` are relative to the file (put them in `release-notes/screenshots/`, named after the version) or full
   `https://` URLs; up to six per item. Crop them to the control being shown rather than the whole page; WebP keeps them
   small. Everything but `type` and `title` is optional.
-- Limits: `title` 200 characters, `summary` and `description` 2000, `code` 1000. One item past a limit fails the
-  whole file, which then falls back to the changelog, so check the longest one-line fixes.
+- Limits: `title` 200 characters, `summary` and `description` 2000, `code` 1000, and 100 `contributors`. One item
+  past a limit fails the whole file, which then falls back to the changelog, so check the longest one-line fixes.
 - A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
   release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files, or a `file://` URL at a checkout; an empty

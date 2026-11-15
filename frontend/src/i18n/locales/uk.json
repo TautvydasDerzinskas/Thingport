@@ -2903,7 +2903,10 @@
       "highlight": "Головне",
       "earlier": "Попередні випуски",
       "backToLatest": "До останнього випуску",
-      "latest": "Останній"
+      "latest": "Останній",
+      "topFeature": "Головна новинка",
+      "thanks": "Дякуємо всім, хто допомагав із випуском {{version}}",
+      "contributor": "{{login}} на GitHub (відкриється в новій вкладці)"
     },
     "grab": {
       "connect": {

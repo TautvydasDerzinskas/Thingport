@@ -3936,7 +3936,10 @@
       "highlight": "Svarbiausia",
       "earlier": "Ankstesnės versijos",
       "backToLatest": "Grįžti į naujausią",
-      "latest": "Naujausia"
+      "latest": "Naujausia",
+      "topFeature": "Pagrindinė naujovė",
+      "thanks": "Ačiū visiems, kurie padėjo kurti {{version}}",
+      "contributor": "{{login}} GitHub paskyra (atsidaro naujame skirtuke)"
     },
     "codeBlock": {
       "copy": "Kopijuoti",

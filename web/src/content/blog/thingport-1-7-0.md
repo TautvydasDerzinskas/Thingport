@@ -1,5 +1,5 @@
 ---
-title: "Thingport 1.7.0: any 3MF, made for your slicer and printer"
+title: "Thingport 1.7.0: open any 3MF file as if tailored for you"
 description: "Any 3MF from any site now opens as if it had been made for your slicer and your printer, and the Thingport Grab extension downloads those copies straight from the model's page. Plus a disk you can tidy, QIDI Maker and VoxelShare, migrating from another instance, achievements and Simplified Chinese."
 pubDate: 2026-11-15
 tags: ["release", "adapted-3mf", "printers", "storage", "providers", "migrate"]
@@ -13,7 +13,7 @@ comes from, and the Thingport Grab extension downloads those copies straight fro
 up gigabytes on the Administration → Storage page, import from QIDI Maker and VoxelShare, move in from another
 instance, earn achievements, and use Thingport in Simplified Chinese.
 
-## Open any 3MF as if it were made for you
+## Made for your slicer and printer
 
 Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts,
 plates and the designer's settings intact, laid out on your printer's bed. Getting it takes two steps:
@@ -32,11 +32,7 @@ changes. Thingport asks once which printer a slicer's copies are for, and rememb
 
 ![Thingport asks once which printer a slicer's copies are for](../../../../release-notes/screenshots/1.7.0-which-printer.webp)
 
-Thanks to SeoliteQ ([#67](https://github.com/TautvydasDerzinskas/Thingport/issues/67)), maxbrueckl
-([#216](https://github.com/TautvydasDerzinskas/Thingport/issues/216)) and truri83
-([#261](https://github.com/TautvydasDerzinskas/Thingport/issues/261),
-[#262](https://github.com/TautvydasDerzinskas/Thingport/pull/262)), whose reports and fix this grew from. How it works,
-slicer by slicer: [Adapted 3MFs](/docs/features/adapted-3mf/).
+How it works, slicer by slicer: [Adapted 3MFs](/docs/features/adapted-3mf/).
 
 ## Download adapted, straight from the model's page
 
@@ -67,9 +63,7 @@ photos. New 3D previews take a fifth of the space they used to. More in [Disk sp
 
 Two printer makers' model communities join in, [QIDI Maker](/docs/providers/qidimaker/) and
 [VoxelShare](/docs/providers/voxelshare/), with their print profiles, collections and likes. Their slicers come along
-too: QIDI Studio and Flash Studio open what you import. Thanks to krolbot for QIDI Studio and QIDI Maker
-([#326](https://github.com/TautvydasDerzinskas/Thingport/pull/326),
-[#340](https://github.com/TautvydasDerzinskas/Thingport/pull/340)).
+too: QIDI Studio and Flash Studio open what you import.
 
 ![The newest sites on the Administration → Providers page](../../../../release-notes/screenshots/1.7.0-providers.webp)
 
@@ -100,11 +94,9 @@ VoxelShare import too.
 
 ## Also new
 
-- **One collection, several sources**: a synced collection can follow lists on several sites at once. Thanks to SeoliteQ
-  ([#70](https://github.com/TautvydasDerzinskas/Thingport/issues/70)).
+- **One collection, several sources**: a synced collection can follow lists on several sites at once.
 - **Files keep their folders**, on the model page and in downloads.
-- **The Thingport Grab extension speaks your language**, every one Thingport does. Thanks to krolbot
-  ([#328](https://github.com/TautvydasDerzinskas/Thingport/pull/328)).
+- **The Thingport Grab extension speaks your language**, every one Thingport does.
 
 ![The extension's language, picked in its popup](../../../../release-notes/screenshots/1.7.0-grab-languages.webp)
 
@@ -112,22 +104,27 @@ VoxelShare import too.
   extension shows it and carries on once it's solved.
 - **eufyMake's print files** import as print profiles.
 - **Invite links without email**: the Invite users button on the Administration → Auth page gives you a link to send
-  yourself. Thanks to CandidB ([#310](https://github.com/TautvydasDerzinskas/Thingport/issues/310)).
+  yourself.
 - **The Thingport Bridge desktop helper** tells you when a new version is out, and updating it on macOS finally works.
 - **Love Thingport?** The What's new dialog, the Administration → Overview page and the Thingport Grab popup now show
   ways to support it.
 - After a tool saves a model, an **Open** button takes you straight to it.
-- Russian, Ukrainian and Belarusian translations are complete, thanks to krolbot
-  ([#327](https://github.com/TautvydasDerzinskas/Thingport/pull/327)).
+- Russian, Ukrainian and Belarusian translations are complete.
 
 ## Fixes
 
 - Rotated parts face the right way in 3D previews and model pictures.
 - Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you
-  have. Thanks to slewantoski ([#333](https://github.com/TautvydasDerzinskas/Thingport/issues/333)).
-- Pairing the Thingport Grab extension survives the browser's permission prompt, thanks to krolbot
-  ([#330](https://github.com/TautvydasDerzinskas/Thingport/pull/330)).
+  have.
+- Pairing the Thingport Grab extension survives the browser's permission prompt.
 - Some Bambu Studio projects no longer show an empty plate in the 3D preview, and more NexPrint models import.
+
+## Thank you
+
+1.7.0 grew out of your reports, ideas, fixes and translations. Thanks to [CandidB](https://github.com/CandidB),
+[maxbrueckl](https://github.com/maxbrueckl), [nevergone](https://github.com/nevergone),
+[SeoliteQ](https://github.com/SeoliteQ), [slewantoski](https://github.com/slewantoski),
+[truri83](https://github.com/truri83) and [WEBzaytsev](https://github.com/WEBzaytsev)!
 
 ## Get it
 

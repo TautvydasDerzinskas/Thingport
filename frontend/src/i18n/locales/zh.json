@@ -3504,7 +3504,10 @@
       "highlight": "亮点",
       "earlier": "更早的版本",
       "backToLatest": "回到最新版本",
-      "latest": "最新"
+      "latest": "最新",
+      "topFeature": "重磅功能",
+      "thanks": "感谢所有为 {{version}} 做出贡献的人",
+      "contributor": "{{login}} 的 GitHub 主页（在新标签页中打开）"
     },
     "codeBlock": {
       "copy": "复制",

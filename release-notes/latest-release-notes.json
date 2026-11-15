@@ -1,13 +1,14 @@
 {
   "version": "1.7.0",
-  "title": "Any 3MF, made for your slicer and printer",
+  "title": "Open any 3MF file as if tailored for you",
   "summary": "Thingport 1.7.0 opens any 3MF as if it had been made for your slicer and your printer, wherever it comes from, and the Thingport Grab extension downloads those copies straight from the model's page. There's more: free up gigabytes on the Administration → Storage page, import from QIDI Maker and VoxelShare, move in from another instance, earn achievements, and use Thingport in Simplified Chinese.",
+  "contributors": ["CandidB", "maxbrueckl", "nevergone", "SeoliteQ", "slewantoski", "truri83", "WEBzaytsev"],
   "items": [
     {
       "type": "feature",
       "highlight": true,
-      "title": "Open any 3MF as if it were made for you",
-      "description": "Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts, plates and the designer's settings intact, laid out on your printer's bed. Tell Thingport what you print with: pick your slicers and add your printers in the Configuration dialog. It suggests printers from your library, and can even find them in your printer makers' accounts. Then click Open adapted on any model page. Thanks to SeoliteQ (#67), maxbrueckl (#216) and truri83 (#261, #262).",
+      "title": "Made for your slicer and printer",
+      "description": "Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts, plates and the designer's settings intact, laid out on your printer's bed. Tell Thingport what you print with: pick your slicers and add your printers in the Configuration dialog. It suggests printers from your library, and can even find them in your printer makers' accounts. Then click Open adapted on any model page.",
       "images": [
         {
           "src": "screenshots/1.7.0-printers.webp",
@@ -62,7 +63,7 @@
       "type": "feature",
       "highlight": true,
       "title": "QIDI Maker and VoxelShare: 23 sites to import from",
-      "description": "Two printer makers' model communities join in, QIDI Maker and VoxelShare, with their print profiles, collections and likes. Their slicers come along too: QIDI Studio and Flash Studio open what you import. Thanks to krolbot for QIDI Studio and QIDI Maker (#326, #340).",
+      "description": "Two printer makers' model communities join in, QIDI Maker and VoxelShare, with their print profiles, collections and likes. Their slicers come along too: QIDI Studio and Flash Studio open what you import.",
       "images": [
         {
           "src": "screenshots/1.7.0-providers.webp",
@@ -113,7 +114,7 @@
     {
       "type": "feature",
       "title": "One collection, several sources",
-      "description": "A synced collection can now follow lists on several sites at once: a MakerWorld collection and a Printables one, say. Thanks to SeoliteQ (#70).",
+      "description": "A synced collection can now follow lists on several sites at once: a MakerWorld collection and a Printables one, say.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/synced-collections.md"
     },
     {
@@ -125,7 +126,7 @@
     {
       "type": "feature",
       "title": "Thingport Grab in your language",
-      "description": "The Thingport Grab extension now speaks every language Thingport does. Thanks to krolbot (#328).",
+      "description": "The Thingport Grab extension now speaks every language Thingport does.",
       "images": [
         {
           "src": "screenshots/1.7.0-grab-languages.webp",
@@ -149,7 +150,7 @@
     {
       "type": "feature",
       "title": "Invite links without email",
-      "description": "No email server? The Invite users button on the Administration → Auth page now gives you a link to send yourself. Thanks to CandidB (#310).",
+      "description": "No email server? The Invite users button on the Administration → Auth page now gives you a link to send yourself.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/multi-user.md"
     },
     {
@@ -176,7 +177,7 @@
     },
     {
       "type": "improvement",
-      "title": "Russian, Ukrainian and Belarusian translations are complete, thanks to krolbot (#327)"
+      "title": "Russian, Ukrainian and Belarusian translations are complete"
     },
     {
       "type": "fix",
@@ -184,11 +185,11 @@
     },
     {
       "type": "fix",
-      "title": "Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you have, thanks to slewantoski (#333)"
+      "title": "Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you have"
     },
     {
       "type": "fix",
-      "title": "Pairing the Thingport Grab extension survives the browser's permission prompt, thanks to krolbot (#330)"
+      "title": "Pairing the Thingport Grab extension survives the browser's permission prompt"
     },
     {
       "type": "fix",

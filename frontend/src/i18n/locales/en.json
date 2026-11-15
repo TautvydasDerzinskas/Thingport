@@ -3665,7 +3665,10 @@
       "highlight": "Highlight",
       "earlier": "Earlier releases",
       "backToLatest": "Back to latest",
-      "latest": "Latest"
+      "latest": "Latest",
+      "topFeature": "Top feature",
+      "thanks": "Thanks to everyone who helped with {{version}}",
+      "contributor": "{{login}} on GitHub (opens in a new tab)"
     },
     "codeBlock": {
       "copy": "Copy",

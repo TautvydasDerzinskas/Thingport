@@ -2895,7 +2895,10 @@
       "highlight": "Главное",
       "earlier": "Предыдущие выпуски",
       "backToLatest": "К последнему выпуску",
-      "latest": "Последний"
+      "latest": "Последний",
+      "topFeature": "Главная новинка",
+      "thanks": "Спасибо всем, кто помогал с выпуском {{version}}",
+      "contributor": "{{login}} на GitHub (откроется в новой вкладке)"
     },
     "grab": {
       "connect": {
