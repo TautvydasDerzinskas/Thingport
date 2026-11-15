@@ -421,6 +421,19 @@ describe("a 3MF's start part", () => {
     );
   });
 
+  it("reads a relationship under a namespace prefix", () => {
+    const prefixed = `<r:Relationships xmlns:r="http://schemas.openxmlformats.org/package/2006/relationships"><r:Relationship Id="r" Target="/3D/main.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></r:Relationships>`;
+    expect(findStartPart(["3D/main.model"], prefixed)).toBe("3D/main.model");
+  });
+
+  it("passes over a relationship that's commented out", () => {
+    const commented = rels("/3D/main.model").replace(
+      "<Relationship ",
+      `<!-- <Relationship Id="old" Target="/3D/old.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/> --><Relationship `,
+    );
+    expect(findStartPart(["3D/old.model", "3D/main.model"], commented)).toBe("3D/main.model");
+  });
+
   it("is nothing for a zip with neither", () => {
     expect(findStartPart(["3D/model.model"], null)).toBeNull();
   });

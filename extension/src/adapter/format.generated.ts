@@ -70,7 +70,9 @@ export function parseGenerator(text: string | null | undefined): { app: string |
 }
 
 const MODEL_RELATIONSHIP = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
-const RELATIONSHIP_RE = /<Relationship\b[^>]*>/gi;
+// Under any namespace prefix; a tag inside a comment isn't an element.
+const RELATIONSHIP_RE = /<(?:[\w.-]+:)?Relationship\b[^>]*>/gi;
+const XML_COMMENT_RE = /<!--[\s\S]*?-->/g;
 
 function xmlAttr(tag: string, name: string): string | null {
   const m = new RegExp(String.raw`\b${name}\s*=\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(tag);
@@ -91,7 +93,7 @@ export function partNames(entries: Iterable<string>): (part: string) => string |
  *  Windows' 3D Builder writes 3D/3DModel.model. */
 export function findStartPart(entries: Iterable<string>, rels: string | null): string | null {
   const named = partNames(entries);
-  for (const tag of rels?.match(RELATIONSHIP_RE) ?? []) {
+  for (const tag of rels?.replace(XML_COMMENT_RE, "").match(RELATIONSHIP_RE) ?? []) {
     const target = xmlAttr(tag, "Target");
     if (!target || xmlAttr(tag, "Type")?.toLowerCase() !== MODEL_RELATIONSHIP) continue;
     const found = named(target);
