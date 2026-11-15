@@ -200,7 +200,9 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
   const attempt = async () => {
     const key = stepKey(job);
     if (solving?.step !== key) {
-      solving = { step: key, outcome: solvePausedStep(location.href, job.profiles?.ids[0] ?? null) };
+      // The model the run paused on, which needn't be the page this tab has gone to since.
+      const model = job.urls[job.index] ?? location.href;
+      solving = { step: key, outcome: solvePausedStep(model, job.profiles?.ids[0] ?? null) };
     }
     const mine = solving;
     const spotlight = spotlightOverlay(t("puzzleProgress", { imported: job.imported, total: job.total }), {

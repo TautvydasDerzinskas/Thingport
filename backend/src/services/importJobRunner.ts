@@ -685,17 +685,30 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     let handedToGrab = 0;
     let grabBlock: ProviderId | null = null;
     let grabPaired: boolean | null = null;
-    // This run's counts as far as the job's row has them. Added to it rather than set: Grab can count one of the job's
-    // failed links done while it runs (settleHandedLinks).
+    // This run's counts as far as the job's row has them. Added to it rather than set, and its failures counted again
+    // with its row held: Grab can count one of the job's failed links done while it runs (grabImports.ts). Returns the
+    // job's totals as they then stand.
     const written = { imported: 0, alreadyInLibrary: 0 };
     const writeCounts = async (data: Prisma.ImportJobUpdateInput) => {
       const counts = { imported, alreadyInLibrary };
-      await updateJob(jobId, {
-        ...data,
-        imported: { increment: counts.imported - written.imported },
-        alreadyInLibrary: { increment: counts.alreadyInLibrary - written.alreadyInLibrary },
+      const totals = await prisma.$transaction(async (tx) => {
+        await tx.importJob.update({
+          where: { id: jobId },
+          data: {
+            ...data,
+            imported: { increment: counts.imported - written.imported },
+            alreadyInLibrary: { increment: counts.alreadyInLibrary - written.alreadyInLibrary },
+          },
+        });
+        const failedCount = await tx.importJobItem.count({ where: { jobId, status: "FAILED" } });
+        return tx.importJob.update({
+          where: { id: jobId },
+          data: { failedCount },
+          select: { imported: true, alreadyInLibrary: true, failedCount: true },
+        });
       });
       Object.assign(written, counts);
+      return totals;
     };
 
     for (const [index, item] of items.entries()) {
@@ -879,7 +892,6 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       processed++;
       await writeCounts({
         processed,
-        failedCount: await countJobItems(jobId, "FAILED"),
         // With every link: a sync's run can end at any of them, by giving way, a person's pause or a restart.
         ...(job.collectionSyncId
           ? {
@@ -893,12 +905,13 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       }).catch(() => undefined);
     }
 
-    const totalImported = job.imported + imported;
-    const failedCount = await countJobItems(jobId, "FAILED");
+    const totals = await writeCounts({ processed });
+    const totalImported = totals.imported;
+    const failedCount = totals.failedCount;
     log.info("links job done", {
       job: jobId,
       imported: totalImported,
-      already_in_library: job.alreadyInLibrary + alreadyInLibrary,
+      already_in_library: totals.alreadyInLibrary,
       failed: failedCount,
     });
     // A link handed to Grab hasn't imported anything yet, and one with nothing to tell (cut off after it finished) has
@@ -908,11 +921,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         ? await prisma.print.findUnique({ where: { id: printId }, select: { id: true, name: true, title: true } })
         : null;
     const singleTrail = single && !waitingForGrab && (failedCount > 0 || singlePrint !== null);
-    await writeCounts({
+    // Its counts are written: a link Grab counts done from here on keeps them right by itself.
+    await updateJob(jobId, {
       status: "DONE",
       errorMessage: null,
-      processed,
-      failedCount,
       // A model already in the library must still open.
       resultPrintId: totalImported === 1 || singleTrail ? (printId ?? job.resultPrintId) : null,
       ...(singlePrint && outcome

@@ -13,11 +13,10 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { parseBody } from "../../utils/validate";
 import manifest from "./manifest.generated";
 import {
-  clearMakerworldGrabImport,
+  finishMakerworldGrabImport,
   getMakerworldGrabImport,
   listMakerworldGrabImports,
   recordMakerworldGrabImportFailure,
-  settleHandedLinks,
 } from "./grabImports";
 
 const MAKERWORLD = manifest.id;
@@ -70,10 +69,7 @@ router.post(
         );
         throw err;
       }
-      // Settled before the row goes, and failing the task if it can't be: kept, the row brings the link in again,
-      // as already imported, and settles it then.
-      await settleHandedLinks(userId, row.url, described.import_outcome === "already_imported");
-      await clearMakerworldGrabImport(row).catch(() => undefined);
+      await finishMakerworldGrabImport(row, described.import_outcome === "already_imported");
       return described;
     };
     if (req.query.async === "1") {

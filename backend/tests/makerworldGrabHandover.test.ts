@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 
 // Imports MakerWorld's CAPTCHA stopped, handed to Thingport Grab to clear with MakerWorld's own puzzle on its site: who
@@ -20,6 +20,8 @@ vi.mock("node:dns/promises", () => ({
 const imports = vi.hoisted(() => ({
   failure: null as (() => Error) | null,
   brought: [] as { url: string; body: Record<string, unknown> }[],
+  // Whatever else happens while Grab's import of a link is under way.
+  meanwhile: null as (() => Promise<void>) | null,
 }));
 
 vi.mock("../src/services/importService", async (original) => ({
@@ -35,9 +37,16 @@ vi.mock("../src/services/singleImport", async (original) => ({
     (userId: string, url: string, body: Record<string, unknown>) => Promise<{ id: string; import_outcome: string }>
   >(async (_userId, url, body) => {
     imports.brought.push({ url, body });
+    await imports.meanwhile?.();
     return { id: "print-from-grab", import_outcome: "created" };
   }),
 }));
+
+// Counting a link done is made to fail where a test says, by the check of which links Grab's import finishes.
+vi.mock("../src/services/importJobService", async (original) => {
+  const actual = await original<typeof import("../src/services/importJobService")>();
+  return { ...actual, isOneModelLink: vi.fn<typeof actual.isOneModelLink>(actual.isOneModelLink) };
+});
 
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
@@ -45,6 +54,7 @@ import { MAKERWORLD_CAPTCHA_CODE, MAKERWORLD_CAPTCHA_MESSAGE } from "../src/prov
 import { clearMakerworldGrabImports } from "../src/providers/makerworld/grabImports";
 import { PROVIDERS } from "../src/providers/registry";
 import { runLinksImportJob } from "../src/services/importJobRunner";
+import { isOneModelLink } from "../src/services/importJobService";
 import { clearFinishedJobs, deleteQueueJob, readOwnQueue, removeQueueItem } from "../src/services/importQueueService";
 import { HttpError } from "../src/utils/fileUtils";
 
@@ -102,10 +112,14 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     token = res.body.token;
   });
 
-  afterEach(async () => {
-    vi.restoreAllMocks();
+  beforeEach(() => {
     imports.failure = captcha;
     imports.brought = [];
+    imports.meanwhile = null;
+  });
+
+  afterEach(async () => {
+    vi.restoreAllMocks();
     await prisma.grabImport.deleteMany({ where: { userId } });
     await prisma.grabConnection.deleteMany({ where: { userId } });
     await prisma.importJob.deleteMany({ where: { userId } });
@@ -267,13 +281,20 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
 
     expect((await itemsOf(jobId)).map((item) => item.status)).toEqual(["DONE", "FAILED"]);
     expect(await jobOf(jobId)).toMatchObject({ imported: 1, failedCount: 1 });
+    const told = await prisma.notification.findFirst({
+      where: { userId, title: { startsWith: "Imported" } },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(told?.title).toBe("Imported 1 of 2 models");
   });
 
   it("keeps a waiting link whose import can't be counted done, to bring in again", async () => {
     await pairGrab();
     const jobId = await runJob([modelUrl(17)]);
     const [row] = await waiting();
-    vi.spyOn(prisma.importJobItem, "findMany").mockRejectedValueOnce(new Error("database gone"));
+    vi.mocked(isOneModelLink).mockImplementationOnce(() => {
+      throw new Error("database gone");
+    });
 
     expect((await bringIn(row)).status).toBe(500);
     expect((await waiting()).map((left) => [left.id, left.attempts])).toEqual([[row.id, 0]]);
@@ -331,5 +352,46 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     expect((await waiting()).map((row) => row.url)).toEqual([link("10"), link("20")]);
     await clearMakerworldGrabImports(userId, design, ["10"]);
     expect((await waiting()).map((row) => row.url)).toEqual([link("20")]);
+  });
+
+  it("leaves a link queued again during Grab's import waiting, with its newer options", async () => {
+    await pairGrab();
+    const first = await runJob([modelUrl(23)]);
+    const [row] = await waiting();
+    // Another import meets the CAPTCHA on the same link meanwhile, to be filed with other tags.
+    let second = "";
+    imports.meanwhile = async () => {
+      imports.meanwhile = null;
+      const { jobId, run } = await startJob([modelUrl(23)]);
+      second = jobId;
+      await run;
+      await prisma.grabImport.update({ where: { id: row.id }, data: { tags: ["newer"] } });
+    };
+
+    expect((await bringIn(row)).status).toBe(200);
+    expect((await waiting()).map((left) => [left.id, left.tags])).toEqual([[row.id, ["newer"]]]);
+    expect((await itemsOf(second))[0].status).toBe("FAILED");
+
+    expect((await bringIn(row)).status).toBe(200);
+    expect(imports.brought.at(-1)?.body).toMatchObject({ tags: ["newer"] });
+    expect(await waiting()).toEqual([]);
+    expect([(await itemsOf(first))[0].status, (await itemsOf(second))[0].status]).toEqual(["DONE", "DONE"]);
+  });
+
+  it("counts every failed try in Grab, however many come at once", async () => {
+    await pairGrab();
+    await runJob([modelUrl(24)]);
+    const [row] = await waiting();
+    await prisma.grabImport.update({ where: { id: row.id }, data: { attempts: 1 } });
+
+    const fail = () =>
+      request(app).post(`/api/import/makerworld/waiting/${row.id}/failed`).set(auth()).send({ error: "no file" });
+    expect((await Promise.all([fail(), fail()])).map((reply) => reply.status)).toEqual([200, 200]);
+
+    expect(await waiting()).toEqual([]);
+    const told = await prisma.notification.findMany({
+      where: { userId, externalUrl: row.url, title: { startsWith: "Couldn't import" } },
+    });
+    expect(told).toHaveLength(1);
   });
 });

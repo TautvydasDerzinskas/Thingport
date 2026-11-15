@@ -107,10 +107,10 @@ export function notePuzzle(pageUrl: string, err: unknown): void {
   }
 }
 
-/** For the run paused on this page: clears the block its step met, with the puzzle that step was refused with, or,
+/** For the run paused in this tab: clears the block its step met, with the puzzle that step was refused with, or,
  *  where none was kept (the instance met it, or the page was loaded again), by asking MakerWorld for the step's file
- *  as its download does, which names the puzzle while the block lasts. `instanceId` is the profile the step is on,
- *  null for the page's own. */
+ *  as its download does, which names the puzzle while the block lasts. `pageUrl` is the model it paused on, and
+ *  `instanceId` the profile the step is on, null for the model's own. */
 export async function solvePausedStep(pageUrl: string, instanceId: string | null): Promise<PuzzleOutcome> {
   const designId = parseMakerworldModelUrl(pageUrl)?.designId;
   const kept = pending;
