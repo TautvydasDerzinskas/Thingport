@@ -40,6 +40,8 @@ Download the latest release from the
 
 Download and run `thingport-bridge-windows-amd64-setup.exe`. Setup registers the `thingport://`
 protocol, installs Bridge under your per-user Programs directory, and adds it to Installed apps.
+The setup wizard supports English, Russian, Ukrainian, Belarusian, Spanish, French, Lithuanian and
+Simplified Chinese; it selects a default from Windows language settings and lets you change it.
 
 ### Linux
 
