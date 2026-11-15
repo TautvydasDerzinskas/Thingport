@@ -28,7 +28,7 @@ Thingport into your language, see [docs/TRANSLATING.md](docs/TRANSLATING.md) -- 
    The type also decides the next version of what you touched (`feat:` minor, `fix:` and `perf:` patch, `!`
    major; anything else none). The backend, the frontend, Bridge and the browser extension are each versioned on
    their own, from the commits under their folder: the backend, frontend and Bridge when a release is merged into
-   `main`, the extension weekly -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
+   `main`, the extension when a maintainer releases it -- see [extension/CONTRIBUTING.md](extension/CONTRIBUTING.md#versioning-how-the-next-version-is-picked).
    Each gets a `CHANGELOG.md` and a GitHub release.
 
 4. **Push** to your fork and open a pull request against `develop`.
@@ -78,7 +78,9 @@ changes early, but only for the project it touches: the backend's when it change
 when it changes `frontend/**`, once any running backend build has finished. Only a release, merged into `main`,
 gets a version and `:latest`. It isn't tested again there, since its pull request was, so merge one only once
 that pull request's checks have passed: `main`'s rules don't require it. When a release changes both projects,
-their images go out together, the backend's first, so nobody pulls a new frontend for an old backend.
+their images go out together, the backend's first, so nobody pulls a new frontend for an old backend. Afterwards
+`main` goes back into `develop` by pull request, with a merge commit; it only brings the versions and changelogs, so
+its title gets `[skip ci]` added (`back-merge-pr.yml`) and merging it runs nothing on `develop`.
 
 If you're a brand-new GitHub account, your first PR's workflows wait for a maintainer to approve
 them before running. That's a GitHub setting, not something wrong with your PR.

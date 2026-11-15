@@ -1,17 +1,11 @@
 name: Extension store release
 
-# Versioned releases of Thingport Grab via semantic-release (extension/.releaserc.json): every
-# Friday at 13:00 Polish time, or on demand. Only commits touching extension/ count; with a
-# releasable one it bumps the version, writes the changelog, tags, creates a GitHub release with
-# the store zips, publishes to the Chrome Web Store, Edge Add-ons and addons.mozilla.org, and moves the
-# extension-latest release to the same build. Per-merge checks are in extension-release.yml.
+# Versioned releases of Thingport Grab via semantic-release (extension/.releaserc.json), started by hand only. Only
+# commits touching extension/ count; with a releasable one it bumps the version, writes the changelog, tags, creates a
+# GitHub release with the store zips, publishes to the Chrome Web Store, Edge Add-ons and addons.mozilla.org, and moves
+# the extension-latest release to the same build. Per-merge checks are in extension-release.yml.
 on:
   workflow_dispatch: {}
-  schedule:
-    # GitHub cron is UTC-only; fire at both CET and CEST equivalents and let the Warsaw-time step
-    # pick the right one.
-    - cron: "0 11 * * 5"
-    - cron: "0 12 * * 5"
 
 concurrency:
   group: extension-store-release
@@ -29,33 +23,17 @@ jobs:
       run:
         working-directory: extension
     steps:
-      - name: Friday 13:00 in Warsaw?
-        id: gate
-        if: github.event_name == 'schedule'
-        run: |
-          offset=$(TZ=Europe/Warsaw date +%z)
-          case "${{ github.event.schedule }}|$offset" in
-            "0 11 * * 5|+0200" | "0 12 * * 5|+0100") echo "run=true" >> "$GITHUB_OUTPUT" ;;
-            *)
-              echo "This trigger isn't 13:00 in Warsaw (UTC offset $offset) -- the other one is. Skipping."
-              echo "run=false" >> "$GITHUB_OUTPUT"
-              ;;
-          esac
       - uses: actions/checkout@v4
-        if: steps.gate.outputs.run != 'false'
         with:
           fetch-depth: 0 # semantic-release needs the full history and tags
       - uses: actions/setup-node@v4
-        if: steps.gate.outputs.run != 'false'
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: extension/package-lock.json
-      - if: steps.gate.outputs.run != 'false'
-        run: npm ci
+      - run: npm ci
       - name: semantic-release
         id: release
-        if: steps.gate.outputs.run != 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: github-actions[bot]

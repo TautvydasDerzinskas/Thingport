@@ -1,0 +1,32 @@
+name: Back-merge PR
+
+# A main -> develop pull request only brings a release's version bumps and changelogs, so merging it mustn't publish
+# :dev or run anything else on develop. GitHub starts no push workflows for a commit whose message has [skip ci], and a
+# merge commit's message is its pull request's title (the repository's merge setting), so the title has to carry it.
+# A run that only skipped its jobs wouldn't do: the update checker (versionService.ts) takes the newest successful push
+# run as the newest :dev build, so :dev installs would be told about an update with no image behind it.
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+    branches: [develop]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  skip-ci:
+    if: github.head_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # A title edited with GITHUB_TOKEN starts no workflows, so this doesn't run itself again.
+      - name: Title carries [skip ci]
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          case "$TITLE" in
+            *"[skip ci]"*) echo "The title already has it." ;;
+            *) gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --title "$TITLE [skip ci]" ;;
+          esac
