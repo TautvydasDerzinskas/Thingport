@@ -34,10 +34,10 @@ export function shellWord(value: string): string {
 }
 
 /** A value for a Compose file: `$` doubled, as Compose reads `$NAME` as a variable even in quotes, and double-quoted
- *  unless YAML would read it as a plain string, as ` #` starts a comment. */
+ *  unless YAML would read it as a plain string, as ` #` starts a comment and a `:` ending it a key. */
 export function composeValue(value: string): string {
   const escaped = value.replace(/\$/g, () => "$$");
-  return /^[\w/.][\w@%+=:,./-]*$/.test(escaped) ? escaped : JSON.stringify(escaped);
+  return /^[\w/.][\w@%+=:,./-]*$/.test(escaped) && !escaped.endsWith(":") ? escaped : JSON.stringify(escaped);
 }
 
 /** Whether the folder field holds an absolute path, or nothing (the default): Compose mounts a bare name as a named
@@ -52,21 +52,31 @@ export function folderIsAbsolute(value: string): boolean {
 export function guideCommands(given: GuideNames, { root, comment }: { root: string; comment: string }) {
   const pick = (key: keyof GuideNames) => given[key].trim() || DEFAULT_NAMES[key];
   const folder = pick("folder").replace(/\/+$/, "") || DEFAULT_NAMES.folder;
+  // rsync before 3.2.4 hands the path to the old server's shell, which splits it again unless -s keeps it whole.
+  // macOS's rsync has no -s, so it's there only for a path that needs it.
+  const protect = shellWord(folder) === folder ? "" : "s";
+  // Compose splits the short form on `:`, so a folder with one past a drive letter is written out in full. It hands
+  // the long form on as a short one too while it may create the folder, hence create_host_path off.
+  const volume = folder.replace(/^[A-Za-z]:/, "").includes(":")
+    ? [
+        "      - type: bind",
+        `        source: ${composeValue(folder)}`,
+        `        target: ${composeValue(root)}`,
+        "        read_only: true",
+        "        bind:",
+        "          create_host_path: false",
+      ]
+    : [`      - ${composeValue(`${folder}:${root}:ro`)}`];
   return {
     dump: [
       "docker compose stop backend",
       `docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP}`,
     ].join("\n"),
-    // docker cp reads a stopped container, its mounts included, so a bind folder and a volume copy alike.
-    storage: `docker cp "$(docker compose ps -aq backend)":/app/storage/. ${STORAGE}`,
-    bring: `rsync -a ${DUMP} ${STORAGE} ${shellWord(`${pick("host")}:${folder}/`)}`,
-    mount: [
-      "services:",
-      "  backend:",
-      "    volumes:",
-      `      # ${comment}`,
-      `      - ${composeValue(`${folder}:${root}:ro`)}`,
-    ].join("\n"),
+    // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
+    // leaves out containers a `docker compose run` left behind.
+    storage: `docker compose cp backend:/app/storage/. ${STORAGE}`,
+    bring: `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${pick("host")}:${folder}/`)}`,
+    mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, ...volume].join("\n"),
     restart: "docker compose up -d backend",
   };
 }

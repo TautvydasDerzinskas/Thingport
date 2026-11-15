@@ -91,7 +91,7 @@ below). Restore dumps of instances you trust.
 Copy the old instance's storage out of its backend's container, from the same folder (the backend may be stopped):
 
 ```sh
-docker cp "$(docker compose ps -aq backend)":/app/storage/. old-storage
+docker compose cp backend:/app/storage/. old-storage
 ```
 
 This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
@@ -109,6 +109,9 @@ and a folder of your own:
 rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
+For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than
+3.2.4 splits the path on this server.
+
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
 Add the one line to the backend's volumes and leave the ones it has, its `/app/storage` among them, as they are. The
@@ -120,6 +123,20 @@ services:
     volumes:
       # ...its own volumes, as they are...
       - /srv/old-thingport:/app/migrate:ro # holds thingport.dump and old-storage/
+```
+
+That line splits on `:`, so a folder with a colon in its path needs the long form instead:
+
+```yaml
+services:
+  backend:
+    volumes:
+      - type: bind
+        source: /srv/archive:2026
+        target: /app/migrate
+        read_only: true
+        bind:
+          create_host_path: false # else Compose turns it back into the line above
 ```
 
 Restart the backend (`docker compose up -d backend`) after adding the line. The backend runs as `PUID`/`PGID`, so that

@@ -20,6 +20,7 @@ describe("dump guide", () => {
     expect(commands.dump).toBe(
       "docker compose stop backend\ndocker compose exec -T db pg_dump -U tp -Fc library > thingport.dump",
     );
+    expect(commands.storage).toBe("docker compose cp backend:/app/storage/. old-storage");
     expect(commands.bring).toBe("rsync -a thingport.dump old-storage 192.168.1.20:/data/old/");
     expect(commands.mount).toContain("      - /data/old:/app/migrate:ro");
     expect(commands.mount).toContain("      # ...its own volumes, as they are...");
@@ -41,7 +42,8 @@ describe("dump guide", () => {
       where,
     );
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
-    expect(commands.bring).toBe("rsync -a thingport.dump old-storage '192.168.1.20:/srv/old library/'");
+    // -s, or an older rsync's remote shell splits the path the local one kept whole.
+    expect(commands.bring).toBe("rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'");
   });
 
   it("writes the mount so Compose reads the folder as it was given", () => {
@@ -53,6 +55,22 @@ describe("dump guide", () => {
     expect(mount("/srv/$backup")).toBe('      - "/srv/$$backup:/app/migrate:ro"');
     expect(mount("C:\\thingport\\old")).toBe('      - "C:\\\\thingport\\\\old:/app/migrate:ro"');
     expect(composeValue("/srv/old-thingport:/app/migrate:ro")).toBe("/srv/old-thingport:/app/migrate:ro");
+    expect(composeValue("/srv/old:")).toBe('"/srv/old:"');
+  });
+
+  it("writes a folder with a colon in the long form, as the short one splits on it", () => {
+    const { mount } = guideCommands({ ...DEFAULT_NAMES, folder: "/srv/archive:2026" }, where);
+    expect(mount.split("\n").slice(-6)).toEqual([
+      "      - type: bind",
+      "        source: /srv/archive:2026",
+      "        target: /app/migrate",
+      "        read_only: true",
+      "        bind:",
+      "          create_host_path: false",
+    ]);
+    expect(guideCommands({ ...DEFAULT_NAMES, folder: "D:/old" }, where).mount).toContain(
+      "      - D:/old:/app/migrate:ro",
+    );
   });
 
   it("takes only an absolute folder, as Compose mounts a bare name as a volume", () => {
