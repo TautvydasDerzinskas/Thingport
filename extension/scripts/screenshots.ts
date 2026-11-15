@@ -8,6 +8,8 @@
 //
 //   npm run screenshots -- --makerworld=https://makerworld.com/en/models/123 --printables=...
 //
+// Any other site's page for --corners and --adapted is given the same way, e.g. --eufymake=<url>.
+//
 // The collection shots use fixed collections, changeable with --printables-collection=<url>,
 // --makerworld-collection=<url> and --myminifactory-collection=<url>. --only=<names> refreshes just those shots, e.g.
 // --only=collection-printables,collection-makerworld.
@@ -15,6 +17,11 @@
 // --corners[=<dir>] also visits a model page on every site Grab works on, for the store's mosaic
 // (scripts/store-assets.ts), and saves the page's bottom-right corner twice -- with Grab's button, and with its panel
 // open -- as <site>.jpg and <site>-panel.jpg in docs/store/corners/ or <dir>.
+//
+// --adapted[=<dir>] visits a model page on every site Download adapted works on, for the mock instance's two slicers
+// and printer, and saves the part of the page around Grab's button as <site>.jpg in docs/store/adapted/ or
+// <dir>, MakerWorld's again with its menu open (makerworld-menu.jpg), and a Thingiverse page in Grab's dark theme
+// (thingiverse-dark.jpg), for the store's Extra features picture.
 //
 // Needs Playwright's Chromium once: `npx playwright install chromium`.
 
@@ -89,6 +96,25 @@ const PROVIDERS: {
 /** CORS is open, so the extension reaches it without a host permission. */
 type MockState = { inspectTitle: string | null; batch: BatchEntriesResult | null };
 
+// The account's Configuration → Slicer and Printer: OrcaSlicer, which gets a copy for a printer, with a P1S, and
+// PrusaSlicer. Without them, Download adapted would offer its copy for before a slicer is picked.
+const ADAPT_SLICERS = {
+  slicer: "orcaslicer",
+  slicers: ["orcaslicer", "prusaslicer"],
+  printers: { orcaslicer: "bambulab-p1s" },
+};
+const ADAPT_PRINTER = {
+  printer: {
+    id: "bambulab-p1s",
+    model: "P1S",
+    bed: { shape: "rectangle", x: 256, y: 256 },
+    height: 250,
+    extruders: 1,
+  },
+  brandName: "Bambu Lab",
+  nozzle: "0.4",
+};
+
 function startMockInstance(state: MockState): Promise<{ url: string; close: () => void }> {
   const collections = [
     { id: "c1", name: "Workshop organizers", system_key: null },
@@ -122,9 +148,10 @@ function startMockInstance(state: MockState): Promise<{ url: string; close: () =
         return json({ supported: true, sync: null });
       case "POST /api/import":
         return json({ id: "demo-imported", title: state.inspectTitle, import_outcome: "created", thumb_url: null });
-      // No slicer, so MakerWorld pages don't add their "Download adapted" button.
       case "GET /api/settings/slicer":
-        return json({ slicer: null });
+        return json(ADAPT_SLICERS);
+      case "GET /api/me/printers":
+        return json({ printers: [ADAPT_PRINTER] });
       // Every provider on: one the instance doesn't list counts as on.
       case "GET /api/settings/providers":
         return json({ providers: [] });
@@ -159,6 +186,9 @@ const OS_SCHEME = OS_SCHEME_ARGS[argValue("os") ?? ""] ?? [];
 const CORNERS_DIR = process.argv.includes("--corners")
   ? path.join(ROOT, "docs", "store", "corners")
   : argValue("corners");
+const ADAPTED_DIR = process.argv.includes("--adapted")
+  ? path.join(ROOT, "docs", "store", "adapted")
+  : argValue("adapted");
 
 function wanted(...files: string[]): boolean {
   return !ONLY.length || files.some((file) => ONLY.includes(file.replace(/\.\w+$/, "")));
@@ -371,6 +401,31 @@ async function screenshotPopup(
   await page.close();
 }
 
+/** Adapt 3MFs' settings, opened from the cog on the Extra features tab: the instance's slicers and printers once the
+ *  popup has read them. */
+async function screenshotAdaptView(
+  context: BrowserContext,
+  extensionId: string,
+  file: string,
+  colorScheme: "light" | "dark",
+): Promise<void> {
+  if (!wanted(file)) return;
+  const page = await context.newPage();
+  await page.emulateMedia({ colorScheme });
+  await page.setViewportSize({ width: POPUP_WIDTH, height: 600 });
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  await page.waitForTimeout(800);
+  await page.locator("#tab-offline").click();
+  await page.waitForTimeout(500);
+  await page.locator("#adapt-settings-btn").click();
+  await page.locator("#adapt-view").waitFor({ state: "visible" });
+  // The subview slides in, and the instance's printers are drawn as they come.
+  await page.waitForTimeout(1200);
+  await undressSeason(page);
+  await page.locator("body").screenshot({ path: path.join(OUT_DIR, file) });
+  await page.close();
+}
+
 // The other sites Grab works on, for --corners: a model linked from the front page, else `fixed`. A site with no entry
 // here, such as one added since, uses the example model page its manifest names.
 const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: string }[] = [
@@ -418,6 +473,8 @@ const CORNER_SITES: { id: string; home?: string; modelLink?: RegExp; fixed?: str
 const CORNER = { width: 640, height: 512 };
 
 async function cornerUrl(page: Page, site: (typeof CORNER_SITES)[number]): Promise<string> {
+  const given = argValue(site.id);
+  if (given) return given;
   if (site.home && site.modelLink) {
     await openPage(page, site.home).catch(() => undefined);
     const links = await page
@@ -519,6 +576,107 @@ async function captureCorners(page: Page, models: Map<ProviderName, ModelInfo>, 
   }
 }
 
+// Where Download adapted works: the sites whose manifests list the kinds of 3MF Grab adapts.
+const ADAPTED_SITES = PROVIDER_IDS.filter(
+  (id) => (MANIFESTS[id].capabilities as { adapted3mfs?: readonly string[] }).adapted3mfs?.length,
+);
+const ADAPTED_CROP = { width: 560, height: 350 };
+
+/** Model pages to try on a site, in turn: the one already read, links from its front page, then its fixed or example
+ *  page. Not every model has a 3MF, and one without gets no Download adapted. */
+async function adaptedCandidates(page: Page, id: string, models: Map<ProviderName, ModelInfo>): Promise<string[]> {
+  const provider = PROVIDERS.find((p) => p.name === id);
+  const site = CORNER_SITES.find((s) => s.id === id);
+  const home = provider?.home ?? site?.home;
+  const link = provider?.modelLink ?? site?.modelLink;
+  const found: string[] = [];
+  const given = argValue(id);
+  if (given) found.push(given);
+  const read = provider && models.get(provider.name);
+  if (read) found.push(read.url);
+  if (home && link) {
+    await openPage(page, home).catch(() => undefined);
+    const links = await page
+      .$$eval("a[href]", (as) => as.map((a) => (a as HTMLAnchorElement).href.split(/[?#]/)[0]))
+      .catch(() => [] as string[]);
+    found.push(...links.filter((href) => link.test(href)));
+  }
+  const fixed = provider?.fixed ?? site?.fixed ?? MANIFESTS[id as keyof typeof MANIFESTS]?.examples?.model;
+  if (fixed) found.push(fixed);
+  return [...new Set(found)].slice(0, 4);
+}
+
+const clamp = (value: number, max: number) => Math.round(Math.min(Math.max(value, 0), max));
+
+/** The part of the page around Grab's Download adapted button, beside the site's own: centred on it, with what's
+ *  above it in view. */
+async function adaptedClip(page: Page): Promise<{ x: number; y: number; width: number; height: number }> {
+  const host = page.locator("#thingport-grab-adapted");
+  await host.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
+  await page.waitForTimeout(800);
+  const box = (await host.boundingBox())!;
+  return {
+    x: clamp(box.x + box.width / 2 - ADAPTED_CROP.width / 2, PAGE_VIEWPORT.width - ADAPTED_CROP.width),
+    y: clamp(box.y + box.height / 2 - ADAPTED_CROP.height * 0.6, PAGE_VIEWPORT.height - ADAPTED_CROP.height),
+    ...ADAPTED_CROP,
+  };
+}
+
+/** Each Download adapted site's model page with Grab's button beside the site's own, MakerWorld's with its menu open
+ *  too, and Thingiverse in Grab's dark theme. A site where the button doesn't come up is reported and left out.
+ *  --only=adapted-<site>,... takes just those. */
+async function captureAdapted(page: Page, models: Map<ProviderName, ModelInfo>): Promise<void> {
+  const dir = ADAPTED_DIR!;
+  await mkdir(dir, { recursive: true });
+  await page.emulateMedia({ colorScheme: "light" });
+  const only = ONLY.filter((name) => name.startsWith("adapted-"));
+  const sites = ADAPTED_SITES.filter((id) => !only.length || only.includes(`adapted-${id}`));
+  for (const id of sites) {
+    let shot = false;
+    for (const url of await adaptedCandidates(page, id, models)) {
+      try {
+        await openPage(page, url);
+        await page.locator("#thingport-grab-adapted .nd__main").waitFor({ timeout: 25000 });
+        await page.mouse.move(0, 0);
+        await dismissBanners(page);
+        await hidePromotions(page);
+        await undressSeason(page);
+        const clip = await adaptedClip(page);
+        await page.screenshot({ path: path.join(dir, `${id}.jpg`), type: "jpeg", quality: 88, clip });
+        if (id === "makerworld") {
+          await page.locator("#thingport-grab-adapted .nd__more").click();
+          await page.waitForTimeout(600);
+          const menuClip = { ...clip, height: Math.min(560, PAGE_VIEWPORT.height - clip.y) };
+          await page.screenshot({
+            path: path.join(dir, "makerworld-menu.jpg"),
+            type: "jpeg",
+            quality: 88,
+            clip: menuClip,
+          });
+          await page.keyboard.press("Escape");
+        }
+        console.log(`adapted ${id}: ${url}`);
+        shot = true;
+        break;
+      } catch (err) {
+        console.warn(`adapted ${id}: no button on ${url} -- ${(err as Error).message.split("\n")[0]}`);
+      }
+    }
+    if (!shot) console.warn(`adapted ${id}: left out`);
+  }
+  const thingiverse = models.get("thingiverse");
+  if (thingiverse && (!only.length || only.includes("adapted-thingiverse-dark"))) {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await openPage(page, thingiverse.url);
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(1500);
+    await undressSeason(page);
+    await page.screenshot({ path: path.join(dir, "thingiverse-dark.jpg"), type: "jpeg", quality: 88 });
+    await page.emulateMedia({ colorScheme: "light" });
+    console.log(`adapted thingiverse-dark: ${thingiverse.url}`);
+  }
+}
+
 async function screenshotViewport(page: Page, file: string): Promise<void> {
   if (!wanted(file)) return;
   // Some cookie banners only show up after a while.
@@ -546,12 +704,15 @@ async function main(): Promise<void> {
 
     const modelShots =
       Boolean(CORNERS_DIR) ||
+      Boolean(ADAPTED_DIR) ||
       wanted(
         "setup-dialog-makerworld",
         "popup-connected",
         "popup-connected-dark",
         "popup-history",
         "popup-history-dark",
+        "adapted-makerworld",
+        "adapted-makerworld-dark",
       ) ||
       PROVIDERS.some((p) => wanted(`panel-${p.name}`, `panel-${p.name}-dark`, `imported-${p.name}`));
     const models = new Map<ProviderName, ModelInfo>();
@@ -605,12 +766,15 @@ async function main(): Promise<void> {
     await screenshotPopup(context, extensionId, "popup-connected-dark.png", "dark");
     await screenshotPopup(context, extensionId, "popup-features.png", "light", "#tab-offline");
     await screenshotPopup(context, extensionId, "popup-features-dark.png", "dark", "#tab-offline");
+    await screenshotAdaptView(context, extensionId, "popup-adapt.png", "light");
+    await screenshotAdaptView(context, extensionId, "popup-adapt-dark.png", "dark");
     await screenshotPopup(context, extensionId, "popup-history.png", "light", "#tab-history");
     await screenshotPopup(context, extensionId, "popup-history-dark.png", "dark", "#tab-history");
     await screenshotPopup(context, extensionId, "popup-appearance.png", "light", "#tab-appearance");
     await screenshotPopup(context, extensionId, "popup-appearance-dark.png", "dark", "#tab-appearance");
 
     if (CORNERS_DIR) await captureCorners(page, models, mockState);
+    if (ADAPTED_DIR) await captureAdapted(page, models);
 
     // Each shot again over the site's dark scheme, for the READMEs' <picture>; Grab's panel follows it too.
     // Printables and Creality Cloud ignore the emulated scheme and follow the OS one, so their shots of each scheme are
@@ -642,6 +806,19 @@ async function main(): Promise<void> {
           await page.getByRole("link", { name: "Open in Thingport" }).waitFor({ timeout: 20000 });
           await screenshotViewport(page, `imported-${provider.name}.jpg`);
         }
+      }
+
+      // Download adapted beside MakerWorld's own button, its menu open on the copies the account's slicers get.
+      const makerworld = models.get("makerworld");
+      if (makerworld && wanted(`adapted-makerworld${suffix}`)) {
+        await openPage(page, makerworld.url);
+        await page.locator("#thingport-grab-adapted .nd__main").waitFor({ timeout: 25000 });
+        await page.mouse.move(0, 0);
+        await page.locator("#thingport-grab-adapted").evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await page.locator("#thingport-grab-adapted .nd__more").click();
+        await page.waitForTimeout(600);
+        await screenshotViewport(page, `adapted-makerworld${suffix}.jpg`);
+        await page.keyboard.press("Escape");
       }
 
       // The sync box is shown ticked, so the shots show what it's for.

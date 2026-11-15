@@ -50,6 +50,10 @@ it stores and sends.
     <td width="50%"><a href="docs/screenshots/panel-crealitycloud.jpg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/panel-crealitycloud-dark.jpg"><img src="docs/screenshots/panel-crealitycloud.jpg" alt="Import panel on a Creality Cloud model page" width="100%"></picture></a><br><sub><b>Creality Cloud</b> -- import panel on a model page</sub></td>
     <td width="50%"><a href="docs/screenshots/setup-dialog-makerworld.jpg"><img src="docs/screenshots/setup-dialog-makerworld.jpg" alt="Setup dialog opened from the grayed-out icon"></a><br><sub><b>Not set up yet</b> -- the grayed-out icon's setup dialog</sub></td>
   </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/adapted-makerworld.jpg"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/adapted-makerworld-dark.jpg"><img src="docs/screenshots/adapted-makerworld.jpg" alt="Download adapted under MakerWorld's Open in Bambu Studio, its menu offering a copy for a Bambu Lab P1S in OrcaSlicer and one for PrusaSlicer" width="100%"></picture></a><br><sub><b>Download adapted</b> -- beside the site's own button, a copy for each slicer and printer</sub></td>
+    <td width="50%"><a href="docs/screenshots/popup-adapt.png"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/popup-adapt-dark.png"><img src="docs/screenshots/popup-adapt.png" alt="Adapt 3MFs settings: the slicers and printer from Thingport, and where the button goes" width="100%"></picture></a><br><sub><b>Adapt 3MFs</b> -- the slicers and printers its copies are made for</sub></td>
+  </tr>
 </table>
 
 <table>
@@ -232,7 +236,9 @@ last imports, and the last 10 models you opened on any of those sites, each with
 models are listed before you connect too, and they stay in this browser. Click the instance's address under the title
 to open it.
 
-**Appearance** sets how the floating icon on model pages looks and where it sits. Its styles are the white
+**Appearance** starts with Grab's **Language**, for its popup and for what it adds to pages: the browser's language
+(the default), or English, Русский, Українська, Беларуская, Español, Français, Lietuvių or 简体中文, each named as it
+writes itself. Below that, it sets how the floating icon on model pages looks and where it sits. Its styles are the white
 **Bubble** (the default), **Pill** (the icon with a word: "Grab", or what clicking it does), **Mini** (smaller, and
 half see-through until the mouse comes near), **Brand** (solid green), **Glass** (frosted, the page showing through)
 and **Edge tab** (docked to the window's side). It can sit in any corner: bottom right (the default), bottom left, or
