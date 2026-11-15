@@ -3115,7 +3115,7 @@
           "host": "Adresse de ce serveur",
           "hostHelp": "Telle que l’ancien serveur le joint en SSH.",
           "folder": "Dossier sur ce serveur",
-          "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}. Un dossier déjà présent est laissé tel quel : l’utilisateur SSH doit pouvoir y écrire, et celui du backend y entrer.",
+          "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}. Un dossier déjà présent est laissé tel quel, sauf qu’un thingport.dump ou old-storage qu’il contient est remplacé par la copie, ce qui n’y est pas étant supprimé. L’utilisateur SSH doit pouvoir l’atteindre et y écrire, et celui du backend y entrer.",
           "folderAbsolute": "Indiquez le chemin complet, par exemple {{example}}.",
           "folderProtect": "rsync -s nécessite la version 3.0 ou plus récente sur les deux serveurs, pas celle de macOS. Sans espaces ni symboles, n'importe quel rsync convient.",
           "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez les deux à l’utilisateur du backend, pour que lui seul lise le dump, ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",

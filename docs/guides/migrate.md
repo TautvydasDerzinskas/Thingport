@@ -92,13 +92,15 @@ for its working copy, with no rights on this instance's data (see below). Restor
 Copy the old instance's storage out of its backend's container, from the same folder (the backend may be stopped):
 
 ```sh
-mkdir old-storage && docker compose cp backend:/app/storage/. old-storage
+mkdir -m 700 old-storage && docker compose cp backend:/app/storage/. old-storage
 ```
 
 This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
 or in a Docker volume. It needs as much free space as the storage takes. `/app/storage` is the old backend's
 `FILE_STORAGE`, which the Compose files set: if you changed it, use yours. `mkdir` stops it if an earlier try left an
-`old-storage` there: remove that first, as copying into it would keep files the old instance has removed since.
+`old-storage` there: remove that first, as copying into it would keep files the old instance has removed since. The
+folder is made readable by you only (`-m 700`), as the files in it are readable by everyone, and it stays so here and
+on this server.
 
 On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `ssh` and
 `rsync` lines below, put the dump beside the folder and mount the folder that holds both. In the hand-over below, give
@@ -111,8 +113,12 @@ and a new folder of your own. The first line makes the folder, as rsync makes on
 `755`, so the backend's user can enter it. Where only root can, as under `/srv`, it does that with `sudo`, asking for
 your password on this server, and gives the folder to the SSH user so rsync can write there. A folder that's already
 there is left as it is, as it may hold other things: the SSH user must be able to write to it, and the backend's user
-to enter it. One the SSH user can't reach stops the `sudo` part with "File exists" rather than being changed.
-`--delete` clears out what an earlier try left in `old-storage` there, and nothing else in the folder.
+to enter it. One the SSH user can't reach stops the `sudo` part with "File exists" rather than being changed. Either
+way the SSH user must be able to get through the folders above it: `sudo` makes the folder, not a way to it.
+
+A `thingport.dump` or `old-storage` already in the folder is replaced by this copy: `--delete` makes `old-storage` there
+match it, deleting the files that aren't in it. That clears what an earlier try left, and nothing else in the folder,
+but use a folder with no `old-storage` of its own.
 
 ```sh
 ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || { sudo mkdir -p /srv && sudo mkdir -m 755 /srv/old-thingport && sudo chown "$(id -u)" /srv/old-thingport; }'

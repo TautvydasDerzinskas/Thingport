@@ -25,7 +25,7 @@ describe("dump guide", () => {
         "docker compose exec -T db pg_dump -U tp -Fc library > thingport.dump",
     );
     // Stopped by an earlier try's copy, which it would add to.
-    expect(commands.storage).toBe("mkdir old-storage && docker compose cp backend:/data/storage/. old-storage");
+    expect(commands.storage).toBe("mkdir -m 700 old-storage && docker compose cp backend:/data/storage/. old-storage");
     // With sudo only where the SSH user can't make the folder, as under /srv, and then only a new one; 755 either way.
     expect(commands.bring).toBe(
       "ssh -t 192.168.1.20 'mkdir -p -m 755 /data/old 2>/dev/null || " +
@@ -41,7 +41,7 @@ describe("dump guide", () => {
   it("takes the defaults for a field left empty", () => {
     const commands = guideCommands({ user: " ", database: "", storage: "", host: "", folder: "" }, where);
     expect(commands.dump).toContain(`-U ${DEFAULT_NAMES.user} -Fc ${DEFAULT_NAMES.database} >`);
-    expect(commands.storage).toBe("mkdir old-storage && docker compose cp backend:/app/storage/. old-storage");
+    expect(commands.storage).toBe("mkdir -m 700 old-storage && docker compose cp backend:/app/storage/. old-storage");
     expect(commands.bring.split("\n").at(-1)).toBe(
       `rsync -a --delete thingport.dump old-storage this-server:${DEFAULT_NAMES.folder}/`,
     );
@@ -61,7 +61,9 @@ describe("dump guide", () => {
       where,
     );
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
-    expect(commands.storage).toBe("mkdir old-storage && docker compose cp 'backend:/data/my storage/.' old-storage");
+    expect(commands.storage).toBe(
+      "mkdir -m 700 old-storage && docker compose cp 'backend:/data/my storage/.' old-storage",
+    );
     // Quoted twice for ssh, whose far shell reads the command again; -s, or an older rsync's far shell splits it.
     expect(commands.bring).toBe(
       "ssh -t 192.168.1.20 'mkdir -p -m 755 '\\''/srv/old library'\\'' 2>/dev/null || " +

@@ -106,8 +106,9 @@ export function guideCommands(
     ].join("\n"),
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
     // leaves out containers a `docker compose run` left behind. It adds to a folder that's there, so an earlier try's
-    // would keep files the old instance has removed since: mkdir stops on one instead.
-    storage: `mkdir ${STORAGE} && docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
+    // would keep files the old instance has removed since: mkdir stops on one instead. 700, as the files in it are
+    // readable by all, and copying into a folder that's there keeps its mode; rsync -a takes that along.
+    storage: `mkdir -m 700 ${STORAGE} && docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
     // rsync makes only the last folder of the path, so the rest is made first: as the SSH user, or where only root
     // can, as under /srv, with sudo and given to that user, so rsync can write there. Either way 755 whatever the
     // umask, so the backend's user can enter it. A folder already there is left as it is, as it may hold other

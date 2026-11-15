@@ -3115,7 +3115,7 @@
           "host": "Dirección de este servidor",
           "hostHelp": "Tal como el servidor antiguo lo alcanza por SSH.",
           "folder": "Carpeta en este servidor",
-          "folderHelp": "Donde van el volcado y old-storage. El backend de esta instancia la ve como {{root}}. Una que ya existe se deja como está: el usuario SSH debe poder escribir en ella, y el usuario del backend, entrar.",
+          "folderHelp": "Donde van el volcado y old-storage. El backend de esta instancia la ve como {{root}}. Una que ya existe se deja como está, salvo que un thingport.dump u old-storage en ella se reemplaza por la copia, borrando lo que no esté en ella. El usuario SSH debe poder llegar a ella y escribir en ella, y el usuario del backend, entrar.",
           "folderAbsolute": "Indica la ruta completa, como {{example}}.",
           "folderProtect": "rsync -s necesita la versión 3.0 o posterior en ambos servidores; el de macOS no sirve. Sin espacios ni símbolos, sirve cualquier rsync.",
           "mountLead": "En este servidor, desde la carpeta donde está su docker-compose.yml: entrega ambos al usuario del backend, para que solo él lea el volcado, añade la entrada a los volúmenes del backend, dejando los que tiene como están, y reinicia el backend.",

@@ -3160,7 +3160,7 @@
           "host": "Šio serverio adresas",
           "hostHelp": "Kaip senas serveris jį pasiekia per SSH.",
           "folder": "Aplankas šiame serveryje",
-          "folderHelp": "Kur keliauja kopija ir old-storage. Šio egzemplioriaus backend jį mato kaip {{root}}. Jau esamas aplankas paliekamas kaip yra: SSH naudotojas turi galėti į jį rašyti, o backend naudotojas – į jį patekti.",
+          "folderHelp": "Kur keliauja kopija ir old-storage. Šio egzemplioriaus backend jį mato kaip {{root}}. Jau esamas aplankas paliekamas kaip yra, tik jame esantys thingport.dump ar old-storage pakeičiami kopija, pašalinant tai, ko joje nėra. SSH naudotojas turi galėti jį pasiekti ir į jį rašyti, o backend naudotojas – į jį patekti.",
           "folderAbsolute": "Nurodykite visą kelią, pvz., {{example}}.",
           "folderProtect": "rsync -s reikia 3.0 ar naujesnės versijos abiejuose serveriuose; macOS įtaisytasis netinka. Be tarpų ir simbolių tiks bet kuris rsync.",
           "mountLead": "Šiame serveryje, aplanke, kuriame yra jo docker-compose.yml: atiduokite abi backend naudotojui, kad kopiją skaitytų tik jis, pridėkite įrašą prie backend tomų, esamus palikdami kaip yra, tada paleiskite backend iš naujo.",
