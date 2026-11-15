@@ -23,7 +23,7 @@ export async function puzzleOpens(ms: number, stop: () => boolean = () => false)
   return false;
 }
 
-/** Once the page shows no puzzle, solved or closed, or `ms` has passed. */
-export async function puzzleGone(ms: number): Promise<void> {
-  for (const end = Date.now() + ms; puzzleBox() && Date.now() < end;) await sleep(250);
+/** Once the page shows no puzzle, solved or closed, `ms` has passed, or `stop` says to give up. */
+export async function puzzleGone(ms: number, stop: () => boolean = () => false): Promise<void> {
+  for (const end = Date.now() + ms; puzzleBox() && Date.now() < end && !stop();) await sleep(250);
 }

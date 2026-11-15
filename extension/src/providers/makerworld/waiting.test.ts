@@ -6,8 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const MODEL_A = "https://makerworld.com/en/models/100-a";
 const MODEL_B = "https://makerworld.com/en/models/200-b#profileId-20";
 const WAITING = [
-  { id: "w1", url: MODEL_A, scope: "url", collection_id: null, attempts: 0 },
-  { id: "w2", url: MODEL_B, scope: "url", collection_id: null, attempts: 0 },
+  { id: "w1", url: MODEL_A, scope: "url", collection_id: null, attempts: 0, revision: 2 },
+  { id: "w2", url: MODEL_B, scope: "url", collection_id: null, attempts: 0, revision: 0 },
 ];
 
 const calls = vi.hoisted(() => ({
@@ -203,6 +203,11 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
 
     const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
     expect(posts).toEqual(["/import/makerworld/waiting/w1/failed", "/import/makerworld/waiting/w2?async=1"]);
+    // Said of the link as it was listed: a try at it doesn't count against it queued again since.
+    expect(calls.api.find(({ path }) => path.endsWith("/failed"))?.body).toEqual({
+      error: "MakerWorld gave no file for it",
+      revision: 2,
+    });
   });
 
   it("go on past an import the instance doesn't finish in time", async () => {

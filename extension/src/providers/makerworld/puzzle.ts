@@ -56,8 +56,12 @@ async function openPuzzle(challenge: PuzzleChallenge): Promise<PuzzleAnswer | "u
 
 /** Shows the puzzle that clears `puzzle` and goes on with the file once it's solved. A puzzle the page shows already,
  *  for a request of its own or a download someone clicked, isn't this one: its file would be another's, so this opens
- *  once that's gone, rather than over it. */
-export async function solveMakerworldPuzzle(puzzle: MakerworldPuzzle): Promise<PuzzleOutcome> {
+ *  once that's gone, rather than over it. `stopped`: what waited on it was stopped meanwhile, so it opens no puzzle and
+ *  asks MakerWorld nothing more, as for one closed. */
+export async function solveMakerworldPuzzle(
+  puzzle: MakerworldPuzzle,
+  { stopped = () => false }: { stopped?: () => boolean } = {},
+): Promise<PuzzleOutcome> {
   let current: MakerworldPuzzle | null = puzzle;
   for (let shown = 0; current && shown < MAX_PUZZLES; shown++) {
     if ("onPage" in current) {
@@ -65,10 +69,11 @@ export async function solveMakerworldPuzzle(puzzle: MakerworldPuzzle): Promise<P
       return downloadUrl ? { kind: "solved", resolved: { ...current.target, downloadUrl } } : { kind: "closed" };
     }
     const { refused, target } = current;
-    await puzzleGone(PAGE_PUZZLE_MS);
+    await puzzleGone(PAGE_PUZZLE_MS, stopped);
+    if (stopped()) return { kind: "closed" };
     const answer = await openPuzzle(refused.challenge);
     if (answer === "unavailable") return { kind: "unavailable" };
-    if (!answer) return { kind: "closed" };
+    if (!answer || stopped()) return { kind: "closed" };
     try {
       return { kind: "solved", resolved: await answerRefusal(refused, target, answer) };
     } catch (err) {

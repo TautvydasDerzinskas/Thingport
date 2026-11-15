@@ -46,6 +46,8 @@ export type MakerworldGrabImportOut = {
   scope: string;
   collection_id: string | null;
   attempts: number;
+  /** Which queueing of the link this is, for Grab to say which one a failed try was at. */
+  revision: number;
 };
 
 export async function listMakerworldGrabImports(userId: string): Promise<MakerworldGrabImportOut[]> {
@@ -59,6 +61,7 @@ export async function listMakerworldGrabImports(userId: string): Promise<Makerwo
     scope: row.scope,
     collection_id: row.collectionId,
     attempts: row.attempts,
+    revision: row.revision,
   }));
 }
 
@@ -116,7 +119,7 @@ async function linksGrabFinishes(
 export async function dropUnwantedMakerworldGrabImports(userId?: string): Promise<void> {
   const rows = await prisma.grabImport.findMany({
     where: { provider: PROVIDER, ...(userId ? { userId } : {}) },
-    select: { id: true, userId: true, url: true },
+    select: { id: true, userId: true, url: true, revision: true },
   });
   if (!rows.length) return;
   const links = await linksGrabFinishes(
@@ -126,8 +129,11 @@ export async function dropUnwantedMakerworldGrabImports(userId?: string): Promis
     ["PENDING", "RUNNING", "FAILED"],
   );
   const wanted = new Set(links.map((item) => `${item.job.userId}|${item.url}`));
-  const dropped = rows.filter((row) => !wanted.has(`${row.userId}|${row.url}`)).map((row) => row.id);
-  if (dropped.length) await prisma.grabImport.deleteMany({ where: { id: { in: dropped } } });
+  // As they were read: one queued again since is wanted again.
+  const dropped = rows
+    .filter((row) => !wanted.has(`${row.userId}|${row.url}`))
+    .map(({ id, revision }) => ({ id, revision }));
+  if (dropped.length) await prisma.grabImport.deleteMany({ where: { OR: dropped } });
 }
 
 /** A failed try in Grab at `row`'s link as it was queued then. The last one drops the model and says why. Counted on the
@@ -143,14 +149,21 @@ export async function recordMakerworldGrabImportFailure(row: GrabImport, error: 
     })
     .catch(() => null);
   if (!tried || tried.attempts < MAKERWORLD_GRAB_MAX_ATTEMPTS) return;
-  const { count } = await prisma.grabImport.deleteMany({ where: queued });
-  if (!count) return;
-  await createNotification(row.userId, {
-    type: "import",
-    title: `Couldn't import a ${manifest.name} model`,
-    body: `Thingport Grab tried ${tried.attempts} times: ${error}`,
-    externalUrl: row.url,
-    internalPath: null,
+  // Dropped only with its notification, so one that can't be told keeps waiting.
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.grabImport.deleteMany({ where: queued });
+    if (!count) return;
+    await createNotification(
+      row.userId,
+      {
+        type: "import",
+        title: `Couldn't import a ${manifest.name} model`,
+        body: `Thingport Grab tried ${tried.attempts} times: ${error}`,
+        externalUrl: row.url,
+        internalPath: null,
+      },
+      tx,
+    );
   });
 }
 

@@ -863,10 +863,15 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         : grabBlock !== null && grabBlock === itemProvider;
       // Whether this link is handed over or not: the links after it that the block stopped can be.
       if (itemFailure && blocked) grabBlock = itemProvider;
+      let handed = false;
       if (fallback && blocked && itemError && !partlyIn && (itemBody.scope ?? "url") === "url") {
         grabPaired ??= await fallback.available(userId).catch(() => false);
         if (grabPaired && URLS[itemProvider!].parseModel(item.url)) {
-          const queued = await fallback
+          // Failed, and saying it waits, before Grab can see it waiting: Grab bringing it in at once then finds it to
+          // count done, and that's left as it is.
+          const waits = fallback.waitingText();
+          await updateJobItem(item.id, { status: "FAILED", attempts, errorMessage: waits }).catch(() => undefined);
+          handed = await fallback
             .queue(userId, item.url, {
               collectionId: options.collection_id,
               categoryId: body.category_id,
@@ -877,18 +882,20 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
               () => true,
               () => false,
             );
-          if (queued) {
+          if (handed) {
             handedToGrab++;
-            itemError = fallback.waitingText();
+            itemError = waits;
             failure = itemError;
           }
         }
       }
-      await updateJobItem(item.id, {
-        status: itemError ? "FAILED" : "DONE",
-        attempts,
-        errorMessage: itemError,
-      }).catch(() => undefined);
+      if (!handed) {
+        await updateJobItem(item.id, {
+          status: itemError ? "FAILED" : "DONE",
+          attempts,
+          errorMessage: itemError,
+        }).catch(() => undefined);
+      }
       processed++;
       await writeCounts({
         processed,

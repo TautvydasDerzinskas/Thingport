@@ -48,17 +48,25 @@ vi.mock("../src/services/importJobService", async (original) => {
   return { ...actual, isOneModelLink: vi.fn<typeof actual.isOneModelLink>(actual.isOneModelLink) };
 });
 
+// Telling the owner a model was given up on is made to fail where a test says.
+vi.mock("../src/services/notificationService", async (original) => {
+  const actual = await original<typeof import("../src/services/notificationService")>();
+  return { ...actual, createNotification: vi.fn<typeof actual.createNotification>(actual.createNotification) };
+});
+
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { MAKERWORLD_CAPTCHA_CODE, MAKERWORLD_CAPTCHA_MESSAGE } from "../src/providers/makerworld/captcha";
 import {
   clearMakerworldGrabImports,
+  finishMakerworldGrabImport,
   queueMakerworldGrabImport,
   recordMakerworldGrabImportFailure,
 } from "../src/providers/makerworld/grabImports";
 import { PROVIDERS } from "../src/providers/registry";
 import { runLinksImportJob } from "../src/services/importJobRunner";
 import { isOneModelLink } from "../src/services/importJobService";
+import { createNotification } from "../src/services/notificationService";
 import { clearFinishedJobs, deleteQueueJob, readOwnQueue, removeQueueItem } from "../src/services/importQueueService";
 import { HttpError } from "../src/utils/fileUtils";
 
@@ -406,13 +414,14 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     const [row] = await waiting();
     await prisma.grabImport.update({ where: { id: row.id }, data: { attempts: 2 } });
     // Another import meets the CAPTCHA on the link between the last try's count and its drop.
-    const drop = prisma.grabImport.deleteMany.bind(prisma.grabImport);
-    vi.spyOn(prisma.grabImport, "deleteMany").mockImplementationOnce(async (args) => {
-      const counted = await prisma.grabImport.findUniqueOrThrow({ where: { id: row.id } });
+    const count = prisma.grabImport.update.bind(prisma.grabImport);
+    vi.spyOn(prisma.grabImport, "update").mockImplementationOnce((async (args: Parameters<typeof count>[0]) => {
+      const counted = await count(args);
+      const before = await prisma.grabImport.findUniqueOrThrow({ where: { id: row.id } });
       await queueMakerworldGrabImport(userId, row.url, { tags: ["newer"] });
-      await prisma.grabImport.update({ where: { id: row.id }, data: { updatedAt: counted.updatedAt } });
-      return drop(args);
-    });
+      await prisma.grabImport.update({ where: { id: row.id }, data: { updatedAt: before.updatedAt } });
+      return counted;
+    }) as unknown as typeof count);
 
     await request(app)
       .post(`/api/import/makerworld/waiting/${row.id}/failed`)
@@ -444,5 +453,75 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     const [now] = await waiting();
     for (let attempt = 0; attempt < 3; attempt++) await recordMakerworldGrabImportFailure(now, "no file");
     expect(await waiting()).toEqual([]);
+  });
+
+  it("doesn't count a try Grab reports at an earlier queueing of a link against a newer one", async () => {
+    await pairGrab();
+    await runJob([modelUrl(27)]);
+    const listed = await request(app).get("/api/import/makerworld/waiting").set(auth()).expect(200);
+    const [row] = listed.body as { id: string; url: string; revision: number }[];
+    expect(row.revision).toBe(0);
+    // Queued again while Grab works through the list it got.
+    await queueMakerworldGrabImport(userId, row.url, { tags: ["newer"] });
+
+    const fail = (revision: number) =>
+      request(app)
+        .post(`/api/import/makerworld/waiting/${row.id}/failed`)
+        .set(auth())
+        .send({ error: "no file", revision })
+        .expect(200);
+    for (let attempt = 0; attempt < 3; attempt++) await fail(row.revision);
+    expect((await waiting()).map((left) => [left.attempts, left.revision])).toEqual([[0, 1]]);
+
+    for (let attempt = 0; attempt < 3; attempt++) await fail(1);
+    expect(await waiting()).toEqual([]);
+  });
+
+  it("keeps a link waiting where telling its owner it was given up on fails", async () => {
+    await pairGrab();
+    await runJob([modelUrl(28)]);
+    const [row] = await waiting();
+    await prisma.grabImport.update({ where: { id: row.id }, data: { attempts: 2 } });
+    vi.mocked(createNotification).mockRejectedValueOnce(new Error("database gone"));
+    const fail = () =>
+      request(app).post(`/api/import/makerworld/waiting/${row.id}/failed`).set(auth()).send({ error: "no file" });
+
+    expect((await fail()).status).toBe(500);
+    expect((await waiting()).map((left) => left.id)).toEqual([row.id]);
+    expect((await fail()).status).toBe(200);
+    expect(await waiting()).toEqual([]);
+    const told = await prisma.notification.findMany({
+      where: { userId, externalUrl: row.url, title: { startsWith: "Couldn't import" } },
+    });
+    expect(told).toHaveLength(1);
+  });
+
+  it("counts a link done that Grab brings in the moment it's handed over", async () => {
+    await pairGrab();
+    const upsert = prisma.grabImport.upsert.bind(prisma.grabImport);
+    vi.spyOn(prisma.grabImport, "upsert").mockImplementationOnce((async (args: Parameters<typeof upsert>[0]) => {
+      const row = await upsert(args);
+      await finishMakerworldGrabImport(row, false);
+      return row;
+    }) as unknown as typeof upsert);
+    const jobId = await runJob([modelUrl(29)]);
+
+    expect(await waiting()).toEqual([]);
+    expect((await itemsOf(jobId)).map((item) => item.status)).toEqual(["DONE"]);
+    expect(await jobOf(jobId)).toMatchObject({ imported: 1, failedCount: 0 });
+  });
+
+  it("keeps a link queued again while what no import wants is being dropped", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(30)]);
+    const [item] = await itemsOf(jobId);
+    const drop = prisma.grabImport.deleteMany.bind(prisma.grabImport);
+    vi.spyOn(prisma.grabImport, "deleteMany").mockImplementationOnce((async (args: Parameters<typeof drop>[0]) => {
+      await queueMakerworldGrabImport(userId, modelUrl(30), { tags: ["newer"] });
+      return drop(args);
+    }) as unknown as typeof drop);
+
+    await removeQueueItem(item.id, userId);
+    expect((await waiting()).map((left) => [left.url, left.tags])).toEqual([[modelUrl(30), ["newer"]]]);
   });
 });

@@ -122,6 +122,38 @@ describe("clearing MakerWorld's CAPTCHA with its own puzzle", () => {
     expect(asks.map((ask) => ask.url)).toEqual([REFUSED_URL]);
   });
 
+  it("opens no puzzle once what waited on it was stopped", async () => {
+    answers = [ANSWER];
+    api({ status: 200, body: { name: "file.3mf", url: FILE } });
+    // Stopped while a puzzle of the page's own still shows.
+    const box = { getBoundingClientRect: () => ({ width: 340, height: 390 }) };
+    vi.stubGlobal(
+      "document",
+      Object.assign(new EventTarget(), { querySelectorAll: () => [box], getElementById: () => null }),
+    );
+    vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible", opacity: "1" }));
+    let stopped = false;
+
+    const outcome = solveMakerworldPuzzle(refusal().puzzle!, { stopped: () => stopped });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    stopped = true;
+
+    expect(await outcome).toEqual({ kind: "closed" });
+    expect(opened).toEqual([]);
+    expect(asks).toEqual([]);
+  });
+
+  it("asks MakerWorld nothing with an answer that came once it was stopped", async () => {
+    answers = [ANSWER];
+    api({ status: 200, body: { name: "file.3mf", url: FILE } });
+    // Stopped while its puzzle was open.
+    const outcome = solveMakerworldPuzzle(refusal().puzzle!, { stopped: () => opened.length > 0 });
+
+    expect(await outcome).toEqual({ kind: "closed" });
+    expect(opened).toEqual([CHALLENGE]);
+    expect(asks).toEqual([]);
+  });
+
   it("leaves it to the user where the page can't open MakerWorld's puzzle", async () => {
     pageShowsPuzzles = false;
     expect(await solveMakerworldPuzzle(refusal().puzzle!)).toEqual({ kind: "unavailable" });

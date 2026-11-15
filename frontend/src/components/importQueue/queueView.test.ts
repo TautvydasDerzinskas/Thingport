@@ -1620,14 +1620,16 @@ describe("a job waiting for Grab", () => {
     expect(
       jobChip(waiting({ single: true, total: 1, failed_count: 1, failed_items_count: 1, grab_waiting: 1 }), t),
     ).toMatchObject({ tone: "info", label: "Waiting for puzzle" });
-    expect(whyText(waiting(), t)).toBeNull();
+    expect(whyText(waiting(), t, null, { grabBanner: true })).toBeNull();
+    // Everyone's list has no banner: the card says it itself.
+    expect(whyText(waiting(), t)).toMatch(/^Waits for Thingport Grab/);
     expect(jobBar(waiting(), t)).toMatchObject({ tone: "info", text: "3 of 3, 2 wait for Grab" });
   });
 
   it("is a plain failure where something else failed too", () => {
     const mixed = waiting({ failed_count: 3, failed_items_count: 3, grab_waiting: 2 });
     expect(jobChip(mixed, t).tone).toBe("warning");
-    expect(whyText(mixed, t)).toMatch(/^Waits for Thingport Grab/);
+    expect(whyText(mixed, t, null, { grabBanner: true })).toMatch(/^Waits for Thingport Grab/);
     expect(jobBar(mixed, t)?.text).toBe("3 of 3, 3 failed");
   });
 

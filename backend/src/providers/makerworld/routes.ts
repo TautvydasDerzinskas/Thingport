@@ -80,12 +80,18 @@ router.post(
   }),
 );
 
-/** Grab couldn't resolve a waiting model's file, the puzzle solved or not. */
+/** Grab couldn't resolve a waiting model's file, the puzzle solved or not. `revision`, from the list Grab worked from:
+ *  a try at an earlier queueing of the link doesn't count against a newer one. An older Grab sends none, and its try
+ *  counts against the link as it's queued now. */
 router.post(
   `/import/${MAKERWORLD}/waiting/:id/failed`,
   asyncHandler(async (req, res) => {
-    const body = parseBody(z.object({ error: z.string().max(1000) }), req.body);
-    await recordMakerworldGrabImportFailure(await getMakerworldGrabImport(req.userId!, req.params.id), body.error);
+    const body = parseBody(
+      z.object({ error: z.string().max(1000), revision: z.number().int().nonnegative().optional() }),
+      req.body,
+    );
+    const row = await getMakerworldGrabImport(req.userId!, req.params.id);
+    await recordMakerworldGrabImportFailure({ ...row, revision: body.revision ?? row.revision }, body.error);
     res.json({ ok: true });
   }),
 );

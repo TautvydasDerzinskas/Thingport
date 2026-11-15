@@ -538,11 +538,16 @@ const NO_REQUEST_REASON = "This older import has no saved request";
 const BARE_FAILURE_COUNT = /^\d+ failed — retry them from the import queue\.?$/;
 
 /** Why a job stopped or failed. Nothing while it's on its way again, as a Start or Retry leaves that behind, or once it
- *  finished with nothing failed, as removing the failed links does. */
-export function whyText(job: QueueJob, t: TFunction, viewerId: string | null = null): string | null {
+ *  finished with nothing failed, as removing the failed links does. `grabBanner`: the Grab banner over the queue shows,
+ *  which says what to do for those waiting for Grab, once for all of them. */
+export function whyText(
+  job: QueueJob,
+  t: TFunction,
+  viewerId: string | null = null,
+  { grabBanner = false }: { grabBanner?: boolean } = {},
+): string | null {
   if (isImporting(job) || isInLine(job) || (job.status === "DONE" && !hasFailures(job))) return null;
-  // The banner over the queue says what to do, once for all of them.
-  if (waitsForGrab(job)) return null;
+  if (grabBanner && waitsForGrab(job)) return null;
   const reason = job.failure_reason;
   if (reason && !BARE_FAILURE_COUNT.test(reason)) {
     if (INTERRUPTED_REASONS.has(reason)) {

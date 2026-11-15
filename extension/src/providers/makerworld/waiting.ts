@@ -37,7 +37,15 @@ const TASK_WAIT_MS = 10 * 60 * 1000;
 // How long the run's last word stays before it goes by itself.
 const DONE_MS = 8000;
 
-type WaitingImport = { id: string; url: string; scope: string; collection_id: string | null; attempts: number };
+type WaitingImport = {
+  id: string;
+  url: string;
+  scope: string;
+  collection_id: string | null;
+  attempts: number;
+  /** Which queueing of the link this is, for a failed try to say. */
+  revision?: number;
+};
 type TaskState = { status: "running" } | { status: "done" } | { status: "error"; detail?: string };
 
 let offered = false;
@@ -105,7 +113,9 @@ async function bringIn(row: WaitingImport, resolved: ResolvedDownload, stopped: 
 
 /** Couldn't resolve it here: the instance counts the try, and drops the model after its last. */
 function reportFailed(row: WaitingImport, error: string): void {
-  void api("POST", `/import/${PROVIDER}/waiting/${row.id}/failed`, { error }).catch(() => undefined);
+  void api("POST", `/import/${PROVIDER}/waiting/${row.id}/failed`, { error, revision: row.revision }).catch(
+    () => undefined,
+  );
 }
 
 /** Works through what waits, one at a time, opening MakerWorld's puzzle where it still wants one solved. Stopped, or
@@ -178,7 +188,9 @@ async function run(waiting: WaitingImport[]): Promise<void> {
             askAgain: stop.onClick,
           }),
         );
-        const outcome = await solveMakerworldPuzzle(err.puzzle).catch(() => ({ kind: "unavailable" as const }));
+        const outcome = await solveMakerworldPuzzle(err.puzzle, { stopped: () => stopped }).catch(() => ({
+          kind: "unavailable" as const,
+        }));
         if (stopped) return;
         if (outcome.kind === "closed") {
           overlays.show(

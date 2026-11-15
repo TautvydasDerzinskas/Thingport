@@ -289,6 +289,22 @@ describe("JobCard, whose it is", () => {
     expect(textOfCard(cut)).toContain("incomplete in your library");
   });
 
+  it("says what to do for links waiting for Grab where no banner over the list does", () => {
+    const waits = "Waits for Thingport Grab: solve MakerWorld's puzzle on makerworld.com and Grab finishes it";
+    const waiting = {
+      type: "LINKS",
+      status: "DONE",
+      attention: true,
+      total: 1,
+      failed_count: 1,
+      failed_items_count: 1,
+      grab_waiting: 1,
+      failure_reason: waits,
+    } as const;
+    expect(textOfCard(waiting)).not.toContain(waits);
+    expect(textOfCard({ ...waiting, owner }, everyone)).toContain(waits);
+  });
+
   it("stands out in one's own line, not in everyone's", () => {
     const own = card({ status: "QUEUED", position: 1 });
     const theirs = card({ status: "QUEUED", position: 1 }, everyone);
