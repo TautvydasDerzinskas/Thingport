@@ -3155,7 +3155,7 @@
           "databaseHelp": "Seno egzemplioriaus POSTGRES_DB, jei jį keitėte.",
           "storagePath": "Saugyklos kelias",
           "storagePathHelp": "Seno backend FILE_STORAGE, jei jį keitėte.",
-          "storageLead": "Tame pačiame aplanke. Tai nukopijuoja jo saugyklą į old-storage šalia kopijos, nesvarbu, ar tai aplankas, ar Docker tomas. Reikia tiek laisvos vietos, kiek užima saugykla.",
+          "storageLead": "Tame pačiame aplanke. Tai nukopijuoja jo saugyklą į old-storage šalia kopijos, nesvarbu, ar tai aplankas, ar Docker tomas. Reikia tiek laisvos vietos, kiek užima saugykla. Komanda sustoja, jei old-storage liko nuo ankstesnio bandymo: pirma jį pašalinkite, nes kopijuojant į jį liktų nuo to laiko pašalinti failai.",
           "bringLead": "Nukopijuokite abi į šį serverį arba perneškite diske. Tame pačiame serveryje tiesiog perkelkite jas į aplanką. Kur aplanką sukurti gali tik root, kaip /srv viduje, pirmoji eilutė šiame serveryje paprašys sudo.",
           "host": "Šio serverio adresas",
           "hostHelp": "Kaip senas serveris jį pasiekia per SSH.",

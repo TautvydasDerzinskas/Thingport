@@ -3013,7 +3013,7 @@
           "databaseHelp": "The old instance's POSTGRES_DB, if you changed it.",
           "storagePath": "Storage path",
           "storagePathHelp": "The old backend's FILE_STORAGE, if you changed it.",
-          "storageLead": "From the same folder. This copies its storage into old-storage, beside the dump, whether it's a folder or a Docker volume. It needs as much free space as the storage takes.",
+          "storageLead": "From the same folder. This copies its storage into old-storage, beside the dump, whether it's a folder or a Docker volume. It needs as much free space as the storage takes. It stops if an earlier try left old-storage there: remove that first, as copying into it would keep files removed since.",
           "bringLead": "Copy both to this server, or carry them over on a disk. On the same server, move them into the folder instead. Where only root can make the folder, as under /srv, the first line asks for sudo on this server.",
           "host": "This server's address",
           "hostHelp": "As the old server reaches it over SSH.",

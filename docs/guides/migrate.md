@@ -92,12 +92,13 @@ for its working copy, with no rights on this instance's data (see below). Restor
 Copy the old instance's storage out of its backend's container, from the same folder (the backend may be stopped):
 
 ```sh
-docker compose cp backend:/app/storage/. old-storage
+mkdir old-storage && docker compose cp backend:/app/storage/. old-storage
 ```
 
 This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
 or in a Docker volume. It needs as much free space as the storage takes. `/app/storage` is the old backend's
-`FILE_STORAGE`, which the Compose files set: if you changed it, use yours.
+`FILE_STORAGE`, which the Compose files set: if you changed it, use yours. `mkdir` stops it if an earlier try left an
+`old-storage` there: remove that first, as copying into it would keep files the old instance has removed since.
 
 On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `ssh` and
 `rsync` lines below, put the dump beside the folder and mount the folder that holds both. In the hand-over below, give
@@ -110,11 +111,12 @@ and a new folder of your own. The first line makes the folder, as rsync makes on
 `755`, so the backend's user can enter it. Where only root can, as under `/srv`, it does that with `sudo`, asking for
 your password on this server, and gives the folder to the SSH user so rsync can write there. A folder that's already
 there is left as it is, as it may hold other things: the SSH user must be able to write to it, and the backend's user
-to enter it.
+to enter it. One the SSH user can't reach stops the `sudo` part with "File exists" rather than being changed.
+`--delete` clears out what an earlier try left in `old-storage` there, and nothing else in the folder.
 
 ```sh
-ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || sudo install -d -o "$(id -u)" /srv/old-thingport'
-rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
+ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || { sudo mkdir -p /srv && sudo mkdir -m 755 /srv/old-thingport && sudo chown "$(id -u)" /srv/old-thingport; }'
+rsync -a --delete thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
 For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than

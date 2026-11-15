@@ -3110,7 +3110,7 @@
           "databaseHelp": "El POSTGRES_DB de la instancia antigua, si lo cambiaste.",
           "storagePath": "Ruta del almacenamiento",
           "storagePathHelp": "El FILE_STORAGE del backend antiguo, si lo cambiaste.",
-          "storageLead": "Desde la misma carpeta. Esto copia su almacenamiento a old-storage, junto al volcado, sea una carpeta o un volumen de Docker. Necesita tanto espacio libre como ocupa el almacenamiento.",
+          "storageLead": "Desde la misma carpeta. Esto copia su almacenamiento a old-storage, junto al volcado, sea una carpeta o un volumen de Docker. Necesita tanto espacio libre como ocupa el almacenamiento. Se detiene si un intento anterior dejó old-storage ahí: elimínalo primero, ya que copiar en él conservaría archivos borrados desde entonces.",
           "bringLead": "Copia ambos a este servidor, o llévalos en un disco. Si es el mismo servidor, muévelos a la carpeta. Donde solo root puede crear la carpeta, como en /srv, la primera línea pide sudo en este servidor.",
           "host": "Dirección de este servidor",
           "hostHelp": "Tal como el servidor antiguo lo alcanza por SSH.",

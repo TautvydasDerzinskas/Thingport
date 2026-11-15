@@ -46,11 +46,11 @@ export function composeValue(value: string): string {
   return /^[\w/.][\w@%+=:,./-]*$/.test(escaped) && !escaped.endsWith(":") ? escaped : JSON.stringify(escaped);
 }
 
-/** Whether the folder field holds an absolute path, or nothing (the default): Compose mounts a bare name as a named
- *  volume, not a folder. */
+/** Whether the field holds an absolute POSIX path, or nothing (the default): Compose mounts a bare name as a named
+ *  volume, not a folder, and a drive path like C:\old is no path to the POSIX shell commands bring the files with. */
 export function folderIsAbsolute(value: string): boolean {
   const folder = value.trim();
-  return !folder || folder.startsWith("/") || /^[A-Za-z]:[\\/]/.test(folder);
+  return !folder || folder.startsWith("/");
 }
 
 /** Whether the rsync line needs -s for this folder: rsync before 3.2.4 hands the path to the far server's shell, which
@@ -83,9 +83,11 @@ export function guideCommands(
   const { uid, gid } = owner ?? DEFAULT_OWNER;
   const protect = folderNeedsProtect(folder) ? "s" : "";
   const host = hostForms(pick("host"));
-  // Compose splits the short form on `:`, so a folder with one past a drive letter is written out in full. It hands
-  // the long form on as a short one too while it may create the folder, hence create_host_path off.
-  const volume = folder.replace(/^[A-Za-z]:/, "").includes(":")
+  // What sudo makes first where only root can, so that only the folder itself is made without -p.
+  const parent = folder.replace(/\/[^/]*$/, "") || "/";
+  // Compose splits the short form on `:`, so a folder with one is written out in full. It hands the long form on as
+  // a short one too while it may create the folder, hence create_host_path off.
+  const volume = folder.includes(":")
     ? [
         "      - type: bind",
         `        source: ${composeValue(folder)}`,
@@ -103,16 +105,23 @@ export function guideCommands(
       `touch ${DUMP} && chmod 600 ${DUMP} && docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP}`,
     ].join("\n"),
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
-    // leaves out containers a `docker compose run` left behind.
-    storage: `docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
+    // leaves out containers a `docker compose run` left behind. It adds to a folder that's there, so an earlier try's
+    // would keep files the old instance has removed since: mkdir stops on one instead.
+    storage: `mkdir ${STORAGE} && docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
     // rsync makes only the last folder of the path, so the rest is made first: as the SSH user, or where only root
     // can, as under /srv, with sudo and given to that user, so rsync can write there. Either way 755 whatever the
     // umask, so the backend's user can enter it. A folder already there is left as it is, as it may hold other
-    // things. ssh hands its command to the far server's shell, hence it's quoted as one word, the folder in it again;
-    // -t, so sudo can ask for a password.
+    // things: sudo makes the folder itself without -p, so one the SSH user only couldn't reach stops it with "File
+    // exists". ssh hands its command to the far server's shell, hence it's quoted as one word, the folder in it
+    // again; -t, so sudo can ask for a password. --delete clears what an earlier try left in old-storage there, and
+    // only there, as the folder itself isn't one rsync is sent.
     bring: [
-      `ssh -t ${shellWord(host.ssh)} ${shellWord(`mkdir -p -m 755 ${shellWord(folder)} 2>/dev/null || sudo install -d -o "$(id -u)" ${shellWord(folder)}`)}`,
-      `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
+      `ssh -t ${shellWord(host.ssh)} ${shellWord(
+        `mkdir -p -m 755 ${shellWord(folder)} 2>/dev/null || ` +
+          `{ sudo mkdir -p ${shellWord(parent)} && sudo mkdir -m 755 ${shellWord(folder)} && ` +
+          `sudo chown "$(id -u)" ${shellWord(folder)}; }`,
+      )}`,
+      `rsync -a${protect} --delete ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
     ].join("\n"),
     // Whoever copied them, the backend's user then owns the two, and only it can read the dump. Only the two: the
     // folder may be one that holds other things.
