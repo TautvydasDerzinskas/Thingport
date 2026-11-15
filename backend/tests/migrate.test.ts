@@ -31,7 +31,7 @@ import {
   startRun,
   UPLOADS,
 } from "../src/services/migrate/runs";
-import { checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
+import { checkDumpFile, checkFolder, folderSource } from "../src/services/migrate/sourceFiles";
 import { dump, hasPgTools, oldInstance, RELEASE_1_0_0_MIGRATIONS, tmp, urlFor } from "./migrateFixture";
 
 // A notification that takes its time when a test asks, as one to a slow database would.
@@ -319,6 +319,33 @@ describe("the old instance's folder", () => {
       process.env.MIGRATE_DIR = MIGRATE_ROOT;
     }
   });
+
+  // What the dump guide's handover is for: kept private to whoever copied them, they're there but not readable.
+  it.skipIf(process.getuid?.() === 0)(
+    "says it can't read a dump or folder rather than that it isn't there",
+    async () => {
+      const shut = inRoot();
+      const shutDump = path.join(shut, "thingport.dump");
+      const storage = path.join(shut, "old-storage");
+      fs.writeFileSync(shutDump, "dump");
+      fs.mkdirSync(storage);
+      try {
+        fs.chmodSync(shutDump, 0o000);
+        await expect(checkDumpFile(shutDump)).rejects.toMatchObject({
+          code: "folder_unreadable",
+          values: { folder: shutDump },
+        });
+        fs.chmodSync(shutDump, 0o600);
+        fs.chmodSync(shut, 0o000);
+        await expect(checkDumpFile(shutDump)).rejects.toMatchObject({ code: "folder_unreadable" });
+        await expect(checkFolder(storage)).rejects.toMatchObject({ code: "folder_unreadable" });
+      } finally {
+        fs.chmodSync(shut, 0o700);
+      }
+      expect(await checkDumpFile(shutDump)).toBe(shutDump);
+      await expect(checkDumpFile(path.join(shut, "nope.dump"))).rejects.toMatchObject({ code: "dump_missing" });
+    },
+  );
 });
 
 describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () => {

@@ -96,23 +96,24 @@ export function guideCommands(
       ]
     : [`      - ${composeValue(`${folder}:${root}:ro`)}`];
   return {
-    // The dump holds password hashes and provider sign-ins, so it's made readable by its owner only, and rsync -a
-    // keeps that; the parentheses keep the umask to this one command.
+    // The dump holds password hashes and provider sign-ins, so it's made readable by its owner only before anything
+    // is written to it, an earlier dump's mode included, and rsync -a keeps that.
     dump: [
       "docker compose stop backend",
-      `(umask 077 && docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP})`,
+      `touch ${DUMP} && chmod 600 ${DUMP} && docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP}`,
     ].join("\n"),
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
     // leaves out containers a `docker compose run` left behind.
     storage: `docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
-    // rsync makes only the last folder of the path, so the rest is made first, for its owner only. ssh hands its
-    // command to the far server's shell, hence the folder quoted twice.
+    // rsync makes only the last folder of the path, so the rest is made first. ssh hands its command to the far
+    // server's shell, hence the folder quoted twice.
     bring: [
-      `ssh ${shellWord(host.ssh)} mkdir -p -m 700 ${shellWord(shellWord(folder))}`,
+      `ssh ${shellWord(host.ssh)} mkdir -p ${shellWord(shellWord(folder))}`,
       `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
     ].join("\n"),
-    // Whoever copied them, the backend's user then owns them, and only it can read the dump.
-    hand: `sudo chown -R ${uid}:${gid} ${shellWord(folder)}`,
+    // Whoever copied them, the backend's user then owns the two, and only it can read the dump. Only the two: the
+    // folder may be one that holds other things.
+    hand: `sudo chown -R ${uid}:${gid} ${shellWord(`${folder}/${DUMP}`)} ${shellWord(`${folder}/${STORAGE}`)}`,
     mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, ...volume].join("\n"),
     restart: "docker compose up -d backend",
   };

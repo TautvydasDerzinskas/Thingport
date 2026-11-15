@@ -3118,7 +3118,7 @@
           "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}.",
           "folderAbsolute": "Indiquez le chemin complet, par exemple {{example}}.",
           "folderProtect": "rsync -s nécessite la version 3.0 ou plus récente sur les deux serveurs, pas celle de macOS. Sans espaces ni symboles, n'importe quel rsync convient.",
-          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez le dossier à l’utilisateur du backend, pour que lui seul lise le dump, ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
+          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez les deux à l’utilisateur du backend, pour que lui seul lise le dump, ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
           "keepVolumes": "...ses volumes, tels quels...",
           "use": "Utiliser ces chemins",
           "guide": "Guide complet"

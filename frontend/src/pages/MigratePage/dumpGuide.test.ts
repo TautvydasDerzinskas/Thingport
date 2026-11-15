@@ -21,13 +21,15 @@ describe("dump guide", () => {
     );
     expect(commands.dump).toBe(
       "docker compose stop backend\n" +
-        "(umask 077 && docker compose exec -T db pg_dump -U tp -Fc library > thingport.dump)",
+        "touch thingport.dump && chmod 600 thingport.dump && " +
+        "docker compose exec -T db pg_dump -U tp -Fc library > thingport.dump",
     );
     expect(commands.storage).toBe("docker compose cp backend:/data/storage/. old-storage");
     expect(commands.bring).toBe(
-      "ssh 192.168.1.20 mkdir -p -m 700 /data/old\nrsync -a thingport.dump old-storage 192.168.1.20:/data/old/",
+      "ssh 192.168.1.20 mkdir -p /data/old\nrsync -a thingport.dump old-storage 192.168.1.20:/data/old/",
     );
-    expect(commands.hand).toBe("sudo chown -R 99:100 /data/old");
+    // The two only: the folder may hold other things.
+    expect(commands.hand).toBe("sudo chown -R 99:100 /data/old/thingport.dump /data/old/old-storage");
     expect(commands.mount).toContain("      - /data/old:/app/migrate:ro");
     expect(commands.mount).toContain("      # ...its own volumes, as they are...");
   });
@@ -40,7 +42,9 @@ describe("dump guide", () => {
       `rsync -a thingport.dump old-storage this-server:${DEFAULT_NAMES.folder}/`,
     );
     // The backend couldn't say who it runs as: PUID and PGID's defaults.
-    expect(commands.hand).toBe(`sudo chown -R 1000:1000 ${DEFAULT_NAMES.folder}`);
+    expect(commands.hand).toBe(
+      `sudo chown -R 1000:1000 ${DEFAULT_NAMES.folder}/thingport.dump ${DEFAULT_NAMES.folder}/old-storage`,
+    );
   });
 
   it("quotes what the shell would read as more than a name", () => {
@@ -56,10 +60,12 @@ describe("dump guide", () => {
     expect(commands.storage).toBe("docker compose cp 'backend:/data/my storage/.' old-storage");
     // Quoted twice for ssh, whose far shell reads the command again; -s, or an older rsync's far shell splits it.
     expect(commands.bring).toBe(
-      "ssh 192.168.1.20 mkdir -p -m 700 ''\\''/srv/old library'\\'''\n" +
+      "ssh 192.168.1.20 mkdir -p ''\\''/srv/old library'\\'''\n" +
         "rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'",
     );
-    expect(commands.hand).toBe("sudo chown -R 1000:1000 '/srv/old library'");
+    expect(commands.hand).toBe(
+      "sudo chown -R 1000:1000 '/srv/old library/thingport.dump' '/srv/old library/old-storage'",
+    );
   });
 
   it("brackets an IPv6 address for rsync but not for ssh", () => {
@@ -71,7 +77,7 @@ describe("dump guide", () => {
     }
     const { bring } = guideCommands({ ...DEFAULT_NAMES, host: "2001:db8::20" }, where);
     expect(bring).toBe(
-      "ssh 2001:db8::20 mkdir -p -m 700 /srv/old-thingport\n" +
+      "ssh 2001:db8::20 mkdir -p /srv/old-thingport\n" +
         "rsync -a thingport.dump old-storage '[2001:db8::20]:/srv/old-thingport/'",
     );
   });

@@ -2924,7 +2924,7 @@
           "folderHelp": "转储和 old-storage 放在这里。此实例的后端将它视为 {{root}}。",
           "folderAbsolute": "请填写完整路径，例如 {{example}}。",
           "folderProtect": "rsync -s 需要两台服务器都是 3.0 或更高版本，macOS 自带的不行。不含空格和符号时，任何 rsync 都可以。",
-          "mountLead": "在此服务器上，于其 docker-compose.yml 所在的文件夹中：把该文件夹交给后端的用户，让只有它能读取转储，把这一项加到后端的 volumes 中，已有的保持不变，然后重启后端。",
+          "mountLead": "在此服务器上，于其 docker-compose.yml 所在的文件夹中：把两者交给后端的用户，让只有它能读取转储，把这一项加到后端的 volumes 中，已有的保持不变，然后重启后端。",
           "keepVolumes": "……原有的卷，保持不变……",
           "use": "使用这些路径",
           "guide": "完整指南"
