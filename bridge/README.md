@@ -42,6 +42,10 @@ Download and run `thingport-bridge-windows-amd64-setup.exe`. Setup registers the
 protocol, installs Bridge under your per-user Programs directory, and adds it to Installed apps.
 The setup wizard supports English, Russian, Ukrainian, Belarusian, Spanish, French, Lithuanian and
 Simplified Chinese; it selects a default from Windows language settings and lets you change it.
+The bundled Belarusian and Lithuanian Inno Setup language files come from `jrsoftware/issrc` at
+commits `1f29baac6c6dfd35e04c237af2ea51c482ee782a` and `b7dc2443356105a5f3cf42fd0e5b1c44e59c3eb3`,
+respectively. The Lithuanian copy is marked and modified only to remove upstream trailing whitespace.
+Their license is included in `installer/windows/languages/Inno-Setup-License.txt`.
 
 ### Linux
 

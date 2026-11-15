@@ -46,7 +46,7 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 Name: "belarusian"; MessagesFile: "languages\Belarusian.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
-Name: "lithuanian"; MessagesFile: "compiler:Languages\Lithuanian.isl"
+Name: "lithuanian"; MessagesFile: "languages\Lithuanian.isl"
 Name: "chinese"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [CustomMessages]
