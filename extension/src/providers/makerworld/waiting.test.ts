@@ -26,6 +26,9 @@ const calls = vi.hoisted(() => ({
   spotlight: null as unknown,
   progressStop: null as unknown,
   removed: 0,
+  // The card on screen, and the one each import was sent under.
+  onScreen: "",
+  importedUnder: [] as string[],
 }));
 
 vi.mock("../../content/runtime", () => ({
@@ -36,7 +39,10 @@ vi.mock("../../content/runtime", () => ({
       if (calls.waiting instanceof Error) throw calls.waiting;
       return calls.waiting;
     }
-    if (method === "POST" && path.endsWith("?async=1")) return { task_id: `task-${path}` };
+    if (method === "POST" && path.endsWith("?async=1")) {
+      calls.importedUnder.push(calls.onScreen);
+      return { task_id: `task-${path}` };
+    }
     if (method === "GET" && path.startsWith("/import/tasks/")) return { status: calls.task(path) };
     return null;
   }),
@@ -59,10 +65,13 @@ vi.mock("../../content/callout", () => ({
 }));
 const card = (name: string) => () => {
   calls.shown.push(name);
-  return { remove: () => undefined, isConnected: true, classList: { add: () => undefined } };
+  return { name, remove: () => undefined, isConnected: true, classList: { add: () => undefined } };
 };
 vi.mock("../../content/overlays", () => ({
-  overlaySwitcher: () => ({ show: () => undefined, current: () => null }),
+  overlaySwitcher: () => ({
+    show: (overlay: { name: string }) => void (calls.onScreen = overlay.name),
+    current: () => null,
+  }),
   progressOverlay: (_title: string, _line: string, _percent: number, stop: unknown) => {
     calls.progressStop = stop;
     return card("progress")();
@@ -142,6 +151,8 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     calls.spotlight = null;
     calls.progressStop = null;
     calls.removed = 0;
+    calls.onScreen = "";
+    calls.importedUnder = [];
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -202,6 +213,21 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     expect(calls.shown).toEqual(["progress", "spotlight", "solved", "progress", "done"]);
     // Nothing to resume where the puzzle never shows: only Stop.
     expect(Object.keys(calls.spotlight as object)).toEqual(["stop"]);
+    // The solved one too goes to the instance under the card with Stop, not the full-page "Solved".
+    expect(calls.importedUnder).toEqual(["progress", "progress"]);
+  });
+
+  it("bring one in under the card with Stop where the puzzle wasn't needed after all", async () => {
+    let refusals = 1;
+    calls.resolve = async (url, instanceId) => {
+      if (refusals-- > 0) throw new MakerworldCaptchaError({ refused: {} } as never);
+      return fileOf(url, instanceId);
+    };
+    calls.puzzle = { kind: "clear", resolved: fileOf(MODEL_A, null) };
+    await freshOffer();
+    await solve();
+
+    expect(calls.importedUnder).toEqual(["progress", "progress"]);
   });
 
   it("leave the rest waiting where the puzzle is closed", async () => {

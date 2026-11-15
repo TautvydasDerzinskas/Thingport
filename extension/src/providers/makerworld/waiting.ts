@@ -243,6 +243,9 @@ async function run(waiting: WaitingImport[]): Promise<void> {
           overlays.show(solvedOverlay(""));
           await sleep(PUZZLE_SOLVED_MS);
         }
+        if (stopped) return;
+        // Back to the card with Stop for the instance's import, not the puzzle's cover.
+        overlays.show(progress);
       }
       if (stopped) return;
       if (!resolved) {
