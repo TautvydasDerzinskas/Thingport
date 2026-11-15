@@ -1,17 +1,25 @@
 {
   "version": "1.7.0",
-  "title": "Every 3MF made for your slicer and printer, and space to spare",
-  "summary": "With 1.7.0, a model opens in your slicer as if it had been made there, for the printer you print on. Open adapted now works for a 3MF from any site, in every slicer Thingport opens: a Bambu Studio project, a PrusaSlicer one or a plain 3MF in colours keeps its parts, plates, painting and the designer's settings. Add your printers under Configuration → Printer, or find them in your printer makers' accounts, and the copy names your slicer's own presets for your printer, with its plates moved onto your bed. Thingport Grab makes the same copies on nine sites with Download adapted, with or without a Thingport instance. Administration → Storage shows what takes the disk and frees what isn't needed, from old 3D previews to extra photos, and new 3D previews take a fifth of the space. QIDI Maker and VoxelShare bring the sites Thingport imports from to twenty-three, with QIDI Studio and Flash Studio, and Snapmaker Space's and VoxelShare's China sites import too. Migrate brings people and libraries in from another instance, achievements put badges on My models, and Thingport and Grab speak Simplified Chinese.",
+  "title": "Any 3MF, made for your slicer and printer",
+  "summary": "Thingport 1.7.0 opens any 3MF as if it had been made for your slicer and your printer, wherever it comes from, and the Thingport Grab extension downloads those copies straight from the model's page. There's more: free up gigabytes on the Administration → Storage page, import from QIDI Maker and VoxelShare, move in from another instance, earn achievements, and use Thingport in Simplified Chinese.",
   "items": [
     {
       "type": "feature",
       "highlight": true,
-      "title": "Open adapted: any 3MF, from any site, in your slicer",
-      "description": "A 3MF is usually its slicer's own project: a MakerWorld model is a Bambu Studio project, a Printables one often a PrusaSlicer one, and another slicer opens it without its colours, parts, plates or settings. Open normalized, offered on MakerWorld models only, becomes Open adapted in your slicer: a copy of the file made for the slicer you open it in, so it opens there as close as it can to a file made there. Thingport reads what kind of 3MF each file is, whichever site it came from. PrusaSlicer and eufyMake Studio get a copy that joins your own printer, filament and settings, with the designer's layer height, walls, infill and supports on each object, and its parts, modifiers and painting kept. Cura gets a Cura project (5.7 and later), each object on its extruder. Bambu Studio and the slicers built on it open a Bambu Studio project as their own, without questions about its version, and a PrusaSlicer project as a project of theirs, each bed a plate. A plain 3MF in several colours gets an extruder per colour in the slicers that read no 3MF colours. A file that already opens as well as it can opens as it is. The copy is made on your Thingport instance, offline too, and the stored file never changes. Right-click a slicer under Configuration → Slicer to switch Open adapted off for it. The old copy's faults are gone with it: PrusaSlicer no longer swaps your printer for a 200 × 200 one named after the file or drops single-part objects, the slicers built on OrcaSlicer keep a project's parts and plates, and a 567 MB project that ran out of memory adapts in about a minute. Thanks to SeoliteQ (#67), maxbrueckl (#216) and truri83 (#261, #262).",
+      "title": "Open any 3MF as if it were made for you",
+      "description": "Whatever slicer you use and whatever printer you own, a 3MF from any site now opens as your own: colours, parts, plates and the designer's settings intact, laid out on your printer's bed. Tell Thingport what you print with: pick your slicers and add your printers in the Configuration dialog. It suggests printers from your library, and can even find them in your printer makers' accounts. Then click Open adapted on any model page. Thanks to SeoliteQ (#67), maxbrueckl (#216) and truri83 (#261, #262).",
       "images": [
         {
+          "src": "screenshots/1.7.0-printers.webp",
+          "caption": "Add your printers in the Configuration dialog, or take the ones Thingport suggests"
+        },
+        {
           "src": "screenshots/1.7.0-open-adapted.webp",
-          "caption": "Open adapted in OrcaSlicer, beside the regular Open, for the printer you print on"
+          "caption": "Open adapted on the model page, made for your printer"
+        },
+        {
+          "src": "screenshots/1.7.0-which-printer.webp",
+          "caption": "Thingport asks once which printer a slicer's copies are for"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/adapted-3mf.md"
@@ -19,33 +27,16 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Made for the printer you print on",
-      "description": "A project names the printer it was made for, often not yours: a MakerWorld model made on an A1 mini opens on an A1 mini. Add your printers under Configuration → Printer, from the 971 printers of 190 brands that ten slicers know, with their pictures, and the copy for Bambu Studio, OrcaSlicer, Snapmaker Orca, Elegoo Slicer, Anycubic Slicer Next, Flash Studio or QIDI Studio names your slicer's own presets for your printer: the printer as your slicer has it, the process at the height and quality the designer started from, and each filament as the same product for your printer or a generic one of its type, with the designer's changes on top. Each plate's objects and its wipe tower move onto your bed. Pick the printer for each slicer from its right-click menu under Configuration → Slicer, or let Thingport ask Which printer is this for? the first time and remember the answer. The model page's button says which printer a copy is for, and its menu downloads the copy as well. Printers your library points at are suggested: the ones your prints were sliced for and your projects are made for, and Not mine turns one down. Signed in to a printer maker's site, you're asked whether to find your printers there: the ones bound to your Bambu Lab account through MakerWorld, those in your Creality Cloud, Snapmaker and Flashforge (VoxelShare) accounts, and the printer your MakerOnline profile names; only each printer's model and nozzle are kept. Creality Print asks for the printer itself, and PrusaSlicer, eufyMake Studio and Cura put a copy on the printer selected in them, so their copies don't change with yours.",
-      "images": [
-        {
-          "src": "screenshots/1.7.0-printers.webp",
-          "caption": "Configuration → Printer: the printers your library suggests, and Find them in your accounts"
-        },
-        {
-          "src": "screenshots/1.7.0-which-printer.webp",
-          "caption": "Which printer is this for? Asked the first time, and remembered for that slicer"
-        }
-      ],
-      "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/adapted-3mf.md#made-for-your-printer"
-    },
-    {
-      "type": "feature",
-      "highlight": true,
-      "title": "Download adapted in Thingport Grab, on nine sites",
-      "description": "Thingport Grab's Download adapted makes the same copies in your browser, with or without a Thingport instance, and not on MakerWorld alone: on Printables, Creality Cloud, Snapmaker Space, NexPrint, MakerOnline, eufyMake, QIDI Maker and VoxelShare too. Adapt 3MFs, in its popup, has settings of its own: your slicers, your printers from the list Grab carries, where the button goes and the sites it works on. Connected, Grab makes the copies for your Thingport instance's slicers and printers instead, going by what the instance said last while it can't be reached, and a slicer whose Open adapted is off gets none. The button sits beside the site's own, named after the copy a click makes, with the others in its menu. On Printables' Files tab and NexPrint's Files list each 3MF gets one of its own, and where the site's button doesn't show, or you'd rather, the copies are in Grab's bubble. A copy is made of the print profile or the 3MF picked on the page, and follows it. The popup now shows Grab's sites as tiles, five to a row, and a line along a tile's edge marks the ones Download adapted works on.",
+      "title": "Download adapted, straight from the model's page",
+      "description": "The Thingport Grab browser extension puts a Download adapted button right beside the download button on nine model sites, MakerWorld and Printables among them. One click, and the 3MF is already made for your slicer and printer. It works even without a Thingport instance connected to the extension: just pick your slicer and printers in its popup.",
       "images": [
         {
           "src": "screenshots/1.7.0-grab-download-adapted.webp",
-          "caption": "Download adapted beside MakerWorld's own button, a copy for each slicer and printer"
+          "caption": "Download adapted, right beside MakerWorld's own button"
         },
         {
           "src": "screenshots/1.7.0-grab-adapt-settings.webp",
-          "caption": "Adapt 3MFs in Grab's popup: the slicers and printers its copies are made for"
+          "caption": "Pick your slicer and printers in the extension's popup"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#download-adapted-no-thingport-needed"
@@ -53,16 +44,16 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "See what takes the disk, and free up space",
-      "description": "Administration → Storage used to say only how much pictures and previews took. Its card now splits the disk by kind in one bar: model files, 3D previews, old 3D previews, photos, thumbnails and renders, description images, slicer copies and the rest. Free up space offers what can go, each with about what it frees: old 3D previews and renders that nothing shows any more, the 3D previews drawn before this release packed to about a fifth of their size, the slicer copies of adapted 3MFs, which are made again when they're needed, and each model's photos past the first 1, 3, 5 or 10, the cover always kept. That last one can't be undone, so it's never ticked for you and asks first. The clean-ups run in the background, one after another with their progress, and a notification says how much was freed. Photos kept per model sets how many photos imports and re-syncs keep from now on. A model's 3D previews and slicer copies now live in its Images folder with its pictures, so they move with it and go when it's deleted, and a new 3D preview is packed as it's drawn and takes the place of the plate's older ones.",
+      "title": "Free up gigabytes in a few clicks",
+      "description": "The Administration → Storage page now shows what really fills your disk, and its Free up space button clears what nothing needs: old 3D previews, leftover slicer copies and, if you like, extra photos. New 3D previews take a fifth of the space they used to.",
       "images": [
         {
           "src": "screenshots/1.7.0-storage.webp",
-          "caption": "Administration → Storage: the disk by kind, and how many photos imports keep"
+          "caption": "The Administration → Storage page: what fills your disk"
         },
         {
           "src": "screenshots/1.7.0-free-up-space.webp",
-          "caption": "Free up space: what can go, and about how much each frees"
+          "caption": "Free up space: pick what goes"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/storage.md#disk-space"
@@ -70,12 +61,12 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Import from QIDI Maker and VoxelShare: twenty-three sites",
-      "description": "Two printer makers' model communities to import from, each with its slicer. QIDI Maker, QIDI Tech's: models, their QIDI Studio print profiles and anyone's public collections with no sign-in, and your own collections and likes, synced too, with the sign-in Thingport Grab hands over. VoxelShare, Flashforge's: models, their print profiles for Flashforge's printers and their files in the designer's folders, and anyone's public collections, with no sign-in, and your own collections and likes, synced too, without adding to your download history there. A model VoxelShare copied from another site says where it was first published. Both bring their categories, trending models and licences, and both are on for everyone after the update. Their slicers come too: QIDI Studio opens models through Thingport Bridge, as it asks each time whether to trust a link, and Flash Studio downloads them itself or through the Bridge. Both get adapted copies made for your printer, and Grab's Download adapted works on both sites. Thanks to krolbot for QIDI Studio and QIDI Maker (#326, #340).",
+      "title": "QIDI Maker and VoxelShare: 23 sites to import from",
+      "description": "Two printer makers' model communities join in, QIDI Maker and VoxelShare, with their print profiles, collections and likes. Their slicers come along too: QIDI Studio and Flash Studio open what you import. Thanks to krolbot for QIDI Studio and QIDI Maker (#326, #340).",
       "images": [
         {
           "src": "screenshots/1.7.0-providers.webp",
-          "caption": "Administration → Providers, newest first: VoxelShare and QIDI Maker"
+          "caption": "The newest sites on the Administration → Providers page"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/PROVIDER_SETUP.md"
@@ -83,12 +74,12 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Move to this instance from another one",
-      "description": "Administration → Migrate brings another Thingport instance's people and libraries into this one. Online, the old instance's admin makes a token there, good for 24 hours, and this instance downloads its database and reads its files over the network. Or, from any release since 1.0.0, with nothing to change on the old instance, bring its database dump and storage folder: How do I make these? gives the commands, filled in for both servers. The copy is brought up to this release, checked, and merged keeping its ids, so a second run brings nothing twice. People come with their passwords, profiles, avatars, dashboards and achievements, and someone who already has an account here, under the same email, is merged into it. Models come with their files, categories, pictures and print profiles, filed in this instance's folder layout, with collections, synced collections, provider sign-ins, Studio designs, widgets and tools, and instance settings and secrets only if you pick them. Sessions, API tokens, Grab connections, the audit log, import history and chats stay behind. Migrate also brings in a Manyfold library, 0.149 or later, read with an API key made there: each model with its files in their folders, pictures, tags, licence, creator, notes and source, and its collections, each owner's models going to the person you pick.",
+      "title": "Move in from another instance",
+      "description": "The new Administration → Migrate page brings another Thingport instance's people and libraries over, online or from a backup of any release since 1.0.0, and never brings anything twice. It can bring a Manyfold library in too.",
       "images": [
         {
           "src": "screenshots/1.7.0-migrate.webp",
-          "caption": "Administration → Migrate: from another Thingport instance or Manyfold, and a token for moving away"
+          "caption": "The new Administration → Migrate page"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/migrate.md"
@@ -96,12 +87,12 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "Achievements: badges for what you do in Thingport",
-      "description": "Badges at the foot of My models, your best three on a shelf and the rest in a strip under them, for downloading and importing models, importing from each site, saving models made with each tool or in Studio, keeping collections in sync, from three sites too, using Thingport on most days, and a few secrets to find. Tiers go bronze, silver, gold, platinum, diamond and holographic, and only ever go up. A new badge comes as a toast and a notification, and the top two tiers get a moment of their own. Others see your badges on Explore and on connected instances: the badge and what it's for, not the counts behind it. Achievements are off until an admin turns them on under Administration → Social → Achievements, which works with social features off, and turning them on gives everyone what they'd already earned, in one notification.",
+      "title": "Achievements: badges for what you do",
+      "description": "Earn badges, from bronze to holographic, for importing, downloading, designing in Studio, syncing collections, and a few secrets. They show on your My models page and on the Explore page. An admin turns them on in the Administration → Social page.",
       "images": [
         {
           "src": "screenshots/1.7.0-achievements.webp",
-          "caption": "Achievements on My models: the best three on a shelf, the rest under them"
+          "caption": "Badges on the My models page"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/profile-and-activity.md#achievements"
@@ -109,12 +100,12 @@
     {
       "type": "feature",
       "highlight": true,
-      "title": "简体中文, and the China sites of Snapmaker Space and VoxelShare",
-      "description": "Thingport and Thingport Grab now speak Simplified Chinese, every string of both, picked up by itself in a browser set to any Chinese, and listed as 简体中文 under Configuration → Appearance → Language. Two China sites import too, each with its own accounts: space.snapmaker.cn, Snapmaker Space's, and www.voxelshare.cn, VoxelShare's. Their models, collections and likes import and sync as the main sites' do, their links go back there, and each is signed in to on its own, from its main site's tile under Configuration → Providers. Grab sends their sign-ins from their own pages and keeps Snapmaker's fresh, and its Download adapted works on Snapmaker Space's China site as well. If you allowed Grab on Snapmaker Space before, the China site's connect steps say how to allow it there too.",
+      "title": "简体中文, and two China sites",
+      "description": "Thingport and the Thingport Grab extension now speak Simplified Chinese, and the China sites of Snapmaker Space and VoxelShare import too.",
       "images": [
         {
           "src": "screenshots/1.7.0-languages.webp",
-          "caption": "Eight languages now, Simplified Chinese the newest"
+          "caption": "Simplified Chinese in the language list"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/appearance.md"
@@ -122,106 +113,106 @@
     {
       "type": "feature",
       "title": "One collection, several sources",
-      "description": "A Thingport collection can now follow any number of lists, on one site or several: a MakerWorld collection of printer parts and a Printables one of upgrades in one collection, say. Each source has its own settings, status and Sync now in a section of the sync dialog, with Add source, and from two sources on an Overview with Sync all now. The badge on the collection shows up to three sources' logos, and past three a ring in their colours with the count. Merging collections keeps every source and the imports they queued. Thanks to SeoliteQ (#70).",
+      "description": "A synced collection can now follow lists on several sites at once: a MakerWorld collection and a Printables one, say. Thanks to SeoliteQ (#70).",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/guides/synced-collections.md"
     },
     {
       "type": "feature",
-      "title": "Files keep the folders they came in",
-      "description": "Where a designer sorted a model's files into folders, they stay there: Printables' and GrabCAD's folders, PIXUP's file groups, MyMiniFactory's archives, Makerables' uploads and any ZIP's own folders, less a folder every file is in. The model page lists the files under a heading per folder, the download picker zips one folder, the model's ZIP keeps them, and on disk they're real folders. Files in different folders may share a name.",
+      "title": "Files keep their folders",
+      "description": "When a designer sorts a model's files into folders, the folders come along, on the model page and in downloads.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/importing.md#what-comes-with-a-model"
     },
     {
       "type": "feature",
       "title": "Thingport Grab in your language",
-      "description": "Grab now speaks every language Thingport does: English, Spanish, French, Lithuanian, Russian, Ukrainian, Belarusian and Simplified Chinese, in its popup and on the pages it adds to. It follows the browser's language, or the one picked at the top of its Appearance tab. Thanks to krolbot (#328).",
+      "description": "The Thingport Grab extension now speaks every language Thingport does. Thanks to krolbot (#328).",
       "images": [
         {
           "src": "screenshots/1.7.0-grab-languages.webp",
-          "caption": "Grab's language, at the top of its Appearance tab"
+          "caption": "The extension's language, picked in its popup"
         }
       ],
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md"
     },
     {
       "type": "feature",
-      "title": "Grab solves MakerWorld's and MakerOnline's puzzles with you",
-      "description": "When MakerWorld or MakerOnline wants a puzzle solved before it hands over a file, Grab now shows the site's own puzzle and carries on once it's solved, where it used to stop with instructions. A guided MakerWorld collection run opens it on the page it paused on and goes on from the same model, and waits with Show puzzle if it's closed unsolved; an import from a model page's panel opens it too. A MakerWorld link imported in Thingport that meets its CAPTCHA now waits for Grab, with the links after it, for anyone with Grab paired: the import queue says how many imports wait for MakerWorld's puzzle, Solve on MakerWorld takes you there, and Grab opens the puzzle and brings them in.",
+      "title": "Puzzles solved, imports carried on",
+      "description": "When MakerWorld or MakerOnline wants a puzzle solved, the Thingport Grab extension shows it right there and carries on once it's solved.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/extension/README.md#what-counts-as-importable"
     },
     {
       "type": "feature",
-      "title": "eufyMake's print files, as print profiles",
-      "description": "eufyMake's models now often come with print files, eufyMake Studio projects their designer made, and Thingport imports them as print profiles, as it does from MakerWorld or NexPrint: the first one, or the one a link names, or all of them, shown on the model page with what the site says of each. A model without print files brings its model files as before. Nothing needs a sign-in, and Grab's panel lists them.",
+      "title": "eufyMake's print profiles",
+      "description": "eufyMake's print files now import as print profiles, as on the other sites that have them.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/providers/eufymake.md"
     },
     {
       "type": "feature",
-      "title": "Invite people with a link when there's no email set up",
-      "description": "With registration closed and no email set up, Administration → Auth had no way to add anyone. Invite users now makes the invitation either way. Without email, it gives you the link to send yourself, for one address, single use and good for 7 days, with a button to copy it; with email, invitations go by email as before. Thanks to CandidB (#310).",
+      "title": "Invite links without email",
+      "description": "No email server? The Invite users button on the Administration → Auth page now gives you a link to send yourself. Thanks to CandidB (#310).",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/docs/features/multi-user.md"
     },
     {
       "type": "feature",
-      "title": "Thingport Bridge says when a newer one is out",
-      "description": "The first time an older Thingport Bridge opens a file, its owner gets a notification that a newer one is out, once for each version, opening Downloads. Updating is installing the new one over the old, settings kept, and on macOS that now works: the old Bridge used to go on opening every link until you logged out, and the new one was stopped. Now the new Bridge takes the old one's place, and the next link opens it. Updating? in the Download dialog says how, and how to check which version you have. The new Bridge also finds QIDI Studio and Flash Studio.",
+      "title": "Thingport Bridge updates",
+      "description": "The Thingport Bridge desktop helper now tells you when a new version is out, and updating it on macOS finally works.",
       "url": "https://github.com/TautvydasDerzinskas/Thingport/blob/main/bridge/README.md#update"
     },
     {
       "type": "improvement",
-      "title": "After a tool saves a model, its toast has an Open button that goes straight to the model, and the tools say so in your language"
+      "title": "Love Thingport? The What's new dialog, the Administration → Overview page and the Thingport Grab popup now show ways to support it"
     },
     {
       "type": "improvement",
-      "title": "A model's page puts its category and size on one row, and says when the model was imported under its info box"
+      "title": "After a tool saves a model, an Open button takes you straight to it"
     },
     {
       "type": "improvement",
-      "title": "Free MyMiniFactory models whose files are archives import without a MyMiniFactory sign-in"
+      "title": "The model page shows when a model was imported, and fits its category and size on one row"
     },
     {
       "type": "improvement",
-      "title": "Russian, Ukrainian and Belarusian are complete, licences included, thanks to krolbot (#327)"
+      "title": "Free MyMiniFactory models with archived files import without signing in"
     },
     {
       "type": "improvement",
-      "title": "Grab's popup footer has the ways to support Thingport, Buy Me a Coffee and GitHub Sponsors"
+      "title": "Russian, Ukrainian and Belarusian translations are complete, thanks to krolbot (#327)"
     },
     {
       "type": "fix",
-      "title": "Turned parts face the right way in the 3D preview, card renders and colour pictures; the ones drawn before are drawn again as they're next viewed"
+      "title": "Rotated parts face the right way in 3D previews and model pictures"
     },
     {
       "type": "fix",
-      "title": "Importing several of a MakerWorld model's print profiles with Grab no longer looks stopped after the second, nor spends downloads on profiles the model already has, thanks to slewantoski (#333)"
+      "title": "Importing several MakerWorld print profiles with the Thingport Grab extension no longer stalls or downloads ones you have, thanks to slewantoski (#333)"
     },
     {
       "type": "fix",
-      "title": "Pairing Grab carries on through the browser's permission prompt, thanks to krolbot (#330)"
+      "title": "Pairing the Thingport Grab extension survives the browser's permission prompt, thanks to krolbot (#330)"
     },
     {
       "type": "fix",
-      "title": "A Bambu Studio project whose plate holds a wrapper object no longer shows an empty plate when the browser draws its preview"
+      "title": "Some Bambu Studio projects no longer show an empty plate in the 3D preview"
     },
     {
       "type": "fix",
-      "title": "A deleted or private Snapmaker Space model says it's gone, instead of failing with code 712001"
+      "title": "A deleted Snapmaker Space model now says it's gone instead of failing"
     },
     {
       "type": "fix",
-      "title": "NexPrint models whose ids start with C import, with their print profiles, and Grab knows their pages"
+      "title": "More NexPrint models import, with their print profiles"
     },
     {
       "type": "fix",
-      "title": "Administration → Social has its icon again where an ad blocker's social filter hid it"
+      "title": "The Social entry of the Administration menu keeps its icon when an ad blocker is on"
     },
     {
       "type": "fix",
-      "title": "A plain-text description keeps its <https://…> links and <name@example.com> addresses"
+      "title": "Links and email addresses in plain-text model descriptions are no longer dropped"
     },
     {
       "type": "fix",
-      "title": "A model's info box taller than the window, or under a taller top bar, no longer sticks out of reach"
+      "title": "The model page's info panel no longer gets stuck out of reach on short screens"
     }
   ]
 }
