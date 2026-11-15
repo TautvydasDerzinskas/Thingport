@@ -7,7 +7,7 @@ import type { ImportJob, Prisma } from "@prisma/client";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
-import { detectProvider, type ProviderId } from "../providers/index.generated";
+import { detectProvider, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import type { ProfileScope } from "../providers/types";
 import { storedImportBody, type StoredRequest } from "../routes/importRequest";
 import { HttpError } from "../utils/fileUtils";
@@ -26,6 +26,7 @@ import {
   countJobItems,
   createJobItems,
   hasSavedRequest,
+  isOneModelLink,
   jobPayload,
   linkTotals,
   listJobItems,
@@ -574,6 +575,8 @@ export type QueueJobView = ImportJob & {
   syncWaiting: boolean;
   attention: boolean;
   firstFailure: string | null;
+  /** Its failed links waiting for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). */
+  grabWaiting: number;
   /** The page title of a link list's only link. */
   linkTitle: string | null;
   actions: JobActions;
@@ -603,6 +606,7 @@ async function describeJobs<T extends ImportJob>(
     : [[], [], []];
   const places = new Map(line.map((job, index) => [job.id, index + 1]));
   const firstFailures = new Map(failures.map((item) => [item.jobId, item.errorMessage]));
+  const grabWaiting = await countGrabWaiting(db, jobs);
   const linkCounts = new Map<string, number>();
   for (const g of grouped) linkCounts.set(g.jobId, (linkCounts.get(g.jobId) ?? 0) + g._count.status);
   const onlyLinks = jobs.filter((job) => job.type === "LINKS" && linkCounts.get(job.id) === 1).map((job) => job.id);
@@ -626,10 +630,38 @@ async function describeJobs<T extends ImportJob>(
       syncWaiting: isWaitingSyncJob(job),
       attention: isAttention(job, now),
       firstFailure: firstFailures.get(job.id) ?? null,
+      grabWaiting: grabWaiting.get(job.id) ?? 0,
       linkTitle: linkTitles.get(job.id) ?? null,
       actions: jobActions(job, counts, runnerLive),
     });
   });
+}
+
+/** Each job's failed links that wait in Grab's list too: a link Grab finishes only fails here when a block it can clear
+ *  stopped it, as one Grab alone imports is parked as done. Only those it finishes by bringing that one model in. */
+async function countGrabWaiting(db: Prisma.TransactionClient, jobs: ImportJob[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const failedJobs = jobs.filter((job) => job.type === "LINKS" && job.failedCount > 0);
+  if (!failedJobs.length) return counts;
+  const byId = new Map(failedJobs.map((job) => [job.id, job]));
+  const [failed, waiting] = await Promise.all([
+    db.importJobItem.findMany({
+      where: { jobId: { in: [...byId.keys()] }, status: "FAILED" },
+      select: { jobId: true, url: true, payload: true },
+    }),
+    db.grabImport.findMany({
+      where: { userId: { in: [...new Set(failedJobs.map((job) => job.userId))] } },
+      select: { userId: true, url: true },
+    }),
+  ]);
+  const waits = new Set(waiting.map((row) => `${row.userId}|${row.url}`));
+  for (const item of failed) {
+    const job = byId.get(item.jobId);
+    if (job && isOneModelLink(item, job) && waits.has(`${job.userId}|${item.url}`)) {
+      counts.set(item.jobId, (counts.get(item.jobId) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 const newestFirst = (a: ImportJob, b: ImportJob) => b.createdAt.getTime() - a.createdAt.getTime();
@@ -744,13 +776,24 @@ async function deleteJob(job: ImportJob): Promise<void> {
   forgetManualStart(job.id);
 }
 
-/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. */
+/** What waits for Grab and no import wants any more, gone from the queue: `userId`'s, or everyone's. Loaded when used:
+ *  the registry reaches this service. */
+async function dropUnwantedGrabWaiting(userId?: string): Promise<void> {
+  const { PROVIDERS } = await import("../providers/registry");
+  await Promise.all(
+    PROVIDER_IDS.map((provider) => PROVIDERS[provider].grabFallback?.dropUnwanted(userId).catch(() => undefined)),
+  );
+}
+
+/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. Its links stop
+ *  waiting for Grab too: what its owner threw away mustn't come in that way. */
 export async function deleteQueueJob(jobId: string, ownerId?: string): Promise<void> {
   const { userId } = await getQueueJob(jobId, ownerId);
   await withImportUserLock(userId, async () => {
     const job = await getQueueJob(jobId, ownerId);
     assertIdle(job);
     await deleteJob(job);
+    await dropUnwantedGrabWaiting(userId);
   });
 }
 
@@ -768,6 +811,7 @@ export async function removeQueueItem(itemId: string, ownerId?: string): Promise
     assertIdle(job);
     const removed = await prisma.importJobItem.deleteMany({ where: { id: itemId } });
     if (!removed.count) throw notFound();
+    await dropUnwantedGrabWaiting(job.userId);
     const left = await prisma.importJobItem.count({ where: { jobId: job.id } });
     if (!left) {
       await deleteJob(job);
@@ -809,6 +853,7 @@ export async function clearFinishedJobs(scope: BulkScope = {}): Promise<number> 
   const { count } = await prisma.importJob.deleteMany({
     where: { ...finished, ...ownerOf(scope), id: { notIn: liveRunnerIds() } },
   });
+  if (count) await dropUnwantedGrabWaiting(scope.ownerId);
   return count;
 }
 

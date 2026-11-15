@@ -28,6 +28,7 @@ import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
 export { parseMakerworldModelUrl };
 
 export {
+  MAKERWORLD_CAPTCHA_CODE,
   MAKERWORLD_CAPTCHA_MESSAGE,
   makerworldCaptchaCooloffActive,
   MAKERWORLD_AUTH_CODE,

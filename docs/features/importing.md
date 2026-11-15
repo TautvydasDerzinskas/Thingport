@@ -103,7 +103,10 @@ the top of the queue starts another without leaving it.
 
 - **Importing** is what's running. **Pause** stops a list of links after the link it's on. Anything else that's running
   goes on to its end.
-- **Needs attention** is what failed or was cut off, with the reason.
+- **Needs attention** is what failed or was cut off, with the reason. A MakerWorld import its CAPTCHA stopped reads
+  **Waiting for puzzle** instead, if you have [Thingport Grab](../../extension/README.md) paired: a banner over the
+  queue sends you to MakerWorld with **Solve on MakerWorld**, where Grab offers to open MakerWorld's puzzle and then
+  finishes the imports. **Retry** still works once the CAPTCHA clears.
 - **Waiting** is what's **In line**, which starts by itself, and what's **On hold**, which doesn't until you start it.
   **Hold** takes an import out of the line.
 - **Finished** keeps what's done until you clear it.

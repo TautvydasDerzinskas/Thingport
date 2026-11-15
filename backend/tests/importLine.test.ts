@@ -1487,7 +1487,7 @@ describe("the line from outside", () => {
       const answer = await queueOf(ann);
       const seen = JSON.stringify(answer).toLowerCase();
       for (const secret of secrets) expect(seen).not.toContain(secret.toLowerCase());
-      expect(Object.keys(answer).toSorted()).toEqual(["finished_total", "jobs", "line", "settings"]);
+      expect(Object.keys(answer).toSorted()).toEqual(["finished_total", "grab_waiting", "jobs", "line", "settings"]);
       expect(answer.jobs.map((job) => job.id)).toEqual([mine]);
       expect(answer.finished_total).toBe(0);
 

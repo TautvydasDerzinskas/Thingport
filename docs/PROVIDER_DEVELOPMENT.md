@@ -66,7 +66,8 @@ A provider needs no column and no migration:
   `services/categorySiteIds.ts`).
 
 A table of the provider's own is the exception, and it goes in `schema.prisma`: Printables' `ProviderListing`, and
-`GrabImport`, the imports waiting for Grab, which MakerOnline and OwlCAD share, told apart by its `provider`.
+`GrabImport`, the imports waiting for Grab, which MakerOnline, OwlCAD and MakerWorld share, told apart by its
+`provider`.
 
 ### Regions: a second site with its own accounts
 
@@ -204,7 +205,13 @@ Rules of thumb:
   `normalizeFolder` (`utils/fileFolder.ts`), and the folders every file of a model shares are dropped. A file's name is
   then unique within its folder, not the model.
 - **MakerWorld** imports through the shared link import in `services/importService.ts`, which every page link of no
-  provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`), paces
+  provider's goes through too (`LINK_PROVIDER`). It pauses after a CAPTCHA until a manual retry (`liftHolds`). Grab
+  clears one on the page for an import started there: the refusal (HTTP 418) names a Geetest `captchaId`, which the
+  site's own `window.onRetry` shows, putting the answer in a header to send the refused request again with
+  (`extension/src/providers/makerworld/puzzle.ts`). An import started in the app that the CAPTCHA stops also waits in
+  `GrabImport` for someone with a paired Grab (`grabFallback`, `providers/makerworld/grabImports.ts`), as well as
+  failing: Grab offers it on the next makerworld.com page it sees, resolves its file there once the puzzle is solved
+  and posts it to `/import/makerworld/waiting/:id`, which counts the link done in the import it failed in. It also paces
   its calls (`IMPORT_MAKERWORLD_CALL_DELAY_MS`), and downloads a model with no print profiles as a zip of its raw
   files (`rawFilesZip`). Its 3MFs are Bambu Studio projects, so Grab offers them converted for other slicers
   (`adapted3mfs`); the app reads what kind of 3MF each file is itself.

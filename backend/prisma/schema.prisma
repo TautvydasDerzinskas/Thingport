@@ -445,6 +445,8 @@ model GrabImport {
   notes        String?
   attempts     Int      @default(0)
   lastError    String?
+  /// Bumped each time the link is queued again: what Grab began on an earlier queueing leaves this one alone.
+  revision     Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

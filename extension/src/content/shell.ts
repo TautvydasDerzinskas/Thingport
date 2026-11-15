@@ -27,8 +27,8 @@ let fabTakesFocus = false;
 /** The bubble's style and corner, on the host for the stylesheet to read (styles/_bubble.scss), and its name, which
  *  carries the pill's word. */
 function applyLook(): void {
-  const host = document.getElementById(HOST_ID);
-  if (host) {
+  for (const host of [document.getElementById(HOST_ID), document.getElementById(SIDE_HOST_ID)]) {
+    if (!host) continue;
     host.dataset.style = look.style;
     host.dataset.place = look.place;
   }
@@ -79,6 +79,29 @@ export function mountHost(): ShadowRoot {
 
 export function getShadowRoot(): ShadowRoot | null {
   return shadowRoot;
+}
+
+const SIDE_HOST_ID = "thingport-grab-side";
+
+/** A host beside the main one, with the same stylesheet and the bubble's corner, for what has to outlast the page's
+ *  own start-overs (init unmounts the main host at every one): an offer, or a run, by the floating icon. */
+export function sideHost(): ShadowRoot {
+  const existing = document.getElementById(SIDE_HOST_ID);
+  if (existing?.shadowRoot) return existing.shadowRoot;
+  const host = document.createElement("div");
+  host.id = SIDE_HOST_ID;
+  host.dataset.style = look.style;
+  host.dataset.place = look.place;
+  document.documentElement.appendChild(host);
+  const root = host.attachShadow({ mode: "open" });
+  const style = document.createElement("style");
+  style.textContent = css;
+  root.appendChild(style);
+  return root;
+}
+
+export function removeSideHost(): void {
+  document.getElementById(SIDE_HOST_ID)?.remove();
 }
 
 export function unmountHost(): void {

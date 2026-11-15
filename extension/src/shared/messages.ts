@@ -13,6 +13,7 @@ import type { Locale } from "./i18n";
 import type { Provider } from "./urls";
 import type { MANIFESTS, ProviderId, RegionId } from "../providers/index.generated";
 import type { MakerworldProfileScope } from "../providers/makerworld/pageData";
+import type { PuzzleChallenge } from "../providers/makerworld/pagePuzzle";
 
 export type ExtensionState = {
   configured: boolean;
@@ -178,8 +179,12 @@ export type MakerworldJob = {
   stepDelayMs: number;
   /** When the current model's step may start; its page counts down to it. */
   startAt: number;
-  /** MakerWorld wants a CAPTCHA: the run waits on this model until the user resumes it. */
+  /** MakerWorld wants its puzzle solved: the run waits on this model, its page showing the puzzle, until it's solved or
+   *  the user resumes it. */
   paused: boolean;
+  /** The file the page got for the step it paused on, once the puzzle was solved: that step imports it rather than ask
+   *  MakerWorld again. Used once, and only by that step. */
+  handed?: { index: number; profile: number; runId?: string; download: ResolvedDownload } | null;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
   /** Tells this run's steps from those of an earlier run in the same tab. Missing on a run saved by an older version. */
@@ -192,6 +197,10 @@ export type MakerworldJob = {
 };
 
 export type MakerworldJobError = { message: string; imported: number; total: number };
+
+/** RESOLVE_MAKERWORLD_*'s error for a CAPTCHA, in English whatever the language: a reply carries nothing but words, and
+ *  the guided run tells a CAPTCHA, which pauses it, from the rest by them. */
+export const MAKERWORLD_CAPTCHA_REPLY = "MakerWorld wants its CAPTCHA puzzle solved.";
 
 /** IMPORT_SINGLE's error for a job that stopped without finishing. A reply carries nothing but words, so the panel goes
  *  by these to show it as paused rather than failed. */
@@ -294,7 +303,13 @@ export type BackgroundMessages = {
     result: null;
   };
   ABORT_MAKERWORLD_COLLECTION_JOB: { payload: void; result: null };
-  RESUME_MAKERWORLD_JOB: { payload: void; result: null };
+  /** `resolved`: the paused step's file, which the page got with the puzzle's answer. Without it the page is loaded
+   *  again and the step asks anew. */
+  /** `step`: the step the page resumes (makerworldStepKey); one the run has moved on from is ignored. */
+  RESUME_MAKERWORLD_JOB: { payload: { resolved?: ResolvedDownload | null; step?: string }; result: null };
+  /** Opens MakerWorld's own puzzle in the page that asks, for a request MakerWorld refused; true when it opened. The
+   *  answer comes to the page itself, on `eventName`. */
+  SHOW_MAKERWORLD_PUZZLE: { payload: { challenge: PuzzleChallenge; eventName: string }; result: boolean };
   MAKERWORLD_JOB_STEP_DUE: { payload: void; result: null };
   FORCE_ADVANCE_MAKERWORLD_JOB: { payload: void; result: null };
   ARM_DOWNLOAD_CAPTURE: { payload: void; result: null };

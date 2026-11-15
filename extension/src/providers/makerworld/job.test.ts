@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MakerworldJob, Reply } from "../../shared/messages";
+import { MAKERWORLD_CAPTCHA_REPLY, type MakerworldJob, type Reply } from "../../shared/messages";
 import { makerworldModelUrl } from "./urls.generated";
 
 // The guided collection import, step by step: what each page visit imports and where the run goes next. The page and
@@ -60,6 +60,7 @@ vi.stubGlobal("chrome", {
 });
 
 const { abortJob, advanceJob, forceAdvanceJob, resumeJob, startJob } = await import("./job");
+const { makerworldStepKey } = await import("./step");
 
 const job = () => store.makerworldCollectionJob as MakerworldJob | undefined;
 const importedUrls = () => imported.map(({ url }) => url);
@@ -167,6 +168,75 @@ describe("the guided MakerWorld collection import", () => {
     await step();
     expect(importedUrls()).toEqual(["10", "11"].map((id) => profileOf(MODEL_A, id)));
     expect(job()).toMatchObject({ paused: false, profiles: { ids: ["12"], done: 2 } });
+  });
+
+  it("carries on with the file the solved puzzle got, on the page already open", async () => {
+    await start([MODEL_A], "designer");
+    await step();
+    const resolve = page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD;
+    page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD = () => ({ ok: false, error: MAKERWORLD_CAPTCHA_REPLY });
+    await step();
+    expect(job()).toMatchObject({ paused: true });
+    page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD = resolve;
+    const asked = () => sent.filter(({ type }) => type === "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD").length;
+    const before = asked();
+
+    const solved = { downloadUrl: "https://s3.example.com/solved-11.3mf", instanceId: "11" };
+    await resumeJob(TAB, solved);
+    expect(visited).toEqual([]);
+    expect(sent.at(-1)?.type).toBe("MAKERWORLD_JOB_UPDATED");
+    await step();
+
+    expect(imported.at(-1)).toEqual({ url: profileOf(MODEL_A, "11"), resolved: solved });
+    expect(asked()).toBe(before);
+    expect(job()).toMatchObject({ paused: false, handed: null, profiles: { ids: ["12"], done: 2 } });
+    // The next profile asks the page, as every step does.
+    await step();
+    expect(asked()).toBe(before + 1);
+  });
+
+  it("asks the page anew rather than import a file handed over for another profile", async () => {
+    await start([MODEL_A], "designer");
+    await step();
+    const resolve = page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD;
+    page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD = () => ({ ok: false, error: MAKERWORLD_CAPTCHA_REPLY });
+    await step();
+    page.RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD = resolve;
+
+    await resumeJob(TAB, { downloadUrl: "https://s3.example.com/solved-12.3mf", instanceId: "12" });
+    await step();
+    expect(imported.at(-1)).toEqual({
+      url: profileOf(MODEL_A, "11"),
+      resolved: { downloadUrl: "https://s3.example.com/11.3mf", instanceId: "11" },
+    });
+  });
+
+  it("brings the page's own profile in with the handed file, as the run does without profiles", async () => {
+    await start([MODEL_A, MODEL_B], "url");
+    page.RESOLVE_MAKERWORLD_DOWNLOAD_URL = () => ({ ok: false, error: MAKERWORLD_CAPTCHA_REPLY });
+    await step();
+    expect(job()).toMatchObject({ paused: true, index: 0 });
+
+    const solved = { downloadUrl: "https://s3.example.com/solved.3mf", instanceId: "10" };
+    await resumeJob(TAB, solved);
+    await step();
+    expect(imported).toEqual([{ url: MODEL_A, resolved: solved }]);
+    expect(visited).toEqual([MODEL_B]);
+  });
+
+  it("takes a resume only for the step it's paused on", async () => {
+    await start([MODEL_A, MODEL_B], "url");
+    page.RESOLVE_MAKERWORLD_DOWNLOAD_URL = () => ({ ok: false, error: MAKERWORLD_CAPTCHA_REPLY });
+    await step();
+    const solved = { downloadUrl: "https://s3.example.com/solved.3mf", instanceId: "10" };
+
+    // Sent for an earlier run's step that looked the same.
+    await resumeJob(TAB, solved, "another-run:0:0");
+    expect(job()).toMatchObject({ paused: true, handed: null });
+
+    await resumeJob(TAB, solved, makerworldStepKey(job()!));
+    await step();
+    expect(imported).toEqual([{ url: MODEL_A, resolved: solved }]);
   });
 
   it("moves past a stuck profile on Import next, not past the whole model", async () => {

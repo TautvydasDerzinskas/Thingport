@@ -779,6 +779,8 @@ type QueueJobOut = ImportJobOut & {
   /** Something for its owner to deal with; older failures just count as finished. */
   attention: boolean;
   failure_reason: string | null;
+  /** Its failed links that wait for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). */
+  grab_waiting: number;
   /** How a one-link job came out. */
   outcome: ImportOutcome | null;
   can_start: boolean;
@@ -812,6 +814,7 @@ export function toQueueJobOut(row: QueueJobView): QueueJobOut {
     sync_waiting: row.syncWaiting,
     attention: row.attention,
     failure_reason: message ?? summary ?? row.firstFailure,
+    grab_waiting: row.grabWaiting,
     outcome:
       payload.outcome === "created" || payload.outcome === "profile_added" || payload.outcome === "already_imported"
         ? payload.outcome
@@ -839,14 +842,20 @@ export type QueueOut = {
   finished_total: number;
   line: LineOut;
   settings: QueueSettingsOut;
+  /** Per provider, imports of one's own waiting for Thingport Grab to clear a block on its site, and where to send
+   *  the user to: MakerWorld's when its CAPTCHA stopped them. */
+  grab_waiting: GrabWaitingOut[];
 };
 
-export function toQueueOut(queue: OwnQueue): QueueOut {
+type GrabWaitingOut = { provider: string; count: number; url: string | null };
+
+export function toQueueOut(queue: OwnQueue, grabWaiting: GrabWaitingOut[] = []): QueueOut {
   return {
     jobs: queue.jobs.map(toQueueJobOut),
     finished_total: queue.finishedTotal,
     line: queue.line,
     settings: { start_grab_links: queue.startGrabLinks },
+    grab_waiting: grabWaiting,
   };
 }
 

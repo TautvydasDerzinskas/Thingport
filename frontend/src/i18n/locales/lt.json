@@ -850,7 +850,11 @@
         "error": "Klaida",
         "partial": "Dalis nepavyko",
         "done": "Baigtas",
-        "unknown": "Nežinoma"
+        "unknown": "Nežinoma",
+        "grabWaiting": "Laukia galvosūkio",
+        "grabWaitingSome_one": "{{count}} laukia galvosūkio",
+        "grabWaitingSome_few": "{{count}} laukia galvosūkio",
+        "grabWaitingSome_other": "{{count}} laukia galvosūkio"
       },
       "statusHint": {
         "running": "Dabar importuojama.",
@@ -862,7 +866,10 @@
         "partialModels": "Baigta, bet kai kurių modelių nepavyko importuoti.",
         "done": "Visos nuorodos importuotos.",
         "doneModels": "Visi modeliai importuoti.",
-        "unknown": "Ši Thingport versija tokios būsenos nežino."
+        "unknown": "Ši Thingport versija tokios būsenos nežino.",
+        "grabWaiting_one": "Svetainė prašo išspręsti galvosūkį. Thingport Grab jį užbaigs ten, arba bandykite dar kartą, kai praeis.",
+        "grabWaiting_few": "Svetainė prašo išspręsti galvosūkį. Thingport Grab juos užbaigs ten, arba bandykite dar kartą, kai praeis.",
+        "grabWaiting_other": "Svetainė prašo išspręsti galvosūkį. Thingport Grab juos užbaigs ten, arba bandykite dar kartą, kai praeis."
       },
       "progress": "{{processed}} iš {{total}}",
       "progressFailed": "{{processed}} iš {{total}}, nepavyko {{failed}}",
@@ -940,7 +947,23 @@
         "finishedMany_other": "Baigta {{count}} importų.",
         "finishedManyFailed_one": "Baigtas {{count}} importas, su klaidomis.",
         "finishedManyFailed_few": "Baigti {{count}} importai, kai kurie su klaidomis.",
-        "finishedManyFailed_other": "Baigta {{count}} importų, kai kurie su klaidomis."
+        "finishedManyFailed_other": "Baigta {{count}} importų, kai kurie su klaidomis.",
+        "finishedGrabWaiting": "„{{name}}“ laukia Thingport Grab",
+        "finishedGrabWaitingSome_one": "„{{name}}“: {{count}} laukia Thingport Grab",
+        "finishedGrabWaitingSome_few": "„{{name}}“: {{count}} laukia Thingport Grab",
+        "finishedGrabWaitingSome_other": "„{{name}}“: {{count}} laukia Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} iš {{total}}, {{count}} laukia Grab",
+      "progressGrabWaiting_few": "{{processed}} iš {{total}}, {{count}} laukia Grab",
+      "progressGrabWaiting_other": "{{processed}} iš {{total}}, {{count}} laukia Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} importas laukia {{site}} galvosūkio",
+        "title_few": "{{count}} importai laukia {{site}} galvosūkio",
+        "title_other": "{{count}} importų laukia {{site}} galvosūkio",
+        "text_one": "Thingport Grab jį užbaigs svetainėje {{host}}.",
+        "text_few": "Thingport Grab juos užbaigs svetainėje {{host}}.",
+        "text_other": "Thingport Grab juos užbaigs svetainėje {{host}}.",
+        "solve": "Išspręsti {{site}}"
       }
     },
     "dashboard": {

@@ -822,7 +822,10 @@
         "error": "Error",
         "partial": "Some failed",
         "done": "Done",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "grabWaiting": "Waiting for puzzle",
+        "grabWaitingSome_one": "{{count}} waits for puzzle",
+        "grabWaitingSome_other": "{{count}} wait for puzzle"
       },
       "statusHint": {
         "running": "Importing now.",
@@ -834,7 +837,9 @@
         "partialModels": "Finished, but some models failed.",
         "done": "Every link imported.",
         "doneModels": "Every model imported.",
-        "unknown": "This version of Thingport doesn't know this state."
+        "unknown": "This version of Thingport doesn't know this state.",
+        "grabWaiting_one": "The site wants its puzzle solved. Thingport Grab finishes it there, or retry once it clears.",
+        "grabWaiting_other": "The site wants its puzzle solved. Thingport Grab finishes them there, or retry once it clears."
       },
       "progress": "{{processed}} of {{total}}",
       "progressFailed": "{{processed}} of {{total}}, {{failed}} failed",
@@ -901,7 +906,19 @@
         "finishedMany_one": "{{count}} import finished.",
         "finishedMany_other": "{{count}} imports finished.",
         "finishedManyFailed_one": "{{count}} import finished, with problems.",
-        "finishedManyFailed_other": "{{count}} imports finished, some with problems."
+        "finishedManyFailed_other": "{{count}} imports finished, some with problems.",
+        "finishedGrabWaiting": "\"{{name}}\" waits for Thingport Grab",
+        "finishedGrabWaitingSome_one": "\"{{name}}\": {{count}} waits for Thingport Grab",
+        "finishedGrabWaitingSome_other": "\"{{name}}\": {{count}} wait for Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} of {{total}}, {{count}} waits for Grab",
+      "progressGrabWaiting_other": "{{processed}} of {{total}}, {{count}} wait for Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} import waits for {{site}}'s puzzle",
+        "title_other": "{{count}} imports wait for {{site}}'s puzzle",
+        "text_one": "Thingport Grab finishes it on {{host}}.",
+        "text_other": "Thingport Grab finishes them on {{host}}.",
+        "solve": "Solve on {{site}}"
       }
     },
     "dashboard": {

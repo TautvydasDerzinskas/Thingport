@@ -4,7 +4,7 @@
 // every provider's.
 
 import type { ImportStatus } from "../shared/api";
-import { listen, send, type ContentMessages } from "../shared/messages";
+import { listen, MAKERWORLD_CAPTCHA_REPLY, send, type ContentMessages } from "../shared/messages";
 import { bubbleLookOf } from "../shared/bubble";
 import { localeOf, setLocale, t, type Locale } from "../shared/i18n";
 import { ADAPT_CHANGE_KEYS, CONFIG_CHANGE_KEYS, STORAGE_KEYS } from "../shared/storage";
@@ -12,9 +12,12 @@ import { classifyUrl } from "../shared/urls";
 import { libraryStateOf, setContext, type LibraryState } from "./context";
 import {
   isMakerworldBlockingError,
+  MakerworldCaptchaError,
   resolveMakerworldDownloadUrl,
   resolveMakerworldProfileDownload,
 } from "../providers/makerworld/downloadResolver";
+import { notePuzzle } from "../providers/makerworld/puzzle";
+import { offerMakerworldWaiting, stopMakerworldWaiting } from "../providers/makerworld/waiting";
 import {
   adaptedReveal,
   loadPageAdapt,
@@ -157,6 +160,8 @@ async function init(): Promise<void> {
   if (isStale()) return;
   if (stateRes?.ok) showInLocale(stateRes.data.locale);
   if (!stateRes?.ok || stateRes.data.disabled) {
+    // The imports waiting for MakerWorld's puzzle keep their own host through the page's start-overs, but not this.
+    if (stateRes?.ok) stopMakerworldWaiting();
     reportTabIconState(false);
     return;
   }
@@ -164,6 +169,8 @@ async function init(): Promise<void> {
   setBubbleLook(stateRes.data.bubble);
   // On every page, importable or not: the header shows who's signed in everywhere.
   if (stateRes.data.configured) captureProviderAccount(location.hostname);
+  // Not with the sign-in, which goes once per tab: the offer comes back once Grab is turned on again.
+  if (stateRes.data.configured && providerOfHost(location.hostname) === "makerworld") void offerMakerworldWaiting();
 
   const url = location.href;
   const classification = classifyUrl(url);
@@ -413,6 +420,15 @@ function installNavigationWatcher(): void {
   setInterval(onLocationChange, 1000);
 }
 
+/** A step's resolution on this page that came to nothing: null lets the instance resolve it, but a CAPTCHA or the daily
+ *  download limit is thrown, as the instance would only meet it too. A CAPTCHA's puzzle is kept for the paused card. */
+function blockingReply(pageUrl: string, err: unknown): null {
+  notePuzzle(pageUrl, err);
+  if (err instanceof MakerworldCaptchaError) throw new Error(MAKERWORLD_CAPTCHA_REPLY);
+  if (isMakerworldBlockingError(err)) throw err;
+  return null;
+}
+
 if (!window.thingportGrabInjected) {
   window.thingportGrabInjected = true;
 
@@ -425,26 +441,29 @@ if (!window.thingportGrabInjected) {
         () => undefined,
       );
     }
-    if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) reinit();
-    else if (STORAGE_KEYS.locale in changes) relocalize(changes[STORAGE_KEYS.locale].newValue);
+    if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) {
+      // Another instance, or another pairing: what waited was listed by the one before.
+      stopMakerworldWaiting();
+      reinit();
+    } else if (STORAGE_KEYS.locale in changes) relocalize(changes[STORAGE_KEYS.locale].newValue);
     else if (ADAPT_CHANGE_KEYS.some((key) => key in changes)) reinitForAdapt();
   });
 
   listen<ContentMessages>({
     // A CAPTCHA or the daily download limit comes back as an error reply so the guided import can
     // say so.
-    RESOLVE_MAKERWORLD_DOWNLOAD_URL: () =>
-      resolveMakerworldDownloadUrl(location.href).catch((err) => {
-        if (isMakerworldBlockingError(err)) throw err;
-        return null;
-      }),
+    RESOLVE_MAKERWORLD_DOWNLOAD_URL: () => {
+      const pageUrl = location.href;
+      return resolveMakerworldDownloadUrl(pageUrl, { puzzles: true }).catch((err) => blockingReply(pageUrl, err));
+    },
     READ_MAKERWORLD_PROFILES: async ({ scope }) =>
       (await CONTENT_MODULES.makerworld.loadProfiles?.(location.href))?.(scope) ?? null,
-    RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: ({ instanceId }) =>
-      resolveMakerworldProfileDownload(location.href, instanceId).catch((err) => {
-        if (isMakerworldBlockingError(err)) throw err;
-        return null;
-      }),
+    RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD: ({ instanceId }) => {
+      const pageUrl = location.href;
+      return resolveMakerworldProfileDownload(pageUrl, instanceId, { puzzles: true }).catch((err) =>
+        blockingReply(pageUrl, err),
+      );
+    },
     MAKERWORLD_JOB_UPDATED: () => {
       reinit();
       return null;
