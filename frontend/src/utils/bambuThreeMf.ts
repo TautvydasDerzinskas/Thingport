@@ -4,6 +4,7 @@
 // Adapted (with modifications) from github.com/maziggy/bambuddy, AGPL-3.0-only.
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { findStartPart, partNames } from "../adapter/format.generated";
 import { keepsOwnColor } from "./ownColor";
 
 type MeshData = {
@@ -412,9 +413,10 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
   const decoder = new TextDecoder();
   const parser = new DOMParser();
 
+  const entryNamed = partNames(Object.keys(zipEntries));
   const findEntry = (path: string): Uint8Array | undefined => {
-    const normalized = path.startsWith("/") ? path.slice(1) : path;
-    return zipEntries[normalized];
+    const name = entryNamed(path);
+    return name === null ? undefined : zipEntries[name];
   };
   // A multi-part object references the same part file once per part.
   const modelFileCache = new Map<string, Document | null>();
@@ -537,9 +539,10 @@ async function parse3MF(zipEntries: Record<string, Uint8Array>): Promise<ParsedB
     } catch {}
   }
 
-  const mainModelPath = Object.keys(zipEntries).find(
-    (name) => name === "3D/3dmodel.model" || name.endsWith("/3dmodel.model"),
-  );
+  const relsBytes = findEntry("_rels/.rels");
+  const mainModelPath =
+    findStartPart(Object.keys(zipEntries), relsBytes ? decoder.decode(relsBytes) : null) ??
+    Object.keys(zipEntries).find((name) => name.toLowerCase().endsWith("/3dmodel.model"));
   let filamentColors: string[] = [];
   let buildVolume: { x: number; y: number } | null = null;
   const projectSettingsBytes = findEntry("Metadata/project_settings.config");

@@ -63,13 +63,18 @@ const ERROR_RETRY_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
 // Failures that would just repeat (too complex, killed for limits) are never retried
 // automatically. Delete the .error file to force a retry.
 const PERMANENT_FAILURE_PREFIX = "permanent: ";
-const UNSUPPORTED_MARKER = `${PERMANENT_FAILURE_PREFIX}unsupported`;
+const UNSUPPORTED_PREFIX = `${PERMANENT_FAILURE_PREFIX}unsupported`;
+/** Kept with a file the readers refused as unsupported. Bump it when they learn to read more, and every file they
+ *  refused gets another try: its 3D preview, its picture and its print check. */
+export const READER_VERSION = 2;
+const UNSUPPORTED_MARKER = `${UNSUPPORTED_PREFIX} (reader ${READER_VERSION})`;
 
 function recentlyFailed(plateId: string, errorPath = modelPreviewErrorPath(plateId)): boolean {
   try {
-    const stat = fsSync.statSync(errorPath);
-    if (Date.now() - stat.mtimeMs < ERROR_RETRY_COOLDOWN_MS) return true;
-    return fsSync.readFileSync(errorPath, "utf-8").startsWith(PERMANENT_FAILURE_PREFIX);
+    const marker = fsSync.readFileSync(errorPath, "utf-8");
+    if (marker.startsWith(UNSUPPORTED_PREFIX) && marker !== UNSUPPORTED_MARKER) return false;
+    if (Date.now() - fsSync.statSync(errorPath).mtimeMs < ERROR_RETRY_COOLDOWN_MS) return true;
+    return marker.startsWith(PERMANENT_FAILURE_PREFIX);
   } catch {
     return false;
   }
@@ -523,7 +528,14 @@ export async function generateModelImage(
           outcome.status === "error" ? outcome.error : outcome.status === "limit" ? outcome.reason : outcome.status;
         if (outcome.status === "error") console.error(`Model picture failed for plate ${plateId}:`, reason);
         // Only an unexpected error is worth another try later; the rest would just repeat.
-        await fs.writeFile(errorPath, outcome.status === "error" ? reason : `${PERMANENT_FAILURE_PREFIX}${reason}`);
+        await fs.writeFile(
+          errorPath,
+          outcome.status === "error"
+            ? reason
+            : outcome.status === "unsupported"
+              ? UNSUPPORTED_MARKER
+              : `${PERMANENT_FAILURE_PREFIX}${reason}`,
+        );
       }
     } catch (err) {
       console.error(`Model picture failed for plate ${plateId}:`, err);

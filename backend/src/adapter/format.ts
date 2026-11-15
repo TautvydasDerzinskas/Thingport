@@ -67,6 +67,37 @@ export function parseGenerator(text: string | null | undefined): { app: string |
   return { app: m[1].trim(), version: m[2] };
 }
 
+const MODEL_RELATIONSHIP = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
+const RELATIONSHIP_RE = /<Relationship\b[^>]*>/gi;
+
+function xmlAttr(tag: string, name: string): string | null {
+  const m = new RegExp(String.raw`\b${name}\s*=\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(tag);
+  return m ? (m[1] ?? m[2]) : null;
+}
+
+/** Finds entries by package part name, which ignores case and may start with "/"; the name as the zip spells it. */
+export function partNames(entries: Iterable<string>): (part: string) => string | null {
+  const byKey = new Map<string, string>();
+  for (const entry of entries) {
+    const key = entry.toLowerCase();
+    if (!byKey.has(key)) byKey.set(key, entry);
+  }
+  return (part) => byKey.get(part.replace(/^\/+/, "").toLowerCase()) ?? null;
+}
+
+/** The entry holding a 3MF's model: the one _rels/.rels names, else 3D/3dmodel.model, in any case; null with neither.
+ *  Windows' 3D Builder writes 3D/3DModel.model. */
+export function findStartPart(entries: Iterable<string>, rels: string | null): string | null {
+  const named = partNames(entries);
+  for (const tag of rels?.match(RELATIONSHIP_RE) ?? []) {
+    const target = xmlAttr(tag, "Target");
+    if (!target || xmlAttr(tag, "Type")?.toLowerCase() !== MODEL_RELATIONSHIP) continue;
+    const found = named(target);
+    if (found) return found;
+  }
+  return named("3D/3dmodel.model");
+}
+
 function readJson(text: string | null): Settings | null {
   if (!text) return null;
   try {
