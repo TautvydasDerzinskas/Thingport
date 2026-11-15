@@ -29,7 +29,7 @@ describe("dump guide", () => {
     // With sudo only where the SSH user can't make the folder, as under /srv, and then only a new one; 755 either way.
     expect(commands.bring).toBe(
       "ssh -t 192.168.1.20 'mkdir -p -m 755 /data/old 2>/dev/null || " +
-        `{ sudo mkdir -p /data && sudo mkdir -m 755 /data/old && sudo chown "$(id -u)" /data/old; }'\n` +
+        `{ umask 022; sudo mkdir -p /data && sudo mkdir -m 755 /data/old && sudo chown "$(id -u)" /data/old; }'\n` +
         "rsync -a --delete thingport.dump old-storage 192.168.1.20:/data/old/",
     );
     // The two only: the folder may hold other things, so it's left as it is.
@@ -67,7 +67,7 @@ describe("dump guide", () => {
     // Quoted twice for ssh, whose far shell reads the command again; -s, or an older rsync's far shell splits it.
     expect(commands.bring).toBe(
       "ssh -t 192.168.1.20 'mkdir -p -m 755 '\\''/srv/old library'\\'' 2>/dev/null || " +
-        "{ sudo mkdir -p /srv && sudo mkdir -m 755 '\\''/srv/old library'\\'' && " +
+        "{ umask 022; sudo mkdir -p /srv && sudo mkdir -m 755 '\\''/srv/old library'\\'' && " +
         `sudo chown "$(id -u)" '\\''/srv/old library'\\''; }'\n` +
         "rsync -as --delete thingport.dump old-storage '192.168.1.20:/srv/old library/'",
     );
@@ -88,7 +88,13 @@ describe("dump guide", () => {
     expect(ssh).toMatch(/^ssh -t 2001:db8::20 'mkdir -p -m 755 \/srv\/old-thingport /);
     expect(rsync).toBe("rsync -a --delete thingport.dump old-storage '[2001:db8::20]:/srv/old-thingport/'");
     // A folder right under /, whose parent is / itself.
-    expect(guideCommands({ ...DEFAULT_NAMES, folder: "/old" }, where).bring).toContain("{ sudo mkdir -p / && ");
+    expect(guideCommands({ ...DEFAULT_NAMES, folder: "/old" }, where).bring).toContain(
+      "{ umask 022; sudo mkdir -p / && ",
+    );
+    // A nested one: parents sudo makes are 755 too, whatever umask sudo keeps, so the SSH user gets through them.
+    expect(guideCommands({ ...DEFAULT_NAMES, folder: "/srv/migrations/old" }, where).bring).toContain(
+      "{ umask 022; sudo mkdir -p /srv/migrations && sudo mkdir -m 755 /srv/migrations/old && ",
+    );
   });
 
   it("says when the folder needs -s, which macOS's own rsync lacks", () => {

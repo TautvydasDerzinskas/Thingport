@@ -113,13 +113,14 @@ export function guideCommands(
     // can, as under /srv, with sudo and given to that user, so rsync can write there. Either way 755 whatever the
     // umask, so the backend's user can enter it. A folder already there is left as it is, as it may hold other
     // things: sudo makes the folder itself without -p, so one the SSH user only couldn't reach stops it with "File
-    // exists". ssh hands its command to the far server's shell, hence it's quoted as one word, the folder in it
+    // exists". umask 022 for the parents it makes, as sudo keeps a stricter one, which would shut the SSH user out.
+    // ssh hands its command to the far server's shell, hence it's quoted as one word, the folder in it
     // again; -t, so sudo can ask for a password. --delete clears what an earlier try left in old-storage there, and
     // only there, as the folder itself isn't one rsync is sent.
     bring: [
       `ssh -t ${shellWord(host.ssh)} ${shellWord(
         `mkdir -p -m 755 ${shellWord(folder)} 2>/dev/null || ` +
-          `{ sudo mkdir -p ${shellWord(parent)} && sudo mkdir -m 755 ${shellWord(folder)} && ` +
+          `{ umask 022; sudo mkdir -p ${shellWord(parent)} && sudo mkdir -m 755 ${shellWord(folder)} && ` +
           `sudo chown "$(id -u)" ${shellWord(folder)}; }`,
       )}`,
       `rsync -a${protect} --delete ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,

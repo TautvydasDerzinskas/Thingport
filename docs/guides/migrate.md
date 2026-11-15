@@ -114,15 +114,16 @@ and a new folder of your own. The first line makes the folder, as rsync makes on
 `755`, so the backend's user can enter it. Where only root can, as under `/srv`, it does that with `sudo`, asking for
 your password on this server, and gives the folder to the SSH user so rsync can write there. A folder that's already
 there is left as it is, as it may hold other things: the SSH user must be able to write to it, and the backend's user
-to enter it. One the SSH user can't reach stops the `sudo` part with "File exists" rather than being changed. Either
-way the SSH user must be able to get through the folders above it: `sudo` makes the folder, not a way to it.
+to enter it. One the SSH user can't reach stops the `sudo` part with "File exists" rather than being changed. Folders
+above it that `sudo` makes are `755` too, but the SSH user must be able to get through those already there: `sudo`
+makes the folder, not a way to it.
 
 A `thingport.dump` or `old-storage` already in the folder is replaced by this copy: `--delete` makes `old-storage` there
 match it, deleting the files that aren't in it. That clears what an earlier try left, and nothing else in the folder,
 but use a folder with no `old-storage` of its own.
 
 ```sh
-ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || { sudo mkdir -p /srv && sudo mkdir -m 755 /srv/old-thingport && sudo chown "$(id -u)" /srv/old-thingport; }'
+ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || { umask 022; sudo mkdir -p /srv && sudo mkdir -m 755 /srv/old-thingport && sudo chown "$(id -u)" /srv/old-thingport; }'
 rsync -a --delete thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
