@@ -20,7 +20,15 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CodeBlock from "../../components/CodeBlock";
 import HelpTip from "../../components/HelpTip";
 import { THINGPORT_WEBSITE_URL } from "../../constants/website";
-import { DEFAULT_NAMES, folderIsAbsolute, guessHost, guideCommands, guidePaths, type GuideNames } from "./dumpGuide";
+import {
+  DEFAULT_NAMES,
+  folderIsAbsolute,
+  folderNeedsProtect,
+  guessHost,
+  guideCommands,
+  guidePaths,
+  type GuideNames,
+} from "./dumpGuide";
 import { k } from "./parts";
 
 const GUIDE_URL = `${THINGPORT_WEBSITE_URL}docs/guides/migrate/#1-stop-the-old-instances-backend`;
@@ -48,7 +56,8 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
   const last = step === STEPS.length - 1;
   const folderWrong = !folderIsAbsolute(names.folder);
 
-  const field = (key: keyof GuideNames, label: string, help: string, error?: string) => (
+  /** A field with its `?` help beneath the label; `error` marks it wrong, `note` only says something under it. */
+  const field = (key: keyof GuideNames, label: string, help: string, error?: string, note?: string) => (
     <TextField
       size="small"
       fullWidth
@@ -62,7 +71,7 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
       onChange={(event) => setNames({ ...names, [key]: event.target.value })}
       placeholder={DEFAULT_NAMES[key]}
       error={Boolean(error)}
-      helperText={error}
+      helperText={error ?? note}
       slotProps={{
         htmlInput: { spellCheck: false, autoCapitalize: "off" },
         inputLabel: { shrink: true, sx: { pointerEvents: "auto" } },
@@ -106,6 +115,7 @@ export default function DumpGuideDialog({ root, onClose, onUse }: Props) {
             t(k("dumpGuide.folder")),
             t(k("dumpGuide.folderHelp"), { root }),
             folderWrong ? t(k("dumpGuide.folderAbsolute"), { example: DEFAULT_NAMES.folder }) : undefined,
+            folderNeedsProtect(names.folder) ? t(k("dumpGuide.folderProtect")) : undefined,
           )}
         </Box>
         <CodeBlock code={commands.bring} />

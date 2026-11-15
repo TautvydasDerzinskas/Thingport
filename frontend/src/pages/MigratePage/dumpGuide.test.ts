@@ -3,6 +3,7 @@ import {
   DEFAULT_NAMES,
   composeValue,
   folderIsAbsolute,
+  folderNeedsProtect,
   guessHost,
   guideCommands,
   guidePaths,
@@ -44,6 +45,15 @@ describe("dump guide", () => {
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
     // -s, or an older rsync's remote shell splits the path the local one kept whole.
     expect(commands.bring).toBe("rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'");
+  });
+
+  it("says when the folder needs -s, which macOS's own rsync lacks", () => {
+    for (const folder of ["/srv/old library", " /srv/(old) ", "/srv/it's"]) {
+      expect(folderNeedsProtect(folder)).toBe(true);
+    }
+    for (const folder of ["", " ", "/srv/old-thingport/", "/srv/archive:2026"]) {
+      expect(folderNeedsProtect(folder)).toBe(false);
+    }
   });
 
   it("writes the mount so Compose reads the folder as it was given", () => {

@@ -47,14 +47,19 @@ export function folderIsAbsolute(value: string): boolean {
   return !folder || folder.startsWith("/") || /^[A-Za-z]:[\\/]/.test(folder);
 }
 
+/** Whether the rsync line needs -s for this folder: rsync before 3.2.4 hands the path to the far server's shell, which
+ *  splits it again. -s takes rsync 3.0 or later on both servers, and macOS's own rsync has none, so only then. */
+export function folderNeedsProtect(value: string): boolean {
+  const folder = value.trim();
+  return Boolean(folder) && shellWord(folder) !== folder;
+}
+
 /** The commands for each step, with the names given, or their defaults where a field is left empty. `root` is where
  *  this server's backend reads a migration from, `comment` the Compose file's note that its other volumes stay. */
 export function guideCommands(given: GuideNames, { root, comment }: { root: string; comment: string }) {
   const pick = (key: keyof GuideNames) => given[key].trim() || DEFAULT_NAMES[key];
   const folder = pick("folder").replace(/\/+$/, "") || DEFAULT_NAMES.folder;
-  // rsync before 3.2.4 hands the path to the old server's shell, which splits it again unless -s keeps it whole.
-  // macOS's rsync has no -s, so it's there only for a path that needs it.
-  const protect = shellWord(folder) === folder ? "" : "s";
+  const protect = folderNeedsProtect(folder) ? "s" : "";
   // Compose splits the short form on `:`, so a folder with one past a drive letter is written out in full. It hands
   // the long form on as a short one too while it may create the folder, hence create_host_path off.
   const volume = folder.replace(/^[A-Za-z]:/, "").includes(":")

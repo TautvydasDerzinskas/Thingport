@@ -110,7 +110,8 @@ rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
 For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than
-3.2.4 splits the path on this server.
+3.2.4 splits the path on this server. `-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync has none:
+where one is older, use a folder without spaces or symbols, which any rsync takes as it is.
 
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
