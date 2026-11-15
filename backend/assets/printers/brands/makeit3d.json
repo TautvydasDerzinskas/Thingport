@@ -1,0 +1,138 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "makeit3d",
+  "name": "Makeit 3D"
+ },
+ "printers": [
+  {
+   "id": "makeit3d-makeitprol",
+   "brand": "makeit3d",
+   "model": "Makeit Pro-L",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 305,
+    "y": 254,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeit_pro_l"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeit_pro_l",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "makeit3d-makeitprom",
+   "brand": "makeit3d",
+   "model": "Makeit Pro-M",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeit_pro_m"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeit_pro_m",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "makeit3d-makeitpromx",
+   "brand": "makeit3d",
+   "model": "Makeit Pro-MX",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "makeit_pro_mx"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "makeit_pro_mx",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

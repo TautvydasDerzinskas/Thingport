@@ -4,9 +4,11 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import PublicIcon from "@mui/icons-material/Public";
 import UpdateCheckSection from "./UpdateCheckSection";
 import SectionHeader from "../../components/SectionHeader";
+import SupportLink from "../../components/SupportLink";
 import SystemHealthSection from "./SystemHealthSection";
 import StorageUsageLine from "./StorageUsageLine";
 import StorageBrowserDialog from "../AdminSettingsPage/StorageBrowserDialog";
@@ -49,13 +51,25 @@ export default function AdminPage({ onUnauthorized }: Props) {
         direction="row"
         alignItems="center"
         spacing={1}
-        title={t("adminSettings.website.hint")}
-        sx={{ px: 0.5, color: "text.secondary" }}
+        useFlexGap
+        sx={{ px: 0.5, color: "text.secondary", flexWrap: "wrap", rowGap: 0.5 }}
       >
-        <PublicIcon fontSize="small" />
-        <Link href={THINGPORT_WEBSITE_URL} target="_blank" rel="noopener" variant="body2" underline="hover">
-          {t("adminSettings.website.link")}
-        </Link>
+        <Stack direction="row" alignItems="center" spacing={1} title={t("adminSettings.website.hint")}>
+          <PublicIcon fontSize="small" />
+          <Link href={THINGPORT_WEBSITE_URL} target="_blank" rel="noopener" variant="body2" underline="hover">
+            {t("adminSettings.website.link")}
+          </Link>
+        </Stack>
+        <Typography
+          component="span"
+          variant="body2"
+          color="text.disabled"
+          aria-hidden
+          sx={{ display: { xs: "none", sm: "inline" } }}
+        >
+          |
+        </Typography>
+        <SupportLink long />
       </Stack>
     </Stack>
   );

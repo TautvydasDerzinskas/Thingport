@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
 import ListItemIcon from "@mui/material/ListItemIcon";
+import ListSubheader from "@mui/material/ListSubheader";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
 import { formatFileSize } from "../../utils/fileSize";
+import { extOf } from "../../utils/fileExtensions";
+import { folderLabel, groupByFolder, hasFolders, shortNames } from "../../utils/fileFolders";
 import { fileRowText } from "./fileRowText";
 import { PREPARED_KEY, type ModelFile } from "./useOpenInSlicer";
 
@@ -34,18 +38,90 @@ function FileIcon({ file }: { file: ModelFile }) {
   );
 }
 
-/** The file the side panel's open and download actions apply to, for a model with several. */
+const folderOf = (file: ModelFile) => file.folder;
+
+/** A folder's heading in the list: its name, and how many of the files are in it. */
+function FolderHeading({ folder, count }: { folder: string; count: number }) {
+  return (
+    <ListSubheader
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.75,
+        lineHeight: "32px",
+        fontSize: "0.72rem",
+        fontWeight: 700,
+        color: "text.secondary",
+        bgcolor: "background.paper",
+        "& svg": { fontSize: 15 },
+      }}
+    >
+      <FolderOutlinedIcon aria-hidden />
+      <Box
+        component="span"
+        sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+      >
+        {folderLabel(folder)}
+      </Box>
+      <Box component="span" sx={{ fontWeight: 500 }}>
+        {count}
+      </Box>
+    </ListSubheader>
+  );
+}
+
+/** The file the side panel's open and download actions apply to, for a model with several. Files in folders are
+ *  listed under a heading for each, after those in none, with the start every name in a folder shares left off. */
 export default function ModelFileSelect({ files, selected, onSelect }: Props) {
   const { t } = useTranslation(["models"]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  const textOf = (file: ModelFile) => {
+  const names = useMemo(
+    () =>
+      shortNames(
+        files,
+        (file) => file.key,
+        (file) => file.filename,
+        folderOf,
+      ),
+    [files],
+  );
+  const grouped = hasFolders(files, folderOf);
+  /** `listed`: under its folder's heading, which then needn't be said again. */
+  const textOf = (file: ModelFile, listed: boolean) => {
     if (isPrepared(file)) return { primary: t("models:detail.preparedPrintFile"), secondary: file.filename };
+    const size = typeof file.size === "number" ? formatFileSize(file.size) : null;
+    if (file.folder) {
+      const type = extOf(file.filename).toUpperCase() || null;
+      return {
+        primary: names.get(file.key) ?? file.filename,
+        secondary: [listed ? null : folderLabel(file.folder), type, size].filter(Boolean).join(" · "),
+      };
+    }
     const text = fileRowText(t, file.filename, file.index);
-    return typeof file.size === "number"
-      ? { ...text, secondary: `${text.secondary} · ${formatFileSize(file.size)}` }
-      : text;
+    return size ? { ...text, secondary: `${text.secondary} · ${size}` } : text;
   };
-  const current = textOf(selected);
+  const current = textOf(selected, false);
+  const row = (file: ModelFile) => (
+    <MenuItem
+      key={file.key}
+      selected={file.key === selected.key}
+      title={file.filename}
+      onClick={() => {
+        onSelect(file);
+        setAnchor(null);
+      }}
+      sx={file.folder ? { pl: 2.5 } : undefined}
+    >
+      <ListItemIcon sx={{ minWidth: 44 }}>
+        <FileIcon file={file} />
+      </ListItemIcon>
+      <ListItemText
+        {...textOf(file, true)}
+        primaryTypographyProps={{ variant: "body2", noWrap: true }}
+        secondaryTypographyProps={{ variant: "caption", noWrap: true }}
+      />
+    </MenuItem>
+  );
 
   return (
     <Box>
@@ -78,8 +154,19 @@ export default function ModelFileSelect({ files, selected, onSelect }: Props) {
           <Typography variant="body2" fontWeight={600} noWrap>
             {current.primary}
           </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-            {current.secondary}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            noWrap
+            component="div"
+            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+          >
+            {selected.folder && !isPrepared(selected) && (
+              <FolderOutlinedIcon aria-hidden sx={{ fontSize: 13, flexShrink: 0 }} />
+            )}
+            <Box component="span" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+              {current.secondary}
+            </Box>
           </Typography>
         </Box>
         <ArrowDropDownIcon
@@ -97,28 +184,17 @@ export default function ModelFileSelect({ files, selected, onSelect }: Props) {
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ paper: { sx: { width: anchor?.offsetWidth, maxHeight: 360 } } }}
+        slotProps={{ paper: { sx: { width: anchor?.offsetWidth, maxHeight: grouped ? 420 : 360 } } }}
+        MenuListProps={grouped ? { sx: { pt: 0 } } : undefined}
       >
-        {files.map((file) => (
-          <MenuItem
-            key={file.key}
-            selected={file.key === selected.key}
-            title={file.filename}
-            onClick={() => {
-              onSelect(file);
-              setAnchor(null);
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 44 }}>
-              <FileIcon file={file} />
-            </ListItemIcon>
-            <ListItemText
-              {...textOf(file)}
-              primaryTypographyProps={{ variant: "body2", noWrap: true }}
-              secondaryTypographyProps={{ variant: "caption", noWrap: true }}
-            />
-          </MenuItem>
-        ))}
+        {grouped
+          ? groupByFolder(files, folderOf).flatMap((group) => [
+              ...(group.folder
+                ? [<FolderHeading key={`folder:${group.folder}`} folder={group.folder} count={group.items.length} />]
+                : []),
+              ...group.items.map(row),
+            ])
+          : files.map(row)}
       </Menu>
     </Box>
   );

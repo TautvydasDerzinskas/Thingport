@@ -1,22 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { STORAGE, MODEL_PREVIEWS, NORMALIZED_3MFS, TAG_MOSAICS, ICONS, COVERS, AVATARS } from "./config";
+import { STORAGE, MODEL_PREVIEWS, ADAPTED_3MFS, TAG_MOSAICS, ICONS, COVERS, AVATARS } from "./config";
 
 // THUMBS, PREVIEWS, DESCRIPTION_IMAGES and BUNDLES are only read now, for models the storage move hasn't reached.
-for (const dir of [
-  STORAGE,
-  MODEL_PREVIEWS,
-  NORMALIZED_3MFS,
-  TAG_MOSAICS,
-  ICONS,
-  COVERS,
-  path.join(AVATARS, "gravatar"),
-]) {
+for (const dir of [STORAGE, MODEL_PREVIEWS, ADAPTED_3MFS, TAG_MOSAICS, ICONS, COVERS, path.join(AVATARS, "gravatar")]) {
   fs.mkdirSync(dir, { recursive: true });
 }
-// The cache's name before it became NORMALIZED_3MFS; nothing reads it any more.
-fs.rmSync(path.join(STORAGE, "sanitized-3mf"), { recursive: true, force: true });
+// The cache's names before it became ADAPTED_3MFS; nothing reads them any more.
+for (const old of ["sanitized-3mf", "normalized-3mf"]) {
+  fs.rmSync(path.join(STORAGE, old), { recursive: true, force: true });
+}
 
 let client = new PrismaClient();
 

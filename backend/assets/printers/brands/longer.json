@@ -1,0 +1,1236 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "longer",
+  "name": "Longer"
+ },
+ "printers": [
+  {
+   "id": "longer-cube2",
+   "brand": "longer",
+   "model": "Cube2",
+   "aliases": [
+    "longercube2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 140,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 105,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_cube2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_cube2",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk1",
+   "brand": "longer",
+   "model": "LK1",
+   "aliases": [
+    "longerlk1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk1",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk1plus",
+   "brand": "longer",
+   "model": "LK1 Plus",
+   "aliases": [
+    "longerlk1plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk1plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk1plus",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk1pro",
+   "brand": "longer",
+   "model": "LK1 Pro",
+   "aliases": [
+    "longerlk1pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk1pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk1pro",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk10",
+   "brand": "longer",
+   "model": "LK10",
+   "aliases": [
+    "longerlk10"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 225,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 265,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "LONGER-LK10"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "LONGER LK10",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LONGER LK10 (0.2 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.2 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LONGER LK10 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LONGER LK10 (0.6 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.6 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LONGER LK10 (0.8 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.8 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "LONGER LK10",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LONGER LK10 (0.2 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.2 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.2 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LONGER LK10 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.4 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LONGER LK10 (0.6 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.6 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.6 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LONGER LK10 (0.8 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 (0.8 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 (0.8 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10",
+           "PLA": "Generic PLA @LONGER LK10"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10",
+           "generic pla": "Generic PLA @LONGER LK10"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "longer-lk10plus",
+   "brand": "longer",
+   "model": "LK10 Plus",
+   "aliases": [
+    "longerlk10plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "LONGER-LK10Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "LONGER LK10 Plus",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LONGER LK10 Plus (0.2 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.2 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LONGER LK10 Plus (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LONGER LK10 Plus (0.6 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.6 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LONGER LK10 Plus (0.8 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.8 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "LONGER LK10 Plus",
+      "presets": {
+       "0.2": [
+        {
+         "name": "LONGER LK10 Plus (0.2 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.2 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.2 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "LONGER LK10 Plus (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.4 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "LONGER LK10 Plus (0.6 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.6 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.6 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "LONGER LK10 Plus (0.8 nozzle)",
+         "defaultProcess": "0.20mm Standard @LONGER LK10 Plus (0.8 nozzle)",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @LONGER LK10 Plus (0.8 nozzle)",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @LONGER LK10 Plus",
+           "PLA": "Generic PLA @LONGER LK10 Plus"
+          },
+          "products": {
+           "generic petg": "Generic PETG @LONGER LK10 Plus",
+           "generic pla": "Generic PLA @LONGER LK10 Plus"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "longer-lk4",
+   "brand": "longer",
+   "model": "LK4",
+   "aliases": [
+    "longerlk4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk4"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk4",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk4pro",
+   "brand": "longer",
+   "model": "LK4 Pro",
+   "aliases": [
+    "longerlk4pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk4pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk4pro",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk4x",
+   "brand": "longer",
+   "model": "LK4 X",
+   "aliases": [
+    "longerlk4x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk4x"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk4x",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk5",
+   "brand": "longer",
+   "model": "LK5",
+   "aliases": [
+    "longerlk5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk5",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "longer-lk5pro",
+   "brand": "longer",
+   "model": "LK5 Pro",
+   "aliases": [
+    "longerlk5pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "longer_lk5pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "longer_lk5pro",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

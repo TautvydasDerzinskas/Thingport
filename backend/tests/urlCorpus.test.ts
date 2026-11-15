@@ -13,7 +13,7 @@ import { parsePrintablesLikesUrl } from "../src/providers/printables/api";
 import { isThangsLikesUrl } from "../src/providers/thangs/api";
 import { parseCults3dLikesUrl } from "../src/providers/cults3d/api";
 import { parseSnapmakerListUrl } from "../src/providers/snapmaker/api";
-import { isEufymakeLikesUrl } from "../src/providers/eufymake/api";
+import { isEufymakeLikesUrl, parseEufymakeModelUrl } from "../src/providers/eufymake/api";
 import { parsePinshapeLikesUrl } from "../src/providers/pinshape/api";
 import { isToymakr3dLikesUrl } from "../src/providers/toymakr3d/api";
 import { parseMakerablesSavedUrl } from "../src/providers/makerables/api";
@@ -22,6 +22,8 @@ import { parseGrabcadLikesUrl } from "../src/providers/grabcad/api";
 import { parsePixup3dWishlistUrl } from "../src/providers/pixup3d/api";
 import { isFab365LikesUrl } from "../src/providers/fab365/api";
 import { isThreedexportDefaultUrl } from "../src/providers/threedexport/api";
+import { isQidimakerLikesUrl, parseQidimakerModelUrl } from "../src/providers/qidimaker/api";
+import { isVoxelshareLikesUrl, parseVoxelshareModelUrl } from "../src/providers/voxelshare/api";
 
 type Expected = {
   provider: string | null;
@@ -42,12 +44,15 @@ const cases = fs
   );
 
 function profileOf(provider: string, url: string): string | null {
-  // requestedProfileOf in importService is private; these are the same five exported parsers it delegates to.
+  // requestedProfileOf in importService is private; these are the exported parsers of the providers with profiles.
   if (provider === "makerworld") return parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
   if (provider === "snapmaker") return parseSnapmakerModelUrl(url)?.requestedProfileId ?? null;
   if (provider === "makeronline") return parseMakeronlineModelUrl(url)?.requestedProfileId ?? null;
   if (provider === "crealitycloud") return parseCrealitycloudModelUrl(url)?.requestedProfileId ?? null;
   if (provider === "nexprint") return parseNexprintModelUrl(url)?.requestedProfileId ?? null;
+  if (provider === "eufymake") return parseEufymakeModelUrl(url)?.requestedProfileId ?? null;
+  if (provider === "qidimaker") return parseQidimakerModelUrl(url)?.requestedProfileId ?? null;
+  if (provider === "voxelshare") return parseVoxelshareModelUrl(url)?.requestedProfileId ?? null;
   return null;
 }
 
@@ -69,7 +74,9 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
     (provider === "cgtrader" && parseCgtraderListUrl(url) === "likes") ||
     (provider === "grabcad" && parseGrabcadLikesUrl(url)) ||
     (provider === "pixup3d" && parsePixup3dWishlistUrl(url)) ||
-    (provider === "fab365" && isFab365LikesUrl(url))
+    (provider === "fab365" && isFab365LikesUrl(url)) ||
+    (provider === "qidimaker" && isQidimakerLikesUrl(url)) ||
+    (provider === "voxelshare" && isVoxelshareLikesUrl(url))
   )
     return "likes";
   return "collection";
@@ -77,8 +84,8 @@ function listKindOf(provider: string, url: string): Expected["listKind"] {
 
 describe("provider URL corpus (backend)", () => {
   it("contains every provider and both positive and negative cases", () => {
-    expect(cases).toHaveLength(168);
-    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(21);
+    expect(cases).toHaveLength(204);
+    expect(new Set(cases.map((item) => item.expect.provider).filter(Boolean)).size).toBe(23);
   });
 
   it.each(cases)("$url", ({ url, expect: common, divergent }) => {

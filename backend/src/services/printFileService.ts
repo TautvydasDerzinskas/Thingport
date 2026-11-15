@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
 import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
@@ -168,7 +169,7 @@ export async function saveFileFromTemp(
   tempPath: string,
   originalFilename: string,
   contentType: string | null | undefined,
-  { role: givenRole }: { role?: "SUPPORTING" | "PREPARED" } = {},
+  { role: givenRole, folder: givenFolder }: { role?: "SUPPORTING" | "PREPARED"; folder?: string | null } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
@@ -176,11 +177,13 @@ export async function saveFileFromTemp(
   const safeName = sanitizeFilename(originalFilename || "supporting-file");
   let role: "SUPPORTING" | "PREPARED" = givenRole ?? (isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING");
   const mime = mimeFromContentType(contentType, safeName);
+  const folder = normalizeFolder(givenFolder);
 
   const record = await prisma.printFile.create({
     data: {
       printId: print.id,
       filename: safeName,
+      folder,
       mime,
       role,
       storagePath: "pending",
@@ -197,7 +200,7 @@ export async function saveFileFromTemp(
     // Again, since dropping each CRLF's CR leaves the file shorter than it arrived.
     const stat = await fs.stat(tempPath);
     // Claimed in the database first, so two uploads of one name can't both pick the same place.
-    const storagePath = await renderPrintFileStoragePath(print, safeName);
+    const storagePath = await renderPrintFileStoragePath(print, safeName, folder);
     await prisma.printFile.update({ where: { id: record.id }, data: { storagePath } });
     destination = path.join(STORAGE, storagePath);
     await fs.mkdir(path.dirname(destination), { recursive: true });

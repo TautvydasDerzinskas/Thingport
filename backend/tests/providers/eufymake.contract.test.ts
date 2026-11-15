@@ -7,7 +7,7 @@ import {
   setUserEufymakeSession,
 } from "../../src/providers/eufymake/session";
 import { describeProviderContract, type ProviderContractSpec } from "./contract";
-import { assertThat, binary, expectStatus, json, loadFixture, stl, type FetchHandler } from "./support";
+import { assertThat, binary, expectStatus, json, loadFixture, stl, threeMf, type FetchHandler } from "./support";
 
 vi.mock("node:dns/promises", () => ({
   default: {
@@ -34,15 +34,44 @@ const LIKED = [
   "9a28d82a6e5411f1aae2b27ad9738895",
 ];
 
-function handlerFor(scenario: string): FetchHandler {
-  return ({ url, json: body, headers }) => {
+const CDN = "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_model/default/0000/";
+
+/** The recorded model with two print files of its designer's, as eufyMake's models often have now. */
+function withPrintFiles(): Record<string, unknown> {
+  const detail = loadFixture("eufymake", "model-detail");
+  const file = (id: number, name: string) => ({
+    info_id: id,
+    print_name: name,
+    print_size: 18711,
+    file_3mf_key: `${CDN}${name}?X-Amz-Signature=a`,
+    cover_url: `${CDN}${id}.png`,
+    printer: "M5C",
+    nozzle: "0.4",
+    material: "PLA+",
+    print_time: 1277,
+    print_weight: 6,
+    print_layer_height: 0,
+    print_infill: 25,
+    walls_num: 3,
+  });
+  detail.data.model.model_print_infos = [file(546, "ghost_lampshade.3mf"), file(547, "ghost_night_light.3mf")];
+  return detail;
+}
+
+/** The model the stub serves: the one with print files, or the bare one as recorded. */
+function handlerFor(scenario: string, model: "print-files" | "bare" = "print-files"): FetchHandler {
+  return async ({ url, json: body, headers }) => {
     if (url.hostname.endsWith(".cloudfront.net") && url.pathname.endsWith(".stl")) {
       return binary(stl(url.pathname.split("/").pop()!));
+    }
+    if (url.hostname.endsWith(".cloudfront.net") && url.pathname.endsWith(".3mf")) {
+      return binary(await threeMf(url.pathname.split("/").pop()!));
     }
     if (url.hostname !== "aiot-wapi-eu.ankermake.com" || !url.pathname.startsWith(API)) return undefined;
     switch (url.pathname.slice(API.length)) {
       case "model/get_model_detail":
-        return json(loadFixture("eufymake", scenario === "missing" ? "model-missing" : "model-detail"));
+        if (scenario === "missing") return json(loadFixture("eufymake", "model-missing"));
+        return json(model === "bare" ? loadFixture("eufymake", "model-detail") : withPrintFiles());
       case "user/get_my_like_list": {
         assertThat(
           headers["x-auth-token"] === TOKEN && headers.gtoken === eufymakeGtoken(EUFY_USER),
@@ -73,8 +102,9 @@ const spec: ProviderContractSpec = {
     tags: ["Halloween", "Lampshade", "Light"],
     category: { name: "Other Household Models", parent: "Household" },
     galleryImages: 2,
-    plateInstanceIds: [null],
-    plateFilenames: ["ghost.stl"],
+    // Its first print file, which a plain link brings.
+    plateInstanceIds: ["546"],
+    plateFilenames: ["ghost_lampshade.3mf"],
   },
   connect: async (userId) => {
     await setUserEufymakeSession(userId, { token: TOKEN, gtoken: eufymakeGtoken(EUFY_USER), userId: EUFY_USER });
@@ -83,7 +113,9 @@ const spec: ProviderContractSpec = {
     await setUserEufymakeSession(userId, null);
   },
   createHandler: (scenario) => handlerFor(scenario),
-  reimport: {},
+  reimport: {
+    profile: { url: `${MODEL_URL}#profileId-547`, plateInstanceIds: ["546", "547"] },
+  },
   list: {
     endpoint: "/api/import/eufymake/list/entries",
     url: LIKES_URL,
@@ -125,13 +157,60 @@ describe("eufyMake specifics", () => {
     expect(await getEufymakeConnection(ctx.userId)).toBe("expired");
   });
 
-  it("imports the model's own files, not the zip of them", async () => {
-    const stub = ctx.stub("ok");
+  it("imports a model's own files where it has no print files, not the zip of them", async () => {
+    const stub = ctx.install(handlerFor("ok", "bare"));
     expectStatus(await ctx.importUrl(), 200);
     const [print] = await ctx.prints();
     const plates = await prisma.plate.findMany({ where: { printId: print.id } });
     expect(plates.map((plate) => plate.filename)).toEqual(["ghost.stl"]);
     expect(stub.calls.some((call) => call.url.pathname.endsWith(".zip"))).toBe(false);
+  });
+
+  it("imports a print file whose designer left the extension off its name, as a 3MF", async () => {
+    const detail = withPrintFiles();
+    const [first] = detail.data.model.model_print_infos;
+    first.print_name = "Ghost lampshade";
+    ctx.install(async (call) =>
+      call.url.hostname === "aiot-wapi-eu.ankermake.com" ? json(detail) : handlerFor("ok")(call),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["Ghost lampshade.3mf"]);
+  });
+
+  /** The import job, once it has finished. */
+  async function finished(jobId: string) {
+    for (let tries = 0; tries < 150; tries++) {
+      const job = await prisma.importJob.findUniqueOrThrow({ where: { id: jobId } });
+      if (job.status !== "RUNNING") return job;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error("The import didn't finish");
+  }
+
+  it.each(["designer", "all"])(
+    "imports a model's own files from a link wanting its %s print files, where it has none",
+    async (scope) => {
+      ctx.install(handlerFor("ok", "bare"));
+      const res = await ctx.post("/api/import/links", { urls: [MODEL_URL], scope });
+      expectStatus(res, 202);
+      expect(await finished(res.body.job_id)).toMatchObject({ status: "DONE", imported: 1, failedCount: 0 });
+      const [print] = await ctx.prints();
+      const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+      expect(plates.map((plate) => plate.filename)).toEqual(["ghost.stl"]);
+    },
+  );
+
+  it("fails a job for a model's print files where it has none, importing nothing", async () => {
+    ctx.install(handlerFor("ok", "bare"));
+    const res = await ctx.post("/api/import/eufymake/profiles", { url: MODEL_URL, scope: "all" });
+    expectStatus(res, 202);
+    expect(await finished(res.body.job_id)).toMatchObject({
+      status: "ERROR",
+      errorMessage: "This eufyMake model has no print profiles to import",
+    });
+    expect(await ctx.prints()).toHaveLength(0);
   });
 });
 

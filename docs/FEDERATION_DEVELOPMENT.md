@@ -107,13 +107,18 @@ looks: Explore stays fast, and shows a partner's things while it's away.
   files, the `url` of each `Document` in its `attachment`. People are `Person`s; a model is a `thingport:Model`, a
   collection a `thingport:Collection`, and Thingport's other terms are under `thingport:` too. What's shared is decided
   by the same rules as Explore here (`sharers`, `sharedModelsWhere` in `services/socialService.ts`).
+- **A person's achievements** ride on their `Person` as `thingport:achievements`, `[{ id, tier, expired? }]`, only while
+  achievements are on there: ids and tiers, never the counts behind them. A partner keeps them on `RemotePerson` and
+  shows them only while achievements are on there too, drawn from its own catalogue, so an id it doesn't know yet is
+  skipped; ids are never renamed (`services/achievementCatalog.ts`). An older partner reads past the term.
 - **What a copy needs** rides on each model as optional `thingport:` terms, so an older partner reads past them:
   `tags`, `creator`, `importedFrom` and `author` (provider and id), `category` (a starter category's names from the top
   and its providers' ids; never a folder, which is its owner's own), `generatorScriptWithheld`, `unfillableGaps` and
   `descriptionImages`; on each picture `generated` (a render) or `plate` (a plate's thumbnail standing in for none); on
-  each file `kind` (plate or file), a file's `role`, and a plate's `profileId`, `profile` (what its site said, with
-  the reader's version), `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its
-  instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
+  each file `kind` (plate or file), a file's `role`, `path` (its folder and real name, "Supported/Arm.stl", for a file
+  in a folder; its `name` is then named after the folder too where another file has the same name, as an older
+  partner shows one list), and a plate's `profileId`, `profile` (what its site said, with the reader's version),
+  `thumb` and `thumbGenerated` (the thumb is a render, which a copy takes only where its instance won't render one). A model past 256 KB leaves its profiles' facts out (`fitModel`), and a copy asks their
   site instead; still past it, its category, description's images and plates' thumbs, then the names at the end of
   its files' addresses, then its description is shortened.
 - **Keeping the copy** (`remoteIndex.ts`): `RemotePerson`, `RemoteModel`, `RemoteCollection`, read on connecting, by

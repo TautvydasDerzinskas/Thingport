@@ -1,0 +1,123 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "magicfirm",
+  "name": "Magicfirm"
+ },
+ "printers": [
+  {
+   "id": "magicfirm-mbot3dgrid2plus",
+   "brand": "magicfirm",
+   "model": "MBot3D Grid 2+",
+   "aliases": [
+    "mbot3dgrid2plusdual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 210,
+    "origin": [
+     -117.5,
+     -105
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "makerbot",
+   "relativeE": false,
+   "codes": {
+    "cura": "mbot3d_grid2plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mbot3d_grid2plus",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "mbot3d_grid2plus_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "magicfirm-mbot3dgrid4",
+   "brand": "magicfirm",
+   "model": "MBot3D Grid 4",
+   "aliases": [
+    "mbot3dgrid4dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mbot3d_grid4"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mbot3d_grid4",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "mbot3d_grid4_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

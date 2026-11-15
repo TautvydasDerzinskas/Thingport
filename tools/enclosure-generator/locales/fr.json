@@ -126,6 +126,7 @@
   "reset.body": "Tous les réglages reviennent à leur état de départ. Annuler les ramène.",
   "reset.title": "Revenir aux valeurs de départ ?",
   "save.addToCollection": "Ajouter à une collection",
+  "save.done": "Enregistré dans Thingport : {name}",
   "save.nothingYet": "Rien à enregistrer pour l'instant",
   "save.openIt": "L'ouvrir",
   "screw.baseHole": "Trou dans la base",

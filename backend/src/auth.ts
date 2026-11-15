@@ -5,6 +5,8 @@ import { AUTH_ALGO, AUTH_SECRET } from "./config";
 import { getAuthTokenTtl } from "./services/settingsService";
 import { findApiTokenUser, isApiToken } from "./services/apiTokenService";
 import { scopeForPath } from "./services/apiTokenScopes";
+import { noteBridgeDownload } from "./services/bridgeUpdateService";
+import { noteActiveDay } from "./services/achievementService";
 import { asyncHandler } from "./utils/asyncHandler";
 import { prisma } from "./db";
 
@@ -130,6 +132,9 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
   req.sessionId = payload.sid;
   // Sessions from before this was recorded count as long ago.
   req.signedInAt = typeof payload.sat === "number" ? new Date(payload.sat * 1000) : new Date(0);
+  if (req.pathToken) noteBridgeDownload(payload.sub, req.get("user-agent"));
+  // A day they used Thingport, for the Regular achievement: in the app, not a slicer fetching a file by link.
+  else noteActiveDay(payload.sub);
   next();
 });
 

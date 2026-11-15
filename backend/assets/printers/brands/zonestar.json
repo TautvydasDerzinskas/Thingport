@@ -1,0 +1,364 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "zonestar",
+  "name": "Zonestar"
+ },
+ "printers": [
+  {
+   "id": "zonestar-z5",
+   "brand": "zonestar",
+   "model": "Z5",
+   "aliases": [
+    "zonestarz5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Z5"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Zonestar Z5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Zonestar Z5+M2 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zonestar-z5x",
+   "brand": "zonestar",
+   "model": "Z5X",
+   "aliases": [
+    "zonestarz5x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Z5X"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Zonestar Z5X",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Zonestar Z5X",
+         "defaultProcess": "0.20mm @Zonestar SINGLE",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar SINGLE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zonestar-z6",
+   "brand": "zonestar",
+   "model": "Z6",
+   "aliases": [
+    "zonestarz6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Z6"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Zonestar Z6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Zonestar Z6",
+         "defaultProcess": "0.20mm @Zonestar SINGLE",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar SINGLE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zonestar-z8",
+   "brand": "zonestar",
+   "model": "Z8",
+   "aliases": [
+    "zonestarz8"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 3,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Z8"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Zonestar Z8",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Zonestar Z8+M3 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z8+M4 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z8+E4 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z8+DDE",
+         "defaultProcess": "0.20mm @Zonestar SINGLE",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar SINGLE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "zonestar-z9",
+   "brand": "zonestar",
+   "model": "Z9",
+   "aliases": [
+    "zonestarz9"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 3,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Z9"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Zonestar Z9",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Zonestar Z9+M3 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z9+M4 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z9+E4 HOTEND",
+         "defaultProcess": "0.20mm @Zonestar MULTI",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar MULTI",
+           "layerHeight": 0.2
+          }
+         ]
+        },
+        {
+         "name": "Zonestar Z9+DDE",
+         "defaultProcess": "0.20mm @Zonestar SINGLE",
+         "processes": [
+          {
+           "name": "0.20mm @Zonestar SINGLE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

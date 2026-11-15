@@ -34,7 +34,13 @@ import { fileKey } from "../src/federation/remoteFiles";
 import { readCollections, readModels } from "../src/federation/remoteIndex";
 import { resetRuntime } from "../src/federation/runtime";
 import { clearFederationSettingsCache, updateFederationSettings } from "../src/federation/settings";
-import { getSocialSettings, setSocialSettings } from "../src/services/settingsService";
+import {
+  getAchievementSettings,
+  getSocialSettings,
+  setAchievementSettings,
+  setSocialSettings,
+} from "../src/services/settingsService";
+import { remotePerson } from "../src/federation/remoteExplore";
 
 const app = createApp();
 const ORIGIN = "http://192.0.2.60:8000";
@@ -235,6 +241,38 @@ describe("what partners are shown", () => {
     expect(icon ?? "").not.toMatch(/\?v=svg$/);
   });
 
+  it("gives a person's achievements while they're on, and shows a partner's person's here only while they're on", async () => {
+    const saved = await getAchievementSettings();
+    const mine = `${ORIGIN}/api/ap/actors/${owner.id}`;
+    const achievementsIn = async () =>
+      ((await directory()) as { orderedItems: Record<string, unknown>[] }).orderedItems.find(
+        (item) => item.id === mine,
+      )?.["thingport:achievements"];
+    await prisma.userAchievement.create({ data: { userId: owner.id, badge: "downloads", tier: 2 } });
+    try {
+      await setAchievementSettings({ enabled: false });
+      expect(await achievementsIn()).toBeUndefined();
+      await setAchievementSettings({ enabled: true });
+      // Ids and tiers only: the partner draws them, and the counts behind them stay here.
+      expect(await achievementsIn()).toEqual([{ id: "downloads", tier: 2 }]);
+
+      await prisma.remotePerson.update({
+        where: { id: personId },
+        data: { achievements: [{ id: "imports", tier: 1 }, { id: "regular", tier: 0, expired: true }, "junk"] },
+      });
+      expect((await remotePerson(personId))?.person.achievements).toEqual([
+        { id: "imports", tier: 1 },
+        { id: "regular", tier: 0, expired: true },
+      ]);
+      await setAchievementSettings({ enabled: false });
+      expect((await remotePerson(personId))?.person.achievements).toBeNull();
+    } finally {
+      await setAchievementSettings(saved);
+      await prisma.userAchievement.deleteMany({ where: { userId: owner.id } });
+      await prisma.remotePerson.update({ where: { id: personId }, data: { achievements: [] } });
+    }
+  });
+
   it("gives only the shared models", async () => {
     const page = (await modelsPage(owner.id)) as { orderedItems: Record<string, unknown>[] };
     expect(page.orderedItems.map((item) => item.id)).toEqual([`${ORIGIN}/api/ap/models/${sharedPrint}`]);
@@ -421,14 +459,15 @@ describe("Explore with partners", () => {
     expect(remoteFiles.body.files).toEqual([
       {
         name: "bin.3mf",
+        folder: null,
         size: 1800,
         media_type: "model/3mf",
         // By a key from its address at the partner, so a reordered list never serves another file.
         url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
       },
-      { name: "notes.pdf", size: 20, media_type: "application/pdf", url: null },
+      { name: "notes.pdf", folder: null, size: 20, media_type: "application/pdf", url: null },
       // Somewhere other than the partner's own origin: never fetched.
-      { name: "elsewhere.stl", size: 30, media_type: null, url: null },
+      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null },
     ]);
     // A key for no file it shares, or for one that isn't on its origin, is never fetched.
     for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {

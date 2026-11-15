@@ -1,0 +1,173 @@
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "nickname": "Maker 2",
+      "userId": "1000000000000000002",
+      "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-2.png",
+      "fans": 1,
+      "likes": 517,
+      "modelNumber": 167,
+      "sliceModelConfigurationVOS": [
+        {
+          "id": "2091804233625579522",
+          "userId": null,
+          "modelId": "2088060037789433858",
+          "modelStatus": 0,
+          "modelName": null,
+          "translatedModelName": null,
+          "modelConfigurationName": "0.12mm layer, 2 walls, 15% infill",
+          "translatedModelConfigurationName": "0.12mm layer, 2 walls, 15% infill",
+          "modelConfigurationSummary": "",
+          "translatedModelConfigurationSummary": null,
+          "modelConfigurationUrl": "https://public-cdn.qidimaker.com/model/modelConfiguration/20260824/8q38vyd2h7/2026-08-24_094329b81eba28.3mf",
+          "modelUrl": "https://public-cdn.qidimaker.com/model/stl/20260824/gtc8il4t4j/Q2-PLA-poop-chute_stls.zip",
+          "modelPictureWeb": null,
+          "modelPictureApp": null,
+          "modelPlateNumber": 1,
+          "modelThreadSpecification": "0.4",
+          "modelTime": 8.5,
+          "modelMaterials": 217.66,
+          "modelConsumable": "PLA",
+          "modelPrinter": "Plus5,Max4,Q2,Q2C,Plus4",
+          "exportPrinter": "QD_Q2",
+          "layerHeight": "0.12",
+          "wallLoops": "2",
+          "sparseInfillDensity": "15%",
+          "status": 3,
+          "failureReason": "",
+          "translatedFailureReason": null,
+          "visibility": 0,
+          "publishTime": "2026-08-24 08:26:21",
+          "updateTime": "2026-11-13 00:38:11",
+          "modelGrade": 0,
+          "remark": null,
+          "modelDownloads": 176,
+          "modelPrint": 33,
+          "modelConfigurationPictures": [
+            {
+              "id": "2091804288822620161",
+              "associationId": "2091804233625579522",
+              "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260824/8r8qkwurd2/2026-08-24_94cf2fb936e6d8.png",
+              "pictureType": 2,
+              "realLifePhoto": 0,
+              "coverPicture": 0
+            }
+          ],
+          "plateDetails": [
+            "https://maker-cdn.qidimaker.com/model/plate/20260824/vi0jvgi1e7/2026-08-24_31656484aae4d3.png"
+          ],
+          "slicePlates": [
+            {
+              "id": null,
+              "modelConfigurationId": null,
+              "plateName": "1",
+              "platePicture": "https://maker-cdn.qidimaker.com/model/plate/20260824/vi0jvgi1e7/2026-08-24_31656484aae4d3.png",
+              "plateThreadSpecification": "0.4",
+              "plateTime": 8.5,
+              "plateMaterials": 217.66,
+              "plateConsumable": null,
+              "slicePlateConsumableVOList": [
+                {
+                  "id": null,
+                  "slicePlateId": "2091804233638162434",
+                  "plateConsumableType": "PLA",
+                  "plateConsumableNumber": 217.657,
+                  "plateConsumableColor": "#0080FF",
+                  "filamentId": 0
+                }
+              ]
+            }
+          ],
+          "fileName": null,
+          "fileSize": null
+        }
+      ]
+    },
+    {
+      "nickname": "Maker 2",
+      "userId": "1000000000000000002",
+      "avatar": "https://public-cdn.qidimaker.com/userInfo/avatar/maker-2.png",
+      "fans": 1,
+      "likes": 517,
+      "modelNumber": 167,
+      "sliceModelConfigurationVOS": [
+        {
+          "id": "2091804660328902658",
+          "userId": null,
+          "modelId": "2088060037789433858",
+          "modelStatus": 0,
+          "modelName": null,
+          "translatedModelName": null,
+          "modelConfigurationName": "0.24mm layer, 2 walls, 15% infill",
+          "translatedModelConfigurationName": "0.24mm layer, 2 walls, 15% infill",
+          "modelConfigurationSummary": "",
+          "translatedModelConfigurationSummary": null,
+          "modelConfigurationUrl": "https://public-cdn.qidimaker.com/model/modelConfiguration/20260824/3jyuwt81ec/2026-08-24_b4adfd44e5b401.3mf",
+          "modelUrl": "https://public-cdn.qidimaker.com/model/stl/20260824/9c3hduec20/Q2-PLA-poop-chute-0.24_stls.zip",
+          "modelPictureWeb": null,
+          "modelPictureApp": null,
+          "modelPlateNumber": 1,
+          "modelThreadSpecification": "0.4",
+          "modelTime": 5.7,
+          "modelMaterials": 221.62,
+          "modelConsumable": "PLA",
+          "modelPrinter": "Plus5,Max4,Q2,Q2C,Plus4",
+          "exportPrinter": "QD_Q2",
+          "layerHeight": "0.24",
+          "wallLoops": "2",
+          "sparseInfillDensity": "15%",
+          "status": 3,
+          "failureReason": "",
+          "translatedFailureReason": null,
+          "visibility": 0,
+          "publishTime": "2026-08-24 08:27:58",
+          "updateTime": "2026-11-06 04:47:28",
+          "modelGrade": 0,
+          "remark": null,
+          "modelDownloads": 87,
+          "modelPrint": 25,
+          "modelConfigurationPictures": [
+            {
+              "id": "2091804695993069569",
+              "associationId": "2091804660328902658",
+              "modelPictureUrl": "https://maker-cdn.qidimaker.com/model/picture/20260824/ofds7wpar1/2026-08-24_576db20874f0ac.png",
+              "pictureType": 2,
+              "realLifePhoto": 0,
+              "coverPicture": 0
+            }
+          ],
+          "plateDetails": [
+            "https://maker-cdn.qidimaker.com/model/plate/20260824/vi0jvgi1e7/2026-08-24_31656484aae4d3.png"
+          ],
+          "slicePlates": [
+            {
+              "id": null,
+              "modelConfigurationId": null,
+              "plateName": "1",
+              "platePicture": "https://maker-cdn.qidimaker.com/model/plate/20260824/vi0jvgi1e7/2026-08-24_31656484aae4d3.png",
+              "plateThreadSpecification": "0.4",
+              "plateTime": 5.7,
+              "plateMaterials": 221.62,
+              "plateConsumable": null,
+              "slicePlateConsumableVOList": [
+                {
+                  "id": null,
+                  "slicePlateId": "2091804660341485569",
+                  "plateConsumableType": "PLA",
+                  "plateConsumableNumber": 221.619,
+                  "plateConsumableColor": "#0080FF",
+                  "filamentId": 0
+                }
+              ]
+            }
+          ],
+          "fileName": null,
+          "fileSize": null
+        }
+      ]
+    }
+  ],
+  "timestamp": 1794600000000
+}

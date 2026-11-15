@@ -105,12 +105,13 @@ async function fetchApi(
   path: string,
   body: Record<string, unknown>,
   auth: CrealitycloudAuth | null,
+  base = API_BASE,
 ): Promise<{ code: number | null; message: string | null; result: unknown }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   let json: unknown;
   try {
-    const res = await credentialRequest("crealitycloud-api", `${API_BASE}${path}`, {
+    const res = await credentialRequest("crealitycloud-api", `${base}${path}`, {
       method: "POST",
       headers: headers(auth),
       body: JSON.stringify(body),
@@ -141,6 +142,37 @@ export async function checkCrealitycloudAuth(
   } catch (err) {
     return err instanceof CrealitycloudAuthError ? "rejected" : "unreachable";
   }
+}
+
+// The site's printer list asks for its FDM (3), resin (4) and K1-series (9) printers.
+const DEVICE_TYPES = [3, 4, 9];
+
+/** Each printer of a device list's answer, in its groups or in none, by the names its model goes by: its name, then
+ *  its internal one. Nothing else of a printer is read. */
+export function crealitycloudDeviceModels(result: unknown): string[][] {
+  if (!isRecord(result)) return [];
+  const groups = Array.isArray(result.groupList) ? result.groupList.filter(isRecord) : [];
+  const devices = [
+    ...groups.flatMap((group) => (Array.isArray(group.deviceList) ? group.deviceList : [])),
+    ...(Array.isArray(result.ungroupedList) ? result.ungroupedList : []),
+  ];
+  return devices.flatMap((device) => {
+    const type = isRecord(device) && isRecord(device.deviceType) ? device.deviceType : null;
+    const names = type ? [str(type.name), str(type.internalName)].filter((name): name is string => !!name) : [];
+    return names.length ? [names] : [];
+  });
+}
+
+/** The printers bound to the account, by `crealitycloudDeviceModels`; null when Creality Cloud can't say. Throws
+ *  when it turns the sign-in down. */
+export async function fetchCrealitycloudDeviceModels(auth: CrealitycloudAuth): Promise<string[][] | null> {
+  const { code, result } = await fetchApi(
+    "/print/cluster/devices/getDeviceList",
+    { type: DEVICE_TYPES },
+    auth,
+    `${SITE_ORIGIN}/api/rest`,
+  );
+  return code === CODE_OK && isRecord(result) ? crealitycloudDeviceModels(result) : null;
 }
 
 /** `coverUrl`: the profile's own picture, which becomes its file's thumbnail. */

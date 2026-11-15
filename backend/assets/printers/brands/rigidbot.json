@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "rigidbot",
+  "name": "RigidBot"
+ },
+ "printers": [
+  {
+   "id": "rigidbot-rigidbot",
+   "brand": "rigidbot",
+   "model": "RigidBot",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 254,
+    "y": 254,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 254,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigidbot"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigidbot",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "rigidbot-rigidbotbig",
+   "brand": "rigidbot",
+   "model": "RigidBotBig",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 254,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigidbot_big"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigidbot_big",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

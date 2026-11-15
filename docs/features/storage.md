@@ -20,7 +20,8 @@ Every user's files sit in a folder of their own first, so a file ends up at, for
 `{category-or-folder}/{model}/{filename}`.
 
 Everything else that belongs to a model sits beside its files: supporting files and prepared prints next to the model
-files, and its pictures (gallery and description images, thumbnails and renders) in an `Images` folder next to them:
+files, and what Thingport makes from it (gallery and description images, thumbnails, renders, 3D previews and copies
+adapted for a slicer) in an `Images` folder next to them, so the folder's size is everything the model takes:
 
 ```
 <user>/Props/Workshop/Cable clip/
@@ -31,11 +32,19 @@ files, and its pictures (gallery and description images, thumbnails and renders)
     Description/
     Thumbnails/
     Renders/
+    3D previews/
+    Slicer copies/
 ```
 
+A model whose files came in folders, from its site or its zip, keeps them as folders beside its other files:
+`<user>/Organizers/Cable organizer/USB C version/Lid.stl`. A folder named `Images` there becomes `Images (files)`, so it
+stays apart from the pictures.
+
 With a layout that keeps several models in one folder, such as `{category-or-folder}/{model} - {filename}`, the
-pictures folder takes the model's name too: `Cable clip - Images`. Installations from before this layout have their
-pictures and supporting files moved in beside the model files in the background the first time they start.
+pictures folder takes the model's name too: `Cable clip - Images`, and so does each folder of its files. Installations from before this layout have their
+pictures and supporting files moved in beside the model files in the background the first time they start; 3D previews
+follow the same way the first time an installation from before they moved in starts, and slicer copies are made again
+when next needed.
 
 A model with a [licence](licenses.md#licensetxt) also has a `LICENSE.txt` beside its files, unless an admin turned that
 off under **Administration → Storage → Licence files**.
@@ -43,6 +52,36 @@ off under **Administration → Storage → Licence files**.
 Change the layout later and existing files are moved to match in the background, with progress shown as they go.
 Renaming a model renames its files too, so the folders stay readable. **Browse files** shows where each model's files
 are now.
+
+## Disk space
+
+The top of **Administration → Storage** shows how much of the disk Thingport's storage takes, split by kind: model
+files, 3D previews, old 3D previews, photos, thumbnails and renders, description images, slicer copies, and everything
+else (Studio designs, tag pictures, icons and profile pictures). It's measured every few minutes at most.
+
+### Free up space
+
+**Free up space** offers what can go, each with about how much it frees:
+
+- **Old 3D previews**: a new 3D preview or render is drawn beside the old one each time their format changes, and
+  previews of models deleted before previews were removed with them stayed behind. Nothing shows them.
+- **Compress 3D previews**: packs each 3D preview to about a fifth of its size with mesh compression (meshopt), rounding
+  shapes to a few thousandths of a millimetre, finer than the viewer shows. New previews are packed as they're drawn,
+  so this is only needed once, for the ones drawn before. A preview too big to pack in the memory a render may use stays as it is.
+- **Slicer copies**: the copies of 3MFs adapted for a slicer or printer. They're made again the next time a model is
+  opened in one, which takes a few seconds.
+- **Extra photos**: deletes each model's photos after the first 1, 3, 5 or 10, the cover always kept. This can't be
+  undone, so it's never ticked for you and asks first. It also sets **Photos kept per model** to the same number.
+
+The first three are ticked when there's anything to free. The clean-ups run in the background one after another, each
+with its progress, and closing the dialog doesn't stop them; a notification says how much was freed. They can't run
+while files are being moved or identical files are being checked, and neither of those can start while they run.
+
+### Photos kept per model
+
+**Photos kept per model** says how many photos an import or a re-sync keeps from a model's page, the cover first: all of
+them (the default), 10, 5, 3 or 1. A photo that couldn't be downloaded doesn't count, so the next one is taken. Models
+already stored keep theirs until **Free up space** trims them, and photos users upload aren't limited.
 
 ## The same model for several users
 
@@ -150,7 +189,8 @@ and says so when every model has its files.
 ## How much space it takes
 
 **Administration → Overview** shows the disk space Thingport uses, split into model files, pictures and previews, and
-other generated files. [System Health](../guides/system-health.md) warns when the storage folder runs low on space or
-can't be written to.
+other generated files. **Administration → Storage** splits it by kind and frees up what isn't needed: see
+[disk space](#disk-space). [System Health](../guides/system-health.md) warns when the storage folder runs low on space
+or can't be written to.
 
 The storage folder is the `thingport_storage` volume, mounted at `/app/storage` in the backend container.

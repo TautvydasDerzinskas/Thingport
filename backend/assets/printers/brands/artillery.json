@@ -1,0 +1,3852 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "artillery",
+  "name": "Artillery"
+ },
+ "printers": [
+  {
+   "id": "artillery-genius",
+   "brand": "artillery",
+   "model": "Genius",
+   "aliases": [
+    "artillerygenius"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Genius",
+    "prusa": "Genius",
+    "cura": "artillery_genius"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Artillery",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Artillery",
+           "ASA": "Generic ASA @Artillery",
+           "PETG": "Generic PETG @Artillery",
+           "PLA": "Generic PLA @Artillery",
+           "PLA-CF": "Generic PLA-CF @Artillery",
+           "TPU": "Generic TPU @Artillery"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Artillery",
+           "generic asa": "Generic ASA @Artillery",
+           "generic petg": "Generic PETG @Artillery",
+           "generic pla": "Generic PLA @Artillery",
+           "generic pla-cf": "Generic PLA-CF @Artillery",
+           "generic tpu": "Generic TPU @Artillery"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Genius",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Genius"
+         ]
+        },
+        {
+         "name": "Artillery Genius BL-TOUCH",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Genius BL-TOUCH"
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_genius",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-geniuspro",
+   "brand": "artillery",
+   "model": "Genius Pro",
+   "aliases": [
+    "artillerygeniuspro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Genius-Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Artillery",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Artillery",
+           "ASA": "Generic ASA @Artillery",
+           "PETG": "Generic PETG @Artillery",
+           "PLA": "Generic PLA @Artillery",
+           "PLA-CF": "Generic PLA-CF @Artillery",
+           "TPU": "Generic TPU @Artillery"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Artillery",
+           "generic asa": "Generic ASA @Artillery",
+           "generic petg": "Generic PETG @Artillery",
+           "generic pla": "Generic PLA @Artillery",
+           "generic pla-cf": "Generic PLA-CF @Artillery",
+           "generic tpu": "Generic TPU @Artillery"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Genius Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Genius Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius Pro",
+         "processes": [
+          {
+           "name": "0.15mm Optimal @Artillery Genius Pro",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Artillery Genius Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Artillery Genius Pro",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-hornet",
+   "brand": "artillery",
+   "model": "Hornet",
+   "aliases": [
+    "artilleryhornet"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Hornet",
+    "prusa": "Hornet",
+    "cura": "artillery_hornet"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @Artillery",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Artillery",
+           "ASA": "Generic ASA @Artillery",
+           "PETG": "Generic PETG @Artillery",
+           "PLA": "Generic PLA @Artillery",
+           "PLA-CF": "Generic PLA-CF @Artillery",
+           "TPU": "Generic TPU @Artillery"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Artillery",
+           "generic asa": "Generic ASA @Artillery",
+           "generic petg": "Generic PETG @Artillery",
+           "generic pla": "Generic PLA @Artillery",
+           "generic pla-cf": "Generic PLA-CF @Artillery",
+           "generic tpu": "Generic TPU @Artillery"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Hornet",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery Hornet",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery Hornet",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery Hornet",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Hornet",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Hornet",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_hornet",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-m1pro",
+   "brand": "artillery",
+   "model": "M1 Pro",
+   "aliases": [
+    "artillerym1pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-M1-Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.2 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "PA": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "PA-CF": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PC": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.4 nozzle",
+           "PETG-CF": "Artillery PETG-CF @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "PLA-CF": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa-cf": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pc": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg-cf": "Artillery PETG-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla-cf": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.6 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.8 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.8 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.2 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "PA": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "PA-CF": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PC": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.4 nozzle",
+           "PETG-CF": "Artillery PETG-CF @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "PLA-CF": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa-cf": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pc": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg-cf": "Artillery PETG-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla-cf": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.6 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "PETG Basic": "Artillery PETG Basic @Artillery M1 Pro 0.8 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.8 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "artillery petg basic": "Artillery PETG Basic @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery M1 Pro",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Artillery M1 Pro 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.06mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.06mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm High Quality @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.14mm Standard @Artillery M1 Pro 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.2 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.2 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.2 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.2 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Artillery M1 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery M1 Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "PA": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "PA-CF": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PC": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "PLA Basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "PLA-CF": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.4 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa": "Artillery PA @Artillery M1 Pro 0.4 nozzle",
+           "artillery pa-cf": "Artillery PA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pc": "Artillery PC @Artillery M1 Pro 0.4 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.4 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla basic+": "Artillery PLA Basic+ @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.4 nozzle",
+           "artillery pla-cf": "Artillery PLA-CF @Artillery M1 Pro 0.4 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.4 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Artillery M1 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.18mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Standard @Artillery M1 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "PLA Matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.6 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.6 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.6 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.6 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.6 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Artillery M1 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.24mm Draft @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Standard @Artillery M1 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "ASA": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "PET": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "PETG": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "PLA": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "PLA Basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "PLA Silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "PVA": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "TPU": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS @Artillery M1 Pro 0.8 nozzle",
+           "artillery asa": "Artillery ASA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pet": "Artillery PET @Artillery M1 Pro 0.8 nozzle",
+           "artillery petg": "Artillery PETG @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla": "Artillery PLA @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla basic": "Artillery PLA Basic @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla matte": "Artillery PLA Matte @Artillery M1 Pro 0.8 nozzle",
+           "artillery pla silk": "Artillery PLA Silk @Artillery M1 Pro 0.8 nozzle",
+           "artillery pva": "Artillery PVA @Artillery M1 Pro 0.8 nozzle",
+           "artillery tpu": "Artillery TPU @Artillery M1 Pro 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx1",
+   "brand": "artillery",
+   "model": "Sidewinder X1",
+   "aliases": [
+    "artillerysidewinderx1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X1",
+    "prusa": "X1",
+    "cura": "artillery_sidewinder_x1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @Artillery",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Artillery",
+           "ASA": "Generic ASA @Artillery",
+           "PETG": "Generic PETG @Artillery",
+           "PLA": "Generic PLA @Artillery",
+           "PLA-CF": "Generic PLA-CF @Artillery",
+           "TPU": "Generic TPU @Artillery"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Artillery",
+           "generic asa": "Generic ASA @Artillery",
+           "generic petg": "Generic PETG @Artillery",
+           "generic pla": "Generic PLA @Artillery",
+           "generic pla-cf": "Generic PLA-CF @Artillery",
+           "generic tpu": "Generic TPU @Artillery"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Artillery X1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X1",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X1",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Sidewinder X1"
+         ]
+        },
+        {
+         "name": "Artillery Sidewinder X1 BL-TOUCH",
+         "defaultProcess": "0.20mm NORMAL @Artillery",
+         "processes": [
+          {
+           "name": "0.08mm SUPERDETAIL @Artillery",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @Artillery",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @Artillery",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @Artillery",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SLOW @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @Artillery",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @Artillery",
+           "layerHeight": 0.28
+          }
+         ],
+         "renamedFrom": [
+          "Sidewinder X1 BL-TOUCH"
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "artillery_sidewinder_x1",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx2",
+   "brand": "artillery",
+   "model": "Sidewinder X2",
+   "aliases": [
+    "artillerysidewinderx2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Artillery",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Artillery",
+           "ASA": "Generic ASA @Artillery",
+           "PETG": "Generic PETG @Artillery",
+           "PLA": "Generic PLA @Artillery",
+           "PLA-CF": "Generic PLA-CF @Artillery",
+           "TPU": "Generic TPU @Artillery"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Artillery",
+           "generic asa": "Generic ASA @Artillery",
+           "generic petg": "Generic PETG @Artillery",
+           "generic pla": "Generic PLA @Artillery",
+           "generic pla-cf": "Generic PLA-CF @Artillery",
+           "generic tpu": "Generic TPU @Artillery"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery X2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery Generic ABS",
+           "ASA": "Artillery Generic ASA",
+           "PETG": "Artillery Generic PETG",
+           "PLA": "Artillery Generic PLA",
+           "PLA-CF": "Artillery Generic PLA-CF",
+           "TPU": "Artillery Generic TPU"
+          },
+          "products": {
+           "artillery generic abs": "Artillery Generic ABS",
+           "artillery generic asa": "Artillery Generic ASA",
+           "artillery generic petg": "Artillery Generic PETG",
+           "artillery generic pla": "Artillery Generic PLA",
+           "artillery generic pla-cf": "Artillery Generic PLA-CF",
+           "artillery generic tpu": "Artillery Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx3plus",
+   "brand": "artillery",
+   "model": "Sidewinder X3 Plus",
+   "aliases": [
+    "artillerysidewinderx3plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 305,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X3-Plus",
+    "prusa": "X3 Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Plus",
+         "defaultProcess": "X3 Default (0.20mm) @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X3 TPU @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "X3 Default (0.20mm) @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx3pro",
+   "brand": "artillery",
+   "model": "Sidewinder X3 Pro",
+   "aliases": [
+    "artillerysidewinderx3pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 245,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X3-Pro",
+    "prusa": "X3 Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Artillery X3Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X3 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X3 Pro",
+         "defaultProcess": "X3 Default (0.20mm) @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X3 TPU @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "X3 Default (0.20mm) @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4max",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Max",
+   "aliases": [
+    "artillerysidewinderx4max"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "prusa": "X4 Max"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Max",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Max",
+         "defaultProcess": "ArtillerySlicer X4 Max PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Max ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Max TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4plus",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Plus",
+   "aliases": [
+    "artillerysidewinderx4plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X4-Plus",
+    "prusa": "X4 Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Plus 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Plus",
+         "defaultProcess": "ArtillerySlicer X4 Plus PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Plus ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Plus TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "artillery-sidewinderx4pro",
+   "brand": "artillery",
+   "model": "Sidewinder X4 Pro",
+   "aliases": [
+    "artillerysidewinderx4pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Artillery-Sidewinder-X4-Pro",
+    "prusa": "X4 Pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Artillery Genius",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.08mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm High Quality @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Optimal @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Artillery X4Pro 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Artillery PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Artillery ABS",
+           "PETG": "Artillery PETG",
+           "PLA Basic": "Artillery PLA Basic",
+           "PLA Matte": "Artillery PLA Matte",
+           "PLA Silk": "Artillery PLA Silk",
+           "PLA Tough": "Artillery PLA Tough",
+           "TPU": "Artillery TPU"
+          },
+          "products": {
+           "artillery abs": "Artillery ABS",
+           "artillery petg": "Artillery PETG",
+           "artillery pla basic": "Artillery PLA Basic",
+           "artillery pla matte": "Artillery PLA Matte",
+           "artillery pla silk": "Artillery PLA Silk",
+           "artillery pla tough": "Artillery PLA Tough",
+           "artillery tpu": "Artillery TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Artillery Sidewinder X4 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Artillery Sidewinder X4 Pro",
+         "defaultProcess": "ArtillerySlicer X4 Pro PETG & PLA & PLA+ @Artillery",
+         "processes": [
+          {
+           "name": "ArtillerySlicer X4 Pro ABS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PETG & PLA & PLA+ @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PLA HS @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro PLA Silk @Artillery",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "ArtillerySlicer X4 Pro TPU @Artillery",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

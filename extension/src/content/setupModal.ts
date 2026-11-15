@@ -4,68 +4,74 @@
 
 import { send, type Connection } from "../shared/messages";
 import { fillIcons } from "../shared/icon";
+import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
+import { getShadowRoot } from "./shell";
 
 type Disconnected = Extract<Connection, { connected: false }>;
 
 function setupBodyHtml(): string {
   return `
       <div class="tg-hint">
-        To import from this page, Thingport Grab needs to know where your Thingport instance is, and
-        that instance needs to know this browser:
+        ${escapeHtml(t("setupIntro"))}
       </div>
       <ul class="tg-modal__list">
-        <li><strong>Instance URL</strong>, e.g. http://192.168.1.20 or https://thingport.example.com</li>
-        <li><strong>Pair</strong> -- Thingport opens in a tab and asks you to approve this browser</li>
+        <li><strong>${escapeHtml(t("setupInstanceUrl"))}</strong>, ${escapeHtml(t("setupInstanceUrlExample"))}</li>
+        <li><strong>${escapeHtml(t("setupPair"))}</strong> — ${escapeHtml(t("setupPairHint"))}</li>
       </ul>
       <div class="tg-hint">
-        Pairing keeps no password in the extension; the setup page still takes an email and password if
-        you'd rather. Either way it's stored only in this browser's extension storage and sent only to
-        your own instance. You can also open this any time from the Thingport Grab icon in your browser
-        toolbar.
+        ${escapeHtml(t("setupSecurityHint"))}
       </div>`;
 }
 
 function disconnectedBodyHtml(problem: Disconnected, instanceUrl: string): string {
-  const instance = `<strong>${escapeHtml(instanceUrl.replace(/^https?:\/\//i, ""))}</strong>`;
+  const instance = instanceUrl.replace(/^https?:\/\//i, "");
+  const message = (key: string): string => {
+    const marker = "__INSTANCE__";
+    return escapeHtml(t(key, { instance: marker })).replace(marker, `<strong>${escapeHtml(instance)}</strong>`);
+  };
   const cause =
     problem.reason === "credentials" && problem.byApproval
-      ? `${instance} no longer accepts this browser's Thingport Grab. It was probably removed from
-         your profile there -- pair again.`
+      ? message("setupApprovalRevoked")
       : problem.reason === "credentials"
-        ? `${instance} turned down the email and password saved in Thingport Grab. They were probably
-         changed in Thingport since -- sign in again with the current ones.`
-        : `${instance} didn't answer. It may not be running, or not be reachable from this network
-         right now. If it moved, update its URL.`;
+        ? message("setupCredentialsRejected")
+        : message("setupUnreachable");
   return `
       <div class="tg-hint">${cause}</div>
       <div class="tg-hint tg-modal__detail">${escapeHtml(problem.detail)}</div>`;
 }
 
-let open: { backdrop: HTMLElement; onKeydown: (event: KeyboardEvent) => void } | null = null;
+let open: {
+  backdrop: HTMLElement;
+  onKeydown: (event: KeyboardEvent) => void;
+  onClosed: (() => void) | null;
+  returnFocus: HTMLElement | null;
+} | null = null;
 
-/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed. */
+/** `problem` set: configured, but signing in failed. `onRetry` re-checks after it's fixed; `refocus` says the icon the
+ *  dialog was opened from had the focus, for the one that replaces it. */
 export function openSetupModal(
   root: ShadowRoot,
-  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: () => void },
+  disconnected?: { problem: Disconnected; instanceUrl: string; onRetry: (options: { refocus: boolean }) => void },
 ): void {
   if (open) return;
+  const returnFocus = root.activeElement instanceof HTMLElement ? root.activeElement : null;
   const backdrop = document.createElement("div");
   backdrop.className = "tg-modal-backdrop";
   backdrop.innerHTML = `
     <div class="tg-modal" role="dialog" aria-modal="true" aria-labelledby="tg-setup-title">
-      <button class="tg-close" type="button" aria-label="Close">×</button>
+      <button class="tg-close" type="button" aria-label="${escapeHtml(t("close"))}">×</button>
       <div class="tg-modal__header">
         <span class="tg-modal__icon" data-icon></span>
         <div class="tg-title" id="tg-setup-title">
-          ${disconnected ? "Thingport Grab can't sign in" : "Connect Thingport Grab"}
+          ${escapeHtml(t(disconnected ? "setupSignInFailed" : "setupConnect"))}
         </div>
       </div>
       ${disconnected ? disconnectedBodyHtml(disconnected.problem, disconnected.instanceUrl) : setupBodyHtml()}
       <button class="tg-btn" type="button" data-action="open-setup">
-        ${disconnected ? "Edit connection" : "Open setup"}
+        ${escapeHtml(t(disconnected ? "editConnection" : "setupOpen"))}
       </button>
-      ${disconnected ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="retry">Try again</button>` : ""}
+      ${disconnected ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="retry">${escapeHtml(t("retry"))}</button>` : ""}
       <div class="tg-hint tg-modal__status" hidden></div>
     </div>
   `;
@@ -79,33 +85,72 @@ export function openSetupModal(
     openBtn.disabled = false;
     if (res?.ok && res.data === "popup") return;
     statusEl.hidden = false;
-    statusEl.textContent = res?.ok
-      ? "Setup opened in a new tab -- you'll be brought back here once it's saved."
-      : "Couldn't open setup automatically -- click the Thingport Grab icon in your browser toolbar (it may be under the Extensions menu).";
+    statusEl.textContent = res?.ok ? t("setupOpened") : t("setupOpenFailed");
   });
 
   backdrop.querySelector("[data-action=retry]")?.addEventListener("click", () => {
+    const refocus = open?.returnFocus != null;
     closeSetupModal();
-    disconnected?.onRetry();
+    disconnected?.onRetry({ refocus });
   });
 
   const onKeydown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") closeSetupModal();
+    if (event.key === "Escape") {
+      dismiss();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...backdrop.querySelectorAll<HTMLElement>("button:not([disabled])")];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1)!;
+    const active = root.activeElement;
+    if (!(active instanceof HTMLElement) || !focusable.includes(active)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
   };
   document.addEventListener("keydown", onKeydown, true);
-  backdrop.querySelector(".tg-close")!.addEventListener("click", closeSetupModal);
+  backdrop.querySelector(".tg-close")!.addEventListener("click", dismiss);
   backdrop.addEventListener("click", (event) => {
-    if (event.target === backdrop) closeSetupModal();
+    if (event.target === backdrop) dismiss();
   });
 
   root.appendChild(backdrop);
-  open = { backdrop, onKeydown };
+  open = { backdrop, onKeydown, onClosed: null, returnFocus };
   openBtn.focus();
+}
+
+/** Runs `show` now, or where the dialog is open, once it's closed: what it shows would take the place of the icon the
+ *  dialog was opened from, and the dialog with it. Only the latest waits, and none where the dialog goes because the
+ *  page starts over (closeSetupModal) rather than being closed. */
+export function whenSetupModalClosed(show: () => void): void {
+  if (open) open.onClosed = show;
+  else show();
+}
+
+/** Closed by the user: what waited for that comes now, and gets the focus the replaced icon was given back. */
+function dismiss(): void {
+  const onClosed = open?.onClosed;
+  const hadFocus = open?.returnFocus != null;
+  closeSetupModal();
+  if (!onClosed) return;
+  onClosed();
+  // The icon itself: the panel that comes with it, close button and all, is still hidden.
+  if (hadFocus) getShadowRoot()?.querySelector<HTMLElement>(".tg-fab")?.focus();
 }
 
 export function closeSetupModal(): void {
   if (!open) return;
-  document.removeEventListener("keydown", open.onKeydown, true);
-  open.backdrop.remove();
+  const { backdrop, onKeydown, returnFocus } = open;
+  document.removeEventListener("keydown", onKeydown, true);
+  backdrop.remove();
   open = null;
+  if (returnFocus?.isConnected) returnFocus.focus();
 }

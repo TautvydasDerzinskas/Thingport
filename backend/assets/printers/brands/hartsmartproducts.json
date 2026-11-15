@@ -1,0 +1,433 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "hartsmartproducts",
+  "name": "HartSmart Products"
+ },
+ "printers": [
+  {
+   "id": "hartsmartproducts-hsp1i",
+   "brand": "hartsmartproducts",
+   "model": "HSP1-I",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 650,
+    "y": 640,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "HSP1-I"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "HSP1-I",
+      "presets": {
+       "0.6": [
+        {
+         "name": "HSP1-I - 2x0.6mm Takoto",
+         "defaultProcess": "300 Micron Standard @HSP1",
+         "processes": [
+          {
+           "name": "200 Micron Detail @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "200 Micron Soluble Interface Detail @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "200 Micron Soluble Support Detail @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Soluble Interface Standard @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Soluble Support Standard @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Standard @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Fast @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "400 Micron Soluble Interface Fast @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "400 Micron Soluble Support Fast @HSP1",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "HSP1-I - 2x0.4mm Takoto",
+         "defaultProcess": "200 Micron Standard @HSP1",
+         "processes": [
+          {
+           "name": "100 Micron Detail @HSP1",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "100 Micron Soluble Interface Detail @HSP1",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "100 Micron Soluble Support Detail @HSP1",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "200 Micron Soluble Interface Standard @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "200 Micron Soluble Support Standard @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "200 Micron Standard @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Fast @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Soluble Interface Fast @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Soluble Support Fast @HSP1",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "HSP1-I - 2x0.8mm Takoto",
+         "defaultProcess": "400 Micron Standard @HSP1",
+         "processes": [
+          {
+           "name": "300 Micron Detail @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Soluble Interface Detail @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "300 Micron Soluble Support Detail @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Soluble Interface Standard @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "400 Micron Soluble Support Standard @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "400 Micron Standard @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "600 Micron Fast @HSP1",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "600 Micron Soluble Interface Fast @HSP1",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "600 Micron Soluble Support Fast @HSP1",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ],
+       "1.0": [
+        {
+         "name": "HSP1-I - 2x1.0mm Takoto",
+         "defaultProcess": "500 Micron Standard @HSP1",
+         "processes": [
+          {
+           "name": "350 Micron Detail @HSP1",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "350 Micron Soluble Interface Detail @HSP1",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "350 Micron Soluble Support Detail @HSP1",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "500 Micron Soluble Interface Standard @HSP1",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "500 Micron Soluble Support Standard @HSP1",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "500 Micron Standard @HSP1",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "700 Micron Fast @HSP1",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "700 Micron Soluble Interface Fast @HSP1",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "700 Micron Soluble Support Fast @HSP1",
+           "layerHeight": 0.7
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "hartsmartproducts-hsp1iduplicatormode",
+   "brand": "hartsmartproducts",
+   "model": "HSP1-I Duplicator Mode",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 640,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "HSP1-I Duplicator Mode"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "HSP1-I Duplicator Mode",
+      "presets": {
+       "0.6": [
+        {
+         "name": "HSP1-I - 0.6mm Takoto Duplicator",
+         "defaultProcess": "300 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "200 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "HSP1-I - 0.6mm Takoto Mirror",
+         "defaultProcess": "300 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "200 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "HSP1-I - 0.4mm Takoto Duplicator",
+         "defaultProcess": "200 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "100 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "200 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "HSP1-I - 0.4mm Takoto Mirror",
+         "defaultProcess": "200 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "100 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "200 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "300 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "HSP1-I - 0.8mm Takoto Duplicator",
+         "defaultProcess": "400 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "300 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "600 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.6
+          }
+         ]
+        },
+        {
+         "name": "HSP1-I - 0.8mm Takoto Mirror",
+         "defaultProcess": "400 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "300 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "400 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "600 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ],
+       "1.0": [
+        {
+         "name": "HSP1-I - 1.0mm Takoto Duplicator",
+         "defaultProcess": "500 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "350 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "500 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "700 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.7
+          }
+         ]
+        },
+        {
+         "name": "HSP1-I - 1.0mm Takoto Mirror",
+         "defaultProcess": "500 Micron Standard Duplicator @HSP1",
+         "processes": [
+          {
+           "name": "350 Micron Detail Duplicator @HSP1",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "500 Micron Standard Duplicator @HSP1",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "700 Micron Fast Duplicator @HSP1",
+           "layerHeight": 0.7
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -36,7 +36,8 @@ exports[`browser manifests > chrome manifest 1`] = `
       "run_at": "document_start",
     },
   ],
-  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",
@@ -48,7 +49,7 @@ exports[`browser manifests > chrome manifest 1`] = `
     "48": "icons/thingport-icon-color-48.png",
   },
   "manifest_version": 3,
-  "name": "Thingport Grab",
+  "name": "__MSG_extensionName__",
   "optional_host_permissions": [
     "*://*/*",
   ],
@@ -99,7 +100,8 @@ exports[`browser manifests > edge manifest 1`] = `
       "run_at": "document_start",
     },
   ],
-  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",
@@ -111,7 +113,7 @@ exports[`browser manifests > edge manifest 1`] = `
     "48": "icons/thingport-icon-color-48.png",
   },
   "manifest_version": 3,
-  "name": "Thingport Grab",
+  "name": "__MSG_extensionName__",
   "optional_host_permissions": [
     "*://*/*",
   ],
@@ -178,7 +180,8 @@ exports[`browser manifests > firefox manifest 1`] = `
   "content_security_policy": {
     "extension_pages": "script-src 'self'",
   },
-  "description": "Import models into Thingport from MakerWorld, Printables, Thingiverse and 18 more sites. Converts MakerWorld 3MFs for other slicers.",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
   "host_permissions": [
     "*://*.makerworld.com/*",
     "*://*.printables.com/*",
@@ -190,7 +193,7 @@ exports[`browser manifests > firefox manifest 1`] = `
     "48": "icons/thingport-icon-color-48.png",
   },
   "manifest_version": 3,
-  "name": "Thingport Grab",
+  "name": "__MSG_extensionName__",
   "optional_host_permissions": [
     "*://*/*",
   ],

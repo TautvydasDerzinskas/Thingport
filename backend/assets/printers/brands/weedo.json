@@ -1,0 +1,439 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "weedo",
+  "name": "WEEDO"
+ },
+ "printers": [
+  {
+   "id": "weedo-f150s",
+   "brand": "weedo",
+   "model": "F150S",
+   "aliases": [
+    "weedof150s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300,
+    "bed": 90
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_f150s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_f150s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-f152s",
+   "brand": "weedo",
+   "model": "F152S",
+   "aliases": [
+    "weedof152s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 185,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 195,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_f152s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_f152s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-f370",
+   "brand": "weedo",
+   "model": "F370",
+   "aliases": [
+    "weedof370"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 370,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_f370"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_f370",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-me40",
+   "brand": "weedo",
+   "model": "ME40",
+   "aliases": [
+    "weedome40"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_me40"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_me40",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-me40lite",
+   "brand": "weedo",
+   "model": "ME40 Lite",
+   "aliases": [
+    "weedome40lite"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300,
+    "bed": 90
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_me40_lite"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_me40_lite",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-tina2",
+   "brand": "weedo",
+   "model": "TINA2",
+   "aliases": [
+    "weedotina2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_tina2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_tina2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-tina2s",
+   "brand": "weedo",
+   "model": "TINA2S",
+   "aliases": [
+    "weedotina2s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 110,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300,
+    "bed": 65
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_tina2s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_tina2s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-x40",
+   "brand": "weedo",
+   "model": "X40",
+   "aliases": [
+    "weedox40"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_x40"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_x40",
+      "nozzles": [
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "weedo-x40v3plus",
+   "brand": "weedo",
+   "model": "X40 V3+",
+   "aliases": [
+    "weedox40v3plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "weedo_x40v3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "weedo_x40v3",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

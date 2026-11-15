@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ubuild3d",
+  "name": "uBuild-3D"
+ },
+ "printers": [
+  {
+   "id": "ubuild3d-mrbot280",
+   "brand": "ubuild3d",
+   "model": "Mr Bot 280",
+   "aliases": [
+    "ubuild3dmrbot280"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 275,
+    "y": 275,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 275,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ubuild-3d_mr_bot_280"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ubuild-3d_mr_bot_280",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

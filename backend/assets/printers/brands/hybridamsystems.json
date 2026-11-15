@@ -1,0 +1,58 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "hybridamsystems",
+  "name": "Hybrid AM Systems"
+ },
+ "printers": [
+  {
+   "id": "hybridamsystems-hms434",
+   "brand": "hybridamsystems",
+   "model": "HMS434",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 450,
+    "y": 325,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 401
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "hms434"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hms434",
+      "nozzles": [
+       "0.4mm TP extruder",
+       "0.8mm TP extruder"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

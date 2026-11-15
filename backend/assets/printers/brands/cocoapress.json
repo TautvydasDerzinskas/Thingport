@@ -1,0 +1,78 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "cocoapress",
+  "name": "Cocoa Press"
+ },
+ "printers": [
+  {
+   "id": "cocoapress-cocoapress",
+   "brand": "cocoapress",
+   "model": "Cocoa Press",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 140,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.8",
+    "1.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Cocoa_Press"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Cocoa Press",
+      "presets": {
+       "0.8": [
+        {
+         "name": "Cocoa Press｜0.8mm",
+         "defaultProcess": "0.5",
+         "processes": [
+          {
+           "name": "Cocoa Press (0.5mm layerheight)",
+           "layerHeight": 0.5
+          }
+         ]
+        }
+       ],
+       "1.6": [
+        {
+         "name": "Cocoa Press｜1.6mm",
+         "defaultProcess": "1.0",
+         "processes": [
+          {
+           "name": "Cocoa Press (1.0mm layerheight)",
+           "layerHeight": 1
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

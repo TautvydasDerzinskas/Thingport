@@ -100,6 +100,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                 index: position,
                 plate: null,
                 size: file.size,
+                folder: file.folder ?? null,
               },
             ]
           : [],

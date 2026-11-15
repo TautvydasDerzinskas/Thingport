@@ -1,0 +1,11 @@
+{"version":1,
+"processes":[
+[{"name":"0.20mm Standard @Phrozen Arco 0.4 nozzle","layerHeight":0.2}]
+],
+"filaments":[
+{"types":{"PLA":"Phrozen PLA @Phrozen Arco 0.4 nozzle"},"products":{"phrozen pla":"Phrozen PLA @Phrozen Arco 0.4 nozzle"}},
+{"types":{"PLA":"Generic PLA @Phrozen Arco 0.4 nozzle"},"products":{"generic pla":"Generic PLA @Phrozen Arco 0.4 nozzle"}}
+],
+"printers":{
+"phrozen-arco":{"extruders":1,"bed":{"shape":"rectangle","x":300,"y":300,"origin":[0,0]},"height":300,"slicers":{"elegooslicer":[{"model":"Phrozen Arco","presets":{"0.4":[{"name":"Phrozen Arco 0.4 nozzle","defaultProcess":"0.20mm Standard @Phrozen Arco 0.4 nozzle","processes":0,"filaments":0}]}}],"orcaslicer":[{"model":"Phrozen Arco","presets":{"0.4":[{"name":"Phrozen Arco 0.4 nozzle","defaultProcess":"0.20mm Standard @Phrozen Arco 0.4 nozzle","processes":0,"filaments":1}]}}],"snapmaker-orca":[{"model":"Phrozen Arco","presets":{"0.4":[{"name":"Phrozen Arco 0.4 nozzle","defaultProcess":"0.20mm Standard @Phrozen Arco 0.4 nozzle","processes":0,"filaments":0}]}}]}}
+}}

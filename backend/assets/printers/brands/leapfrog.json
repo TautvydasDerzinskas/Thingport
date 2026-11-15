@@ -1,0 +1,147 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "leapfrog",
+  "name": "Leapfrog"
+ },
+ "printers": [
+  {
+   "id": "leapfrog-boltpro",
+   "brand": "leapfrog",
+   "model": "Bolt Pro",
+   "aliases": [
+    "leapfrogboltpro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 302,
+    "y": 322,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "leapfrog_bolt_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "leapfrog_bolt_pro",
+      "nozzles": [
+       "Brass 0.4",
+       "NozzleX 0.4"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "leapfrog-creatrhs",
+   "brand": "leapfrog",
+   "model": "Creatr HS",
+   "aliases": [
+    "leapfrogcreatrhs"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 270,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "leapfrog_creatr_hs"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "leapfrog_creatr_hs",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "leapfrog-creatrhsxl",
+   "brand": "leapfrog",
+   "model": "Creatr HS XL",
+   "aliases": [
+    "leapfrogcreatrhsxl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 270,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 590,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "leapfrog_creatr_hs_xl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "leapfrog_creatr_hs_xl",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

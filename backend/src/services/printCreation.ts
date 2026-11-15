@@ -5,6 +5,7 @@ import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { inspectPreparedPrint } from "./preparedPrint";
 import {
@@ -24,7 +25,8 @@ import {
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
 import { printAssetHome } from "./modelAssets";
-import { deleteNormalized3mf } from "./normalized3mfCache";
+import { deleteAdapted3mfs } from "./adapted3mfCache";
+import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
 import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
@@ -51,6 +53,8 @@ export type NewPlateInput = {
   sourceInstanceId?: string | null;
   /** What was read of the print profile it is (Plate.profile), carried over by a copy so it isn't read again. */
   profile?: Prisma.JsonValue | null;
+  /** The folder its source kept it in (Plate.folder); untrusted, normalized here. */
+  folder?: string | null;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -78,6 +82,8 @@ export type PrintMetaInput = {
   originalId?: string | null;
   /** A copy of a partner instance's model: where it came from (federation/remoteCopy.ts). */
   remoteSource?: Prisma.InputJsonValue | null;
+  /** What made it, when Thingport did (Print.createdWith): one of the Tools, by slug, or a Studio design, by id. */
+  createdWith?: { kind: "tool" | "studio"; ref: string } | null;
   /** Its licence's columns (services/licenseService.ts): what an import read, or what a copy carries over. Absent on an
    *  import that didn't look, whose licence is then read once it has settled. */
   licenseColumns?: Partial<Pick<Prisma.PrintUncheckedCreateInput, "license" | "licenseAllows" | "licenseReadAt">>;
@@ -147,6 +153,7 @@ async function thumbnailAndSniff(plateId: string, filename: string, mime: string
   if (mime.toLowerCase().startsWith("image/") && IMAGE_EXTS.has(ext)) {
     await saveThumbFromFile(plateId, effectivePath);
   } else if (ext === ".3mf") {
+    await storePlateFormat(plateId, filename, effectivePath);
     await ensurePlateThumbnail(plateId, effectivePath);
     // "on-demand" builds the preview on first view, "disabled" never. Not awaited: it can be slow.
     if ((await getPreviewMode()) === "automatic") void generateModelPreviewGlb(plateId, effectivePath);
@@ -188,8 +195,9 @@ async function createPlateAtPosition(
   position: number,
 ): Promise<CreatedPlate> {
   const sanitized = sanitizeFilename(input.filename);
-  const desiredFilename = await availablePlateFilename(print.id, sanitized);
-  const storagePath = await renderPlateStoragePath(print, desiredFilename, position);
+  const folder = normalizeFolder(input.folder);
+  const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
+  const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
   const destAbsPath = path.join(STORAGE, storagePath);
   const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
   const size = await resolveSize(input, effectivePath);
@@ -202,6 +210,7 @@ async function createPlateAtPosition(
         printId: print.id,
         position,
         filename: desiredFilename,
+        folder,
         mime,
         size,
         storagePath,
@@ -237,9 +246,11 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
   if (!inputs.length) return;
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
+  const keyOf = (filename: string, folder: string | null | undefined) =>
+    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
   const stored = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true } })).map((file) =>
-      file.filename.toLowerCase(),
+    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
+      keyOf(file.filename, file.folder),
     ),
   );
   for (const input of inputs) {
@@ -250,12 +261,14 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       continue;
     }
     // Compared as it will be stored, since that is the name a second copy would collide with.
-    const safeName = sanitizeFilename(input.filename).toLowerCase();
-    if (stored.has(safeName)) continue;
+    const key = keyOf(sanitizeFilename(input.filename), input.folder);
+    if (stored.has(key)) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
-      await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain");
-      stored.add(safeName);
+      await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain", {
+        folder: input.folder,
+      });
+      stored.add(key);
     } catch (err) {
       console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
     }
@@ -351,13 +364,21 @@ export async function createPrint(
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);
+    // What made it goes on last, once nothing above can discard it: achievements count models by it, and a badge
+    // given for one that never finished would stay.
+    const made = meta.createdWith
+      ? await prisma.print.update({
+          where: { id: print.id },
+          data: { createdWith: meta.createdWith.kind, createdWithRef: meta.createdWith.ref },
+        })
+      : print;
 
     // Background classification is intentionally detached: importing a model must not wait for,
     // or fail because of, a third-party AI provider.
     const quiet = importingQuietly();
     if (!print.categoryId && classify && !quiet) void enqueueAiCategorization(userId, print.id);
     if (describe && !quiet) enqueueAiDescription(userId, print.id);
-    return { print, plates };
+    return { print: made, plates };
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -367,22 +388,29 @@ export async function createPrint(
 /** Undoes a half-created print, so a failure doesn't leave a model with only some of its files. */
 export async function discardPrint(printId: string): Promise<void> {
   try {
-    const plates = await prisma.plate.findMany({ where: { printId } });
-    const home = await printAssetHome(printId);
-    const assetOwners = await assetOwnerIds(printId);
-    await deleteAllPrintFiles(printId);
-    await prisma.print.delete({ where: { id: printId } });
-    for (const plate of plates) {
-      await removePlatePictures(plate.id, home);
-      if (plate.sourcePath) continue;
-      const managed = managedPlatePath(plate);
-      await fs.rm(managed, { force: true });
-      await pruneEmptyStorageDirs(path.dirname(managed));
-    }
-    await removeAssetHome(home, assetOwners);
+    await discardPrintOrThrow(printId);
   } catch (err) {
     console.error("Failed to discard half-created print", printId, err);
   }
+}
+
+/** The same, failing when the print couldn't be removed, for a caller that must know it's gone. One that isn't there
+ *  is gone already. */
+export async function discardPrintOrThrow(printId: string): Promise<void> {
+  if (!(await prisma.print.findUnique({ where: { id: printId }, select: { id: true } }))) return;
+  const plates = await prisma.plate.findMany({ where: { printId } });
+  const home = await printAssetHome(printId);
+  const assetOwners = await assetOwnerIds(printId);
+  await deleteAllPrintFiles(printId);
+  await prisma.print.delete({ where: { id: printId } });
+  for (const plate of plates) {
+    await removePlatePictures(plate.id, home);
+    if (plate.sourcePath) continue;
+    const managed = managedPlatePath(plate);
+    await fs.rm(managed, { force: true });
+    await pruneEmptyStorageDirs(path.dirname(managed));
+  }
+  await removeAssetHome(home, assetOwners);
 }
 
 export async function addPlatesToPrint(
@@ -431,7 +459,7 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
 export async function renamePlate(print: Print, plateId: string, filename: string): Promise<string> {
   const plate = await prisma.plate.findUnique({ where: { id: plateId } });
   if (!plate || plate.printId !== print.id) throw new HttpError(404, "Plate not found");
-  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id);
+  const nextFilename = await availablePlateFilename(print.id, sanitizeFilename(filename), plate.id, plate.folder);
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
@@ -441,7 +469,7 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
 }
 
 export async function deletePlateFiles(plate: Pick<Plate, "id" | "storagePath">): Promise<void> {
-  await deleteNormalized3mf(plate.id);
+  await deleteAdapted3mfs(plate.id);
   const abs = path.join(STORAGE, plate.storagePath);
   try {
     await fs.rm(abs, { force: true });

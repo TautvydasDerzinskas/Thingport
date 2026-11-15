@@ -1,0 +1,560 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "bibo",
+  "name": "BIBO"
+ },
+ "printers": [
+  {
+   "id": "bibo-2",
+   "brand": "bibo",
+   "model": "2",
+   "aliases": [
+    "2dual",
+    "bibo2dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 214,
+    "y": 186,
+    "origin": [
+     -107,
+     -93
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 160,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "bibo2_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "bibo-bibo2touch",
+   "brand": "bibo",
+   "model": "BIBO2 Touch",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 214,
+    "y": 186,
+    "origin": [
+     -107,
+     -93
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 160,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "BIBO2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "BIBO2 Touch",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIBO2 Touch Dual extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm OPTIMAL SOLUBLE FULL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm OPTIMAL SOLUBLE INTERFACE @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm NORMAL SOLUBLE FULL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm NORMAL SOLUBLE INTERFACE @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO2 Touch E1 right only extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO2 Touch E2 left only extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO2 E1 right E2 Ditto",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO2 E2 left E1 Ditto",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO M2 BLTouch Dual extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm OPTIMAL SOLUBLE FULL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm OPTIMAL SOLUBLE INTERFACE @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm NORMAL SOLUBLE FULL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm NORMAL SOLUBLE INTERFACE @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO M2 BLTouch E1 right only extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO M2 BLTouch E2 left only extrusion",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO M2 E1 right E2 Ditto BLTouch",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "BIBO M2 E2 left E1 Ditto BLTouch",
+         "defaultProcess": "0.20mm NORMAL @BIBO2",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @BIBO2",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm SUPERDETAIL @BIBO2",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIBO2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIBO2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm OPTIMAL @BIBO2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @BIBO2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIBO2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIBO2",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm ULTRADRAFT @BIBO2",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

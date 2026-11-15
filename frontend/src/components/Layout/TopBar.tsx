@@ -9,6 +9,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MenuIcon from "@mui/icons-material/Menu";
 import type { AuthUser } from "../../api/auth";
 import type { ThemeSelection } from "../../constants/settingsOptions";
+import { publishTopBarHeight } from "../../utils/topBarHeight";
 import {
   notifyConfigurationClosed,
   onOpenConfiguration,
@@ -67,11 +68,10 @@ export default function TopBar({
     if (tab) setConfigTab(tab);
   }, []);
 
-  // Publishes the bar's real height (it can wrap) as a CSS var for sticky elements below it.
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    const update = () => document.documentElement.style.setProperty("--topbar-height", `${el.offsetHeight}px`);
+    const update = () => publishTopBarHeight(el.offsetHeight);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);

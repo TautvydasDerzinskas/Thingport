@@ -225,7 +225,8 @@ Models are named by id: one for the details and 3D preview shots, one whose prin
 and one whose description AI rewrote (that shot is skipped without it). The customizer and collection sync shots
 take the library's first model with a script and first synced collection, unless `--generative-model` or
 `--synced-collection` names another. The print profiles and licence shots need a model whose profiles and licence were
-read, which happens the first time its owner opens it, and the sharing shot a collection to open the form on.
+read, which happens the first time its owner opens it, and the sharing shot a collection to open the form on. The Open
+adapted shot (56) uses the print profiles model too, with the account's slicers and printers answered in the browser.
 
 The connected-instances shots, 43-49, need two instances paired with each other, which a library instance usually
 isn't, so they're taken from a demo pair: one at home connecting to one on the internet through a link. Take 43-45 and
@@ -248,19 +249,19 @@ rather than failing the run. It holds the current release's shots; earlier ones 
 ```bash
 cd regression
 THINGPORT_PASSWORD='…' npm run release-shots -- --url https://thingport.example --email you@example.com \
-  --profiles-model <id> --license-model <id> --shared-collection <id>
-npm run release-shots -- --url … --email … --only licence,providers   # just some shots
+  --profiles-model <id>
+npm run release-shots -- --url … --email … --only storage,providers   # just some shots
 ```
 
 A shot's file is what an item's `images` then names, so the two are written together -- an item naming a picture
 nothing captures leaves a gap in the dialog. Thingport Grab's own pictures come from
 `npm --prefix extension run screenshots` instead, and are converted to WebP by hand.
 
-What the shots show has to be on the instance first: a model with print profiles and one with a licence, both read
-already. The people the sharing form and Explore show are made up in the browser, so social features needn't be on.
-The connected-instances shots (`explore-everywhere`, `partner-model`, `connect-link`, `partners`) are taken from a
-demo pair as above, with the same `--host-rules`, `--connect-to` and `--no-blur`. The script only switches your theme
-and print profiles layout for the run, and restores them.
+What the shots show has to be on the instance first: for 1.7.0's, a MakerWorld model with print profiles, read already,
+for the Open adapted shots. What a shot needs of the account that it may not have is answered in the browser: the
+slicers and printers that make Open adapted name a printer, and badges while achievements are off. The script only
+switches your theme and print profiles layout for the run, and restores them. Grab's pictures, such as its Download
+adapted, come from `npm --prefix extension run screenshots -- --adapted` and are converted with sharp.
 
 ## Quality checks
 
@@ -381,6 +382,7 @@ version inside it: one that names another is never shown. Then replace the file'
   "version": "1.2.0",
   "title": "Optional headline",
   "summary": "Optional sentence or two under it.",
+  "contributors": ["octocat", "monalisa"],
   "items": [
     {
       "type": "feature",
@@ -397,17 +399,21 @@ version inside it: one that names another is never shown. Then replace the file'
 
 - `type` is `breaking`, `feature`, `improvement` or `fix`; the dialog groups them in that order.
 - `highlight: true` shows the item as a large card above the grouped list; keep it to the release's headline
-  features.
+  features. The first feature among them is the release's top feature, framed in gold.
 - `code` is a command shown in a box with a copy button, e.g. how to connect something.
+- `contributors` are the GitHub usernames of everyone who helped with the release, thanked in one box under the notes
+  with their GitHub pictures, so items don't need a thanks of their own. A name that isn't a GitHub username is left
+  out; credit the person behind a bot account rather than the bot.
 - `images` are relative to the file (put them in `release-notes/screenshots/`, named after the version) or full
   `https://` URLs; up to six per item. Crop them to the control being shown rather than the whole page; WebP keeps them
   small. Everything but `type` and `title` is optional.
-- Limits: `title` 200 characters, `summary` and `description` 2000, `code` 1000. One item past a limit fails the
-  whole file, which then falls back to the changelog, so check the longest one-line fixes.
+- Limits: `title` 200 characters, `summary` and `description` 2000, `code` 1000, and 100 `contributors`. One item
+  past a limit fails the whole file, which then falls back to the changelog, so check the longest one-line fixes.
 - A file that doesn't parse falls back to the changelog, as does one naming a version outside the running
   release's `x.y` line. One naming an earlier patch of that line still counts, for the quiet hotfixes below.
 - `RELEASE_NOTES_URL` points a backend at another copy of the repo files, or a `file://` URL at a checkout; an empty
-  value turns fetching off.
+  value turns fetching off. It's also where the backend finds the newest Thingport Bridge (`bridge/package.json`), for
+  the notification that tells someone theirs is out of date.
 
 To preview the notes before they're pushed, open What's new on a backend started with `npm run dev`: it reads these
 files from the checkout it runs in rather than from `main`, afresh each time, and shows the latest file under its own

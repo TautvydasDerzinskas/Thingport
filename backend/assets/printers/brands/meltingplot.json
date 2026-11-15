@@ -1,0 +1,1209 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "meltingplot",
+  "name": "Meltingplot"
+ },
+ "printers": [
+  {
+   "id": "meltingplot-chx350",
+   "brand": "meltingplot",
+   "model": "CHX 350",
+   "aliases": [
+    "meltingplotchx350"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 880,
+    "y": 422,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 943,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Meltingplot-CHX-350"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Meltingplot CHX 350",
+      "presets": {
+       "1": [
+        {
+         "name": "Meltingplot CHX 350 1.0 nozzle",
+         "defaultProcess": "0.48mm Optimal 1.0 nozzle @Meltingplot CHX 350",
+         "processes": [
+          {
+           "name": "0.44mm Fine 1.0 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.48mm Optimal 1.0 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @1.0 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @1.0 nozzle",
+           "ASA": "Meltingplot ASA @1.0 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @1.0 nozzle",
+           "PETG": "Meltingplot PETG @1.0 nozzle",
+           "PLA": "Meltingplot PLA @1.0 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @1.0 nozzle",
+           "meltingplot abs": "Meltingplot ABS @1.0 nozzle",
+           "meltingplot asa": "Meltingplot ASA @1.0 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @1.0 nozzle",
+           "meltingplot petg": "Meltingplot PETG @1.0 nozzle",
+           "meltingplot pla": "Meltingplot PLA @1.0 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @1.0 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Meltingplot CHX 350 0.4 nozzle",
+         "defaultProcess": "0.18mm Fine 0.4 nozzle @Meltingplot CHX 350",
+         "processes": [
+          {
+           "name": "0.18mm Fine 0.4 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.18
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.4 nozzle",
+           "ASA": "Meltingplot ASA @0.4 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.4 nozzle",
+           "PETG": "Meltingplot PETG @0.4 nozzle",
+           "PLA": "Meltingplot PLA @0.4 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.4 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.4 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.4 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.4 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.4 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.4 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Meltingplot CHX 350 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Meltingplot CHX 350",
+         "processes": [
+          {
+           "name": "0.24mm Fine 0.6 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Optimal 0.6 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.6 nozzle",
+           "ASA": "Meltingplot ASA @0.6 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.6 nozzle",
+           "PETG": "Meltingplot PETG @0.6 nozzle",
+           "PLA": "Meltingplot PLA @0.6 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.6 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.6 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.6 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.6 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.6 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.6 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Meltingplot CHX 350 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Meltingplot CHX 350",
+         "processes": [
+          {
+           "name": "0.32mm Fine 0.8 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.36mm Optimal 0.8 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.8 nozzle",
+           "ASA": "Meltingplot ASA @0.8 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.8 nozzle",
+           "PETG": "Meltingplot PETG @0.8 nozzle",
+           "PLA": "Meltingplot PLA @0.8 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.8 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.8 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.8 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.8 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.8 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.8 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Meltingplot CHX 350 1.2 nozzle",
+         "defaultProcess": "0.56mm Optimal 1.2 nozzle @Meltingplot CHX 350",
+         "processes": [
+          {
+           "name": "0.48mm Fine 1.2 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Optimal 1.2 nozzle @Meltingplot CHX 350",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS",
+           "ASA": "Meltingplot ASA",
+           "PA-CF": "Meltingplot PA6 CF HT",
+           "PET-CF": "Meltingplot PET-CF15",
+           "PETG": "Meltingplot PETG",
+           "PLA": "Meltingplot PLA"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt",
+           "meltingplot abs": "Meltingplot ABS",
+           "meltingplot asa": "Meltingplot ASA",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15",
+           "meltingplot petg": "Meltingplot PETG",
+           "meltingplot pla": "Meltingplot PLA",
+           "meltingplot titanx": "Meltingplot TitanX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "meltingplot-mbl133",
+   "brand": "meltingplot",
+   "model": "MBL 133",
+   "aliases": [
+    "meltingplotmbl133"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 835,
+    "y": 405,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 394,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Meltingplot-MBL-133"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Meltingplot MBL 133",
+      "presets": {
+       "1": [
+        {
+         "name": "Meltingplot MBL 133 1.0 nozzle",
+         "defaultProcess": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.44mm Fine 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @1.0 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @1.0 nozzle",
+           "ASA": "Meltingplot ASA @1.0 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @1.0 nozzle",
+           "PETG": "Meltingplot PETG @1.0 nozzle",
+           "PLA": "Meltingplot PLA @1.0 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @1.0 nozzle",
+           "meltingplot abs": "Meltingplot ABS @1.0 nozzle",
+           "meltingplot asa": "Meltingplot ASA @1.0 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @1.0 nozzle",
+           "meltingplot petg": "Meltingplot PETG @1.0 nozzle",
+           "meltingplot pla": "Meltingplot PLA @1.0 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @1.0 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Meltingplot MBL 133 0.4 nozzle",
+         "defaultProcess": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+           "layerHeight": 0.18
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.4 nozzle",
+           "ASA": "Meltingplot ASA @0.4 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.4 nozzle",
+           "PETG": "Meltingplot PETG @0.4 nozzle",
+           "PLA": "Meltingplot PLA @0.4 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.4 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.4 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.4 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.4 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.4 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.4 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Meltingplot MBL 133 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.24mm Fine 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Optimal 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.6 nozzle",
+           "ASA": "Meltingplot ASA @0.6 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.6 nozzle",
+           "PETG": "Meltingplot PETG @0.6 nozzle",
+           "PLA": "Meltingplot PLA @0.6 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.6 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.6 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.6 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.6 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.6 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.6 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Meltingplot MBL 133 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.34mm Fine 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.34
+          },
+          {
+           "name": "0.36mm Optimal 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.8 nozzle",
+           "ASA": "Meltingplot ASA @0.8 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.8 nozzle",
+           "PETG": "Meltingplot PETG @0.8 nozzle",
+           "PLA": "Meltingplot PLA @0.8 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.8 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.8 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.8 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.8 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.8 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.8 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Meltingplot MBL 133 1.2 nozzle",
+         "defaultProcess": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.48mm Fine 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS",
+           "ASA": "Meltingplot ASA",
+           "PA-CF": "Meltingplot PA6 CF HT",
+           "PET-CF": "Meltingplot PET-CF15",
+           "PETG": "Meltingplot PETG",
+           "PLA": "Meltingplot PLA"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt",
+           "meltingplot abs": "Meltingplot ABS",
+           "meltingplot asa": "Meltingplot ASA",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15",
+           "meltingplot petg": "Meltingplot PETG",
+           "meltingplot pla": "Meltingplot PLA",
+           "meltingplot titanx": "Meltingplot TitanX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "meltingplot-mbl136",
+   "brand": "meltingplot",
+   "model": "MBL 136",
+   "aliases": [
+    "meltingplotmbl136"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 850,
+    "y": 405,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 396,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Meltingplot-MBL-136"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Meltingplot MBL 136",
+      "presets": {
+       "1": [
+        {
+         "name": "Meltingplot MBL 136 1.0 nozzle",
+         "defaultProcess": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.44mm Fine 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @1.0 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @1.0 nozzle",
+           "ASA": "Meltingplot ASA @1.0 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @1.0 nozzle",
+           "PETG": "Meltingplot PETG @1.0 nozzle",
+           "PLA": "Meltingplot PLA @1.0 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @1.0 nozzle",
+           "meltingplot abs": "Meltingplot ABS @1.0 nozzle",
+           "meltingplot asa": "Meltingplot ASA @1.0 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @1.0 nozzle",
+           "meltingplot petg": "Meltingplot PETG @1.0 nozzle",
+           "meltingplot pla": "Meltingplot PLA @1.0 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @1.0 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Meltingplot MBL 136 0.4 nozzle",
+         "defaultProcess": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+           "layerHeight": 0.18
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.4 nozzle",
+           "ASA": "Meltingplot ASA @0.4 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.4 nozzle",
+           "PETG": "Meltingplot PETG @0.4 nozzle",
+           "PLA": "Meltingplot PLA @0.4 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.4 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.4 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.4 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.4 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.4 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.4 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Meltingplot MBL 136 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.24mm Fine 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Optimal 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.6 nozzle",
+           "ASA": "Meltingplot ASA @0.6 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.6 nozzle",
+           "PETG": "Meltingplot PETG @0.6 nozzle",
+           "PLA": "Meltingplot PLA @0.6 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.6 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.6 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.6 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.6 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.6 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.6 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Meltingplot MBL 136 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.34mm Fine 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.34
+          },
+          {
+           "name": "0.36mm Optimal 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.8 nozzle",
+           "ASA": "Meltingplot ASA @0.8 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.8 nozzle",
+           "PETG": "Meltingplot PETG @0.8 nozzle",
+           "PLA": "Meltingplot PLA @0.8 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.8 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.8 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.8 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.8 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.8 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.8 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Meltingplot MBL 136 1.2 nozzle",
+         "defaultProcess": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.48mm Fine 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS",
+           "ASA": "Meltingplot ASA",
+           "PA-CF": "Meltingplot PA6 CF HT",
+           "PET-CF": "Meltingplot PET-CF15",
+           "PETG": "Meltingplot PETG",
+           "PLA": "Meltingplot PLA"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt",
+           "meltingplot abs": "Meltingplot ABS",
+           "meltingplot asa": "Meltingplot ASA",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15",
+           "meltingplot petg": "Meltingplot PETG",
+           "meltingplot pla": "Meltingplot PLA",
+           "meltingplot titanx": "Meltingplot TitanX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "meltingplot-mbl308",
+   "brand": "meltingplot",
+   "model": "MBL 308",
+   "aliases": [
+    "meltingplotmbl308"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 850,
+    "y": 405,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 896,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Meltingplot-MBL-308"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Meltingplot MBL 308",
+      "presets": {
+       "1": [
+        {
+         "name": "Meltingplot MBL 308 1.0 nozzle",
+         "defaultProcess": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.44mm Fine 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @1.0 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @1.0 nozzle",
+           "ASA": "Meltingplot ASA @1.0 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @1.0 nozzle",
+           "PETG": "Meltingplot PETG @1.0 nozzle",
+           "PLA": "Meltingplot PLA @1.0 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @1.0 nozzle",
+           "meltingplot abs": "Meltingplot ABS @1.0 nozzle",
+           "meltingplot asa": "Meltingplot ASA @1.0 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @1.0 nozzle",
+           "meltingplot petg": "Meltingplot PETG @1.0 nozzle",
+           "meltingplot pla": "Meltingplot PLA @1.0 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @1.0 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Meltingplot MBL 308 0.4 nozzle",
+         "defaultProcess": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+           "layerHeight": 0.18
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.4 nozzle",
+           "ASA": "Meltingplot ASA @0.4 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.4 nozzle",
+           "PETG": "Meltingplot PETG @0.4 nozzle",
+           "PLA": "Meltingplot PLA @0.4 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.4 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.4 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.4 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.4 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.4 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.4 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Meltingplot MBL 308 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.24mm Fine 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Optimal 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.6 nozzle",
+           "ASA": "Meltingplot ASA @0.6 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.6 nozzle",
+           "PETG": "Meltingplot PETG @0.6 nozzle",
+           "PLA": "Meltingplot PLA @0.6 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.6 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.6 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.6 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.6 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.6 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.6 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Meltingplot MBL 308 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.34mm Fine 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.34
+          },
+          {
+           "name": "0.36mm Optimal 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.8 nozzle",
+           "ASA": "Meltingplot ASA @0.8 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.8 nozzle",
+           "PETG": "Meltingplot PETG @0.8 nozzle",
+           "PLA": "Meltingplot PLA @0.8 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.8 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.8 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.8 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.8 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.8 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.8 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Meltingplot MBL 308 1.2 nozzle",
+         "defaultProcess": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.48mm Fine 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS",
+           "ASA": "Meltingplot ASA",
+           "PA-CF": "Meltingplot PA6 CF HT",
+           "PET-CF": "Meltingplot PET-CF15",
+           "PETG": "Meltingplot PETG",
+           "PLA": "Meltingplot PLA"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt",
+           "meltingplot abs": "Meltingplot ABS",
+           "meltingplot asa": "Meltingplot ASA",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15",
+           "meltingplot petg": "Meltingplot PETG",
+           "meltingplot pla": "Meltingplot PLA",
+           "meltingplot titanx": "Meltingplot TitanX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "meltingplot-mbl480",
+   "brand": "meltingplot",
+   "model": "MBL 480",
+   "aliases": [
+    "meltingplotmbl480"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 850,
+    "y": 405,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1396,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Meltingplot-MBL-480"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Meltingplot MBL 480",
+      "presets": {
+       "1": [
+        {
+         "name": "Meltingplot MBL 480 1.0 nozzle",
+         "defaultProcess": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.44mm Fine 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.44
+          },
+          {
+           "name": "0.48mm Optimal 1.0 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @1.0 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @1.0 nozzle",
+           "ASA": "Meltingplot ASA @1.0 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @1.0 nozzle",
+           "PETG": "Meltingplot PETG @1.0 nozzle",
+           "PLA": "Meltingplot PLA @1.0 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @1.0 nozzle",
+           "meltingplot abs": "Meltingplot ABS @1.0 nozzle",
+           "meltingplot asa": "Meltingplot ASA @1.0 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @1.0 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @1.0 nozzle",
+           "meltingplot petg": "Meltingplot PETG @1.0 nozzle",
+           "meltingplot pla": "Meltingplot PLA @1.0 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @1.0 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Meltingplot MBL 480 0.4 nozzle",
+         "defaultProcess": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.18mm Fine 0.4 nozzle @Meltingplot MBL",
+           "layerHeight": 0.18
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.4 nozzle",
+           "ASA": "Meltingplot ASA @0.4 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.4 nozzle",
+           "PETG": "Meltingplot PETG @0.4 nozzle",
+           "PLA": "Meltingplot PLA @0.4 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.4 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.4 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.4 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.4 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.4 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.4 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.4 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Meltingplot MBL 480 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.24mm Fine 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Optimal 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Meltingplot MBL",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.6 nozzle",
+           "ASA": "Meltingplot ASA @0.6 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.6 nozzle",
+           "PETG": "Meltingplot PETG @0.6 nozzle",
+           "PLA": "Meltingplot PLA @0.6 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.6 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.6 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.6 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.6 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.6 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.6 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.6 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Meltingplot MBL 480 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.34mm Fine 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.34
+          },
+          {
+           "name": "0.36mm Optimal 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Meltingplot MBL",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS @0.8 nozzle",
+           "ASA": "Meltingplot ASA @0.8 nozzle",
+           "PA-CF": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "PET-CF": "Meltingplot PET-CF15 @0.8 nozzle",
+           "PETG": "Meltingplot PETG @0.8 nozzle",
+           "PLA": "Meltingplot PLA @0.8 nozzle"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt @0.8 nozzle",
+           "meltingplot abs": "Meltingplot ABS @0.8 nozzle",
+           "meltingplot asa": "Meltingplot ASA @0.8 nozzle",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT @0.8 nozzle",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15 @0.8 nozzle",
+           "meltingplot petg": "Meltingplot PETG @0.8 nozzle",
+           "meltingplot pla": "Meltingplot PLA @0.8 nozzle",
+           "meltingplot titanx": "Meltingplot TitanX @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Meltingplot MBL 480 1.2 nozzle",
+         "defaultProcess": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+         "processes": [
+          {
+           "name": "0.48mm Fine 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Optimal 1.2 nozzle @Meltingplot MBL",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Meltingplot PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Meltingplot ABS",
+           "ASA": "Meltingplot ASA",
+           "PA-CF": "Meltingplot PA6 CF HT",
+           "PET-CF": "Meltingplot PET-CF15",
+           "PETG": "Meltingplot PETG",
+           "PLA": "Meltingplot PLA"
+          },
+          "products": {
+           "extrudr pla nx2 matt": "Extrudr PLA NX2 Matt",
+           "meltingplot abs": "Meltingplot ABS",
+           "meltingplot asa": "Meltingplot ASA",
+           "meltingplot pa6 cf ht": "Meltingplot PA6 CF HT",
+           "meltingplot pet-cf15": "Meltingplot PET-CF15",
+           "meltingplot petg": "Meltingplot PETG",
+           "meltingplot pla": "Meltingplot PLA",
+           "meltingplot titanx": "Meltingplot TitanX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

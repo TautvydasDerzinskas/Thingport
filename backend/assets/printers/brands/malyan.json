@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "malyan",
+  "name": "Malyan"
+ },
+ "printers": [
+  {
+   "id": "malyan-m180",
+   "brand": "malyan",
+   "model": "M180",
+   "aliases": [
+    "malyanm180"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 145,
+    "origin": [
+     -115,
+     -72.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 165,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "malyan_m180"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "malyan_m180",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "malyan-m200",
+   "brand": "malyan",
+   "model": "M200",
+   "aliases": [
+    "malyanm200"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "malyan_m200"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "malyan_m200",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

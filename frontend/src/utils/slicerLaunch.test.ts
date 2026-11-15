@@ -10,9 +10,18 @@ describe("slicerLaunchUrl", () => {
     );
   });
 
+  it("names a 3MF for eufyMake Studio in the lowercase it opens", () => {
+    expect(slicerLaunchUrl("eufystudio3d", FILE, "Ghost light.3MF")).toBe(
+      `eufystudio3d://open/?file=${encodeURIComponent(FILE)}&name=Ghost%20light.3mf`,
+    );
+  });
+
   it("sends the slicers that won't take a self-hosted link through the Bridge", () => {
     expect(slicerLaunchUrl("prusaslicer", FILE, "a.stl")).toBe(
       `thingport://open?url=${encodeURIComponent(FILE)}&slicer=prusaslicer&filename=a.stl`,
+    );
+    expect(slicerLaunchUrl("qidistudio", FILE, "a.stl")).toBe(
+      `thingport://open?url=${encodeURIComponent(FILE)}&slicer=qidistudio&filename=a.stl`,
     );
   });
 
@@ -31,6 +40,7 @@ describe("slicerLaunchUrl", () => {
 
   it("tells which slicers open through the Bridge", () => {
     expect(isBridgedSlicer("bambustudio")).toBe(true);
+    expect(isBridgedSlicer("qidistudio")).toBe(true);
     expect(isBridgedSlicer("elegooslicer")).toBe(false);
     expect(isBridgedSlicer("elegooslicer", ["elegooslicer"])).toBe(true);
     // Nothing to send through it.
@@ -39,5 +49,15 @@ describe("slicerLaunchUrl", () => {
 
   it("opens the others by their own scheme", () => {
     expect(slicerLaunchUrl("orcaslicer", FILE)).toBe(`orcaslicer://open?file=${encodeURIComponent(FILE)}`);
+  });
+
+  it("opens Flash Studio by the scheme it registers, which isn't its id, or through the Bridge by its id", () => {
+    expect(slicerLaunchUrl("orca-flashforge", FILE, "a.3mf")).toBe(
+      `orcaflashforge://open?file=${encodeURIComponent(FILE)}`,
+    );
+    expect(isBridgedSlicer("orca-flashforge")).toBe(false);
+    expect(slicerLaunchUrl("orca-flashforge", FILE, "a.3mf", ["orca-flashforge"])).toBe(
+      `thingport://open?url=${encodeURIComponent(FILE)}&slicer=orca-flashforge&filename=a.3mf`,
+    );
   });
 });

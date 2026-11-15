@@ -1,0 +1,972 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "colido",
+  "name": "CoLiDo"
+ },
+ "printers": [
+  {
+   "id": "colido-160v2",
+   "brand": "colido",
+   "model": "160 V2",
+   "aliases": [
+    "colido160v2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 160,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "CoLiDo_160_V2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "CoLiDo 160 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo 160 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo 160 V2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo 160 V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo 160 V2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo 160 V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo 160 V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo 160 V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo X16",
+           "PETG": "Generic PETG @CoLiDo X16",
+           "PLA": "Generic PLA @CoLiDo X16",
+           "TPU": "Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo X16",
+           "generic petg": "Generic PETG @CoLiDo X16",
+           "generic pla": "Generic PLA @CoLiDo X16",
+           "generic tpu": "Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "CoLiDo 160 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo 160 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo 160 V2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo 160 V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo 160 V2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo 160 V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo 160 V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo 160 V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "CoLiDo 160 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo 160 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo 160 V2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo 160 V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo 160 V2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo 160 V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo 160 V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo 160 V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "colido-diy4",
+   "brand": "colido",
+   "model": "DIY 4.0",
+   "aliases": [
+    "colidodiy4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "CoLiDo_DIY_4_0"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "CoLiDo DIY 4.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo DIY 4.0",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo DIY 4.0",
+           "generic petg": "Generic PETG @CoLiDo DIY 4.0",
+           "generic pla": "Generic PLA @CoLiDo DIY 4.0",
+           "generic tpu": "Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "CoLiDo DIY 4.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo DIY 4.0",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "CoLiDo DIY 4.0",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo DIY 4.0",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo DIY 4.0",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo DIY 4.0",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "PETG": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "PLA": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "TPU": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo DIY 4.0",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo DIY 4.0",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo DIY 4.0",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo DIY 4.0"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "colido-diy4v2",
+   "brand": "colido",
+   "model": "DIY 4.0 V2",
+   "aliases": [
+    "colidodiy4v2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 255,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "CoLiDo_DIY_4_0_V2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "CoLiDo DIY 4.0 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "CoLiDo DIY 4.0 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "CoLiDo DIY 4.0 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo DIY 4.0 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @CoLiDo DIY 4.0 V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2",
+         "filaments": {
+          "types": {
+           "PLA": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          },
+          "products": {
+           "colido pla+": "CoLiDo PLA+ @CoLiDo DIY 4.0 V2"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "colido-sr1",
+   "brand": "colido",
+   "model": "SR1",
+   "aliases": [
+    "colidosr1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 251,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "CoLiDo_SR1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "CoLiDo SR1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo SR1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo SR1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo SR1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo SR1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo SR1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo SR1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo SR1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @CoLiDo SR1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "CoLiDo SR1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo SR1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo SR1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo SR1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo SR1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo SR1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo SR1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo SR1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @CoLiDo SR1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "CoLiDo SR1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo SR1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo SR1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo SR1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo SR1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm Optimal @CoLiDo SR1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo SR1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo SR1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo SR1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @CoLiDo SR1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "CoLiDo PLA @CoLiDo SR1",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo ABS @CoLiDo SR1",
+           "PETG": "CoLiDo PETG @CoLiDo SR1",
+           "PLA": "CoLiDo PLA @CoLiDo SR1"
+          },
+          "products": {
+           "colido abs": "CoLiDo ABS @CoLiDo SR1",
+           "colido petg": "CoLiDo PETG @CoLiDo SR1",
+           "colido pla": "CoLiDo PLA @CoLiDo SR1",
+           "colido pla silk": "CoLiDo PLA Silk @CoLiDo SR1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "colido-x16",
+   "brand": "colido",
+   "model": "X16",
+   "aliases": [
+    "colidox16"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 160,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "CoLiDo_X16"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "CoLiDo X16",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo X16 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo X16",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo X16",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo X16",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo X16",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo X16",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo X16",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @CoLiDo X16",
+           "PETG": "Generic PETG @CoLiDo X16",
+           "PLA": "Generic PLA @CoLiDo X16",
+           "TPU": "Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "generic abs": "Generic ABS @CoLiDo X16",
+           "generic petg": "Generic PETG @CoLiDo X16",
+           "generic pla": "Generic PLA @CoLiDo X16",
+           "generic tpu": "Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "CoLiDo X16",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo X16 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo X16",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo X16",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo X16",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo X16",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo X16",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo X16",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "CoLiDo X16",
+      "presets": {
+       "0.4": [
+        {
+         "name": "CoLiDo X16 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @CoLiDo X16",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @CoLiDo X16",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @CoLiDo X16",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @CoLiDo X16",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @CoLiDo X16",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @CoLiDo X16",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @CoLiDo X16",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "CoLiDo Generic PLA @CoLiDo X16",
+         "filaments": {
+          "types": {
+           "ABS": "CoLiDo Generic ABS @CoLiDo X16",
+           "PETG": "CoLiDo Generic PETG @CoLiDo X16",
+           "PLA": "CoLiDo Generic PLA @CoLiDo X16",
+           "TPU": "CoLiDo Generic TPU @CoLiDo X16"
+          },
+          "products": {
+           "colido generic abs": "CoLiDo Generic ABS @CoLiDo X16",
+           "colido generic petg": "CoLiDo Generic PETG @CoLiDo X16",
+           "colido generic pla": "CoLiDo Generic PLA @CoLiDo X16",
+           "colido generic tpu": "CoLiDo Generic TPU @CoLiDo X16"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

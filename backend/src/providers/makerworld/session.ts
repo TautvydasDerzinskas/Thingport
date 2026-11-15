@@ -45,8 +45,9 @@ export async function setUserMakerworldCookie(
 // A synced collection's error while its MakerWorld syncs wait for a new cookie.
 export const MAKERWORLD_REJECTED_ERROR = "Your MakerWorld sign-in has expired";
 
-export async function markMakerworldCookieRejected(userId: string): Promise<void> {
-  await rejectConnection(userId, ID);
+/** `cookie`: the one MakerWorld turned down, so a sign-in given meanwhile isn't marked with it. */
+export async function markMakerworldCookieRejected(userId: string, cookie?: string): Promise<void> {
+  await rejectConnection(userId, ID, "default", cookie === undefined ? undefined : ({ cookie } satisfies Secret));
 }
 
 export type MakerworldConnection = ConnectionState;

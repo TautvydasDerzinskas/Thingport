@@ -1,0 +1,5614 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "sovol",
+  "name": "Sovol"
+ },
+ "printers": [
+  {
+   "id": "sovol-sv01",
+   "brand": "sovol",
+   "model": "SV01",
+   "aliases": [
+    "sovolsv01",
+    "sovolsv01legacy",
+    "sv01bltouch",
+    "sv01sv01bltouch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV01",
+    "prusa": "SV01",
+    "cura": "SV01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV01",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV01",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV01",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV01",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV01",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV01",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV01 / SV01 BLTOUCH",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV01",
+         "defaultProcess": "0.20mm SPEED @SV01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV01",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV01",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV01",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV01",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV01_BLTouch",
+         "defaultProcess": "0.20mm SPEED @SV01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV01",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV01",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV01",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV01",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV01 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV01",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV01 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV01",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV01",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV01",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV01 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV01",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV01",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV01",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "SV01",
+      "nozzles": []
+     },
+     {
+      "definition": "sovol_sv01",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv01pro",
+   "brand": "sovol",
+   "model": "SV01 Pro",
+   "aliases": [
+    "sovolsv01pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV01-Pro",
+    "prusa": "SV01 PRO",
+    "cura": "sovol_sv01pro"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV01 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01Pro",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV01Pro",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV01Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV01 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01Pro",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV01Pro",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV01Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV01 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01Pro",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV01Pro",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV01Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV01 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01Pro",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV01Pro",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV01Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV01 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV01 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV01Pro",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV01Pro",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV01Pro",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV01 PRO",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV01 PRO",
+         "defaultProcess": "0.20mm SPEED @SV01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV01",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV01",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV01",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV01",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV01 PRO 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV01",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV01",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV01 PRO 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV01",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV01",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV01",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV01",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV01",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV01 PRO 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV01",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV01",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV01",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV01",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "sovol_sv01pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv02",
+   "brand": "sovol",
+   "model": "SV02",
+   "aliases": [
+    "sovolsv02",
+    "sovolsv02legacy",
+    "sv02bltouch",
+    "sv02sv02bltouch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV02",
+    "prusa": "SV02",
+    "cura": "SV02"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV02",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV02 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV02",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV02",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV02",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV02",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV02 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV02",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV02",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV02",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV02",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV02 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV02",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV02",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV02",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV02",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV02 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV02",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV02",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV02",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV02",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV02 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV02",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV02",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV02",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV02 / SV02 BLTOUCH",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV02",
+         "defaultProcess": "0.20mm SPEED @SV02",
+         "processes": [
+          {
+           "name": "0.10mm DETAIL @SV02",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV02",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV02",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV02",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV02",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV02",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV02_BLTouch",
+         "defaultProcess": "0.20mm SPEED @SV02",
+         "processes": [
+          {
+           "name": "0.10mm DETAIL @SV02",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV02",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV02",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV02",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV02",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV02",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV02 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV02",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV02",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV02",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV02",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV02",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV02 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV02",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV02",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV02",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV02",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV02",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV02",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV02 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV02",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV02",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV02",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV02",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "SV02",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv03",
+   "brand": "sovol",
+   "model": "SV03",
+   "aliases": [
+    "sovolsv03",
+    "sovolsv03legacy",
+    "sv03bltouch",
+    "sv03sv03bltouch"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "SV03",
+    "cura": "SV03"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "SV03 / SV03 BLTOUCH",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV03",
+         "defaultProcess": "0.20mm SPEED @SV03",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV03",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV03",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV03",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV03",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV03",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV03",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV03",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV03",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV03_BLTouch",
+         "defaultProcess": "0.20mm SPEED @SV03",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV03",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV03",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV03",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV03",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV03",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV03",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV03",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV03",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV03 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV03",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV03",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV03",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV03",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV03",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV03 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV03",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV03",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV03",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV03",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV03",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV03",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV03 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV03",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV03",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV03",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV03",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "SV03",
+      "nozzles": []
+     },
+     {
+      "definition": "sovol_sv03",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv04",
+   "brand": "sovol",
+   "model": "SV04",
+   "aliases": [
+    "sovolsv04copymode",
+    "sovolsv04dualmode",
+    "sovolsv04mirrormode",
+    "sovolsv04singlemode01",
+    "sovolsv04singlemode02",
+    "sv04copymode",
+    "sv04dualmode",
+    "sv04mirrormode",
+    "sv04singlemode01",
+    "sv04singlemode02"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 302,
+    "y": 302,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 402,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual Mode",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "SV04"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "SV04",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV04",
+         "defaultProcess": "0.20mm SPEED @SV04",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV04 Copy Mode",
+         "defaultProcess": "0.20mm SPEED @SV04 Copy Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV04 Dual Mode",
+         "defaultProcess": "0.20mm SPEED @SV04 Dual Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV04 Mirror Mode",
+         "defaultProcess": "0.20mm SPEED @SV04 Mirror Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 01",
+         "defaultProcess": "0.20mm SPEED @SV04 Single Mode 01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 02",
+         "defaultProcess": "0.20mm SPEED @SV04 Single Mode 02",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV04",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV04 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "SV04 Copy Mode 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04 Copy Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "SV04 Dual Mode 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04 Dual Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "SV04 Mirror Mode 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04 Mirror Mode",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 01 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04 Single Mode 01",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 02 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV04 Single Mode 02",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV04",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV04",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV04 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "SV04 Copy Mode 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04 Copy Mode",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "SV04 Dual Mode 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04 Dual Mode",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "SV04 Mirror Mode 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04 Mirror Mode",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 01 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04 Single Mode 01",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 02 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV04 Single Mode 02",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV04",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV04",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV04",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV04 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        },
+        {
+         "name": "SV04 Copy Mode 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04 Copy Mode",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        },
+        {
+         "name": "SV04 Dual Mode 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04 Dual Mode",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        },
+        {
+         "name": "SV04 Mirror Mode 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04 Mirror Mode",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 01 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04 Single Mode 01",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        },
+        {
+         "name": "SV04 Single Mode 02 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV04 Single Mode 02",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV04",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV04",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV04",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "config": "Copy Mode",
+      "definition": "sovol_sv04_copy_mode",
+      "nozzles": []
+     },
+     {
+      "config": "Dual Mode",
+      "definition": "sovol_sv04_dual_mode",
+      "nozzles": []
+     },
+     {
+      "config": "Mirror Mode",
+      "definition": "sovol_sv04_mirror_mode",
+      "nozzles": []
+     },
+     {
+      "config": "Single Mode 01",
+      "definition": "sovol_sv04_single_mode_1",
+      "nozzles": []
+     },
+     {
+      "config": "Single Mode 02",
+      "definition": "sovol_sv04_single_mode_2",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv05",
+   "brand": "sovol",
+   "model": "SV05",
+   "aliases": [
+    "sovolsv05"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV05",
+    "prusa": "SV05",
+    "cura": "sovol_sv05"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV05 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV05",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV05",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV05",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV05 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV05",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV05",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV05",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV05 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV05",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV05",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV05",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV05 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV05",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV05",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV05",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV05 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV05",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV05",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV05",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV05",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV05",
+         "defaultProcess": "0.20mm SPEED @SV05",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV05",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV05",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV05",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV05",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV05",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV05",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV05",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV05",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV05 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV05",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV05",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV05",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV05",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV05",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV05 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV05",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV05",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV05",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV05",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV05",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV05",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV05 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV05",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV05",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV05",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV05",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "sovol_sv05",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv06",
+   "brand": "sovol",
+   "model": "SV06",
+   "aliases": [
+    "sovolsv06"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV06",
+    "prusa": "SV06",
+    "cura": "sovol_sv06"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 0.4 High-Speed nozzle",
+         "defaultProcess": "0.20mm High-Speed @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.20mm High-Speed @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Sovol SV06 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm High-Speed @Sovol SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 0.4 High-Speed nozzle",
+         "defaultProcess": "0.20mm High-Speed @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.20mm High-Speed @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Sovol SV06 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 0.4 High-Speed nozzle",
+         "defaultProcess": "0.20mm High-Speed @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.20mm High-Speed @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Sovol SV06 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 0.4 High-Speed nozzle",
+         "defaultProcess": "0.20mm High-Speed @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.20mm High-Speed @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "Sovol SV06 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV06",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV06",
+         "defaultProcess": "0.20mm SPEED @SV06",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV06",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV06",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV06",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV06",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV06 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV06",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV06 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV06",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV06",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV06",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV06 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV06",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV06",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV06",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "sovol_sv06",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv06ace",
+   "brand": "sovol",
+   "model": "SV06 ACE",
+   "aliases": [
+    "sovolsv06ace"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV06-ACE"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV06 ACE",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV06 ACE 0.2 nozzle",
+         "defaultProcess": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV06 ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 ACE",
+         "processes": [
+          {
+           "name": "0.08mm High Quality @Sovol SV06 ACE",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Quality @Sovol SV06 ACE",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06 ACE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Fast @Sovol SV06 ACE",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV06 ACE 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV06 ACE 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 ACE",
+           "PETG": "Generic PETG @Sovol SV06 ACE",
+           "PLA": "Generic PLA @Sovol SV06 ACE",
+           "TPU": "Generic TPU @Sovol SV06 ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 ACE",
+           "generic petg": "Generic PETG @Sovol SV06 ACE",
+           "generic pla": "Generic PLA @Sovol SV06 ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 ACE"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV06 ACE",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV06 ACE 0.2 nozzle",
+         "defaultProcess": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV06 ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 ACE",
+         "processes": [
+          {
+           "name": "0.08mm High Quality @Sovol SV06 ACE",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Quality @Sovol SV06 ACE",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06 ACE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Fast @Sovol SV06 ACE",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV06 ACE 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV06 ACE 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV06 ACE",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV06 ACE 0.2 nozzle",
+         "defaultProcess": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV06 ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 ACE",
+         "processes": [
+          {
+           "name": "0.08mm High Quality @Sovol SV06 ACE",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Quality @Sovol SV06 ACE",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06 ACE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Fast @Sovol SV06 ACE",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV06 ACE 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV06 ACE 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV06 ACE",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV06 ACE 0.2 nozzle",
+         "defaultProcess": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Standard @Sovol SV06 ACE 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV06 ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 ACE",
+         "processes": [
+          {
+           "name": "0.08mm High Quality @Sovol SV06 ACE",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Quality @Sovol SV06 ACE",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06 ACE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Fast @Sovol SV06 ACE",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV06 ACE 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV06 ACE 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV06 ACE 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV06 ACE 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV06 ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 ACE ABS",
+           "PETG": "Sovol SV06 ACE PETG",
+           "PLA": "Sovol SV06 ACE PLA",
+           "TPU": "Sovol SV06 ACE TPU"
+          },
+          "products": {
+           "sovol sv06 ace abs": "Sovol SV06 ACE ABS",
+           "sovol sv06 ace petg": "Sovol SV06 ACE PETG",
+           "sovol sv06 ace pla": "Sovol SV06 ACE PLA",
+           "sovol sv06 ace tpu": "Sovol SV06 ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv06plus",
+   "brand": "sovol",
+   "model": "SV06 Plus",
+   "aliases": [
+    "sovolsv06plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 340,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV06-Plus",
+    "prusa": "SV06 PLUS",
+    "cura": "sovol_sv06_plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV06 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV06 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV06 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV06 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV06 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV06Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV06Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "SV06 PLUS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SV06 PLUS",
+         "defaultProcess": "0.20mm SPEED @SV06",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @SV06",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @SV06",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @SV06",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm SPEED @SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm QUALITY @SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm DRAFT @SV06",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "SV06 PLUS 0.3 nozzle",
+         "defaultProcess": "0.10mm DETAIL @0.3 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.05mm ULTRADETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.07mm ULTRADETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.10mm DETAIL @0.3 nozzle SV06",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @0.3 nozzle SV06",
+           "layerHeight": 0.15
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "SV06 PLUS 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.15mm DETAIL @0.6 nozzle SV06",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle SV06",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle SV06",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle SV06",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle SV06",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "SV06 PLUS 0.8 nozzle",
+         "defaultProcess": "0.40mm QUALITY @0.8 nozzle SV06",
+         "processes": [
+          {
+           "name": "0.30mm DETAIL @0.8 nozzle SV06",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm QUALITY @0.8 nozzle SV06",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.55mm DRAFT @0.8 nozzle SV06",
+           "layerHeight": 0.55
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "sovol_sv06_plus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv06plusace",
+   "brand": "sovol",
+   "model": "SV06 Plus ACE",
+   "aliases": [
+    "sovolsv06plusace"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV06-Plus-ACE"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV06 Plus ACE",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 Plus ACE",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV06 Plus ACE",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV06 Plus ACE",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV06 Plus ACE",
+           "PETG": "Generic PETG @Sovol SV06 Plus ACE",
+           "PLA": "Generic PLA @Sovol SV06 Plus ACE",
+           "TPU": "Generic TPU @Sovol SV06 Plus ACE"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV06 Plus ACE",
+           "generic petg": "Generic PETG @Sovol SV06 Plus ACE",
+           "generic pla": "Generic PLA @Sovol SV06 Plus ACE",
+           "generic tpu": "Generic TPU @Sovol SV06 Plus ACE"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV06 Plus ACE",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 Plus ACE",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV06 Plus ACE",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV06 Plus ACE",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 Plus ACE",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV06 Plus ACE",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV06 Plus ACE",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV06 Plus ACE 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV06 Plus ACE",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV06 Plus ACE",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV06 Plus ACE PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV06 Plus ACE ABS",
+           "PETG": "Sovol SV06 Plus ACE PETG",
+           "PLA": "Sovol SV06 Plus ACE PLA",
+           "TPU": "Sovol SV06 Plus ACE TPU"
+          },
+          "products": {
+           "sovol sv06 plus ace abs": "Sovol SV06 Plus ACE ABS",
+           "sovol sv06 plus ace petg": "Sovol SV06 Plus ACE PETG",
+           "sovol sv06 plus ace pla": "Sovol SV06 Plus ACE PLA",
+           "sovol sv06 plus ace tpu": "Sovol SV06 Plus ACE TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv07",
+   "brand": "sovol",
+   "model": "SV07",
+   "aliases": [
+    "sovolsv07"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV07"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV07",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Sovol SV07"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Sovol SV07"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV07",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU",
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV07",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV07",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV07",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "PLA": "Sovol SV07 PLA"
+          },
+          "products": {
+           "sovol sv07 pla": "Sovol SV07 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv07plus",
+   "brand": "sovol",
+   "model": "SV07 Plus",
+   "aliases": [
+    "sovolsv07plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": false,
+   "codes": {
+    "orca": "Sovol-SV07Plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV07 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07 Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07 Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07 Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV07 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07 Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07 Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07 Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Generic ABS",
+           "PETG": "Sovol Generic PETG",
+           "PLA": "Sovol Generic PLA"
+          },
+          "products": {
+           "sovol generic abs": "Sovol Generic ABS",
+           "sovol generic petg": "Sovol Generic PETG",
+           "sovol generic pla": "Sovol Generic PLA",
+           "sovol generic tpu": "Sovol Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV07 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07 Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07 Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07 Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV07 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07 Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07 Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07 Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV07 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV07 Plus 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV07 Plus",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV07 Plus",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV07 Plus",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv08",
+   "brand": "sovol",
+   "model": "SV08",
+   "aliases": [
+    "sovolsv08"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 345,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV08",
+    "cura": "sovol_sv08"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV08",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV08 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08 0.2 nozzle",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08 0.2 nozzle",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV08",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08",
+           "PETG": "Generic PETG @Sovol SV08",
+           "PLA": "Generic PLA @Sovol SV08",
+           "TPU": "Generic TPU @Sovol SV08"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08",
+           "generic petg": "Generic PETG @Sovol SV08",
+           "generic pla": "Generic PLA @Sovol SV08",
+           "generic tpu": "Generic TPU @Sovol SV08"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Sovol SV08",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV08 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV08",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV08 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08",
+         "processes": [
+          {
+           "name": "0.18mm Optimal @Sovol SV08",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV08",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV08 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Sovol SV08",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Sovol SV08 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA @SV08 0.2 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA @SV08 0.2 nozzle",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Sovol SV08 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Sovol SV08 PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol SV08 ABS",
+           "PETG": "Sovol SV08 PETG",
+           "PLA": "Sovol SV08 PLA",
+           "TPU": "Sovol SV08 TPU"
+          },
+          "products": {
+           "sovol sv08 abs": "Sovol SV08 ABS",
+           "sovol sv08 petg": "Sovol SV08 PETG",
+           "sovol sv08 pla": "Sovol SV08 PLA",
+           "sovol sv08 tpu": "Sovol SV08 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "sovol_sv08",
+      "nozzles": [
+       "0.4mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-sv08max",
+   "brand": "sovol",
+   "model": "SV08 MAX",
+   "aliases": [
+    "sovolsv08max"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-SV08 MAX"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol SV08 MAX",
+      "presets": {
+       "1": [
+        {
+         "name": "Sovol SV08 MAX 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @Sovol SV08 MAX 1.0 nozzle",
+         "processes": [
+          {
+           "name": "0.50mm Standard @Sovol SV08 MAX 1.0 nozzle",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.2": [
+        {
+         "name": "Sovol SV08 MAX 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol SV08 MAX 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Sovol SV08 MAX 0.2 nozzle",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol SV08 MAX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 MAX 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 MAX 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol SV08 MAX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV08 MAX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 MAX 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 MAX 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol SV08 MAX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol SV08 MAX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol SV08 MAX 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol SV08 MAX 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol SV08 MAX 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Standard @Sovol SV08 MAX 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol SV08 MAX",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol SV08 MAX",
+           "PC": "Generic PC @Sovol SV08 MAX",
+           "PETG": "Generic PETG @Sovol SV08 MAX",
+           "PLA": "Generic PLA @Sovol SV08 MAX",
+           "TPU": "Generic TPU @Sovol SV08 MAX"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol SV08 MAX",
+           "generic pc": "Generic PC @Sovol SV08 MAX",
+           "generic petg": "Generic PETG @Sovol SV08 MAX",
+           "generic pla": "Generic PLA @Sovol SV08 MAX",
+           "generic pla silk": "Generic PLA Silk @Sovol SV08 MAX",
+           "generic tpu": "Generic TPU @Sovol SV08 MAX",
+           "polymaker petg": "Polymaker PETG @Sovol SV08 MAX",
+           "sunlu petg": "SUNLU PETG @Sovol SV08 MAX"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "sovol-zero",
+   "brand": "sovol",
+   "model": "Zero",
+   "aliases": [
+    "sovolzero"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 152.4,
+    "y": 152.4,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 152.4,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Sovol-Zero"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Sovol Zero",
+      "presets": {
+       "1": [
+        {
+         "name": "Sovol Zero 1.0 Hardened Steel nozzle",
+         "defaultProcess": "0.50mm Standard @Sovol Zero 1.0 nozzle",
+         "processes": [
+          {
+           "name": "0.25mm Quality @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.50mm Standard @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.70mm Fast @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        },
+        {
+         "name": "Sovol Zero 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard @Sovol Zero 1.0 nozzle",
+         "processes": [
+          {
+           "name": "0.25mm Quality @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.50mm Standard @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.70mm Fast @Sovol Zero 1.0 nozzle",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        }
+       ],
+       "0.2": [
+        {
+         "name": "Sovol Zero 0.2 Hardened Steel nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol Zero 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Quality @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.10mm Standard @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Fast @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        },
+        {
+         "name": "Sovol Zero 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Sovol Zero 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.06mm Quality @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.10mm Standard @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.14mm Fast @Sovol Zero 0.2 nozzle",
+           "layerHeight": 0.14
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Sovol Zero 0.4 Hardened Steel nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Quality @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm SPEEDBENCHY @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.28mm Fast @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic pla speedbenchy": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        },
+        {
+         "name": "Sovol Zero 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.12mm Quality @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm SPEEDBENCHY @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.28mm Fast @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic pla speedbenchy": "Generic PLA SPEEDBENCHY @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Sovol Zero 0.6 Hardened Steel nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol Zero 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Quality @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.30mm Standard @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.42mm Fast @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        },
+        {
+         "name": "Sovol Zero 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Sovol Zero 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Quality @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.30mm Standard @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.42mm Fast @Sovol Zero 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Sovol Zero 0.8 Hardened Steel nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol Zero 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.40mm Standard @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Fast @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "PLA": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero Hardened Steel nozzle",
+           "generic pla": "Generic PLA @Sovol Zero Hardened Steel nozzle",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero Hardened Steel nozzle",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        },
+        {
+         "name": "Sovol Zero 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Sovol Zero 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Quality @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.40mm Standard @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Fast @Sovol Zero 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @Sovol Zero",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Sovol Zero",
+           "PC": "Generic PC @Sovol Zero",
+           "PETG": "Generic PETG @Sovol Zero",
+           "PLA": "Generic PLA @Sovol Zero",
+           "TPU": "Generic TPU @Sovol Zero"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Sovol Zero",
+           "generic pc": "Generic PC @Sovol Zero",
+           "generic petg": "Generic PETG @Sovol Zero",
+           "generic pla": "Generic PLA @Sovol Zero",
+           "generic pla silk": "Generic PLA Silk @Sovol Zero",
+           "generic tpu": "Generic TPU @Sovol Zero"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Sovol Zero",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol Zero 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Zero PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Zero ABS",
+           "PC": "Sovol Zero PC",
+           "PETG": "Sovol Zero PETG",
+           "PLA": "Sovol Zero PLA Silk",
+           "TPU": "Sovol Zero TPU"
+          },
+          "products": {
+           "sovol zero abs": "Sovol Zero ABS",
+           "sovol zero pc": "Sovol Zero PC",
+           "sovol zero petg": "Sovol Zero PETG",
+           "sovol zero petg hs nozzle": "Sovol Zero PETG HS Nozzle",
+           "sovol zero pla basic": "Sovol Zero PLA Basic",
+           "sovol zero pla basic hs nozzle": "Sovol Zero PLA Basic HS Nozzle",
+           "sovol zero pla silk": "Sovol Zero PLA Silk",
+           "sovol zero pla silk hs nozzle": "Sovol Zero PLA Silk HS Nozzle",
+           "sovol zero tpu": "Sovol Zero TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Sovol Zero",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Sovol Zero 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Sovol Zero 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Sovol Zero PLA Basic",
+         "filaments": {
+          "types": {
+           "ABS": "Sovol Zero ABS",
+           "PC": "Sovol Zero PC",
+           "PETG": "Sovol Zero PETG",
+           "PLA": "Sovol Zero PLA Silk",
+           "TPU": "Sovol Zero TPU"
+          },
+          "products": {
+           "sovol zero abs": "Sovol Zero ABS",
+           "sovol zero pc": "Sovol Zero PC",
+           "sovol zero petg": "Sovol Zero PETG",
+           "sovol zero petg hs nozzle": "Sovol Zero PETG HS Nozzle",
+           "sovol zero pla basic": "Sovol Zero PLA Basic",
+           "sovol zero pla basic hs nozzle": "Sovol Zero PLA Basic HS Nozzle",
+           "sovol zero pla silk": "Sovol Zero PLA Silk",
+           "sovol zero pla silk hs nozzle": "Sovol Zero PLA Silk HS Nozzle",
+           "sovol zero tpu": "Sovol Zero TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

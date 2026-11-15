@@ -4,6 +4,7 @@ import {
   adminQueueApi,
   importQueueApi,
   importsApi,
+  type GrabWaitingOut,
   type ImportJobItem,
   type LineOut,
   type QueueSubmitAnswer,
@@ -46,6 +47,8 @@ export type QueueState = {
   line: LineOut;
   finishedTotal: number;
   startGrabLinks: boolean;
+  /** Their imports waiting for Thingport Grab to clear a block on a provider's site, by provider. */
+  grabWaiting: GrabWaitingOut[];
   /** Their imports just all finished, for a few seconds. */
   flash: boolean;
   /** Goes up whenever one of theirs finishes, for pages showing what it may have brought in. */
@@ -67,6 +70,7 @@ export function initialQueueState(viewerId: string | null = null): QueueState {
     line: EMPTY_LINE,
     finishedTotal: 0,
     startGrabLinks: false,
+    grabWaiting: [],
     flash: false,
     finishedVersion: 0,
     dialog: { open: false, section: "run", scope: "mine", person: null },
@@ -202,7 +206,15 @@ export function createQueueStore(deps: QueueStoreDeps) {
       if (!body) {
         // Seen as new if the backend is upgraded, without replaying what finished before then.
         previous = null;
-        set({ supported: false, loading: false, failed: false, jobs: [], line: EMPTY_LINE, finishedTotal: 0 });
+        set({
+          supported: false,
+          loading: false,
+          failed: false,
+          jobs: [],
+          line: EMPTY_LINE,
+          finishedTotal: 0,
+          grabWaiting: [],
+        });
         return;
       }
       const snapshot = toQueueSnapshot(body);
@@ -219,6 +231,7 @@ export function createQueueStore(deps: QueueStoreDeps) {
         line: snapshot.line,
         finishedTotal: snapshot.finishedTotal,
         startGrabLinks: settingIsCurrent ? snapshot.startGrabLinks : state.startGrabLinks,
+        grabWaiting: snapshot.grabWaiting,
       });
       if (finished.length) announce(finished, flash, beyondList);
     } catch (err) {

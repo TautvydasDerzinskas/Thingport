@@ -1,0 +1,103 @@
+{
+  "code": 0,
+  "msg": "OK",
+  "data": {
+    "status": 1,
+    "modelId": "8242660",
+    "modelName": "Flexi mechanical dragon",
+    "slug": "flexi-mechanical-dragon",
+    "originalName": "Flexi mechanical dragon",
+    "originalContent": "<p>Flexible Mechanical Dragon.</p>\n<p>Print-in-place, no supports required.</p>\n<p>A fully articulated dragon, printed directly on the build plate.</p>\n<p>No assembly, no supports—just peel it off and play!</p>",
+    "source": "Voxelshare",
+    "mainImage": {
+      "url": "https://webimage.voxelshare.com/models/f5d3fd99d338ca4b/images/0.png?t=6af88b3e&sign=f676045624e7e5b0bf1dcada05963b83&imageMogr2%2Fthumbnail%2F1400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+      "aspectRatio": 1.34,
+      "format": "jpeg"
+    },
+    "mainImageInfo": {
+      "key": "models/f5d3fd99d338ca4b/images/0.png",
+      "bucket": "iecrawl-1349496149",
+      "source": "tencent",
+      "aspectRatio": 0.0
+    },
+    "images": [
+      {
+        "url": "https://webimage.voxelshare.com/models/f5d3fd99d338ca4b/images/0.png?t=6af88b3e&sign=f676045624e7e5b0bf1dcada05963b83&imageMogr2%2Fthumbnail%2F1400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.34,
+        "format": "jpeg"
+      },
+      {
+        "url": "https://webimage.voxelshare.com/models/f5d3fd99d338ca4b/images/2.jpg?t=6af88b3e&sign=b66d099afa11b797f4f4b8f8a0e2a0d9&imageMogr2%2Fthumbnail%2F1400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.33,
+        "format": "jpeg"
+      },
+      {
+        "url": "https://webimage.voxelshare.com/models/f5d3fd99d338ca4b/images/1.png?t=6af88b3e&sign=346d74d967e1ab4e37485f2d787e61b6&imageMogr2%2Fthumbnail%2F1400x%3E%7CimageMogr2%2Fformat%2Fwebp",
+        "aspectRatio": 1.34,
+        "format": "jpeg"
+      }
+    ],
+    "imagesInfo": [
+      {
+        "key": "models/f5d3fd99d338ca4b/images/0.png",
+        "bucket": "iecrawl-1349496149",
+        "source": "tencent",
+        "aspectRatio": 0.0
+      },
+      {
+        "key": "models/f5d3fd99d338ca4b/images/2.jpg",
+        "bucket": "iecrawl-1349496149",
+        "source": "tencent",
+        "aspectRatio": 0.0
+      },
+      {
+        "key": "models/f5d3fd99d338ca4b/images/1.png",
+        "bucket": "iecrawl-1349496149",
+        "source": "tencent",
+        "aspectRatio": 0.0
+      }
+    ],
+    "modelUrl": "https://www.voxelshare.com/models/8242660-flexi-mechanical-dragon",
+    "free": true,
+    "publishTime": 1773124046,
+    "printAdded": false,
+    "license": "CC BY-ND",
+    "likeCount": 1421,
+    "commentCount": 37,
+    "downloadCount": 4350,
+    "printCount": 7375,
+    "viewCount": 0,
+    "collectCount": 1591,
+    "privateFlag": false,
+    "userOpStatus": 0,
+    "liked": false,
+    "content": "<p>Flexible Mechanical Dragon.</p>\n<p>Print-in-place, no supports required.</p>\n<p>A fully articulated dragon, printed directly on the build plate.</p>\n<p>No assembly, no supports—just peel it off and play!</p>",
+    "brief": "",
+    "lang": "EN",
+    "tags": [],
+    "shareUrl": "https://www.voxelshare.com/models/8242660-flexi-mechanical-dragon",
+    "category": [
+      {
+        "id": 85,
+        "name": "Toys & Games",
+        "slug": "toys-games"
+      },
+      {
+        "id": 86,
+        "name": "Action Figures & Collectibles",
+        "slug": "action-figures-collectibles"
+      }
+    ],
+    "creator": {
+      "id": "284e9b6c92974fe2f24708db6e6b1e16",
+      "nickname": "Maker 6",
+      "avatar": "https://webimage.voxelshare.com/voxelshare/user/avatar/default/059ca4de83324a259850eb49877525fc.png",
+      "followed": false
+    },
+    "aigc": false,
+    "sourceInfo": {
+      "url": "https://makeronline.cn/zh/model/Flexi%E6%9C%BA%E6%A2%B0%E9%BE%99/283560.html"
+    },
+    "oneClickPrint": true
+  }
+}

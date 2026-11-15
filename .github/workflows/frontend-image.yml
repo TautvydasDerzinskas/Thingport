@@ -3,6 +3,10 @@ name: Frontend image
 # Runs when frontend/ or the build workflow changes. Use "Manual image publish" to force a build.
 # Pull requests into develop only run the checks; the image build waits for the merge, which publishes :dev for
 # testers, and the develop -> main pull request builds it again before a release.
+# A merge into main isn't tested again, its pull request was, and when it changes the backend too the two images go
+# out together, the backend's first: this one is tagged once the backend's has been (build-image.yml's publish), so
+# nobody pulls a new frontend for an old backend. The update checker reads this workflow's runs too (backend-image.yml).
+# On develop, :dev is only tagged once no backend run is left going, but a failed one doesn't hold it back.
 on:
   push:
     branches: [main, develop]
@@ -27,8 +31,9 @@ jobs:
   # Typecheck, lint, tests and a production build, natively. The image build skips the Dockerfile's test
   # stage, so this is the only place the frontend tests run.
   verify:
-    # A main -> develop back-merge only brings release commits main already tested.
-    if: github.head_ref != 'main'
+    # Not on main, whose pull requests ran this, nor for a main -> develop back-merge, which only brings those and the
+    # release commits.
+    if: github.head_ref != 'main' && github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,7 +52,6 @@ jobs:
 
   # A merge into main may give the frontend a new version (release-project.yml); the image is built from it.
   release:
-    needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
@@ -59,11 +63,14 @@ jobs:
 
   build:
     needs: [verify, release]
-    # Also when the release was skipped, as on pull requests; never after a failed one.
+    # After the checks, or on main without them; also when the release was skipped, as on pull requests, never after
+    # a failed one.
     if: >-
-      ${{ !cancelled() && needs.verify.result == 'success' && needs.release.result != 'failure'
+      ${{ !cancelled() && (needs.verify.result == 'success' || github.ref == 'refs/heads/main')
+      && needs.release.result != 'failure'
       && !(github.event_name == 'pull_request' && github.base_ref == 'develop') }}
     permissions:
+      actions: read # publish reads the backend's run
       contents: read
       packages: write
     uses: ./.github/workflows/build-image.yml
@@ -76,4 +83,8 @@ jobs:
       dockerfile: frontend/Dockerfile
       cache_scope: frontend
       push: ${{ github.event_name != 'pull_request' }}
+      # On main, after the backend's image for the same commit; the backend's job waits for this one's "build / build":
+      # don't rename either. On develop, after whatever backend run is still going.
+      wait_for_workflow: ${{ github.event_name == 'push' && 'backend-image.yml' || '' }}
+      wait_for_job: ${{ github.ref == 'refs/heads/main' && 'build / publish' || '' }}
     secrets: inherit

@@ -10,6 +10,7 @@ import type { CustomWidget } from "../../api/widgets";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 import { buildWidgetSdk, type WidgetSize } from "../../sdk/widgetSdk";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
+import { scriptToast } from "../../sdk/toast";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import { useIconSrc } from "../../components/IconPicker/iconCatalog";
@@ -79,9 +80,9 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
   // The language a widget is handed, matched to one Thingport has; changing it draws it again, as the theme does.
   const language = matchLanguage(i18n.language);
   // Read through refs, so the script isn't run again when the dashboard's own callbacks change.
-  const latest = useRef({ navigate, toast, confirm });
+  const latest = useRef({ navigate, toast, confirm, t });
   useEffect(() => {
-    latest.current = { navigate, toast, confirm };
+    latest.current = { navigate, toast, confirm, t };
   });
 
   useEffect(() => {
@@ -114,6 +115,7 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
     // can use `var(--tp-accent)` without copying the theme across in script first.
     setThemeVariables(root, JSON.parse(themeKey) as typeof theme);
     root.innerHTML = widget.html ?? "";
+    const openModel = (id: string) => latest.current.navigate(`/models/${encodeURIComponent(id)}`);
     const thingport = buildWidgetSdk({
       widget,
       instanceId,
@@ -129,7 +131,10 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
         return () => listeners.delete(listener);
       },
       ui: {
-        toast: (message, severity = "info") => latest.current.toast({ message: String(message), severity }),
+        toast: (message, severity = "info", options) =>
+          latest.current.toast(
+            scriptToast(message, severity, options, { label: latest.current.t("common:open"), openModel }),
+          ),
         confirm: async (options) =>
           (await latest.current.confirm({
             title: options.title,
@@ -137,7 +142,7 @@ export default function CustomWidgetCard({ widget, instanceId, settings }: Props
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        openModel: (id) => latest.current.navigate(`/models/${encodeURIComponent(id)}`),
+        openModel,
       },
     });
 

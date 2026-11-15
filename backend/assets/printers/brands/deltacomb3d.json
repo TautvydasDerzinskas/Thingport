@@ -1,0 +1,372 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "deltacomb3d",
+  "name": "Deltacomb 3D"
+ },
+ "printers": [
+  {
+   "id": "deltacomb3d-deltacombdc20",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-20",
+   "aliases": [
+    "deltacombdc20dual"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 190,
+    "y": 190,
+    "origin": [
+     -95,
+     -95
+    ],
+    "diameter": 190
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc20"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc20",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm",
+       "V-FBE 0.80mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "deltacomb_dc20dual",
+      "nozzles": [
+       "DBE 0.25mm",
+       "DBE 0.40mm",
+       "DBE 0.60mm",
+       "V-DBE 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "deltacomb3d-deltacombdc20flux",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-20 Flux",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 190,
+    "y": 190,
+    "origin": [
+     -95,
+     -95
+    ],
+    "diameter": 190
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc20flux"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc20flux",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "deltacomb3d-deltacombdc21",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-21",
+   "aliases": [
+    "deltacombdc21dual"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 190,
+    "y": 190,
+    "origin": [
+     -95,
+     -95
+    ],
+    "diameter": 190
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc21"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc21",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm",
+       "V-FBE 0.80mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "deltacomb_dc21dual",
+      "nozzles": [
+       "DBE 0.25mm",
+       "DBE 0.40mm",
+       "DBE 0.60mm",
+       "V-DBE 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "deltacomb3d-deltacombdc21flux",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-21 Flux",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 190,
+    "y": 190,
+    "origin": [
+     -95,
+     -95
+    ],
+    "diameter": 190
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc21flux"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc21flux",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "deltacomb3d-deltacombdc30",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-30",
+   "aliases": [
+    "deltacombdc30dual"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 290,
+    "y": 290,
+    "origin": [
+     -145,
+     -145
+    ],
+    "diameter": 290
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc30"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc30",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm",
+       "V-FBE 0.80mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "deltacomb_dc30dual",
+      "nozzles": [
+       "DBE 0.25mm",
+       "DBE 0.40mm",
+       "DBE 0.60mm",
+       "V-DBE 0.80mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "deltacomb3d-deltacombdc30flux",
+   "brand": "deltacomb3d",
+   "model": "Deltacomb DC-30 Flux",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 290,
+    "y": 290,
+    "origin": [
+     -145,
+     -145
+    ],
+    "diameter": 290
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "deltacomb_dc30flux"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "deltacomb_dc30flux",
+      "nozzles": [
+       "FBE 0.25mm",
+       "FBE 0.40mm",
+       "FBE 0.60mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,74 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "print4taste",
+  "name": "Print4Taste"
+ },
+ "printers": [
+  {
+   "id": "print4taste-mycusini2",
+   "brand": "print4taste",
+   "model": "mycusini 2.0",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 110,
+    "origin": [
+     5,
+     2.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 45,
+   "nozzles": [
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprap",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MC2.0"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "mycusini 2.0",
+      "presets": {
+       "1.0": [
+        {
+         "name": "mycusini 2.0",
+         "defaultProcess": "0.50mm SOLID @MC2.0",
+         "processes": [
+          {
+           "name": "0.50mm FILLABLE @MC2.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.50mm OUTLINES @MC2.0",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.50mm SOLID @MC2.0",
+           "layerHeight": 0.5
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

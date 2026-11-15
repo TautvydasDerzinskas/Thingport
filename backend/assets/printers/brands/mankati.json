@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "mankati",
+  "name": "Mankati"
+ },
+ "printers": [
+  {
+   "id": "mankati-fullscalextplus",
+   "brand": "mankati",
+   "model": "Fullscale XT Plus",
+   "aliases": [
+    "mankatifullscalextplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mankati_fullscale_xt_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mankati_fullscale_xt_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

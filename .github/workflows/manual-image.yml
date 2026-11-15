@@ -23,6 +23,7 @@ jobs:
   backend:
     if: inputs.target == 'backend' || inputs.target == 'both'
     permissions:
+      actions: read # build-image.yml's publish job asks for it, though only releases on main run it
       contents: read
       packages: write
     uses: ./.github/workflows/build-image.yml
@@ -40,6 +41,7 @@ jobs:
   frontend:
     if: inputs.target == 'frontend' || inputs.target == 'both'
     permissions:
+      actions: read # build-image.yml's publish job asks for it, though only releases on main run it
       contents: read
       packages: write
     uses: ./.github/workflows/build-image.yml

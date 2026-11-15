@@ -1,0 +1,625 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "mellow",
+  "name": "Mellow"
+ },
+ "printers": [
+  {
+   "id": "mellow-m1",
+   "brand": "mellow",
+   "model": "M1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 106,
+    "y": 106,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "m1_1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "M1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "M1 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "M1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "M1 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "M1 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @M1",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "M1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "M1 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "M1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "M1 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "M1 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @M1",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "M1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "M1 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "M1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "M1 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "M1 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @M1",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "M1",
+      "presets": {
+       "0.2": [
+        {
+         "name": "M1 0.2 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "M1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "M1 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @M1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @M1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "M1 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @M1",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @M1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @M1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @M1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @M1",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Standard @M1",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @M1",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.56mm Standard @M1",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -850,6 +850,7 @@ describe("the import queue's routes", () => {
       "failed_count",
       "failed_items_count",
       "failure_reason",
+      "grab_waiting",
       "id",
       "imported",
       "link_title",
@@ -890,7 +891,8 @@ describe("the import queue's routes", () => {
       await row(bob);
 
       const queue = await ownQueue(alice);
-      expect(Object.keys(queue).toSorted()).toEqual(["finished_total", "jobs", "line", "settings"]);
+      expect(Object.keys(queue).toSorted()).toEqual(["finished_total", "grab_waiting", "jobs", "line", "settings"]);
+      expect(queue.grab_waiting).toEqual([]);
       expect(queue.settings).toEqual({ start_grab_links: false });
       expect(queue.finished_total).toBe(1);
       expect(queue.jobs).toHaveLength(4);

@@ -10,6 +10,7 @@ import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
+import { scriptToast } from "../../sdk/toast";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
 type Mount = (thingport: Record<string, unknown>) => unknown;
@@ -86,6 +87,10 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
     // dark one, while what reads on an accent is its own contrast colour.
     setThemeVariables(root, theme);
     root.innerHTML = tool.html ?? "";
+    const openModel = (id: string) => {
+      latest.current.onClose();
+      latest.current.navigate(`/models/${encodeURIComponent(id)}`);
+    };
     const thingport = buildToolSdk({
       tool,
       context,
@@ -100,7 +105,10 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         return () => listeners.delete(listener);
       },
       ui: {
-        toast: (message, severity = "info") => latest.current.toast({ message: String(message), severity }),
+        toast: (message, severity = "info", options) =>
+          latest.current.toast(
+            scriptToast(message, severity, options, { label: latest.current.t("common:open"), openModel }),
+          ),
         confirm: async (options) =>
           (await latest.current.confirm({
             title: options.title,
@@ -109,10 +117,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             destructive: options.destructive,
           })) === true,
         pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
-        openModel: (id) => {
-          latest.current.onClose();
-          latest.current.navigate(`/models/${encodeURIComponent(id)}`);
-        },
+        openModel,
         close: () => latest.current.onClose(),
       },
     });

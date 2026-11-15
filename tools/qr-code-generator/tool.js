@@ -4808,7 +4808,7 @@ export default async function mount(thingport) {
           if (flat) pictures.push({ name: `${fileBase(chosen)}-scan.png`, data: flat });
           if (pictures.length) await models.addImages(saved.id, pictures);
           close();
-          ui.toast(t("save.done", { name: chosen, collection: collection.name }), "success");
+          ui.toast(t("save.done", { name: chosen, collection: collection.name }), "success", { openModel: saved.id });
         } catch (error) {
           go.disabled = false;
           go.textContent = t("save.go");

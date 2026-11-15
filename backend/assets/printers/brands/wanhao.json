@@ -1,0 +1,4177 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "wanhao",
+  "name": "Wanhao"
+ },
+ "printers": [
+  {
+   "id": "wanhao-d12230prom2direct",
+   "brand": "wanhao",
+   "model": "D12 230 PRO M2 DIRECT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 230 PRO M2 DIRECT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 230 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 230 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 230 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12230prom2mono",
+   "brand": "wanhao",
+   "model": "D12 230 PRO M2 MONO",
+   "aliases": [
+    "d12230prom2monodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12230prom2monodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 230 PRO M2 MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 230 PRO M2 MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 230 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 230 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 230 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO M2 MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12230prosmartpaddirect",
+   "brand": "wanhao",
+   "model": "D12 230 PRO SMARTPAD DIRECT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 230 PRO SMARTPAD DIRECT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 230 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 230 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 230 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12230prosmartpadmono",
+   "brand": "wanhao",
+   "model": "D12 230 PRO SMARTPAD MONO",
+   "aliases": [
+    "d12230prosmartpadmonodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 230 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-230",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12230prosmartpadmonodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 230 PRO SMARTPAD MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 230 PRO SMARTPAD MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 230 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 230 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 230 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 230 PRO SMARTPAD MONO DUAL 0.4 nozzle PoopTool",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-230 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prom2direct",
+   "brand": "wanhao",
+   "model": "D12 300 PRO M2 DIRECT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 300 PRO M2 DIRECT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 300 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 300 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 300 PRO M2 DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prom2mono",
+   "brand": "wanhao",
+   "model": "D12 300 PRO M2 MONO",
+   "aliases": [
+    "d12300prom2monodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prom2monodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 300 PRO M2 MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 300 PRO M2 MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 300 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 300 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 300 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prosmartpaddirect",
+   "brand": "wanhao",
+   "model": "D12 300 PRO SMARTPAD DIRECT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 300 PRO SMARTPAD DIRECT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 300 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 300 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 300 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prosmartpadmono",
+   "brand": "wanhao",
+   "model": "D12 300 PRO SMARTPAD MONO",
+   "aliases": [
+    "d12300prosmartpadmonodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 300 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300prosmartpadmonodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 300 PRO SMARTPAD MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 300 PRO SMARTPAD MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 300 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 300 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 300 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 300 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-300 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12500prom2mono",
+   "brand": "wanhao",
+   "model": "D12 500 PRO M2 MONO",
+   "aliases": [
+    "d12500prom2monodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO M2 MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12500prom2monodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 500 PRO M2 MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 510,
+    "y": 510,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 500 PRO M2 MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 500 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 500 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 500 PRO M2 MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12500prosmartpaddirect",
+   "brand": "wanhao",
+   "model": "D12 500 PRO SMARTPAD DIRECT",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 500 PRO SMARTPAD DIRECT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 500 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        },
+        {
+         "name": "D12 500 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Direct Drive"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 500 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        },
+        {
+         "name": "D12 500 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 500 PRO SMARTPAD DIRECT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO M2 DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        },
+        {
+         "name": "D12 500 PRO SMARTPAD DIRECT 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Direct Drive",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden",
+           "yumi pla direct drive": "YUMI PLA Direct Drive"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12500prosmartpadmono",
+   "brand": "wanhao",
+   "model": "D12 500 PRO SMARTPAD MONO",
+   "aliases": [
+    "d12500prosmartpadmonodual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "D12 500 PRO SMARTPAD MONO DUAL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @Wanhao-D12-500",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12500prosmartpadmonodualpooptool",
+   "brand": "wanhao",
+   "model": "D12 500 PRO SMARTPAD MONO DUAL PoopTool",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 510,
+    "y": 510,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12 500 PRO SMARTPAD MONO DUAL PoopTool"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "D12 500 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "D12 500 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "D12 500 PRO SMARTPAD MONO DUAL PoopTool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "D12 500 PRO SMARTPAD MONO DUAL PoopTool 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Wanhao-D12-500 PoopTool",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "YUMI PLA Bowden",
+         "filaments": {
+          "types": {
+           "PETG": "YUMI PETG",
+           "PLA": "YUMI PLA Bowden"
+          },
+          "products": {
+           "yumi petg": "YUMI PETG",
+           "yumi pla bowden": "YUMI PLA Bowden"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d12300",
+   "brand": "wanhao",
+   "model": "D12-300",
+   "aliases": [
+    "wanhaod12300"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "D12"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D12-300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D12-300 0.4 nozzle",
+         "defaultProcess": "0.15mm Optimal @Wanhao D12-300",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D12-400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Wanhao D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Wanhao D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Wanhao D12-300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D12-300 0.4 nozzle",
+         "defaultProcess": "0.15mm Optimal @Wanhao D12-300",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D12-400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Wanhao D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Wanhao D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @BIQU",
+         "filaments": {
+          "types": {
+           "PETG": "Wanhao Generic PETG",
+           "PLA": "Wanhao Generic PLA",
+           "TPU": "Wanhao Generic TPU"
+          },
+          "products": {
+           "wanhao generic petg": "Wanhao Generic PETG",
+           "wanhao generic pla": "Wanhao Generic PLA",
+           "wanhao generic tpu": "Wanhao Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Wanhao D12-300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D12-300 0.4 nozzle",
+         "defaultProcess": "0.15mm Optimal @Wanhao D12-300",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D12-400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Wanhao D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Wanhao D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Wanhao D12-300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D12-300 0.4 nozzle",
+         "defaultProcess": "0.15mm Optimal @Wanhao D12-300",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D12-400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Wanhao D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Wanhao D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Wanhao D12-300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D12-300 0.4 nozzle",
+         "defaultProcess": "0.15mm Optimal @Wanhao D12-300",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D12-400",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Wanhao D12-300",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D12-300",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Wanhao D12-300",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "wanhao-d9300mk1",
+   "brand": "wanhao",
+   "model": "D9-300 MK1",
+   "aliases": [
+    "wanhaod9300mk1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-300-MK1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-300 MK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-300 MK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9 MK1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9 MK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9 MK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9 MK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9300mk1bltouchkit",
+   "brand": "wanhao",
+   "model": "D9-300 MK1 BLTouch kit",
+   "aliases": [
+    "wanhaod9300mk1bltouchkit"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-300-MK1u2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-300 MK1 BLTouch kit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-300 MK1 BLTouch kit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9300mk2",
+   "brand": "wanhao",
+   "model": "D9-300 MK2",
+   "aliases": [
+    "wanhaod9300mk2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-300-MK2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-300 MK2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-300 MK2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9300mk3",
+   "brand": "wanhao",
+   "model": "D9-300 MK3",
+   "aliases": [
+    "wanhaod9300mk3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-300-MK3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-300 MK3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-300 MK3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9400mk1",
+   "brand": "wanhao",
+   "model": "D9-400 MK1",
+   "aliases": [
+    "wanhaod9400mk1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-400-MK1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-400 MK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-400 MK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9 MK1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9 MK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9 MK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9 MK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9400mk1bltouchkit",
+   "brand": "wanhao",
+   "model": "D9-400 MK1 BLTouch kit",
+   "aliases": [
+    "wanhaod9400mk1bltouchkit"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-400-MK1u2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-400 MK1 BLTouch kit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-400 MK1 BLTouch kit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9400mk2",
+   "brand": "wanhao",
+   "model": "D9-400 MK2",
+   "aliases": [
+    "wanhaod9400mk2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-400-MK2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-400 MK2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-400 MK2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9400mk3",
+   "brand": "wanhao",
+   "model": "D9-400 MK3",
+   "aliases": [
+    "wanhaod9400mk3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-400-MK3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-400 MK3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-400 MK3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9500mk1",
+   "brand": "wanhao",
+   "model": "D9-500 MK1",
+   "aliases": [
+    "wanhaod9500mk1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-500-MK1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-500 MK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-500 MK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9 MK1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9 MK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9 MK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9 MK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9500mk1bltouchkit",
+   "brand": "wanhao",
+   "model": "D9-500 MK1 BLTouch kit",
+   "aliases": [
+    "wanhaod9500mk1bltouchkit"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-500-MK1u2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-500 MK1 BLTouch kit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-500 MK1 BLTouch kit 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9500mk2",
+   "brand": "wanhao",
+   "model": "D9-500 MK2",
+   "aliases": [
+    "wanhaod9500mk2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-500-MK2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-500 MK2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-500 MK2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-d9500mk3",
+   "brand": "wanhao",
+   "model": "D9-500 MK3",
+   "aliases": [
+    "wanhaod9500mk3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Wanhao-D9-500-MK3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Wanhao D9-500 MK3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Wanhao D9-500 MK3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Wanhao D9",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Wanhao D9",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @Wanhao D9",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Wanhao D9",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator4s",
+   "brand": "wanhao",
+   "model": "Duplicator 4S",
+   "aliases": [
+    "wanhaoduplicator4s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_d4s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_d4s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator5s",
+   "brand": "wanhao",
+   "model": "Duplicator 5S",
+   "aliases": [
+    "wanhaoduplicator5s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_duplicator5S"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_duplicator5S",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator5smini",
+   "brand": "wanhao",
+   "model": "Duplicator 5S Mini",
+   "aliases": [
+    "wanhaoduplicator5smini"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_duplicator5Smini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_duplicator5Smini",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator6",
+   "brand": "wanhao",
+   "model": "Duplicator 6",
+   "aliases": [
+    "wanhaoduplicator6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_d6"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_d6",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator6plus",
+   "brand": "wanhao",
+   "model": "Duplicator 6 Plus",
+   "aliases": [
+    "wanhaoduplicator6plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_d6_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_d6_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicator9",
+   "brand": "wanhao",
+   "model": "Duplicator 9",
+   "aliases": [
+    "wanhaoduplicator9"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_d9"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_d9",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicatori3",
+   "brand": "wanhao",
+   "model": "Duplicator i3",
+   "aliases": [
+    "wanhaoduplicatori3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_i3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_i3",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicatori3mini",
+   "brand": "wanhao",
+   "model": "Duplicator i3 Mini",
+   "aliases": [
+    "wanhaoduplicatori3mini"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 110,
+    "y": 110,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 110,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_i3mini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_i3mini",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "wanhao-duplicatori3plus",
+   "brand": "wanhao",
+   "model": "Duplicator i3 Plus",
+   "aliases": [
+    "wanhaoduplicatori3plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "wanhao_i3plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "wanhao_i3plus",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -46,10 +46,11 @@ function id(value: unknown): string | null {
   return typeof value === "string" && /^\d+$/.test(value) ? value : null;
 }
 
-/** The ids its pages show: a "G" and digits for models, profiles and collections, a "U" and digits for users. */
-function outId(value: unknown, prefix: "G" | "U"): string | null {
+/** The ids its pages show: one of `prefixes` and digits. Models and their profiles have "G" ids, or "C" ones on some
+ *  models; collections "G" ones and users "U" ones. */
+function outId(value: unknown, prefixes: "GC" | "G" | "U"): string | null {
   const text = str(value)?.toUpperCase();
-  return text && new RegExp(`^${prefix}\\d+$`).test(text) ? text : null;
+  return text && new RegExp(`^[${prefixes}]\\d+$`).test(text) ? text : null;
 }
 
 function count(value: unknown): number {
@@ -126,7 +127,7 @@ export async function checkNexprintAuth(
 }
 
 export type NexprintProfile = {
-  /** Its "G" id, the one the site's links carry. */
+  /** Its "G" (or "C") id, the one the site's links carry. */
   id: string;
   /** Its internal id, which signs its file. */
   settingId: string;
@@ -142,7 +143,7 @@ export type NexprintModelFile = { fileId: string; name: string };
 export type NexprintModelResolution = {
   meta: Partial<ImportedPageMetadata>;
   galleryImages: { url: string; filename: string }[];
-  /** Its "G" id, the one Thingport keeps for it. */
+  /** Its "G" (or "C") id, the one Thingport keeps for it. */
   modelId: string;
   /** Its internal id, which signs its files. */
   internalId: string;
@@ -179,7 +180,7 @@ function records(value: unknown): Record<string, unknown>[] {
 
 /** The metadata mapping, apart from the fetch so it can be tested on its own. */
 export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintModelResolution | null {
-  const modelId = outId(data.modelId, "G");
+  const modelId = outId(data.modelId, "GC");
   const internalId = id(data.id);
   if (!modelId || !internalId) return null;
   const meta: Partial<ImportedPageMetadata> = {};
@@ -217,7 +218,7 @@ export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintM
   meta.license = nexprintLicenseFrom(data);
   const authorId = id(data.authorId);
   const profiles = records(data.settingInfoList).flatMap((setting): NexprintProfile[] => {
-    const profileId = outId(setting.settingOutId, "G");
+    const profileId = outId(setting.settingOutId, "GC");
     const settingId = id(setting.id);
     const fileId = isRecord(setting.settingFile) ? id(setting.settingFile.fileId) : null;
     if (!profileId || !settingId || !fileId || setting.open === false || setting.isInvalid === true) return [];
@@ -251,7 +252,7 @@ export function nexprintMetaFromDetail(data: Record<string, unknown>): NexprintM
   };
 }
 
-/** The model's public details as the site answers them, profiles included, by its "G" id. Null for a model that
+/** The model's public details as the site answers them, profiles included, by its "G" (or "C") id. Null for a model that
  *  doesn't exist, was deleted or isn't public. */
 export async function fetchNexprintDetail(modelId: string): Promise<Record<string, unknown> | null> {
   const { code, message, data } = await fetchApi(
@@ -261,10 +262,10 @@ export async function fetchNexprintDetail(modelId: string): Promise<Record<strin
   );
   if (code !== CODE_OK) throw failure("this model", code, message);
   // A model that isn't there comes back as one with every field null.
-  return isRecord(data) && outId(data.modelId, "G") ? data : null;
+  return isRecord(data) && outId(data.modelId, "GC") ? data : null;
 }
 
-/** By its "G" id. Null for a model that doesn't exist, was deleted or isn't public. */
+/** By its "G" (or "C") id. Null for a model that doesn't exist, was deleted or isn't public. */
 export async function resolveNexprintModel(modelId: string): Promise<NexprintModelResolution | null> {
   const detail = await fetchNexprintDetail(modelId);
   return detail ? nexprintMetaFromDetail(detail) : null;
@@ -372,7 +373,7 @@ async function fetchCollectionModels(collectionId: string, maxItems: number): Pr
     total = count(data.total) || total;
     const items = records(data.list);
     for (const item of items) {
-      const modelId = outId(item.modelId, "G");
+      const modelId = outId(item.modelId, "GC");
       if (!modelId || item.isInvalid === true || item.open === false || seen.has(modelId)) continue;
       seen.add(modelId);
       entries.push({ modelId, title: str(item.modelName) ?? `Model ${modelId}`, cover: str(item.coverImgUrl) });

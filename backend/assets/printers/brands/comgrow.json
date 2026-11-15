@@ -1,0 +1,860 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "comgrow",
+  "name": "Comgrow"
+ },
+ "printers": [
+  {
+   "id": "comgrow-t300",
+   "brand": "comgrow",
+   "model": "T300",
+   "aliases": [
+    "comgrowt300"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Comgrow_T300"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Comgrow T300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Comgrow T300"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Comgrow T300"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Comgrow T300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Comgrow T300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Comgrow T300",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T300 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.20mm Optimal @Comgrow T300 0.4 - official",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "PLA": "Comgrow T300 PLA"
+          },
+          "products": {
+           "comgrow t300 pla": "Comgrow T300 PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "comgrow-t500",
+   "brand": "comgrow",
+   "model": "T500",
+   "aliases": [
+    "comgrowt500"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Comgrow_T500"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Comgrow T500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Comgrow T500 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.18mm Optimal @Comgrow T500",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Comgrow T500 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Opitmal @Comgrow T500 0.6",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.6",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.6",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Comgrow T500 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.24mm Optimal @Comgrow T500 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Comgrow T500 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm SuperChunky @Comgrow T500 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PETG @Comgrow",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Comgrow",
+           "PETG": "Generic PETG @Comgrow",
+           "PLA": "Generic PLA @Comgrow"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Comgrow",
+           "generic petg": "Generic PETG @Comgrow",
+           "generic pla": "Generic PLA @Comgrow"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Comgrow T500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Comgrow T500 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.18mm Optimal @Comgrow T500",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Comgrow T500 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Opitmal @Comgrow T500 0.6",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.6",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.6",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Comgrow T500 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.24mm Optimal @Comgrow T500 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Comgrow T500 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm SuperChunky @Comgrow T500 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Comgrow T500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Comgrow T500 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.18mm Optimal @Comgrow T500",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Comgrow T500 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Opitmal @Comgrow T500 0.6",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.6",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.6",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Comgrow T500 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.24mm Optimal @Comgrow T500 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Comgrow T500 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm SuperChunky @Comgrow T500 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Comgrow T500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Comgrow T500 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.18mm Optimal @Comgrow T500",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Comgrow T500 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Opitmal @Comgrow T500 0.6",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.6",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.6",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Comgrow T500 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.24mm Optimal @Comgrow T500 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Comgrow T500 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm SuperChunky @Comgrow T500 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Comgrow T500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Comgrow T500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Optimal @Comgrow T500 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.18mm Optimal @Comgrow T500",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.4",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.4",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Comgrow T500 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.16mm Opitmal @Comgrow T500 0.6",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Comgrow T500 0.6",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Comgrow T500 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SuperDraft @Comgrow T500 0.6",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Comgrow T500 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Comgrow T500",
+         "processes": [
+          {
+           "name": "0.24mm Optimal @Comgrow T500 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Comgrow T500 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Comgrow T500 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm SuperChunky @Comgrow T500 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Comgrow Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "Comgrow Generic ABS",
+           "PETG": "Comgrow Generic PETG",
+           "PLA": "Comgrow Generic PLA"
+          },
+          "products": {
+           "comgrow generic abs": "Comgrow Generic ABS",
+           "comgrow generic petg": "Comgrow Generic PETG",
+           "comgrow generic pla": "Comgrow Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

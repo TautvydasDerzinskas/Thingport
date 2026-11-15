@@ -43,8 +43,8 @@ import { useOpenInSlicer } from "./useOpenInSlicer";
 import { useOpenInStudio } from "./useOpenInStudio";
 import StudioFileMenu from "./StudioFileMenu";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
-import NormalizeInfoIcon from "./NormalizeInfoIcon";
-import { useNormalizedOpen } from "./useNormalizedOpen";
+import AdaptedInfoIcon from "./AdaptedInfoIcon";
+import { useAdaptedOpen } from "./useAdaptedOpen";
 import DownloadPickerDialog from "./DownloadPickerDialog";
 import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
@@ -126,7 +126,7 @@ export default function ModelActionsMenu({
   const [searchParams, setSearchParams] = useSearchParams();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [slicerMenuAnchor, setSlicerMenuAnchor] = useState<MenuAnchor>(null);
-  const [normalizedMenuAnchor, setNormalizedMenuAnchor] = useState<MenuAnchor>(null);
+  const [adaptedMenuAnchor, setAdaptedMenuAnchor] = useState<MenuAnchor>(null);
   const [studioMenuAnchor, setStudioMenuAnchor] = useState<MenuAnchor>(null);
   const [deleting, setDeleting] = useState(false);
   const [removingFromCollection, setRemovingFromCollection] = useState(false);
@@ -276,14 +276,14 @@ export default function ModelActionsMenu({
   };
 
   const providerInfo = importProviderInfo(print.source_provider);
-  const { slicerOption, targets: slicerTargets, normalizedTargets } = useOpenInSlicer(print);
+  const { slicerOption, targets: slicerTargets, adaptedTargets } = useOpenInSlicer(print);
   const openInSlicerHref = slicerTargets.length === 1 ? slicerTargets[0].href : undefined;
-  const normalized = useNormalizedOpen(print.id, recordUse, onUnauthorized);
-  const normalizedMenuLabel = (slicer: string) => {
-    const state = normalizedTargets.length === 1 ? normalized.stateOf(normalizedTargets[0]) : "idle";
-    if (state === "preparing") return t("models:detail.normalizePreparing");
-    if (state === "ready") return t("models:detail.normalizeReady", { slicer });
-    return t("models:detail.openNormalizedInSlicer", { slicer });
+  const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized);
+  const adaptedMenuLabel = (slicer: string) => {
+    const state = adaptedTargets.length === 1 ? adapted.stateOf(adaptedTargets[0]) : "idle";
+    if (state === "preparing") return t("models:detail.adaptPreparing");
+    if (state === "ready") return t("models:detail.adaptReady", { slicer });
+    return t("models:detail.openAdaptedInSlicer", { slicer });
   };
 
   return (
@@ -442,28 +442,28 @@ export default function ModelActionsMenu({
               : t("models:detail.openInSlicerGeneric")}
           </ListItemText>
         </MenuItem>
-        {slicerOption && normalizedTargets.length > 0 && (
+        {slicerOption && adaptedTargets.length > 0 && (
           <MenuItem
-            disabled={normalizedTargets.length === 1 && normalized.stateOf(normalizedTargets[0]) === "preparing"}
+            disabled={adaptedTargets.length === 1 && adapted.stateOf(adaptedTargets[0]) === "preparing"}
             onClick={() => {
-              if (normalizedTargets.length > 1) {
-                setNormalizedMenuAnchor(menuAnchor);
+              if (adaptedTargets.length > 1) {
+                setAdaptedMenuAnchor(menuAnchor);
                 closeMenu();
                 return;
               }
               // Stays open while preparing, so the item can show progress and then "ready".
-              void normalized.open(normalizedTargets[0]).then((launched) => launched && closeMenu());
+              void adapted.open(adaptedTargets[0]).then((launched) => launched && closeMenu());
             }}
             sx={{ color: "warning.main" }}
           >
             <ListItemIcon sx={{ color: "inherit" }}>
-              {normalizedTargets.length === 1 && normalized.stateOf(normalizedTargets[0]) === "preparing" ? (
+              {adaptedTargets.length === 1 && adapted.stateOf(adaptedTargets[0]) === "preparing" ? (
                 <CircularProgress size={18} color="inherit" />
               ) : (
-                <NormalizeInfoIcon slicerLabel={slicerOption.label} />
+                <AdaptedInfoIcon slicerLabel={slicerOption.label} plan={adaptedTargets[0].plan} />
               )}
             </ListItemIcon>
-            <ListItemText>{normalizedMenuLabel(slicerOption.label)}</ListItemText>
+            <ListItemText>{adaptedMenuLabel(slicerOption.label)}</ListItemText>
           </MenuItem>
         )}
         {studio.files.length > 0 && (
@@ -535,17 +535,18 @@ export default function ModelActionsMenu({
         )}
       </Menu>
 
-      {slicerOption && normalizedTargets.length > 1 && (
+      {slicerOption && adaptedTargets.length > 1 && (
         <SlicerFileMenu
-          anchorEl={normalizedMenuAnchor}
-          onClose={() => setNormalizedMenuAnchor(null)}
+          anchorEl={adaptedMenuAnchor}
+          onClose={() => setAdaptedMenuAnchor(null)}
           slicerLabel={slicerOption.label}
-          title={t("models:detail.openNormalizedInSlicer", { slicer: slicerOption.label })}
-          targets={normalizedTargets}
+          title={t("models:detail.openAdaptedInSlicer", { slicer: slicerOption.label })}
+          targets={adaptedTargets}
           onOpen={recordUse}
-          normalized={normalized}
+          adapted={adapted}
         />
       )}
+      {adapted.dialog}
       {slicerOption && slicerTargets.length > 1 && (
         <SlicerFileMenu
           anchorEl={slicerMenuAnchor}
@@ -570,7 +571,8 @@ export default function ModelActionsMenu({
         onClose={() => setPickerOpen(false)}
         downloading={downloading}
         sortedPlates={sortedPlates}
-        downloadAllZip={downloadAllZip}
+        downloadAllZip={() => void downloadAllZip()}
+        downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
       />
 

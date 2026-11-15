@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "fablabbcn",
+  "name": "FablabBcn"
+ },
+ "printers": [
+  {
+   "id": "fablabbcn-pasteprinter",
+   "brand": "fablabbcn",
+   "model": "PastePrinter",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 235,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "fablabbcn_pasteprinter"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "fablabbcn_pasteprinter",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

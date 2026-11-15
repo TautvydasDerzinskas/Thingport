@@ -537,7 +537,8 @@ export default function JobCard({ job }: { job: QueueJob }) {
   const primary = primaryAction(job, t);
   const bar = jobBar(job, t);
   const inLine = inLineText(job, t);
-  const why = whyText(job, t, queue.viewerId);
+  // The banner shows over one's own list only.
+  const why = whyText(job, t, queue.viewerId, { grabBanner: !everyone });
   const target = jobOpenTarget(job, queue.viewerId);
   const hasMenu = Boolean(target || job.can_delete);
   const moreLabel = t("importQueue.menu.more", { label });

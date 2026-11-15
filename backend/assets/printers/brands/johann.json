@@ -1,0 +1,97 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "johann",
+  "name": "Johann"
+ },
+ "printers": [
+  {
+   "id": "johann-kosselmini",
+   "brand": "johann",
+   "model": "Kossel Mini",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 170,
+    "y": 170,
+    "origin": [
+     -85,
+     -85
+    ],
+    "diameter": 170
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kossel_mini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kossel_mini",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "johann-kosselpro",
+   "brand": "johann",
+   "model": "Kossel Pro",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 240,
+    "y": 240,
+    "origin": [
+     -120,
+     -120
+    ],
+    "diameter": 240
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kossel_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kossel_pro",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

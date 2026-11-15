@@ -126,6 +126,7 @@
   "reset.body": "Усе налады вернуцца да пачатковых. Іх можна будзе аднавіць адменай.",
   "reset.title": "Вярнуць пачатковыя налады?",
   "save.addToCollection": "Дадаць у калекцыю",
+  "save.done": "Захавана ў Thingport: {name}",
   "save.nothingYet": "Пакуль няма чаго захоўваць",
   "save.openIt": "Адкрыць",
   "screw.baseHole": "Адтуліна ў аснове",

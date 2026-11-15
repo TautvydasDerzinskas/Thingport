@@ -15,6 +15,8 @@ details and collections need nothing; its files and your likes go only to a sign
 - A model comes in like a MakerWorld one: its print profile's 3MF, as a file tagged with the profile. Another profile,
   or the designer's or all profiles, adds more; a model without print profiles brings its model files instead.
 - Collections, private ones included, read with nothing; your likes, through your sign-in.
+- Its 3MFs are Creality Print projects; other slicers open them as [adapted 3MFs](../features/adapted-3mf.md), and Thingport
+  Grab downloads them adapted on Creality Cloud itself, once you allow it there.
 
 ## Setup
 

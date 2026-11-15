@@ -54,6 +54,10 @@ vi.stubGlobal("fetch", async () => {
   throw new TypeError("Failed to fetch");
 });
 
+// The page the panel is on, which an import's end reads to tell its own address changes from the user's.
+const page = { href: URL_PRINTABLES };
+vi.stubGlobal("location", page);
+
 vi.stubGlobal("chrome", {
   runtime: {
     sendMessage: async ({ type, payload }: { type: string; payload: Record<string, unknown> }) => {
@@ -220,6 +224,24 @@ describe("the single-model panel", () => {
   });
 
   describe("Import", () => {
+    it("sends the profile the page shows where its address doesn't name it, to the import and the queue alike", async () => {
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
+      answers.QUEUE_IMPORT = { job_id: "job1", item_id: "item1", duplicate: false, waiting: 1 };
+      // VoxelShare's page keeps its pick to itself: the module names it in the link.
+      contentModules.printables = { shownProfileUrl: (url: string) => `${url}#profileId-9` };
+      atProvider("printables", { canQueue: true, importQueue: true });
+      await loadSingleItem();
+      await click("import");
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-9`]);
+
+      await loadSingleItem();
+      await click("queue");
+      expect(messages.find(({ type }) => type === "QUEUE_IMPORT")?.payload).toMatchObject({
+        url: `${URL_PRINTABLES}#profileId-9`,
+        scope: "url",
+      });
+    });
+
     it("stays immediate, flag or not: it's never Add to the queue", async () => {
       answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
       atProvider("printables", { canQueue: true, importQueue: true });
@@ -312,9 +334,44 @@ describe("the single-model panel", () => {
       await click("import");
 
       expect(importedUrls()).toEqual([`${SNAPMAKER}#profileId-2`]);
-      expect(last()).toContain("Profile added");
-      expect(last()).toContain("1 print profile imported.");
+      expect(last()).toContain("Profiles added");
+      expect(last()).toContain("Print profiles imported: 1.");
       expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
+    });
+
+    it("leaves out a profile the model got since the panel was drawn, downloading nothing for it", async () => {
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "profile_added" };
+      // Another tab brought 3 and 4 in meanwhile.
+      answers[`GET /import/status?url=${encodeURIComponent(SNAPMAKER)}`] = {
+        already_imported: true,
+        print_id: "print1",
+        imported_profile_ids: ["1", "3", "4"],
+      };
+      await openInLibrary(held("imported", ["1"]));
+      await click("import");
+
+      expect(importedUrls()).toEqual([`${SNAPMAKER}#profileId-2`]);
+      expect(last()).toContain("Print profiles imported: 1, 2 already on the model.");
+    });
+
+    it("shows a run under way to a panel drawn again meanwhile, and starts no second one", async () => {
+      let finish!: (print: unknown) => void;
+      answers.IMPORT_SINGLE = new Promise((resolve) => (finish = resolve));
+      await openInLibrary(held("imported", ["1", "3", "4"]));
+      const importButton = actions.get("import")!;
+      importButton();
+      await vi.waitFor(() => expect(importedUrls()).toHaveLength(1));
+
+      importButton();
+      // Drawn again from the library as it was when the run began, which still lacks what the run is bringing in.
+      actions.clear();
+      await loadSingleItem();
+      expect(last()).toContain("Importing print profile 1 of 1…");
+      expect(actions.has("import")).toBe(false);
+
+      finish({ id: "print1", import_outcome: "profile_added" });
+      await vi.waitFor(() => expect(last()).toContain("Profiles added"));
+      expect(importedUrls()).toHaveLength(1);
     });
 
     it("names the profile in each link, even the one a link without a profile would bring", async () => {
@@ -393,6 +450,61 @@ describe("the single-model panel", () => {
   });
 
   describe("importing several print profiles", () => {
+    it("leaves out the first one too when another tab brought it in after the panel was drawn", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1", "2"] };
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "profile_added" };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: true,
+        print_id: "print1",
+        imported_profile_ids: ["1"],
+      };
+      // Drawn while the model wasn't in the library.
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-2`]);
+      expect(last()).toContain("Print profiles imported: 1, 1 already on the model.");
+      // The import filed it into the collection.
+      expect(asked("/collection/col1/items/print1")).toBe(false);
+    });
+
+    it("files the model into the picked collection when every profile turned out to be on it", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1", "2"] };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: true,
+        print_id: "print1",
+        imported_profile_ids: ["1", "2"],
+      };
+      answers["POST /collection/col1/items/print1"] = { ok: true };
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([]);
+      expect(asked("/collection/col1/items/print1")).toBe(true);
+      expect(last()).toContain("Print profiles imported: 0, 2 already on the model.");
+      expect(last()).toContain(`href="${INSTANCE}/models/print1"`);
+    });
+
+    it("leaves nothing out of a fresh model, which the instance says has no profiles", async () => {
+      profileScope = "all";
+      contentModules.printables = { loadProfiles: async () => () => ["1"] };
+      answers.IMPORT_SINGLE = { id: "print1", import_outcome: "created" };
+      answers[`GET /import/status?url=${encodeURIComponent(URL_PRINTABLES)}`] = {
+        already_imported: false,
+        print_id: null,
+        imported_profile_ids: [],
+      };
+      atProvider("printables", { canQueue: false, importQueue: false });
+      await loadSingleItem();
+      await click("import");
+
+      expect(importedUrls()).toEqual([`${URL_PRINTABLES}#profileId-1`]);
+    });
+
     it("says why the ones that failed did, when some came in", async () => {
       profileScope = "all";
       contentModules.printables = { loadProfiles: async () => () => ["1", "2", "3"] };
@@ -407,7 +519,7 @@ describe("the single-model panel", () => {
       await click("import", 5000); // the pause between two profiles is real
 
       expect(last()).toContain("Partly imported");
-      expect(last()).toContain("1 print profile imported, 2 failed.");
+      expect(last()).toContain("Print profiles imported: 1, 2 failed.");
       expect(last()).toContain("Last error: MakerWorld wants a CAPTCHA");
     });
   });

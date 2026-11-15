@@ -1,0 +1,2668 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ultimaker",
+  "name": "UltiMaker"
+ },
+ "printers": [
+  {
+   "id": "ultimaker-2",
+   "brand": "ultimaker",
+   "model": "2",
+   "aliases": [
+    "ultimaker2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      29.5,
+      -1
+     ],
+     [
+      27.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      221.5,
+      9
+     ],
+     [
+      219.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "orca": "UltiMaker-2",
+    "prusa": "ULTIMAKER2",
+    "cura": "ultimaker2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2",
+      "nozzles": []
+     }
+    ],
+    "orcaslicer": [
+     {
+      "model": "UltiMaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 0.4 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2",
+         "processes": [
+          {
+           "name": "0.10mm Fine @UltiMaker 2",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @UltiMaker 2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Draft @UltiMaker 2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "UltiMaker 2 0.6 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Standard @UltiMaker 2 0.6 nozzle",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "UltiMaker 2 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @UltiMaker 2 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @UltiMaker 2 0.8 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "UltiMaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 0.4 nozzle",
+         "defaultProcess": "0.18mm Standard @UltiMaker 2",
+         "processes": [
+          {
+           "name": "0.12mm Fine @UltiMaker 2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @UltiMaker 2",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @UltiMaker 2",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "UltiMaker Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "UltiMaker Generic ABS",
+           "PETG": "UltiMaker Generic PETG",
+           "PLA": "UltiMaker Generic PLA"
+          },
+          "products": {
+           "ultimaker generic abs": "UltiMaker Generic ABS",
+           "ultimaker generic petg": "UltiMaker Generic PETG",
+           "ultimaker generic pla": "UltiMaker Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "UltiMaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 0.4 nozzle",
+         "defaultProcess": "0.18mm Standard @UltiMaker 2",
+         "processes": [
+          {
+           "name": "0.12mm Fine @UltiMaker 2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @UltiMaker 2",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @UltiMaker 2",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "UltiMaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 0.4 nozzle",
+         "defaultProcess": "0.18mm Standard @UltiMaker 2",
+         "processes": [
+          {
+           "name": "0.12mm Fine @UltiMaker 2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @UltiMaker 2",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @UltiMaker 2",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "UltiMaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 0.4 nozzle",
+         "defaultProcess": "0.18mm Standard @UltiMaker 2",
+         "processes": [
+          {
+           "name": "0.12mm Fine @UltiMaker 2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.18mm Standard @UltiMaker 2",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Draft @UltiMaker 2",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "Ultimaker 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Ultimaker 2",
+         "defaultProcess": "0.20mm NORMAL @ULTIMAKER",
+         "processes": [
+          {
+           "name": "0.10mm FINE @ULTIMAKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @ULTIMAKER",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm NORMAL @ULTIMAKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm DRAFT @ULTIMAKER",
+           "layerHeight": 0.25
+          }
+         ]
+        },
+        {
+         "name": "Ultimaker 2 DXUv2",
+         "defaultProcess": "0.20mm NORMAL @ULTIMAKER",
+         "processes": [
+          {
+           "name": "0.10mm FINE @ULTIMAKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @ULTIMAKER",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm NORMAL @ULTIMAKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm DRAFT @ULTIMAKER",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ultimaker-2extended",
+   "brand": "ultimaker",
+   "model": "2 Extended",
+   "aliases": [
+    "ultimaker2extended"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      29.5,
+      -1
+     ],
+     [
+      27.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      221.5,
+      9
+     ],
+     [
+      219.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker2_extended"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_extended",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-2extendedwitholsson",
+   "brand": "ultimaker",
+   "model": "2 Extended with Olsson",
+   "aliases": [
+    "ultimaker2extendedwitholsson"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      29.5,
+      -1
+     ],
+     [
+      27.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      221.5,
+      9
+     ],
+     [
+      219.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker2_extended_olsson"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_extended_olsson",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-2extendedplus",
+   "brand": "ultimaker",
+   "model": "2 Extended+",
+   "aliases": [
+    "ultimaker2extendedplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      33.5,
+      -1
+     ],
+     [
+      31.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      216.5,
+      9
+     ],
+     [
+      214.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "orca": "UltiMaker-2-extended-plus",
+    "cura": "ultimaker2_extended_plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_extended_plus",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ],
+    "orcaslicer": [
+     {
+      "model": "UltiMaker 2 extended+",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2 extended+ 0.4 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2 extended+",
+         "processes": [
+          {
+           "name": "0.10mm Fine @UltiMaker 2 extended+",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @UltiMaker 2 extended+",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Draft @UltiMaker 2 extended+",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "UltiMaker 2 extended+ 0.6 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2 extended+ 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Standard @UltiMaker 2 extended+ 0.6 nozzle",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "UltiMaker 2 extended+ 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @UltiMaker 2 extended+ 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @UltiMaker 2 extended+ 0.8 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2 extended+ 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2 extended+ 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2 extended+ 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2 extended+ 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2 extended+ 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ultimaker-2go",
+   "brand": "ultimaker",
+   "model": "2 Go",
+   "aliases": [
+    "ultimaker2go"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      27,
+      0
+     ],
+     [
+      25,
+      8
+     ],
+     [
+      0,
+      8
+     ]
+    ],
+    [
+     [
+      120,
+      0
+     ],
+     [
+      120,
+      8
+     ],
+     [
+      95,
+      8
+     ],
+     [
+      93,
+      0
+     ]
+    ],
+    [
+     [
+      0,
+      120
+     ],
+     [
+      0,
+      112
+     ],
+     [
+      25,
+      112
+     ],
+     [
+      27,
+      120
+     ]
+    ],
+    [
+     [
+      120,
+      120
+     ],
+     [
+      93,
+      120
+     ],
+     [
+      95,
+      112
+     ],
+     [
+      120,
+      112
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 115,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker2_go"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_go",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-2witholssonblock",
+   "brand": "ultimaker",
+   "model": "2 with Olsson Block",
+   "aliases": [
+    "ultimaker2witholssonblock"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      29.5,
+      -1
+     ],
+     [
+      27.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      221.5,
+      9
+     ],
+     [
+      219.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker2_olsson"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_olsson",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-2plus",
+   "brand": "ultimaker",
+   "model": "2+",
+   "aliases": [
+    "ultimaker2plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      33.5,
+      -1
+     ],
+     [
+      31.5,
+      9
+     ],
+     [
+      -3.5,
+      9
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      9
+     ],
+     [
+      216.5,
+      9
+     ],
+     [
+      214.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      216
+     ],
+     [
+      27.5,
+      216
+     ],
+     [
+      29.5,
+      224
+     ]
+    ],
+    [
+     [
+      226.5,
+      224
+     ],
+     [
+      219.5,
+      224
+     ],
+     [
+      221.5,
+      216
+     ],
+     [
+      226.5,
+      216
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "ultigcode",
+   "relativeE": false,
+   "codes": {
+    "orca": "UltiMaker-2-plus",
+    "cura": "ultimaker2_plus"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_plus",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ],
+    "orcaslicer": [
+     {
+      "model": "UltiMaker 2+",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker 2+ 0.4 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2+",
+         "processes": [
+          {
+           "name": "0.10mm Fine @UltiMaker 2+",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Standard @UltiMaker 2+",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Draft @UltiMaker 2+",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.4 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.4 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.4 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.4 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.4 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "UltiMaker 2+ 0.6 nozzle",
+         "defaultProcess": "0.15mm Standard @UltiMaker 2+ 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.15mm Standard @UltiMaker 2+ 0.6 nozzle",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.6 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.6 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.6 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.6 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.6 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.6 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.6 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "UltiMaker 2+ 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @UltiMaker 2+ 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.20mm Standard @UltiMaker 2+ 0.8 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @UltiMaker 2+ 0.8 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @UltiMaker 2+ 0.8 nozzle",
+           "PETG": "Generic PETG @UltiMaker 2+ 0.8 nozzle",
+           "PLA": "Generic PLA @UltiMaker 2+ 0.8 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @UltiMaker 2+ 0.8 nozzle",
+           "generic petg": "Generic PETG @UltiMaker 2+ 0.8 nozzle",
+           "generic pla": "Generic PLA @UltiMaker 2+ 0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ultimaker-2plusconnect",
+   "brand": "ultimaker",
+   "model": "2+ Connect",
+   "aliases": [
+    "ultimaker2plusconnect"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -2.5
+     ],
+     [
+      28.5,
+      -2.5
+     ],
+     [
+      26.5,
+      6
+     ],
+     [
+      -3.5,
+      6
+     ]
+    ],
+    [
+     [
+      226.5,
+      -2.5
+     ],
+     [
+      226.5,
+      6
+     ],
+     [
+      215.5,
+      6
+     ],
+     [
+      213.5,
+      -2.5
+     ]
+    ],
+    [
+     [
+      -3.5,
+      222.5
+     ],
+     [
+      -3.5,
+      214
+     ],
+     [
+      24.5,
+      214
+     ],
+     [
+      26.5,
+      222.5
+     ]
+    ],
+    [
+     [
+      226.5,
+      222.5
+     ],
+     [
+      215.5,
+      222.5
+     ],
+     [
+      217.5,
+      214
+     ],
+     [
+      226.5,
+      214
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 260,
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker2_plus_connect"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker2_plus_connect",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-3",
+   "brand": "ultimaker",
+   "model": "3",
+   "aliases": [
+    "ultimaker3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 233,
+    "y": 215,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      209.3,
+      160.9
+     ],
+     [
+      209.3,
+      205
+     ],
+     [
+      233,
+      205
+     ],
+     [
+      233,
+      160.9
+     ]
+    ],
+    [
+     [
+      190.3,
+      0
+     ],
+     [
+      190.3,
+      7
+     ],
+     [
+      233,
+      7
+     ],
+     [
+      233,
+      0
+     ]
+    ],
+    [
+     [
+      191.1,
+      0
+     ],
+     [
+      191.1,
+      7
+     ],
+     [
+      233,
+      7
+     ],
+     [
+      233,
+      0
+     ]
+    ],
+    [
+     [
+      191.4,
+      205
+     ],
+     [
+      191.4,
+      215
+     ],
+     [
+      233,
+      215
+     ],
+     [
+      233,
+      205
+     ]
+    ],
+    [
+     [
+      0,
+      211
+     ],
+     [
+      0,
+      215
+     ],
+     [
+      15.599999999999994,
+      215
+     ],
+     [
+      15.599999999999994,
+      211
+     ]
+    ],
+    [
+     [
+      0,
+      1.7000000000000028
+     ],
+     [
+      19.599999999999994,
+      1.7000000000000028
+     ],
+     [
+      19.599999999999994,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 115
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker3",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-3extended",
+   "brand": "ultimaker",
+   "model": "3 Extended",
+   "aliases": [
+    "ultimaker3extended"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 233,
+    "y": 215,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      209.3,
+      160.9
+     ],
+     [
+      209.3,
+      205
+     ],
+     [
+      233,
+      205
+     ],
+     [
+      233,
+      160.9
+     ]
+    ],
+    [
+     [
+      190.3,
+      0
+     ],
+     [
+      190.3,
+      7
+     ],
+     [
+      233,
+      7
+     ],
+     [
+      233,
+      0
+     ]
+    ],
+    [
+     [
+      191.1,
+      0
+     ],
+     [
+      191.1,
+      7
+     ],
+     [
+      233,
+      7
+     ],
+     [
+      233,
+      0
+     ]
+    ],
+    [
+     [
+      191.4,
+      205
+     ],
+     [
+      191.4,
+      215
+     ],
+     [
+      233,
+      215
+     ],
+     [
+      233,
+      205
+     ]
+    ],
+    [
+     [
+      0,
+      211
+     ],
+     [
+      0,
+      215
+     ],
+     [
+      15.599999999999994,
+      215
+     ],
+     [
+      15.599999999999994,
+      211
+     ]
+    ],
+    [
+     [
+      0,
+      1.7000000000000028
+     ],
+     [
+      19.599999999999994,
+      1.7000000000000028
+     ],
+     [
+      19.599999999999994,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 115
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker3_extended"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker3_extended",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-factor4",
+   "brand": "ultimaker",
+   "model": "Factor 4",
+   "aliases": [
+    "ultimakerfactor4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 340,
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_factor4"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_factor4",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8",
+       "CC 0.4",
+       "CC 0.6",
+       "DD 0.4",
+       "HT 0.6"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-factor4plus",
+   "brand": "ultimaker",
+   "model": "Factor 4+",
+   "aliases": [
+    "ultimakerfactor4plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 340,
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_factor4_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_factor4_plus",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "AA+ 0.4",
+       "BB 0.4",
+       "BB 0.8",
+       "CC 0.4",
+       "CC 0.6",
+       "CC+ 0.6",
+       "DD 0.4",
+       "HT 0.6"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-method",
+   "brand": "ultimaker",
+   "model": "Method",
+   "aliases": [
+    "ultimakermethod"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 283.3,
+    "y": 236.48,
+    "origin": [
+     -141.65,
+     -118.24
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 196.749,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 67
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_method"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_method",
+      "nozzles": [
+       "1A",
+       "1C",
+       "2A",
+       "LABS"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-methodx",
+   "brand": "ultimaker",
+   "model": "Method X",
+   "aliases": [
+    "ultimakermethodx"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 283.3,
+    "y": 236.48,
+    "origin": [
+     -141.65,
+     -118.24
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 196.749,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 107
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_methodx"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_methodx",
+      "nozzles": [
+       "1A",
+       "1C",
+       "1XA",
+       "2A",
+       "2XA",
+       "LABS"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-methodxl",
+   "brand": "ultimaker",
+   "model": "Method XL",
+   "aliases": [
+    "ultimakermethodxl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 410,
+    "y": 320,
+    "origin": [
+     -205,
+     -160
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 319.9,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 100
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_methodxl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_methodxl",
+      "nozzles": [
+       "1A",
+       "1C",
+       "1XA",
+       "2A",
+       "2XA",
+       "LABS"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-original",
+   "brand": "ultimaker",
+   "model": "Original",
+   "aliases": [
+    "ultimakeroriginal"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_original"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_original",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-originaldualextrusion",
+   "brand": "ultimaker",
+   "model": "Original Dual Extrusion",
+   "aliases": [
+    "ultimakeroriginaldualextrusion"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 195,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_original_dual"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_original_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-originalplus",
+   "brand": "ultimaker",
+   "model": "Original+",
+   "aliases": [
+    "ultimakeroriginalplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_original_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_original_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-sline",
+   "brand": "ultimaker",
+   "model": "S-line",
+   "aliases": [
+    "ultimakersline"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 190,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "ULTIMAKERSline"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Ultimaker S-line",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Ultimaker S3",
+         "defaultProcess": "0.20mm NORMAL @ULTIMAKER",
+         "processes": [
+          {
+           "name": "0.10mm FINE @ULTIMAKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @ULTIMAKER",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm NORMAL @ULTIMAKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm DRAFT @ULTIMAKER",
+           "layerHeight": 0.25
+          }
+         ]
+        },
+        {
+         "name": "Ultimaker S5/S7",
+         "defaultProcess": "0.20mm NORMAL @ULTIMAKER",
+         "processes": [
+          {
+           "name": "0.10mm FINE @ULTIMAKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @ULTIMAKER",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm NORMAL @ULTIMAKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm DRAFT @ULTIMAKER",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ultimaker-s3",
+   "brand": "ultimaker",
+   "model": "S3",
+   "aliases": [
+    "ultimakers3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 190,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_s3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_s3",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8",
+       "CC 0.4",
+       "CC 0.6",
+       "DD 0.4"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-s5",
+   "brand": "ultimaker",
+   "model": "S5",
+   "aliases": [
+    "ultimakers5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 50
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "orca": "UltiMaker-S5",
+    "cura": "ultimaker_s5"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_s5",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8",
+       "CC 0.4",
+       "CC 0.6",
+       "DD 0.4"
+      ]
+     }
+    ],
+    "orcaslicer": [
+     {
+      "model": "UltiMaker S5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "UltiMaker S5 0.4 nozzle - Single Extruder",
+         "defaultProcess": "0.18mm Standard @UltiMaker S5",
+         "processes": [
+          {
+           "name": "0.18mm Standard @UltiMaker S5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.2mm Fast @UltiMaker S5",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        },
+        {
+         "name": "UltiMaker S5 0.4 nozzle",
+         "defaultProcess": "0.18mm Standard @UltiMaker S5",
+         "processes": [
+          {
+           "name": "0.18mm Standard @UltiMaker S5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.2mm Fast @UltiMaker S5",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ultimaker-s6",
+   "brand": "ultimaker",
+   "model": "S6",
+   "aliases": [
+    "ultimakers6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 50
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_s6"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_s6",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "AA+ 0.4",
+       "BB 0.4",
+       "CC 0.4",
+       "CC 0.6",
+       "CC+ 0.4",
+       "CC+ 0.6",
+       "DD 0.4"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-s7",
+   "brand": "ultimaker",
+   "model": "S7",
+   "aliases": [
+    "ultimakers7"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 50
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_s7"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_s7",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "BB 0.4",
+       "BB 0.8",
+       "CC 0.4",
+       "CC 0.6",
+       "DD 0.4"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "ultimaker-s8",
+   "brand": "ultimaker",
+   "model": "S8",
+   "aliases": [
+    "ultimakers8"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 240,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 120,
+    "chamber": 50
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "griffin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ultimaker_s8"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ultimaker_s8",
+      "nozzles": [
+       "AA 0.25",
+       "AA 0.4",
+       "AA 0.8",
+       "AA+ 0.4",
+       "BB 0.4",
+       "CC 0.4",
+       "CC 0.6",
+       "CC+ 0.4",
+       "CC+ 0.6",
+       "DD 0.4"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

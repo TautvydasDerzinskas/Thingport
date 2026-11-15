@@ -5,7 +5,7 @@ import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { z } from "zod";
 import { parseBody } from "../utils/validate";
-import { getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
+import { forgetStorageUsage, getStorageUsage, listLogs, listUsersWithPrintCounts } from "../services/adminService";
 import { createLog } from "../services/auditLog";
 import { communityWidgetsSource, communityWidgetUsage, widgetsInUse } from "../services/customWidgetsService";
 import { getToolsAccess, setToolsAccess, TOOLS_AUDIENCES } from "../services/settingsService";
@@ -20,6 +20,15 @@ import {
   uninstallRepoTool,
 } from "../services/toolsService";
 import { listStorageFolder } from "../services/storageBrowserService";
+import {
+  CLEANUP_TASKS,
+  currentStorageCleanup,
+  startStorageCleanup,
+  type StorageCleanupRun,
+} from "../services/storageCleanup";
+import { currentStorageMove } from "../services/storageMoveService";
+import { currentFileReuseBackfill } from "../services/fileReuseBackfill";
+import { PHOTO_KEEP_OPTIONS, type PhotoKeep } from "../services/settingsService";
 import { deleteUser, deleteUserModels, permissionsOver, setUserRole } from "../services/userAdminService";
 import { getHealthReport, HEALTH_COMPONENTS, testHealth } from "../services/systemHealthService";
 import { INVITATION_TTL_DAYS, inviteUser } from "../services/invitationService";
@@ -40,11 +49,14 @@ import {
   startQueueJob,
 } from "../services/importQueueService";
 import { toAdminImportJobOut, toAdminQueueJobOut, toImportJobItemOut } from "../dto";
+import migrateRouter from "./adminMigrate";
 
 // Mounted at /api/admin (app.ts), so these guards only see admin routes.
 const router = Router();
 router.use(requireAuth);
 router.use(requireAdmin);
+
+router.use("/migrate", migrateRouter);
 
 router.get(
   "/users",
@@ -98,13 +110,80 @@ router.get(
   "/storage",
   asyncHandler(async (_req, res) => {
     const usage = await getStorageUsage();
+    const { breakdown, freeable } = usage;
     res.json({
       model_bytes: usage.modelBytes,
       model_count: usage.modelCount,
       total_bytes: usage.totalBytes,
       picture_bytes: usage.pictureBytes,
       other_generated_bytes: usage.otherGeneratedBytes,
+      breakdown: {
+        previews: breakdown.previews,
+        old: breakdown.old,
+        photos: breakdown.photos,
+        thumbnails: breakdown.thumbnails,
+        description: breakdown.description,
+        slicer: breakdown.slicer,
+        tag_pictures: breakdown.tagPictures,
+        bundles: breakdown.bundles,
+        other: breakdown.other,
+      },
+      freeable,
     });
+  }),
+);
+
+function storageCleanupOut(run: StorageCleanupRun | null) {
+  if (!run) return null;
+  return {
+    running: run.running,
+    started_at: run.startedAt,
+    finished_at: run.finishedAt,
+    keep_photos: run.keepPhotos,
+    tasks: run.tasks,
+  };
+}
+
+// Free up space: the clean-ups picked in Administration → Storage, run in the background; the page follows them here.
+router.get(
+  "/storage/cleanup",
+  asyncHandler(async (_req, res) => {
+    res.json({ cleanup: storageCleanupOut(currentStorageCleanup()) });
+  }),
+);
+
+const cleanupSchema = z.object({
+  tasks: z.array(z.enum(CLEANUP_TASKS)).min(1),
+  keep_photos: z
+    .number()
+    .refine((value): value is PhotoKeep => (PHOTO_KEEP_OPTIONS as readonly number[]).includes(value))
+    .nullable()
+    .optional(),
+});
+router.post(
+  "/storage/cleanup",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(cleanupSchema, req.body);
+    if (body.tasks.includes("photos") && !body.keep_photos) {
+      throw new HttpError(400, "Say how many photos each model keeps", "keep_photos_required");
+    }
+    if (currentStorageCleanup()?.running) {
+      throw new HttpError(409, "Space is already being freed", "storage_cleanup_running");
+    }
+    if (currentStorageMove()?.running) {
+      throw new HttpError(409, "Model files are being moved; try again once that's done", "storage_moving");
+    }
+    if (currentFileReuseBackfill()?.running) {
+      throw new HttpError(409, "Identical files are being checked; try again once that's done", "file_reuse_running");
+    }
+    const keepPhotos = (body.keep_photos as PhotoKeep | null | undefined) ?? null;
+    startStorageCleanup(req.userId!, body.tasks, keepPhotos, forgetStorageUsage);
+    void createLog({
+      userId: req.userId!,
+      action: "storage_cleanup_started",
+      details: { tasks: body.tasks, ...(body.tasks.includes("photos") ? { keep_photos: keepPhotos } : {}) },
+    });
+    res.json({ cleanup: storageCleanupOut(currentStorageCleanup()) });
   }),
 );
 
@@ -145,7 +224,8 @@ router.get(
   }),
 );
 
-// Re-inviting an address sends a fresh link and retires the old one.
+// Re-inviting an address makes a fresh link and retires the old one. `link` is null when it went by email, and
+// otherwise (no SMTP) the link for the admin to send.
 const inviteSchema = z.object({ email: z.string().trim().email("Enter a valid email address") });
 router.post(
   "/invitations",
@@ -153,14 +233,19 @@ router.post(
     const body = parseBody(inviteSchema, req.body);
     const admin = await prisma.user.findUnique({ where: { id: req.userId! } });
     if (!admin) throw new HttpError(401, "Invalid or expired token");
-    const invitation = await inviteUser({
+    const { invitation, link } = await inviteUser({
       email: body.email,
       invitedById: admin.id,
       inviterName: admin.displayName,
       origin: req.get("origin") ?? null,
     });
     void createLog({ userId: admin.id, action: "user_invited", details: { email: invitation.email } });
-    res.json({ email: invitation.email, expires_at: invitation.expiresAt, expires_in_days: INVITATION_TTL_DAYS });
+    res.json({
+      email: invitation.email,
+      expires_at: invitation.expiresAt,
+      expires_in_days: INVITATION_TTL_DAYS,
+      link,
+    });
   }),
 );
 

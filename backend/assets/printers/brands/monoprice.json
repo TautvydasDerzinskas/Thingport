@@ -1,0 +1,233 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "monoprice",
+  "name": "Monoprice"
+ },
+ "printers": [
+  {
+   "id": "monoprice-mpminidelta",
+   "brand": "monoprice",
+   "model": "MP Mini Delta",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 110,
+    "y": 110,
+    "origin": [
+     -55,
+     -55
+    ],
+    "diameter": 110
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mp_mini_delta"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mp_mini_delta",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "monoprice-mpminideltav2",
+   "brand": "monoprice",
+   "model": "MP Mini Delta V2",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 110,
+    "y": 110,
+    "origin": [
+     -55,
+     -55
+    ],
+    "diameter": 110
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mp_mini_delta_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mp_mini_delta_v2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "monoprice-selectminiv1",
+   "brand": "monoprice",
+   "model": "Select Mini V1",
+   "aliases": [
+    "monopriceselectminiv1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "monoprice_select_mini_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "monoprice_select_mini_v1",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "monoprice-selectminiv2e3d",
+   "brand": "monoprice",
+   "model": "Select Mini V2 (E3D)",
+   "aliases": [
+    "monopriceselectminiv2e3d",
+    "selectminiv2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "monoprice_select_mini_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "monoprice_select_mini_v2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "monoprice-ultimate",
+   "brand": "monoprice",
+   "model": "Ultimate",
+   "aliases": [
+    "monopriceultimate"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "monoprice_ultimate"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "monoprice_ultimate",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

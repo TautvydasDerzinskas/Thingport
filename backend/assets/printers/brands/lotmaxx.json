@@ -1,0 +1,144 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "lotmaxx",
+  "name": "Lotmaxx"
+ },
+ "printers": [
+  {
+   "id": "lotmaxx-sc10",
+   "brand": "lotmaxx",
+   "model": "SC-10",
+   "aliases": [
+    "lotmaxxsc10"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "lotmaxx_sc10"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "lotmaxx_sc10",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "lotmaxx-sc20",
+   "brand": "lotmaxx",
+   "model": "SC-20",
+   "aliases": [
+    "lotmaxxsc20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 320,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "lotmaxx_sc20"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "lotmaxx_sc20",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "lotmaxx-shark",
+   "brand": "lotmaxx",
+   "model": "Shark",
+   "aliases": [
+    "lotmaxxshark"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 265,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "lotmaxx_sc60"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "lotmaxx_sc60",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

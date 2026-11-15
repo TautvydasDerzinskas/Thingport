@@ -26,3 +26,11 @@ In short, for either:
 Once merged, a widget shows up under **Community** in every Thingport instance's custom widgets, and a tool under
 **Administration → Tools**, for an admin to install. Raise its `version` when you change it, and people who installed
 it are offered the update.
+
+## A secret achievement
+
+A published widget or tool can hide an easter egg that gives its users a secret badge: call
+`thingport.achievements?.unlock("<key>")` when they find it (one of the community widgets has one). The badge
+has to be in Thingport too, so the same pull request adds it: `<slug>/<key>` to `SECRETS` in
+`backend/src/services/achievementCatalog.ts`, its entry in `frontend/src/constants/achievements.ts` (with its art in
+`frontend/src/components/achievements/`), and its name, rule and stat under `app.achievements.badges` in every locale.

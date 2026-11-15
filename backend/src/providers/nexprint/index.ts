@@ -150,7 +150,7 @@ export const nexprintLists: ProviderLists = {
     .array(
       z
         .string()
-        .regex(/^G\d+$/i)
+        .regex(/^[GC]\d+$/i)
         .max(32)
         .transform((id) => id.toUpperCase()),
     )

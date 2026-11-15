@@ -13,6 +13,8 @@ export type LogAction =
   | "mcp_access_changed"
   | "file_reuse_changed"
   | "file_reuse_backfill_started"
+  | "storage_cleanup_started"
+  | "photos_per_model_changed"
   | "license_files_changed"
   | "custom_widgets_changed"
   | "tool_installed"
@@ -51,6 +53,7 @@ export type LogAction =
   | "grab_connected"
   | "grab_disconnected"
   | "social_settings_changed"
+  | "achievement_settings_changed"
   | "chat_room_created"
   | "chat_room_edited"
   | "chat_room_deleted"
@@ -63,7 +66,12 @@ export type LogAction =
   | "federation_resumed"
   | "federation_disconnected"
   | "federation_blocked"
-  | "federation_unblocked";
+  | "federation_unblocked"
+  | "migration_prepared"
+  | "migration_started"
+  | "migration_export_created"
+  | "migration_export_revoked"
+  | "migration_export_read";
 
 /** Fire-and-forget: a logging failure must never break the action it records. */
 export async function createLog(params: {

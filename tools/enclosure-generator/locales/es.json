@@ -126,6 +126,7 @@
   "reset.body": "Todos los ajustes vuelven a como empiezan. Deshacer los recupera.",
   "reset.title": "¿Volver a los valores iniciales?",
   "save.addToCollection": "Añadir a una colección",
+  "save.done": "Guardado en Thingport: {name}",
   "save.nothingYet": "Todavía no hay nada que guardar",
   "save.openIt": "Abrirla",
   "screw.baseHole": "Agujero en la base",

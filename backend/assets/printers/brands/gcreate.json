@@ -1,0 +1,792 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "gcreate",
+  "name": "gCreate"
+ },
+ "printers": [
+  {
+   "id": "gcreate-gmax15plus",
+   "brand": "gcreate",
+   "model": "gMax 1.5 Plus",
+   "aliases": [
+    "gmax15plusdualextruder"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 406,
+    "y": 406,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 533,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "gmax15plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "gmax15plus",
+      "nozzles": [
+       "0.25mm E3D (Difficult)",
+       "0.4mm E3D",
+       "0.5mm E3D (Default)",
+       "0.5mm J-Head",
+       "0.6mm E3D",
+       "0.8mm E3D",
+       "1.0mm J-Head",
+       "1.2mm E3D Volcano"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "gmax15plus_dual",
+      "nozzles": [
+       "0.25mm E3D (Difficult)",
+       "0.4mm E3D",
+       "0.5mm E3D (Default)",
+       "0.5mm J-Head",
+       "0.6mm E3D",
+       "0.8mm E3D",
+       "1.0mm J-Head"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "gcreate-gmax15xtplus",
+   "brand": "gcreate",
+   "model": "gMax 1.5XT Plus",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 410,
+    "y": 410,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 533,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "GMAX15P"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "gMax 1.5XT Plus",
+      "presets": {
+       "0.3": [
+        {
+         "name": "gMax 1.5XT Plus - 0.3mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "gMax 1.5XT Plus - 0.4mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "gMax 1.5XT Plus - 0.5mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "gMax 1.5XT Plus - 0.8mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ],
+       "1.0": [
+        {
+         "name": "gMax 1.5XT Plus - 1.0mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "gcreate-gmax2",
+   "brand": "gcreate",
+   "model": "gMax 2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 457,
+    "y": 457,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 610,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "GMAX2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "gMax 2",
+      "presets": {
+       "0.3": [
+        {
+         "name": "gMax 2 - 0.3mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "gMax 2 - 0.4mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "gMax 2 - 0.5mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "gMax 2 - 0.8mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ],
+       "1.0": [
+        {
+         "name": "gMax 2 - 1.0mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "gcreate-gmax2dual2in1",
+   "brand": "gcreate",
+   "model": "gMax 2 Dual 2in1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 457,
+    "y": 457,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 610,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "single-extruder multi-material"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "GMAX2DUAL2IN1"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "gMax 2 Dual 2in1",
+      "presets": {
+       "0.5": [
+        {
+         "name": "gMax 2 Dual 2in1 - 0.5, 0.5mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.20mm - Dual 2in1 @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Dual 2in1 PLA with PVA Support @GCREATE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "gcreate-gmax2dualchimera",
+   "brand": "gcreate",
+   "model": "gMax 2 Dual Chimera",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 457,
+    "y": 457,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 610,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "GMAX2DUAL"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "gMax 2 Dual Chimera",
+      "presets": {
+       "0.5": [
+        {
+         "name": "gMax 2 Dual Chimera - 0.5, 0.5mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.20mm - Dual 2in1 PLA with PVA Support @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Dual Chimera @GCREATE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "gcreate-gmax2pro",
+   "brand": "gcreate",
+   "model": "gMax 2 Pro",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 457,
+    "y": 457,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 610,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "GMAX2PRO"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "gMax 2 Pro",
+      "presets": {
+       "0.3": [
+        {
+         "name": "gMax 2 Pro - 0.3mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.4": [
+        {
+         "name": "gMax 2 Pro - 0.4mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.5": [
+        {
+         "name": "gMax 2 Pro - 0.5mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.10mm - Very Thin Layers @GCREATE",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm - Thin Layers @GCREATE",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm - Standard Layers @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Fast @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm - Standard Layers Slow (PETG and TPU) @GCREATE",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm - Thick Layers @GCREATE",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm - Very Thick Layers @GCREATE",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "gMax 2 Pro - 0.8mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ],
+       "1.0": [
+        {
+         "name": "gMax 2 Pro - 1.0mm nozzle",
+         "defaultProcess": "0.20mm - Standard Layers @GCREATE",
+         "processes": [
+          {
+           "name": "0.40mm - High Output Layers @GCREATE",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm - High Output Layers @GCREATE",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm - High Output Layers @GCREATE",
+           "layerHeight": 0.6
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

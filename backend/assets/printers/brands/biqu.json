@@ -1,0 +1,927 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "biqu",
+  "name": "BIQU"
+ },
+ "printers": [
+  {
+   "id": "biqu-b1",
+   "brand": "biqu",
+   "model": "B1",
+   "aliases": [
+    "biqub1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 270,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "B1",
+    "cura": "biqu_b1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BIQU B1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU B1 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "BIQU B1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU B1 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BIQU B1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU B1 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BIQU B1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU B1 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BIQU B1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU B1 (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU B1 (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "biqu_b1",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "biqu-b1abl",
+   "brand": "biqu",
+   "model": "B1 ABL",
+   "aliases": [
+    "biqub1abl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 270,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "biqu_b1_abl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "biqu_b1_abl",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "biqu-b2",
+   "brand": "biqu",
+   "model": "B2",
+   "aliases": [
+    "biqub2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 270,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "biqu_b2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "biqu_b2",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "biqu-bx",
+   "brand": "biqu",
+   "model": "BX",
+   "aliases": [
+    "biqubx"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "BX",
+    "prusa": "BIQUBX",
+    "cura": "biqu_bx_abl"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU BX (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "BIQU BX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU BX",
+         "defaultProcess": "0.20mm NORMAL @BIQU",
+         "processes": [
+          {
+           "name": "0.08mm HIGHDETAIL @BIQU",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm HIGHDETAIL @BIQU",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm DETAIL @BIQU",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm OPTIMAL @BIQU",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @BIQU",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @BIQU",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm SUPERDRAFT @BIQU",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "biqu_bx_abl",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "biqu-hurakan",
+   "brand": "biqu",
+   "model": "Hurakan",
+   "aliases": [
+    "biquhurakan"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 270,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Hurakan",
+    "cura": "biqu_hurakan"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BIQU Hurakan",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU Hurakan (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "BIQU Hurakan",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU Hurakan (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "BIQU Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "BIQU Generic ABS",
+           "ASA": "BIQU Generic ASA",
+           "PA": "BIQU Generic PA",
+           "PA-CF": "BIQU Generic PA-CF",
+           "PC": "BIQU Generic PC",
+           "PETG": "BIQU Generic PETG",
+           "PETG-CF": "BIQU Generic PETG-CF",
+           "PLA": "BIQU Generic PLA",
+           "PLA-CF": "BIQU Generic PLA-CF",
+           "PVA": "BIQU Generic PVA",
+           "TPU": "BIQU Generic TPU"
+          },
+          "products": {
+           "biqu generic abs": "BIQU Generic ABS",
+           "biqu generic asa": "BIQU Generic ASA",
+           "biqu generic pa": "BIQU Generic PA",
+           "biqu generic pa-cf": "BIQU Generic PA-CF",
+           "biqu generic pc": "BIQU Generic PC",
+           "biqu generic petg": "BIQU Generic PETG",
+           "biqu generic petg-cf": "BIQU Generic PETG-CF",
+           "biqu generic pla": "BIQU Generic PLA",
+           "biqu generic pla silk": "BIQU Generic PLA Silk",
+           "biqu generic pla-cf": "BIQU Generic PLA-CF",
+           "biqu generic pva": "BIQU Generic PVA",
+           "biqu generic tpu": "BIQU Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BIQU Hurakan",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU Hurakan (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BIQU Hurakan",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU Hurakan (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BIQU Hurakan",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BIQU Hurakan (0.4 nozzle)",
+         "defaultProcess": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @BIQU Hurakan (0.4 nozzle)",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "biqu_hurakan",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

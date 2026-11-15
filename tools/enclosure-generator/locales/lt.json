@@ -126,6 +126,7 @@
   "reset.body": "Visi nustatymai grįš į pradinius. Atšaukimas juos sugrąžins.",
   "reset.title": "Atgal į numatytuosius?",
   "save.addToCollection": "Įdėti į rinkinį",
+  "save.done": "Įrašyta į Thingport: {name}",
   "save.nothingYet": "Kol kas nėra ko įrašyti",
   "save.openIt": "Atverti",
   "screw.baseHole": "Pagrindo skylė",

@@ -1,0 +1,144 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "builder",
+  "name": "Builder"
+ },
+ "printers": [
+  {
+   "id": "builder-premiumlarge",
+   "brand": "builder",
+   "model": "Premium Large",
+   "aliases": [
+    "builderpremiumlarge"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 215,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "builder_premium_large"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "builder_premium_large",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "builder-premiummedium",
+   "brand": "builder",
+   "model": "Premium Medium",
+   "aliases": [
+    "builderpremiummedium"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 215,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "builder_premium_medium"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "builder_premium_medium",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "builder-premiumsmall",
+   "brand": "builder",
+   "model": "Premium Small",
+   "aliases": [
+    "builderpremiumsmall"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 215,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "builder_premium_small"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "builder_premium_small",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

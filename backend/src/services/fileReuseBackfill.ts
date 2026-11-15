@@ -7,10 +7,12 @@ import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { withStorageLock } from "../utils/storageLock";
+import { formatBytes } from "../utils/formatBytes";
 import { cloneFromHandle, MIN_SHARE_BYTES, openRegularFile, sha256OfFile, sha256OfHandle } from "./fileReuse";
 import { createNotification } from "./notificationService";
 import { pruneEmptyStorageDirs } from "./printService";
 import { getFileReuse } from "./settingsService";
+import { currentStorageCleanup } from "./storageCleanup";
 import { currentStorageMove } from "./storageMoveService";
 import { delegate, DROP, LEGACY_BUNDLES, managedPathOf, STORED, type StoredKind } from "./storedContent";
 
@@ -136,8 +138,9 @@ const dropSetting = (key: string) => prisma.setting.deleteMany({ where: { key } 
 async function run(state: FileReuseBackfillRun, pending: Pending): Promise<void> {
   try {
     await putSetting(PENDING_KEY, pending);
-    // A move changes where files are; wait for it rather than race it. (Starting one is refused while this runs.)
-    while (currentStorageMove()?.running) await sleep(1000);
+    // A move changes where files are, and freeing space removes some: wait for either rather than race it. (Starting
+    // one is refused while this runs, but one can begin while the switch's setting is being saved.)
+    while (currentStorageMove()?.running || currentStorageCleanup()?.running) await sleep(1000);
     await removeLeftovers();
     const canClone = await probeClones();
     state.unsupported = !canClone;
@@ -188,17 +191,6 @@ async function startQueued(ended: FileReuseBackfillRun): Promise<void> {
     ended.restartQueued = false;
     log.error("couldn't start the queued run", { error: err });
   }
-}
-
-function formatBytes(bytes: number): string {
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${unit ? value.toFixed(1) : value} ${units[unit]}`;
 }
 
 async function notifyDone(userId: string, state: FileReuseBackfillRun): Promise<void> {

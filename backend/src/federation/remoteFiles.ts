@@ -11,6 +11,7 @@ import type { Request, Response as ExpressResponse } from "express";
 import { IMPORT_MAX_BYTES } from "../config";
 import { prisma } from "../db";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { folderPath, normalizeFolder } from "../utils/fileFolder";
 import { writeZip } from "../utils/zipWriter";
 import { originOf } from "./addresses";
 import type { RemoteFileDetails } from "./remoteIndex";
@@ -59,6 +60,7 @@ export function filesOf(model: Pick<RemoteModel, "files">, origin: string): Remo
     profile: isProfile(file.profile) ? file.profile : undefined,
     thumb: own(file.thumb) ? file.thumb : undefined,
     thumbGenerated: own(file.thumb) && file.thumbGenerated === true ? true : undefined,
+    folder: (typeof file.folder === "string" && normalizeFolder(file.folder)) || undefined,
   }));
 }
 
@@ -193,9 +195,10 @@ export async function sendRemoteZip(
       const dest = path.join(dir, `${index}`);
       await fetchRemoteFile(model, index, dest, { signal: viewer.signal, maxBytes: IMPORT_MAX_BYTES - total });
       total += (await fsp.stat(dest)).size;
-      // Two files may share a name: the later one gets a number.
-      let arcname = sanitizeFilename(file.name) || `file-${index}`;
-      for (let n = 2; taken.has(arcname); n++) arcname = `${n}-${sanitizeFilename(file.name)}`;
+      // In its folder, as the partner keeps it. Two files may still share a place: the later one gets a number.
+      const name = sanitizeFilename(file.name) || `file-${index}`;
+      let arcname = folderPath(file.folder, name);
+      for (let n = 2; taken.has(arcname); n++) arcname = folderPath(file.folder, `${n}-${name}`);
       taken.add(arcname);
       entries.push({ arcname, filePath: dest });
     }

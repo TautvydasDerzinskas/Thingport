@@ -1,0 +1,722 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "cubicon",
+  "name": "Cubicon"
+ },
+ "printers": [
+  {
+   "id": "cubicon-dualproa30",
+   "brand": "cubicon",
+   "model": "Dual Pro-A30",
+   "aliases": [
+    "cubicondualproa30"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_dual_pro_a30"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_dual_pro_a30",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-single",
+   "brand": "cubicon",
+   "model": "Single",
+   "aliases": [
+    "cubiconsingle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 190,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_3dp_110f"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_3dp_110f",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-singleplus",
+   "brand": "cubicon",
+   "model": "Single Plus",
+   "aliases": [
+    "cubiconsingleplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 190,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_3dp_310f"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_3dp_310f",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-style",
+   "brand": "cubicon",
+   "model": "Style",
+   "aliases": [
+    "cubiconstyle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_3dp_210f"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_3dp_210f",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-styleneoa22",
+   "brand": "cubicon",
+   "model": "Style Neo-A22",
+   "aliases": [
+    "cubiconstyleneoa22"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_style_neo_a22"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_style_neo_a22",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-styleneoa31",
+   "brand": "cubicon",
+   "model": "Style Neo-A31",
+   "aliases": [
+    "cubiconstyleneoa31"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 310,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_style_neo_a31"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_style_neo_a31",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-styleplusa15",
+   "brand": "cubicon",
+   "model": "Style Plus-A15",
+   "aliases": [
+    "cubiconstyleplusa15"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "cubicon_style_plus_a15"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cubicon_style_plus_a15",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "cubicon-xceleri",
+   "brand": "cubicon",
+   "model": "xCeler-I",
+   "aliases": [
+    "cubiconxceleri"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 290,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Cubicon xCeler-I",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-I 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-I 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Cubicon xCeler-I",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-I 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-I",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @base",
+           "PA": "Cubicon PA-CF @base",
+           "PC": "Cubicon PC @base",
+           "PETG": "Cubicon PETG @base",
+           "PLA": "Cubicon PLA @base"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @base",
+           "cubicon abs-a100": "Cubicon ABS-A100 @base",
+           "cubicon absk": "Cubicon ABSk @base",
+           "cubicon pa-cf": "Cubicon PA-CF @base",
+           "cubicon pc": "Cubicon PC @base",
+           "cubicon petg": "Cubicon PETG @base",
+           "cubicon pla": "Cubicon PLA @base",
+           "cubicon pla+": "Cubicon PLA+ @base",
+           "cubicon plai21": "Cubicon PLAi21 @base"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Cubicon xCeler-I",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-I 0.4 nozzle",
+         "defaultProcess": "0.08mm Extra Fine @Creality K1 (0.4 nozzle)",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-I 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @base",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-I 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-I 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "cubicon-xcelermini",
+   "brand": "cubicon",
+   "model": "xCeler-Mini",
+   "aliases": [
+    "cubiconxcelermini"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Cubicon xCeler-Mini",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-Mini 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-Mini 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Mini 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Cubicon xCeler-Mini",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-Mini 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-Mini 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Mini",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Mini 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Mini 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "cubicon-xcelerplus",
+   "brand": "cubicon",
+   "model": "xCeler-Plus",
+   "aliases": [
+    "cubiconxcelerplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 310,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Cubicon xCeler-Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-Plus 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @Cubicon xCeler-Plus 0.4 nozzle",
+           "PA": "Cubicon PA-CF @Cubicon xCeler-Plus 0.4 nozzle",
+           "PC": "Cubicon PC @Cubicon xCeler-Plus 0.4 nozzle",
+           "PETG": "Cubicon PETG @Cubicon xCeler-Plus 0.4 nozzle",
+           "PLA": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon abs-a100": "Cubicon ABS-A100 @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon absk": "Cubicon ABSk @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pa-cf": "Cubicon PA-CF @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pc": "Cubicon PC @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon petg": "Cubicon PETG @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pla": "Cubicon PLA @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon pla+": "Cubicon PLA+ @Cubicon xCeler-Plus 0.4 nozzle",
+           "cubicon plai21": "Cubicon PLAi21 @Cubicon xCeler-Plus 0.4 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Cubicon xCeler-Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Cubicon xCeler-Plus 0.4 nozzle",
+         "defaultProcess": "cubicon default @base",
+         "processes": [
+          {
+           "name": "cubicon default @Cubicon xCeler-Plus 0.4 nozzle",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Cubicon PLA @Cubicon xCeler-Plus",
+         "filaments": {
+          "types": {
+           "ABS": "Cubicon ABS @base",
+           "PA": "Cubicon PA-CF @base",
+           "PC": "Cubicon PC @base",
+           "PETG": "Cubicon PETG @base",
+           "PLA": "Cubicon PLA @base"
+          },
+          "products": {
+           "cubicon abs": "Cubicon ABS @base",
+           "cubicon abs-a100": "Cubicon ABS-A100 @base",
+           "cubicon absk": "Cubicon ABSk @base",
+           "cubicon pa-cf": "Cubicon PA-CF @base",
+           "cubicon pc": "Cubicon PC @base",
+           "cubicon petg": "Cubicon PETG @base",
+           "cubicon pla": "Cubicon PLA @base",
+           "cubicon pla+": "Cubicon PLA+ @base",
+           "cubicon plai21": "Cubicon PLAi21 @base"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

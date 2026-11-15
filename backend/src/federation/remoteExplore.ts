@@ -7,6 +7,7 @@ import type { RemoteOriginOut } from "../dto";
 import { prisma } from "../db";
 import { PERSON_COLLECTIONS_PAGE } from "../services/socialService";
 import { mediaAddress } from "./media";
+import { getAchievementSettings } from "../services/settingsService";
 import { libraryCopyOfRemote, type RemoteSource } from "./remoteCopy";
 import { fileKey, filesOf } from "./remoteFiles";
 import { isFederationLive } from "./settings";
@@ -242,6 +243,8 @@ export type RemotePersonPageOut = {
     cover_preset: string | null;
     cover_position_y: number;
     joined_at: string | null;
+    /** Their badges as their instance said; null while achievements are off here. */
+    achievements: RemoteAchievementOut[] | null;
   };
   /** The first page of them; the rest from GET /explore/elsewhere/person/:id/collections. */
   collections: RemoteCollectionCardOut[];
@@ -254,13 +257,27 @@ const collectionsOrder: Prisma.RemoteCollectionOrderByWithRelationInput[] = [
   { id: "asc" },
 ];
 
+/** One of a partner's person's badges, checked as it was read (remoteIndex.ts). */
+export type RemoteAchievementOut = { id: string; tier: number; expired?: boolean };
+
+function remoteAchievements(value: Prisma.JsonValue): RemoteAchievementOut[] {
+  return Array.isArray(value)
+    ? value.flatMap((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const { id, tier, expired } = item as Record<string, unknown>;
+        if (typeof id !== "string" || typeof tier !== "number") return [];
+        return [{ id, tier, ...(expired === true ? { expired } : {}) }];
+      })
+    : [];
+}
+
 export async function remotePerson(id: string): Promise<RemotePersonPageOut | null> {
   const row = await prisma.remotePerson.findFirst({
     where: { id, listed: true, peer: ACTIVE },
     include: { peer: true },
   });
   if (!row) return null;
-  const [collections, total] = await Promise.all([
+  const [collections, total, achievementsOn] = await Promise.all([
     prisma.remoteCollection.findMany({
       where: { personId: row.id, limited: false },
       orderBy: collectionsOrder,
@@ -268,6 +285,7 @@ export async function remotePerson(id: string): Promise<RemotePersonPageOut | nu
       include: { peer: true, person: true },
     }),
     prisma.remoteCollection.count({ where: { personId: row.id, limited: false } }),
+    getAchievementSettings().then(({ enabled }) => enabled),
   ]);
   return {
     person: {
@@ -278,6 +296,7 @@ export async function remotePerson(id: string): Promise<RemotePersonPageOut | nu
       cover_preset: row.coverUrl ? null : row.coverPreset,
       cover_position_y: row.coverPositionY,
       joined_at: row.joinedAt?.toISOString() ?? null,
+      achievements: achievementsOn ? remoteAchievements(row.achievements) : null,
     },
     collections: await collectionCardsOut(collections),
     collections_total: total,
@@ -343,7 +362,7 @@ export type RemoteModelOut = RemoteModelCardOut & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for it. */
-  files: { name: string; size: number | null; media_type: string | null; url: string | null }[];
+  files: { name: string; folder: string | null; size: number | null; media_type: string | null; url: string | null }[];
   updated_at: string | null;
   owner_handle: string | null;
   /** Its owner's public collections it's in. */
@@ -378,6 +397,7 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
     images: row.images.flatMap((url) => mediaAddress(url) ?? []),
     files: filesOf(row, row.peer.origin).map((file) => ({
       name: file.name,
+      folder: file.folder ?? null,
       size: file.size,
       media_type: file.mediaType,
       url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,

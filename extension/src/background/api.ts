@@ -3,10 +3,11 @@
 
 import type { LoginResult } from "../shared/api";
 import type { Connection } from "../shared/messages";
-import { STORAGE_KEYS, apiUrl } from "../shared/storage";
+import { STORAGE_KEYS, apiUrl, normalizeInstanceUrl } from "../shared/storage";
 import { isMakerworldUrl } from "../shared/urls";
 import { getStoredConfig, isConfigured, type ConfiguredConfig } from "./config";
 import { getLiveMakerworldCookie, maybeSyncMakerworldCookie } from "../providers/makerworld/cookie";
+import { backgroundText } from "./localize";
 
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
@@ -21,6 +22,16 @@ async function errorDetail(res: Response, fallback: string): Promise<string> {
     if (body && body.detail) return body.detail;
   } catch {}
   return fallback;
+}
+
+/** The instance answered a call with an error status, its own message as the message. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
 }
 
 /** The instance turned the saved email/password down (401/403), as opposed to not answering. */
@@ -70,7 +81,7 @@ export async function fetchInstance(url: string, init: RequestInit): Promise<Res
   await res.body?.cancel().catch(() => undefined);
   init.signal?.throwIfAborted();
   const origin = await httpsUpgradeOf(target, init.signal);
-  if (!origin) throw redirectError();
+  if (!origin) throw await redirectError();
   httpsUpgrades.set(target.origin, origin);
   return fetchUpgraded(target, origin, init);
 }
@@ -81,13 +92,13 @@ function fetchUpgraded(target: URL, origin: string, init: RequestInit): Promise<
   // Assign the path as data: resolving a leading // as a relative URL would replace the verified host.
   upgraded.pathname = target.pathname;
   upgraded.search = target.search;
-  return fetchInstanceOnce(upgraded.href, init).catch((err: unknown) => {
+  return fetchInstanceOnce(upgraded.href, init).catch(async (err: unknown) => {
     init.signal?.throwIfAborted();
     // The next request asks the configured address again, in case the upgrade is gone.
     httpsUpgrades.delete(target.origin);
     // Typically a connection made before Grab asked for the https:// origin as well: it may not reach it yet.
     if (err instanceof TypeError) {
-      throw new Error(`Thingport redirects to ${origin}: connect Grab again so it may reach that address`);
+      throw new Error(await backgroundText("thingportRedirectsTo", { origin }));
     }
     throw err;
   });
@@ -97,11 +108,10 @@ async function fetchInstanceOnce(url: string, init: RequestInit): Promise<Respon
   const res = await fetch(url, { ...init, redirect: "manual" });
   if (!isRedirect(res)) return res;
   await res.body?.cancel().catch(() => undefined);
-  throw redirectError();
+  throw await redirectError();
 }
 
-const redirectError = () =>
-  new Error("Thingport instance redirected a credential-bearing request; configure its final URL");
+const redirectError = async () => new Error(await backgroundText("thingportCredentialRedirect"));
 
 /** Mirrored on the toolbar icon, so a broken connection shows before the user reaches a provider. */
 function setConnectionBadge(connected: boolean): void {
@@ -119,6 +129,22 @@ async function askImportQueue(instanceUrl: string): Promise<boolean | null> {
     if (!res.ok) return null;
     const health = (await res.json()) as { import_queue?: boolean } | null;
     return health ? health.import_queue === true : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Whether the instance can approve Grab instead of taking a password. Null when it can't be asked: unreachable, or
+ *  an address still being typed. Its health check answers any origin, so this works before access is granted. */
+export async function probePairing(rawInstanceUrl: string): Promise<boolean | null> {
+  try {
+    const res = await fetch(apiUrl(normalizeInstanceUrl(rawInstanceUrl), "/health"), {
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+    });
+    // An error, say a proxy's with a JSON body of its own, says nothing of what the instance can do.
+    if (!res.ok) return null;
+    const health = (await res.json()) as { grab_pairing?: boolean } | null;
+    return health ? health.grab_pairing === true : null;
   } catch {
     return null;
   }
@@ -161,7 +187,7 @@ export async function loginAndStoreToken(credentials: Credentials): Promise<stri
     },
   );
   if (!res.ok) {
-    const detail = await errorDetail(res, `Could not sign in to this Thingport instance (${res.status})`);
+    const detail = await errorDetail(res, await backgroundText("couldNotSignInToThingport", { status: res.status }));
     throw res.status === 401 || res.status === 403 ? new LoginRejectedError(detail) : new Error(detail);
   }
   const data = (await res.json()) as LoginResult;
@@ -215,17 +241,15 @@ export async function ensureToken(config: ConfiguredConfig, { forceRefresh = fal
     return config.token;
   }
   pendingLogin ??= loginAndStoreToken(config)
-    .catch((err: unknown) => {
+    .catch(async (err: unknown) => {
       void chrome.storage.local.remove(STORAGE_KEYS.loginVerifiedAt);
       setConnectionBadge(false);
       // A silent re-login has no form to show the error next to, so say where to fix it.
       if (err instanceof LoginRejectedError) {
         throw new LoginRejectedError(
-          config.connectionToken
-            ? `Thingport no longer accepts this browser's Thingport Grab (${err.message}). ` +
-                "Open the extension popup, click the instance and connect again."
-            : `Thingport rejected the email or password saved in Thingport Grab (${err.message}). ` +
-                "Open the extension popup, click the instance and sign in again.",
+          await backgroundText(config.connectionToken ? "reloginApprovalRejected" : "reloginCredentialsRejected", {
+            detail: err.message,
+          }),
           err.detail,
         );
       }
@@ -262,15 +286,22 @@ export async function checkConnection(): Promise<Connection> {
 
 export async function requireConfig(): Promise<ConfiguredConfig> {
   const config = await getStoredConfig();
-  if (!isConfigured(config)) throw new Error("Thingport Grab isn't configured yet -- open the extension popup first.");
-  if (config.disabled) throw new Error("Thingport Grab is disabled -- re-enable it from the extension popup.");
+  if (!isConfigured(config)) throw new Error(await backgroundText("grabNotConfigured"));
+  if (config.disabled) throw new Error(await backgroundText("grabDisabled"));
   return config;
 }
 
 /** `path` is after `/api`. MakerWorld `/import*` calls get the live browser cookie attached unless
- *  the caller set one. */
-export async function apiCall<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const config = await requireConfig();
+ *  the caller set one. `account`: the connection to ask as, with the token it held when it was read, rather than
+ *  whichever is stored when the request goes. It's never signed in again, as that would store its token over another
+ *  account's, so an expired one fails. */
+export async function apiCall<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  account?: ConfiguredConfig,
+): Promise<T> {
+  const config = account ?? (await requireConfig());
 
   let finalBody = body as Record<string, unknown> | undefined;
   // The browser's own MakerWorld cookie, on any import of a MakerWorld link: the backend imports MakerWorld's models by
@@ -300,9 +331,14 @@ export async function apiCall<T = unknown>(method: string, path: string, body?: 
       body: finalBody ? JSON.stringify(finalBody) : undefined,
     });
 
-  let res = await doFetch(await ensureToken(config));
-  if (res.status === 401) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
-  if (!res.ok) throw new Error(await errorDetail(res, `Request failed (${res.status})`));
+  if (account && !account.token) throw new ApiError(await backgroundText("accountNotSignedIn"), 401);
+  let res = await doFetch(account ? account.token! : await ensureToken(config));
+  if (res.status === 401 && !account) res = await doFetch(await ensureToken(config, { forceRefresh: true }));
+  if (!res.ok)
+    throw new ApiError(
+      await errorDetail(res, await backgroundText("requestFailed", { status: res.status })),
+      res.status,
+    );
   if (res.status === 204) return null as T;
   return (await res.json()) as T;
 }

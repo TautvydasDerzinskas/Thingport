@@ -1806,13 +1806,7 @@ export default async function mount(thingport) {
         // A model without its picture is still the plan; the render stands in.
       }
       sheets["save-sheet"].close();
-      ui.toast(`Saved “${name}” to your library`, "success");
-      const yes = await ui.confirm({
-        title: t("plans.openTitle"),
-        message: t("plans.openBody"),
-        confirmLabel: t("plans.open"),
-      });
-      if (yes) models.open(model.id);
+      ui.toast(t("save.done", { name }), "success", { openModel: model.id });
     } finally {
       button.disabled = false;
       button.textContent = t("plans.save");

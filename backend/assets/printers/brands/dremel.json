@@ -1,0 +1,761 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "dremel",
+  "name": "Dremel"
+ },
+ "printers": [
+  {
+   "id": "dremel-3d20",
+   "brand": "dremel",
+   "model": "3D20",
+   "aliases": [
+    "dremel3d20"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 140,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "Dremel_3D20"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Dremel 3D20",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D20 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D20 0.4",
+         "processes": [
+          {
+           "name": ".10mm Detail @Dremel 3D20 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D20 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D20 0.4",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D20 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D20 all"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Dremel 3D20",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D20 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D20 0.4",
+         "processes": [
+          {
+           "name": ".10mm Detail @Dremel 3D20 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D20 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D20 0.4",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Dremel 3D20",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D20 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D20 0.4",
+         "processes": [
+          {
+           "name": ".10mm Detail @Dremel 3D20 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D20 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D20 0.4",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Dremel 3D20",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D20 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D20 0.4",
+         "processes": [
+          {
+           "name": ".10mm Detail @Dremel 3D20 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D20 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D20 0.4",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Dremel 3D20",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D20 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D20 0.4",
+         "processes": [
+          {
+           "name": ".10mm Detail @Dremel 3D20 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D20 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D20 0.4",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D20 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "dremel-3d40",
+   "brand": "dremel",
+   "model": "3D40",
+   "aliases": [
+    "dremel3d40"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 155,
+    "origin": [
+     -127.5,
+     -77.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 170,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "orca": "Dremel_3D40"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Dremel 3D40",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D40 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D40 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D40 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D40 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D40 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D40 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D40 all"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Dremel 3D40",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D40 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D40 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D40 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D40 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Dremel 3D40",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D40 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D40 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D40 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D40 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D40 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Dremel 3D40",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D40 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D40 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D40 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D40 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D40 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Dremel 3D40",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D40 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D40 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D40 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D40 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D40 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D40 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D40 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "dremel-3d45",
+   "brand": "dremel",
+   "model": "3D45",
+   "aliases": [
+    "dremel3d45"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 155,
+    "origin": [
+     -127.5,
+     -77.5
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 170,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "orca": "Dremel_3D45"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Dremel 3D45",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D45 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D45 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D45 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D45 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D45 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Generic PLA @Dremel 3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Generic PLA @Dremel 3D45 all"
+          },
+          "products": {
+           "generic pla": "Generic PLA @Dremel 3D45 all"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Dremel 3D45",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D45 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D45 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D45 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D45 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D45 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Dremel 3D45",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D45 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D45 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D45 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D45 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D45 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Dremel 3D45",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D45 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D45 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D45 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D45 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D45 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Dremel 3D45",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Dremel 3D45 0.4 nozzle",
+         "defaultProcess": ".20mm Standard @Dremel 3D45 0.4",
+         "processes": [
+          {
+           "name": ".05mm Super Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.05
+          },
+          {
+           "name": ".10mm Detail @Dremel 3D45 0.4",
+           "layerHeight": 0.1
+          },
+          {
+           "name": ".20mm Standard @Dremel 3D45 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": ".30mm Draft @Dremel 3D45 0.4",
+           "layerHeight": 0.3
+          },
+          {
+           "name": ".34mm SuperDraft @Dremel 3D45 0.4",
+           "layerHeight": 0.34
+          }
+         ],
+         "defaultFilament": "Dremel Generic PLA @3D45 all",
+         "filaments": {
+          "types": {
+           "PLA": "Dremel Generic PLA"
+          },
+          "products": {
+           "dremel generic pla": "Dremel Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

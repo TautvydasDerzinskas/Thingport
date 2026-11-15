@@ -1,0 +1,80 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ideaformer",
+  "name": "IdeaFormer"
+ },
+ "printers": [
+  {
+   "id": "ideaformer-ir3v2",
+   "brand": "ideaformer",
+   "model": "IR3 V2",
+   "aliases": [
+    "ideaformerir3v2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 2000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "IdeaFormer_IR3_V2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "IdeaFormer IR3 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "IdeaFormer IR3 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @IdeaFormer IR3 V2",
+         "processes": [
+          {
+           "name": "0.20mm Standard @IdeaFormer IR3 V2",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Generic PLA @IdeaFormer IR3 V2",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @IdeaFormer IR3 V2",
+           "PLA": "Generic PLA @IdeaFormer IR3 V2"
+          },
+          "products": {
+           "esun pla": "eSUN PLA @IdeaFormer IR3 V2",
+           "generic petg": "Generic PETG @IdeaFormer IR3 V2",
+           "generic pla": "Generic PLA @IdeaFormer IR3 V2"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,636 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "modix",
+  "name": "Modix"
+ },
+ "printers": [
+  {
+   "id": "modix-v3big120x",
+   "brand": "modix",
+   "model": "V3 BIG-120X",
+   "aliases": [
+    "modixv3big120x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1200,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 640,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big120X"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big120X",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v3big120z",
+   "brand": "modix",
+   "model": "V3 BIG-120Z",
+   "aliases": [
+    "modixv3big120z"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1200,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big120Z"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big120Z",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v3big180x",
+   "brand": "modix",
+   "model": "V3 BIG-180X",
+   "aliases": [
+    "modixv3big180x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1800,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big180X"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big180X",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v3big40",
+   "brand": "modix",
+   "model": "V3 BIG-40",
+   "aliases": [
+    "modixv3big40"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 800,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big40"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big40",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v3big60",
+   "brand": "modix",
+   "model": "V3 BIG-60",
+   "aliases": [
+    "modixv3big60"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 660,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big60"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big60",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v3bigmeter",
+   "brand": "modix",
+   "model": "V3 BIG-Meter",
+   "aliases": [
+    "modixv3bigmeter"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v3_big_meter"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v3_big_meter",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v4big120x",
+   "brand": "modix",
+   "model": "V4 BIG-120X",
+   "aliases": [
+    "modixv4big120x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1200,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 640,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v4_big120X"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v4_big120X",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v4big120z",
+   "brand": "modix",
+   "model": "V4 BIG-120Z",
+   "aliases": [
+    "modixv4big120z"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1200,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v4_big120Z"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v4_big120Z",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v4big180x",
+   "brand": "modix",
+   "model": "V4 BIG-180X",
+   "aliases": [
+    "modixv4big180x"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1800,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v4_big180X"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v4_big180X",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v4big60",
+   "brand": "modix",
+   "model": "V4 BIG-60",
+   "aliases": [
+    "modixv4big60"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 660,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v4_big60"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v4_big60",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "modix-v4bigmeter",
+   "brand": "modix",
+   "model": "V4 BIG-Meter",
+   "aliases": [
+    "modixv4bigmeter"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2",
+    "1.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "modix_v4_big_meter"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "modix_v4_big_meter",
+      "nozzles": [
+       "0.4 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "1.0 mm Nozzle",
+       "1.2 mm Nozzle",
+       "1.4 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

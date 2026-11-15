@@ -1,0 +1,993 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "re3d",
+  "name": "re3D"
+ },
+ "printers": [
+  {
+   "id": "re3d-gigabot4",
+   "brand": "re3d",
+   "model": "Gigabot 4",
+   "aliases": [
+    "re3dgigabot4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 590,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D Gigabot 4"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D Gigabot 4",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Gigabot 4 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Gigabot 4 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D Gigabot 4",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Gigabot 4 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Gigabot 4 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "re3d-gigabot4xlt",
+   "brand": "re3d",
+   "model": "Gigabot 4 XLT",
+   "aliases": [
+    "re3dgigabot4xlt"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 590,
+    "y": 760,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 900,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D Gigabot 4 XLT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D Gigabot 4 XLT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Gigabot 4 XLT 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Gigabot 4 XLT 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D Gigabot 4 XLT",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Gigabot 4 XLT 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Gigabot 4 XLT 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "re3d-gigabotx2",
+   "brand": "re3d",
+   "model": "GigabotX 2",
+   "aliases": [
+    "re3dgigabotx2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 552,
+    "y": 593,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 470,
+   "nozzles": [
+    "0.8",
+    "1.75"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D GigabotX 2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D GigabotX 2",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D GigabotX 2 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D GigabotX 2 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D GigabotX 2",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D GigabotX 2 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D GigabotX 2 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "re3d-gigabotx2xlt",
+   "brand": "re3d",
+   "model": "GigabotX 2 XLT",
+   "aliases": [
+    "re3dgigabotx2xlt"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 552,
+    "y": 740,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 470,
+   "nozzles": [
+    "0.8",
+    "1.75"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D GigabotX 2 XLT"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D GigabotX 2 XLT",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D GigabotX 2 XLT 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D GigabotX 2 XLT 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D GigabotX 2 XLT",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D GigabotX 2 XLT 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D GigabotX 2 XLT 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "re3d-terabot4",
+   "brand": "re3d",
+   "model": "Terabot 4",
+   "aliases": [
+    "re3dterabot4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 915,
+    "y": 915,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.4",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D Terabot 4"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D Terabot 4",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Terabot 4 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.4 nozzle",
+           "PETG": "re3D PETG @0.4 nozzle",
+           "PLA": "re3D PLA @0.4 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.4 nozzle",
+           "re3d petg": "re3D PETG @0.4 nozzle",
+           "re3d pla": "re3D PLA @0.4 nozzle"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Terabot 4 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC @0.8 nozzle",
+           "PETG": "re3D PETG @0.8 nozzle",
+           "PLA": "re3D PLA @0.8 nozzle"
+          },
+          "products": {
+           "re3d pc": "re3D PC @0.8 nozzle",
+           "re3d petg": "re3D PETG @0.8 nozzle",
+           "re3d pla": "re3D PLA @0.8 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D Terabot 4",
+      "presets": {
+       "0.4": [
+        {
+         "name": "re3D Terabot 4 0.4 nozzle",
+         "defaultProcess": "0.26 Standard",
+         "processes": [
+          {
+           "name": "0.2 Fine",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26 Standard",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32 Draft",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.4 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "re3D Terabot 4 0.8 nozzle",
+         "defaultProcess": "0.4 Standard",
+         "processes": [
+          {
+           "name": "0.3 Fine",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.4 Standard",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "re3D PLA @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PC": "re3D PC",
+           "PETG": "re3D PETG",
+           "PLA": "re3D PLA"
+          },
+          "products": {
+           "re3d pc": "re3D PC",
+           "re3d petg": "re3D PETG",
+           "re3d pla": "re3D PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "re3d-terabotx2",
+   "brand": "re3d",
+   "model": "TerabotX 2",
+   "aliases": [
+    "re3dterabotx2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 892,
+    "y": 908,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 870,
+   "nozzles": [
+    "0.8",
+    "1.75"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "re3D TerabotX 2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "re3D TerabotX 2",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D TerabotX 2 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @0.8 nozzle",
+           "PP": "re3D rPP @0.8 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @0.8 nozzle",
+           "re3d rpp": "re3D rPP @0.8 nozzle"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D TerabotX 2 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D rPETG @1.75 nozzle",
+           "PP": "re3D rPP @1.75 nozzle"
+          },
+          "products": {
+           "re3d rpetg": "re3D rPETG @1.75 nozzle",
+           "re3d rpp": "re3D rPP @1.75 nozzle"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "re3D TerabotX 2",
+      "presets": {
+       "0.8": [
+        {
+         "name": "re3D TerabotX 2 0.8 nozzle",
+         "defaultProcess": "0.6 Standard",
+         "processes": [
+          {
+           "name": "0.6 Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @0.8 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ],
+       "1.75": [
+        {
+         "name": "re3D TerabotX 2 1.75 nozzle",
+         "defaultProcess": "1.0 Standard",
+         "processes": [
+          {
+           "name": "1.0 Standard",
+           "layerHeight": 1
+          }
+         ],
+         "defaultFilament": "re3D Greengate rPETG @1.75 nozzle",
+         "filaments": {
+          "types": {
+           "PETG": "re3D Greengate rPETG",
+           "PP": "re3D rPP"
+          },
+          "products": {
+           "re3d greengate rpetg": "re3D Greengate rPETG",
+           "re3d rpp": "re3D rPP"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

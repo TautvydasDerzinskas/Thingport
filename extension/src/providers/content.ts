@@ -12,9 +12,13 @@ import { isUnboughtThreedexportModel } from "./threedexport/content";
 import { meshyPlanLock, type MeshyPlanLock } from "./meshy/content";
 import { loadMakeronlineProfiles } from "./makeronline/content";
 import { loadMakerworldDesignForPage, makerworldProfileIds, makerworldScripts } from "./makerworld/pageData";
+import { loadEufymakeProfiles } from "./eufymake/content";
 import { loadNexprintProfiles } from "./nexprint/content";
+import { loadQidimakerProfileIds } from "./qidimaker/content";
+import { loadVoxelshareProfileIds, shownVoxelshareProfileUrl } from "./voxelshare/content";
 import { loadSnapmakerProfiles, snapmakerUserId } from "./snapmaker/content";
 import { thangsDownloadBlock } from "./thangs/content";
+import { t } from "../shared/i18n";
 
 export type ProfileScope = "url" | "designer" | "all";
 
@@ -30,6 +34,9 @@ export type ContentModule = {
   loadProfiles?(url: string): Promise<((scope: ProfileScope) => string[]) | null>;
   /** A link to one of the model's print profiles, where it isn't `#profileId-<id>`. */
   profileUrl?(url: string, profileId: string): string;
+  /** The page's link naming the print profile it shows, where its address doesn't follow the one picked there; the
+   *  link as it is otherwise. */
+  shownProfileUrl?(url: string): string;
   /** Why the model on this page can't be imported, or null when it can, or that can't be told. */
   blockReason?(url: string): Promise<ImportBlock | null>;
   /** What the panel says of a list's model the instance marks as one the user can't import, by its reason. */
@@ -44,20 +51,30 @@ export type ContentModule = {
 };
 
 const PIXUP3D_PAID: ImportBlock = {
-  title: "Paid model",
-  hint: "Buy it on PIXUP first. Once it's in your library, Thingport imports it.",
+  get title() {
+    return t("paidModel");
+  },
+  get hint() {
+    return t("buyOnPixup");
+  },
 };
 
 const MESHY_BLOCKS: Record<MeshyPlanLock, ImportBlock> = {
   community: {
-    title: "Needs Meshy Pro",
-    hint:
-      "Meshy keeps other people's community models for its Pro and Studio plans. Your own import on a free plan, " +
-      "unless its AI agent made them.",
+    get title() {
+      return t("needsMeshyPro");
+    },
+    get hint() {
+      return t("meshyCommunityLocked");
+    },
   },
   own: {
-    title: "Needs a paid Meshy plan",
-    hint: "Meshy keeps the models its AI agent made for paid plans, even yours.",
+    get title() {
+      return t("needsPaidMeshyPlan");
+    },
+    get hint() {
+      return t("meshyOwnLocked");
+    },
   },
 };
 
@@ -80,8 +97,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
       return document.querySelector('[data-component-name="DownloadButton"]')
         ? null
         : {
-            title: "Paid model",
-            hint: "Buy it on MyMiniFactory first. Once it's in your library, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnMyMiniFactory"),
           };
     },
   },
@@ -89,8 +106,9 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     loadProfiles: loadSnapmakerProfiles,
     // Likes and bookmarks share one page, whose address doesn't say which: the instance's names it.
     async ownList(url) {
-      const [own, list] = [await snapmakerUserId(), parseSnapmakerListUrl(url)];
-      return own && list && own === list.userId ? snapmakerListUrl(own, list.list) : null;
+      const list = parseSnapmakerListUrl(url);
+      const own = list ? await snapmakerUserId(list.region) : null;
+      return own && list && own === list.userId ? snapmakerListUrl(own, list.list, list.region) : null;
     },
   },
   makeronline: { loadProfiles: loadMakeronlineProfiles },
@@ -115,7 +133,7 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // Thangs counts every download against the account's daily ones, so one it would refuse isn't tried.
   thangs: { blockReason: thangsDownloadBlock },
   // Its only list, the likes, is the viewer's own page (/user/me/), which names no one else.
-  eufymake: {},
+  eufymake: { loadProfiles: loadEufymakeProfiles },
   // Its collections and anyone's likes are anyone's to read.
   pinshape: {},
   // Its only list, the liked products, is the user's own page (/like-product), which names no one else.
@@ -129,8 +147,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     async blockReason(url) {
       return (await isUnboughtCgtraderModel(url))
         ? {
-            title: "Paid model",
-            hint: "Buy it on CGTrader first. Once it's in your purchases, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnCgtrader"),
           }
         : null;
     },
@@ -144,8 +162,8 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
     async blockReason(url) {
       return (await isUnboughtCults3dModel(url))
         ? {
-            title: "Paid model",
-            hint: "Buy it on Cults3D first. Once it's in your downloads, Thingport imports it from there.",
+            title: t("paidModel"),
+            hint: t("buyOnCults3d"),
           }
         : null;
     },
@@ -175,9 +193,22 @@ export const CONTENT_MODULES: { readonly [K in ProviderId]: ContentModule } = {
   // imported once bought, so one their page offers to sell them isn't tried.
   threedexport: {
     async blockReason(url) {
-      return isUnboughtThreedexportModel(url)
-        ? { title: "Paid model", hint: "Buy it on 3DExport first. Once it's yours, Thingport imports it." }
-        : null;
+      return isUnboughtThreedexportModel(url) ? { title: t("paidModel"), hint: t("buyOnThreedexport") } : null;
     },
   },
+  // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and
+  // their private collections their own too, read with their sign-in. Its links name a print profile by ?profile_id=.
+  qidimaker: {
+    loadProfiles: loadQidimakerProfileIds,
+    profileUrl(url, profileId) {
+      const named = new URL(url);
+      named.hash = "";
+      named.searchParams.set("profile_id", profileId);
+      return named.toString();
+    },
+  },
+  // Anyone's public collections are anyone's to read; its likes are the user's own page, which names no one else, and
+  // their private collections their own too, read with their sign-in. Its page keeps the profile it shows to itself, so
+  // the panel takes the one picked in its list.
+  voxelshare: { loadProfiles: loadVoxelshareProfileIds, shownProfileUrl: shownVoxelshareProfileUrl },
 };

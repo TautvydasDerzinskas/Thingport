@@ -1,0 +1,1140 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "lulzbot",
+  "name": "LulzBot"
+ },
+ "printers": [
+  {
+   "id": "lulzbot-mini1",
+   "brand": "lulzbot",
+   "model": "Mini 1",
+   "aliases": [
+    "lulzbotmini1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 154,
+    "y": 154,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 158,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Lulzbot-Mini-1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Lulzbot Mini 1",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Mini 1 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Mini 1",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Mini 1",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Mini 1",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Lulzbot Mini 1",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Lulzbot Mini 1",
+           "PETG": "Generic PETG @Lulzbot Mini 1",
+           "PLA": "Generic PLA @Lulzbot Mini 1"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Lulzbot Mini 1",
+           "generic petg": "Generic PETG @Lulzbot Mini 1",
+           "generic pla": "Generic PLA @Lulzbot Mini 1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-mini2se05",
+   "brand": "lulzbot",
+   "model": "Mini 2 | SE | 0.5 mm",
+   "aliases": [
+    "lulzbotmini2se05"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 162,
+    "y": 162,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      166,
+      -4
+     ],
+     [
+      166,
+      4
+     ],
+     [
+      158,
+      -4
+     ]
+    ],
+    [
+     [
+      -4,
+      -4
+     ],
+     [
+      -4,
+      4
+     ],
+     [
+      4,
+      -4
+     ]
+    ],
+    [
+     [
+      166,
+      166
+     ],
+     [
+      166,
+      158
+     ],
+     [
+      158,
+      166
+     ]
+    ],
+    [
+     [
+      -4,
+      166
+     ],
+     [
+      -4,
+      158
+     ],
+     [
+      4,
+      166
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "lulzbot_mini_2_se"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "lulzbot_mini_2_se",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "lulzbot-mini2sl025micro",
+   "brand": "lulzbot",
+   "model": "Mini 2 | SL | 0.25 mm (Micro)",
+   "aliases": [
+    "lulzbotmini2sl025micro",
+    "mini2sl025"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 162,
+    "y": 162,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      166,
+      -4
+     ],
+     [
+      166,
+      4
+     ],
+     [
+      158,
+      -4
+     ]
+    ],
+    [
+     [
+      -4,
+      -4
+     ],
+     [
+      -4,
+      4
+     ],
+     [
+      4,
+      -4
+     ]
+    ],
+    [
+     [
+      166,
+      166
+     ],
+     [
+      166,
+      158
+     ],
+     [
+      158,
+      166
+     ]
+    ],
+    [
+     [
+      -4,
+      166
+     ],
+     [
+      -4,
+      158
+     ],
+     [
+      4,
+      166
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "lulzbot_mini_2_sl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "lulzbot_mini_2_sl",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "lulzbot-miniaero",
+   "brand": "lulzbot",
+   "model": "Mini Aero",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 154,
+    "y": 154,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 158,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "MINI_AERO"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Mini Aero",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Mini Aero 0.5mm",
+         "defaultProcess": "0.25mm STANDARD @lulzbot",
+         "processes": [
+          {
+           "name": "0.14mm DETAIL @lulzbot",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.25mm STANDARD @lulzbot",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm SPEED @lulzbot",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-taz4or5",
+   "brand": "lulzbot",
+   "model": "Taz 4 or 5",
+   "aliases": [
+    "lulzbottaz4or5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Lulzbot-Taz-4-5"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Lulzbot Taz 4 or 5",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 4 or 5 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 4 or 5",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Lulzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Lulzbot",
+           "PETG": "Generic PETG @Lulzbot",
+           "PLA": "Generic PLA @Lulzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Lulzbot",
+           "generic petg": "Generic PETG @Lulzbot",
+           "generic pla": "Generic PLA @Lulzbot"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Lulzbot Taz 4 or 5",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 4 or 5 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 4 or 5",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Lulzbot Taz 4 or 5",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 4 or 5 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 4 or 5",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Lulzbot Taz 4 or 5",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 4 or 5 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 4 or 5",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 4 or 5",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-taz6",
+   "brand": "lulzbot",
+   "model": "Taz 6",
+   "aliases": [
+    "lulzbottaz6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Lulzbot-Taz-6"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Lulzbot Taz 6",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 6 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 6",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 6",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Lulzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Lulzbot",
+           "PETG": "Generic PETG @Lulzbot",
+           "PLA": "Generic PLA @Lulzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Lulzbot",
+           "generic petg": "Generic PETG @Lulzbot",
+           "generic pla": "Generic PLA @Lulzbot"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Lulzbot Taz 6",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 6 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 6",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 6",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Lulzbot Taz 6",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 6 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 6",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 6",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Lulzbot Taz 6",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz 6 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz 6",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz 6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz 6",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-tazpro",
+   "brand": "lulzbot",
+   "model": "Taz Pro",
+   "aliases": [
+    "lulzbottazprodual",
+    "lulzbottazprodualextruder",
+    "tazprodual",
+    "tazprodualextruder"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 280,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Dual",
+      "model": "Lulzbot Taz Pro Dual",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro Dual 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro Dual",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @Lulzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Lulzbot",
+           "PETG": "Generic PETG @Lulzbot",
+           "PLA": "Generic PLA @Lulzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Lulzbot",
+           "generic petg": "Generic PETG @Lulzbot",
+           "generic pla": "Generic PLA @Lulzbot"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "config": "Dual",
+      "model": "Lulzbot Taz Pro Dual",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro Dual 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro Dual",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "config": "Dual",
+      "model": "Lulzbot Taz Pro Dual",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro Dual 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro Dual",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "config": "Dual",
+      "model": "Lulzbot Taz Pro Dual",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro Dual 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro Dual",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro Dual",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Lulzbot 2.85mm PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Lulzbot 2.85mm ABS",
+           "PETG": "Lulzbot 2.85mm PETG",
+           "PLA": "Lulzbot 2.85mm PLA"
+          },
+          "products": {
+           "lulzbot 2.85mm abs": "Lulzbot 2.85mm ABS",
+           "lulzbot 2.85mm petg": "Lulzbot 2.85mm PETG",
+           "lulzbot 2.85mm pla": "Lulzbot 2.85mm PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "lulzbot_taz_pro_dual",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-tazpros",
+   "brand": "lulzbot",
+   "model": "Taz Pro S",
+   "aliases": [
+    "lulzbottazpros"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 280,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "Lulzbot-Taz-Pro-S"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Lulzbot Taz Pro S",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro S 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro S",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro S",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Lulzbot Taz Pro S",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro S 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro S",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro S",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Lulzbot Taz Pro S",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro S 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro S",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro S",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Lulzbot Taz Pro S",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Lulzbot Taz Pro S 0.5 nozzle",
+         "defaultProcess": "0.25mm Standard @Lulzbot Taz Pro S",
+         "processes": [
+          {
+           "name": "0.18mm High Detail @Lulzbot Taz Pro S",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.25mm Standard @Lulzbot Taz Pro S",
+           "layerHeight": 0.25
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "lulzbot-taz6aero",
+   "brand": "lulzbot",
+   "model": "Taz6 Aero",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.5"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "TAZ6_AERO"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Taz6 Aero",
+      "presets": {
+       "0.5": [
+        {
+         "name": "Taz6 Aero 0.5mm",
+         "defaultProcess": "0.25mm STANDARD @lulzbot",
+         "processes": [
+          {
+           "name": "0.14mm DETAIL @lulzbot",
+           "layerHeight": 0.14
+          },
+          {
+           "name": "0.25mm STANDARD @lulzbot",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm SPEED @lulzbot",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

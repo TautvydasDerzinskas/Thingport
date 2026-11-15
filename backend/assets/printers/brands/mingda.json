@@ -1,0 +1,615 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "mingda",
+  "name": "Mingda"
+ },
+ "printers": [
+  {
+   "id": "mingda-1000pro",
+   "brand": "mingda",
+   "model": "1000Pro",
+   "aliases": [
+    "mingda1000pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_1000pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_1000pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-4h",
+   "brand": "mingda",
+   "model": "4H",
+   "aliases": [
+    "mingda4h"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_4h"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_4h",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-600pro",
+   "brand": "mingda",
+   "model": "600Pro",
+   "aliases": [
+    "mingda600pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_600pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_600pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-6h",
+   "brand": "mingda",
+   "model": "6H",
+   "aliases": [
+    "mingda6h"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_6h"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_6h",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-d2",
+   "brand": "mingda",
+   "model": "D2",
+   "aliases": [
+    "mingdad2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_d2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_d2",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-d3",
+   "brand": "mingda",
+   "model": "D3",
+   "aliases": [
+    "d3pro",
+    "mingdad3pro",
+    "mingdarock3pro",
+    "pro",
+    "rock3pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_d3pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_d3pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     },
+     {
+      "definition": "mingda_rock3",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-d4pro",
+   "brand": "mingda",
+   "model": "D4 Pro",
+   "aliases": [
+    "mingdad4pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 420,
+    "y": 420,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_d4pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_d4pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-magicianmax",
+   "brand": "mingda",
+   "model": "Magician Max",
+   "aliases": [
+    "mingdamagicianmax"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_magician_max"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_magician_max",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-magicianpro",
+   "brand": "mingda",
+   "model": "Magician Pro",
+   "aliases": [
+    "mingdamagicianpro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_magician_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_magician_pro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "mingda-magicianx",
+   "brand": "mingda",
+   "model": "Magician X",
+   "aliases": [
+    "mingdamagicianx"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "mingda_magician_x"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "mingda_magician_x",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -60,6 +60,10 @@ const SIGNED_UPLOAD = `https://downloader.cults3d.com/uploaders/15745893/bluepri
  *  - "nested-zip-broken": and beside it an entry named like a zip that isn't one;
  *  - "other-account": the site shows the sign-in as somebody other than the API key's account;
  *  - "missing": no such model. */
+/** Each plate's place in its model, folder and name: "H501/Top.stl". */
+const placesOf = (plates: { filename: string; folder: string | null }[]) =>
+  plates.map((plate) => (plate.folder ? `${plate.folder}/${plate.filename}` : plate.filename)).toSorted();
+
 function handlerFor(scenario: string): FetchHandler {
   let ordered = scenario === "owned" || scenario === "paid-owned";
   const siteCalls: string[] = [];
@@ -218,12 +222,8 @@ describe("Cults3D specifics", () => {
       ctx.stub("nested-zip");
       const res = await ctx.importUrl();
       expectStatus(res, 200);
-      // Named apart by their folder where the inner zip has them twice, as a flat archive's are.
-      expect(res.body.plates.map((plate: { filename: string }) => plate.filename).toSorted()).toEqual([
-        "H501 - Top.stl",
-        "H502 - Top.stl",
-        "base.stl",
-      ]);
+      // In the folders the inner zip has them in, less the ones it's wrapped in: "3rdesignworks/<slug>/<slug>-v1.1".
+      expect(placesOf(res.body.plates)).toEqual(["H501/Top.stl", "H501/base.stl", "H502/Top.stl"]);
     });
 
     // A sibling entry named like a zip that isn't one: it's skipped, and the files already out of the good one stay.
@@ -232,11 +232,7 @@ describe("Cults3D specifics", () => {
       ctx.stub("nested-zip-broken");
       const res = await ctx.importUrl();
       expectStatus(res, 200);
-      expect(res.body.plates.map((plate: { filename: string }) => plate.filename).toSorted()).toEqual([
-        "H501 - Top.stl",
-        "H502 - Top.stl",
-        "base.stl",
-      ]);
+      expect(placesOf(res.body.plates)).toEqual(["H501/Top.stl", "H501/base.stl", "H502/Top.stl"]);
     });
 
     it("downloads a model already in the user's orders without ordering it", async () => {

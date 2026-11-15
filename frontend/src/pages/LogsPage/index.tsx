@@ -42,6 +42,9 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   file_reuse_changed: "info",
   license_files_changed: "info",
   file_reuse_backfill_started: "info",
+  // Can delete photos for good.
+  storage_cleanup_started: "warning",
+  photos_per_model_changed: "info",
   custom_widgets_changed: "warning",
   tool_installed: "info",
   // Takes the data it kept for everyone with it.
@@ -82,6 +85,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   grab_connected: "info",
   grab_disconnected: "default",
   social_settings_changed: "warning",
+  achievement_settings_changed: "warning",
   chat_room_created: "info",
   chat_room_edited: "default",
   chat_room_deleted: "error",
@@ -95,6 +99,11 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   federation_blocked: "error",
   federation_unblocked: "default",
   federation_user_requested: "info",
+  migration_prepared: "default",
+  migration_started: "warning",
+  migration_export_created: "warning",
+  migration_export_revoked: "default",
+  migration_export_read: "warning",
 };
 
 function isoDateOnly(d: Date): string {
@@ -182,10 +191,29 @@ export default function LogsPage({ onUnauthorized }: Props) {
         ]
           .filter(Boolean)
           .join(" · ");
+      case "achievement_settings_changed":
+        return typeof d.enabled === "boolean"
+          ? t(d.enabled ? "adminSettings.logs.achievementsOn" : "adminSettings.logs.achievementsOff")
+          : "";
       case "chat_room_created":
       case "chat_room_edited":
       case "chat_room_deleted":
         return typeof d.name === "string" ? d.name : "";
+      case "storage_cleanup_started":
+        return Array.isArray(d.tasks)
+          ? d.tasks
+              .filter((task): task is string => typeof task === "string")
+              .map((task) =>
+                task === "photos" && typeof d.keep_photos === "number"
+                  ? t("adminSettings.logs.photosTrimmed", { count: d.keep_photos })
+                  : t(`adminSettings.freeSpace.tasks.${task}.title`),
+              )
+              .join(" · ")
+          : "";
+      case "photos_per_model_changed":
+        return typeof d.keep === "number"
+          ? t("adminSettings.logs.photosKept", { count: d.keep })
+          : t("adminSettings.logs.photosKeptAll");
       case "license_files_changed":
         return typeof d.enabled === "boolean"
           ? t(d.enabled ? "adminSettings.logs.licenseFilesOn" : "adminSettings.logs.licenseFilesOff")
@@ -205,6 +233,11 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.origin === "string" ? d.origin : "";
       case "federation_user_requested":
         return typeof d.handle === "string" ? d.handle : "";
+      case "migration_prepared":
+        return typeof d.dump === "string" ? d.dump : typeof d.address === "string" ? d.address : "";
+      case "migration_started":
+        if (d.source === "manyfold") return t("adminSettings.logs.migrationManyfold");
+        return typeof d.people === "number" ? t("adminSettings.logs.migrationPeople", { count: d.people }) : "";
       case "descriptions_refetched":
         return t("adminSettings.logs.descriptionsRefetched", {
           email: typeof d.email === "string" ? d.email : "",

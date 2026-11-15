@@ -1,0 +1,481 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "gingeradditive",
+  "name": "Ginger Additive"
+ },
+ "printers": [
+  {
+   "id": "gingeradditive-gingerg1",
+   "brand": "gingeradditive",
+   "model": "Ginger G1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "1.2",
+    "3",
+    "5",
+    "8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Ginger_G1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Ginger G1",
+      "presets": {
+       "3": [
+        {
+         "name": "Ginger G1 3.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "1.50mm Standard",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "1.80mm Vasemode",
+           "layerHeight": 1.8
+          }
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
+        }
+       ],
+       "5": [
+        {
+         "name": "Ginger G1 5.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "2.50mm Standard",
+           "layerHeight": 2.5
+          }
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
+        }
+       ],
+       "8": [
+        {
+         "name": "Ginger G1 8.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "4.00mm Standard",
+           "layerHeight": 4
+          }
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Ginger G1 1.2 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "0.60mm Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Generic PLA @Ginger",
+         "filaments": {
+          "types": {
+           "PETG": "Generic PETG @Ginger",
+           "PLA": "Generic PLA @Ginger"
+          },
+          "products": {
+           "generic petg": "Generic PETG @Ginger",
+           "generic pla": "Generic PLA @Ginger"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Ginger G1",
+      "presets": {
+       "3": [
+        {
+         "name": "Ginger G1 3.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "1.50mm Standard",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "1.80mm Vasemode",
+           "layerHeight": 1.8
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "5": [
+        {
+         "name": "Ginger G1 5.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "2.50mm Standard",
+           "layerHeight": 2.5
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "8": [
+        {
+         "name": "Ginger G1 8.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "4.00mm Standard",
+           "layerHeight": 4
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Ginger G1 1.2 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "0.60mm Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Ginger G1",
+      "presets": {
+       "3": [
+        {
+         "name": "Ginger G1 3.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "1.50mm Standard",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "1.80mm Vasemode",
+           "layerHeight": 1.8
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "5": [
+        {
+         "name": "Ginger G1 5.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "2.50mm Standard",
+           "layerHeight": 2.5
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "8": [
+        {
+         "name": "Ginger G1 8.0 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "4.00mm Standard",
+           "layerHeight": 4
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "Ginger G1 1.2 nozzle",
+         "defaultProcess": "1.50mm Standard @Ginger G1",
+         "processes": [
+          {
+           "name": "0.60mm Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Ginger Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "ginger G1",
+      "presets": {
+       "3": [
+        {
+         "name": "ginger G1 3.0 nozzle",
+         "defaultProcess": "0.20mm Standard @MyKlipper",
+         "processes": [
+          {
+           "name": "1.50mm Standard",
+           "layerHeight": 1.5
+          },
+          {
+           "name": "1.80mm Vasemode",
+           "layerHeight": 1.8
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
+        }
+       ],
+       "5": [
+        {
+         "name": "ginger G1 5.0 nozzle",
+         "defaultProcess": "0.20mm Standard @MyKlipper",
+         "processes": [
+          {
+           "name": "2.50mm Standard",
+           "layerHeight": 2.5
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
+        }
+       ],
+       "8": [
+        {
+         "name": "ginger G1 8.0 nozzle",
+         "defaultProcess": "0.20mm Standard @MyKlipper",
+         "processes": [
+          {
+           "name": "4.00mm Standard",
+           "layerHeight": 4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "ginger G1 1.2 nozzle",
+         "defaultProcess": "0.20mm Standard @MyKlipper",
+         "processes": [
+          {
+           "name": "0.60mm Standard",
+           "layerHeight": 0.6
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PETG": "Ginger Generic PETG",
+           "PLA": "Ginger Generic PLA",
+           "rPETG": "Ginger Generic rPETG",
+           "rPLA": "Ginger Generic rPLA"
+          },
+          "products": {
+           "ginger generic petg": "Ginger Generic PETG",
+           "ginger generic pla": "Ginger Generic PLA",
+           "ginger generic rpetg": "Ginger Generic rPETG",
+           "ginger generic rpla": "Ginger Generic rPLA"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

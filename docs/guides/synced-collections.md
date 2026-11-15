@@ -2,8 +2,10 @@
 
 A synced collection follows a list on a model site -- a collection, someone's likes, or your bookmarks, wishlist or
 saved projects. When a model is added to it there, Thingport imports that model into the matching Thingport collection
-on its own, without you visiting the page again. Every site Thingport imports from can be synced except OwlCAD, which
-has no collections or likes; [what each one syncs](#what-each-site-syncs) is below.
+on its own, without you visiting the page again. One Thingport collection can follow several lists, on one site or on
+different ones, such as a MakerWorld collection of printer parts and a Printables collection of upgrades. Every site
+Thingport imports from can be synced except OwlCAD, which has no collections or likes;
+[what each one syncs](#what-each-site-syncs) is below.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../assets/collection-sync-dark.gif">
@@ -53,6 +55,8 @@ has no collections or likes; [what each one syncs](#what-each-site-syncs) is bel
 | PIXUP           | Anyone's collections and wishlists            | Your sign-in, for the files                                                                               |
 | Fab365          | Your favourites                               | Your sign-in, for the list and the files                                                                  |
 | 3DExport        | Collections, your private ones too            | Your sign-in, for the files and your own collections                                                      |
+| QIDI Maker      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
+| VoxelShare      | Collections, your private ones too, and likes | Your sign-in, for your own collections and likes; the files need none                                     |
 
 A few have more to know:
 
@@ -61,6 +65,9 @@ A few have more to know:
   and Grab sends the new one on your next visit. GrabCAD's lasts two days from its last use, and visiting grabcad.com
   with Grab now and then keeps it alive; without one, a GrabCAD sync waits rather than fail every model. 3DExport's
   lasts until you sign out of 3dexport.com, in any browser, and Grab sends the new one when you sign in again.
+  QIDI Maker's lasts 90 days; without it, a sync of a private collection of yours waits rather than take it for gone.
+  VoxelShare's lasts 31 days, and Grab sends each new one the site makes as you use it; a sync of a private collection
+  waits for it too.
 - **Left out.** A MyMiniFactory collection's paid models; on Thangs, Cults3D and PIXUP the paid ones you don't own, and
   on Thangs the print-only ones too. CGTrader's and 3DExport's paid ones aren't left out: one you haven't bought is
   refused when the sync reaches it, and counts as failed.
@@ -72,18 +79,20 @@ A few have more to know:
 ## Turn sync on in Thingport
 
 1. Open the Thingport collection that should follow a list on a provider, or create it first.
-2. Choose **⋮ → Sync configuration**. A collection that isn't synced yet opens on **Browse**.
+2. Choose **⋮ → Sync configuration**. A collection that isn't synced yet opens on **Add source**; one that already
+   follows a list has **Add source** at the bottom of the left-hand list.
 3. Pick the provider. Your own lists there are listed: on Printables, Thingiverse and MyMiniFactory, the public ones of
    the username you give the first time; everywhere else, those of the account you connected, as the table says (on
    Pinshape, the collections you subscribed to as well). Or paste the link of any list the site lets Thingport read,
    yours or someone else's.
-4. Pick one and click **Sync**. **Settings** sets how often it's checked, and for MakerWorld, Snapmaker Space,
-   MakerOnline, Creality Cloud and NexPrint which print profiles each new model brings, before you do.
+4. Pick one and click **Sync**. The dialog opens the new source, where you can change how often it's checked, and for
+   MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, eufyMake, QIDI Maker and VoxelShare which print profiles each
+   new model brings.
 
 The models already in the list are imported now, one at a time; MakerOnline's wait for Grab, as below. MakerWorld
 rate-limits bulk imports quickly, so there only models added from now on come in. Ones already in your library are
 added to the collection either way. A provider's list syncs with one Thingport collection at most, so one that's taken
-shows which collection follows it.
+shows which collection follows it, and one this collection already follows says so.
 
 ### MakerOnline
 
@@ -103,9 +112,10 @@ before Grab has read it, and its models come in on that next visit.
 
 1. Open the list's page on the site, with the site switched on in Grab's popup:
    - a collection page on MakerWorld, Printables, Thingiverse, MyMiniFactory, MakerOnline, Creality Cloud, Thangs,
-     Pinshape, Meshy, PIXUP or 3DExport (your **Default Collection** too), or on NexPrint one open on its owner's page;
+     Pinshape, Meshy, PIXUP, 3DExport, QIDI Maker (your **Default Collection** too) or VoxelShare, or on NexPrint one open on its
+     owner's page;
    - anyone's likes page on Thingiverse, Cults3D, Pinshape (its **Likes** tab) or GrabCAD, anyone's wishlist on PIXUP,
-     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake or Toymakr3D;
+     or your own likes on MakerOnline, Creality Cloud, Thangs (**Liked**), eufyMake, Toymakr3D, QIDI Maker or VoxelShare;
    - one of your own printlists on Cults3D, your liked models or wishlist on CGTrader, your favourites on Fab365, or
      your **Interactions** tab on Snapmaker Space, where the panel's switch picks your likes or bookmarks.
 
@@ -130,34 +140,40 @@ Thingport sends a notification once sync is on, naming the collection it follows
 
 ## Find it in Thingport
 
-A synced collection's tile on the **Collections** page shows the provider's logo with a green tick.
+A synced collection's tile on the **Collections** page shows the provider's logo with a green tick. With two or three
+sources their logos overlap; with more, a ring in the sites' colours shows how many there are. The tick turns into
+**!** when an admin has turned off the site of one of them, and into a red stop sign when all of them are off.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/09_collections.png">
   <img src="../../frontend/src/assets/screenshots/light/09_collections.png" alt="The Collections page, with synced collections marked by their provider's logo" width="100%">
 </picture>
 
-Open the collection and click the same logo above its models, or choose **⋮ → Sync configuration**, to see how it's
+Open the collection and click the same logos above its models, or choose **⋮ → Sync configuration**, to see how it's
 linked:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/36_collection_sync.png">
-  <img src="../../frontend/src/assets/screenshots/light/36_collection_sync.png" alt="A synced collection's sync configuration, Overview section" width="100%">
+  <img src="../../frontend/src/assets/screenshots/light/36_collection_sync.png" alt="A synced collection's sync configuration" width="100%">
 </picture>
 
-- **Overview** shows the chain from the provider's collection to yours, when it was last checked and when the next
-  check is due, and a link to the collection on the provider's site. **Sync now** checks it right away. **Stop
-  syncing** unlinks it.
-- **Settings** sets how often it's checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker
-  Space, MakerOnline, Creality Cloud and NexPrint it also sets which print profiles each new model brings: the default one, the
-  designer's (the default), or all of them, community ones included.
+- **Each source** has a section of its own, named after the provider's list. It shows the chain from that list to
+  your collection, when it was last checked and when the next check is due, and a link to the list on the provider's
+  site. **Sync now** checks it right away; **Stop syncing** unlinks that source alone. Below that, how often it's
+  checked: every hour, 6 hours or 24 hours (the default). For MakerWorld, Snapmaker Space, MakerOnline, Creality Cloud,
+  NexPrint, eufyMake and QIDI Maker it also sets which print profiles each new model brings: the default one, the designer's (the
+  default), or all of them, community ones included. Each source keeps its own settings.
+- **Overview**, once a collection follows two or more, lists them with how each is doing; click one to open it.
+  **Sync all now** checks every one that can be checked, with a notification for each.
+- **Add source** links another list, as [above](#turn-sync-on-in-thingport).
 
 ## How it works
 
-- **On a schedule.** Each synced collection is checked on its own interval, once a day unless you change it. A check
-  compares the provider's collection with the models Thingport has already seen there.
-- **New models only.** A model that's already in your library is just added to the collection. The rest are imported
-  one at a time, a minute apart, so the provider isn't flooded with requests. You get a notification when they're in.
+- **On a schedule.** Each source is checked on its own interval, once a day unless you change it. A check compares the
+  provider's collection with the models Thingport has already seen there.
+- **New models only.** A model that's already in your library is just added to the collection, so one that's in two of
+  its sources is imported once. The rest are imported one at a time, a minute apart, so the provider isn't flooded
+  with requests. You get a notification when they're in.
 - **A lane of its own.** Synced collections don't wait in the [import queue](../features/importing.md#the-import-queue)'s
   line or hold it up: they run beside it. A sync gives way while an import from the same provider is running, since both
   reach the provider from the same server, and carries on by itself afterwards.
@@ -168,22 +184,30 @@ linked:
   you left it unticked or deleted it from your library later.
 - **Renames are fine.** The link follows the provider's collection id, so renaming the collection on either side keeps
   it synced.
-- **One to one.** A provider collection syncs with one Thingport collection, and the other way round. If a collection
-  with the same name already follows another source, the new one gets its own name, such as "Things (MakerWorld)".
+- **Several into one.** A Thingport collection can follow any number of provider collections, from one site or many,
+  but a provider collection syncs with one Thingport collection only. Models you add to the collection yourself stay,
+  whatever its sources do.
+- **Grab doesn't merge by name.** When Grab turns sync on, a collection with the same name that already follows another
+  source isn't used: the new one gets its own, such as "Things (MakerWorld)". To have one collection follow both, add
+  the second source in Thingport with **Add source**.
+- **Merging keeps syncing.** Merge collections and the one you keep takes over the others' sources, and the models they
+  had waiting to import.
 - **Rate limits pause it.** If the provider stops the imports, for example with a MakerWorld CAPTCHA or daily download
   limit, the remaining models wait, on hold, in your [import queue](../features/importing.md#the-import-queue) until
   you start them again. They then go back to this lane, not the line.
 - **Restarts don't lose it.** A sync a server restart cut off carries on by itself. With scheduled checks off (below),
   it stays on hold until you start it or click **Sync now**.
-- **Deleted collections.** If the provider's collection can't be found on two checks in a row, the Thingport collection
-  is unsynced and you get a notification. Its models stay. Deleting the Thingport collection removes the sync with it.
+- **Deleted collections.** If the provider's collection can't be found on two checks in a row, that source is unlinked
+  and you get a notification. The collection's models stay, and so do its other sources. Deleting the Thingport
+  collection removes all of its syncs with it.
 - **Sync now** is available again 5 minutes after the last check. Its notification also tells you when there was
   nothing new. While an import from the same provider is running, it waits for that first.
 
 ## Turn sync off
 
-Either untick the box in Thingport Grab on the collection's page and save, or use **Stop syncing** in the collection's
-sync configuration. The collection and its models stay in Thingport. You can turn sync on again at any time, in Thingport or from Grab.
+Either untick the box in Thingport Grab on the list's page and save, or use **Stop syncing** in that source's section
+of the collection's sync configuration. Only that source stops: the collection, its models and its other sources stay
+in Thingport. You can turn sync on again at any time, in Thingport or from Grab.
 
 ## For admins
 
@@ -194,7 +218,7 @@ Two optional settings, added to the `backend` service's `environment` in `docker
 - `COLLECTION_SYNC_ITEM_DELAY_MS` sets the pause between the models a sync imports, in milliseconds. The default is
   `60000`, one minute.
 
-Checks run one collection at a time across all users, since they all reach the providers from the same server. One that
+Checks run one source at a time across all users, since they all reach the providers from the same server. One that
 has to give way hands its turn to the next, so syncs from other providers carry on.
 
 Turning a provider off under **Administration → Providers** pauses every collection synced from it, for every user.

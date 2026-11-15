@@ -24,6 +24,8 @@ import meshyCategories from "./meshy/categories.json";
 import pixup3dCategories from "./pixup3d/categories.json";
 import fab365Categories from "./fab365/categories.json";
 import threedexportCategories from "./threedexport/categories.json";
+import qidimakerCategories from "./qidimaker/categories.json";
+import voxelshareCategories from "./voxelshare/categories.json";
 import { meshyImport, meshyTrending, meshyLists, meshyDetails } from "./meshy";
 import { meshyConnection } from "./meshy/connection";
 import { meshySync } from "./meshy/sync";
@@ -40,6 +42,18 @@ import { threedexportImport, threedexportTrending, threedexportLists, threedexpo
 import { threedexportConnection } from "./threedexport/connection";
 import { threedexportSync } from "./threedexport/sync";
 import { threedexportBrowse } from "./threedexport/browse";
+import { qidimakerImport, qidimakerTrending, qidimakerLists, qidimakerDetails } from "./qidimaker";
+import { qidimakerConnection } from "./qidimaker/connection";
+import { qidimakerSync } from "./qidimaker/sync";
+import { qidimakerBrowse } from "./qidimaker/browse";
+import { qidimakerProfileFacts } from "./qidimaker/profileFacts";
+import { readQidimakerLicense } from "./qidimaker/license";
+import { voxelshareImport, voxelshareTrending, voxelshareLists, voxelshareDetails } from "./voxelshare";
+import { voxelshareChinaConnection, voxelshareConnection } from "./voxelshare/connection";
+import { voxelshareSync } from "./voxelshare/sync";
+import { voxelshareBrowse } from "./voxelshare/browse";
+import { voxelshareProfileFacts } from "./voxelshare/profileFacts";
+import { readVoxelshareLicense } from "./voxelshare/license";
 import {
   crealitycloudImport,
   crealitycloudTrending,
@@ -93,7 +107,7 @@ import { toymakr3dConnection } from "./toymakr3d/connection";
 import { makerablesConnection } from "./makerables/connection";
 import { cgtraderConnection } from "./cgtrader/connection";
 import { grabcadConnection } from "./grabcad/connection";
-import { snapmakerConnection } from "./snapmaker/connection";
+import { snapmakerChinaConnection, snapmakerConnection } from "./snapmaker/connection";
 import { thangsConnection } from "./thangs/connection";
 import { thingiverseConnection } from "./thingiverse/connection";
 import { makerworldSync } from "./makerworld/sync";
@@ -128,6 +142,11 @@ import { toymakr3dBrowse } from "./toymakr3d/browse";
 import { makerablesBrowse } from "./makerables/browse";
 import { cgtraderBrowse } from "./cgtrader/browse";
 import { grabcadBrowse } from "./grabcad/browse";
+import { crealitycloudPrinters } from "./crealitycloud/printers";
+import { makeronlinePrinters } from "./makeronline/printers";
+import { makerworldPrinters } from "./makerworld/printers";
+import { snapmakerPrinters } from "./snapmaker/printers";
+import { voxelsharePrinters } from "./voxelshare/printers";
 import type { AuthSlot } from "./index.generated";
 import type {
   ConnectionSlot,
@@ -135,6 +154,7 @@ import type {
   ProviderBrowse,
   ProviderDetails,
   ProviderLists,
+  ProviderOwnedPrinters,
   ProviderSync,
   ProviderTrending,
   SourcedImport,
@@ -150,12 +170,13 @@ import {
   MAKERWORLD_REJECTED_ERROR,
   withStoredMakerworldCookie,
 } from "./makerworld/session";
-import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
+import { isMakerworldCaptchaFailure, liftCaptchaCooloffByHand } from "./makerworld/captcha";
 import { makerworldProfileFacts } from "./makerworld/profileFacts";
 import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
 import { makeronlineProfileFacts } from "./makeronline/profileFacts";
 import { crealitycloudProfileFacts } from "./crealitycloud/profileFacts";
 import { nexprintProfileFacts } from "./nexprint/profileFacts";
+import { eufymakeProfileFacts } from "./eufymake/profileFacts";
 import type { GrabImportOptions } from "./makeronline/grabImports";
 import type { ImportCookies } from "../services/importResolvers";
 import type { ProviderProfileFactsById } from "../services/printProfileFacts";
@@ -194,6 +215,8 @@ export type ProviderBackend = {
   browse?: ProviderBrowse;
   /** Its list for the dashboard's trending panel, where its manifest says it has one. */
   trending?: ProviderTrending;
+  /** The printers the user's account there has, where its printer maker's cloud lists them (Find my printers). */
+  ownedPrinters?: ProviderOwnedPrinters;
   /** How a model's details are read without its files. */
   details: ProviderDetails;
   /** The links of the print profiles a scope picks from the model a link is of, for a provider whose models import by
@@ -226,6 +249,9 @@ export type ProviderBackend = {
   /** For a provider whose files only Thingport Grab can fetch, on its own pages: where imports that start anywhere
    *  else wait for its next visit there. */
   grabQueue?: GrabQueue;
+  /** For a provider whose imports Thingport Grab can finish when a block stops them here (MakerWorld's CAPTCHA, which
+   *  Grab clears with the site's own puzzle): where an import the block stopped waits for it, beside failing. */
+  grabFallback?: GrabFallback;
   /** The import body with the user's stored sign-in where the request brought none, for the provider a link import
    *  of no provider's goes through (LINK_PROVIDER). */
   withStoredAuth?<T extends ImportCookies>(userId: string, body: T): Promise<T>;
@@ -250,12 +276,44 @@ export type GrabQueue = {
   clear(userId: string, modelId: string): Promise<void>;
 };
 
+/** Imports a block stopped here, waiting for Thingport Grab to clear it on the provider's site. */
+export type GrabFallback = {
+  /** The failure Grab can clear. */
+  blocks(err: unknown): boolean;
+  /** Only for someone whose Grab can be told about it. */
+  available(userId: string): Promise<boolean>;
+  queue(userId: string, url: string, options?: GrabImportOptions): Promise<void>;
+  /** Imported, however it came in, as `printId`: nothing waits for the model any more, but a link naming one of its
+   *  print profiles that `profileIds`, those its print has now, lack. What waited is finished as Grab would have. */
+  clear(userId: string, modelId: string, profileIds: string[], printId: string): Promise<void>;
+  /** Forgets what no import wants any more, its own deleted from the queue or taken out of one: it mustn't come in
+   *  through Grab either. `userId`'s, or everyone's. */
+  dropUnwanted(userId?: string): Promise<void>;
+  /** What a failed link that waits says, or with `count`, a batch's summary of that many. */
+  waitingText(count?: number): string;
+  /** How many of `userId`'s imports wait for Grab here, and the first one's link, to send them to the site with. */
+  waiting(userId: string): Promise<{ count: number; url: string | null }>;
+};
+
 /** The provider whose session a page link of no provider's is imported with. */
 export const LINK_PROVIDER: ProviderId = "makerworld";
 
 /** A link import's body with LINK_PROVIDER's stored sign-in, where the request brought none. */
 export function withLinkAuth<T extends ImportCookies>(userId: string, body: T): Promise<T> {
   return PROVIDERS[LINK_PROVIDER].withStoredAuth?.(userId, body) ?? Promise.resolve(body);
+}
+
+/** Per provider with a GrabFallback, how many of `userId`'s imports wait for Grab to clear its block. */
+export async function grabFallbackWaiting(
+  userId: string,
+): Promise<{ provider: ProviderId; count: number; url: string | null }[]> {
+  const waiting = await Promise.all(
+    PROVIDER_IDS.map(async (provider) => {
+      const fallback = PROVIDERS[provider].grabFallback;
+      return fallback ? { provider, ...(await fallback.waiting(userId)) } : null;
+    }),
+  );
+  return waiting.filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.count > 0);
 }
 
 /** A retry the user asked for: every provider's pause after a block ends. */
@@ -265,6 +323,7 @@ export function liftProviderHolds(): void {
 
 // Loaded when used: their waiting imports reach the services that read this registry.
 const grabImports = () => import("./makeronline/grabImports");
+const makerworldGrabImports = () => import("./makerworld/grabImports");
 const owlcadExports = () => import("./owlcad/grabExports");
 
 type Manifests = typeof MANIFESTS;
@@ -291,6 +350,7 @@ export const PROVIDERS = {
     sync: makerworldSync,
     browse: makerworldBrowse,
     trending: makerworldTrending,
+    ownedPrinters: makerworldPrinters,
     details: makerworldDetails,
     license: readMakerworldLicense,
     profileFacts: makerworldProfileFacts,
@@ -300,6 +360,20 @@ export const PROVIDERS = {
       (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),
     withStoredAuth: withStoredMakerworldCookie,
     liftHolds: liftCaptchaCooloffByHand,
+    grabFallback: {
+      blocks: isMakerworldCaptchaFailure,
+      available: async (userId) => (await makerworldGrabImports()).hasPairedGrab(userId),
+      queue: async (userId, url, options) =>
+        (await makerworldGrabImports()).queueMakerworldGrabImport(userId, url, options),
+      clear: async (userId, designId, profileIds, printId) =>
+        (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId, profileIds, printId),
+      dropUnwanted: async (userId) => (await makerworldGrabImports()).dropUnwantedMakerworldGrabImports(userId),
+      waitingText: (count) =>
+        `${count === undefined ? "Waits" : `${count} ${count === 1 ? "waits" : "wait"}`} for Thingport Grab: solve ` +
+        `${name("makerworld")}'s puzzle on ${siteHost("makerworld")} and Grab finishes ` +
+        `${(count ?? 1) === 1 ? "it" : "them"}, or retry once it clears (usually 1-4 hours)`,
+      waiting: async (userId) => (await makerworldGrabImports()).makerworldPuzzleWaiting(userId),
+    },
     // Its models import by the shared link import, which doesn't know whose cookie it was.
     markRejected: (userId) => markMakerworldCookieRejected(userId),
     stopTexts: {
@@ -352,13 +426,14 @@ export const PROVIDERS = {
   },
   snapmaker: {
     starterCategories: snapmakerCategories,
-    connection: { default: snapmakerConnection },
-    authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} with Thingport Grab, then retry`,
+    connection: { default: snapmakerConnection, cn: snapmakerChinaConnection },
+    authStopText: `your ${name("snapmaker")} sign-in ran out — visit ${siteHost("snapmaker")} (space.snapmaker.cn for a China account) with Thingport Grab, then retry`,
     sourcedImport: snapmakerImport,
     lists: snapmakerLists,
     sync: snapmakerSync,
     browse: snapmakerBrowse,
     trending: snapmakerTrending,
+    ownedPrinters: snapmakerPrinters,
     details: snapmakerDetails,
     profileFacts: snapmakerProfileFacts,
   },
@@ -377,6 +452,7 @@ export const PROVIDERS = {
     sync: makeronlineSync,
     browse: makeronlineBrowse,
     trending: makeronlineTrending,
+    ownedPrinters: makeronlinePrinters,
     details: makeronlineDetails,
     profileFacts: makeronlineProfileFacts,
   },
@@ -389,6 +465,7 @@ export const PROVIDERS = {
     sync: crealitycloudSync,
     browse: crealitycloudBrowse,
     trending: crealitycloudTrending,
+    ownedPrinters: crealitycloudPrinters,
     details: crealitycloudDetails,
     license: readCrealitycloudLicense,
     profileFacts: crealitycloudProfileFacts,
@@ -446,6 +523,7 @@ export const PROVIDERS = {
     trending: eufymakeTrending,
     details: eufymakeDetails,
     license: readEufymakeLicense,
+    profileFacts: eufymakeProfileFacts,
   },
   pinshape: {
     starterCategories: pinshapeCategories,
@@ -587,6 +665,37 @@ export const PROVIDERS = {
     trending: threedexportTrending,
     // An older import's licence comes from its page's details, one request with no sign-in.
     details: threedexportDetails,
+  },
+  qidimaker: {
+    starterCategories: qidimakerCategories,
+    connection: { default: qidimakerConnection },
+    // Only the user's own collections and likes are read with the sign-in; its models and their files need none.
+    authStopText: grabSignInStop("qidimaker"),
+    sourcedImport: qidimakerImport,
+    lists: qidimakerLists,
+    sync: qidimakerSync,
+    browse: qidimakerBrowse,
+    trending: qidimakerTrending,
+    details: qidimakerDetails,
+    // From the model's details alone, without its print profiles' list.
+    license: readQidimakerLicense,
+    profileFacts: qidimakerProfileFacts,
+  },
+  voxelshare: {
+    starterCategories: voxelshareCategories,
+    connection: { default: voxelshareConnection, cn: voxelshareChinaConnection },
+    // Only the user's own collections and likes are read with the sign-in; its models and their files need none.
+    authStopText: grabSignInStop("voxelshare"),
+    sourcedImport: voxelshareImport,
+    lists: voxelshareLists,
+    sync: voxelshareSync,
+    browse: voxelshareBrowse,
+    trending: voxelshareTrending,
+    ownedPrinters: voxelsharePrinters,
+    details: voxelshareDetails,
+    // From the model's details alone, without its print profiles' list.
+    license: readVoxelshareLicense,
+    profileFacts: voxelshareProfileFacts,
   },
 } satisfies { [K in ProviderId]: Entry<K> } as { readonly [K in ProviderId]: ProviderBackend };
 

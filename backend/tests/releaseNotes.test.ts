@@ -295,6 +295,17 @@ describe("release notes", () => {
     expect(parseCuratedNotes({ version: "next", items: [] }, "https://x.example/a.json")).toBeNull();
   });
 
+  it("thanks each GitHub user the notes name once, leaving out names that aren't usernames", () => {
+    const parse = (contributors?: unknown) =>
+      parseCuratedNotes(
+        { version: "1.7.0", contributors, items: [{ type: "fix", title: "A fix" }] },
+        "https://x.example/a.json",
+      );
+    const names = ["WEBzaytsev", " SeoliteQ ", "webzaytsev", "@someone", "two words", "-dash", "a--b", "x".repeat(40)];
+    expect(parse(names)?.contributors).toEqual(["WEBzaytsev", "SeoliteQ"]);
+    expect(parse()?.contributors).toEqual([]);
+  });
+
   it("previews a checkout's latest notes, read afresh at their own version, with its pictures served", async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "release-notes-"));
     const write = (file: string, body: string) => {

@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "typeamachines",
+  "name": "TypeAMachines"
+ },
+ "printers": [
+  {
+   "id": "typeamachines-series12014",
+   "brand": "typeamachines",
+   "model": "Series 1 2014",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 305,
+    "y": 305,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tam"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tam",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

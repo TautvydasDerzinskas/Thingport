@@ -99,6 +99,8 @@ type State = {
   libraryPages?: number;
   /** Run before a request whose path matches is answered, such as another sign-in saved meanwhile. */
   before?: { path: RegExp; run: () => Promise<void> };
+  /** The model variant's file groups, in place of its one. */
+  groups?: { id: number; name: string }[];
 };
 
 const freshState = (state: Partial<State> = {}): State => ({ owned: new Set([STL_VARIANT]), cart: [], ...state });
@@ -142,7 +144,13 @@ function handlerFor(scenario: string, state: State = freshState()): FetchHandler
     const me = signedIn(call);
     const unauthorized = () => json({ error: "Unauthorized" }, 401);
     if (p === `${API}/posts/${POST}`) {
-      return scenario === "missing" ? json({ error: "Not Found" }, 404) : json(loadFixture("pixup3d", "post"));
+      if (scenario === "missing") return json({ error: "Not Found" }, 404);
+      const post = loadFixture("pixup3d", "post");
+      if (state.groups) {
+        const models = post.data.variants.find((each: { id: number }) => String(each.id) === STL_VARIANT);
+        models.file_groups = state.groups;
+      }
+      return json(post);
     }
     if (p === `${API}/posts/${PAID_POST}`) return json(loadFixture("pixup3d", "post-paid"));
     if (p.startsWith(`${API}/posts/`)) return json({ error: "Not Found" }, 404);
@@ -359,6 +367,26 @@ describe("PIXUP specifics", () => {
     expect(state.owned.has(STL_VARIANT)).toBe(true);
     // The sliced variant was never ordered.
     expect(callsTo(stub.calls, /\/cart\/variants\/892$/)).toEqual([]);
+  });
+
+  // A variant's file groups are what its designer split it into, supported and not: each a folder of the model's, one
+  // left unnamed ("Default name") none.
+  it("keeps each of a variant's file groups in a folder of its own", async () => {
+    await connect(ctx.userId);
+    const groups = [
+      { id: 2763, name: "STL_Unsupported" },
+      { id: 2764, name: "STL_Pre-supported" },
+      { id: 2765, name: "Default name" },
+    ];
+    ctx.install(handlerFor("ok", freshState({ groups })));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      ["STL_Unsupported", "Phrozen XP Finder.stl"],
+      ["STL_Pre-supported", "Phrozen XP Finder.stl"],
+      [null, "Phrozen XP Finder.stl"],
+    ]);
   });
 
   it("names the files as their designer did, without the upload numbers PIXUP's zip puts in front", async () => {

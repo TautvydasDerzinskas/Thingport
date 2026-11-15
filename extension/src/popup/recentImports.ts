@@ -1,3 +1,4 @@
+import { t } from "../shared/i18n";
 import { send } from "../shared/messages";
 import { els } from "./dom";
 import { providerLogo, providerName } from "./sites";
@@ -15,10 +16,14 @@ export async function loadRecentImports(): Promise<void> {
         url: item.url,
         title: item.title,
         image: item.image,
-        label: "Imported model",
+        label: t("importedModel"),
         badge: item.provider ? providerLogo(item.provider) : undefined,
       });
-      if (item.provider) link.title = `${item.title ?? "Model"} · from ${providerName(item.provider)}`;
+      if (item.provider)
+        link.title = t("recentImportTitle", {
+          title: item.title ?? t("model"),
+          site: providerName(item.provider),
+        });
       return link;
     }),
   );

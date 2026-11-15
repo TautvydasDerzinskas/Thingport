@@ -56,7 +56,9 @@ describe("models that came with a generator script", () => {
   it("names the script on the model, so a list can mark it without asking for each one's files", async () => {
     const res = await request(app).get(`/api/print/${generated}`).set(auth());
     expect(res.status).toBe(200);
-    expect(res.body.generator_scripts).toEqual([{ id: expect.any(String), filename: "keychain_customizable.scad" }]);
+    expect(res.body.generator_scripts).toEqual([
+      { id: expect.any(String), filename: "keychain_customizable.scad", folder: null },
+    ]);
   });
 
   it("leaves a model with no script, and one with an unrelated file, without any", async () => {
@@ -120,7 +122,7 @@ describe("models that came with a generator script", () => {
 
     const print = (await request(app).get(`/api/print/${res.body.prints[0].id}`).set(auth())).body;
     expect(print.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["part.stl"]);
-    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "part.scad" }]);
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "part.scad", folder: null }]);
   });
 
   it("turns down a script with nothing to go with, rather than making a model of it", async () => {

@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "3dator",
+  "name": "3Dator"
+ },
+ "printers": [
+  {
+   "id": "3dator-3dator",
+   "brand": "3dator",
+   "model": "3Dator",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 170,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "3dator"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "3dator",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

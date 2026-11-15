@@ -6,6 +6,7 @@ import { importPrintFromUrl } from "../src/services/importService";
 import { setMyminifactoryApiKey } from "../src/providers/myminifactory/apiKey";
 import { prisma } from "../src/db";
 import { getMyminifactoryConnection, setUserMyminifactoryCookie } from "../src/providers/myminifactory/session";
+import { myminifactoryArchivesFrom } from "../src/providers/myminifactory/api";
 
 // MyMiniFactory import end to end: metadata from the API v2 shapes, files from /download, fetch mocked.
 
@@ -175,17 +176,67 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
     await prisma.print.deleteMany({ where: { userId, sourceProvider: "myminifactory" } });
   });
 
-  /** `library`: what downloadables answers -- the unpacked archive, "not owned" (401), or "signed out" (to login). */
+  /** `library`: what downloadables answers -- the unpacked archive, "not owned" (401), or "signed out" (to login).
+   *  `archives`: what the object's page offers under its Download button, by name, and whether those download for
+   *  anyone (`free`) or send them to sign in. */
   function mockLibrary({
     paid = false,
     library = "owned",
+    archives = ["Skull.rar"],
+    free = false,
+    pageFails = false,
+    failArchive,
   }: {
     paid?: boolean;
     library?: "owned" | "not-owned" | "expired";
+    archives?: string[];
+    free?: boolean;
+    /** The object's page doesn't answer at all. */
+    pageFails?: boolean;
+    /** Which archive (by index) answers its signed link with a 500. */
+    failArchive?: number;
   }) {
     return vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
       const url = String(input);
       const cookie = new Headers(init?.headers).get("cookie");
+      if (url === `https://www.myminifactory.com/object/${OBJECT_ID}`) {
+        if (pageFails) throw new TypeError("fetch failed");
+        const button = {
+          isLoggedIn: false,
+          archives: archives.map((name, i) => ({
+            id: 70 + i,
+            path: name,
+            size: "100",
+            download_url: `https://www.myminifactory.com/download/${OBJECT_ID}?archive_id=${70 + i}`,
+          })),
+        };
+        return new Response(
+          `<html><script type="application/json" data-component-name="DownloadButton">${JSON.stringify(button)}</script></html>`,
+          { status: 200, headers: { "content-type": "text/html" } },
+        );
+      }
+      const archive = url.match(new RegExp(`/download/${OBJECT_ID}\\?archive_id=(\\d+)$`));
+      if (archive && !cookie) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: free
+              ? `https://dl4.myminifactory.com/object-assets/test/threedfiles/archive-${archive[1]}.zip?sig=x`
+              : `/object/3d-print-test-skull-${OBJECT_ID}`,
+          },
+        });
+      }
+      const zipped = url.match(/threedfiles\/archive-(\d+)\.zip/);
+      if (zipped && Number(zipped[1]) - 70 === failArchive) return new Response("oops", { status: 500 });
+      if (zipped) {
+        const zip = new JSZip();
+        zip.file(
+          `${archives[Number(zipped[1]) - 70].replace(/\.zip$/, "")}/Bust/bust.stl`,
+          `solid ${zipped[1]}\nendsolid\n`,
+        );
+        zip.file("readme.pdf", "%PDF-1.4 fake");
+        return new Response(await zip.generateAsync({ type: "nodebuffer" }), { status: 200 });
+      }
       if (url.startsWith(`https://www.myminifactory.com/api/v2/objects/${OBJECT_ID}?`)) {
         return jsonResponse(200, {
           ...OBJECT,
@@ -262,5 +313,85 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
       /didn't accept your saved sign-in/,
     );
     expect(await getMyminifactoryConnection(userId)).toBe("expired");
+  });
+
+  // A free model's archives download for anyone from the links on its page's Download button.
+  it("imports a free model's archives without a sign-in, each in a folder of its own", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    global.fetch = mockLibrary({ archives: ["Heroes.zip", "Villains.zip"], free: true }) as unknown as typeof fetch;
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    // Inside each, the folder its every file is in says nothing.
+    expect(result.plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      ["Heroes", "bust.stl"],
+      ["Villains", "bust.stl"],
+    ]);
+  });
+
+  it("imports one free archive's files as they are in it", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    global.fetch = mockLibrary({ archives: ["Heroes.zip"], free: true }) as unknown as typeof fetch;
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    // The zip's own top folder is named after it, as every file's is, so it says nothing.
+    expect(result.plates.map((plate) => [plate.folder, plate.filename])).toEqual([[null, "bust.stl"]]);
+  });
+
+  // Archives whose button asks for a sign-in, or that Thingport can't open, come from the library as before.
+  it("takes from the library what the page won't hand out, or can't be opened", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    await setUserMyminifactoryCookie(userId, SESSION);
+    for (const options of [
+      { archives: ["Skull.zip"], free: false },
+      { archives: ["Skull.rar"], free: true },
+    ]) {
+      global.fetch = mockLibrary(options) as unknown as typeof fetch;
+      const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+      expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
+      await prisma.print.deleteMany({ where: { userId, sourceProvider: "myminifactory" } });
+    }
+  });
+
+  // Where the page or an archive doesn't answer, a signed-in user's library may still have the files; without a
+  // sign-in, what went wrong is said rather than a request to sign in.
+  it("falls back to the library when the page doesn't answer, for someone signed in", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    global.fetch = mockLibrary({ archives: ["Heroes.zip"], free: true, pageFails: true }) as unknown as typeof fetch;
+    await expect(importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] })).rejects.toThrow(/fetch failed/);
+
+    await setUserMyminifactoryCookie(userId, SESSION);
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
+  });
+
+  // A model made of the archives that did come would be the one a later import finds, never fetching the rest.
+  it("won't make a model of some archives when another didn't download", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    const options = { archives: ["Heroes.zip", "Villains.zip"], free: true, failArchive: 1 };
+    global.fetch = mockLibrary(options) as unknown as typeof fetch;
+    await expect(importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] })).rejects.toThrow(
+      /didn't hand over one of this model's archives/,
+    );
+    expect(await prisma.print.count({ where: { userId, sourceProvider: "myminifactory" } })).toBe(0);
+
+    await setUserMyminifactoryCookie(userId, SESSION);
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
+  });
+
+  it("takes only an archive link of the object's own from its page", () => {
+    const page = (archives: unknown[]) =>
+      `<script type="application/json" data-component-name="DownloadButton">${JSON.stringify({ archives })}</script>`;
+    const link = (id: string, query = `archive_id=${id}`) => `https://www.myminifactory.com/download/${id}?${query}`;
+    expect(
+      myminifactoryArchivesFrom(
+        page([
+          { id: 1, path: "dir/Good.zip", download_url: `https://www.myminifactory.com/download/42?archive_id=1` },
+          { id: 2, path: "Other.zip", download_url: link("43", "archive_id=2") },
+          { id: 3, path: "Elsewhere.zip", download_url: "https://evil.example/download/42?archive_id=3" },
+          { id: 4, path: "Mismatch.zip", download_url: `https://www.myminifactory.com/download/42?archive_id=5` },
+        ]),
+        "42",
+      ),
+    ).toEqual([{ id: "1", name: "Good.zip" }]);
+    expect(myminifactoryArchivesFrom("<html></html>", "42")).toEqual([]);
   });
 });

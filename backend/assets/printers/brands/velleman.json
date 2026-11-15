@@ -1,0 +1,172 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "velleman",
+  "name": "Velleman"
+ },
+ "printers": [
+  {
+   "id": "velleman-vertexdeltak8800",
+   "brand": "velleman",
+   "model": "Vertex Delta K8800",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     -100,
+     -100
+    ],
+    "diameter": 200
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 225,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vertex_delta_k8800"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vertex_delta_k8800",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "velleman-vertexk8400",
+   "brand": "velleman",
+   "model": "Vertex K8400",
+   "aliases": [
+    "vertexk8400dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      20
+     ],
+     [
+      200,
+      20
+     ],
+     [
+      200,
+      0
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vertex_k8400"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vertex_k8400",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "vertex_k8400_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "velleman-vertexk8600",
+   "brand": "velleman",
+   "model": "Vertex K8600",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 80,
+    "y": 80,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 75,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vertex_nano_k8600"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vertex_nano_k8600",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

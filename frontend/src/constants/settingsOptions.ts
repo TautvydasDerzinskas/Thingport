@@ -1,7 +1,8 @@
 export type SlicerOption = { id: string; label: string };
 
 // Slicers that register a URL protocol. IDs must match the backend's SLICER_IDS and (except
-// "other") equal the scheme the slicer registers, e.g. "crealityprintlink". Some are launched via
+// "other") equal the scheme the slicer registers, e.g. "crealityprintlink", but for Flash Studio's, which is its
+// project's name as the printer catalogue knows it (utils/slicerLaunch.ts gives its scheme). Some are launched via
 // the Bridge instead (see utils/slicerLaunch.ts).
 export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "bambustudio", label: "Bambu Studio" },
@@ -13,20 +14,10 @@ export const SLICER_OPTIONS: SlicerOption[] = [
   { id: "elegooslicer", label: "Elegoo Slicer" },
   { id: "snapmaker-orca", label: "Snapmaker Orca" },
   { id: "eufystudio3d", label: "eufyMake Studio" },
+  { id: "qidistudio", label: "QIDI Studio" },
+  { id: "orca-flashforge", label: "Flash Studio" },
   { id: "other", label: "Other / Manual" },
 ];
-
-// Offered "Open normalized in <slicer>" for MakerWorld 3MFs. They mis-import Bambu projects (lost colors,
-// settings or parts); Orca forks too, since each copied Bambu's 3MF handling at a different point.
-export const NORMALIZE_3MF_SLICER_IDS: ReadonlySet<string> = new Set([
-  "prusaslicer",
-  "cura",
-  "anycubicslicernext",
-  "crealityprintlink",
-  "elegooslicer",
-  "snapmaker-orca",
-  "eufystudio3d",
-]);
 
 /** "system" follows prefers-color-scheme; resolve with useResolvedTheme before rendering. */
 export type ThemeSelection = "light" | "dark" | "system";

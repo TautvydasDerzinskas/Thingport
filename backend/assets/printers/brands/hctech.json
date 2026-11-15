@@ -1,0 +1,144 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "hctech",
+  "name": "HCTECH"
+ },
+ "printers": [
+  {
+   "id": "hctech-hc300m1m1h",
+   "brand": "hctech",
+   "model": "HC300-M1&M1H",
+   "aliases": [
+    "hctechhc300m1m1h"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hctech_hc300-m1&m1h"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hctech_hc300-m1&m1h",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hctech-hc300m2h",
+   "brand": "hctech",
+   "model": "HC300-M2H",
+   "aliases": [
+    "hctechhc300m2h"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hctech_hc300-m2h"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hctech_hc300-m2h",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hctech-hc300m3",
+   "brand": "hctech",
+   "model": "HC300-M3",
+   "aliases": [
+    "hctechhc300m3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hctech_hc300-m3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hctech_hc300-m3",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

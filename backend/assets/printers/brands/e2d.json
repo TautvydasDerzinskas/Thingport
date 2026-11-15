@@ -1,0 +1,191 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "e2d",
+  "name": "E2D"
+ },
+ "printers": [
+  {
+   "id": "e2d-i310",
+   "brand": "e2d",
+   "model": "i310",
+   "aliases": [
+    "e2di310"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.3",
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "i310"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "E2D i310",
+      "presets": {
+       "0.4": [
+        {
+         "name": "E2D i310 0.4 nozzle",
+         "defaultProcess": "0.20mm NORMAL i310",
+         "processes": [
+          {
+           "name": "0.10mm DETAIL @E2D i310",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm NORMAL @E2D i310",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm QUALITY @E2D i310",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm DRAFT @E2D i310",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "E2D i310 0.3 nozzle",
+         "defaultProcess": "0.20mm DRAFT @0.30 nozzle i310",
+         "processes": [
+          {
+           "name": "0.05mm DETAIL @E2D 0.30 nozzle i310",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm NORMAL @E2D 0.30 nozzle i310",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm DRAFT @E2D 0.30 nozzle i310",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "e2d-i311",
+   "brand": "e2d",
+   "model": "i311",
+   "aliases": [
+    "e2di311"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.3",
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "i311"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "E2D i311",
+      "presets": {
+       "0.4": [
+        {
+         "name": "E2D i311 0.4 nozzle",
+         "defaultProcess": "0.20mm NORMAL i311",
+         "processes": [
+          {
+           "name": "0.10mm DETAIL @E2D i311",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm QUALITY @E2D i311",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm NORMAL @E2D i311",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.3": [
+        {
+         "name": "E2D i311 0.3 nozzle",
+         "defaultProcess": "0.20mm NORMAL @0.30 nozzle i311",
+         "processes": [
+          {
+           "name": "0.08mm DETAIL @E2D 0.30 nozzle i311",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm QUALITY @E2D 0.30 nozzle i311",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm SPEED @E2D 0.30 nozzle i311",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm NORMAL @E2D 0.30 nozzle i311",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -27,6 +27,8 @@ export default defineConfig({
   site,
   base,
   trailingSlash: "always",
+  // Docs pages that moved: links to the old address still arrive.
+  redirects: { "/docs/features/normalized-3mf/": "/docs/features/adapted-3mf/" },
   integrations: [
     // Only /docs/ is Starlight's; the home page, the feature tour and the blog are the site's own pages.
     starlight({

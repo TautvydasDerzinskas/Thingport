@@ -142,6 +142,8 @@ export type ProfileImportTotals = {
   failed: number;
   printId: string | null;
   stopReason: StopReason | null;
+  /** The failure that set `stopReason`, for a block Thingport Grab can clear (MakerWorld's CAPTCHA) to be told apart. */
+  stopError?: unknown;
   /** `shouldStop` said so: the profiles left weren't tried. */
   stopped: boolean;
 };
@@ -185,6 +187,7 @@ export async function importProfileUrlsSequentially(
       } catch (err) {
         totals.failed++;
         totals.stopReason = asStopReason(classifyImportFailure(err));
+        if (totals.stopReason) totals.stopError = err;
         log.warn("profile import failed", { url: profileUrl, reason: classifyImportFailure(err), error: err });
       }
     }
@@ -205,6 +208,7 @@ async function runProfilesImportJob(
   const name = MANIFESTS[provider].name;
   try {
     const { title, urls } = await profileUrls(body.url, body.scope);
+    if (!urls.length) throw new HttpError(400, `This ${name} model has no print profiles to import`);
     await updateJob(jobId, { total: urls.length, sourceLabel: title });
     log.info(`${provider} profiles job started`, { job: jobId, url: body.url, profiles: urls.length });
     const progress = jobProgress(jobId);
@@ -585,8 +589,11 @@ async function importOneLink(
   const profileUrls = provider && profileUrlsOf(provider);
   if (profileUrls && URLS[provider!].parseModel(url) && body.scope && body.scope !== "url") {
     const { urls } = await profileUrls(url, body.scope, body);
-    const totals = await importProfileUrlsSequentially(userId, urls, { ...body, url });
-    return { ...totals, profiles: true, outcome: totals.imported ? "created" : "already_imported" };
+    // None for a model without profiles, which imports as a plain link: its own files.
+    if (urls.length) {
+      const totals = await importProfileUrlsSequentially(userId, urls, { ...body, url });
+      return { ...totals, profiles: true, outcome: totals.imported ? "created" : "already_imported" };
+    }
   }
   const result = await importPrintFromUrl(userId, url, { ...body, url });
   return {
@@ -676,6 +683,36 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     const filedBefore = syncFiled(job);
     // MakerOnline links, handed to Thingport Grab: only it can get their files.
     let waitingForGrab = 0;
+    // Links a block stopped that wait for Grab to clear it too, the provider whose block that was (from the link that
+    // met it, handed over or not), and whether its owner has a Grab to tell (asked once).
+    let handedToGrab = 0;
+    let grabBlock: ProviderId | null = null;
+    let grabPaired: boolean | null = null;
+    // This run's counts as far as the job's row has them. Added to it rather than set, and its failures counted again
+    // with its row held: Grab can count one of the job's failed links done while it runs (grabImports.ts). Returns the
+    // job's totals as they then stand.
+    const written = { imported: 0, alreadyInLibrary: 0 };
+    const writeCounts = async (data: Prisma.ImportJobUpdateInput) => {
+      const counts = { imported, alreadyInLibrary };
+      const totals = await prisma.$transaction(async (tx) => {
+        await tx.importJob.update({
+          where: { id: jobId },
+          data: {
+            ...data,
+            imported: { increment: counts.imported - written.imported },
+            alreadyInLibrary: { increment: counts.alreadyInLibrary - written.alreadyInLibrary },
+          },
+        });
+        const failedCount = await tx.importJobItem.count({ where: { jobId, status: "FAILED" } });
+        return tx.importJob.update({
+          where: { id: jobId },
+          data: { failedCount },
+          select: { imported: true, alreadyInLibrary: true, failedCount: true },
+        });
+      });
+      Object.assign(written, counts);
+      return totals;
+    };
 
     for (const [index, item] of items.entries()) {
       if (index > 0 && body.itemDelayMs) await sleep(body.itemDelayMs);
@@ -717,6 +754,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       await updateJobItem(item.id, { status: "RUNNING" }).catch(() => undefined);
       let attempts = item.attempts;
       let itemError: string | null = null;
+      let itemFailure: unknown = null;
       // Some of the link's print profiles got in, though others failed.
       let partlyIn = false;
       let settled = false;
@@ -754,6 +792,8 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
             partlyIn = result.failed < result.processed;
             if (result.stopReason) {
               stopReason = result.stopReason;
+              // So a block Grab can clear is known by what it was, as a link's own failure is.
+              itemFailure = result.stopError ?? null;
               itemError += {
                 rateLimited: ` (${rateLimitText(item.url)} — retry once it clears)`,
                 downloadLimit: ` (${downloadLimitSite(item.url)}'s daily download limit — retry tomorrow)`,
@@ -768,6 +808,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
           }
         } catch (err) {
           itemError = failureMessage(err);
+          itemFailure = err;
           failure = err instanceof HttpError ? err.message : isDownloadCutOff(err) ? itemError : SINGLE_FAILED_TEXT;
           stopReason = asStopReason(classifyImportFailure(err)) ?? stopReason;
           if (classifyImportFailure(err) === "disabled") providerOff = true;
@@ -819,17 +860,55 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         await pauseSyncJob(job, stopReason, newPrintIds);
         return;
       }
-      await updateJobItem(item.id, {
-        status: itemError ? "FAILED" : "DONE",
-        attempts,
-        errorMessage: itemError,
-      }).catch(() => undefined);
+      // A block Grab can clear on the provider's site: the link waits for it as well as failing, for someone with a
+      // paired Grab, and so do the links after it that the block stopped, from the same provider.
+      const fallback = itemProvider ? PROVIDERS[itemProvider].grabFallback : undefined;
+      const blocked = itemFailure
+        ? Boolean(fallback?.blocks(itemFailure))
+        : grabBlock !== null && grabBlock === itemProvider;
+      // Whether this link is handed over or not: the links after it that the block stopped can be.
+      if (itemFailure && blocked) grabBlock = itemProvider;
+      let handed = false;
+      if (fallback && blocked && itemError && !partlyIn && (itemBody.scope ?? "url") === "url") {
+        grabPaired ??= await fallback.available(userId).catch(() => false);
+        if (grabPaired && URLS[itemProvider!].parseModel(item.url)) {
+          // Failed, and saying it waits, before Grab can see it waiting: Grab bringing it in at once then finds it to
+          // count done, and that's left as it is.
+          const waits = fallback.waitingText();
+          const marked = await updateJobItem(item.id, { status: "FAILED", attempts, errorMessage: waits }).then(
+            () => true,
+            () => false,
+          );
+          handed =
+            marked &&
+            (await fallback
+              .queue(userId, item.url, {
+                collectionId: options.collection_id,
+                categoryId: body.category_id,
+                tags: body.tags,
+                notes: body.notes,
+              })
+              .then(
+                () => true,
+                () => false,
+              ));
+          if (handed) {
+            handedToGrab++;
+            itemError = waits;
+            failure = itemError;
+          }
+        }
+      }
+      if (!handed) {
+        await updateJobItem(item.id, {
+          status: itemError ? "FAILED" : "DONE",
+          attempts,
+          errorMessage: itemError,
+        }).catch(() => undefined);
+      }
       processed++;
-      await updateJob(jobId, {
+      await writeCounts({
         processed,
-        imported: job.imported + imported,
-        alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
-        failedCount: await countJobItems(jobId, "FAILED"),
         // With every link: a sync's run can end at any of them, by giving way, a person's pause or a restart.
         ...(job.collectionSyncId
           ? {
@@ -843,12 +922,13 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       }).catch(() => undefined);
     }
 
-    const totalImported = job.imported + imported;
-    const failedCount = await countJobItems(jobId, "FAILED");
+    const totals = await writeCounts({ processed });
+    const totalImported = totals.imported;
+    const failedCount = totals.failedCount;
     log.info("links job done", {
       job: jobId,
       imported: totalImported,
-      already_in_library: job.alreadyInLibrary + alreadyInLibrary,
+      already_in_library: totals.alreadyInLibrary,
       failed: failedCount,
     });
     // A link handed to Grab hasn't imported anything yet, and one with nothing to tell (cut off after it finished) has
@@ -858,13 +938,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         ? await prisma.print.findUnique({ where: { id: printId }, select: { id: true, name: true, title: true } })
         : null;
     const singleTrail = single && !waitingForGrab && (failedCount > 0 || singlePrint !== null);
+    // Its counts are written: a link Grab counts done from here on keeps them right by itself.
     await updateJob(jobId, {
       status: "DONE",
       errorMessage: null,
-      processed,
-      imported: totalImported,
-      alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
-      failedCount,
       // A model already in the library must still open.
       resultPrintId: totalImported === 1 || singleTrail ? (printId ?? job.resultPrintId) : null,
       ...(singlePrint && outcome
@@ -901,7 +978,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     }
 
     const failureParts: string[] = [];
-    if (stopReason === "rateLimited") {
+    const grabFallback = grabBlock ? PROVIDERS[grabBlock].grabFallback : undefined;
+    if (grabFallback && handedToGrab) {
+      failureParts.push(grabFallback.waitingText(handedToGrab));
+    } else if (stopReason === "rateLimited") {
       failureParts.push(
         `the rest not imported: ${rateLimitText(stopUrl ?? job.sourceUrl)} — this usually clears in 1-4 hours, then retry the failed links`,
       );

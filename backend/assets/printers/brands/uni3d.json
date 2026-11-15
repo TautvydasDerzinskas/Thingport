@@ -1,0 +1,205 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "uni3d",
+  "name": "Uni 3D"
+ },
+ "printers": [
+  {
+   "id": "uni3d-uni200",
+   "brand": "uni3d",
+   "model": "Uni 200",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "uni_200"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "uni_200",
+      "nozzles": [
+       "0.30mm Nozzle",
+       "0.40mm Nozzle",
+       "0.50mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "uni3d-uni250",
+   "brand": "uni3d",
+   "model": "Uni 250",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 270,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "uni_250"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "uni_250",
+      "nozzles": [
+       "0.30mm Nozzle",
+       "0.40mm Nozzle",
+       "0.50mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "uni3d-uni300",
+   "brand": "uni3d",
+   "model": "Uni 300",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "uni_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "uni_300",
+      "nozzles": [
+       "0.30mm Nozzle",
+       "0.40mm Nozzle",
+       "0.50mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "uni3d-unimini",
+   "brand": "uni3d",
+   "model": "Uni Mini",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 160,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.3",
+    "0.4",
+    "0.5"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "uni_mini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "uni_mini",
+      "nozzles": [
+       "0.30mm Nozzle",
+       "0.40mm Nozzle",
+       "0.50mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

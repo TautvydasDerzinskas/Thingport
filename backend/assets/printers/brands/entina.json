@@ -1,0 +1,104 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "entina",
+  "name": "ENTINA"
+ },
+ "printers": [
+  {
+   "id": "entina-tina2",
+   "brand": "entina",
+   "model": "TINA2",
+   "aliases": [
+    "entinatina2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "entina_tina2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "entina_tina2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "entina-tina2s",
+   "brand": "entina",
+   "model": "TINA2S",
+   "aliases": [
+    "entinatina2s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 110,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 300,
+    "bed": 65
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "entina_tina2s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "entina_tina2s",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

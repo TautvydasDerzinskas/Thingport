@@ -1,0 +1,537 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "rigid3d",
+  "name": "Rigid3D"
+ },
+ "printers": [
+  {
+   "id": "rigid3d-2nesil",
+   "brand": "rigid3d",
+   "model": "2. Nesil",
+   "aliases": [
+    "rigid3d2nesil"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigid3d"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigid3d",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "rigid3d-3nesil",
+   "brand": "rigid3d",
+   "model": "3. Nesil",
+   "aliases": [
+    "rigid3d3nesil"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 270,
+    "y": 290,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigid3d_3rdgen"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigid3d_3rdgen",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "rigid3d-hobby",
+   "brand": "rigid3d",
+   "model": "Hobby",
+   "aliases": [
+    "rigid3dhobby"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigid3d_hobby"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigid3d_hobby",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "rigid3d-mucit",
+   "brand": "rigid3d",
+   "model": "Mucit",
+   "aliases": [
+    "rigid3dmucit"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Mucit",
+    "cura": "rigid3d_mucit"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Rigid3D Mucit",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rigid3D Mucit",
+         "defaultProcess": "\"0.20mm - Standard @Rigid3D\"",
+         "processes": [
+          {
+           "name": "0.06mm - Ultra @Rigid3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.12mm - Super @Rigid3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm - Good @Rigid3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm - Standard @Rigid3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm - Draft @Rigid3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm - Low @Rigid3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "rigid3d_mucit",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "rigid3d-mucit2",
+   "brand": "rigid3d",
+   "model": "Mucit2",
+   "aliases": [
+    "rigid3dmucit2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Mucit2",
+    "cura": "rigid3d_mucit2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Rigid3D Mucit2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rigid3D Mucit2",
+         "defaultProcess": "\"0.20mm - Standard @Rigid3D\"",
+         "processes": [
+          {
+           "name": "0.06mm - Ultra @Rigid3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.12mm - Super @Rigid3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm - Good @Rigid3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm - Standard @Rigid3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm - Draft @Rigid3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm - Low @Rigid3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "rigid3d_mucit2",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "rigid3d-zero",
+   "brand": "rigid3d",
+   "model": "Zero",
+   "aliases": [
+    "rigid3dzero"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "rigid3d_zero"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "rigid3d_zero",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "rigid3d-zero2",
+   "brand": "rigid3d",
+   "model": "Zero2",
+   "aliases": [
+    "rigid3dzero2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 190,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Zero2",
+    "cura": "rigid3d_zero2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Rigid3D Zero2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rigid3D Zero2",
+         "defaultProcess": "\"0.20mm - Standard @Rigid3D\"",
+         "processes": [
+          {
+           "name": "0.06mm - Ultra @Rigid3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.12mm - Super @Rigid3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm - Good @Rigid3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm - Standard @Rigid3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm - Draft @Rigid3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm - Low @Rigid3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "rigid3d_zero2",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "rigid3d-zero3",
+   "brand": "rigid3d",
+   "model": "Zero3",
+   "aliases": [
+    "rigid3dzero3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": false,
+   "codes": {
+    "prusa": "Zero3",
+    "cura": "rigid3d_zero3"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Rigid3D Zero3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Rigid3D Zero3",
+         "defaultProcess": "\"0.20mm - Standard @Rigid3D\"",
+         "processes": [
+          {
+           "name": "0.06mm - Ultra @Rigid3D",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.12mm - Super @Rigid3D",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm - Good @Rigid3D",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm - Standard @Rigid3D",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm - Draft @Rigid3D",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm - Low @Rigid3D",
+           "layerHeight": 0.28
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "rigid3d_zero3",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

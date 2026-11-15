@@ -18,6 +18,8 @@ works out of the box.
   own: with [Thingport Grab](../../extension/README.md) in a browser where you're signed in to Printables, Grab reads
   them while you're on Printables, at most once an hour, and sends them on. Synced ones get new models after your next
   visit rather than on a schedule.
+- Its 3MFs come from PrusaSlicer as often as from Bambu Studio; other slicers open them as
+  [adapted 3MFs](../features/adapted-3mf.md), and Thingport Grab downloads them adapted on Printables itself.
 
 ## Setup
 

@@ -655,6 +655,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         message: t("studio.design.saved", { name: model.title || model.name }),
         severity: "success",
         action: { label: t("studio.design.openSaved"), onClick: () => navigate(`/models/${model.id}`) },
+        autoHideMs: 8000,
       });
     } catch (error) {
       showError(error);

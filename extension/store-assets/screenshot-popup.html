@@ -1,7 +1,7 @@
 <!doctype html>
-<!-- Store screenshot 2, 1280x800: the popup before it's connected, then each of its tabs once it is. Rendered by
-     `npm run store-assets` (scripts/store-assets.ts) from docs/screenshots/popup-*.png, which
-     `npm run screenshots` takes of the real popup. -->
+<!-- Store screenshot 2, 1280x800: the popup before it's connected, then its Providers, Appearance and History tabs
+     once it is (Extra features has a picture of its own, screenshot-features.html). Rendered by `npm run store-assets`
+     (scripts/store-assets.ts) from docs/screenshots/popup-*.png, which `npm run screenshots` takes of the real popup. -->
 <html>
   <head>
     <meta charset="utf-8" />
@@ -15,10 +15,9 @@
       .grid {
         mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 85%);
       }
-      /* Header and popups together sit in the middle; the tallest popup sets how far down the block goes. */
       header {
         position: absolute;
-        top: 84px;
+        top: 66px;
         left: 0;
         right: 0;
         text-align: center;
@@ -32,7 +31,7 @@
       }
       h1 {
         margin-top: 10px;
-        font-size: 42px;
+        font-size: 44px;
         line-height: 1.1;
       }
       header p {
@@ -42,18 +41,18 @@
       }
       .row {
         position: absolute;
-        top: 238px;
-        left: 28px;
-        right: 28px;
+        top: 222px;
+        left: 26px;
+        right: 26px;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 18px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
       }
       .step__head {
         display: grid;
         grid-template-columns: 28px 1fr;
         gap: 10px;
-        height: 88px;
+        height: 70px;
       }
       .step__num {
         width: 28px;
@@ -68,19 +67,19 @@
       }
       .step__head b {
         display: block;
-        font-size: 18px;
+        font-size: 19px;
         line-height: 28px;
         color: var(--heading);
       }
       .step__head span {
         display: block;
-        font-size: 13.5px;
+        font-size: 14px;
         line-height: 1.35;
       }
       /* The popup hangs below its caption, as it drops from the toolbar. */
       .step__shot {
-        margin-top: 12px;
-        max-height: 498px;
+        margin-top: 10px;
+        max-height: 520px;
         overflow: hidden;
         border-radius: 14px;
         box-shadow:
@@ -99,7 +98,10 @@
     <header>
       <div class="eyebrow">In the toolbar</div>
       <h1>Set it up once, <em>then just browse</em></h1>
-      <p>Pair with your Thingport instance, choose the sites, and find what you imported, all from the popup.</p>
+      <p>
+        Pair with your Thingport instance, pick the sites and Grab's look, and find what you imported, all from the
+        popup.
+      </p>
     </header>
     <div class="row" id="row"></div>
     <script>
@@ -109,17 +111,20 @@
           title: "Pair with Thingport",
           text: "Approve this browser in Thingport. No password is saved.",
         },
-        { popup: "connected", title: "Choose the sites", text: "Every site Grab works on, each on or off." },
-        { popup: "appearance", title: "Its look", text: "Six looks for its button, in any corner of the page." },
         {
-          popup: "features",
-          title: "Extra features",
-          text: "Normalized MakerWorld 3MFs, Thingiverse dark mode, no ads.",
+          popup: "connected",
+          title: "Choose the sites",
+          text: ({ providers }) => `All ${providers.length} sites, each on or off, and where Download adapted works.`,
+        },
+        {
+          popup: "appearance",
+          title: "Its look, in your language",
+          text: "Eight languages, and six looks for its button in any corner.",
         },
         { popup: "history", title: "History", text: "What you imported, and the models you looked at lately." },
       ];
 
-      window.render = ({ popups }) => {
+      window.render = (data) => {
         const row = document.getElementById("row");
         STEPS.forEach((step, i) => {
           const el = document.createElement("div");
@@ -128,9 +133,9 @@
             `<div class="step__head"><div class="step__num">${i + 1}</div><div><b></b><span></span></div></div>` +
             `<div class="step__shot"><img alt="" /></div>`;
           el.querySelector("b").textContent = step.title;
-          el.querySelector("span").textContent = step.text;
+          el.querySelector("span").textContent = typeof step.text === "function" ? step.text(data) : step.text;
           const img = el.querySelector("img");
-          if (popups[step.popup]) img.src = popups[step.popup];
+          if (data.popups[step.popup]) img.src = data.popups[step.popup];
           else el.querySelector(".step__shot").remove();
           row.append(el);
         });

@@ -47,6 +47,7 @@ For a tool, the type is `ToolSdk`.
 | [`api`](#apipath-init)                    |   ✓    |  ✓   | Thingport's own REST API, as the user, signed in as the page is.                                                                                              |
 | [`download`](#downloadfile)               |   ✓    |  ✓   | Hands the user a file to keep, as a browser download.                                                                                                         |
 | [`ui`](#ui)                               |   ✓    |  ✓   | Thingport's own toast and confirmation.                                                                                                                       |
+| [`achievements`](#achievements)           |   ✓    |  ✓   | The user's achievements: badges for what they do in Thingport, while an admin has them on.                                                                    |
 | [`close`](#close)                         |        |  ✓   | Closes the tool's window.                                                                                                                                     |
 | [`library`](#libraryname)                 |   ✓    |  ✓   | A library Thingport carries, for a job a script can't fit inside itself.                                                                                      |
 | [`libraries`](#libraries)                 |   ✓    |  ✓   | The names `library()` takes.                                                                                                                                  |
@@ -726,23 +727,25 @@ thingport.ui: ToolUi
 
 Thingport's own toast and confirmation, the collection picker, and closing the window.
 
-#### `ui.toast(message, severity?)`
+#### `ui.toast(message, severity?, options?)`
 
 ```ts
-thingport.ui.toast(message: string, severity?: SdkSeverity): void
+thingport.ui.toast(message: string, severity?: SdkSeverity, options?: SdkToastOptions): void
 ```
 
 Shows a short message in Thingport's own toast.
 
-| Parameter  | What it is                            |
-| ---------- | ------------------------------------- |
-| `message`  | What to say.                          |
-| `severity` | How it looks: `"info"` when left out. |
+| Parameter  | What it is                                                                           |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `message`  | What to say.                                                                         |
+| `severity` | How it looks: `"info"` when left out.                                                |
+| `options`  | `openModel`: a model's id, for an Open button on the toast that leaves for its page. |
 
-See [`SdkSeverity`](#sdkseverity).
+See [`SdkSeverity`](#sdkseverity), [`SdkToastOptions`](#sdktoastoptions).
 
 ```js
-thingport.ui.toast(t("save.done"), "success");
+const model = await thingport.models.create({ name, files });
+thingport.ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
 ```
 
 #### `ui.confirm(options)`
@@ -804,6 +807,34 @@ thingport.ui.close(): void
 ```
 
 Closes the tool's window, as `close()` does.
+
+### `achievements`
+
+_Widgets and tools_
+
+```ts
+thingport.achievements: SdkAchievements
+```
+
+The user's achievements: badges for what they do in Thingport, while an admin has them on.
+
+#### `achievements.unlock(key)`
+
+```ts
+thingport.achievements.unlock(key: string): Promise<boolean>
+```
+
+Gives the user a secret badge this widget or tool hides: an easter egg Thingport knows by the script's slug and `key`. Thingport shows them the badge the first time; asked again, nothing happens. Resolves false when there's no such secret for this script, when an admin has achievements off, and in an unsaved draft. Never throws, so an easter egg can't break the script around it; and as Thingport versions before achievements have no `thingport.achievements`, call it as `thingport.achievements?.unlock(key)`.
+
+| Parameter | What it is                                                          |
+| --------- | ------------------------------------------------------------------- |
+| `key`     | The secret's name, as Thingport's catalogue has it for this script. |
+
+**Returns:** Whether the user has it now.
+
+```js
+root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
+```
 
 ### `close()`
 
@@ -1399,6 +1430,14 @@ How a toast looks.
 ```ts
 type SdkSeverity = "success" | "info" | "warning" | "error";
 ```
+
+### `SdkToastOptions`
+
+What a toast can carry besides its message.
+
+| Field        | Type     | What it is                                                                                                                                                                                                                                                                      |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `openModel?` | `string` | A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport instance shows the message without the button. |
 
 ### `SdkToolModel`
 

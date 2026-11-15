@@ -2,9 +2,18 @@
 // and every request to the Thingport instance.
 
 import { listen, senderTabId, type BackgroundMessages } from "../shared/messages";
-import { LEGACY_SESSION_KEYS } from "../shared/storage";
-import { apiCall, checkConnection, disconnect } from "./api";
-import { getState, saveConfig, setBubble, setDisabled, setOfflineFeature } from "./config";
+import { LEGACY_SESSION_KEYS, STORAGE_KEYS } from "../shared/storage";
+import {
+  carryAdaptPicks,
+  getAdaptOffer,
+  getAdaptView,
+  openAdaptSettings,
+  printerRecipeFor,
+  setAdaptLast,
+  setAdaptSettings,
+} from "./adaptSettings";
+import { apiCall, checkConnection, disconnect, probePairing } from "./api";
+import { getState, saveConfig, setBubble, setDisabled, setLocale, setOfflineFeature } from "./config";
 import { armDownloadCapture, awaitDownloadCapture, disarmDownloadCapture } from "./downloadCapture";
 import { importSingle, queueImport } from "./importJobs";
 import {
@@ -19,7 +28,7 @@ import { getRecentImports } from "./recentImports";
 import { seasonalIcon } from "../shared/seasonalIcon";
 import { clearRecentlyViewed, getRecentlyViewed, recordViewedModel } from "./recentlyViewed";
 import { syncSession } from "./sessionSync";
-import { onPairingTabClosed, onPairingTabUrl, startPairing } from "./pairing";
+import { onPairingStorageChanged, onPairingTabClosed, onPairingTabUrl, resumePairingIntent } from "./pairing";
 import { openSetup } from "./setup";
 import {
   forgetProviderTab,
@@ -33,12 +42,24 @@ import { injectIntoOpenTabs, OPTIONAL_SITES, siteEnabled, syncSiteScripts } from
 
 listen<BackgroundMessages>({
   GET_STATE: () => getState(),
-  SAVE_CONFIG: (payload) => saveConfig(payload),
+  SAVE_CONFIG: async (payload) => {
+    await saveConfig(payload);
+    void carryAdaptPicks();
+    return null;
+  },
   SET_DISABLED: ({ disabled }) => setDisabled(disabled),
   DISCONNECT: () => disconnect(),
   SET_OFFLINE_FEATURE: ({ feature, enabled }) => setOfflineFeature(feature, enabled),
   SET_BUBBLE: (pick) => setBubble(pick),
-  START_PAIRING: ({ instanceUrl }) => startPairing(instanceUrl),
+  SET_LOCALE: ({ locale }) => setLocale(locale),
+  GET_ADAPT_SETTINGS: () => getAdaptView(),
+  SET_ADAPT_SETTINGS: (change) => setAdaptSettings(change),
+  GET_ADAPT_OFFER: () => getAdaptOffer(),
+  SET_ADAPT_LAST: ({ key }) => setAdaptLast(key),
+  GET_PRINTER_RECIPE: ({ slicer, printerId, nozzle }) => printerRecipeFor(slicer, printerId, nozzle),
+  OPEN_ADAPT_SETTINGS: () => openAdaptSettings(),
+  RESUME_PAIRING: () => resumePairingIntent(true),
+  PROBE_PAIRING: ({ instanceUrl }) => probePairing(instanceUrl),
   GET_RECENT_IMPORTS: () => getRecentImports(),
   GET_SEASONAL_ICON: () => seasonalIcon(),
   RECORD_VIEWED_MODEL: (model) => recordViewedModel(model),
@@ -46,7 +67,7 @@ listen<BackgroundMessages>({
   CLEAR_RECENTLY_VIEWED: () => clearRecentlyViewed(),
   CHECK_CONNECTION: () => checkConnection(),
   REPORT_PROVIDER_ACCOUNT: ({ provider, value }) => reportProviderAccount(provider, value),
-  SYNC_PROVIDER_SESSION: ({ provider }) => syncSession(provider),
+  SYNC_PROVIDER_SESSION: ({ provider, region }) => syncSession(provider, region ?? null),
   OPEN_SETUP: (_payload, sender) => openSetup(sender.tab?.id),
   SET_TAB_ICON_STATE: ({ active }, sender) => setTabIconState(senderTabId(sender), active),
   NOTE_PROVIDER_TAB: ({ provider }, sender) => noteProviderTab(provider, senderTabId(sender)),
@@ -78,6 +99,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onStartup.addListener(() => {
   void checkConnection();
   void forgetProviderTabs();
+  // Tab ids start over with the browser, so an approval tab from the last session can't be finished or told apart.
+  void chrome.storage.local.remove(STORAGE_KEYS.pendingPairing);
 });
 chrome.runtime.onInstalled.addListener(() => {
   void checkConnection();
@@ -89,11 +112,16 @@ chrome.runtime.onInstalled.addListener(() => {
 // site get Grab straight away; it doesn't run twice in one.
 void syncSiteScripts();
 chrome.permissions.onAdded.addListener(() => {
+  void resumePairingIntent().catch(() => undefined);
   void syncSiteScripts().then(async () => {
     for (const site of OPTIONAL_SITES) if (await siteEnabled(site)) await injectIntoOpenTabs(site);
   });
   onProvidersWake();
 });
+
+// The popup starts the durable write and permission request together to preserve the user gesture. Whichever
+// browser event arrives second resumes the intent; the pairing module serializes the two attempts.
+chrome.storage.onChanged.addListener(onPairingStorageChanged);
 chrome.permissions.onRemoved.addListener(() => {
   void syncSiteScripts();
   onProvidersWake();

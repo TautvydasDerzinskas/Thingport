@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "skriware",
+  "name": "Skriware"
+ },
+ "printers": [
+  {
+   "id": "skriware-2",
+   "brand": "skriware",
+   "model": "2",
+   "aliases": [
+    "skriware2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 260,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "skriware_2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "skriware_2",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

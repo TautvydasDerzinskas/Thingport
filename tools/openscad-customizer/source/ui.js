@@ -472,7 +472,7 @@ export default async function mount(thingport) {
           : t("save.descriptionFile", { script: current.name }),
         files: [file],
       });
-      ui.toast(t("save.done", { name: model.name }), "success");
+      ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
       // The toast goes; a button to open what was just saved stays until the next generate.
       const open = $("saved");
       open.hidden = false;

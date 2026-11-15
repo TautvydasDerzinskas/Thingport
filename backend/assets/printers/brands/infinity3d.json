@@ -1,0 +1,159 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "infinity3d",
+  "name": "Infinity3D"
+ },
+ "printers": [
+  {
+   "id": "infinity3d-dev200",
+   "brand": "infinity3d",
+   "model": "DEV-200",
+   "aliases": [
+    "infinity3ddev200"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 235,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "DEV-200"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Infinity3D DEV-200",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Infinity3D DEV-200",
+         "defaultProcess": "0.20mm GOOD @Infinity3D_DEV_200",
+         "processes": [
+          {
+           "name": "0.06mm SUPERFINE @Infinity3D_DEV_200",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.10mm Fine @Infinity3D_DEV_200",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm GOOD @Infinity3D_DEV_200",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm RAPID @Infinity3D_DEV_200",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm FAST @Infinity3D_DEV_200",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "infinity3d-dev350",
+   "brand": "infinity3d",
+   "model": "DEV-350",
+   "aliases": [
+    "infinity3ddev350"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "prusa": "DEV-350"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Infinity3D DEV-350",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Infinity3D DEV-350",
+         "defaultProcess": "0.20mm GOOD @Infinity3D_DEV_350",
+         "processes": [
+          {
+           "name": "0.06mm SUPERFINE @Infinity3D_DEV_350",
+           "layerHeight": 0.06
+          },
+          {
+           "name": "0.10mm Fine @Infinity3D_DEV_350",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm GOOD @Infinity3D_DEV_350",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm RAPID @Infinity3D_DEV_350",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm FAST @Infinity3D_DEV_350",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

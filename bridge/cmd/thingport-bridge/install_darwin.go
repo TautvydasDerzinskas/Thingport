@@ -2,6 +2,13 @@
 
 package main
 
+/*
+#include <stdlib.h>
+
+int TPQuitOtherBridges(const char *bundleID, double graceSeconds);
+*/
+import "C"
+
 import (
 	_ "embed"
 	"fmt"
@@ -9,6 +16,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"unsafe"
 )
 
 const (
@@ -46,7 +55,7 @@ func installSelf() (string, error) {
 	targetExe := filepath.Join(macosDir, bundleExeName)
 
 	if !samePath(exePath, targetExe) {
-		if err := copyFile(exePath, targetExe, 0755); err != nil {
+		if err := replaceFile(exePath, targetExe, 0755); err != nil {
 			return "", fmt.Errorf("copy binary: %w", err)
 		}
 	} else if err := os.Chmod(targetExe, 0755); err != nil {
@@ -70,7 +79,28 @@ func installSelf() (string, error) {
 		_ = exec.Command(lsregisterBin, "-f", appDir).Run()
 	}
 
+	// The old version stays running and macOS sends it every link, so the update would wait for a logout.
+	if quitOtherBridges(10) > 0 {
+		fmt.Println("An older Thingport Bridge is still running. It's replaced when you log out and back in.")
+	}
+
 	return targetExe, nil
+}
+
+func quitOtherBridges(graceSeconds float64) int {
+	id := C.CString(bundleID)
+	defer C.free(unsafe.Pointer(id))
+	return int(C.TPQuitOtherBridges(id, C.double(graceSeconds)))
+}
+
+var releaseVersion = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
+
+// Finder's Get Info shows it, the one place to read the version without a terminal.
+func bundleVersion() string {
+	if releaseVersion.MatchString(version) {
+		return version
+	}
+	return "0.0.0"
 }
 
 func infoPlist() string {
@@ -85,9 +115,9 @@ func infoPlist() string {
 	<key>CFBundleIdentifier</key>
 	<string>` + bundleID + `</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>` + bundleVersion() + `</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>` + bundleVersion() + `</string>
 	<key>CFBundleExecutable</key>
 	<string>` + bundleExeName + `</string>
 	<key>CFBundleIconFile</key>

@@ -1,0 +1,234 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "eazao",
+  "name": "Eazao"
+ },
+ "printers": [
+  {
+   "id": "eazao-m500",
+   "brand": "eazao",
+   "model": "M500",
+   "aliases": [
+    "eazaom500"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 520,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eazao_m500"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eazao_m500",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eazao-m600",
+   "brand": "eazao",
+   "model": "M600",
+   "aliases": [
+    "eazaom600"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 420,
+    "y": 420,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 620,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eazao_m600"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eazao_m600",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eazao-m700",
+   "brand": "eazao",
+   "model": "M700",
+   "aliases": [
+    "eazaom700"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 520,
+    "y": 520,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 720,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eazao_m700"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eazao_m700",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eazao-potter",
+   "brand": "eazao",
+   "model": "Potter",
+   "aliases": [
+    "eazaopotter"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 167,
+    "y": 167,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 280,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eazao_potter"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eazao_potter",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "eazao-zero",
+   "brand": "eazao",
+   "model": "Zero",
+   "aliases": [
+    "eazaozero"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "eazao_zero"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "eazao_zero",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

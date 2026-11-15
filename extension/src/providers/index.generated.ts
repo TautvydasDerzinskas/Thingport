@@ -2,7 +2,7 @@
 // change providers/ and run npm run providers:sync.
 
 import { hostIs } from "./_lib/hosts.generated";
-import type { ListLink, ModelLink, ProviderManifest, ProviderUrls } from "./_lib/types.generated";
+import type { ListLink, ModelLink, ProviderManifest, ProviderUrls, RegionId } from "./_lib/types.generated";
 import makerworld from "./makerworld/manifest.generated";
 import { urls as makerworldUrls } from "./makerworld/urls.generated";
 import printables from "./printables/manifest.generated";
@@ -45,6 +45,10 @@ import fab365 from "./fab365/manifest.generated";
 import { urls as fab365Urls } from "./fab365/urls.generated";
 import threedexport from "./threedexport/manifest.generated";
 import { urls as threedexportUrls } from "./threedexport/urls.generated";
+import qidimaker from "./qidimaker/manifest.generated";
+import { urls as qidimakerUrls } from "./qidimaker/urls.generated";
+import voxelshare from "./voxelshare/manifest.generated";
+import { urls as voxelshareUrls } from "./voxelshare/urls.generated";
 
 export type {
   AuthField,
@@ -57,10 +61,13 @@ export type {
   Need,
   ProviderManifest,
   ProviderUrls,
+  Region,
+  RegionId,
   SignIn,
 } from "./_lib/types.generated";
 export { hostIs } from "./_lib/hosts.generated";
 export { LIKES_ID_PREFIX } from "./_lib/lists.generated";
+export { regionalId, splitRegionalId } from "./_lib/regions.generated";
 
 /** Every provider, in the order lists show them. */
 export const PROVIDER_IDS = [
@@ -85,6 +92,8 @@ export const PROVIDER_IDS = [
   "pixup3d",
   "fab365",
   "threedexport",
+  "qidimaker",
+  "voxelshare",
 ] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
@@ -110,6 +119,8 @@ export const MANIFESTS = {
   pixup3d,
   fab365,
   threedexport,
+  qidimaker,
+  voxelshare,
 } as const;
 
 /** What each site is, in two or three sentences (providers/<id>/docs.ts), for the UI that introduces a provider
@@ -157,6 +168,10 @@ export const ABOUT: { readonly [K in ProviderId]: string } = {
     "Fab365 is a South Korean 3D-model marketplace, running since 2018. It's known for meticulously engineered models — SpaceX rockets, foldable robots, Star Wars ships — many designed to print cleanly without supports.",
   threedexport:
     "One of the oldest 3D model marketplaces, open since 2004 and based in San Jose: game and film assets, textures and a large 3D printing catalogue, sold by their designers and some given away free.",
+  qidimaker:
+    "QIDI Maker is the model community of QIDI Tech, the Chinese maker of the X-Plus, X-Max and Q printers. It opened in 2026, and its models come with print profiles made in QIDI Studio for those printers.",
+  voxelshare:
+    "VoxelShare is the model community of Flashforge, the Chinese maker of the Adventurer and Creator printers. Its models come with print profiles for those printers, made in Flash Studio, Flashforge's own slicer.",
 };
 
 /** The providers with a list for the dashboard's trending panel, in the panel's order. */
@@ -181,6 +196,8 @@ export const TRENDING_PROVIDER_IDS = [
   "pixup3d",
   "fab365",
   "threedexport",
+  "qidimaker",
+  "voxelshare",
 ] as const;
 export type TrendingProviderId = (typeof TRENDING_PROVIDER_IDS)[number];
 
@@ -206,6 +223,8 @@ export const URLS: { readonly [K in ProviderId]: ProviderUrls } = {
   pixup3d: pixup3dUrls,
   fab365: fab365Urls,
   threedexport: threedexportUrls,
+  qidimaker: qidimakerUrls,
+  voxelshare: voxelshareUrls,
 };
 
 export function isProviderId(value: unknown): value is ProviderId {
@@ -220,6 +239,22 @@ export function manifestOf(id: ProviderId): ProviderManifest {
 /** The provider whose site `hostname` is, subdomains included; null for any other site. */
 export function providerOfHost(hostname: string): ProviderId | null {
   return PROVIDER_IDS.find((id) => MANIFESTS[id].hosts.some((domain) => hostIs(hostname, domain))) ?? null;
+}
+
+/** The region of a provider's site `hostname` is on, subdomains included: one of its manifest's `regions`, or null
+ *  for its main site. */
+export function regionOfHost(provider: ProviderId, hostname: string): RegionId | null {
+  const regions = manifestOf(provider).regions ?? [];
+  return regions.find((region) => region.hosts.some((domain) => hostIs(hostname, domain)))?.id ?? null;
+}
+
+/** The region of a provider's site a link is on; null for its main site, or what isn't a link. */
+export function regionOfUrl(provider: ProviderId, url: string): RegionId | null {
+  try {
+    return regionOfHost(provider, new URL(url).hostname);
+  } catch {
+    return null;
+  }
 }
 
 /** The provider whose links a URL's host is, as its parsers read them (narrower than providerOfHost: Snapmaker's

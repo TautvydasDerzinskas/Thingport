@@ -1,0 +1,3596 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ankermake",
+  "name": "AnkerMake"
+ },
+ "printers": [
+  {
+   "id": "ankermake-m5",
+   "brand": "ankermake",
+   "model": "M5",
+   "aliases": [
+    "ankerm5",
+    "ankerm5allmetalhotend",
+    "ankermakem5",
+    "m5allmetalhotend"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "V8111",
+    "prusa": "M5",
+    "cura": "ankermake_m5"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.2 nozzle",
+           "ASA": "Generic ASA @Anker 0.2 nozzle",
+           "PETG": "Generic PETG @Anker 0.2 nozzle",
+           "PLA": "Generic PLA @Anker 0.2 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.2 nozzle",
+           "generic asa": "Generic ASA @Anker 0.2 nozzle",
+           "generic petg": "Generic PETG @Anker 0.2 nozzle",
+           "generic pla": "Generic PLA @Anker 0.2 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.2 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.25 nozzle",
+           "ASA": "Generic ASA @Anker 0.25 nozzle",
+           "PETG": "Generic PETG @Anker 0.25 nozzle",
+           "PLA": "Generic PLA @Anker 0.25 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.25 nozzle",
+           "generic asa": "Generic ASA @Anker 0.25 nozzle",
+           "generic petg": "Generic PETG @Anker 0.25 nozzle",
+           "generic pla": "Generic PLA @Anker 0.25 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.25 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "ankermake pla+ matte": "AnkerMake PLA+ Matte @Anker",
+           "ankermake pla+ metallic": "AnkerMake PLA+ Metallic @Anker",
+           "ankermake pla+ silk": "AnkerMake PLA+ Silk @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.2 nozzle",
+           "ASA": "Generic ASA @Anker 0.2 nozzle",
+           "PA": "Generic PA @Anker 0.2 nozzle",
+           "PC": "Generic PC @Anker 0.2 nozzle",
+           "PETG": "Generic PETG @Anker 0.2 nozzle",
+           "PLA": "Generic PLA @Anker 0.2 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.2 nozzle",
+           "generic asa": "Generic ASA @Anker 0.2 nozzle",
+           "generic pa": "Generic PA @Anker 0.2 nozzle",
+           "generic pc": "Generic PC @Anker 0.2 nozzle",
+           "generic petg": "Generic PETG @Anker 0.2 nozzle",
+           "generic pla": "Generic PLA @Anker 0.2 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.2 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.25 nozzle",
+           "ASA": "Generic ASA @Anker 0.25 nozzle",
+           "PA": "Generic PA @Anker 0.25 nozzle",
+           "PC": "Generic PC @Anker 0.25 nozzle",
+           "PETG": "Generic PETG @Anker 0.25 nozzle",
+           "PLA": "Generic PLA @Anker 0.25 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.25 nozzle",
+           "generic asa": "Generic ASA @Anker 0.25 nozzle",
+           "generic pa": "Generic PA @Anker 0.25 nozzle",
+           "generic pc": "Generic PC @Anker 0.25 nozzle",
+           "generic petg": "Generic PETG @Anker 0.25 nozzle",
+           "generic pla": "Generic PLA @Anker 0.25 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.25 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PA": "Generic PA @Anker",
+           "PA-CF": "Generic PA-CF @Anker",
+           "PC": "Generic PC @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "ankermake pla+ matte": "AnkerMake PLA+ Matte @Anker",
+           "ankermake pla+ metallic": "AnkerMake PLA+ Metallic @Anker",
+           "ankermake pla+ silk": "AnkerMake PLA+ Silk @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic pa": "Generic PA @Anker",
+           "generic pa-cf": "Generic PA-CF @Anker",
+           "generic pc": "Generic PC @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PA": "Generic PA @Anker",
+           "PA-CF": "Generic PA-CF @Anker",
+           "PC": "Generic PC @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "ankermake pla+ silk": "AnkerMake PLA+ Silk @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic pa": "Generic PA @Anker",
+           "generic pa-cf": "Generic PA-CF @Anker",
+           "generic pc": "Generic PC @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     },
+     {
+      "config": "All-Metal",
+      "model": "Anker M5 All-Metal Hot End",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5 All-Metal 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5 All-Metal 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5 All-Metal 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5 All-Metal 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Anker M5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Anker M5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Anker.json",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "AnkerMake M5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AnkerMake M5 (0.4 mm nozzle)",
+         "defaultProcess": "0.2 mm OPTIMAL (0.4 mm nozzle) @ANKER",
+         "processes": [
+          {
+           "name": "0.10 mm HIGHDETAIL (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20 mm NORMAL (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30 mm SUPERDRAFT (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "ankermake_m5",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "ankermake-m5c",
+   "brand": "ankermake",
+   "model": "M5C",
+   "aliases": [
+    "ankerm5c",
+    "ankermakem5c"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.25",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "V81101C3",
+    "prusa": "M5C",
+    "cura": "ankermake_m5c"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.2 nozzle",
+           "ASA": "Generic ASA @Anker 0.2 nozzle",
+           "PA": "Generic PA @Anker 0.2 nozzle",
+           "PC": "Generic PC @Anker 0.2 nozzle",
+           "PETG": "Generic PETG @Anker 0.2 nozzle",
+           "PLA": "Generic PLA @Anker 0.2 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.2 nozzle",
+           "generic asa": "Generic ASA @Anker 0.2 nozzle",
+           "generic pa": "Generic PA @Anker 0.2 nozzle",
+           "generic pc": "Generic PC @Anker 0.2 nozzle",
+           "generic petg": "Generic PETG @Anker 0.2 nozzle",
+           "generic pla": "Generic PLA @Anker 0.2 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.2 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker 0.25 nozzle",
+           "ASA": "Generic ASA @Anker 0.25 nozzle",
+           "PA": "Generic PA @Anker 0.25 nozzle",
+           "PC": "Generic PC @Anker 0.25 nozzle",
+           "PETG": "Generic PETG @Anker 0.25 nozzle",
+           "PLA": "Generic PLA @Anker 0.25 nozzle"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker 0.25 nozzle",
+           "generic asa": "Generic ASA @Anker 0.25 nozzle",
+           "generic pa": "Generic PA @Anker 0.25 nozzle",
+           "generic pc": "Generic PC @Anker 0.25 nozzle",
+           "generic petg": "Generic PETG @Anker 0.25 nozzle",
+           "generic pla": "Generic PLA @Anker 0.25 nozzle",
+           "generic pla silk": "Generic PLA Silk @Anker 0.25 nozzle",
+           "generic pla+": "Generic PLA+ @Anker 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PA": "Generic PA @Anker",
+           "PA-CF": "Generic PA-CF @Anker",
+           "PC": "Generic PC @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "ankermake pla+ matte": "AnkerMake PLA+ Matte @Anker",
+           "ankermake pla+ metallic": "AnkerMake PLA+ Metallic @Anker",
+           "ankermake pla+ silk": "AnkerMake PLA+ Silk @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic pa": "Generic PA @Anker",
+           "generic pa-cf": "Generic PA-CF @Anker",
+           "generic pc": "Generic PC @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA+ @Anker",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PA": "Generic PA @Anker",
+           "PA-CF": "Generic PA-CF @Anker",
+           "PC": "Generic PC @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PETG-CF": "Generic PETG-CF @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "ankermake pla+ basic": "AnkerMake PLA+ Basic @Anker",
+           "ankermake pla+ glitter": "AnkerMake PLA+ Glitter @Anker",
+           "ankermake pla+ silk": "AnkerMake PLA+ Silk @Anker",
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic pa": "Generic PA @Anker",
+           "generic pa-cf": "Generic PA-CF @Anker",
+           "generic pc": "Generic PC @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic petg-cf": "Generic PETG-CF @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla silk": "Generic PLA Silk @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pla+": "Generic PLA+ @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker.json",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Anker M5C 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard 0.2mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.2 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.2 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.2 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.2 nozzle",
+           "ASA": "Anker Generic ASA 0.2 nozzle",
+           "PA": "Anker Generic PA 0.2 nozzle",
+           "PC": "Anker Generic PC 0.2 nozzle",
+           "PETG": "Anker Generic PETG 0.2 nozzle",
+           "PLA": "Anker Generic PLA 0.2 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.2 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.2 nozzle",
+           "anker generic pa": "Anker Generic PA 0.2 nozzle",
+           "anker generic pc": "Anker Generic PC 0.2 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.2 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.2 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.2 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.2 nozzle"
+          }
+         }
+        }
+       ],
+       "0.25": [
+        {
+         "name": "Anker M5C 0.25 nozzle",
+         "defaultProcess": "0.10mm Standard 0.25mm nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Optimal 0.25 nozzle @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Standard 0.25 nozzle @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Draft 0.25 nozzle @Anker",
+           "layerHeight": 0.15
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS 0.25 nozzle",
+           "ASA": "Anker Generic ASA 0.25 nozzle",
+           "PA": "Anker Generic PA 0.25 nozzle",
+           "PC": "Anker Generic PC 0.25 nozzle",
+           "PETG": "Anker Generic PETG 0.25 nozzle",
+           "PLA": "Anker Generic PLA 0.25 nozzle"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS 0.25 nozzle",
+           "anker generic asa": "Anker Generic ASA 0.25 nozzle",
+           "anker generic pa": "Anker Generic PA 0.25 nozzle",
+           "anker generic pc": "Anker Generic PC 0.25 nozzle",
+           "anker generic petg": "Anker Generic PETG 0.25 nozzle",
+           "anker generic pla": "Anker Generic PLA 0.25 nozzle",
+           "anker generic pla silk": "Anker Generic PLA Silk 0.25 nozzle",
+           "anker generic pla+": "Anker Generic PLA+ 0.25 nozzle"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Anker M5C 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Anker",
+         "processes": [
+          {
+           "name": "0.15mm Detail 0.6 nozzle @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Standard 0.6mm nozzle @Anker",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Draft 0.6mm nozzle @Anker",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm Superdraft 0.6mm nozzle @Anker",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Anker Generic PLA+",
+         "filaments": {
+          "types": {
+           "ABS": "Anker Generic ABS",
+           "ASA": "Anker Generic ASA",
+           "PA": "Anker Generic PA",
+           "PA-CF": "Anker Generic PA-CF",
+           "PC": "Anker Generic PC",
+           "PETG": "Anker Generic PETG",
+           "PETG-CF": "Anker Generic PETG-CF",
+           "PLA": "Anker Generic PLA",
+           "PLA-CF": "Anker Generic PLA-CF",
+           "PVA": "Anker Generic PVA",
+           "TPU": "Anker Generic TPU"
+          },
+          "products": {
+           "anker generic abs": "Anker Generic ABS",
+           "anker generic asa": "Anker Generic ASA",
+           "anker generic pa": "Anker Generic PA",
+           "anker generic pa-cf": "Anker Generic PA-CF",
+           "anker generic pc": "Anker Generic PC",
+           "anker generic petg": "Anker Generic PETG",
+           "anker generic petg-cf": "Anker Generic PETG-CF",
+           "anker generic pla": "Anker Generic PLA",
+           "anker generic pla silk": "Anker Generic PLA Silk",
+           "anker generic pla-cf": "Anker Generic PLA-CF",
+           "anker generic pla+": "Anker Generic PLA+",
+           "anker generic pva": "Anker Generic PVA",
+           "anker generic tpu": "Anker Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Anker M5C",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Anker M5C 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Anker",
+         "processes": [
+          {
+           "name": "0.05mm Ultradetail @Anker",
+           "layerHeight": 0.05
+          },
+          {
+           "name": "0.10mm Detail @Anker",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Fast @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm Optimal @Anker",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Fast @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @Anker",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Draft @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.25mm Fast @Anker",
+           "layerHeight": 0.25
+          },
+          {
+           "name": "0.30mm Superdraft @Anker",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @Anker.json",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Anker",
+           "ASA": "Generic ASA @Anker",
+           "PA": "Generic PA @Anker",
+           "PA-CF": "Generic PA-CF @Anker",
+           "PC": "Generic PC @Anker",
+           "PETG": "Generic PETG @Anker",
+           "PLA": "Generic PLA @Anker",
+           "PLA-CF": "Generic PLA-CF @Anker",
+           "PVA": "Generic PVA @Anker",
+           "TPU": "Generic TPU @Anker"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Anker",
+           "generic asa": "Generic ASA @Anker",
+           "generic pa": "Generic PA @Anker",
+           "generic pa-cf": "Generic PA-CF @Anker",
+           "generic pc": "Generic PC @Anker",
+           "generic petg": "Generic PETG @Anker",
+           "generic pla": "Generic PLA @Anker",
+           "generic pla-cf": "Generic PLA-CF @Anker",
+           "generic pva": "Generic PVA @Anker",
+           "generic tpu": "Generic TPU @Anker"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "AnkerMake M5C",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AnkerMake M5C (0.4 mm nozzle)",
+         "defaultProcess": "0.2 mm OPTIMAL (0.4 mm nozzle) @ANKER",
+         "processes": [
+          {
+           "name": "Precision - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "Normal - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Fast - M5C (0.4 mm nozzle) @ANKER",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "ankermake_m5c",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

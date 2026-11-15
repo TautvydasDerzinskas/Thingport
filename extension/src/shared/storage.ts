@@ -1,6 +1,8 @@
 // chrome.storage.local keys and their shapes. Nothing is synced across browsers.
 
 import type { ProviderId } from "../providers/index.generated";
+import type { SessionKey } from "../background/sessionSync";
+import type { ThingportAdapt } from "./messages";
 
 export const STORAGE_KEYS = {
   instanceUrl: "instanceUrl",
@@ -11,6 +13,8 @@ export const STORAGE_KEYS = {
   connectionToken: "connectionToken",
   // A connection by approval in progress: the secret it proves itself with, and the tab it opened.
   pendingPairing: "pendingPairing",
+  // The address saved before the browser's host-permission prompt dismisses the popup.
+  pairingIntent: "pairingIntent",
   disabled: "disabled",
   // The popup's Offline features (see OFFLINE_FEATURE_DEFAULTS); unset means the default.
   normalizeMakerworld: "normalizeMakerworld",
@@ -19,6 +23,21 @@ export const STORAGE_KEYS = {
   // The popup's Bubble tab (see shared/bubble.ts); unset means today's white bubble, bottom right.
   bubbleStyle: "bubbleStyle",
   bubblePlace: "bubblePlace",
+  // The explicit UI language. When absent, runtime catalogs follow the browser language.
+  locale: "locale",
+  // Adapt 3MFs' own settings (see shared/adaptSettings.ts), used while not connected.
+  adaptSlicers: "adaptSlicers",
+  adaptPrinters: "adaptPrinters",
+  adaptPlacement: "adaptPlacement",
+  // The Thingport instance and account Grab's slicers and printers were last offered to on connecting, so they're
+  // offered once, not again after the user removed them there.
+  adaptCarriedTo: "adaptCarriedTo",
+  // The copy Download adapted made last (an AdaptTarget's key), made again by its button.
+  adaptLastTarget: "adaptLastTarget",
+  // What the connected account's instance last said its slicers and printers are, for while it can't answer.
+  adaptThingportLast: "adaptThingportLast",
+  // Set by a page's "Adapt settings…" for the popup to open there; read and cleared when it opens.
+  adaptOpenSettings: "adaptOpenSettings",
   // From the last login: admins get "Add to the queue" in the import panel.
   isAdmin: "isAdmin",
   // Whether the instance gives everyone an import queue of their own, as its health check said at the last sign-in:
@@ -51,12 +70,25 @@ export type StoredConfig = {
   password?: string;
   connectionToken?: string;
   pendingPairing?: PendingPairing;
+  pairingIntent?: PairingIntent;
   disabled?: boolean;
   normalizeMakerworld?: boolean;
   thingiverseDark?: boolean;
   thingiverseHideAds?: boolean;
   bubbleStyle?: string;
   bubblePlace?: string;
+  locale?: string;
+  adaptSlicers?: string[];
+  adaptPrinters?: { id: string; nozzle: string }[];
+  adaptPlacement?: string;
+  /** What of Adapt 3MFs' settings has gone to each Thingport account, by `instanceUrl|email`: the parts settled, and
+   *  the printers sent of a carry under way (background/adaptSettings.ts). */
+  adaptCarriedTo?: Record<string, { settled: ("slicers" | "printers")[]; printersSent?: string[] }>;
+  adaptLastTarget?: string;
+  /** What each Thingport account's instance said last of its slicers and printers, by `instanceUrl|email`
+   *  (background/adaptSettings.ts). */
+  adaptThingportLast?: Record<string, ThingportAdapt>;
+  adaptOpenSettings?: number;
   isAdmin?: boolean;
   importQueue?: boolean;
   token?: string;
@@ -64,7 +96,7 @@ export type StoredConfig = {
   loginVerifiedAt?: number;
   lastSyncedMakerworldCookie?: string;
   /** `account` is the Thingport instance and email it was sent to. */
-  lastSyncedSessions?: Partial<Record<ProviderId, { account: string; value: string }>>;
+  lastSyncedSessions?: Partial<Record<SessionKey, { account: string; value: string }>>;
   /** `account` is the Thingport instance and email they were sent to. */
   lastSentProviderAccounts?: { account: string; values: Record<string, string> };
   lastPrintablesPushAt?: number;
@@ -78,7 +110,7 @@ export type ProviderTabs = Partial<Record<number, ProviderId>>;
 
 /** What works without a Thingport instance, and whether each is on until the user says otherwise. */
 export const OFFLINE_FEATURE_DEFAULTS = {
-  // The "Download normalized" button on MakerWorld.
+  // Adapt 3MFs: the Download adapted button (its settings are in shared/adaptSettings.ts).
   normalizeMakerworld: true,
   // Restyles Thingiverse, which has no dark theme of its own, while the system theme is dark.
   thingiverseDark: true,
@@ -93,6 +125,16 @@ export function offlineFeatureOn(config: StoredConfig, feature: OfflineFeature):
 }
 
 export type PendingPairing = { instanceUrl: string; verifier: string; tabId: number; startedAt: number };
+/** `failed`: put back after the approval tab couldn't be opened, for the address field; only the pair button tries it again. */
+export type PairingIntent = { instanceUrl: string; startedAt: number; failed?: true };
+
+// Long enough to sign in through a provider on the way.
+export const PAIRING_TTL_MS = 15 * 60 * 1000;
+
+/** Still in time to finish; an older one is left over (its tab gone unnoticed) and mustn't hold the popup up. */
+export function pairingFresh<T extends { startedAt: number }>(pairing: T | undefined): pairing is T {
+  return pairing != null && Date.now() - pairing.startedAt <= PAIRING_TTL_MS;
+}
 
 /** Where each sign-in sent was remembered before lastSyncedSessions; dropped on update, so each is sent once more. */
 export const LEGACY_SESSION_KEYS = [
@@ -114,6 +156,14 @@ export const CONFIG_CHANGE_KEYS: readonly string[] = [
   STORAGE_KEYS.normalizeMakerworld,
   STORAGE_KEYS.isAdmin,
   STORAGE_KEYS.importQueue,
+];
+
+/** Adapt 3MFs' settings: open pages offer the copies anew once they've settled, a hidden one once it's shown. Not the
+ *  copy last made, which only the button shows. */
+export const ADAPT_CHANGE_KEYS: readonly string[] = [
+  STORAGE_KEYS.adaptSlicers,
+  STORAGE_KEYS.adaptPrinters,
+  STORAGE_KEYS.adaptPlacement,
 ];
 
 export function normalizeInstanceUrl(raw: string | undefined | null): string {

@@ -1,7 +1,7 @@
 // A category's ids on each provider's site (CategorySiteId), which imports from it land in the category by. The
 // starter categories' come from each provider's categories.json, so a new provider needs no column or SQL.
 
-import type { CategorySiteId, Prisma } from "@prisma/client";
+import { type CategorySiteId, Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { MANIFESTS, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
@@ -68,8 +68,7 @@ export function starterSiteIds(path: readonly string[]): SiteIds {
 const seedKey = (provider: ProviderId) => `provider_category_seed:${provider}`;
 
 /** Once per provider, at startup: gives the starter categories of users who signed up before the provider was added
- *  its ids. A category is found by its path of names from the top; one a user renamed, moved or deleted is skipped,
- *  and one that already has ids for it keeps them. In SQL, as it reads every user's tree. */
+ *  its ids. */
 export async function seedProviderCategoryIds(): Promise<void> {
   const done = new Set(
     (
@@ -80,31 +79,9 @@ export async function seedProviderCategoryIds(): Promise<void> {
     ).map((setting) => setting.key),
   );
   for (const provider of PROVIDER_IDS.filter((id) => !done.has(seedKey(id)))) {
-    const starter = Object.entries(PROVIDERS[provider].starterCategories).flatMap(([path, ids]) =>
-      ids.map((siteId, position) => ({ path: pathKey(path.split("/")), siteId: String(siteId), position })),
-    );
     const added = await prisma.$transaction(
       async (tx) => {
-        const count = await tx.$executeRaw`
-        WITH RECURSIVE tree AS (
-          SELECT id, lower(trim(name)) AS path FROM "Category" WHERE kind = 'category' AND "parentId" IS NULL
-          UNION ALL
-          SELECT c.id, t.path || '/' || lower(trim(c.name))
-          FROM "Category" c JOIN tree t ON c."parentId" = t.id
-          WHERE c.kind = 'category'
-        ), starter AS (
-          SELECT * FROM unnest(
-            ${starter.map((row) => row.path)}::text[],
-            ${starter.map((row) => row.siteId)}::text[],
-            ${starter.map((row) => row.position)}::int[]
-          ) AS s(path, site_id, position)
-        )
-        INSERT INTO "CategorySiteId" ("categoryId", "provider", "siteId", "position")
-        SELECT t.id, ${provider}, s.site_id, s.position FROM tree t JOIN starter s ON s.path = t.path
-        WHERE NOT EXISTS (
-          SELECT 1 FROM "CategorySiteId" own WHERE own."categoryId" = t.id AND own.provider = ${provider}
-        )
-        ON CONFLICT DO NOTHING`;
+        const count = await insertStarterSiteIds(tx, provider, null);
         await tx.setting.create({ data: { key: seedKey(provider), value: new Date().toISOString() } });
         return count;
       },
@@ -112,4 +89,46 @@ export async function seedProviderCategoryIds(): Promise<void> {
     );
     log.info("starter category ids seeded", { provider: MANIFESTS[provider].name, ids: added });
   }
+}
+
+/** The same for people who came from an older instance (services/migrate), whose starter categories have the ids of
+ *  the providers it had. */
+export async function seedStarterSiteIdsFor(userIds: string[]): Promise<void> {
+  if (!userIds.length) return;
+  for (const provider of PROVIDER_IDS) await insertStarterSiteIds(prisma, provider, userIds);
+}
+
+/** Gives `provider`'s ids to the starter categories that have none for it, everyone's or only `userIds`'. A category is
+ *  found by its path of names from the top; one a user renamed, moved or deleted is skipped. In SQL, as it reads
+ *  every user's tree. */
+async function insertStarterSiteIds(
+  db: Prisma.TransactionClient,
+  provider: ProviderId,
+  userIds: string[] | null,
+): Promise<number> {
+  const starter = Object.entries(PROVIDERS[provider].starterCategories).flatMap(([path, ids]) =>
+    ids.map((siteId, position) => ({ path: pathKey(path.split("/")), siteId: String(siteId), position })),
+  );
+  if (!starter.length) return 0;
+  const whose = userIds ? Prisma.sql`AND "userId" = ANY(${userIds})` : Prisma.empty;
+  return db.$executeRaw`
+    WITH RECURSIVE tree AS (
+      SELECT id, lower(trim(name)) AS path FROM "Category" WHERE kind = 'category' AND "parentId" IS NULL ${whose}
+      UNION ALL
+      SELECT c.id, t.path || '/' || lower(trim(c.name))
+      FROM "Category" c JOIN tree t ON c."parentId" = t.id
+      WHERE c.kind = 'category'
+    ), starter AS (
+      SELECT * FROM unnest(
+        ${starter.map((row) => row.path)}::text[],
+        ${starter.map((row) => row.siteId)}::text[],
+        ${starter.map((row) => row.position)}::int[]
+      ) AS s(path, site_id, position)
+    )
+    INSERT INTO "CategorySiteId" ("categoryId", "provider", "siteId", "position")
+    SELECT t.id, ${provider}, s.site_id, s.position FROM tree t JOIN starter s ON s.path = t.path
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "CategorySiteId" own WHERE own."categoryId" = t.id AND own.provider = ${provider}
+    )
+    ON CONFLICT DO NOTHING`;
 }

@@ -1,0 +1,850 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "seckit",
+  "name": "SecKit"
+ },
+ "printers": [
+  {
+   "id": "seckit-go3",
+   "brand": "seckit",
+   "model": "Go3",
+   "aliases": [
+    "seckitgo3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 275,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "SK-Go3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Seckit Go3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit Go3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PETG @SecKit",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @SecKit",
+           "ASA": "Generic ASA @SecKit",
+           "PA": "Generic PA @SecKit",
+           "PA-CF": "Generic PA-CF @SecKit",
+           "PC": "Generic PC @SecKit",
+           "PETG": "Generic PETG @SecKit",
+           "PLA": "Generic PLA @SecKit",
+           "PLA-CF": "Generic PLA-CF @SecKit",
+           "PVA": "Generic PVA @SecKit",
+           "TPU": "Generic TPU @SecKit"
+          },
+          "products": {
+           "generic abs": "Generic ABS @SecKit",
+           "generic asa": "Generic ASA @SecKit",
+           "generic pa": "Generic PA @SecKit",
+           "generic pa-cf": "Generic PA-CF @SecKit",
+           "generic pc": "Generic PC @SecKit",
+           "generic petg": "Generic PETG @SecKit",
+           "generic pla": "Generic PLA @SecKit",
+           "generic pla-cf": "Generic PLA-CF @SecKit",
+           "generic pva": "Generic PVA @SecKit",
+           "generic tpu": "Generic TPU @SecKit"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Seckit Go3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit Go3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Seckit Go3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit Go3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Seckit Go3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit Go3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Seckit Go3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit Go3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "seckit-skgo",
+   "brand": "seckit",
+   "model": "SK-Go",
+   "aliases": [
+    "seckitskgo"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "seckit_skgo"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "seckit_skgo",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "seckit-sktank",
+   "brand": "seckit",
+   "model": "SK-Tank",
+   "aliases": [
+    "seckitsktank"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "SK-Tank",
+    "cura": "seckit_sktank"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "SecKit SK-Tank",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit SK-Tank 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PETG @SecKit",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @SecKit",
+           "ASA": "Generic ASA @SecKit",
+           "PA": "Generic PA @SecKit",
+           "PA-CF": "Generic PA-CF @SecKit",
+           "PC": "Generic PC @SecKit",
+           "PETG": "Generic PETG @SecKit",
+           "PLA": "Generic PLA @SecKit",
+           "PLA-CF": "Generic PLA-CF @SecKit",
+           "PVA": "Generic PVA @SecKit",
+           "TPU": "Generic TPU @SecKit"
+          },
+          "products": {
+           "generic abs": "Generic ABS @SecKit",
+           "generic asa": "Generic ASA @SecKit",
+           "generic pa": "Generic PA @SecKit",
+           "generic pa-cf": "Generic PA-CF @SecKit",
+           "generic pc": "Generic PC @SecKit",
+           "generic petg": "Generic PETG @SecKit",
+           "generic pla": "Generic PLA @SecKit",
+           "generic pla-cf": "Generic PLA-CF @SecKit",
+           "generic pva": "Generic PVA @SecKit",
+           "generic tpu": "Generic TPU @SecKit"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "SecKit SK-Tank",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit SK-Tank 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "SecKit SK-Tank",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit SK-Tank 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "SecKit SK-Tank",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit SK-Tank 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "SecKit SK-Tank",
+      "presets": {
+       "0.4": [
+        {
+         "name": "SecKit SK-Tank 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SecKit",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SecKit",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SecKit",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @SecKit",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @SecKit",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SecKit",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SecKit",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.30mm Fast @SecKit",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "SecKit Generic PETG",
+         "filaments": {
+          "types": {
+           "ABS": "SecKit Generic ABS",
+           "ASA": "SecKit Generic ASA",
+           "PA": "SecKit Generic PA",
+           "PA-CF": "SecKit Generic PA-CF",
+           "PC": "SecKit Generic PC",
+           "PETG": "SecKit Generic PETG",
+           "PLA": "SecKit Generic PLA",
+           "PLA-CF": "SecKit Generic PLA-CF",
+           "PVA": "SecKit Generic PVA",
+           "TPU": "SecKit Generic TPU"
+          },
+          "products": {
+           "seckit generic abs": "SecKit Generic ABS",
+           "seckit generic asa": "SecKit Generic ASA",
+           "seckit generic pa": "SecKit Generic PA",
+           "seckit generic pa-cf": "SecKit Generic PA-CF",
+           "seckit generic pc": "SecKit Generic PC",
+           "seckit generic petg": "SecKit Generic PETG",
+           "seckit generic pla": "SecKit Generic PLA",
+           "seckit generic pla-cf": "SecKit Generic PLA-CF",
+           "seckit generic pva": "SecKit Generic PVA",
+           "seckit generic tpu": "SecKit Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "seckit_sktank",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

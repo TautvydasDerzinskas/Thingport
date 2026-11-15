@@ -17,7 +17,14 @@ describe("provider filters", () => {
   });
 
   it("keeps only those with every feature asked for", () => {
-    expect(shown({ features: ["profiles", "likes"] })).toEqual(["snapmaker", "makeronline", "crealitycloud"]);
+    expect(shown({ features: ["profiles", "likes"] })).toEqual([
+      "snapmaker",
+      "makeronline",
+      "crealitycloud",
+      "eufymake",
+      "qidimaker",
+      "voxelshare",
+    ]);
     expect(shown({ features: ["paidModels"] })).toEqual([
       "myminifactory",
       "thangs",

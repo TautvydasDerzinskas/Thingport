@@ -1,0 +1,135 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "foehnsturm",
+  "name": "Foehnsturm"
+ },
+ "printers": [
+  {
+   "id": "foehnsturm-mark2forultimaker2",
+   "brand": "foehnsturm",
+   "model": "Mark2 for Ultimaker2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 223,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -3.5,
+      -1
+     ],
+     [
+      101.5,
+      -1
+     ],
+     [
+      101.5,
+      39
+     ],
+     [
+      -3.5,
+      39
+     ]
+    ],
+    [
+     [
+      226.5,
+      -1
+     ],
+     [
+      226.5,
+      39
+     ],
+     [
+      126.5,
+      39
+     ],
+     [
+      126.5,
+      -1
+     ]
+    ],
+    [
+     [
+      -3.5,
+      224
+     ],
+     [
+      -3.5,
+      199
+     ],
+     [
+      226.5,
+      199
+     ],
+     [
+      226.5,
+      224
+     ]
+    ],
+    [
+     [
+      -3.5,
+      39
+     ],
+     [
+      14.5,
+      39
+     ],
+     [
+      14.5,
+      224
+     ],
+     [
+      -3.5,
+      224
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 203,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "Mark2_for_Ultimaker2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "Mark2_for_Ultimaker2",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

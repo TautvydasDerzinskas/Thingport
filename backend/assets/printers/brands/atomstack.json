@@ -1,0 +1,181 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "atomstack",
+  "name": "AtomStack"
+ },
+ "printers": [
+  {
+   "id": "atomstack-cambrianmaxe175",
+   "brand": "atomstack",
+   "model": "Cambrian Max E175",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 330,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 380,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atomstack_cambrianmaxe175"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atomstack_cambrianmaxe175",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "atomstack-cambrianmaxe285",
+   "brand": "atomstack",
+   "model": "Cambrian Max E285",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 320,
+    "y": 330,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 380,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atomstack_cambrianmaxe285"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atomstack_cambrianmaxe285",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "atomstack-cambrianproe175",
+   "brand": "atomstack",
+   "model": "Cambrian Pro E175",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atomstack_cambrianproe175"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atomstack_cambrianproe175",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "atomstack-cambrianproe285",
+   "brand": "atomstack",
+   "model": "Cambrian Pro E285",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "atomstack_cambrianproe285"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "atomstack_cambrianproe285",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

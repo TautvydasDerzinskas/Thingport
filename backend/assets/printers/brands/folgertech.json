@@ -1,0 +1,1481 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "folgertech",
+  "name": "Folgertech"
+ },
+ "printers": [
+  {
+   "id": "folgertech-ft5",
+   "brand": "folgertech",
+   "model": "FT-5",
+   "aliases": [
+    "folgertechft5"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "FT-5",
+    "cura": "folgertech_FT-5"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Folgertech FT-5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Folgertech FT-5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Folgertech FT-5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Folgertech FT-5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Folgertech FT-5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-5 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "folgertech_FT-5",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "folgertech-ft6",
+   "brand": "folgertech",
+   "model": "FT-6",
+   "aliases": [
+    "folgertechft6"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 700,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "FT-6"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Folgertech FT-6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-6 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Folgertech FT-6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-6 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Folgertech FT-6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-6 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Folgertech FT-6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-6 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Folgertech FT-6",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech FT-6 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech FT-6 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "folgertech-i3",
+   "brand": "folgertech",
+   "model": "i3",
+   "aliases": [
+    "folgertechi3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 175,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "i3"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Folgertech i3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech i3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech i3 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Folgertech i3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech i3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech i3 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @folgertech",
+         "filaments": {
+          "types": {
+           "ABS": "Folgertech Generic ABS",
+           "ASA": "Folgertech Generic ASA",
+           "PA": "Folgertech Generic PA",
+           "PA-CF": "Folgertech Generic PA-CF",
+           "PC": "Folgertech Generic PC",
+           "PETG": "Folgertech Generic PETG",
+           "PETG-CF": "Folgertech Generic PETG-CF",
+           "PLA": "Folgertech Generic PLA",
+           "PLA-CF": "Folgertech Generic PLA-CF",
+           "PVA": "Folgertech Generic PVA",
+           "TPU": "Folgertech Generic TPU"
+          },
+          "products": {
+           "folgertech generic abs": "Folgertech Generic ABS",
+           "folgertech generic asa": "Folgertech Generic ASA",
+           "folgertech generic pa": "Folgertech Generic PA",
+           "folgertech generic pa-cf": "Folgertech Generic PA-CF",
+           "folgertech generic pc": "Folgertech Generic PC",
+           "folgertech generic petg": "Folgertech Generic PETG",
+           "folgertech generic petg-cf": "Folgertech Generic PETG-CF",
+           "folgertech generic pla": "Folgertech Generic PLA",
+           "folgertech generic pla silk": "Folgertech Generic PLA Silk",
+           "folgertech generic pla-cf": "Folgertech Generic PLA-CF",
+           "folgertech generic pva": "Folgertech Generic PVA",
+           "folgertech generic tpu": "Folgertech Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Folgertech i3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech i3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech i3 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Folgertech i3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech i3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech i3 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Folgertech i3",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Folgertech i3 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FT",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @FT 0.4 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @FT 0.4 nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FT 0.4 nozzle",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strength @FT 0.4 nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FT 0.4 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @FT 0.4 nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Folgertech i3 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @FT 0.6 Nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @FT 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @FT 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @FT 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @FT 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @FT 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

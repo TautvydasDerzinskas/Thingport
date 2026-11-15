@@ -384,10 +384,12 @@ async function unsyncGone(sync: SyncWithCollection): Promise<void> {
     targetId: sync.collectionId,
     details: { name, provider: sync.provider, url: sync.sourceUrl, reason: "source_gone" },
   });
+  // Its other sources carry on, so it's only this one that stopped.
+  const others = await prisma.collectionSync.count({ where: { collectionId: sync.collectionId } });
   await createNotification(sync.userId, {
     type: "sync",
-    title: `"${name}" is no longer synced`,
-    body: `${capitalize(sourceDescription(sync))} can't be found any more, so new models won't come in. The models already in "${name}" stay.`,
+    title: others ? `"${name}" no longer syncs with a ${provider} collection` : `"${name}" is no longer synced`,
+    body: `${capitalize(sourceDescription(sync))} can't be found any more, so new models won't come in from it. The models already in "${name}" stay.`,
     externalUrl: sync.sourceUrl,
     internalPath: `/models/collections/${sync.collectionId}`,
   });
@@ -455,7 +457,7 @@ async function notifyManualOutcome(before: SyncWithCollection, outcome: SyncOutc
     },
     gone: {
       title: `Couldn't find "${name}" on ${provider}`,
-      body: `${capitalize(sourceDescription(before))} may have been deleted. If it's still missing on the next check, "${name}" is unsynced; its models stay.`,
+      body: `${capitalize(sourceDescription(before))} may have been deleted. If it's still missing on the next check, "${name}" stops syncing with it; its models stay.`,
     },
   };
   const note = message[outcome];

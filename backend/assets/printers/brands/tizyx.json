@@ -1,0 +1,144 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tizyx",
+  "name": "Tizyx"
+ },
+ "printers": [
+  {
+   "id": "tizyx-evy",
+   "brand": "tizyx",
+   "model": "Evy",
+   "aliases": [
+    "evydual",
+    "tizyxevy",
+    "tizyxevydual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 255,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tizyx_evy"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tizyx_evy",
+      "nozzles": [
+       "0.2mm",
+       "0.3mm",
+       "0.4mm",
+       "0.5mm",
+       "0.6mm",
+       "0.8mm",
+       "1.0mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "tizyx_evy_dual",
+      "nozzles": [
+       "Classic Extruder",
+       "Direct Drive"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "tizyx-k25",
+   "brand": "tizyx",
+   "model": "K25",
+   "aliases": [
+    "tizyxk25"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 255,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 255,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "tizyx_k25"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "tizyx_k25",
+      "nozzles": [
+       "0.2 mm",
+       "0.3 mm",
+       "0.4 mm",
+       "0.5 mm",
+       "0.6 mm",
+       "0.8 mm",
+       "1.0 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

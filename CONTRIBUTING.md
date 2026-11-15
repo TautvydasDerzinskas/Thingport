@@ -75,7 +75,10 @@ against the full stack, isn't run on pull requests. It runs weekly on `main`.
 
 Nothing is published from a pull request. A merge into `develop` publishes a `:dev` image for testers who want
 changes early, but only for the project it touches: the backend's when it changes `backend/**`, the frontend's
-when it changes `frontend/**`. Only a release, merged into `main`, gets a version and `:latest`.
+when it changes `frontend/**`, once any running backend build has finished. Only a release, merged into `main`,
+gets a version and `:latest`. It isn't tested again there, since its pull request was, so merge one only once
+that pull request's checks have passed: `main`'s rules don't require it. When a release changes both projects,
+their images go out together, the backend's first, so nobody pulls a new frontend for an old backend.
 
 If you're a brand-new GitHub account, your first PR's workflows wait for a maintainer to approve
 them before running. That's a GitHub setting, not something wrong with your PR.
@@ -87,6 +90,13 @@ you verified it** is much faster to review than a diff alone -- especially for a
 reviewer otherwise has to reconstruct your reasoning from scratch.
 
 If you couldn't verify something end to end, say so. That's useful information, not a weakness.
+
+CodeRabbit reviews pull requests into `develop`, and each push to them. An account kept for it watches CodeRabbit's
+checks and the pushes, and asks for what a pull request is still owed once it's due, so there's no need to ask yourself:
+`@coderabbitai review` for a push it didn't review (`full review` if it never reviewed the pull request, stacked ones
+included), the same ask again once a rate limit's wait is over, and `full review` when a review had nothing to say or
+CodeRabbit answers "Already reviewed the last commit". Comment `@coderabbitai pause` to stop its reviews of your pull
+request, and `@coderabbitai resume` to start them again.
 
 ## Adding a provider
 
@@ -104,6 +114,12 @@ users' browsers, so it's read before it's merged.
 Studio, the CAD page, has one rule: everything a person can do to a design is a command, which is also an MCP tool, so
 an AI can do it too. How that's built and the steps for a new command are in
 [docs/STUDIO_DEVELOPMENT.md](docs/STUDIO_DEVELOPMENT.md).
+
+## Updating the printer catalogue
+
+The printers Thingport knows, their beds and each slicer's names for them, are built from the slicers' own profiles
+by `npm run printers:update` and committed. How it's built and how to update it or add a slicer are in
+[docs/PRINTERS_DEVELOPMENT.md](docs/PRINTERS_DEVELOPMENT.md).
 
 ## Working on social features
 

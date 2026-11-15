@@ -1,0 +1,334 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "srivignan",
+  "name": "Sri Vignan"
+ },
+ "printers": [
+  {
+   "id": "srivignan-arjun300",
+   "brand": "srivignan",
+   "model": "Arjun 300",
+   "aliases": [
+    "arjun300duplication",
+    "arjun300mirror"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 317,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 290,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "arjun300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "arjun300",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "PVA 0.2 mm Nozzle",
+       "PVA 0.3 mm Nozzle",
+       "PVA 0.4 mm Nozzle",
+       "PVA 0.5 mm Nozzle",
+       "PVA 0.6 mm Nozzle",
+       "PVA 0.8 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Duplication",
+      "definition": "arjun_duplication",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Mirror",
+      "definition": "arjun_mirrored",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "srivignan-arjunpro300",
+   "brand": "srivignan",
+   "model": "Arjun Pro 300",
+   "aliases": [
+    "arjunpro300duplication",
+    "arjunpro300mirror"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 293,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "arjunpro300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "arjunpro300",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "PVA 0.2 mm Nozzle",
+       "PVA 0.3 mm Nozzle",
+       "PVA 0.4 mm Nozzle",
+       "PVA 0.5 mm Nozzle",
+       "PVA 0.6 mm Nozzle",
+       "PVA 0.8 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Duplication",
+      "definition": "arjunpro_duplication",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Mirror",
+      "definition": "arjunpro_mirrored",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "srivignan-diytech220",
+   "brand": "srivignan",
+   "model": "Diytech 220",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 305,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "diy220"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "diy220",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "srivignan-kosher",
+   "brand": "srivignan",
+   "model": "Kosher",
+   "aliases": [
+    "kosherduplication",
+    "koshermirror"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "kosher"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "kosher",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "PVA 0.2 mm Nozzle",
+       "PVA 0.4 mm Nozzle",
+       "PVA 0.5 mm Nozzle",
+       "PVA 0.6 mm Nozzle",
+       "PVA 0.8 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Duplication",
+      "definition": "kosher_duplication",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle",
+       "PVA 0.3 mm Nozzle"
+      ]
+     },
+     {
+      "config": "Mirror",
+      "definition": "kosher_mirror",
+      "nozzles": [
+       "0.2 mm Nozzle",
+       "0.3 mm Nozzle",
+       "0.4 mm Nozzle",
+       "0.5 mm Nozzle",
+       "0.6 mm Nozzle",
+       "0.8 mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

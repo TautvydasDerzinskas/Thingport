@@ -84,6 +84,7 @@
   "problem.bin": "Un bac {w}×{d} {issues}.",
   "problem.cellTooBig": "Une seule cellule avec sa bordure ne tient pas sur le plateau : agrandissez le plateau.",
   "save.addToCollection": "Ajouter à une collection",
+  "save.done": "Enregistré : {name}",
   "save.go": "Enregistrer",
   "save.making": "Fabrication des pièces…",
   "save.note": "Chaque pièce dans un modèle, avec le nombre à imprimer de chacune dans sa description.",

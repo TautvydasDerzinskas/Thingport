@@ -3,10 +3,13 @@ import {
   STORAGE_KEYS,
   normalizeInstanceUrl,
   offlineFeatureOn,
+  pairingFresh,
   type OfflineFeature,
   type StoredConfig,
 } from "../shared/storage";
+import { adaptSettingsOf } from "../shared/adaptSettings";
 import { bubbleLookOf, bubbleUpdate, type BubbleLook } from "../shared/bubble";
+import { isLocale, localeOf, type Locale } from "../shared/i18n";
 import type { ExtensionState } from "../shared/messages";
 import { learnImportQueue, loginAndStoreToken } from "./api";
 
@@ -40,6 +43,7 @@ export async function getState(): Promise<ExtensionState> {
     });
   }
   const importQueue = config.importQueue === true;
+  const pairing = pairingFresh(config.pendingPairing);
   return {
     configured: isConfigured(config),
     disabled: Boolean(config.disabled),
@@ -48,6 +52,13 @@ export async function getState(): Promise<ExtensionState> {
     instanceUrl: config.instanceUrl || "",
     email: config.email || "",
     connectedByApproval: Boolean(config.connectionToken),
+    pairing,
+    // A left-over approval tab's address only when nothing newer was typed.
+    pairingInstanceUrl:
+      (pairing ? config.pendingPairing?.instanceUrl : "") ||
+      config.pairingIntent?.instanceUrl ||
+      config.pendingPairing?.instanceUrl ||
+      "",
     offlineFeatures: Object.fromEntries(
       (Object.keys(OFFLINE_FEATURE_DEFAULTS) as OfflineFeature[]).map((feature) => [
         feature,
@@ -55,6 +66,9 @@ export async function getState(): Promise<ExtensionState> {
       ]),
     ) as Record<OfflineFeature, boolean>,
     bubble: bubbleLookOf(config),
+    locale: localeOf(config.locale),
+    localeChoice: isLocale(config.locale) ? config.locale : null,
+    adaptPlacement: adaptSettingsOf(config).placement,
   };
 }
 
@@ -73,7 +87,11 @@ export async function saveConfig({
   await loginAndStoreToken({ instanceUrl: normalized, email, password });
   await chrome.storage.local.set({ instanceUrl: normalized, email, password, disabled: false });
   // The password replaces a connection made by approval; that one stays listed in Thingport until removed there.
-  await chrome.storage.local.remove([STORAGE_KEYS.connectionToken, STORAGE_KEYS.pendingPairing]);
+  await chrome.storage.local.remove([
+    STORAGE_KEYS.connectionToken,
+    STORAGE_KEYS.pendingPairing,
+    STORAGE_KEYS.pairingIntent,
+  ]);
   return null;
 }
 
@@ -91,5 +109,13 @@ export async function setOfflineFeature(feature: OfflineFeature, enabled: boolea
 /** Open model pages pick the change up from storage themselves (content/index.ts). */
 export async function setBubble(pick: Partial<BubbleLook>): Promise<null> {
   await chrome.storage.local.set(bubbleUpdate(pick));
+  return null;
+}
+
+/** Null goes back to following the browser. */
+export async function setLocale(locale: Locale | null): Promise<null> {
+  if (locale === null) await chrome.storage.local.remove(STORAGE_KEYS.locale);
+  else if (isLocale(locale)) await chrome.storage.local.set({ [STORAGE_KEYS.locale]: locale });
+  else throw new Error(`Unknown language: ${String(locale)}`);
   return null;
 }

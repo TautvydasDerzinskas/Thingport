@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "101hero",
+  "name": "101Hero"
+ },
+ "printers": [
+  {
+   "id": "101hero-101hero",
+   "brand": "101hero",
+   "model": "101Hero",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 149.86,
+    "y": 149.86,
+    "origin": [
+     -74.93,
+     -74.93
+    ],
+    "diameter": 149.86
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 99.822,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "101Hero"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "101Hero",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

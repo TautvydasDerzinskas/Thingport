@@ -59,8 +59,13 @@ export async function rejectConnection(
   userId: string,
   provider: ProviderId,
   slot: UserSlot = "default",
+  secret?: Prisma.InputJsonValue,
 ): Promise<void> {
-  await prisma.providerConnection.updateMany({ where: { userId, provider, slot }, data: { rejectedAt: new Date() } });
+  // With `secret`, only while it's still the one stored: compared and marked in one statement.
+  await prisma.providerConnection.updateMany({
+    where: { userId, provider, slot, ...(secret === undefined ? {} : { secret: { equals: secret } }) },
+    data: { rejectedAt: new Date() },
+  });
 }
 
 /** `honoursExpiry`: past its expiry, the secret is expired too, where the site won't take it after. */

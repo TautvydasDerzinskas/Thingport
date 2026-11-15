@@ -1,0 +1,856 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "twotrees",
+  "name": "Two Trees"
+ },
+ "printers": [
+  {
+   "id": "twotrees-bluer",
+   "brand": "twotrees",
+   "model": "Bluer",
+   "aliases": [
+    "twotreesbluer"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 280,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "two_trees_bluer"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "two_trees_bluer",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "twotrees-bluerplus",
+   "brand": "twotrees",
+   "model": "Bluer Plus",
+   "aliases": [
+    "twotreesbluerplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "two_trees_bluerplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "two_trees_bluerplus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "twotrees-sapphireplus",
+   "brand": "twotrees",
+   "model": "Sapphire Plus",
+   "aliases": [
+    "twotreessapphireplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "two_trees_sapphireplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "two_trees_sapphireplus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "twotrees-sapphirepro",
+   "brand": "twotrees",
+   "model": "Sapphire Pro",
+   "aliases": [
+    "twotreessapphirepro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "two_trees_sapphirepro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "two_trees_sapphirepro",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "twotrees-sk1",
+   "brand": "twotrees",
+   "model": "SK1",
+   "aliases": [
+    "twotreessk1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 256,
+    "y": 256,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 256,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "TwoTrees_SK1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "TwoTrees SK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SK1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SK1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @SK1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Quality @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm HSpeed @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PLA": "Generic HS PLA @TwoTrees SK1",
+           "TPU": "Generic TPU 95A @TwoTrees SK1"
+          },
+          "products": {
+           "generic hs pla": "Generic HS PLA @TwoTrees SK1",
+           "generic tpu 95a": "Generic TPU 95A @TwoTrees SK1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "TwoTrees SK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SK1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SK1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @SK1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Quality @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm HSpeed @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "TwoTrees Generic PETG @SK1",
+           "PLA": "TwoTrees Generic PLA @SK1",
+           "PLA-CF": "TwoTrees Generic PLA-CF @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1",
+           "twotrees generic petg": "TwoTrees Generic PETG @SK1",
+           "twotrees generic pla": "TwoTrees Generic PLA @SK1",
+           "twotrees generic pla matte": "TwoTrees Generic PLA Matte @SK1",
+           "twotrees generic pla silk": "TwoTrees Generic PLA Silk @SK1",
+           "twotrees generic pla-cf": "TwoTrees Generic PLA-CF @SK1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "TwoTrees SK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SK1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SK1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @SK1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Quality @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm HSpeed @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "TwoTrees SK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SK1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SK1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @SK1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Quality @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm HSpeed @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "TwoTrees SK1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SK1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @SK1",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @SK1",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @SK1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @SK1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Quality @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @SK1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.24mm HSpeed @SK1",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @SK1",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "PLA": "TwoTrees Generic HS PLA @SK1",
+           "TPU": "TwoTrees Generic 95A TPU @SK1"
+          },
+          "products": {
+           "twotrees generic 95a tpu": "TwoTrees Generic 95A TPU @SK1",
+           "twotrees generic hs pla": "TwoTrees Generic HS PLA @SK1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "twotrees-sp5klipper",
+   "brand": "twotrees",
+   "model": "SP-5 Klipper",
+   "aliases": [
+    "twotreessp5klipper"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "TwoTrees_SP-5_Klipper"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "TwoTrees SP-5 Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SP-5 Klipper 0.4 nozzle",
+         "defaultProcess": "0.16mm Optimal @Bambu Lab X1 Carbon 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @TwoTrees",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @TwoTrees",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @TwoTrees",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @TwoTrees",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @TwoTrees",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @TwoTrees",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "TwoTrees SP-5 Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SP-5 Klipper 0.4 nozzle",
+         "defaultProcess": "0.16mm Optimal @Bambu Lab X1 Carbon 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @TwoTrees",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @TwoTrees",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @TwoTrees",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @TwoTrees",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @TwoTrees",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @TwoTrees",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "TwoTrees Generic ABS",
+           "ASA": "TwoTrees Generic ASA",
+           "PA": "TwoTrees Generic PA",
+           "PA-CF": "TwoTrees Generic PA-CF",
+           "PC": "TwoTrees Generic PC",
+           "PETG": "TwoTrees Generic PETG",
+           "PLA": "TwoTrees Generic PLA",
+           "PLA-CF": "TwoTrees Generic PLA-CF",
+           "PVA": "TwoTrees Generic PVA",
+           "TPU": "TwoTrees Generic TPU"
+          },
+          "products": {
+           "twotrees generic abs": "TwoTrees Generic ABS",
+           "twotrees generic asa": "TwoTrees Generic ASA",
+           "twotrees generic pa": "TwoTrees Generic PA",
+           "twotrees generic pa-cf": "TwoTrees Generic PA-CF",
+           "twotrees generic pc": "TwoTrees Generic PC",
+           "twotrees generic petg": "TwoTrees Generic PETG",
+           "twotrees generic pla": "TwoTrees Generic PLA",
+           "twotrees generic pla-cf": "TwoTrees Generic PLA-CF",
+           "twotrees generic pva": "TwoTrees Generic PVA",
+           "twotrees generic tpu": "TwoTrees Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "TwoTrees SP-5 Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SP-5 Klipper 0.4 nozzle",
+         "defaultProcess": "0.16mm Optimal @Bambu Lab X1 Carbon 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @TwoTrees",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @TwoTrees",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @TwoTrees",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @TwoTrees",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @TwoTrees",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @TwoTrees",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "TwoTrees SP-5 Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SP-5 Klipper 0.4 nozzle",
+         "defaultProcess": "0.16mm Optimal @Bambu Lab X1 Carbon 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @TwoTrees",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @TwoTrees",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @TwoTrees",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @TwoTrees",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @TwoTrees",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @TwoTrees",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "TwoTrees SP-5 Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "TwoTrees SP-5 Klipper 0.4 nozzle",
+         "defaultProcess": "0.16mm Optimal @Bambu Lab X1 Carbon 0.4 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @TwoTrees",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @TwoTrees",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @TwoTrees",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @TwoTrees",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @TwoTrees",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @TwoTrees",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "TwoTrees Generic PLA"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -1,0 +1,138 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "joyplace",
+  "name": "JOYPLACE"
+ },
+ "printers": [
+  {
+   "id": "joyplace-cremakermv1",
+   "brand": "joyplace",
+   "model": "Cremaker M V1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "cura": "cremaker_m_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cremaker_m_v1",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "joyplace-cremakermv2",
+   "brand": "joyplace",
+   "model": "Cremaker M V2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "cura": "cremaker_m_v2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cremaker_m_v2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "joyplace-cremakersv1",
+   "brand": "joyplace",
+   "model": "Cremaker S V1",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 160,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "cura": "cremaker_s_v1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "cremaker_s_v1",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "key3d",
+  "name": "Key3D"
+ },
+ "printers": [
+  {
+   "id": "key3d-tyro",
+   "brand": "key3d",
+   "model": "Tyro",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "key3d_tyro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "key3d_tyro",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,234 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "bq",
+  "name": "BQ"
+ },
+ "printers": [
+  {
+   "id": "bq-hephestos2",
+   "brand": "bq",
+   "model": "Hephestos 2",
+   "aliases": [
+    "bqhephestos2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 297,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "bq_hephestos_2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bq_hephestos_2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "bq-prusai3hephestos",
+   "brand": "bq",
+   "model": "Prusa i3 Hephestos",
+   "aliases": [
+    "bqprusai3hephestos"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 215,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "bq_hephestos"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bq_hephestos",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "bq-prusai3hephestosxl",
+   "brand": "bq",
+   "model": "Prusa i3 Hephestos XL",
+   "aliases": [
+    "bqprusai3hephestosxl"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "bq_hephestos_xl"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bq_hephestos_xl",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "bq-witbox",
+   "brand": "bq",
+   "model": "Witbox",
+   "aliases": [
+    "bqwitbox"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 297,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "bq_witbox"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bq_witbox",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "bq-witbox2",
+   "brand": "bq",
+   "model": "Witbox 2",
+   "aliases": [
+    "bqwitbox2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 297,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "bq_witbox_2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "bq_witbox_2",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

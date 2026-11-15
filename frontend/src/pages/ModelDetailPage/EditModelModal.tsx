@@ -26,6 +26,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
@@ -41,11 +42,14 @@ import DescriptionEditor from "./DescriptionEditor";
 import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
+import { folderLabel } from "../../utils/fileFolders";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
 
-type PlateItem = { kind: "existing"; id: string; filename: string } | { kind: "new"; localId: string; file: File };
+type PlateItem =
+  | { kind: "existing"; id: string; filename: string; folder: string | null }
+  | { kind: "new"; localId: string; file: File };
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -94,7 +98,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   // generating, and a diff would delete it as soon as it appeared.
   const [removedImageIds, setRemovedImageIds] = useState<Set<string>>(new Set());
   const [plateItems, setPlateItems] = useState<PlateItem[]>(() =>
-    print.plates.map((p): PlateItem => ({ kind: "existing", id: p.id, filename: p.filename })),
+    print.plates.map((p): PlateItem => ({
+      kind: "existing",
+      id: p.id,
+      filename: p.filename,
+      folder: p.folder ?? null,
+    })),
   );
   const [categories, setCategories] = useState<Category[] | null>(null);
   // "source": what its source lists; "": none, for a model with no source; otherwise a licence id the owner picks.
@@ -593,6 +602,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
                 const filename = p.kind === "existing" ? p.filename : p.file.name;
+                const folder = p.kind === "existing" ? p.folder : null;
                 return (
                   <Stack
                     key={key}
@@ -602,9 +612,27 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, px: 1, py: 0.5 }}
                   >
                     <InsertDriveFileIcon fontSize="small" color="action" />
-                    <Typography variant="body2" noWrap title={filename} sx={{ flex: 1, minWidth: 0 }}>
-                      {filename}
-                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" noWrap title={filename}>
+                        {filename}
+                      </Typography>
+                      {/* Its order is the model's, across folders, so the folder is said on each file. */}
+                      {folder && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          noWrap
+                          component="div"
+                          title={folder}
+                          sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                        >
+                          <FolderOutlinedIcon aria-hidden sx={{ fontSize: 13, flexShrink: 0 }} />
+                          <Box component="span" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {folderLabel(folder)}
+                          </Box>
+                        </Typography>
+                      )}
+                    </Box>
                     {p.kind === "new" && <Chip label={t("models:edit.newBadge")} size="small" />}
                     <IconButton size="small" disabled={saving || idx === 0} onClick={() => movePlateItemBy(key, -1)}>
                       <ArrowUpwardIcon fontSize="small" />

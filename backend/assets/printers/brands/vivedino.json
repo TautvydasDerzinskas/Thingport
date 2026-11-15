@@ -1,0 +1,1356 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "vivedino",
+  "name": "Vivedino"
+ },
+ "printers": [
+  {
+   "id": "vivedino-trex2plus",
+   "brand": "vivedino",
+   "model": "T-REX 2+",
+   "aliases": [
+    "vivedinotrex2plus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vivedino_trex2plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vivedino_trex2plus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "vivedino-trex3",
+   "brand": "vivedino",
+   "model": "T-REX 3",
+   "aliases": [
+    "vivedinotrex3"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vivedino_trex3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vivedino_trex3",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "vivedino-troodon2klipper",
+   "brand": "vivedino",
+   "model": "Troodon 2.0 - Klipper",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Troodon2Klipper"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Troodon Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Troodon Generic ABS",
+           "ASA": "Troodon Generic ASA",
+           "PA": "Troodon Generic PA",
+           "PA-CF": "Troodon Generic PA-CF",
+           "PC": "Troodon Generic PC",
+           "PETG": "Troodon Generic PETG",
+           "PLA": "Troodon Generic PLA",
+           "PLA-CF": "Troodon Generic PLA-CF",
+           "PVA": "Troodon Generic PVA",
+           "TPU": "Troodon Generic TPU"
+          },
+          "products": {
+           "troodon generic abs": "Troodon Generic ABS",
+           "troodon generic asa": "Troodon Generic ASA",
+           "troodon generic pa": "Troodon Generic PA",
+           "troodon generic pa-cf": "Troodon Generic PA-CF",
+           "troodon generic pc": "Troodon Generic PC",
+           "troodon generic petg": "Troodon Generic PETG",
+           "troodon generic pla": "Troodon Generic PLA",
+           "troodon generic pla-cf": "Troodon Generic PLA-CF",
+           "troodon generic pva": "Troodon Generic PVA",
+           "troodon generic tpu": "Troodon Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Troodon 2.0 - Klipper",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 Klipper 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Troodon Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Troodon",
+           "ASA": "Generic ASA @Troodon",
+           "PA": "Generic PA @Troodon",
+           "PA-CF": "Generic PA-CF @Troodon",
+           "PC": "Generic PC @Troodon",
+           "PETG": "Generic PETG @Troodon",
+           "PLA": "Generic PLA @Troodon",
+           "PLA-CF": "Generic PLA-CF @Troodon",
+           "PVA": "Generic PVA @Troodon",
+           "TPU": "Generic TPU @Troodon"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Troodon",
+           "generic asa": "Generic ASA @Troodon",
+           "generic pa": "Generic PA @Troodon",
+           "generic pa-cf": "Generic PA-CF @Troodon",
+           "generic pc": "Generic PC @Troodon",
+           "generic petg": "Generic PETG @Troodon",
+           "generic pla": "Generic PLA @Troodon",
+           "generic pla-cf": "Generic PLA-CF @Troodon",
+           "generic pva": "Generic PVA @Troodon",
+           "generic tpu": "Generic TPU @Troodon"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vivedino-troodon2rrf",
+   "brand": "vivedino",
+   "model": "Troodon 2.0 - RRF",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "orca": "Troodon2RRF"
+   },
+   "device": null,
+   "sources": [
+    "bambustudio",
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Troodon Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Troodon Generic ABS",
+           "ASA": "Troodon Generic ASA",
+           "PA": "Troodon Generic PA",
+           "PA-CF": "Troodon Generic PA-CF",
+           "PC": "Troodon Generic PC",
+           "PETG": "Troodon Generic PETG",
+           "PLA": "Troodon Generic PLA",
+           "PLA-CF": "Troodon Generic PLA-CF",
+           "PVA": "Troodon Generic PVA",
+           "TPU": "Troodon Generic TPU"
+          },
+          "products": {
+           "troodon generic abs": "Troodon Generic ABS",
+           "troodon generic asa": "Troodon Generic ASA",
+           "troodon generic pa": "Troodon Generic PA",
+           "troodon generic pa-cf": "Troodon Generic PA-CF",
+           "troodon generic pc": "Troodon Generic PC",
+           "troodon generic petg": "Troodon Generic PETG",
+           "troodon generic pla": "Troodon Generic PLA",
+           "troodon generic pla-cf": "Troodon Generic PLA-CF",
+           "troodon generic pva": "Troodon Generic PVA",
+           "troodon generic tpu": "Troodon Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @System"
+        }
+       ]
+      }
+     }
+    ],
+    "bambustudio": [
+     {
+      "model": "Troodon 2.0 - RRF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Troodon 2.0 RRF 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Troodon2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Troodon2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Troodon2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Troodon2",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Troodon2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Troodon2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Troodon2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Troodon Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Troodon",
+           "ASA": "Generic ASA @Troodon",
+           "PA": "Generic PA @Troodon",
+           "PA-CF": "Generic PA-CF @Troodon",
+           "PC": "Generic PC @Troodon",
+           "PETG": "Generic PETG @Troodon",
+           "PLA": "Generic PLA @Troodon",
+           "PLA-CF": "Generic PLA-CF @Troodon",
+           "PVA": "Generic PVA @Troodon",
+           "TPU": "Generic TPU @Troodon"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Troodon",
+           "generic asa": "Generic ASA @Troodon",
+           "generic pa": "Generic PA @Troodon",
+           "generic pa-cf": "Generic PA-CF @Troodon",
+           "generic pc": "Generic PC @Troodon",
+           "generic petg": "Generic PETG @Troodon",
+           "generic pla": "Generic PLA @Troodon",
+           "generic pla-cf": "Generic PLA-CF @Troodon",
+           "generic pva": "Generic PVA @Troodon",
+           "generic tpu": "Generic TPU @Troodon"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vivedino-xplorer",
+   "brand": "vivedino",
+   "model": "Xplorer",
+   "aliases": [
+    "xplorersingle"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     10,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 401,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "config": "Single",
+      "model": "Xplorer Single",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Xplorer Single 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Xplorer 0.4",
+         "processes": [
+          {
+           "name": "0.04mm Ultra Fine @Xplorer 0.4",
+           "layerHeight": 0.04
+          },
+          {
+           "name": "0.08mm Extra Fine @Xplorer 0.4",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Xplorer 0.4",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Xplorer 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Xplorer 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Xplorer 0.4",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Extra Draft @Xplorer 0.4",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Xplorer Single 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Xplorer 0.6",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Xplorer 0.6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Xplorer 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Xplorer 0.6",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Xplorer 0.6",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Xplorer 0.6",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Xplorer Single 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Xplorer 0.8",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Xplorer 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Xplorer 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Xplorer 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Xplorer 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Xplorer 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vivedino-xplorerdualgantry",
+   "brand": "vivedino",
+   "model": "Xplorer Dual Gantry",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 342.5,
+    "origin": [
+     10,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 401,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "XplorerDualGantry"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Xplorer Dual Gantry",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Xplorer Dual Gantry 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Xplorer 0.4",
+         "processes": [
+          {
+           "name": "0.04mm Ultra Fine @Xplorer 0.4",
+           "layerHeight": 0.04
+          },
+          {
+           "name": "0.08mm Extra Fine @Xplorer 0.4",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Xplorer 0.4",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Xplorer 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Xplorer 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Xplorer 0.4",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Extra Draft @Xplorer 0.4",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Xplorer Dual Gantry 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Xplorer 0.6",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Xplorer 0.6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Xplorer 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Xplorer 0.6",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Xplorer 0.6",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Xplorer 0.6",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Xplorer Dual Gantry 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Xplorer 0.8",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Xplorer 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Xplorer 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Xplorer 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Xplorer 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Xplorer 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vivedino-xploreridex",
+   "brand": "vivedino",
+   "model": "Xplorer IDEX",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     10,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 401,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "XplorerIDEX"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Xplorer IDEX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Xplorer IDEX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Xplorer 0.4",
+         "processes": [
+          {
+           "name": "0.04mm Ultra Fine @Xplorer 0.4",
+           "layerHeight": 0.04
+          },
+          {
+           "name": "0.08mm Extra Fine @Xplorer 0.4",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Xplorer 0.4",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Xplorer 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Xplorer 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Xplorer 0.4",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Extra Draft @Xplorer 0.4",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Xplorer IDEX 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Xplorer 0.6",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Xplorer 0.6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Xplorer 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Xplorer 0.6",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Xplorer 0.6",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Xplorer 0.6",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Xplorer IDEX 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Xplorer 0.8",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Xplorer 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Xplorer 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Xplorer 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Xplorer 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Xplorer 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vivedino-xploreriqex",
+   "brand": "vivedino",
+   "model": "Xplorer IQEX",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 342.5,
+    "origin": [
+     10,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 401,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 4,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "XplorerIQEX"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Xplorer IQEX",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Xplorer IQEX 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Xplorer 0.4",
+         "processes": [
+          {
+           "name": "0.04mm Ultra Fine @Xplorer 0.4",
+           "layerHeight": 0.04
+          },
+          {
+           "name": "0.08mm Extra Fine @Xplorer 0.4",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Xplorer 0.4",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Xplorer 0.4",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Xplorer 0.4",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.28mm Draft @Xplorer 0.4",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.32mm Extra Draft @Xplorer 0.4",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Xplorer IQEX 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Xplorer 0.6",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Xplorer 0.6",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Optimal @Xplorer 0.6",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Xplorer 0.6",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Xplorer 0.6",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Xplorer 0.6",
+           "layerHeight": 0.42
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Xplorer IQEX 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @Xplorer 0.8",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Xplorer 0.8",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Optimal @Xplorer 0.8",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Xplorer 0.8",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Xplorer 0.8",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Xplorer 0.8",
+           "layerHeight": 0.56
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

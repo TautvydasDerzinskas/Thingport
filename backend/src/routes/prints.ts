@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
+import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -25,7 +26,10 @@ import { notifyUpload, type UploadOrigin } from "../services/modelNotifications"
 import { fillSourceGaps } from "../services/fillGapsService";
 import { linkPrintToSource } from "../services/modelLinkService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
-import { isNormalizable3mf, normalize3mfStatus, normalized3mfFor } from "../services/normalized3mfCache";
+import { adapt3mfStatus, adapted3mfFor, isAdaptable3mf } from "../services/adapted3mfCache";
+import { ensurePlateFormat, fillPlateFormats } from "../services/threeMfFormat";
+import { planAdaptation, slicerProfile, type AdaptPlan, type PrinterRecipe } from "../adapter";
+import { printerTarget } from "../printers/targets";
 import {
   listPrints,
   listPrintSources,
@@ -67,6 +71,22 @@ function printFiltersFromQuery(req: Request): PrintFilters {
   };
 }
 
+/** The tool a model came from, as the SDK names it for a tool's `models.create` (Print.createdWith): one the user has,
+ *  installed from the repository or their own, by slug. Anything else is left out rather than refused: the model is
+ *  still the model. */
+async function createdWithTool(
+  userId: string,
+  origin: UploadOrigin,
+  slug: string | undefined,
+): Promise<{ kind: "tool"; ref: string } | null> {
+  if (origin !== "created" || !slug || slug.length > 100) return null;
+  const tool = await prisma.tool.findFirst({
+    where: { slug, OR: [{ scope: "repo" }, { scope: userId }] },
+    select: { slug: true },
+  });
+  return tool ? { kind: "tool", ref: tool.slug } : null;
+}
+
 router.post(
   "/upload",
   modelUpload.array("files"),
@@ -97,6 +117,7 @@ router.post(
         tags,
         categoryId: body.category_id || null,
         categorySource: body.category_id ? ("MANUAL" as const) : null,
+        createdWith: await createdWithTool(req.userId!, origin, body.created_with_tool),
       };
 
       const printsOut = [];
@@ -217,6 +238,11 @@ router.get(
       where: { id: req.params.id, userId: req.userId },
       data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
     });
+    // An older 3MF's kind, read once, so the page knows which slicers get an adapted copy of it.
+    await fillPlateFormats(
+      { printId: req.params.id, print: await readablePrintWhere(req.userId!) },
+      resolvePlateFilePath,
+    );
     res.json(await readablePrintOutById(req.userId!, req.params.id));
   }),
 );
@@ -407,7 +433,11 @@ const downloadFilterSchema = z.object({
   category_id: z.string().optional(),
   collection_id: z.string().optional(),
 });
-const downloadSchema = downloadFilterSchema.extend({ filename: z.string().optional() });
+const downloadSchema = downloadFilterSchema.extend({
+  filename: z.string().optional(),
+  // Only the models' files in this folder and the folders in it (PlateOut.folder), as one folder of a model downloads.
+  folder: z.string().max(1000).optional(),
+});
 
 function assertDownloadFilterGiven(body: z.infer<typeof downloadFilterSchema>): void {
   if (!(body.print_ids?.length || body.tag || body.category_id || body.collection_id)) {
@@ -455,46 +485,121 @@ router.post(
         downloadName = `${safeName}.zip`;
       }
     }
-    await sendPrintsZip(res, prints, downloadName, { flatten });
+    // A folder that names none (".", "..") would otherwise mean every file.
+    const folder = normalizeFolder(body.folder);
+    if (body.folder && !folder) throw new HttpError(400, "That isn't a folder a model's files can be in");
+    await sendPrintsZip(res, prints, downloadName, { flatten, folder });
   }),
 );
+
+async function readablePlate(req: Request) {
+  const plate = await prisma.plate.findFirst({
+    where: { id: req.params.plateId, printId: req.params.id, print: await readablePrintWhere(req.userId!) },
+    include: { print: { select: { preparedMetadata: true } } },
+  });
+  if (!plate) throw new HttpError(404, "Not found");
+  const filePath = resolvePlateFilePath(plate);
+  if (!filePath) throw new HttpError(404, "Not found");
+  return { plate, filePath };
+}
+
+type ReadablePlate = Awaited<ReturnType<typeof readablePlate>>["plate"];
+
+/** Whether the plate is a 3MF a copy can be made of: never a sliced print, whose G-code would be dropped. */
+function adaptable(plate: ReadablePlate): boolean {
+  return plate.print.preparedMetadata === null && isAdaptable3mf(plate.filename);
+}
+
+type PrinterAsked = { id: string; nozzle: string } | null;
+type Adaptation = { plan: AdaptPlan; printer: PrinterRecipe | null };
+
+/** The copy of the plate to open in `slicer` (src/adapter/plan.ts), or null to open the plate itself. With a printer
+ *  the slicer has a preset for, the copy is made for that printer. */
+async function adaptPlanFor(
+  plate: ReadablePlate,
+  filePath: string,
+  slicer: unknown,
+  printer: PrinterAsked = null,
+): Promise<Adaptation | null> {
+  if (!adaptable(plate) || typeof slicer !== "string") return null;
+  const target = printer ? printerTarget(slicer, printer.id, printer.nozzle) : null;
+  const plan = planAdaptation(await ensurePlateFormat(plate, filePath), slicerProfile(slicer), target?.choice);
+  if (!plan) return null;
+  return { plan, printer: plan.output === "bambu" && plan.printer && target ? target.recipe : null };
+}
+
+const printerAskedSchema = z
+  .object({ id: z.string().regex(/^[a-z0-9-]{1,120}$/), nozzle: z.string().regex(/^[A-Za-z]{0,3}\d+(\.\d+)?$/) })
+  .strict();
+
+// What a page loaded before "Open adapted" asked for with "Open normalized": the copy PrusaSlicer gets, nearest to
+// it, for the same files (a Bambu layout project, never a print).
+const NORMALIZED_FOR = "prusaslicer";
+
+function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
+  res.setHeader("Content-Type", plate.mime || "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(plate.filename)}"`);
+  res.setHeader("Cache-Control", "private, max-age=86400");
+  res.sendFile(path.resolve(filePath));
+}
 
 router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
-    const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, printId: req.params.id, print: await readablePrintWhere(req.userId!) },
-      include: { print: { select: { preparedMetadata: true } } },
-    });
-    if (!plate) throw new HttpError(404, "Not found");
-    let filePath = resolvePlateFilePath(plate);
-    if (!filePath) throw new HttpError(404, "Not found");
-    // Only "Open normalized in <slicer>" asks for it; a plate that is itself a sliced print is never touched.
-    if (req.query.normalize === "1" && plate.print.preparedMetadata === null && isNormalizable3mf(plate.filename)) {
-      filePath = (await normalized3mfFor(plate.id, filePath)) ?? filePath;
-    }
-    res.setHeader("Content-Type", plate.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(plate.filename)}"`);
-    res.setHeader("Cache-Control", "private, max-age=86400");
-    res.sendFile(path.resolve(filePath));
+    const { plate, filePath } = await readablePlate(req);
+    const adapt = req.query.normalize === "1" ? await adaptPlanFor(plate, filePath, NORMALIZED_FOR) : null;
+    const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan) : null;
+    sendPlateFile(res, plate, adapted ?? filePath);
   }),
 );
 
-// Polled by "Open normalized in <slicer>" until the copy is ready, so no request outlasts a proxy timeout.
+async function sendAdapted(req: Request, res: Response, printer: PrinterAsked) {
+  const { plate, filePath } = await readablePlate(req);
+  const adapt = await adaptPlanFor(plate, filePath, req.params.slicer, printer);
+  const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan, adapt.printer) : null;
+  sendPlateFile(res, plate, adapted ?? filePath);
+}
+
+// The plate as `slicer` opens it best: the adapted copy, waited for if needed, or the plate itself when it needs none
+// or one can't be made. The path, not a query, names the slicer: OrcaSlicer names the file after the URL's end.
+router.get(
+  "/print/:id/plate/:plateId/adapted/:slicer/:filename",
+  asyncHandler((req, res) => sendAdapted(req, res, null)),
+);
+
+// The same, made for a printer from the printer catalogue with the given nozzle ("0.4"), where the slicer has a
+// preset for it.
+router.get(
+  "/print/:id/plate/:plateId/adapted/:slicer/:printer/:nozzle/:filename",
+  asyncHandler(async (req, res) => {
+    const printer = printerAskedSchema.safeParse({ id: req.params.printer, nozzle: req.params.nozzle });
+    if (!printer.success) throw new HttpError(404, "Not found");
+    await sendAdapted(req, res, printer.data);
+  }),
+);
+
+// Polled by "Open adapted in <slicer>" until the copy is ready, so no request outlasts a proxy timeout. "original"
+// when the slicer opens the plate itself as well as it can. `printer`, as in the adapted link, makes it for a printer.
+const adaptBodySchema = z.object({ slicer: z.unknown(), printer: printerAskedSchema.nullable().optional() });
+router.post(
+  "/print/:id/plate/:plateId/adapt",
+  asyncHandler(async (req, res) => {
+    const { plate, filePath } = await readablePlate(req);
+    const body = parseBody(adaptBodySchema, req.body ?? {});
+    const adapt = await adaptPlanFor(plate, filePath, body.slicer, body.printer ?? null);
+    res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan, adapt.printer) : "original" });
+  }),
+);
+
+// The "Open normalized" status, for pages loaded before an upgrade.
 router.post(
   "/print/:id/plate/:plateId/normalize",
   asyncHandler(async (req, res) => {
-    const plate = await prisma.plate.findFirst({
-      where: { id: req.params.plateId, printId: req.params.id, print: await readablePrintWhere(req.userId!) },
-      include: { print: { select: { preparedMetadata: true } } },
-    });
-    if (!plate) throw new HttpError(404, "Not found");
-    if (plate.print.preparedMetadata !== null || !isNormalizable3mf(plate.filename)) {
-      throw new HttpError(400, "Only a plain 3MF project can be normalized.");
-    }
-    const filePath = resolvePlateFilePath(plate);
-    if (!filePath) throw new HttpError(404, "Not found");
-    res.json({ status: await normalize3mfStatus(plate.id, filePath) });
+    const { plate, filePath } = await readablePlate(req);
+    if (!adaptable(plate)) throw new HttpError(400, "Only a plain 3MF project can be normalized.");
+    const adapt = await adaptPlanFor(plate, filePath, NORMALIZED_FOR);
+    // Ready to open: the file itself, when it isn't a project a copy is made of.
+    res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan) : "ready" });
   }),
 );
 

@@ -95,6 +95,21 @@ describe("NexPrint URLs", () => {
     expect(modelIdFromUrl("nexprint", modelUrlFor("nexprint", "G1215164"))).toBe("G1215164");
   });
 
+  it('takes the models some have "C" ids for, and their profiles', () => {
+    expect(parseNexprintModelUrl("https://www.nexprint.com/en/models/C2546326?printConfigId=C9550970")).toEqual({
+      modelId: "C2546326",
+      requestedProfileId: "C9550970",
+    });
+    expect(identifySourceModel("https://www.nexprint.com/en/models/c2546326")).toEqual({
+      provider: "nexprint",
+      externalId: "C2546326",
+    });
+    expect(modelIdFromUrl("nexprint", modelUrlFor("nexprint", "C2546326"))).toBe("C2546326");
+    // Collections are only ever "G" ones.
+    expect(parseNexprintCollectionUrl("https://www.nexprint.com/en/collection/C10199482")).toBeNull();
+    expect(parseNexprintModelUrl("https://www.nexprint.com/en/models/X2546326")).toBeNull();
+  });
+
   it("only takes signed files from NexPrint's OSS bucket", () => {
     expect(isNexprintFileHost("nexprint.oss-eu-central-1.aliyuncs.com")).toBe(true);
     expect(isNexprintFileHost("aliyuncs.com.evil.net")).toBe(false);
@@ -203,6 +218,18 @@ describe("NexPrint model details", () => {
     ]);
     // The profile's 3MF isn't counted again as a model file.
     expect(resolved.files).toEqual([{ fileId: "2109986422412034999", name: "Dog.stl" }]);
+  });
+
+  it('maps a model with "C" ids and its profiles', () => {
+    const detail = {
+      ...DETAIL,
+      modelId: "C2546326",
+      settingInfoList: DETAIL.settingInfoList.map((setting, at) => ({ ...setting, settingOutId: `C955097${at}` })),
+    };
+    const resolved = nexprintMetaFromDetail(detail)!;
+    expect(resolved.modelId).toBe("C2546326");
+    expect(resolved.profiles.map((p) => p.id)).toEqual(["C9550970", "C9550971"]);
+    expect(selectNexprintProfiles(resolved, "url", "C9550971")).toEqual(["C9550971"]);
   });
 
   it("picks profiles like MakerWorld", () => {

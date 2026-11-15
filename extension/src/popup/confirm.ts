@@ -1,6 +1,7 @@
 // The popup's confirmation dialog, for actions that are a step too far to take on one click: disconnecting, turning
 // Grab off. A native <dialog>: focus stays in it, Cancel is focused first, and Esc or a click beside it backs out.
 
+import { closeOnBackdrop } from "./dialog";
 import { els } from "./dom";
 
 let busy = false;
@@ -31,10 +32,7 @@ function close(): void {
 }
 
 els.confirmCancel.addEventListener("click", close);
-// A click on the backdrop lands on the dialog itself, outside its box.
-els.confirmDialog.addEventListener("click", (event) => {
-  if (event.target === els.confirmDialog) close();
-});
+closeOnBackdrop(els.confirmDialog, close);
 // Esc, but not while the action runs.
 els.confirmDialog.addEventListener("cancel", (event) => {
   if (busy) event.preventDefault();

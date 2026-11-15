@@ -1,0 +1,10 @@
+{"version":1,
+"processes":[
+[{"name":"0.16mm Optimal @Voxelab AquilaX2","layerHeight":0.16},{"name":"0.20mm Standard @Voxelab AquilaX2","layerHeight":0.2}]
+],
+"filaments":[
+{"types":{"ABS":"Generic ABS @Voxelab","PETG":"Generic PETG @Voxelab","PLA":"Generic PLA @Voxelab"},"products":{"generic abs":"Generic ABS @Voxelab","generic petg":"Generic PETG @Voxelab","generic pla":"Generic PLA @Voxelab"}}
+],
+"printers":{
+"voxelab-aquilax2":{"extruders":1,"bed":{"shape":"rectangle","x":220,"y":220,"origin":[0,0]},"height":250,"slicers":{"anycubicslicernext":[{"model":"Voxelab Aquila X2","presets":{"0.4":[{"name":"Voxelab Aquila X2 0.4 nozzle","defaultProcess":"0.20mm Standard @Voxelab AquilaX2","processes":0}]}}],"bambustudio":[{"model":"Voxelab Aquila X2","presets":{"0.4":[{"name":"Voxelab Aquila X2 0.4 nozzle","defaultProcess":"0.20mm Standard @Voxelab AquilaX2","processes":0,"filaments":0}]}}],"elegooslicer":[{"model":"Voxelab Aquila X2","presets":{"0.4":[{"name":"Voxelab Aquila X2 0.4 nozzle","defaultProcess":"0.20mm Standard @Voxelab AquilaX2","processes":0}]}}],"orcaslicer":[{"model":"Voxelab Aquila X2","presets":{"0.4":[{"name":"Voxelab Aquila X2 0.4 nozzle","defaultProcess":"0.20mm Standard @Voxelab AquilaX2","processes":0}]}}],"snapmaker-orca":[{"model":"Voxelab Aquila X2","presets":{"0.4":[{"name":"Voxelab Aquila X2 0.4 nozzle","defaultProcess":"0.20mm Standard @Voxelab AquilaX2","processes":0}]}}]}}
+}}

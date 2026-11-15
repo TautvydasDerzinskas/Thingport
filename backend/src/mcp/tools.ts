@@ -249,6 +249,7 @@ const getModel: McpToolDefinition = {
         : null,
       files: print.plates.map((plate) => ({
         name: plate.filename,
+        ...(plate.folder ? { folder: plate.folder } : {}),
         size_bytes: plate.size,
         ...(plate.profile ? { print_profile: profileForAi(plate.profile) } : {}),
       })),
@@ -276,7 +277,9 @@ const getModel: McpToolDefinition = {
 const listCollections: McpToolDefinition = {
   name: "list_collections",
   title: "List collections",
-  description: "The user's collections, with how many models each holds, plus Favourites and Browsing History.",
+  description:
+    "The user's collections, with how many models each holds and the provider collections it syncs with (models " +
+    "added to any of those come in on their own), plus Favourites and Browsing History.",
   readOnly: true,
   inputSchema: {},
   async run(ctx) {
@@ -285,7 +288,10 @@ const listCollections: McpToolDefinition = {
       prisma.collection.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { items: true } }, sync: { select: { provider: true, sourceUrl: true } } },
+        include: {
+          _count: { select: { items: true } },
+          syncs: { select: { provider: true, sourceUrl: true, title: true }, orderBy: { createdAt: "asc" } },
+        },
       }),
       prisma.print.count({ where: { userId, favoritedAt: { not: null } } }),
       prisma.print.count({ where: { userId, lastViewedAt: { not: null } } }),
@@ -300,7 +306,7 @@ const listCollections: McpToolDefinition = {
           description: c.description,
           tags: c.tags,
           model_count: c._count.items,
-          synced_with: c.sync ? { provider: c.sync.provider, url: c.sync.sourceUrl } : null,
+          synced_with: c.syncs.map((sync) => ({ provider: sync.provider, url: sync.sourceUrl, name: sync.title })),
         })),
       ],
     };
@@ -816,6 +822,7 @@ export const MCP_FILE_MAX_BYTES = 10 * 1024 * 1024;
 type ModelFile = {
   id: string;
   name: string;
+  folder: string | null;
   kind: "plate" | "supporting" | "prepared";
   mime: string;
   size_bytes: number;
@@ -838,6 +845,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
   const plates = print.plates.map((plate): ModelFile => ({
     id: plate.id,
     name: plate.filename,
+    folder: plate.folder,
     kind: "plate",
     mime: plate.mime || "application/octet-stream",
     size_bytes: plate.size,
@@ -847,6 +855,7 @@ async function modelFiles(userId: string, modelId: string): Promise<ModelFile[]>
   const others = print.files.map((file): ModelFile => ({
     id: file.id,
     name: file.filename,
+    folder: file.folder,
     kind: file.role === "PREPARED" ? "prepared" : "supporting",
     mime: file.mime || "application/octet-stream",
     size_bytes: file.size,
@@ -860,6 +869,7 @@ function fileOut(ctx: McpToolContext, file: ModelFile) {
   return {
     id: file.id,
     name: file.name,
+    folder: file.folder,
     kind: file.kind,
     mime: file.mime,
     size_bytes: file.size_bytes,
@@ -873,8 +883,10 @@ const listModelFiles: McpToolDefinition = {
   title: "List a model's files",
   description:
     "A model's files: its plates (the 3D files), supporting files and sliced print, each with the id get_model_file " +
-    "takes. api_path (on the server's own address) or download_url, when the server knows its address, opens with " +
-    "the same token as 'Authorization: Bearer' if it may read Model files.",
+    "takes. folder is the folder its source kept it in, levels joined by '/' (e.g. 'USB C version/Handles'; often the " +
+    "model's variants), or null; a name is unique within its folder, not the whole model. api_path (on the server's " +
+    "own address) or download_url, when the server knows its address, opens with the same token as " +
+    "'Authorization: Bearer' if it may read Model files.",
   readOnly: true,
   inputSchema: { model_id: z.string().min(1).describe("The model's id, from search_models or list_models.") },
   async run(ctx, args) {

@@ -1,0 +1,612 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "hellbot",
+  "name": "Hellbot"
+ },
+ "printers": [
+  {
+   "id": "hellbot-adonis",
+   "brand": "hellbot",
+   "model": "Adonis",
+   "aliases": [
+    "hellbotadonis"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 160,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 160,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_adonis"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_adonis",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-hidra",
+   "brand": "hellbot",
+   "model": "Hidra",
+   "aliases": [
+    "hellbothidra"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_hidra"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_hidra",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-hidraplus",
+   "brand": "hellbot",
+   "model": "Hidra Plus",
+   "aliases": [
+    "hellbothidraplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_hidra_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_hidra_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna",
+   "brand": "hellbot",
+   "model": "Magna",
+   "aliases": [
+    "hellbotmagnadual",
+    "magnadual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": null,
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "config": "Dual",
+      "definition": "hellbot_magna_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna1",
+   "brand": "hellbot",
+   "model": "Magna 1",
+   "aliases": [
+    "hellbotmagna1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_I"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_I",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna2230",
+   "brand": "hellbot",
+   "model": "Magna 2 230",
+   "aliases": [
+    "hellbotmagna2230",
+    "hellbotmagna2230dual",
+    "magna2230dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_2_230"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_2_230",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "hellbot_magna_2_230_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna2300",
+   "brand": "hellbot",
+   "model": "Magna 2 300",
+   "aliases": [
+    "hellbotmagna2300",
+    "hellbotmagna2300dual",
+    "magna2300dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_2_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_2_300",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "hellbot_magna_2_300_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna2400",
+   "brand": "hellbot",
+   "model": "Magna 2 400",
+   "aliases": [
+    "hellbotmagna2400",
+    "hellbotmagna2400dual",
+    "magna2400dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_2_400"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_2_400",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "hellbot_magna_2_400_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magna2500",
+   "brand": "hellbot",
+   "model": "Magna 2 500",
+   "aliases": [
+    "hellbotmagna2500",
+    "hellbotmagna2500dual",
+    "magna2500dual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_2_500"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_2_500",
+      "nozzles": []
+     },
+     {
+      "config": "Dual",
+      "definition": "hellbot_magna_2_500_dual",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magnase",
+   "brand": "hellbot",
+   "model": "Magna SE",
+   "aliases": [
+    "hellbotmagnase"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_SE"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_SE",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magnase300",
+   "brand": "hellbot",
+   "model": "Magna SE 300",
+   "aliases": [
+    "hellbotmagnase300"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_SE_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_SE_300",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "hellbot-magnasepro",
+   "brand": "hellbot",
+   "model": "Magna SE Pro",
+   "aliases": [
+    "hellbotmagnasepro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "hellbot_magna_SE_Pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "hellbot_magna_SE_Pro",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

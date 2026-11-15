@@ -136,6 +136,21 @@ export function jobPayload(job: Pick<ImportJob, "payload">): Record<string, unkn
   return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
 }
 
+const LINK_SCOPES = new Set(["url", "designer", "all"]);
+
+/** Whether a link of a link list asks for just the one model its link names, which is all Thingport Grab brings in for
+ *  it: not every print profile of the model, nor its creator's models. Its own scope over its job's, as runLinks reads
+ *  them. */
+export function isOneModelLink(
+  item: Pick<ImportJobItem, "payload">,
+  job: Pick<ImportJob, "type" | "payload">,
+): boolean {
+  if (job.type !== "LINKS") return false;
+  const own = jobPayload(item).scope;
+  const scope = typeof own === "string" && LINK_SCOPES.has(own) ? own : jobPayload(job).scope;
+  return (scope ?? "url") === "url";
+}
+
 /** Whether a job other than a LINKS one kept what it takes to run again: rows from before the line didn't. */
 export function hasSavedRequest(job: Pick<ImportJob, "type" | "payload">): boolean {
   const payload = jobPayload(job);

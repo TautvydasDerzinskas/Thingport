@@ -123,3 +123,6 @@ Both switches are in **Administration → Social**: **Social features**, and **C
 off hides everything shared again; each collection keeps its Public or Private setting for when it's back on, and copies
 people made stay theirs. Turning chats off hides every chat, and nothing is deleted. Apps reading the REST API with an
 [API token](../guides/api-token.md) need its **Chats** permission to read chats, which a new token doesn't have.
+
+**Achievements** has its own switch on the same page, and works with social features off: see
+[Profile and activity](profile-and-activity.md#achievements).

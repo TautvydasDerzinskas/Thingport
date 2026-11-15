@@ -1,0 +1,2615 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "blocks",
+  "name": "Blocks"
+ },
+ "printers": [
+  {
+   "id": "blocks-one",
+   "brand": "blocks",
+   "model": "One",
+   "aliases": [
+    "blocksone"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_one"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_one",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "blocks-onemkii",
+   "brand": "blocks",
+   "model": "One MKII",
+   "aliases": [
+    "blocksonemkii"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_mkii"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_mkii",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "blocks-pros100",
+   "brand": "blocks",
+   "model": "Pro S100",
+   "aliases": [
+    "blockspros100"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 1000,
+    "y": 1000,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 900,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "BLOCKS Pro S100",
+    "cura": "blocks_pros100"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BLOCKS Pro S100",
+      "presets": {
+       "1": [
+        {
+         "name": "BLOCKS Pro S100 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard 1.0 nozzle @Blocks_Pro_S100",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 1.0 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.50mm Standard 1.0 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft 1.0 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft 1.0 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_Pro_S100",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks PETG @Blocks_Pro_S100",
+           "PLA": "Blocks PLA @Blocks_Pro_S100",
+           "TPU": "Blocks TPU @Blocks_Pro_S100"
+          },
+          "products": {
+           "blocks petg": "Blocks PETG @Blocks_Pro_S100",
+           "blocks pla": "Blocks PLA @Blocks_Pro_S100",
+           "blocks tpu": "Blocks TPU @Blocks_Pro_S100"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "BLOCKS Pro S100 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_Pro_S100",
+         "processes": [
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft 0.4 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_Pro_S100",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks PETG @Blocks_Pro_S100",
+           "PLA": "Blocks PLA @Blocks_Pro_S100",
+           "TPU": "Blocks TPU @Blocks_Pro_S100"
+          },
+          "products": {
+           "blocks petg": "Blocks PETG @Blocks_Pro_S100",
+           "blocks pla": "Blocks PLA @Blocks_Pro_S100",
+           "blocks tpu": "Blocks TPU @Blocks_Pro_S100"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS Pro S100 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Blocks_Pro_S100",
+         "processes": [
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Draft 0.6 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_Pro_S100",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks PETG @Blocks_Pro_S100",
+           "PLA": "Blocks PLA @Blocks_Pro_S100",
+           "TPU": "Blocks TPU @Blocks_Pro_S100"
+          },
+          "products": {
+           "blocks petg": "Blocks PETG @Blocks_Pro_S100",
+           "blocks pla": "Blocks PLA @Blocks_Pro_S100",
+           "blocks tpu": "Blocks TPU @Blocks_Pro_S100"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS Pro S100 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard 0.8 nozzle @Blocks_Pro_S100",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Standard 0.8 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Draft 0.8 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_Pro_S100",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks PETG @Blocks_Pro_S100",
+           "PLA": "Blocks PLA @Blocks_Pro_S100",
+           "TPU": "Blocks TPU @Blocks_Pro_S100"
+          },
+          "products": {
+           "blocks petg": "Blocks PETG @Blocks_Pro_S100",
+           "blocks pla": "Blocks PLA @Blocks_Pro_S100",
+           "blocks tpu": "Blocks TPU @Blocks_Pro_S100"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "BLOCKS Pro S100 1.2 nozzle",
+         "defaultProcess": "0.60mm Standard 1.2 nozzle @Blocks_Pro_S100",
+         "processes": [
+          {
+           "name": "0.50mm Optimal 1.2 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Standard 1.2 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Draft 1.2 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "0.80mm Extra Draft 1.2 nozzle @Blocks_Pro_S100",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_Pro_S100",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks PETG @Blocks_Pro_S100",
+           "PLA": "Blocks PLA @Blocks_Pro_S100",
+           "TPU": "Blocks TPU @Blocks_Pro_S100"
+          },
+          "products": {
+           "blocks petg": "Blocks PETG @Blocks_Pro_S100",
+           "blocks pla": "Blocks PLA @Blocks_Pro_S100",
+           "blocks tpu": "Blocks TPU @Blocks_Pro_S100"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BLOCKS Pro S100",
+      "presets": {
+       "1": [
+        {
+         "name": "BLOCKS Pro S100 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard 1.0 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 1.0 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.50mm Standard 1.0 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "BLOCKS Pro S100 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS Pro S100 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Draft 0.6 nozzle @Blocks",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS Pro S100 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard 0.8 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Standard 0.8 nozzle @Blocks",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Draft 0.8 nozzle @Blocks",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "BLOCKS Pro S100 1.2 nozzle",
+         "defaultProcess": "0.60mm Standard 1.2 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.50mm Optimal 1.2 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Standard 1.2 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "0.80mm Extra Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BLOCKS Pro S100",
+      "presets": {
+       "1": [
+        {
+         "name": "BLOCKS Pro S100 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard 1.0 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 1.0 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.50mm Standard 1.0 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "BLOCKS Pro S100 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS Pro S100 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Draft 0.6 nozzle @Blocks",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS Pro S100 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard 0.8 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Standard 0.8 nozzle @Blocks",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Draft 0.8 nozzle @Blocks",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "BLOCKS Pro S100 1.2 nozzle",
+         "defaultProcess": "0.60mm Standard 1.2 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.50mm Optimal 1.2 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Standard 1.2 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "0.80mm Extra Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BLOCKS Pro S100",
+      "presets": {
+       "1": [
+        {
+         "name": "BLOCKS Pro S100 1.0 nozzle",
+         "defaultProcess": "0.50mm Standard 1.0 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 1.0 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.50mm Standard 1.0 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Extra Draft 1.0 nozzle @Blocks",
+           "layerHeight": 0.7
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.4": [
+        {
+         "name": "BLOCKS Pro S100 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft 0.4 nozzle @Blocks",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS Pro S100 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard 0.6 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Standard 0.6 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Draft 0.6 nozzle @Blocks",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS Pro S100 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard 0.8 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.40mm Standard 0.8 nozzle @Blocks",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.50mm Draft 0.8 nozzle @Blocks",
+           "layerHeight": 0.5
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "1.2": [
+        {
+         "name": "BLOCKS Pro S100 1.2 nozzle",
+         "defaultProcess": "0.60mm Standard 1.2 nozzle @Blocks",
+         "processes": [
+          {
+           "name": "0.50mm Optimal 1.2 nozzle @Blocks",
+           "layerHeight": 0.5
+          },
+          {
+           "name": "0.60mm Standard 1.2 nozzle @Blocks",
+           "layerHeight": 0.6
+          },
+          {
+           "name": "0.70mm Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.7
+          },
+          {
+           "name": "0.80mm Extra Draft 1.2 nozzle @Blocks",
+           "layerHeight": 0.8
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "blocks_pros100",
+      "nozzles": [
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle",
+       "1.2mm Nozzle"
+      ]
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "blocks-pros30",
+   "brand": "blocks",
+   "model": "Pro S30",
+   "aliases": [
+    "blockspros30"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 290,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_pros30"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_pros30",
+      "nozzles": [
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle",
+       "1.2mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "blocks-r21",
+   "brand": "blocks",
+   "model": "R21",
+   "aliases": [
+    "blocksr21"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_r21"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_r21",
+      "nozzles": [
+       "HT - 0.3mm",
+       "HT - 0.4mm",
+       "HT - 0.5mm",
+       "HT - 0.6mm",
+       "HT - 0.8mm",
+       "ST - 0.2mm",
+       "ST - 0.3mm",
+       "ST - 0.4mm",
+       "ST - 0.5mm",
+       "ST - 0.6mm",
+       "ST - 0.8mm",
+       "ST - 1.0mm",
+       "ST - 1.2mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "blocks-rd50",
+   "brand": "blocks",
+   "model": "RD50",
+   "aliases": [
+    "blocksrd50",
+    "blocksrd50duplicationmode",
+    "blocksrd50mirrormode",
+    "rd50duplicationmode",
+    "rd50mirrormode"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1",
+    "1.2"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Duplication Mode",
+     "tools": 2
+    },
+    {
+     "config": "Mirror Mode",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "IDEX"
+   ],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_rd50"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_rd50",
+      "nozzles": [
+       "HT - 0.3mm",
+       "HT - 0.4mm",
+       "HT - 0.5mm",
+       "HT - 0.6mm",
+       "HT - 0.8mm",
+       "ST - 0.2mm",
+       "ST - 0.3mm",
+       "ST - 0.4mm",
+       "ST - 0.5mm",
+       "ST - 0.6mm",
+       "ST - 0.8mm",
+       "ST - 1.0mm",
+       "ST - 1.2mm",
+       "ST - 1.2mm"
+      ]
+     },
+     {
+      "config": "Duplication Mode",
+      "definition": "blocks_rd50duplicate",
+      "nozzles": [
+       "HT - 0.3mm",
+       "HT - 0.4mm",
+       "HT - 0.5mm",
+       "HT - 0.6mm",
+       "HT - 0.8mm",
+       "ST - 0.2mm",
+       "ST - 0.3mm",
+       "ST - 0.4mm",
+       "ST - 0.5mm",
+       "ST - 0.6mm",
+       "ST - 0.8mm",
+       "ST - 1.0mm",
+       "ST - 1.2mm"
+      ]
+     },
+     {
+      "config": "Mirror Mode",
+      "definition": "blocks_rd50mirror",
+      "nozzles": [
+       "HT - 0.3mm",
+       "HT - 0.4mm",
+       "HT - 0.5mm",
+       "HT - 0.6mm",
+       "HT - 0.8mm",
+       "ST - 0.2mm",
+       "ST - 0.3mm",
+       "ST - 0.4mm",
+       "ST - 0.5mm",
+       "ST - 0.6mm",
+       "ST - 0.8mm",
+       "ST - 1.0mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "blocks-rd50v2",
+   "brand": "blocks",
+   "model": "RD50 V2",
+   "aliases": [
+    "blocksrd50v2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "BLOCKS RD50 V2"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BLOCKS RD50 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RD50 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RD50_V2",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RD50_V2",
+           "ASA": "Blocks ASA @Blocks_RD50_V2",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RD50_V2",
+           "PA": "Blocks PA @Blocks_RD50_V2",
+           "PA-CF": "Blocks PA-CF @Blocks_RD50_V2",
+           "PC": "Blocks PC @Blocks_RD50_V2",
+           "PETG": "Blocks PETG @Blocks_RD50_V2",
+           "PLA": "Blocks PLA @Blocks_RD50_V2",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RD50_V2",
+           "PVA": "Blocks PVA @Blocks_RD50_V2",
+           "TPU": "Blocks TPU @Blocks_RD50_V2"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RD50_V2",
+           "blocks asa": "Blocks ASA @Blocks_RD50_V2",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RD50_V2",
+           "blocks pa": "Blocks PA @Blocks_RD50_V2",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RD50_V2",
+           "blocks pc": "Blocks PC @Blocks_RD50_V2",
+           "blocks petg": "Blocks PETG @Blocks_RD50_V2",
+           "blocks pla": "Blocks PLA @Blocks_RD50_V2",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RD50_V2",
+           "blocks pva": "Blocks PVA @Blocks_RD50_V2",
+           "blocks tpu": "Blocks TPU @Blocks_RD50_V2"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RD50 V2 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RD50_V2",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RD50_V2",
+           "ASA": "Blocks ASA @Blocks_RD50_V2",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RD50_V2",
+           "PA": "Blocks PA @Blocks_RD50_V2",
+           "PA-CF": "Blocks PA-CF @Blocks_RD50_V2",
+           "PC": "Blocks PC @Blocks_RD50_V2",
+           "PETG": "Blocks PETG @Blocks_RD50_V2",
+           "PLA": "Blocks PLA @Blocks_RD50_V2",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RD50_V2",
+           "PVA": "Blocks PVA @Blocks_RD50_V2",
+           "TPU": "Blocks TPU @Blocks_RD50_V2"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RD50_V2",
+           "blocks asa": "Blocks ASA @Blocks_RD50_V2",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RD50_V2",
+           "blocks pa": "Blocks PA @Blocks_RD50_V2",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RD50_V2",
+           "blocks pc": "Blocks PC @Blocks_RD50_V2",
+           "blocks petg": "Blocks PETG @Blocks_RD50_V2",
+           "blocks pla": "Blocks PLA @Blocks_RD50_V2",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RD50_V2",
+           "blocks pva": "Blocks PVA @Blocks_RD50_V2",
+           "blocks tpu": "Blocks TPU @Blocks_RD50_V2"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RD50 V2 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RD50_V2",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RD50_V2",
+           "ASA": "Blocks ASA @Blocks_RD50_V2",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RD50_V2",
+           "PA": "Blocks PA @Blocks_RD50_V2",
+           "PA-CF": "Blocks PA-CF @Blocks_RD50_V2",
+           "PC": "Blocks PC @Blocks_RD50_V2",
+           "PETG": "Blocks PETG @Blocks_RD50_V2",
+           "PLA": "Blocks PLA @Blocks_RD50_V2",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RD50_V2",
+           "PVA": "Blocks PVA @Blocks_RD50_V2",
+           "TPU": "Blocks TPU @Blocks_RD50_V2"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RD50_V2",
+           "blocks asa": "Blocks ASA @Blocks_RD50_V2",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RD50_V2",
+           "blocks pa": "Blocks PA @Blocks_RD50_V2",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RD50_V2",
+           "blocks pc": "Blocks PC @Blocks_RD50_V2",
+           "blocks petg": "Blocks PETG @Blocks_RD50_V2",
+           "blocks pla": "Blocks PLA @Blocks_RD50_V2",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RD50_V2",
+           "blocks pva": "Blocks PVA @Blocks_RD50_V2",
+           "blocks tpu": "Blocks TPU @Blocks_RD50_V2"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BLOCKS RD50 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RD50 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RD50 V2 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RD50 V2 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BLOCKS RD50 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RD50 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RD50 V2 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RD50 V2 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BLOCKS RD50 V2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RD50 V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RD50 V2 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RD50 V2 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RD50_V2",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "blocks-rf50",
+   "brand": "blocks",
+   "model": "RF50",
+   "aliases": [
+    "blocksrf50"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "BLOCKS RF50"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "BLOCKS RF50",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RF50 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RF50",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RF50",
+           "ASA": "Blocks ASA @Blocks_RF50",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RF50",
+           "PA": "Blocks PA @Blocks_RF50",
+           "PA-CF": "Blocks PA-CF @Blocks_RF50",
+           "PC": "Blocks PC @Blocks_RF50",
+           "PETG": "Blocks PETG @Blocks_RF50",
+           "PLA": "Blocks PLA @Blocks_RF50",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RF50",
+           "PVA": "Blocks PVA @Blocks_RF50",
+           "TPU": "Blocks TPU @Blocks_RF50"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RF50",
+           "blocks asa": "Blocks ASA @Blocks_RF50",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RF50",
+           "blocks pa": "Blocks PA @Blocks_RF50",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RF50",
+           "blocks pc": "Blocks PC @Blocks_RF50",
+           "blocks petg": "Blocks PETG @Blocks_RF50",
+           "blocks pla": "Blocks PLA @Blocks_RF50",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RF50",
+           "blocks pva": "Blocks PVA @Blocks_RF50",
+           "blocks tpu": "Blocks TPU @Blocks_RF50"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RF50 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RF50",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RF50",
+           "ASA": "Blocks ASA @Blocks_RF50",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RF50",
+           "PA": "Blocks PA @Blocks_RF50",
+           "PA-CF": "Blocks PA-CF @Blocks_RF50",
+           "PC": "Blocks PC @Blocks_RF50",
+           "PETG": "Blocks PETG @Blocks_RF50",
+           "PLA": "Blocks PLA @Blocks_RF50",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RF50",
+           "PVA": "Blocks PVA @Blocks_RF50",
+           "TPU": "Blocks TPU @Blocks_RF50"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RF50",
+           "blocks asa": "Blocks ASA @Blocks_RF50",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RF50",
+           "blocks pa": "Blocks PA @Blocks_RF50",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RF50",
+           "blocks pc": "Blocks PC @Blocks_RF50",
+           "blocks petg": "Blocks PETG @Blocks_RF50",
+           "blocks pla": "Blocks PLA @Blocks_RF50",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RF50",
+           "blocks pva": "Blocks PVA @Blocks_RF50",
+           "blocks tpu": "Blocks TPU @Blocks_RF50"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RF50 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks PLA @Blocks_RF50",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks ABS @Blocks_RF50",
+           "ASA": "Blocks ASA @Blocks_RF50",
+           "ASA-CF": "Blocks ASA-CF @Blocks_RF50",
+           "PA": "Blocks PA @Blocks_RF50",
+           "PA-CF": "Blocks PA-CF @Blocks_RF50",
+           "PC": "Blocks PC @Blocks_RF50",
+           "PETG": "Blocks PETG @Blocks_RF50",
+           "PLA": "Blocks PLA @Blocks_RF50",
+           "PLA-CF": "Blocks PLA-CF @Blocks_RF50",
+           "PVA": "Blocks PVA @Blocks_RF50",
+           "TPU": "Blocks TPU @Blocks_RF50"
+          },
+          "products": {
+           "blocks abs": "Blocks ABS @Blocks_RF50",
+           "blocks asa": "Blocks ASA @Blocks_RF50",
+           "blocks asa-cf": "Blocks ASA-CF @Blocks_RF50",
+           "blocks pa": "Blocks PA @Blocks_RF50",
+           "blocks pa-cf": "Blocks PA-CF @Blocks_RF50",
+           "blocks pc": "Blocks PC @Blocks_RF50",
+           "blocks petg": "Blocks PETG @Blocks_RF50",
+           "blocks pla": "Blocks PLA @Blocks_RF50",
+           "blocks pla-cf": "Blocks PLA-CF @Blocks_RF50",
+           "blocks pva": "Blocks PVA @Blocks_RF50",
+           "blocks tpu": "Blocks TPU @Blocks_RF50"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "BLOCKS RF50",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RF50 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RF50 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RF50 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "BLOCKS RF50",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RF50 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RF50 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RF50 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic asa-cf": "Blocks Generic ASA-CF",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "BLOCKS RF50",
+      "presets": {
+       "0.4": [
+        {
+         "name": "BLOCKS RF50 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.12mm Fine 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft 0.4 nozzle @Blocks_RF50",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "BLOCKS RF50 0.6 nozzle",
+         "defaultProcess": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.20mm Optimal 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.26mm Standard 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.26
+          },
+          {
+           "name": "0.32mm Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.38mm Extra Draft 0.6 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "BLOCKS RF50 0.8 nozzle",
+         "defaultProcess": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+         "processes": [
+          {
+           "name": "0.30mm Optimal 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.38mm Standard 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.38
+          },
+          {
+           "name": "0.46mm Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.46
+          },
+          {
+           "name": "0.54mm Extra Draft 0.8 nozzle @Blocks_RF50",
+           "layerHeight": 0.54
+          }
+         ],
+         "defaultFilament": "Blocks Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "Blocks Generic ABS",
+           "ASA": "Blocks Generic ASA",
+           "PA": "Blocks Generic PA",
+           "PA-CF": "Blocks Generic PA-CF",
+           "PC": "Blocks Generic PC",
+           "PETG": "Blocks Generic PETG",
+           "PLA": "Blocks Generic PLA",
+           "PLA-CF": "Blocks Generic PLA-CF",
+           "PVA": "Blocks Generic PVA",
+           "TPU": "Blocks Generic TPU"
+          },
+          "products": {
+           "blocks generic abs": "Blocks Generic ABS",
+           "blocks generic asa": "Blocks Generic ASA",
+           "blocks generic pa": "Blocks Generic PA",
+           "blocks generic pa-cf": "Blocks Generic PA-CF",
+           "blocks generic pc": "Blocks Generic PC",
+           "blocks generic petg": "Blocks Generic PETG",
+           "blocks generic pla": "Blocks Generic PLA",
+           "blocks generic pla-cf": "Blocks Generic PLA-CF",
+           "blocks generic pva": "Blocks Generic PVA",
+           "blocks generic tpu": "Blocks Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "blocks-zero",
+   "brand": "blocks",
+   "model": "Zero",
+   "aliases": [
+    "blockszero"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 140,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 120,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "blocks_zero"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blocks_zero",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

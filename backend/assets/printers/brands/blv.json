@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "blv",
+  "name": "BLV"
+ },
+ "printers": [
+  {
+   "id": "blv-mgncube300",
+   "brand": "blv",
+   "model": "MGN Cube 300",
+   "aliases": [
+    "blvmgncube300"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 465,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "blv_mgn_cube_300"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blv_mgn_cube_300",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "blv-mgncube350",
+   "brand": "blv",
+   "model": "MGN Cube 350",
+   "aliases": [
+    "blvmgncube350"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 350,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 465,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "blv_mgn_cube_350"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "blv_mgn_cube_350",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "papapiu",
+  "name": "Papapiu"
+ },
+ "printers": [
+  {
+   "id": "papapiu-n1s",
+   "brand": "papapiu",
+   "model": "N1S",
+   "aliases": [
+    "papapiun1s"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 299,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 360,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Papapiu_N1S"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Papapiu N1S",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Papapiu N1S",
+         "defaultProcess": "\"0.20mm NORMAL @Papapiu\"",
+         "processes": [
+          {
+           "name": "0.15mm FAST @Papapiu",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm NORMAL @Papapiu",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm FAST @Papapiu",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm NORMAL @Papapiu",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

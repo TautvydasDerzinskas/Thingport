@@ -43,6 +43,8 @@ describe("provider-module freeze", () => {
         "https://pixup3d.com/en/posts/427",
         "https://fab365.net/items/116",
         "https://3dexport.com/3d-model-elephant-a001-667112",
+        "https://www.qidimaker.com/en/models/detail/2077275848848752642",
+        "https://www.voxelshare.com/en/models/8242660-flexi-mechanical-dragon",
       ].map((url) => identifySourceModel(url)?.provider),
     ).toEqual([
       "makerworld",
@@ -65,6 +67,8 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -91,6 +95,8 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -116,6 +122,8 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -142,6 +150,8 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
+      "voxelshare",
     ]);
   });
 
@@ -167,11 +177,22 @@ describe("provider-module freeze", () => {
       "pixup3d",
       "fab365",
       "threedexport",
+      "qidimaker",
+      "voxelshare",
     ]);
   });
 
   it("pins profile provider IDs", () => {
-    expect([...PROFILE_PROVIDERS]).toEqual(["makerworld", "snapmaker", "makeronline", "crealitycloud", "nexprint"]);
+    expect([...PROFILE_PROVIDERS]).toEqual([
+      "makerworld",
+      "snapmaker",
+      "makeronline",
+      "crealitycloud",
+      "nexprint",
+      "eufymake",
+      "qidimaker",
+      "voxelshare",
+    ]);
   });
 
   it("pins client-facing provider error codes", () => {
@@ -209,6 +230,8 @@ describe("provider-module freeze", () => {
         "pixup3d_session",
         "fab365_session",
         "threedexport_session",
+        "qidimaker_session",
+        "voxelshare_session",
       ].toSorted(),
     );
     // The dashboard's provider failure is a route-local literal, not a *_CODE constant.
@@ -231,8 +254,9 @@ describe("provider-module freeze", () => {
           )
           .map((path) => `${id}: ${path}`),
       ),
-    ).toEqual(["imports: /import/makeronline/waiting"]);
+    ).toEqual(["imports: /import/makeronline/waiting", "imports: /import/makerworld/waiting"]);
     expect(scopeForPath("/import/makeronline/waiting")).toBe("imports");
+    expect(scopeForPath("/import/makerworld/waiting")).toBe("imports");
   });
 
   it("pins the Express method and path inventory for provider routes and their routers", () => {
@@ -255,7 +279,10 @@ describe("provider-module freeze", () => {
             : // Connected instances' ActivityPub routes, ahead of the JSON body parser.
               mount.regexp.test("/api/ap/__freeze__")
               ? "/api/ap"
-              : null;
+              : // Another instance copying this one online, also ahead of it.
+                mount.regexp.test("/api/migrate-export/__freeze__")
+                ? "/api/migrate-export"
+                : null;
         if (!prefix) throw new Error(`Unknown Express mount: ${mount.regexp}`);
         const wholeRouter = [importsRoutes, settingsRoutes, providerCollectionsRoutes].includes(mount.handle as never);
         // Providers' own routers are mounted inside one router of theirs (providers/routes.ts).
@@ -327,6 +354,8 @@ describe("provider-module freeze", () => {
           "pixup3d_cat_ids",
           "fab365_cat_ids",
           "threedexport_cat_ids",
+          "qidimaker_cat_ids",
+          "voxelshare_cat_ids",
         ].toSorted(),
       );
     } finally {

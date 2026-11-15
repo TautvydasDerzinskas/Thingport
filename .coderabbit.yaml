@@ -18,6 +18,9 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    # Review rounds go on until a round finds only nitpicks, so every push is reviewed rather than pausing after a
+    # few; `@coderabbitai pause` still stops a pull request, and coderabbit-retry.yml leaves paused ones alone.
+    auto_pause_after_reviewed_commits: 0
 
   path_filters:
     # Generated or tool-owned files
@@ -25,6 +28,7 @@ reviews:
     - "!**/CHANGELOG.md"
     - "!web/.astro/**"
     - "!**/dist/**"
+    - "!backend/assets/printers/**"
     # Fixtures
     - "!regression/fixtures/**"
 

@@ -194,6 +194,16 @@ export interface SdkConfirmOptions {
 /** How a toast looks. */
 export type SdkSeverity = "success" | "info" | "warning" | "error";
 
+/** What a toast can carry besides its message. */
+export interface SdkToastOptions {
+  /**
+   * A model's id: the toast gets an Open button that leaves for the model's page, as `ui.openModel` does, and stays
+   * up longer so it can be reached. Pass it whenever the toast says a model was saved or changed. An older Thingport
+   * instance shows the message without the button.
+   */
+  openModel?: string;
+}
+
 /** A model a tool from the repository brings, as `toolModels()` lists it. */
 export interface SdkToolModel {
   /** What the tool's metadata calls it. */
@@ -649,10 +659,12 @@ export interface SdkUi {
    *
    * @param message What to say.
    * @param severity How it looks: `"info"` when left out.
+   * @param options `openModel`: a model's id, for an Open button on the toast that leaves for its page.
    * @example
-   * thingport.ui.toast(t("save.done"), "success");
+   * const model = await thingport.models.create({ name, files });
+   * thingport.ui.toast(t("save.done", { name: model.name }), "success", { openModel: model.id });
    */
-  toast(message: string, severity?: SdkSeverity): void;
+  toast(message: string, severity?: SdkSeverity, options?: SdkToastOptions): void;
   /**
    * Asks the user to confirm, in Thingport's own dialog.
    *
@@ -862,6 +874,12 @@ export interface SdkBase {
    */
   ui: SdkUi;
   /**
+   * The user's achievements: badges for what they do in Thingport, while an admin has them on.
+   *
+   * @group Interface
+   */
+  achievements: SdkAchievements;
+  /**
    * A library Thingport carries, for a job a script can't fit inside itself. Fetched the first time anything asks
    * and shared with every widget and tool after that, so ask only when the script needs it: a panel drawn in HTML
    * shouldn't wait on a WebAssembly download.
@@ -878,6 +896,23 @@ export interface SdkBase {
    * @group Libraries
    */
   libraries: SdkLibraryName[];
+}
+
+/** What a widget or tool can do with the user's achievements. */
+export interface SdkAchievements {
+  /**
+   * Gives the user a secret badge this widget or tool hides: an easter egg Thingport knows by the script's slug and
+   * `key`. Thingport shows them the badge the first time; asked again, nothing happens. Resolves false when there's no
+   * such secret for this script, when an admin has achievements off, and in an unsaved draft. Never throws, so an
+   * easter egg can't break the script around it; and as Thingport versions before achievements have no
+   * `thingport.achievements`, call it as `thingport.achievements?.unlock(key)`.
+   *
+   * @param key The secret's name, as Thingport's catalogue has it for this script.
+   * @returns Whether the user has it now.
+   * @example
+   * root.addEventListener("dblclick", () => thingport.achievements?.unlock("guest"));
+   */
+  unlock(key: string): Promise<boolean>;
 }
 
 /** The `thingport` object a dashboard widget's default export is called with. */

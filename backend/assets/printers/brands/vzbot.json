@@ -1,0 +1,2118 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "vzbot",
+  "name": "Vzbot"
+ },
+ "printers": [
+  {
+   "id": "vzbot-235",
+   "brand": "vzbot",
+   "model": "235",
+   "aliases": [
+    "vzbot235"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 240,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vzbot_235"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vzbot_235",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "vzbot-235awd",
+   "brand": "vzbot",
+   "model": "235 AWD",
+   "aliases": [
+    "vzbot235awd"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 235,
+    "y": 235,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Vzbot 235 AWD"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Vzbot 235 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 235 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 235 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 235 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Vzbot 235 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 235 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 235 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 235 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Vzbot 235 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 235 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 235 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 235 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Vzbot 235 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 235 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 235 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 235 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Vzbot 235 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 235 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 235 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 235 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vzbot-330",
+   "brand": "vzbot",
+   "model": "330",
+   "aliases": [
+    "vzbot330"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 330,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vzbot_330"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vzbot_330",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "vzbot-330awd",
+   "brand": "vzbot",
+   "model": "330 AWD",
+   "aliases": [
+    "vzbot330awd"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 330,
+    "y": 330,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.5",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "Vzbot 330 AWD"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Vzbot 330 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 330 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 330 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 330 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic ABS @Vzbot",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Vzbot",
+           "ASA": "Generic ASA @Vzbot",
+           "PA": "Generic PA @Vzbot",
+           "PA-CF": "Generic PA-CF @Vzbot",
+           "PC": "Generic PC @Vzbot",
+           "PETG": "Generic PETG @Vzbot",
+           "PLA": "Generic PLA @Vzbot",
+           "PLA-CF": "Generic PLA-CF @Vzbot",
+           "PVA": "Generic PVA @Vzbot",
+           "TPU": "Generic TPU @Vzbot"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Vzbot",
+           "generic asa": "Generic ASA @Vzbot",
+           "generic pa": "Generic PA @Vzbot",
+           "generic pa-cf": "Generic PA-CF @Vzbot",
+           "generic pc": "Generic PC @Vzbot",
+           "generic petg": "Generic PETG @Vzbot",
+           "generic pla": "Generic PLA @Vzbot",
+           "generic pla-cf": "Generic PLA-CF @Vzbot",
+           "generic pva": "Generic PVA @Vzbot",
+           "generic tpu": "Generic TPU @Vzbot"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "Vzbot 330 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 330 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 330 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 330 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Vzbot 330 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 330 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 330 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 330 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Vzbot 330 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 330 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 330 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 330 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "Vzbot 330 AWD",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Vzbot 330 AWD 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.28
+          },
+          {
+           "name": "0.28mm Extra Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.28
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.5": [
+        {
+         "name": "Vzbot 330 AWD 0.5 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.5nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.5nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.5nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.5nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Vzbot 330 AWD 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Vzbot",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @Vzbot 0.6nozzle",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Optimal @Vzbot 0.6nozzle",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @Vzbot 0.6nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Vzbot 0.6nozzle",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Vzbot Generic ABS",
+         "filaments": {
+          "types": {
+           "ABS": "Vzbot Generic ABS",
+           "ASA": "Vzbot Generic ASA",
+           "PA": "Vzbot Generic PA",
+           "PA-CF": "Vzbot Generic PA-CF",
+           "PC": "Vzbot Generic PC",
+           "PETG": "Vzbot Generic PETG",
+           "PLA": "Vzbot Generic PLA",
+           "PLA-CF": "Vzbot Generic PLA-CF",
+           "PVA": "Vzbot Generic PVA",
+           "TPU": "Vzbot Generic TPU"
+          },
+          "products": {
+           "vzbot generic abs": "Vzbot Generic ABS",
+           "vzbot generic asa": "Vzbot Generic ASA",
+           "vzbot generic pa": "Vzbot Generic PA",
+           "vzbot generic pa-cf": "Vzbot Generic PA-CF",
+           "vzbot generic pc": "Vzbot Generic PC",
+           "vzbot generic petg": "Vzbot Generic PETG",
+           "vzbot generic pla": "Vzbot Generic PLA",
+           "vzbot generic pla-cf": "Vzbot Generic PLA-CF",
+           "vzbot generic pva": "Vzbot Generic PVA",
+           "vzbot generic tpu": "Vzbot Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "vzbot-custom",
+   "brand": "vzbot",
+   "model": "Custom",
+   "aliases": [
+    "vzbotcustom"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.3",
+    "0.4",
+    "0.5",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "vzbot_custom"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "vzbot_custom",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.3mm Nozzle",
+       "0.4mm Nozzle",
+       "0.5mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

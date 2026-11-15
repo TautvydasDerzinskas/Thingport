@@ -45,7 +45,32 @@
     }
   },
   {
+    "url": "https://space.snapmaker.cn/zh/model/3335-u1#profileId-3264",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "model",
+      "externalId": "cn-3335",
+      "requestedProfileId": "3264"
+    }
+  },
+  {
+    "url": "https://space.snapmaker.cn/zh/creator/9858?tab=interactions&list=bookmarks",
+    "expect": {
+      "provider": "snapmaker",
+      "kind": "list",
+      "externalId": "cn-bookmarks-9858",
+      "listKind": "bookmarks"
+    }
+  },
+  {
     "url": "https://www.snapmaker.com/en/model/33595",
+    "expect": {
+      "provider": null,
+      "kind": null
+    }
+  },
+  {
+    "url": "https://www.snapmaker.cn/model/3335",
     "expect": {
       "provider": null,
       "kind": null

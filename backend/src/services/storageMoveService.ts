@@ -2,18 +2,19 @@ import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
 import type { Prisma } from "@prisma/client";
-import { BUNDLES, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, THUMBS } from "../config";
+import { ADAPTED_3MFS, BUNDLES, DESCRIPTION_IMAGES, MODEL_PREVIEWS, PREVIEWS, THUMBS } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { createNotification } from "./notificationService";
 import { isLegacyRender } from "./modelAssets";
 import { getStorageTemplate, reorganizeManagedPrints } from "./printService";
+import { currentStorageCleanup } from "./storageCleanup";
 
 // Moving every user's model files to the storage structure an admin saved. It runs in the background, followed by
 // a bar at the bottom of the app; it can't be stopped, since half the files in one layout and half in another is
 // what it's there to end. Its template is kept as a setting while it runs, so a restart carries on with it.
 // The first start after pictures and supporting files moved in beside the model files runs one too, to bring those
-// saved before over from the shared folders they were in.
+// saved before over from the shared folders they were in; so does the first after 3D previews and slicer copies did.
 
 const log = createLogger("storage-move");
 const PENDING_KEY = "storage_move_pending";
@@ -64,6 +65,9 @@ async function run(state: StorageMoveRun, pending: Pending): Promise<void> {
       create: { key: PENDING_KEY, value },
       update: { value },
     });
+    // Freeing space reads where files are once, before it starts: wait for it rather than move them from under it.
+    // (Starting it is refused while this runs, but it can begin while the new structure is being saved.)
+    while (currentStorageCleanup()?.running) await new Promise((resolve) => setTimeout(resolve, 1000));
     log.info("moving files", { template: pending.template });
     const { moved, skipped } = await reorganizeManagedPrints(pending.template, undefined, (progress) => {
       Object.assign(state, progress);
@@ -105,14 +109,24 @@ async function notifyDone(userId: string, moved: number, skipped: number): Promi
 
 const LEGACY_FOLDERS = [THUMBS, PREVIEWS, DESCRIPTION_IMAGES, BUNDLES];
 
-/** The old shared folders, and the renders among the 3D previews, once a move has brought every model's files over:
- *  whatever is still there is a model's that's gone, such as the render of a plate deleted before renders were
- *  removed with it. Otherwise it would start the move again on every start. */
+// In the shared folders that keep their failure markers: the 3D previews and renders, and the slicer copies.
+const isLegacyPreview = (name: string) => isLegacyRender(name) || name.endsWith(".glb");
+const isLegacySlicerCopy = (name: string) => name.endsWith(".3mf");
+
+/** The old shared folders, and the pictures and copies among the cache's markers, once a move has brought every
+ *  model's files over: whatever is still there is an older version, a copy that's made again when next needed, or a
+ *  model's that's gone, such as the 3D preview of a plate deleted before previews were removed with it. Otherwise it
+ *  would start the move again on every start. */
 async function removeLegacyLeftovers(): Promise<void> {
   for (const dir of LEGACY_FOLDERS) await fs.rm(dir, { recursive: true, force: true }).catch(() => undefined);
-  const names = await fs.readdir(MODEL_PREVIEWS).catch(() => [] as string[]);
-  for (const name of names.filter(isLegacyRender)) {
-    await fs.rm(path.join(MODEL_PREVIEWS, name), { force: true }).catch(() => undefined);
+  for (const [dir, leftover] of [
+    [MODEL_PREVIEWS, isLegacyPreview],
+    [ADAPTED_3MFS, isLegacySlicerCopy],
+  ] as const) {
+    const names = await fs.readdir(dir).catch(() => [] as string[]);
+    for (const name of names.filter(leftover)) {
+      await fs.rm(path.join(dir, name), { force: true }).catch(() => undefined);
+    }
   }
 }
 
@@ -139,7 +153,7 @@ async function legacyFilesLeft(): Promise<boolean> {
   ]);
   if (unhomed > 0 || bundled > 0) return true;
   for (const dir of LEGACY_FOLDERS) if (await hasFiles(dir)) return true;
-  return hasFiles(MODEL_PREVIEWS, isLegacyRender);
+  return (await hasFiles(MODEL_PREVIEWS, isLegacyPreview)) || hasFiles(ADAPTED_3MFS, isLegacySlicerCopy);
 }
 
 /** At startup: carries on with a move the previous process didn't finish, or brings over the pictures and

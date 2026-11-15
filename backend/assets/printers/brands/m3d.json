@@ -1,0 +1,239 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "m3d",
+  "name": "M3D"
+ },
+ "printers": [
+  {
+   "id": "m3d-enablerd7500",
+   "brand": "m3d",
+   "model": "Enabler D7500",
+   "aliases": [
+    "m3denablerd7500"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "M3D_D7500"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "M3D Enabler D7500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "M3D Enabler D7500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M3D Enabler D7500",
+         "processes": [
+          {
+           "name": "0.15mm Standard @M3D Enabler D7500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @M3D Enabler D7500",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Enabler PLA @M3D",
+         "filaments": {
+          "types": {
+           "PLA": "Enabler PLA @M3D"
+          },
+          "products": {
+           "enabler pla": "Enabler PLA @M3D"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "m3d-enablerd8500",
+   "brand": "m3d",
+   "model": "Enabler D8500",
+   "aliases": [
+    "m3denablerd8500"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "M3D_D8500"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "M3D Enabler D8500",
+      "presets": {
+       "0.4": [
+        {
+         "name": "M3D Enabler D8500 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @M3D Enabler D8500",
+         "processes": [
+          {
+           "name": "High Detail (0.12mm) @M3D Enabler D8500",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.15mm Standard @M3D Enabler D8500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Standard @M3D Enabler D8500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Fuzzy Skin @M3D Enabler D8500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "High Strength @M3D Enabler D8500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Mesh Design @M3D Enabler D8500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Vase Mode @M3D Enabler D8500",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "Rapid Draft (0.28mm) @M3D Enabler D8500",
+           "layerHeight": 0.32
+          }
+         ],
+         "defaultFilament": "Enabler PLA @M3D",
+         "filaments": {
+          "types": {
+           "PLA": "Enabler PLA @M3D"
+          },
+          "products": {
+           "enabler pla": "Enabler PLA @M3D"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "m3d-enablerd8500model",
+   "brand": "m3d",
+   "model": "Enabler D8500 MM Model",
+   "aliases": [
+    "m3denablerd8500model"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 210,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": null,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "M3D_D8500_MM"
+   },
+   "device": null,
+   "sources": [
+    "elegooslicer"
+   ],
+   "slicers": {
+    "elegooslicer": [
+     {
+      "model": "M3D Enabler D8500 MM Model",
+      "presets": {
+       "0.4": [
+        {
+         "name": "M3D Enabler D8500 MM",
+         "processes": [
+          {
+           "name": "0.15mm MM @D8500",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm MM @D8500",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

@@ -15,7 +15,10 @@ func samePath(a, b string) bool {
 	return filepath.Clean(a) == filepath.Clean(b)
 }
 
-func copyFile(src, dst string, perm os.FileMode) error {
+// replaceFile writes src to a new file beside dst and renames it over dst. Rewriting dst in place
+// while an older Bridge runs from it breaks updates: Linux refuses (text file busy), and macOS kills
+// the new binary at every launch.
+func replaceFile(src, dst string, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
 	}
@@ -25,22 +28,31 @@ func copyFile(src, dst string, perm os.FileMode) error {
 	}
 	defer in.Close()
 
-	out, err := os.Create(dst)
+	out, err := os.CreateTemp(filepath.Dir(dst), "."+filepath.Base(dst)+".*")
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	tmp := out.Name()
+	err = writeAndClose(out, in, perm)
+	if err == nil {
+		err = os.Rename(tmp, dst)
+	}
+	if err != nil {
+		_ = os.Remove(tmp)
+	}
+	return err
+}
 
-	if _, err := io.Copy(out, in); err != nil {
-		return err
+func writeAndClose(out *os.File, in io.Reader, perm os.FileMode) error {
+	_, err := io.Copy(out, in)
+	if err == nil {
+		err = out.Sync()
 	}
-	if err := out.Sync(); err != nil {
-		return err
+	if closeErr := out.Close(); err == nil {
+		err = closeErr
 	}
-	if perm != 0 {
-		if err := os.Chmod(dst, perm); err != nil && runtime.GOOS != "windows" {
-			return err
-		}
+	if err == nil && perm != 0 && runtime.GOOS != "windows" {
+		err = os.Chmod(out.Name(), perm)
 	}
-	return nil
+	return err
 }

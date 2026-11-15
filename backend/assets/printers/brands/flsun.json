@@ -1,0 +1,2138 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "flsun",
+  "name": "FLSun"
+ },
+ "printers": [
+  {
+   "id": "flsun-q5",
+   "brand": "flsun",
+   "model": "Q5",
+   "aliases": [
+    "flsunq5"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     -100,
+     -100
+    ],
+    "diameter": 200
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun-Q5",
+    "prusa": "Q5",
+    "cura": "flsun_q5"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun Q5",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun Q5",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun Q5",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun Q5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun Q5",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun Q5",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun Q5",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun Q5",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun Q5",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun Q5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun Q5",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun Q5",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun Q5",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun Q5",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun Q5",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun Q5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun Q5",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun Q5",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun Q5",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun Q5",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun Q5",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun Q5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun Q5",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun Q5",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun Q5",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun Q5",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun Q5",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun Q5",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun Q5",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun Q5",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "FLSun Q5",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Q5",
+         "defaultProcess": "0.20mm QUALITY @FLSUN",
+         "processes": [
+          {
+           "name": "0.08mm DETAIL @FLSUN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.15mm VASE @FLSUN",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm VASE SPEED @FLSUN",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm QUALITY @FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm SPEED @FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm QUALITY @FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @FLSUN",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm SPEED @FLSUN",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "FLSun Q5 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle FLSUN",
+         "processes": [
+          {
+           "name": "0.16mm DETAIL @0.6 nozzle FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle FLSUN",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle FLSUN",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle FLSUN",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "flsun_q5",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flsun-qq",
+   "brand": "flsun",
+   "model": "QQ",
+   "aliases": [
+    "flsunqq"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     -130,
+     -130
+    ],
+    "diameter": 260
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 285,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "flsun_qq"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "flsun_qq",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "flsun-qqs",
+   "brand": "flsun",
+   "model": "QQ-S",
+   "aliases": [
+    "flsunqqs"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     -130,
+     -130
+    ],
+    "diameter": 260
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 370,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "repetier",
+   "relativeE": false,
+   "codes": {
+    "cura": "flsun_qq_s"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "flsun_qq_s",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "flsun-qqspro",
+   "brand": "flsun",
+   "model": "QQ-S Pro",
+   "aliases": [
+    "flsunqqspro"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     -130,
+     -130
+    ],
+    "diameter": 260
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 360,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun-QQS-Pro",
+    "prusa": "QQSP"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "prusaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun QQ-S Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQ-S Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun QQSPro",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun QQSPro",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun QQSPro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun QQSPro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun QQSPro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun QQSPro",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FLSun QQ-S Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQ-S Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun QQSPro",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun QQSPro",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun QQSPro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun QQSPro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun QQSPro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun QQSPro",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun QQ-S Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQ-S Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun QQSPro",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun QQSPro",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun QQSPro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun QQSPro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun QQSPro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun QQSPro",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun QQ-S Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQ-S Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun QQSPro",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun QQSPro",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun QQSPro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun QQSPro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun QQSPro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun QQSPro",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun QQ-S Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQ-S Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun QQSPro",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun QQSPro",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun QQSPro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun QQSPro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun QQSPro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun QQSPro",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "prusaslicer": [
+     {
+      "model": "FLSun QQS Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun QQS Pro",
+         "defaultProcess": "0.20mm QUALITY @FLSUN",
+         "processes": [
+          {
+           "name": "0.08mm DETAIL @FLSUN",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.15mm VASE @FLSUN",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.15mm VASE SPEED @FLSUN",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.16mm QUALITY @FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm SPEED @FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm QUALITY @FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm SPEED @FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm DRAFT @FLSUN",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm SPEED @FLSUN",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "FLSun QQS Pro 0.6 nozzle",
+         "defaultProcess": "0.30mm QUALITY @0.6 nozzle FLSUN",
+         "processes": [
+          {
+           "name": "0.16mm DETAIL @0.6 nozzle FLSUN",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm DETAIL @0.6 nozzle FLSUN",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm QUALITY @0.6 nozzle FLSUN",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm SPEED @0.6 nozzle FLSUN",
+           "layerHeight": 0.35
+          },
+          {
+           "name": "0.40mm DRAFT @0.6 nozzle FLSUN",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flsun-s1",
+   "brand": "flsun",
+   "model": "S1",
+   "aliases": [
+    "flsuns1"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 320,
+    "y": 320,
+    "origin": [
+     -160,
+     -160
+    ],
+    "diameter": 320
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 430,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun_S1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun S1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun S1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun S1",
+           "ASA": "Generic ASA @FLSun S1",
+           "PETG": "Generic PETG @FLSun S1",
+           "PLA": "Generic PLA @FLSun S1",
+           "TPU": "Generic TPU @FLSun S1"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun S1",
+           "generic asa": "Generic ASA @FLSun S1",
+           "generic petg": "Generic PETG @FLSun S1",
+           "generic pla": "Generic PLA @FLSun S1",
+           "generic pla high speed": "Generic PLA High Speed @FLSun S1",
+           "generic pla silk": "Generic PLA Silk @FLSun S1",
+           "generic tpu": "Generic TPU @FLSun S1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun S1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun S1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun S1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun S1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun S1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun S1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun S1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun S1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun S1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun S1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun S1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun S1 ABS",
+           "ASA": "FLSun S1 ASA",
+           "PETG": "FLSun S1 PETG",
+           "PLA": "FLSun S1 PLA Generic",
+           "TPU": "FLSun S1 TPU"
+          },
+          "products": {
+           "flsun s1 abs": "FLSun S1 ABS",
+           "flsun s1 asa": "FLSun S1 ASA",
+           "flsun s1 petg": "FLSun S1 PETG",
+           "flsun s1 pla generic": "FLSun S1 PLA Generic",
+           "flsun s1 pla high speed": "FLSun S1 PLA High Speed",
+           "flsun s1 pla silk": "FLSun S1 PLA Silk",
+           "flsun s1 tpu": "FLSun S1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flsun-superracersr",
+   "brand": "flsun",
+   "model": "Super Racer (SR)",
+   "aliases": [
+    "flsunsuperracer",
+    "flsunsuperracersr",
+    "superracer"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 270,
+    "y": 270,
+    "origin": [
+     -135,
+     -135
+    ],
+    "diameter": 270
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun_Super_Racer",
+    "cura": "flsun_sr"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun Super Racer (SR)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Super Racer 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun SR",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun SR",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun SR",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun SR",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun SR",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun SR",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @FLSun",
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FLSun Super Racer (SR)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Super Racer 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun SR",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun SR",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun SR",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun SR",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun SR",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun SR",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun Super Racer (SR)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Super Racer 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun SR",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun SR",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun SR",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun SR",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun SR",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun SR",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun Super Racer (SR)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Super Racer 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun SR",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun SR",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun SR",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun SR",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun SR",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun SR",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun Super Racer (SR)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun Super Racer 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun SR",
+         "processes": [
+          {
+           "name": "0.08mm Fine @FLSun SR",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.16mm Optimal @FLSun SR",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun SR",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun SR",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun SR",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "FLSun Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "flsun_sr",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flsun-t1",
+   "brand": "flsun",
+   "model": "T1",
+   "aliases": [
+    "flsunt1"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 260,
+    "y": 260,
+    "origin": [
+     -130,
+     -130
+    ],
+    "diameter": 260
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 330,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun_T1"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun T1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun T1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun T1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun T1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun T1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun T1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun T1",
+           "ASA": "Generic ASA @FLSun T1",
+           "PETG": "Generic PETG @FLSun T1",
+           "PLA": "Generic PLA @FLSun T1",
+           "TPU": "Generic TPU @FLSun T1"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun T1",
+           "generic asa": "Generic ASA @FLSun T1",
+           "generic petg": "Generic PETG @FLSun T1",
+           "generic pla": "Generic PLA @FLSun T1",
+           "generic pla high speed": "Generic PLA High Speed @FLSun T1",
+           "generic pla silk": "Generic PLA Silk @FLSun T1",
+           "generic tpu": "Generic TPU @FLSun T1"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun T1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun T1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun T1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun T1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun T1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun T1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun T1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun T1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun T1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun T1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun T1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun T1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun T1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun T1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun T1",
+         "processes": [
+          {
+           "name": "0.12mm Fine @FLSun T1",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @FLSun T1",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @FLSun T1",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Extra Draft @FLSun T1",
+           "layerHeight": 0.3
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun T1 ABS",
+           "ASA": "FLSun T1 ASA",
+           "PETG": "FLSun T1 PETG",
+           "PLA": "FLSun T1 PLA Generic",
+           "TPU": "FLSun T1 TPU"
+          },
+          "products": {
+           "flsun t1 abs": "FLSun T1 ABS",
+           "flsun t1 asa": "FLSun T1 ASA",
+           "flsun t1 petg": "FLSun T1 PETG",
+           "flsun t1 pla generic": "FLSun T1 PLA Generic",
+           "flsun t1 pla high speed": "FLSun T1 PLA High Speed",
+           "flsun t1 pla silk": "FLSun T1 PLA Silk",
+           "flsun t1 tpu": "FLSun T1 TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "flsun-v400",
+   "brand": "flsun",
+   "model": "V400",
+   "aliases": [
+    "flsunv400"
+   ],
+   "bed": {
+    "shape": "circle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     -150,
+     -150
+    ],
+    "diameter": 300
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 410,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "FLSun_V400",
+    "cura": "flsun_v400"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext",
+    "cura"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "FLSun V400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun V400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun V400",
+         "processes": [
+          {
+           "name": "0.20mm Standard @FLSun V400",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @FLSun",
+           "ASA": "Generic ASA @FLSun",
+           "PA": "Generic PA @FLSun",
+           "PA-CF": "Generic PA-CF @FLSun",
+           "PC": "Generic PC @FLSun",
+           "PETG": "Generic PETG @FLSun",
+           "PLA": "Generic PLA @FLSun",
+           "PLA-CF": "Generic PLA-CF @FLSun",
+           "PVA": "Generic PVA @FLSun",
+           "TPU": "Generic TPU @FLSun"
+          },
+          "products": {
+           "generic abs": "Generic ABS @FLSun",
+           "generic asa": "Generic ASA @FLSun",
+           "generic pa": "Generic PA @FLSun",
+           "generic pa-cf": "Generic PA-CF @FLSun",
+           "generic pc": "Generic PC @FLSun",
+           "generic petg": "Generic PETG @FLSun",
+           "generic pla": "Generic PLA @FLSun",
+           "generic pla-cf": "Generic PLA-CF @FLSun",
+           "generic pva": "Generic PVA @FLSun",
+           "generic tpu": "Generic TPU @FLSun"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "FLSun V400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun V400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun V400",
+         "processes": [
+          {
+           "name": "0.20mm Standard @FLSun V400",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "FLSun V400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun V400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun V400",
+         "processes": [
+          {
+           "name": "0.20mm Standard @FLSun V400",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "FLSun V400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun V400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun V400",
+         "processes": [
+          {
+           "name": "0.20mm Standard @FLSun V400",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "FLSun V400",
+      "presets": {
+       "0.4": [
+        {
+         "name": "FLSun V400 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @FLSun V400",
+         "processes": [
+          {
+           "name": "0.20mm Standard @FLSun V400",
+           "layerHeight": 0.2
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "FLSun Generic ABS",
+           "ASA": "FLSun Generic ASA",
+           "PA": "FLSun Generic PA",
+           "PA-CF": "FLSun Generic PA-CF",
+           "PC": "FLSun Generic PC",
+           "PETG": "FLSun Generic PETG",
+           "PLA": "FLSun Generic PLA",
+           "PLA-CF": "FLSun Generic PLA-CF",
+           "PVA": "FLSun Generic PVA",
+           "TPU": "FLSun Generic TPU"
+          },
+          "products": {
+           "flsun generic abs": "FLSun Generic ABS",
+           "flsun generic asa": "FLSun Generic ASA",
+           "flsun generic pa": "FLSun Generic PA",
+           "flsun generic pa-cf": "FLSun Generic PA-CF",
+           "flsun generic pc": "FLSun Generic PC",
+           "flsun generic petg": "FLSun Generic PETG",
+           "flsun generic pla": "FLSun Generic PLA",
+           "flsun generic pla-cf": "FLSun Generic PLA-CF",
+           "flsun generic pva": "FLSun Generic PVA",
+           "flsun generic tpu": "FLSun Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "flsun_v400",
+      "nozzles": []
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

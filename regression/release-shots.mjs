@@ -3,40 +3,34 @@
 // thing each one is about and written as WebP into release-notes/screenshots/, named after the version:
 //
 //   THINGPORT_PASSWORD='…' npm --prefix regression run release-shots -- --url https://thingport.example \
-//     --email me@example.com --profiles-model <id> --license-model <id> --shared-collection <id>
+//     --email me@example.com --profiles-model <id>
 //
 // Options, also settable as env vars:
 //   --url                 THINGPORT_URL              instance to capture (required)
 //   --email               THINGPORT_EMAIL            admin account to sign in with (required)
 //   --password            THINGPORT_PASSWORD
-//   --profiles-model      SCREENSHOT_PROFILES_MODEL  a model with print profiles, read already (open it once first)
-//   --license-model       SCREENSHOT_LICENSE_MODEL   a model whose licence was read, default --profiles-model
-//   --shared-collection   SCREENSHOT_SHARED_COLLECTION  a collection to show the sharing form on
-//   --connect-to          SCREENSHOT_CONNECT_TO      an instance's address for the Connect dialog, looked up only
+//   --profiles-model      SCREENSHOT_PROFILES_MODEL  a MakerWorld model with print profiles, read already (open it once
+//                                                    first), for the Open adapted shots
 //   --host-rules          SCREENSHOT_HOST_RULES      Chromium --host-resolver-rules, for names this machine can't resolve
 //   --no-blur                                        leave addresses unblurred, on a demo instance of made-up handles
 //   --version             RELEASE_SHOTS_VERSION      names the files, default the version the notes name
 //   --theme               RELEASE_SHOTS_THEME        light (the default) or dark
-//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. print-profiles-tiles,licence
+//   --only                RELEASE_SHOTS_ONLY         comma-separated shot names, e.g. open-adapted,storage
 //   --out                 RELEASE_SHOTS_OUT          output folder, default release-notes/screenshots
 //   --headed                                         show the browser
 //
-// Shots needing something the instance doesn't have -- a model with print profiles, a partner instance -- are
-// skipped with a line saying so, and the rest still run. Nothing in the library is changed: dialogs and menus are only
-// opened, and what the sharing form and Explore show of other people is answered in the browser, so social features
-// needn't be on. Email addresses are blurred. The account's theme and print profiles layout are switched for the run
-// and restored afterwards.
+// Shots needing something the instance doesn't have, such as a model with print profiles, are skipped with a line
+// saying so, and the rest still run. Nothing in the library is changed: dialogs and menus are only opened, and what a
+// shot needs of the account that it may not have -- slicers and printers for Open adapted, achievements while an admin
+// has them off -- is answered in the browser. Email addresses are blurred. The account's theme and print profiles
+// layout are switched for the run and restored afterwards.
 //
-// The connected-instances shots need a partner, so they're taken from an instance that has one, with --only naming
-// them: explore-everywhere, partner-model and connect-link on the one that connects from home, partners on the one it
-// connects to. As in screenshots.mjs, a demo pair on one machine has the Connect dialog's lookup shown suggesting the
-// link, and the Public URL shown confirmed, answered in the browser. Thingport Grab's own pictures aren't covered:
-// they come from `npm --prefix extension run screenshots`, which loads the built extension into a visible browser.
-// Convert the ones you want with `sharp` as this script does.
+// Thingport Grab's own pictures aren't covered: they come from `npm --prefix extension run screenshots`, which loads
+// the built extension into a visible browser. Convert the ones you want with `sharp` as this script does.
 //
 // The file a shot writes is what a release-notes item then names in its `images`, e.g.
 //
-//   { "src": "screenshots/1.6.0-licence.webp", "caption": "A model's licence: what it allows, its terms and a credit line to copy" }
+//   { "src": "screenshots/1.7.0-storage.webp", "caption": "Administration → Storage: what takes the disk, by kind" }
 //
 // so a shot added here wants an item in release-notes/latest-release-notes.json to put it in, and the other way
 // round: an item naming a picture nothing captures leaves a gap in What's new. Earlier releases' shots are in this
@@ -66,9 +60,6 @@ const { values: args } = parseArgs({
     email: { type: "string" },
     password: { type: "string" },
     "profiles-model": { type: "string" },
-    "license-model": { type: "string" },
-    "shared-collection": { type: "string" },
-    "connect-to": { type: "string" },
     "host-rules": { type: "string" },
     "no-blur": { type: "boolean", default: false },
     version: { type: "string" },
@@ -88,9 +79,6 @@ const baseUrl = (args.url || process.env.THINGPORT_URL || "").replace(/\/+$/, ""
 const email = args.email || process.env.THINGPORT_EMAIL;
 const password = args.password || process.env.THINGPORT_PASSWORD;
 const profilesModel = args["profiles-model"] || process.env.SCREENSHOT_PROFILES_MODEL;
-const licenseModel = args["license-model"] || process.env.SCREENSHOT_LICENSE_MODEL || profilesModel;
-const sharedCollection = args["shared-collection"] || process.env.SCREENSHOT_SHARED_COLLECTION;
-const connectTo = args["connect-to"] || process.env.SCREENSHOT_CONNECT_TO;
 const hostRules = args["host-rules"] || process.env.SCREENSHOT_HOST_RULES;
 const theme = args.theme || process.env.RELEASE_SHOTS_THEME || "light";
 const only = list(args.only || process.env.RELEASE_SHOTS_ONLY);
@@ -171,123 +159,140 @@ async function blurEmails(page) {
   });
 }
 
-// Made-up people for what the sharing form and Explore show, so nobody real is in a published picture.
-const person = (id, display_name) => ({ id, display_name, username: id, avatar_url: null });
-const ALEX = person("alex", "Alex Morgan");
-const SAM = person("sam", "Sam Rivera");
-const LENA = person("lena", "Lena Fischer");
+/** The nearest card around a locator. */
+const cardOf = (locator) => locator.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
 
-/** Explore and the sidebar's Explore and Chats answered in the browser, with `overview` as what Explore shows. */
-async function stubSocial(page, overview) {
-  await page.route(/\/api\/social$/, (route) => route.fulfill({ json: { enabled: true, explore: true, chats: true } }));
-  await page.route(/\/api\/chats\/unread/, (route) => route.fulfill({ json: { unread: 0, latest: null } }));
-  if (overview) await page.route(/\/api\/explore$/, (route) => route.fulfill({ json: overview }));
+/** The account's slicers and printers answered in the browser, so a Bambu Studio project offers Open adapted:
+ *  OrcaSlicer, used last, and PrusaSlicer, with a Bambu Lab P1S and an A1 mini from the printer catalogue. `printerFor`
+ *  is OrcaSlicer's printer, the A1 mini, as a project made for the very printer needs no copy for it; without one,
+ *  opening a model adapted asks which. */
+async function stubAdaptSlicers(page, api, { printerFor = "bambulab-a1mini" } = {}) {
+  const catalogue = await api("GET", "/printers/catalogue");
+  const brandName = (printer) => catalogue.brands.find((brand) => brand.id === printer.brand)?.name ?? printer.brand;
+  const printers = ["bambulab-p1s", "bambulab-a1mini"]
+    .map((id) => catalogue.printers.find((printer) => printer.id === id))
+    .filter(Boolean)
+    .map((printer) => {
+      const name = `${brandName(printer)} ${printer.model} 0.4 nozzle`;
+      return {
+        printer,
+        brandName: brandName(printer),
+        nozzle: "0.4",
+        presets: { orcaslicer: name, bambustudio: name },
+      };
+    });
+  const slicers = {
+    slicer: "orcaslicer",
+    slicers: ["orcaslicer", "prusaslicer"],
+    bridged: [],
+    unadapted: [],
+    printers: printerFor ? { orcaslicer: printerFor } : {},
+  };
+  await page.route(/\/api\/settings\/slicer$/, (route) =>
+    route.request().method() === "GET" ? route.fulfill({ json: slicers }) : route.continue(),
+  );
+  await page.route(/\/api\/me\/printers$/, (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ json: { printers, suggestions: [], accounts: [] } })
+      : route.continue(),
+  );
 }
 
-/** A model's page in a print profiles layout, and the box of its side panel: the one with Open in the slicer. */
-async function profilesPanel(page, api, view) {
-  if (!profilesModel) return { skip: "needs --profiles-model" };
-  await api("PATCH", "/settings/print-profiles-view", { view });
+/** The profiles model's page in the Picker layout, and its side panel: the card with Open in the slicer. */
+async function modelPanel(page, api) {
+  await api("PATCH", "/settings/print-profiles-view", { view: "picker" });
   await open(page, `/models/${encodeURIComponent(profilesModel)}`);
-  // A link when the slicer opens by address, a button otherwise.
-  const openButton = page
-    .getByRole("link", { name: /^Open in / })
-    .or(page.getByRole("button", { name: /^Open in / }))
-    .first();
-  await openButton.waitFor({ timeout: 20000 });
-  const panel = openButton.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
+  const adapted = page.getByRole("group", { name: "Open or download the adapted copy" });
+  await adapted.waitFor({ timeout: 20000 });
   await settle(page, 800);
-  return { panel };
+  return { adapted, panel: cardOf(adapted) };
 }
 
-/** A clip around `boxes` that may reach past VIEWPORT, for shots taken in a taller window. */
-function clipIn(page, boxes, pad = PAD) {
-  const size = page.viewportSize() ?? VIEWPORT;
-  const left = Math.max(0, Math.min(...boxes.map((b) => b.x)) - pad);
-  const top = Math.max(0, Math.min(...boxes.map((b) => b.y)) - pad);
-  const right = Math.min(size.width, Math.max(...boxes.map((b) => b.x + b.width)) + pad);
-  const bottom = Math.min(size.height, Math.max(...boxes.map((b) => b.y + b.height)) + pad);
-  return { x: left, y: top, width: right - left, height: bottom - top };
-}
-
-/** What partner instances share on this one's Explore. */
-async function partnerContent(api) {
-  const overview = await api("GET", "/explore").catch(() => null);
-  return { models: overview?.elsewhere?.recent_models ?? [], people: overview?.elsewhere?.people ?? [] };
-}
+// Badges like a well-used library's, the counts close to this one's own: the shot answers them in the browser, as
+// achievements are usually off until an admin turns them on.
+const earned = (day) => `2026-11-${String(day).padStart(2, "0")}T10:00:00.000Z`;
+const BADGES = [
+  { id: "imports", tier: 4, earned_at: earned(13), count: 633, next: 1000, seen: true },
+  { id: "site:makerworld", tier: 2, earned_at: earned(13), count: 435, next: null, seen: true },
+  { id: "downloads", tier: 3, earned_at: earned(14), count: 240, next: 500, seen: true },
+  { id: "site:thingiverse", tier: 2, earned_at: earned(13), count: 102, next: null, seen: true },
+  { id: "site:printables", tier: 1, earned_at: earned(13), count: 44, next: 100, seen: true },
+  { id: "synced", tier: 1, earned_at: earned(13), count: 6, next: 10, seen: true },
+  { id: "sync-sources", tier: 0, earned_at: earned(13), count: 3, next: null, seen: true },
+  { id: "studio", tier: 0, earned_at: earned(14), count: 3, next: 10, seen: true },
+  { id: "tool:keyring-generator", tier: 0, earned_at: earned(14), count: 2, next: 10, seen: true },
+  { id: "regular", tier: 0, earned_at: earned(15), count: 24, next: null, seen: true },
+  { id: "secret:weather-scene/guest", tier: 0, earned_at: earned(14), count: null, next: null, seen: true },
+];
 
 const SHOTS = [
   {
-    name: "print-profiles-picker",
+    name: "open-adapted",
     run: async (page, { api }) => {
-      const { skip, panel } = await profilesPanel(page, api, "picker");
-      if (skip) return { skip };
-      // The model's picture beside the panel, cut off where the panel ends.
-      const main = await page.locator("main").first().boundingBox();
+      if (!profilesModel) return { skip: "needs --profiles-model" };
+      await stubAdaptSlicers(page, api);
+      const { panel } = await modelPanel(page, api);
+      // The side panel from its print profile down to the buttons, big enough to read.
       const box = await panel.boundingBox();
-      return { clip: clipAround([{ x: main.x + PAD, y: 0, width: 1, height: 1 }, box]) };
+      const from = await panel.getByText("Print profile", { exact: true }).first().boundingBox();
+      return { clip: clipAround([{ ...box, y: from.y, height: box.y + box.height - from.y }]) };
     },
   },
   {
-    name: "print-profiles-tiles",
+    name: "which-printer",
     run: async (page, { api }) => {
-      // Taller, so every tile fits.
-      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
-      const { skip, panel } = await profilesPanel(page, api, "tiles");
-      if (skip) return { skip };
-      return { clip: clipIn(page, [await panel.boundingBox()]) };
+      if (!profilesModel) return { skip: "needs --profiles-model" };
+      // Two printers and none set for OrcaSlicer: opening the model adapted asks which. The dialog is only opened.
+      await stubAdaptSlicers(page, api, { printerFor: null });
+      const { adapted } = await modelPanel(page, api);
+      await adapted.getByRole("button").first().click();
+      const dialog = page.getByRole("dialog", { name: "Which printer is this for?" });
+      await dialog.waitFor();
+      await settle(page, 500);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
-    name: "print-profiles-list",
-    run: async (page, { api }) => {
-      await page.setViewportSize({ width: VIEWPORT.width, height: 1500 });
-      const { skip, panel } = await profilesPanel(page, api, "list");
-      if (skip) return { skip };
-      return { clip: clipIn(page, [await panel.boundingBox()]) };
-    },
-  },
-  {
-    name: "licence",
-    run: async (page, { api }) => {
-      if (!licenseModel) return { skip: "needs --license-model" };
-      await api("PATCH", "/settings/print-profiles-view", { view: "picker" });
-      await open(page, `/models/${encodeURIComponent(licenseModel)}`);
-      const strip = page.getByRole("button", { name: /: licence details$/ });
-      if (!(await strip.isVisible().catch(() => false)))
-        return { skip: "the model shows no licence yet: open it once" };
-      // Its description box with the strip at its foot, and the details it opens.
-      const box = strip.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
-      await box.scrollIntoViewIfNeeded();
-      await settle(page, 300);
-      // Measured first: the open popover hides the rest of the page from role queries.
-      const stripBox = await strip.boundingBox();
-      await strip.click();
-      const details = page.locator(".MuiPopover-paper").first();
-      await page.getByRole("button", { name: "Copy credit line" }).waitFor();
-      await settle(page, 400);
-      return { clip: clipAround([stripBox, await details.boundingBox()].filter(Boolean)) };
-    },
-  },
-  {
-    name: "licence-filter",
+    name: "printers",
     run: async (page) => {
-      await page.setViewportSize({ width: VIEWPORT.width, height: 1300 });
-      await open(page, "/models");
-      const button = page.getByRole("button", { name: "Filters" });
-      const buttonBox = await button.boundingBox();
-      await button.click();
-      const popover = page.locator(".MuiPopover-paper, .MuiMenu-paper").first();
-      await popover.getByText("Licence allows").waitFor();
-      await settle(page, 400);
-      return { clip: clipIn(page, [buttonBox, await popover.boundingBox()]) };
+      // The account's printers and the ones its library suggests, as they are on the instance.
+      await open(page, "/?configuration=printers");
+      const dialog = page.getByRole("dialog", { name: "Configuration" });
+      await dialog.getByRole("button", { name: "Add", exact: true }).waitFor();
+      await settle(page, 600);
+      // The dialog down to the line under the printers, not the empty rest of it.
+      const box = await dialog.boundingBox();
+      const last = await dialog.getByText(/^Add the printers you print on/).boundingBox();
+      return { clip: clipAround([{ ...box, height: last.y + last.height + PAD - box.y }], 0) };
+    },
+  },
+  {
+    name: "storage",
+    run: async (page) => {
+      await open(page, "/admin-storage");
+      const button = page.getByRole("button", { name: "Free up space" }).first();
+      await button.waitFor();
+      await settle(page, 600);
+      return { clip: await clipOf(page, cardOf(button)) };
+    },
+  },
+  {
+    name: "free-up-space",
+    run: async (page) => {
+      await open(page, "/admin-storage");
+      await page.getByRole("button", { name: "Free up space" }).first().click();
+      // Measured as it opens; only opened, so nothing is removed.
+      const dialog = page.getByRole("dialog", { name: "Free up space" });
+      await dialog.getByRole("button", { name: "Cancel" }).waitFor();
+      await settle(page, 1500);
+      return { clip: await clipOf(page, dialog, 0) };
     },
   },
   {
     name: "providers",
     run: async (page) => {
       await open(page, "/admin-providers");
-      // Newest first: the three sites this release adds lead the grid.
+      // Newest first: the two sites this release adds lead the grid.
       await page
         .getByRole("tab", { name: "Newest" })
         .or(page.getByRole("button", { name: "Newest", exact: true }))
@@ -298,91 +303,40 @@ const SHOTS = [
     },
   },
   {
-    name: "share-collection",
+    name: "migrate",
     run: async (page) => {
-      if (!sharedCollection) return { skip: "needs --shared-collection" };
-      await stubSocial(page);
-      // Who it's shared with, answered in the browser: the form is only opened, never saved.
-      await page.route(/\/api\/collection\/[^/]+\/sharing$/, (route) =>
-        route.fulfill({ json: { visibility: "shared", people: [ALEX, SAM, LENA], max_people: 100 } }),
+      await open(page, "/admin-migrate");
+      const token = page.getByRole("button", { name: "Create a token" });
+      await token.waitFor();
+      await settle(page, 400);
+      // Both sources and the line for moving away, without the list of migrations under them.
+      const boxes = await Promise.all(
+        [
+          cardOf(page.getByText("From Manyfold", { exact: true })),
+          cardOf(page.getByText("From another Thingport instance", { exact: true })),
+          cardOf(token),
+        ].map((card) => card.boundingBox()),
       );
-      await page.route(/\/api\/social\/people/, (route) => route.fulfill({ json: { people: [ALEX, SAM, LENA] } }));
-      await open(page, `/models/collections/${encodeURIComponent(sharedCollection)}`);
-      await page.getByRole("button", { name: "More", exact: true }).first().click();
-      await page.getByRole("menuitem", { name: "Share…" }).click();
-      const dialog = page.getByRole("dialog");
-      await dialog.getByText("Sam Rivera").waitFor();
-      await settle(page, 500);
-      return { clip: await clipOf(page, dialog, 0) };
+      return { clip: clipAround(boxes.filter(Boolean)) };
     },
   },
   {
-    name: "shared-with-you",
-    run: async (page, { api }) => {
-      // The library's own collections and models, as the made-up people's shares.
-      const models = (await api("GET", "/prints?limit=40")).filter((m) => m.preview_images?.length);
-      const collections = (await api("GET", "/collections")).filter(
-        (c) => !c.tool_id && !c.system_key && c.item_count > 3,
-      );
-      const owner = (i) => [ALEX, SAM, LENA][i % 3];
-      const shared = collections.slice(0, 3).map((c, i) => ({ ...c, visibility: "shared", owner: owner(i) }));
-      await stubSocial(page, {
-        shared_with_you: shared,
-        shared_with_you_total: shared.length,
-        people: [
-          { ...ALEX, collection_count: 3, model_count: 41 },
-          { ...SAM, collection_count: 2, model_count: 17 },
-          { ...LENA, collection_count: 1, model_count: 9 },
-        ],
-        recent_models: models.slice(0, 10).map((m, i) => ({ ...m, owner: owner(i) })),
-        recent_collections: collections.slice(3, 7).map((c, i) => ({ ...c, visibility: "public", owner: owner(i) })),
-        most_collected: [],
-      });
-      await open(page, "/explore");
-      const heading = page.getByText("Shared with you", { exact: true }).first();
-      await heading.waitFor();
-      await settle(page);
-      const main = await page.locator("main").first().boundingBox();
-      const top = await heading.boundingBox();
-      // Down to the heading of the section after it.
-      const next = await page.getByText("People", { exact: true }).first().boundingBox();
-      const bottom = next && next.y > top.y ? next.y - 8 : top.y + 380;
-      return {
-        clip: { x: main.x, y: top.y - PAD, width: VIEWPORT.width - main.x, height: bottom - top.y + PAD },
-      };
-    },
-  },
-  {
-    name: "profile",
+    name: "achievements",
     run: async (page) => {
-      // Links under the bio, answered in the browser when the account has none, so its own aren't changed.
-      await page.route(/\/api\/me$/, async (route) => {
+      await page.route(/\/api\/social$/, async (route) => {
         const response = await route.fetch();
         const json = await response.json();
-        if (json.user && !json.user.links?.length) {
-          json.user.links = ["https://github.com/TautvydasDerzinskas/Thingport", "https://thingport.net"];
-        }
-        await route.fulfill({ response, json });
+        await route.fulfill({ response, json: { ...json, achievements: true } });
       });
+      await page.route(/\/api\/me\/achievements(\?.*)?$/, (route) =>
+        route.fulfill({ json: new URL(route.request().url()).searchParams.has("unseen") ? [] : BADGES }),
+      );
       await open(page, "/authors/self");
-      const edit = page.getByRole("button", { name: "Edit profile" });
-      await edit.waitFor();
-      await settle(page);
-      const main = await page.locator("main").first().boundingBox();
-      const lastLink = page.getByRole("link", { name: /thingport\.net/ }).last();
-      const end = (await lastLink.boundingBox()) ?? (await edit.boundingBox());
-      return { clip: { x: main.x, y: 0, width: VIEWPORT.width - main.x, height: end.y + end.height + PAD * 2 } };
-    },
-  },
-  {
-    name: "avatar",
-    run: async (page) => {
-      await open(page, "/authors/self");
-      await page.getByRole("button", { name: "Change avatar" }).first().click();
-      const dialog = page.getByRole("dialog");
-      await dialog.waitFor();
-      await settle(page, 600);
-      return { clip: await clipOf(page, dialog, 0) };
+      const shelf = page.getByRole("region", { name: "Achievements" });
+      await shelf.waitFor();
+      await shelf.evaluate((el) => el.scrollIntoView({ block: "center" }));
+      await settle(page, 800);
+      return { clip: await clipOf(page, shelf) };
     },
   },
   {
@@ -396,88 +350,13 @@ const SHOTS = [
       await picker.waitFor();
       const pickerBox = await picker.boundingBox();
       await picker.click();
-      const list = page.getByRole("listbox", { name: "Language" });
-      await list.waitFor();
+      const languages = page.getByRole("listbox", { name: "Language" });
+      await languages.waitFor();
+      // Down to the newest, at the foot of the list.
+      await languages.getByRole("option", { name: /简体中文/ }).scrollIntoViewIfNeeded();
       await settle(page, 500);
-      const listBox = await list.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]").boundingBox();
-      return { clip: clipAround([pickerBox, listBox ?? (await list.boundingBox())]) };
-    },
-  },
-  {
-    name: "explore-everywhere",
-    run: async (page, { api }) => {
-      if (!(await partnerContent(api)).models.length) return { skip: "no partner's models on Explore" };
-      await open(page, "/explore");
-      await page.getByRole("button", { name: "Everywhere" }).first().waitFor();
-      await settle(page);
-      return { clip: await mainClip(page) };
-    },
-  },
-  {
-    name: "partner-model",
-    run: async (page, { api }) => {
-      const { models } = await partnerContent(api);
-      const model = models.find((m) => /vase/i.test(m.name ?? m.title ?? "")) ?? models[0];
-      if (!model) return { skip: "no partner's models on Explore" };
-      await open(page, `/explore/elsewhere/models/${encodeURIComponent(model.id)}`);
-      await page
-        .getByRole("button", { name: /^Copy to my library|^Open my copy/ })
-        .first()
-        .waitFor();
-      await settle(page);
-      return { clip: await mainClip(page) };
-    },
-  },
-  {
-    name: "connect-link",
-    run: async (page) => {
-      if (!connectTo) return { skip: "needs --connect-to" };
-      await page.route(/\/api\/federation\/lookup/, async (route) => {
-        const response = await route.fetch();
-        const json = await response.json();
-        await route.fulfill({ response, json: { ...json, suggestLink: "local" } });
-      });
-      await open(page, "/admin-social");
-      await page.getByRole("button", { name: "Connect to an instance" }).first().click();
-      const dialog = page.getByRole("dialog");
-      await dialog.getByLabel("Its address").fill(connectTo);
-      await dialog.getByRole("button", { name: "Look up" }).click();
-      await dialog.getByText("The keys match").waitFor({ timeout: 20000 });
-      await dialog.getByText("The keys match").click();
-      await dialog.getByLabel("Note for their admin (optional)").fill("Hi from Sam's garage workshop!");
-      await settle(page, 500);
-      return { clip: await clipOf(page, dialog, 0) };
-    },
-  },
-  {
-    name: "partners",
-    run: async (page, { api }) => {
-      const instances = await api("GET", "/federation/instances").catch(() => null);
-      if (!instances?.partners?.length) return { skip: "no partner instance" };
-      await page.route(/\/api\/federation\/settings$/, async (route) => {
-        const response = await route.fetch();
-        const json = await response.json();
-        const reachability = { ...json.reachability, kind: "public", reason: null, detail: null };
-        await route.fulfill({
-          response,
-          json: { ...json, reachability, confirmedBy: Math.max(1, json.confirmedBy ?? 0) },
-        });
-      });
-      await open(page, "/admin-social");
-      await page
-        .getByRole("button", { name: /^Partners/ })
-        .or(page.getByRole("tab", { name: /^Partners/ }))
-        .first()
-        .click();
-      const more = page.getByRole("button", { name: /^More for / }).first();
-      await more.waitFor();
-      await settle(page);
-      // From the connected instances switch down to the partners under it.
-      const row = page.getByText("Connected instances", { exact: true }).first();
-      const top = row.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
-      const list = more.locator("xpath=ancestor::*[contains(@class, 'MuiPaper-root')][1]");
-      const boxes = [await top.boundingBox(), await list.boundingBox()].filter(Boolean);
-      return { clip: clipAround(boxes) };
+      const listBox = await cardOf(languages).boundingBox();
+      return { clip: clipAround([pickerBox, listBox ?? (await languages.boundingBox())]) };
     },
   },
 ];

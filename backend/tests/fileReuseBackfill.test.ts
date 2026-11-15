@@ -28,6 +28,7 @@ import {
   resumeFileReuseBackfill,
   startFileReuseBackfill,
 } from "../src/services/fileReuseBackfill";
+import { currentStorageCleanup } from "../src/services/storageCleanup";
 import { startStorageMove } from "../src/services/storageMoveService";
 import { setFileReuse } from "../src/services/settingsService";
 import { withStorageLock } from "../src/utils/storageLock";
@@ -1121,6 +1122,59 @@ describe("the admin routes", () => {
     release();
     await held;
     await until(() => !running?.running);
+  });
+
+  it("waits for a clean-up that started while the switch was being turned on, and checks nothing until it's over", async () => {
+    mockClones();
+    await setFileReuse("off");
+    // Turning it on held where the switch is saved, so the clean-up can start meanwhile.
+    let save!: () => void;
+    const saveGate = new Promise<void>((resolve) => (save = resolve));
+    let saving = false;
+    const realUpsert = prisma.setting.upsert.bind(prisma.setting);
+    vi.spyOn(prisma.setting, "upsert").mockImplementation(((args: any) => {
+      if (args.where?.key !== "file_reuse" || saving) return realUpsert(args);
+      saving = true;
+      return saveGate.then(() => realUpsert(args));
+    }) as any);
+    // The clean-up held at its first read, the models' folders.
+    let free!: () => void;
+    const freeGate = new Promise<void>((resolve) => (free = resolve));
+    const realFindMany = prisma.print.findMany.bind(prisma.print);
+    vi.spyOn(prisma.print, "findMany").mockImplementation(((args: any) =>
+      args?.where?.assetsPath ? freeGate.then(() => realFindMany(args)) : realFindMany(args)) as any);
+    // The run's first look at the disk is whether it can clone.
+    const probes: string[] = [];
+    const realMkdir = fsp.mkdir;
+    vi.spyOn(fsp, "mkdir").mockImplementation(((target: any, options: any) => {
+      if (path.basename(String(target)).startsWith(".reflink-probe-")) probes.push(String(target));
+      return realMkdir(target, options);
+    }) as any);
+
+    const turningOn = request(app)
+      .post("/api/settings/file-reuse")
+      .set(admin())
+      .send({ mode: "reflink" })
+      .then((res) => res);
+    await until(() => saving);
+    const cleanup = await request(app)
+      .post("/api/admin/storage/cleanup")
+      .set(admin())
+      .send({ tasks: ["old"] });
+    expect(cleanup.status).toBe(200);
+    save();
+    expect((await turningOn).status).toBe(200);
+    const run = currentFileReuseBackfill()!;
+    try {
+      expect(run.running).toBe(true);
+      await sleep(300);
+      expect(probes).toEqual([]);
+    } finally {
+      free();
+      await until(() => !currentStorageCleanup()?.running);
+      await until(() => !run.running);
+    }
+    expect(probes).toHaveLength(1);
   });
   it("starts a new run once a stopped one has ended, when turned on again meanwhile", async () => {
     const { files } = await stored(3);

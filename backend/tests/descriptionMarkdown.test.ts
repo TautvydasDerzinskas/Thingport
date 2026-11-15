@@ -1,6 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { htmlToMarkdown } from "../src/services/descriptionMarkdown";
+import { htmlToMarkdown, markdownFromDescription } from "../src/services/descriptionMarkdown";
 import { cleanThingiverseMarkdown } from "../src/providers/thingiverse/markdown";
+
+describe("markdownFromDescription", () => {
+  it("converts a description that's HTML, and keeps one that's plain text as it is, line breaks and all", () => {
+    expect(markdownFromDescription("<p>Print <strong>flat</strong>.</p><p>No supports.</p>")).toBe(
+      "Print **flat**.\n\nNo supports.",
+    );
+    expect(markdownFromDescription("Print flat.\r\nNo supports.\n\n\n\nEnjoy  ")).toBe(
+      "Print flat.\nNo supports.\n\nEnjoy",
+    );
+  });
+
+  it("keeps a plain text's links and addresses in angle brackets, which aren't HTML", () => {
+    expect(markdownFromDescription("Assembly guide:\n<https://example.com/guide>")).toBe(
+      "Assembly guide:\n<https://example.com/guide>",
+    );
+    expect(markdownFromDescription("Questions: <maker@example.com>")).toBe("Questions: <maker@example.com>");
+    expect(markdownFromDescription("Print <b>flat</b>.<br/>No supports.")).toBe("Print **flat**.\nNo supports.");
+    expect(markdownFromDescription('<a href="https://example.com/guide">Guide</a>')).toBe(
+      "[Guide](https://example.com/guide)",
+    );
+  });
+});
 
 describe("htmlToMarkdown", () => {
   it("keeps headings, emphasis, lists and step images from a MakerWorld summary", () => {

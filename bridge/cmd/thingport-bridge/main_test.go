@@ -112,6 +112,26 @@ func TestDownloadFileDoesNotExposeTokenInError(t *testing.T) {
 	}
 }
 
+// Thingport reads the version from it to say when a newer Bridge is out; 1.0.1 and older sent Go's default.
+func TestDownloadFileNamesTheBridgeAndItsVersion(t *testing.T) {
+	var got string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("User-Agent")
+		_, _ = w.Write([]byte("solid t\nendsolid t\n"))
+	}))
+	defer server.Close()
+
+	old := version
+	version = "1.2.3"
+	defer func() { version = old }()
+	if err := downloadFile(server.URL+"/model.stl", filepath.Join(t.TempDir(), "model.stl")); err != nil {
+		t.Fatal(err)
+	}
+	if want := "Thingport-Bridge/1.2.3 (" + runtime.GOOS + ")"; got != want {
+		t.Fatalf("User-Agent = %q, want %q", got, want)
+	}
+}
+
 func TestDownloadTLSErrorDoesNotLeakSignedURL(t *testing.T) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -188,12 +208,27 @@ func TestFindWindowsCommandResolvesAnycubicSlicerNext(t *testing.T) {
 func TestFindMacCommandChecksUserApplications(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	appPath := filepath.Join(home, "Applications", "AnycubicSlicerNext.app")
+	t.Setenv("USERPROFILE", home)
+	appPath := filepath.Join(home, "Applications", "ThingportTestAnycubic.app")
 	if err := os.MkdirAll(appPath, 0755); err != nil {
 		t.Fatalf("mkdir app: %v", err)
 	}
-	candidates := map[string][]string{"anycubicslicernext": {"/Applications/AnycubicSlicerNext.app"}}
+	candidates := map[string][]string{"anycubicslicernext": {"/Applications/ThingportTestAnycubic.app"}}
 	if got := findMacCommand("anycubicslicernext", candidates); got != appPath {
+		t.Fatalf("findMacCommand(...) = %q, expected %q", got, appPath)
+	}
+}
+
+func TestFindMacCommandResolvesQIDIStudio(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	appPath := filepath.Join(home, "Applications", "ThingportTestQIDIStudio.app")
+	if err := os.MkdirAll(appPath, 0755); err != nil {
+		t.Fatalf("mkdir app: %v", err)
+	}
+	candidates := map[string][]string{"qidistudio": {"/Applications/ThingportTestQIDIStudio.app"}}
+	if got := findMacCommand("qidistudio", candidates); got != appPath {
 		t.Fatalf("findMacCommand(...) = %q, expected %q", got, appPath)
 	}
 }
@@ -248,9 +283,14 @@ func TestFindWindowsCommandResolvesBridgeableSlicers(t *testing.T) {
 		id, base, rel string
 	}{
 		{"orcaslicer", "ProgramFiles", "OrcaSlicer/orca-slicer.exe"},
+		{"qidistudio", "ProgramFiles", "QIDIStudio/qidi-studio.exe"},
 		{"crealityprintlink", "ProgramFiles", "Creality Print 5.1/CrealityPrint.exe"},
 		{"elegooslicer", "ProgramFiles", "ElegooSlicer/elegoo-slicer.exe"},
 		{"snapmaker-orca", "ProgramFiles", "Snapmaker_Orca/snapmaker-orca.exe"},
+		// Flash Studio's installer doesn't say its folder: the one its maker and product names make, and its CPack one.
+		{"orca-flashforge", "ProgramFiles", "Flashforge/Flash Studio Desktop/flash studio.exe"},
+		{"orca-flashforge", "ProgramFiles", "Flashforge/Orca-Flashforge/flash studio.exe"},
+		{"orca-flashforge", "ProgramFiles", "Orca-Flashforge/flash studio.exe"},
 		{"eufystudio3d", "LOCALAPPDATA", "eufyMake Studio 3D/eufymake studio.exe"},
 		{"eufystudio3d", "LOCALAPPDATA", "AnkerMake Studio/AnkerMake Studio.exe"},
 	}
@@ -308,6 +348,21 @@ func TestFindLinuxCommandLooksInFlatpakExports(t *testing.T) {
 	}
 	if got := findLinuxCommand("snapmaker-orca", linuxCandidates()); got != launcher {
 		t.Fatalf("findLinuxCommand(snapmaker-orca) = %q, expected %q", got, launcher)
+	}
+}
+
+func TestFindLinuxCommandResolvesQIDIStudio(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Linux lookup")
+	}
+	dir := t.TempDir()
+	t.Setenv("PATH", dir)
+	launcher := filepath.Join(dir, "qidi-studio")
+	if err := os.WriteFile(launcher, []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatalf("write launcher: %v", err)
+	}
+	if got := findLinuxCommand("qidistudio", linuxCandidates()); got != launcher {
+		t.Fatalf("findLinuxCommand(qidistudio) = %q, expected %q", got, launcher)
 	}
 }
 

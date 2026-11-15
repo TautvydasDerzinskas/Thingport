@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "zone3d",
+  "name": "Zone3D"
+ },
+ "printers": [
+  {
+   "id": "zone3d-printer",
+   "brand": "zone3d",
+   "model": "Printer",
+   "aliases": [
+    "zone3dprinter"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 240,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "zone3d_printer"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "zone3d_printer",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

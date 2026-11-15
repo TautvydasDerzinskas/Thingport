@@ -1,0 +1,276 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "trimaker",
+  "name": "Trimaker"
+ },
+ "printers": [
+  {
+   "id": "trimaker-cosmosii",
+   "brand": "trimaker",
+   "model": "Cosmos II",
+   "aliases": [
+    "trimakercosmosii"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Trimaker Cosmos II",
+    "cura": "trimaker_cosmosII"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Trimaker Cosmos II",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Trimaker Cosmos II 0.4 nozzle",
+         "defaultProcess": "0.2 Layer - 0,4 Nozzle",
+         "processes": [
+          {
+           "name": "0.1 Layer - 0,4 Nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.2 Layer - 0,4 Nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3 Layer - 0,4 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "trimaker_cosmosII",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "trimaker-nebula",
+   "brand": "trimaker",
+   "model": "Nebula",
+   "aliases": [
+    "trimakernebula"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Trimaker Nebula",
+    "cura": "trimaker_nebula"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer",
+    "cura"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Trimaker Nebula",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Trimaker Nebula  0.4 nozzle",
+         "defaultProcess": "0.2 Layer - 0,4 Nozzle",
+         "processes": [
+          {
+           "name": "0.1 Layer - 0,4 Nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.2 Layer - 0,4 Nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2 Layer - 0,4 Nozzle - Speed",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3 Layer - 0,4 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ],
+    "cura": [
+     {
+      "definition": "trimaker_nebula",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "trimaker-nebulacloud",
+   "brand": "trimaker",
+   "model": "Nebula Cloud",
+   "aliases": [
+    "trimakernebulacloud"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "prusa": "Trimaker Nebula Cloud"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "Trimaker Nebula Cloud",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Trimaker Nebula Cloud 0.4 nozzle",
+         "defaultProcess": "0.2 Layer - 0,4 Nozzle",
+         "processes": [
+          {
+           "name": "0.1 Layer - 0,4 Nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.2 Layer - 0,4 Nozzle",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.2 Layer - 0,4 Nozzle - Speed",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.3 Layer - 0,4 Nozzle",
+           "layerHeight": 0.3
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "trimaker-nebulaplus",
+   "brand": "trimaker",
+   "model": "Nebula Plus",
+   "aliases": [
+    "trimakernebulaplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 230,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 260,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "trimaker_nebula_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "trimaker_nebula_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

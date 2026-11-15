@@ -16,6 +16,9 @@ import { apiCall } from "../../background/api";
 import { importSingle } from "../../background/importJobs";
 import { type BackgroundMessages, type Handlers, senderTabId } from "../../shared/messages";
 import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
+import { backgroundText } from "../../background/localize";
+import { showMakerworldPuzzle } from "./puzzleBackground";
+import { makerworldStepKey } from "./step";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
@@ -38,7 +41,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([promise, new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))]);
 }
 
-/** Both the extension's and the backend's CAPTCHA messages say so; API errors carry only text. */
+/** The page's CAPTCHA reply (MAKERWORLD_CAPTCHA_REPLY) and the instance's both say so, in English; API errors carry
+ *  only text. */
 function isCaptchaMessage(message: string): boolean {
   return /captcha/i.test(message);
 }
@@ -94,18 +98,45 @@ export async function abortJob(tabId: number): Promise<null> {
   const job = await getJob();
   if (!job || job.tabId !== tabId) return null;
   await setJob(null);
-  void sendRunSummary(job, "you stopped the import.");
+  void sendRunSummary(job, await backgroundText("guidedImportAborted"));
   await chrome.tabs.update(tabId, { url: job.originalUrl });
   return null;
 }
 
-/** Retries the model the run paused on, once the user has solved MakerWorld's CAPTCHA. */
-export async function resumeJob(tabId: number): Promise<null> {
+/** Takes up the step the run paused on, once MakerWorld's puzzle is solved. With the file the page got by solving it,
+ *  the step imports that, on the page already open; without, the model's page loads again and the step asks anew.
+ *  `step`, the one the page meant: a resume for a step the run has left behind, or another run's, does nothing. */
+export async function resumeJob(tabId: number, resolved?: ResolvedDownload | null, step?: string): Promise<null> {
   const job = await getJob();
   if (!job || job.tabId !== tabId || !job.paused) return null;
-  await setJob({ ...job, paused: false, awaitingLoad: true, startAt: 0 });
-  await chrome.tabs.update(tabId, { url: job.urls[job.index] });
+  if (step !== undefined && step !== makerworldStepKey(job)) return null;
+  const resumed: MakerworldJob = { ...job, paused: false, awaitingLoad: true, startAt: 0, handed: null };
+  if (!resolved?.downloadUrl) {
+    await setJob(resumed);
+    await chrome.tabs.update(tabId, { url: job.urls[job.index] });
+    return null;
+  }
+  const { index, profile, runId } = stepOf(job);
+  await setJob({ ...resumed, handed: { index, profile, runId, download: resolved } });
+  const reply = await sendToTab(tabId, "MAKERWORLD_JOB_UPDATED").catch(() => undefined);
+  if (!reply?.ok) await chrome.tabs.reload(tabId).catch(() => undefined);
   return null;
+}
+
+/** The file handed over for this step, if one was, the profile it's for checked where the step names one. Taken off
+ *  the job either way: a later step mustn't import it. */
+function takeHanded(job: MakerworldJob, instanceId: string | null): ResolvedDownload | null {
+  const handed = job.handed;
+  job.handed = null;
+  if (
+    !handed ||
+    handed.runId !== job.runId ||
+    handed.index !== job.index ||
+    handed.profile !== (job.profiles?.done ?? 0)
+  ) {
+    return null;
+  }
+  return instanceId && handed.download.instanceId !== instanceId ? null : handed.download;
 }
 
 /** A just-stopped job's error is read-and-clear, so it's shown exactly once. */
@@ -205,7 +236,7 @@ async function resolvedInPage(
 
 /** The profile the page shows, as every model came in before profiles could be chosen. */
 async function importPageProfile(tabId: number, job: MakerworldJob): Promise<void> {
-  const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_DOWNLOAD_URL"));
+  const resolved = takeHanded(job, null) ?? (await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_DOWNLOAD_URL")));
   await stayAtStep(tabId, job);
   const print = await importSingle(
     { url: job.urls[job.index], collectionId: job.collectionId, resolved },
@@ -248,10 +279,7 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
       (await readProfiles(tabId, job)) ??
       (await new Promise((resolve) => setTimeout(resolve, PROFILES_RETRY_MS)).then(() => readProfiles(tabId, job)));
     if (!ids) {
-      throw new Error(
-        "Couldn't read this model's print profiles from its page. Start the import again to carry on: models " +
-          "already brought in are only checked for the profiles they lack.",
-      );
+      throw new Error(await backgroundText("couldNotReadMakerworldProfiles"));
     }
     await stayAtStep(tabId, job);
     if (!ids.length) {
@@ -267,7 +295,9 @@ async function importProfileStep(tabId: number, job: MakerworldJob): Promise<voi
     if (!missing.length) return;
   }
   const instanceId = job.profiles.ids[0];
-  const resolved = await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD", { instanceId }));
+  const resolved =
+    takeHanded(job, instanceId) ??
+    (await resolvedInPage(sendToTab(tabId, "RESOLVE_MAKERWORLD_PROFILE_DOWNLOAD", { instanceId })));
   await stayAtStep(tabId, job);
   const print = await importSingle(
     { url: profileUrl(modelUrl, instanceId), collectionId: job.collectionId, resolved },
@@ -292,7 +322,7 @@ function claimStep(tabId: number): Promise<MakerworldJob | null> {
   return claimed;
 }
 
-/** A CAPTCHA pauses the run on this model for the user to solve; any other failure, the daily
+/** A CAPTCHA pauses the run on this model for the user to solve on its page; any other failure, the daily
  *  download limit included, stops it, since it almost always means MakerWorld rejected the
  *  request, and more requests would make it worse. */
 export async function advanceJob(tabId: number): Promise<void> {
@@ -308,8 +338,8 @@ export async function advanceJob(tabId: number): Promise<void> {
     if (!(await isStillAtStep(tabId, step))) return;
     const message = err instanceof Error ? err.message : String(err);
     if (isCaptchaMessage(message)) {
-      // Stays on this page: the CAPTCHA has to be solved here, in MakerWorld's own UI.
-      await setJob({ ...job, paused: true });
+      // Stays on this page, which brings up MakerWorld's own puzzle (see overlays.ts) and resumes once it's solved.
+      await setJob({ ...job, paused: true, handed: null });
       await sendToTab(tabId, "MAKERWORLD_JOB_UPDATED").catch(() => undefined);
       return;
     }
@@ -360,14 +390,15 @@ export async function dropJobIfForTab(tabId: number): Promise<void> {
   const job = await getJob();
   if (!job || job.tabId !== tabId) return;
   await setJob(null);
-  await sendRunSummary(job, "the MakerWorld tab was closed.");
+  await sendRunSummary(job, await backgroundText("makerworldTabClosed"));
 }
 
 export const makerworldHandlers: Partial<Handlers<BackgroundMessages>> = {
   START_MAKERWORLD_COLLECTION_JOB: (payload, sender) => startJob(senderTabId(sender), payload),
   ABORT_MAKERWORLD_COLLECTION_JOB: (_payload, sender) => abortJob(senderTabId(sender)),
   FORCE_ADVANCE_MAKERWORLD_JOB: (_payload, sender) => forceAdvanceJob(senderTabId(sender)),
-  RESUME_MAKERWORLD_JOB: (_payload, sender) => resumeJob(senderTabId(sender)),
+  RESUME_MAKERWORLD_JOB: ({ resolved, step }, sender) => resumeJob(senderTabId(sender), resolved, step),
+  SHOW_MAKERWORLD_PUZZLE: (payload, sender) => showMakerworldPuzzle(payload, sender),
   // Not awaited: the step runs for as long as the import takes.
   MAKERWORLD_JOB_STEP_DUE: (_payload, sender) => {
     void advanceJob(senderTabId(sender));

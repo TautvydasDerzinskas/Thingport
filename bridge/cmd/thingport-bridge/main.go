@@ -31,9 +31,10 @@ type Config struct {
 }
 
 // For slicers Thingport can't hand off to directly: bambustudio:// and prusaslicer:// only accept
-// allowlisted domains, and Cura's cura:// registration is unreliable. OrcaSlicer and the others with
-// a handler of their own come here only when the user sends them through the Bridge (Configuration >
-// Slicer in Thingport), for when one can't download from the instance itself.
+// allowlisted domains, qidistudio:// asks whether to trust any other site on every link, and Cura's
+// cura:// registration is unreliable. OrcaSlicer and the others with a handler of their own come here
+// only when the user sends them through the Bridge (Configuration > Slicer in Thingport), for when one
+// can't download from the instance itself.
 const scheme = "thingport"
 
 // Release builds set it with -ldflags "-X main.version=...".
@@ -81,7 +82,7 @@ func runInstallAndReport() {
 		fmt.Printf("Install failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Installed Thingport Bridge at %s\n", target)
+	fmt.Printf("Installed Thingport Bridge %s at %s\n", version, target)
 	fmt.Println("You can now use \"Open in Bambu Studio\" from Thingport.")
 }
 
@@ -128,7 +129,7 @@ func handleProtocol(raw string, cfg Config) error {
 	}
 
 	slicerID := strings.ToLower(strings.TrimSpace(q.Get("slicer")))
-	log.Printf("open request slicer=%s url=%s filename=%s", slicerID, redactURL(downloadURL), filename)
+	log.Printf("open request version=%s slicer=%s url=%s filename=%s", version, slicerID, redactURL(downloadURL), filename)
 
 	downloadDir := resolveDownloadDir(cfg)
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
@@ -261,6 +262,8 @@ func downloadFile(downloadURL, targetPath string) error {
 	if err != nil {
 		return fmt.Errorf("request: %w", scrubURL(err))
 	}
+	// Thingport tells the user when a newer Bridge is out (bridgeUpdateService).
+	req.Header.Set("User-Agent", userAgent())
 	res, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("download: %w", scrubURL(err))
@@ -278,6 +281,10 @@ func downloadFile(downloadURL, targetPath string) error {
 		return fmt.Errorf("save file: %w", err)
 	}
 	return nil
+}
+
+func userAgent() string {
+	return fmt.Sprintf("Thingport-Bridge/%s (%s)", version, runtime.GOOS)
 }
 
 // scrubURL redacts the URL a *url.Error repeats (net/http's and url.Parse's errors do), so a
@@ -436,6 +443,7 @@ func windowsCandidates() map[string][]string {
 		// The installer ships bambu-studio.exe; BambuStudio.exe is kept in case a build names it that.
 		// "/" so the test runs on any OS; Windows accepts it.
 		"bambustudio": {"Bambu Studio/bambu-studio.exe", "Bambu Studio/BambuStudio.exe"},
+		"qidistudio":  {"QIDIStudio/qidi-studio.exe"},
 		"orcaslicer":  {"OrcaSlicer/orca-slicer.exe"},
 		"prusaslicer": {"PrusaSlicer\\PrusaSlicer.exe"},
 		// The folder carries the version: Creality\Creality Print 7.3 for 6.x and 7.x, Creality Print 5.1
@@ -446,6 +454,16 @@ func windowsCandidates() map[string][]string {
 		},
 		"elegooslicer":   {"ElegooSlicer/elegoo-slicer.exe"},
 		"snapmaker-orca": {"Snapmaker_Orca/snapmaker-orca.exe"},
+		// Flash Studio's launcher beside Orca-Flashforge.dll. Its installer (Advanced Installer) doesn't say where it
+		// puts it, so the folders its maker and product names would make, under its older product name too, and the
+		// one its CPack script names.
+		"orca-flashforge": {
+			"Flashforge/Flash Studio Desktop/flash studio.exe",
+			"Flashforge/Flash Studio*/flash studio.exe",
+			"Flashforge/Orca-Flashforge/flash studio.exe",
+			"Flash Studio*/flash studio.exe",
+			"Orca-Flashforge/flash studio.exe",
+		},
 		// Under LOCALAPPDATA. Not "eufyMake Studio\eufyMake Studio.exe": 1.5.26 used it, but so does
 		// eufyMake's separate app for its UV printer.
 		"eufystudio3d": {"eufyMake Studio 3D/eufymake studio.exe", "AnkerMake Studio/AnkerMake Studio.exe"},
@@ -468,6 +486,7 @@ func windowsCandidates() map[string][]string {
 func linuxCandidates() map[string][]string {
 	return map[string][]string{
 		"bambustudio": {"bambu-studio", "BambuStudio"},
+		"qidistudio":  {"qidi-studio"},
 		// Flatpak app ids are the commands Flatpak exports; each of these has the home folder, where the
 		// downloads are. The old OrcaSlicer id is its GitHub builds' up to 2.3.1.
 		"orcaslicer":  {"orca-slicer", "OrcaSlicer", "com.orcaslicer.OrcaSlicer", "io.github.softfever.OrcaSlicer"},
@@ -478,12 +497,15 @@ func linuxCandidates() map[string][]string {
 		"crealityprintlink":  {"CrealityPrint", "creality-print", "io.github.crealityofficial.CrealityPrint"},
 		"elegooslicer":       {"elegoo-slicer"},
 		"snapmaker-orca":     {"snapmaker-orca", "io.github.Snapmaker.Snapmaker_Orca"},
+		// Its packaged launcher, then its binary. Its GitHub builds are AppImages, which need a config.json entry.
+		"orca-flashforge": {"flash-slicer", "FlashStudio"},
 	}
 }
 
 func macCandidates() map[string][]string {
 	return map[string][]string{
 		"bambustudio":        {"/Applications/BambuStudio.app"},
+		"qidistudio":         {"/Applications/QIDIStudio.app"},
 		"orcaslicer":         {"/Applications/OrcaSlicer.app"},
 		"prusaslicer":        {"/Applications/PrusaSlicer.app", "/Applications/Original Prusa Drivers/PrusaSlicer.app"},
 		"cura":               {"/Applications/UltiMaker Cura.app", "/Applications/Ultimaker Cura.app"},
@@ -491,6 +513,7 @@ func macCandidates() map[string][]string {
 		"crealityprintlink":  {"/Applications/Creality Print.app"},
 		"elegooslicer":       {"/Applications/ElegooSlicer.app"},
 		"snapmaker-orca":     {"/Applications/Snapmaker Orca.app"},
+		"orca-flashforge":    {"/Applications/Flash Studio.app"},
 		// Its earlier names after them. Its UV printer's app is "Anker Make Studio.app", with a space.
 		"eufystudio3d": {
 			"/Applications/eufyMake Studio 3D.app",

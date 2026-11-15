@@ -1,0 +1,234 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "klema",
+  "name": "KLEMA"
+ },
+ "printers": [
+  {
+   "id": "klema-180",
+   "brand": "klema",
+   "model": "180",
+   "aliases": [
+    "klema180"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 220,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "klema_180"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "klema_180",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "klema-250",
+   "brand": "klema",
+   "model": "250",
+   "aliases": [
+    "klema250"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "klema_250"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "klema_250",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "klema-250pro",
+   "brand": "klema",
+   "model": "250 Pro",
+   "aliases": [
+    "klema250pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "klema_250_pro"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "klema_250_pro",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "klema-250twin",
+   "brand": "klema",
+   "model": "250 Twin",
+   "aliases": [
+    "klema250twin"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "klema_250_twin"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "klema_250_twin",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "klema-500",
+   "brand": "klema",
+   "model": "500",
+   "aliases": [
+    "klema500"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 555,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "klema_500"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "klema_500",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -24,8 +24,10 @@ import FolderIcon from "@mui/icons-material/Folder";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+import ThreeDRotationOutlinedIcon from "@mui/icons-material/ThreeDRotationOutlined";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import { adminApi, type StorageFile, type StorageFileKind, type StorageListing } from "../../api/admin";
 import { UnauthorizedError } from "../../api/client";
@@ -45,10 +47,12 @@ const KIND_ICONS: Record<StorageFileKind, typeof InsertDriveFileOutlinedIcon> = 
   description: ImageOutlinedIcon,
   thumb: ImageOutlinedIcon,
   render: ImageOutlinedIcon,
+  preview: ThreeDRotationOutlinedIcon,
+  slicer: LayersOutlinedIcon,
 };
 
-/** The managed model files, and the pictures and supporting files beside them, as they're laid out on disk now: a
- *  folder per user, then the storage structure. */
+/** The managed model files, and the supporting files, pictures, 3D previews and slicer copies beside them, as they're
+ *  laid out on disk now: a folder per user, then the storage structure. */
 export default function StorageBrowserDialog({ onClose, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const theme = useTheme();

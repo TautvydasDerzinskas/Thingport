@@ -1,0 +1,58 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "liquid3d",
+  "name": "Liquid 3D"
+ },
+ "printers": [
+  {
+   "id": "liquid3d-liquid",
+   "brand": "liquid3d",
+   "model": "Liquid",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "cura": "liquid"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "liquid",
+      "nozzles": [
+       "VO 0.4",
+       "VO 0.6",
+       "VO 0.8"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

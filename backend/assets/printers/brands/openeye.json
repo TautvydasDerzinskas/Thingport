@@ -1,0 +1,267 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "openeye",
+  "name": "OpenEYE"
+ },
+ "printers": [
+  {
+   "id": "openeye-peacockv2",
+   "brand": "openeye",
+   "model": "Peacock V2",
+   "aliases": [
+    "openeyepeacockv2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 233.5,
+    "y": 228,
+    "origin": [
+     1.5,
+     7
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "openeye_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "OpenEYE Peacock V2",
+      "presets": {
+       "0.2": [
+        {
+         "name": "OpenEYE Peacock V2 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @OpenEYE Peacock V2 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Balanced Quality @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "OpenEYE Peacock V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @OpenEYE Peacock V2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @OpenEYE Peacock V2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @OpenEYE Peacock V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Balanced Quality @OpenEYE Peacock V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Balanced Strength @OpenEYE Peacock V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "OpenEYE Peacock V2 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Balanced Quality @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Balanced Strength @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "OpenEYE Peacock V2 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Balanced Quality @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Balanced Strength @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "OpenEYE Peacock V2",
+      "presets": {
+       "0.2": [
+        {
+         "name": "OpenEYE Peacock V2 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @OpenEYE Peacock V2 0.2 nozzle",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.10mm Standard @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Balanced Quality @OpenEYE Peacock V2 0.2 nozzle",
+           "layerHeight": 0.12
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "OpenEYE Peacock V2 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @OpenEYE Peacock V2",
+         "processes": [
+          {
+           "name": "0.08mm Extra Fine @OpenEYE Peacock V2",
+           "layerHeight": 0.08
+          },
+          {
+           "name": "0.12mm Fine @OpenEYE Peacock V2",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Balanced Quality @OpenEYE Peacock V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.16mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Balanced Strength @OpenEYE Peacock V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Standard @OpenEYE Peacock V2",
+           "layerHeight": 0.24
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "OpenEYE Peacock V2 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Balanced Quality @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Balanced Strength @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @OpenEYE Peacock V2 0.6 nozzle",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ],
+       "0.8": [
+        {
+         "name": "OpenEYE Peacock V2 0.8 nozzle",
+         "defaultProcess": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.24mm Balanced Quality @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Balanced Strength @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @OpenEYE Peacock V2 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

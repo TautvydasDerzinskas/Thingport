@@ -1,0 +1,1281 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "magicmaker",
+  "name": "MagicMaker"
+ },
+ "printers": [
+  {
+   "id": "magicmaker-mmboneking",
+   "brand": "magicmaker",
+   "model": "MM BoneKing",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 306,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "MM-BoneKing"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "MM BoneKing",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM BoneKing 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM BoneKing",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Fine BestFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm Fine SuperFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM BoneKing",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM BoneKing",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "Generic PEEK @MM"
+          },
+          "products": {
+           "generic peek": "Generic PEEK @MM"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "MM BoneKing",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM BoneKing 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM BoneKing",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Fine BestFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm Fine SuperFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM BoneKing",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM BoneKing",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PEEK": "MM Generic PEEK",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic peek": "MM Generic PEEK",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "MM BoneKing",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM BoneKing 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM BoneKing",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Fine BestFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm Fine SuperFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM BoneKing",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM BoneKing",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "MM BoneKing",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM BoneKing 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM BoneKing",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Fine BestFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm Fine SuperFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM BoneKing",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM BoneKing",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "MM BoneKing",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM BoneKing 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM BoneKing",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM BoneKing",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.12mm Fine BestFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.12mm Fine SuperFast @MM BoneKing",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.20mm Standard @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM BoneKing",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM BoneKing",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM BoneKing",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "magicmaker-mmhjsk",
+   "brand": "magicmaker",
+   "model": "MM hj SK",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "MM-hj-SK"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "MM hj SK",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hj SK 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hj SK",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hj SK",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hj SK",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "Generic PEEK @MM"
+          },
+          "products": {
+           "generic peek": "Generic PEEK @MM"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "MM hj SK",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hj SK 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hj SK",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hj SK",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hj SK",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PEEK": "MM Generic PEEK",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic peek": "MM Generic PEEK",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "MM hj SK",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hj SK 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hj SK",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hj SK",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hj SK",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "MM hj SK",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hj SK 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hj SK",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hj SK",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hj SK",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "MM hj SK",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hj SK 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hj SK",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hj SK",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hj SK",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hj SK",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hj SK",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System",
+         "filaments": {
+          "types": {
+           "PEEK": "MM Generic PEEK"
+          },
+          "products": {
+           "mm generic peek": "MM Generic PEEK"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "magicmaker-mmhqshj",
+   "brand": "magicmaker",
+   "model": "MM hqs hj",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "MM-hqs-hj"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "MM hqs hj",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs hj 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs hj",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs hj",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs hj",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs hj",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "MM hqs hj",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs hj 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs hj",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs hj",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs hj",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs hj",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "MM hqs hj",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs hj 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs hj",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs hj",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs hj",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs hj",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "MM hqs hj",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs hj 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs hj",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs hj",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs hj",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs hj",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "MM hqs hj",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs hj 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs hj",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs hj",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs hj",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs hj",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "magicmaker-mmhqssf",
+   "brand": "magicmaker",
+   "model": "MM hqs SF",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 210,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin2",
+   "relativeE": true,
+   "codes": {
+    "orca": "MM-hqs-SF"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "MM hqs SF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs SF 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs SF",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs SF",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hqs sf",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs SF",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hqs SF",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "MM hqs SF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs SF 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs SF",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs SF",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs SF",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hqs SF",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PA": "MM Generic PA",
+           "PC": "MM Generic PC",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic pa": "MM Generic PA",
+           "mm generic pc": "MM Generic PC",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "MM hqs SF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs SF 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs SF",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs SF",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Standard Fast @MM hqs sf",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs SF",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hqs SF",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "MM hqs SF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs SF 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs SF",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs SF",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs SF",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hqs SF",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "MM hqs SF",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM hqs SF 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM hqs SF",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.10mm Fine Fast @MM hqs SF",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM hqs SF",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM hqs SF",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Draft Fast @MM hqs SF",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "magicmaker-mmslb",
+   "brand": "magicmaker",
+   "model": "MM slb",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 125,
+    "y": 125,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 160,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "orca": "MM-slb"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "crealityprintlink",
+    "elegooslicer",
+    "snapmaker-orca",
+    "anycubicslicernext"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "MM slb",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM slb 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM slb",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM slb",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM slb",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM slb",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "crealityprintlink": [
+     {
+      "model": "MM slb",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM slb 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM slb",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM slb",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM slb",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM slb",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "MM Generic PLA",
+         "filaments": {
+          "types": {
+           "ABS": "MM Generic ABS",
+           "PETG": "MM Generic PETG",
+           "PLA": "MM Generic PLA",
+           "TPU": "MM Generic TPU"
+          },
+          "products": {
+           "mm generic abs": "MM Generic ABS",
+           "mm generic petg": "MM Generic PETG",
+           "mm generic pla": "MM Generic PLA",
+           "mm generic tpu": "MM Generic TPU"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "MM slb",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM slb 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM slb",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM slb",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM slb",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM slb",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "MM slb",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM slb 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM slb",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM slb",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM slb",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM slb",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ],
+    "anycubicslicernext": [
+     {
+      "model": "MM slb",
+      "presets": {
+       "0.4": [
+        {
+         "name": "MM slb 0.4 nozzle",
+         "defaultProcess": "0.10mm Fine @MM slb",
+         "processes": [
+          {
+           "name": "0.10mm Fine @MM slb",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.20mm Standard @MM slb",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.30mm Draft @MM slb",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Generic PLA @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

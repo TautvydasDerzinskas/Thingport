@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ideagen3d",
+  "name": "Ideagen3D"
+ },
+ "printers": [
+  {
+   "id": "ideagen3d-sapphireplus",
+   "brand": "ideagen3d",
+   "model": "Sapphire Plus",
+   "aliases": [
+    "ideagen3dsapphireplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 350,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ideagen3D_sapphire_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ideagen3D_sapphire_plus",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -30,6 +30,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
       .catch(() => {});
   };
   const recordUse = () => record("slicer");
+  /** A download made elsewhere, such as an adapted copy's. */
+  const recordDownload = () => record("download");
 
   /** A plate, or any other of the model's files, such as its prepared print. */
   const downloadFile = async (file: Pick<Plate, "url" | "filename">) => {
@@ -48,11 +50,15 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     }
   };
 
-  const downloadAllZip = async () => {
+  /** `folder`: only the files in that folder of the model (Plate.folder) and the folders in it. */
+  const downloadAllZip = async (folder?: string) => {
     setDownloading(true);
     try {
-      const res = await printsApi.downloadZip({ print_ids: [print.id] });
-      await saveResponseToDisk(res, `${print.name || "model"}.zip`);
+      const name = print.name || "model";
+      // Named by the server, which otherwise calls every zip "thingport.zip".
+      const filename = folder ? `${name} - ${folder.split("/").pop()}.zip` : `${name}.zip`;
+      const res = await printsApi.downloadZip({ print_ids: [print.id], filename, ...(folder ? { folder } : {}) });
+      await saveResponseToDisk(res, filename);
       setPickerOpen(false);
       record("download");
     } catch (err) {
@@ -83,5 +89,6 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     downloadAllZip,
     sortedPlates,
     recordUse,
+    recordDownload,
   };
 }

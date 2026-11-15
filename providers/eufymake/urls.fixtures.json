@@ -16,6 +16,15 @@
     }
   },
   {
+    "url": "https://makeitreal.eufymake.com/models/e2e98e9a110011ef91d13a215133689a/Bed%20scraper/#profileId-547",
+    "expect": {
+      "provider": "eufymake",
+      "kind": "model",
+      "externalId": "e2e98e9a110011ef91d13a215133689a",
+      "requestedProfileId": "547"
+    }
+  },
+  {
     "url": "https://makeitreal.eufymake.com/user/me/",
     "expect": {
       "provider": "eufymake",

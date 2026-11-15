@@ -32,6 +32,7 @@ import { useRenderColor } from "../../hooks/useAccentColor";
 import { renderSwatch } from "../../theme";
 import type { PrintProfilesView } from "../../api/settings";
 import { fileRowText } from "./fileRowText";
+import { shortNames } from "../../utils/fileFolders";
 import type { ProfileEntry } from "./PrintProfiles/entries";
 import PreviewProfilePanel, { type PreviewPlateRow } from "./PrintProfiles/PreviewProfilePanel";
 import type { ModelFile } from "./useOpenInSlicer";
@@ -72,6 +73,16 @@ export default function Model3DPreviewModal({
   const themeMode = muiTheme.palette.mode;
   const previewBg = themeMode === "dark" ? muiTheme.thingport.pageBackground : LIGHT_PREVIEW_BG;
   const sortedPlates = useMemo(() => print.plates.toSorted((a, b) => a.position - b.position), [print.plates]);
+  const plateNames = useMemo(
+    () =>
+      shortNames(
+        sortedPlates,
+        (plate) => plate.id,
+        (plate) => plate.filename,
+        (plate) => plate.folder,
+      ),
+    [sortedPlates],
+  );
   const profileMode = Boolean(profileEntries?.length) && Boolean(profilesView) && profilesView !== "off";
   const [activePlateId, setActivePlateId] = useState<string | null>(
     (initialPlateId && sortedPlates.some((p) => p.id === initialPlateId) ? initialPlateId : null) ??
@@ -125,6 +136,7 @@ export default function Model3DPreviewModal({
               launchFilename: plate.filename,
               index,
               plate,
+              folder: plate.folder ?? null,
             }))
         : [],
     [profileMode, profileEntries, sortedPlates],
@@ -237,7 +249,7 @@ export default function Model3DPreviewModal({
                         <PlateThumbnail plate={plate} />
                       </ListItemIcon>
                       <ListItemText
-                        {...fileRowText(t, plate.filename, idx)}
+                        {...fileRowText(t, plate.filename, idx, plate.folder, plateNames.get(plate.id))}
                         primaryTypographyProps={{ variant: "body2", noWrap: true }}
                         secondaryTypographyProps={{ variant: "caption", noWrap: true }}
                       />

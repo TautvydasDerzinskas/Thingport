@@ -17,6 +17,8 @@
             type="button"
             class="icon-btn"
             id="edit-instance-btn"
+            data-i18n-aria-label="editInstance"
+            data-i18n-title="editInstance"
             aria-label="Edit instance"
             title="Edit instance"
           >
@@ -37,6 +39,8 @@
             type="button"
             class="icon-btn icon-btn--danger"
             id="disconnect-btn"
+            data-i18n-aria-label="disconnectFromThingport"
+            data-i18n-title="disconnect"
             aria-label="Disconnect from Thingport"
             title="Disconnect"
           >
@@ -57,20 +61,59 @@
         </div>
       </div>
       <span class="tooltip" id="enabled-toggle" data-tooltip="Extension enabled" hidden>
-        <input type="checkbox" role="switch" class="switch" id="enabled-switch" aria-label="Extension enabled" />
+        <input
+          type="checkbox"
+          role="switch"
+          class="switch"
+          id="enabled-switch"
+          data-i18n-aria-label="extensionEnabled"
+          aria-label="Extension enabled"
+        />
       </span>
     </header>
 
-    <div class="tabs" role="tablist" aria-label="Sections" id="tabs">
-      <button type="button" class="tabs__tab" role="tab" id="tab-connect" aria-controls="panel-connect">Connect</button>
+    <div class="tabs" role="tablist" data-i18n-aria-label="sections" aria-label="Sections" id="tabs">
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-connect"
+        data-i18n="connect"
+        aria-controls="panel-connect"
+      >
+        Connect
+      </button>
       <!-- Connected only (popup/index.ts): the bubble it styles is the one that imports. -->
-      <button type="button" class="tabs__tab" role="tab" id="tab-appearance" aria-controls="panel-appearance" hidden>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-appearance"
+        data-i18n="tabAppearance"
+        aria-controls="panel-appearance"
+      >
         Appearance
       </button>
-      <button type="button" class="tabs__tab" role="tab" id="tab-offline" aria-controls="panel-offline">
-        Offline features
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-offline"
+        data-i18n="tabOfflineFeatures"
+        aria-controls="panel-offline"
+      >
+        Offline
       </button>
-      <button type="button" class="tabs__tab" role="tab" id="tab-history" aria-controls="panel-history">History</button>
+      <button
+        type="button"
+        class="tabs__tab"
+        role="tab"
+        id="tab-history"
+        data-i18n="history"
+        aria-controls="panel-history"
+      >
+        History
+      </button>
       <span class="tabs__indicator" aria-hidden="true"></span>
     </div>
 
@@ -84,6 +127,8 @@
                 type="button"
                 class="text-btn"
                 id="sites-enable-all"
+                data-i18n="enableAll"
+                data-i18n-title="enableAllTitle"
                 title="Asks your browser for access to every site Grab can import from"
                 hidden
               >
@@ -95,19 +140,53 @@
               <div class="featured__head">
                 <span class="featured__logo" id="featured-logo"></span>
                 <span class="featured__name" id="featured-name"></span>
-                <span class="featured__here">this site</span>
+                <span class="featured__here" data-i18n="thisSite">this site</span>
+                <span class="featured__adapted" id="featured-adapted" data-i18n-title="adaptedWorksHere" hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3v11" />
+                    <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+                  </svg>
+                  <span data-i18n="downloadAdapted">Download adapted</span>
+                </span>
                 <span class="featured__status" id="featured-status"></span>
               </div>
               <p class="featured__desc" id="featured-desc"></p>
             </div>
-            <ul class="sites" id="sites-list" aria-label="Providers"></ul>
+            <ul class="sites" id="sites-list" data-i18n-aria-label="providers" aria-label="Providers"></ul>
+            <!-- What the line along some tiles' bottom edge means, and the way to Adapt 3MFs' settings (popup/adapt.ts). -->
+            <p class="sites__legend" id="sites-legend">
+              <span class="sites__band" aria-hidden="true"></span>
+              <span class="sites__legend-text" id="sites-legend-text"></span>
+              <button
+                type="button"
+                class="text-btn sites__legend-link"
+                id="sites-legend-link"
+                data-i18n="adaptPopup.settings"
+                data-i18n-aria-label="adaptPopup.settingsLabel"
+                aria-label="Adapt 3MFs settings"
+                aria-haspopup="dialog"
+              >
+                Settings
+              </button>
+            </p>
           </div>
           <div class="error" id="configured-error" role="alert"></div>
         </section>
 
         <form id="setup-form" class="form" hidden>
-          <p class="form__intro">Connect to your Thingport instance to import models with one click.</p>
-          <label class="form__label" for="instance-url">Thingport instance URL</label>
+          <p class="form__intro" data-i18n="connectionIntro">
+            Connect to your Thingport instance to import models with one click.
+          </p>
+          <label class="form__label" for="instance-url" data-i18n="instanceUrl">Thingport instance URL</label>
           <input
             class="form__input"
             type="url"
@@ -116,21 +195,25 @@
             required
           />
           <!-- The way in: Thingport approves this browser, so no password is kept here. -->
-          <button type="button" class="btn" id="pair-btn" disabled>Pair with Thingport</button>
-          <p class="note" id="pair-note">
-            Opens Thingport in a tab to approve this browser. Nothing is saved here but the connection it hands back.
+          <button type="button" class="btn" id="pair-btn" data-i18n="pairWithThingport" disabled>
+            Pair with Thingport
+          </button>
+          <p class="note" id="pair-note" data-i18n="pairNote">
+            Opens Thingport in a tab to approve this browser. The connection it hands back is kept instead of a
+            password.
           </p>
-          <p class="note note--pending" id="pair-pending" hidden>
+          <p class="note note--pending" id="pair-pending" data-i18n="pairPending" hidden>
             Finish connecting in the Thingport tab that just opened.
           </p>
 
           <!-- The older way, for instances that can't pair and anyone who'd rather type a password. -->
           <div class="alt" id="credentials-toggle">
-            <span>or</span>
+            <span data-i18n="or">or</span>
             <button
               type="button"
               class="text-btn"
               id="credentials-btn"
+              data-i18n="enterCredentials"
               aria-expanded="false"
               aria-controls="credentials-block"
             >
@@ -138,41 +221,72 @@
             </button>
           </div>
           <div class="credentials" id="credentials-block" hidden>
-            <label class="form__label" for="email">Email</label>
+            <label class="form__label" for="email" data-i18n="email">Email</label>
             <input class="form__input" type="email" id="email" autocomplete="username" />
-            <label class="form__label" for="password">Password</label>
+            <label class="form__label" for="password" data-i18n="password">Password</label>
             <input class="form__input" type="password" id="password" autocomplete="current-password" />
-            <button type="submit" class="btn" id="save-btn">Save</button>
+            <button type="submit" class="btn" id="save-btn" data-i18n="save">Save</button>
           </div>
 
-          <button type="button" class="btn btn--secondary" id="cancel-btn" hidden>Cancel</button>
+          <button type="button" class="btn btn--secondary" id="cancel-btn" data-i18n="cancel" hidden>Cancel</button>
           <p class="note" id="disconnected-note" hidden></p>
           <div class="error" id="error" role="alert"></div>
         </form>
       </div>
 
       <div class="tab-panel" role="tabpanel" id="panel-offline" aria-labelledby="tab-offline" hidden>
-        <p class="note" id="offline-note">These work without a Thingport instance.</p>
+        <p class="note" id="offline-note" data-i18n="offlineNote">These work without a Thingport instance.</p>
         <ul class="features">
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="normalize-switch">Normalize MakerWorld 3MFs</label>
-              <p class="feature__desc" id="normalize-desc">
-                Adds a Download normalized button to MakerWorld models, for slicers that mis-read Bambu 3MFs.
+              <label class="feature__name" for="normalize-switch" data-i18n="adapt3mf">Adapt 3MFs</label>
+              <p class="feature__desc" id="normalize-desc" data-i18n="adapt3mfDescription">
+                Adds Download adapted to models with a 3MF: a copy made in your browser for your slicer and printer.
               </p>
+              <!-- The slicers and printers it uses, or a way to pick a slicer (popup/adapt.ts). -->
+              <div class="adapt-setup" id="adapt-setup"></div>
             </div>
-            <input
-              type="checkbox"
-              role="switch"
-              class="switch"
-              id="normalize-switch"
-              aria-describedby="normalize-desc"
-            />
+            <div class="feature__controls">
+              <button
+                type="button"
+                class="icon-btn"
+                id="adapt-settings-btn"
+                data-i18n-aria-label="adaptPopup.settingsLabel"
+                data-i18n-title="adaptPopup.settings"
+                aria-label="Adapt 3MFs settings"
+                title="Settings"
+                aria-haspopup="dialog"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                  />
+                </svg>
+              </button>
+              <input
+                type="checkbox"
+                role="switch"
+                class="switch"
+                id="normalize-switch"
+                aria-describedby="normalize-desc"
+              />
+            </div>
           </li>
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="thingiverse-dark-switch">Thingiverse dark mode</label>
-              <p class="feature__desc" id="thingiverse-dark-desc">
+              <label class="feature__name" for="thingiverse-dark-switch" data-i18n="darkMode"
+                >Thingiverse dark mode</label
+              >
+              <p class="feature__desc" id="thingiverse-dark-desc" data-i18n="darkModeDescription">
                 A dark theme for Thingiverse, which doesn't have one, while your system theme is dark.
               </p>
             </div>
@@ -186,8 +300,8 @@
           </li>
           <li class="feature">
             <div class="feature__text">
-              <label class="feature__name" for="thingiverse-ads-switch">Hide Thingiverse ads</label>
-              <p class="feature__desc" id="thingiverse-ads-desc">
+              <label class="feature__name" for="thingiverse-ads-switch" data-i18n="hideAds">Hide Thingiverse ads</label>
+              <p class="feature__desc" id="thingiverse-ads-desc" data-i18n="hideAdsDescription">
                 Hides the banners, ad cards and video ads on Thingiverse's pages.
               </p>
             </div>
@@ -206,11 +320,23 @@
       <!-- The floating bubble on model pages: its style and its corner (popup/appearance.ts). -->
       <div class="tab-panel" role="tabpanel" id="panel-appearance" aria-labelledby="tab-appearance" hidden>
         <div class="section">
-          <h2 class="section__title" id="bubble-style-title">Bubble style</h2>
+          <h2 class="section__title" id="language-title" data-i18n="language">Language</h2>
+          <button
+            type="button"
+            class="field-select"
+            id="language-trigger"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-labelledby="language-title language-trigger"
+            disabled
+          ></button>
+        </div>
+        <div class="section">
+          <h2 class="section__title" id="bubble-style-title" data-i18n="bubbleStyle">Bubble style</h2>
           <div class="looks" id="bubble-styles" role="radiogroup" aria-labelledby="bubble-style-title"></div>
         </div>
         <div class="section">
-          <h2 class="section__title" id="bubble-place-title">Bubble location</h2>
+          <h2 class="section__title" id="bubble-place-title" data-i18n="bubbleLocation">Bubble location</h2>
           <div class="spots" id="bubble-places" role="radiogroup" aria-labelledby="bubble-place-title"></div>
           <p class="spots__caption" id="bubble-place-name" aria-hidden="true"></p>
         </div>
@@ -219,14 +345,20 @@
 
       <div class="tab-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" hidden>
         <div class="section" id="recent-section" hidden>
-          <h2 class="section__title">Recent imports</h2>
+          <h2 class="section__title" data-i18n="recentImports">Recent imports</h2>
           <div class="recent-grid" id="recent-grid"></div>
         </div>
         <div class="section">
           <div class="section__head">
-            <h2 class="section__title">Recently viewed</h2>
+            <h2 class="section__title" data-i18n="recentlyViewed">Recently viewed</h2>
             <span class="tooltip" data-tooltip="Clear" id="viewed-clear-wrap" hidden>
-              <button type="button" class="icon-btn" id="viewed-clear" aria-label="Clear recently viewed">
+              <button
+                type="button"
+                class="icon-btn"
+                id="viewed-clear"
+                data-i18n-aria-label="clearRecentlyViewed"
+                aria-label="Clear recently viewed"
+              >
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -245,24 +377,207 @@
           </div>
           <div class="recent-grid" id="viewed-grid"></div>
           <div class="error" id="history-error" role="alert"></div>
-          <p class="note" id="viewed-empty" hidden>
+          <p class="note" id="viewed-empty" data-i18n="viewedEmpty" hidden>
             Models you open on MakerWorld, Printables, Thingiverse and the other sites Grab runs on show up here.
           </p>
         </div>
       </div>
     </main>
 
+    <!-- Views over the whole popup, one at a time (popup/subview.ts): Adapt 3MFs' settings, and adding a printer to
+         them. Filled by popup/adapt.ts. -->
+    <section class="subview" id="adapt-view" aria-labelledby="adapt-view-title" hidden>
+      <div class="subview__head">
+        <button
+          type="button"
+          class="icon-btn subview__back"
+          data-back
+          data-i18n-aria-label="adaptPopup.back"
+          data-i18n-title="adaptPopup.back"
+          aria-label="Back"
+          title="Back"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <h2 class="subview__title" id="adapt-view-title" data-i18n="adapt3mf">Adapt 3MFs</h2>
+        <input
+          type="checkbox"
+          role="switch"
+          class="switch"
+          id="adapt-view-switch"
+          data-i18n-aria-label="adapt3mf"
+          aria-label="Adapt 3MFs"
+        />
+      </div>
+      <div id="adapt-sections"></div>
+      <div class="error" id="adapt-error" role="alert"></div>
+    </section>
+
+    <section class="subview" id="add-printer-view" aria-labelledby="add-printer-title" hidden>
+      <div class="subview__head">
+        <button
+          type="button"
+          class="icon-btn subview__back"
+          data-back
+          data-i18n-aria-label="adaptPopup.back"
+          data-i18n-title="adaptPopup.back"
+          aria-label="Back"
+          title="Back"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <h2 class="subview__title" id="add-printer-title" data-i18n="adaptPopup.addPrinter">Add printer</h2>
+        <span class="subview__aside" id="add-printer-count"></span>
+      </div>
+      <label class="search">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          class="form__input"
+          type="search"
+          id="add-printer-search"
+          autocomplete="off"
+          data-i18n-aria-label="adaptPopup.searchPrinters"
+          aria-label="Search printers"
+        />
+      </label>
+      <p class="visually-hidden" id="add-printer-status" role="status"></p>
+      <div id="add-printer-body"></div>
+      <div class="error" id="add-printer-error" role="alert"></div>
+    </section>
+
     <dialog class="dialog" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
       <h2 class="dialog__title" id="confirm-title"></h2>
       <p class="dialog__text" id="confirm-text"></p>
       <div class="dialog__actions">
-        <button type="button" class="btn btn--secondary" id="confirm-cancel" autofocus>Cancel</button>
+        <button type="button" class="btn btn--secondary" id="confirm-cancel" data-i18n="cancel" autofocus>
+          Cancel
+        </button>
         <button type="button" class="btn btn--danger" id="confirm-ok"></button>
       </div>
     </dialog>
 
+    <!-- The ways to support Thingport, from the footer (popup/support.ts). -->
+    <dialog class="dialog love" id="love-dialog" aria-labelledby="love-title" aria-describedby="love-text">
+      <button
+        type="button"
+        class="icon-btn love__close"
+        id="love-close"
+        data-i18n-aria-label="close"
+        data-i18n-title="close"
+        aria-label="Close"
+        title="Close"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
+      <span class="love__heart">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.1 1.7-1.9 3.2-3.1 5.3-3.1 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21Z"
+          />
+        </svg>
+      </span>
+      <h2 class="dialog__title love__title" id="love-title" data-i18n="supportTitle">Show your love</h2>
+      <p class="dialog__text love__text" id="love-text" data-i18n="supportText">
+        Thingport and Grab take a lot of time and effort to build, and to keep working as the sites they read change.
+        Every bit of support matters. Thank you!
+      </p>
+      <div class="love__ways">
+        <a class="love__way love__way--coffee" id="love-coffee" href="https://buymeacoffee.com/TautvydasDerzinskas">
+          <span class="love__icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9Z" />
+              <path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16" />
+              <path d="M8.5 2.8c-.6.8-.6 1.6 0 2.4M11.5 2.8c-.6.8-.6 1.6 0 2.4" />
+              <path d="M4 21.5h14" />
+            </svg>
+          </span>
+          <span class="love__name">Buy Me a Coffee</span>
+          <span class="love__host">buymeacoffee.com</span>
+        </a>
+        <a
+          class="love__way love__way--sponsors"
+          id="love-sponsors"
+          href="https://github.com/sponsors/TautvydasDerzinskas"
+        >
+          <span class="love__icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 20.2s-7-4.3-8.9-8.6C1.7 8.4 3.6 5 7 5c1.9 0 3.3 1.1 5 2.9C13.7 6.1 15.1 5 17 5c3.4 0 5.3 3.4 3.9 6.6C19 15.9 12 20.2 12 20.2Z"
+              />
+            </svg>
+          </span>
+          <span class="love__name">GitHub Sponsors</span>
+          <span class="love__host">github.com</span>
+        </a>
+      </div>
+      <button type="button" class="text-btn love__later" id="love-later" data-i18n="supportLater">Maybe later</button>
+    </dialog>
+
     <footer class="footer">
       <a class="footer__link" href="https://thingport.net" target="_blank" rel="noopener noreferrer">thingport.net</a>
+      <span class="footer__sep" aria-hidden="true">|</span>
+      <button type="button" class="footer__love" id="love-btn" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.1 1.7-1.9 3.2-3.1 5.3-3.1 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21Z"
+          />
+        </svg>
+        <span data-i18n="supportLink">Like the extension? Show your love!</span>
+      </button>
       <span class="footer__version" id="version"></span>
     </footer>
 

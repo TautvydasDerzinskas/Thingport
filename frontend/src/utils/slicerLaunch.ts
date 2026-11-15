@@ -1,11 +1,11 @@
 // The Thingport Bridge helper app's protocol (see bridge/README.md).
 const BRIDGE_SCHEME = "thingport";
 
-// bambustudio:// and prusaslicer:// only open files from allowlisted domains, and Cura's cura://
-// registration is unreliable, so the Bridge downloads the file and launches them directly.
-// Anycubic Slicer Next registers OrcaSlicer's orcaslicer:// protocol, so with both installed only
-// one would get the link; the Bridge launches it by path instead.
-const BRIDGED_SLICERS = new Set(["bambustudio", "prusaslicer", "cura", "anycubicslicernext"]);
+// bambustudio:// and prusaslicer:// only open files from allowlisted domains, qidistudio:// asks whether to trust any
+// other site on every link, and Cura's cura:// registration is unreliable, so the Bridge downloads the file and
+// launches them directly. Anycubic Slicer Next registers OrcaSlicer's orcaslicer:// protocol, so with both installed
+// only one would get the link; the Bridge launches it by path instead.
+const BRIDGED_SLICERS = new Set(["bambustudio", "prusaslicer", "cura", "anycubicslicernext", "qidistudio"]);
 
 // The rest download the link themselves. Each can go through the Bridge instead, for when it can't download from this
 // instance (a certificate it doesn't trust, say): the user picks which in the Slicer settings. The backend's
@@ -16,7 +16,12 @@ const BRIDGEABLE_SLICERS = new Set([
   "elegooslicer",
   "snapmaker-orca",
   "eufystudio3d",
+  "orca-flashforge",
 ]);
+
+// The scheme each slicer registers is its id, but for Flash Studio's: its id is its project's, Orca-Flashforge, as
+// the printer catalogue names it.
+const SCHEMES: Readonly<Record<string, string>> = { "orca-flashforge": "orcaflashforge" };
 
 /** True for a slicer that always goes through the Bridge. */
 export function alwaysBridged(slicerId: string): boolean {
@@ -63,9 +68,11 @@ export function slicerLaunchUrl(
   // eufyMake Studio is a PrusaSlicer fork without its Printables-only check; its link is the one its site's own
   // "Open in slicer" button makes, the file named after the link's last segment or `name`.
   if (slicerId === "eufystudio3d") {
-    const name = filename ? `&name=${encodeURIComponent(filename)}` : "";
+    // It opens a 3MF only by a lowercase ".3mf" name, and does nothing with "Model.3MF".
+    const name = filename ? `&name=${encodeURIComponent(filename.replace(/\.3mf$/i, ".3mf"))}` : "";
     return `eufystudio3d://open/?file=${encodeURIComponent(fileUrl)}${name}`;
   }
   const hinted = filename ? withFilenameHint(slicerId, fileUrl, filename) : { fileUrl, extra: "" };
-  return `${slicerId}://open?file=${encodeURIComponent(hinted.fileUrl)}${hinted.extra}`;
+  const scheme = Object.hasOwn(SCHEMES, slicerId) ? SCHEMES[slicerId] : slicerId;
+  return `${scheme}://open?file=${encodeURIComponent(hinted.fileUrl)}${hinted.extra}`;
 }

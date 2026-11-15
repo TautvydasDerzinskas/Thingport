@@ -5,9 +5,11 @@ import PrintIcon from "@mui/icons-material/Print";
 import PlateThumbnail from "../../../components/media/PlateThumbnail";
 import { formatFileSize } from "../../../utils/fileSize";
 import { extOf, stemOf } from "../../../utils/fileExtensions";
+import { folderLabel } from "../../../utils/fileFolders";
 import { PREPARED_KEY, type ModelFile } from "../useOpenInSlicer";
 
-/** A file of a model with print profiles that isn't one of them: a raw model file, or the prepared print. */
+/** A file of a model with print profiles that isn't one of them: a raw model file, or the prepared print. A file in a
+ *  folder says which, as two of one name may be in two. */
 export function useOtherFileText() {
   const { t } = useTranslation("models");
   return (file: ModelFile): { primary: string; secondary: string } => {
@@ -18,7 +20,13 @@ export function useOtherFileText() {
     const size = file.plate?.size ?? file.size;
     return {
       primary: stemOf(file.filename),
-      secondary: [type || null, typeof size === "number" ? formatFileSize(size) : null].filter(Boolean).join(" · "),
+      secondary: [
+        file.folder ? folderLabel(file.folder) : null,
+        type || null,
+        typeof size === "number" ? formatFileSize(size) : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     };
   };
 }

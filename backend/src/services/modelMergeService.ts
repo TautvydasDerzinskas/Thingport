@@ -190,11 +190,18 @@ export async function mergeModels(
 
         const keptPlates = platesOf(primary.id);
         let position = (keptPlates.at(-1)?.position ?? -1) + 1;
-        const names = new Set(keptPlates.map((plate) => plate.filename.toLowerCase()));
+        // Names are unique within a folder, and each plate keeps its own.
+        const names = new Map<string, Set<string>>();
+        const namesIn = (folder: string | null) => {
+          const taken = names.get(folder ?? "") ?? new Set<string>();
+          names.set(folder ?? "", taken);
+          return taken;
+        };
+        for (const plate of keptPlates) namesIn(plate.folder).add(plate.filename.toLowerCase());
         const instances = new Set(keptPlates.flatMap((plate) => plate.sourceInstanceId ?? []));
         for (const plate of otherIds.flatMap((id) => platesOf(id))) {
-          const filename = freePlateFilename(plate.filename, names);
-          names.add(filename.toLowerCase());
+          const filename = freePlateFilename(plate.filename, namesIn(plate.folder));
+          namesIn(plate.folder).add(filename.toLowerCase());
           const instance =
             plate.sourceInstanceId && !instances.has(plate.sourceInstanceId) ? plate.sourceInstanceId : null;
           if (instance) instances.add(instance);

@@ -1151,6 +1151,9 @@ export default function mount(thingport) {
       figure.classList.add("still");
       await pause(450);
       figure.classList.add("waving");
+      // Met: a secret achievement, where the instance has achievements (older Thingport versions have no
+      // `thingport.achievements`, and it never throws).
+      void thingport.achievements?.unlock("guest");
       await pause(2100);
       figure.classList.remove("waving");
       await pause(300);

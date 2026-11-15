@@ -1,0 +1,99 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "nwa3d",
+  "name": "Nwa 3D"
+ },
+ "printers": [
+  {
+   "id": "nwa3d-nwa3da31",
+   "brand": "nwa3d",
+   "model": "Nwa3D A31",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "nwa3d_a31"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "nwa3d_a31",
+      "nozzles": [
+       "Engineering 0.6mm",
+       "Standard 0.4mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "nwa3d-nwa3da5",
+   "brand": "nwa3d",
+   "model": "Nwa3D A5",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 125,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": false,
+   "codes": {
+    "cura": "nwa3d_a5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "nwa3d_a5",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

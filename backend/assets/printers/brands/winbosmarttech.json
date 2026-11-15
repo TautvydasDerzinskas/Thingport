@@ -1,0 +1,187 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "winbosmarttech",
+  "name": "Winbo Smart Tech"
+ },
+ "printers": [
+  {
+   "id": "winbosmarttech-winbodragonl4",
+   "brand": "winbosmarttech",
+   "model": "Winbo Dragon(L)4",
+   "aliases": [
+    "winbodragon4"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 615,
+    "y": 463,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 615,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 100
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "winbo_dragonl4"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "winbo_dragonl4",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "winbosmarttech-winbomini2",
+   "brand": "winbosmarttech",
+   "model": "Winbo Mini2",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 205,
+    "y": 155,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 205,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 115
+   },
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "winbo_mini2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "winbo_mini2",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "winbosmarttech-winbosuperhelper105",
+   "brand": "winbosmarttech",
+   "model": "Winbo Super Helper 105",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 108,
+    "y": 108,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 158,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "winbo_superhelper105"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "winbo_superhelper105",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "winbosmarttech-winbosuperhelper155",
+   "brand": "winbosmarttech",
+   "model": "Winbo Super Helper 155",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 158,
+    "y": 158,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 208,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "winbo_superhelper155"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "winbo_superhelper155",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

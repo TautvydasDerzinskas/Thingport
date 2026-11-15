@@ -1,0 +1,2689 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "tiertime",
+  "name": "Tiertime"
+ },
+ "printers": [
+  {
+   "id": "tiertime-up300hs",
+   "brand": "tiertime",
+   "model": "UP300 HS",
+   "aliases": [
+    "tiertimeup300hs"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 207,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up300_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime 300HS",
+           "ASA": "Generic ASA @Tiertime 300HS",
+           "BVOH": "Generic BVOH @Tiertime 300HS",
+           "EVA": "Generic EVA @Tiertime 300HS",
+           "HIPS": "Generic HIPS @Tiertime 300HS",
+           "PA": "Generic PA @Tiertime 300HS",
+           "PA-CF": "Generic PA-CF @Tiertime 300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Generic PC @Tiertime 300HS",
+           "PCTG": "Generic PCTG @Tiertime 300HS",
+           "PE": "Generic PE @Tiertime 300HS",
+           "PE-CF": "Generic PE-CF @Tiertime 300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Generic PETG @Tiertime 300HS",
+           "PETG-CF": "Generic PETG-CF @Tiertime 300HS",
+           "PHA": "Generic PHA @Tiertime 300HS",
+           "PLA": "Generic PLA @Tiertime 300HS",
+           "PLA-CF": "Generic PLA-CF @Tiertime 300HS",
+           "PP": "Generic PP @Tiertime 300HS",
+           "PP-CF": "Generic PP-CF @Tiertime 300HS",
+           "PP-GF": "Generic PP-GF @Tiertime 300HS",
+           "PPA-CF": "Generic PPA-CF @Tiertime 300HS",
+           "PPA-GF": "Generic PPA-GF @Tiertime 300HS",
+           "PPS": "Generic PPS @Tiertime 300HS",
+           "PPS-CF": "Generic PPS-CF @Tiertime 300HS",
+           "PVA": "Generic PVA @Tiertime 300HS",
+           "SBS": "Generic SBS @Tiertime 300HS",
+           "TPU": "Generic TPU @Tiertime 300HS"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime 300HS",
+           "generic asa": "Generic ASA @Tiertime 300HS",
+           "generic bvoh": "Generic BVOH @Tiertime 300HS",
+           "generic eva": "Generic EVA @Tiertime 300HS",
+           "generic hips": "Generic HIPS @Tiertime 300HS",
+           "generic pa": "Generic PA @Tiertime 300HS",
+           "generic pa-cf": "Generic PA-CF @Tiertime 300HS",
+           "generic pc": "Generic PC @Tiertime 300HS",
+           "generic pctg": "Generic PCTG @Tiertime 300HS",
+           "generic pe": "Generic PE @Tiertime 300HS",
+           "generic pe-cf": "Generic PE-CF @Tiertime 300HS",
+           "generic petg": "Generic PETG @Tiertime 300HS",
+           "generic petg-cf": "Generic PETG-CF @Tiertime 300HS",
+           "generic pha": "Generic PHA @Tiertime 300HS",
+           "generic pla": "Generic PLA @Tiertime 300HS",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime 300HS",
+           "generic pla silk": "Generic PLA Silk @Tiertime 300HS",
+           "generic pla-cf": "Generic PLA-CF @Tiertime 300HS",
+           "generic pp": "Generic PP @Tiertime 300HS",
+           "generic pp-cf": "Generic PP-CF @Tiertime 300HS",
+           "generic pp-gf": "Generic PP-GF @Tiertime 300HS",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime 300HS",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime 300HS",
+           "generic pps": "Generic PPS @Tiertime 300HS",
+           "generic pps-cf": "Generic PPS-CF @Tiertime 300HS",
+           "generic pva": "Generic PVA @Tiertime 300HS",
+           "generic sbs": "Generic SBS @Tiertime 300HS",
+           "generic tpu": "Generic TPU @Tiertime 300HS",
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP300 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP300 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP300 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP300 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP300 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP300 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP300 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up310pro",
+   "brand": "tiertime",
+   "model": "UP310 Pro",
+   "aliases": [
+    "tiertimeup310pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime310_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime",
+           "ASA": "Generic ASA @Tiertime",
+           "BVOH": "Generic BVOH @Tiertime",
+           "EVA": "Generic EVA @Tiertime",
+           "HIPS": "Generic HIPS @Tiertime",
+           "PA": "Generic PA @Tiertime",
+           "PA-CF": "Generic PA-CF @Tiertime",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Generic PC @Tiertime",
+           "PCTG": "Generic PCTG @Tiertime",
+           "PE": "Generic PE @Tiertime",
+           "PE-CF": "Generic PE-CF @Tiertime",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Generic PETG @Tiertime",
+           "PETG-CF": "Generic PETG-CF @Tiertime",
+           "PHA": "Generic PHA @Tiertime",
+           "PLA": "Generic PLA @Tiertime",
+           "PLA-CF": "Generic PLA-CF @Tiertime",
+           "PP": "Generic PP @Tiertime",
+           "PP-CF": "Generic PP-CF @Tiertime",
+           "PP-GF": "Generic PP-GF @Tiertime",
+           "PPA-CF": "Generic PPA-CF @Tiertime",
+           "PPA-GF": "Generic PPA-GF @Tiertime",
+           "PPS": "Generic PPS @Tiertime",
+           "PPS-CF": "Generic PPS-CF @Tiertime",
+           "PVA": "Generic PVA @Tiertime",
+           "SBS": "Generic SBS @Tiertime",
+           "TPU": "Generic TPU @Tiertime"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime",
+           "generic asa": "Generic ASA @Tiertime",
+           "generic bvoh": "Generic BVOH @Tiertime",
+           "generic eva": "Generic EVA @Tiertime",
+           "generic hips": "Generic HIPS @Tiertime",
+           "generic pa": "Generic PA @Tiertime",
+           "generic pa-cf": "Generic PA-CF @Tiertime",
+           "generic pc": "Generic PC @Tiertime",
+           "generic pctg": "Generic PCTG @Tiertime",
+           "generic pe": "Generic PE @Tiertime",
+           "generic pe-cf": "Generic PE-CF @Tiertime",
+           "generic petg": "Generic PETG @Tiertime",
+           "generic petg-cf": "Generic PETG-CF @Tiertime",
+           "generic pha": "Generic PHA @Tiertime",
+           "generic pla": "Generic PLA @Tiertime",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime",
+           "generic pla silk": "Generic PLA Silk @Tiertime",
+           "generic pla-cf": "Generic PLA-CF @Tiertime",
+           "generic pp": "Generic PP @Tiertime",
+           "generic pp-cf": "Generic PP-CF @Tiertime",
+           "generic pp-gf": "Generic PP-GF @Tiertime",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime",
+           "generic pps": "Generic PPS @Tiertime",
+           "generic pps-cf": "Generic PPS-CF @Tiertime",
+           "generic pva": "Generic PVA @Tiertime",
+           "generic sbs": "Generic SBS @Tiertime",
+           "generic tpu": "Generic TPU @Tiertime",
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP310 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP310 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP310 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP310 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP310 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP310 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up400pro",
+   "brand": "tiertime",
+   "model": "UP400 Pro",
+   "aliases": [
+    "tiertimeup400pro"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 400,
+    "y": 350,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 380,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up400_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime",
+           "ASA": "Generic ASA @Tiertime",
+           "BVOH": "Generic BVOH @Tiertime",
+           "EVA": "Generic EVA @Tiertime",
+           "HIPS": "Generic HIPS @Tiertime",
+           "PA": "Generic PA @Tiertime",
+           "PA-CF": "Generic PA-CF @Tiertime",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Generic PC @Tiertime",
+           "PCTG": "Generic PCTG @Tiertime",
+           "PE": "Generic PE @Tiertime",
+           "PE-CF": "Generic PE-CF @Tiertime",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Generic PETG @Tiertime",
+           "PETG-CF": "Generic PETG-CF @Tiertime",
+           "PHA": "Generic PHA @Tiertime",
+           "PLA": "Generic PLA @Tiertime",
+           "PLA-CF": "Generic PLA-CF @Tiertime",
+           "PP": "Generic PP @Tiertime",
+           "PP-CF": "Generic PP-CF @Tiertime",
+           "PP-GF": "Generic PP-GF @Tiertime",
+           "PPA-CF": "Generic PPA-CF @Tiertime",
+           "PPA-GF": "Generic PPA-GF @Tiertime",
+           "PPS": "Generic PPS @Tiertime",
+           "PPS-CF": "Generic PPS-CF @Tiertime",
+           "PVA": "Generic PVA @Tiertime",
+           "SBS": "Generic SBS @Tiertime",
+           "TPU": "Generic TPU @Tiertime"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime",
+           "generic asa": "Generic ASA @Tiertime",
+           "generic bvoh": "Generic BVOH @Tiertime",
+           "generic eva": "Generic EVA @Tiertime",
+           "generic hips": "Generic HIPS @Tiertime",
+           "generic pa": "Generic PA @Tiertime",
+           "generic pa-cf": "Generic PA-CF @Tiertime",
+           "generic pc": "Generic PC @Tiertime",
+           "generic pctg": "Generic PCTG @Tiertime",
+           "generic pe": "Generic PE @Tiertime",
+           "generic pe-cf": "Generic PE-CF @Tiertime",
+           "generic petg": "Generic PETG @Tiertime",
+           "generic petg-cf": "Generic PETG-CF @Tiertime",
+           "generic pha": "Generic PHA @Tiertime",
+           "generic pla": "Generic PLA @Tiertime",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime",
+           "generic pla silk": "Generic PLA Silk @Tiertime",
+           "generic pla-cf": "Generic PLA-CF @Tiertime",
+           "generic pp": "Generic PP @Tiertime",
+           "generic pp-cf": "Generic PP-CF @Tiertime",
+           "generic pp-gf": "Generic PP-GF @Tiertime",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime",
+           "generic pps": "Generic PPS @Tiertime",
+           "generic pps-cf": "Generic PPS-CF @Tiertime",
+           "generic pva": "Generic PVA @Tiertime",
+           "generic sbs": "Generic SBS @Tiertime",
+           "generic tpu": "Generic TPU @Tiertime",
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime",
+           "ASA": "Generic ASA @Tiertime",
+           "BVOH": "Generic BVOH @Tiertime",
+           "EVA": "Generic EVA @Tiertime",
+           "HIPS": "Generic HIPS @Tiertime",
+           "PA": "Generic PA @Tiertime",
+           "PA-CF": "Generic PA-CF @Tiertime",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Generic PC @Tiertime",
+           "PCTG": "Generic PCTG @Tiertime",
+           "PE": "Generic PE @Tiertime",
+           "PE-CF": "Generic PE-CF @Tiertime",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Generic PETG @Tiertime",
+           "PETG-CF": "Generic PETG-CF @Tiertime",
+           "PHA": "Generic PHA @Tiertime",
+           "PLA": "Generic PLA @Tiertime",
+           "PLA-CF": "Generic PLA-CF @Tiertime",
+           "PP": "Generic PP @Tiertime",
+           "PP-CF": "Generic PP-CF @Tiertime",
+           "PP-GF": "Generic PP-GF @Tiertime",
+           "PPA-CF": "Generic PPA-CF @Tiertime",
+           "PPA-GF": "Generic PPA-GF @Tiertime",
+           "PPS": "Generic PPS @Tiertime",
+           "PPS-CF": "Generic PPS-CF @Tiertime",
+           "PVA": "Generic PVA @Tiertime",
+           "SBS": "Generic SBS @Tiertime",
+           "TPU": "Generic TPU @Tiertime"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime",
+           "generic asa": "Generic ASA @Tiertime",
+           "generic bvoh": "Generic BVOH @Tiertime",
+           "generic eva": "Generic EVA @Tiertime",
+           "generic hips": "Generic HIPS @Tiertime",
+           "generic pa": "Generic PA @Tiertime",
+           "generic pa-cf": "Generic PA-CF @Tiertime",
+           "generic pc": "Generic PC @Tiertime",
+           "generic pctg": "Generic PCTG @Tiertime",
+           "generic pe": "Generic PE @Tiertime",
+           "generic pe-cf": "Generic PE-CF @Tiertime",
+           "generic petg": "Generic PETG @Tiertime",
+           "generic petg-cf": "Generic PETG-CF @Tiertime",
+           "generic pha": "Generic PHA @Tiertime",
+           "generic pla": "Generic PLA @Tiertime",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime",
+           "generic pla silk": "Generic PLA Silk @Tiertime",
+           "generic pla-cf": "Generic PLA-CF @Tiertime",
+           "generic pp": "Generic PP @Tiertime",
+           "generic pp-cf": "Generic PP-CF @Tiertime",
+           "generic pp-gf": "Generic PP-GF @Tiertime",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime",
+           "generic pps": "Generic PPS @Tiertime",
+           "generic pps-cf": "Generic PPS-CF @Tiertime",
+           "generic pva": "Generic PVA @Tiertime",
+           "generic sbs": "Generic SBS @Tiertime",
+           "generic tpu": "Generic TPU @Tiertime",
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime",
+           "ASA": "Generic ASA @Tiertime",
+           "BVOH": "Generic BVOH @Tiertime",
+           "EVA": "Generic EVA @Tiertime",
+           "HIPS": "Generic HIPS @Tiertime",
+           "PA": "Generic PA @Tiertime",
+           "PA-CF": "Generic PA-CF @Tiertime",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Generic PC @Tiertime",
+           "PCTG": "Generic PCTG @Tiertime",
+           "PE": "Generic PE @Tiertime",
+           "PE-CF": "Generic PE-CF @Tiertime",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Generic PETG @Tiertime",
+           "PETG-CF": "Generic PETG-CF @Tiertime",
+           "PHA": "Generic PHA @Tiertime",
+           "PLA": "Generic PLA @Tiertime",
+           "PLA-CF": "Generic PLA-CF @Tiertime",
+           "PP": "Generic PP @Tiertime",
+           "PP-CF": "Generic PP-CF @Tiertime",
+           "PP-GF": "Generic PP-GF @Tiertime",
+           "PPA-CF": "Generic PPA-CF @Tiertime",
+           "PPA-GF": "Generic PPA-GF @Tiertime",
+           "PPS": "Generic PPS @Tiertime",
+           "PPS-CF": "Generic PPS-CF @Tiertime",
+           "PVA": "Generic PVA @Tiertime",
+           "SBS": "Generic SBS @Tiertime",
+           "TPU": "Generic TPU @Tiertime"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime",
+           "generic asa": "Generic ASA @Tiertime",
+           "generic bvoh": "Generic BVOH @Tiertime",
+           "generic eva": "Generic EVA @Tiertime",
+           "generic hips": "Generic HIPS @Tiertime",
+           "generic pa": "Generic PA @Tiertime",
+           "generic pa-cf": "Generic PA-CF @Tiertime",
+           "generic pc": "Generic PC @Tiertime",
+           "generic pctg": "Generic PCTG @Tiertime",
+           "generic pe": "Generic PE @Tiertime",
+           "generic pe-cf": "Generic PE-CF @Tiertime",
+           "generic petg": "Generic PETG @Tiertime",
+           "generic petg-cf": "Generic PETG-CF @Tiertime",
+           "generic pha": "Generic PHA @Tiertime",
+           "generic pla": "Generic PLA @Tiertime",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime",
+           "generic pla silk": "Generic PLA Silk @Tiertime",
+           "generic pla-cf": "Generic PLA-CF @Tiertime",
+           "generic pp": "Generic PP @Tiertime",
+           "generic pp-cf": "Generic PP-CF @Tiertime",
+           "generic pp-gf": "Generic PP-GF @Tiertime",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime",
+           "generic pps": "Generic PPS @Tiertime",
+           "generic pps-cf": "Generic PPS-CF @Tiertime",
+           "generic pva": "Generic PVA @Tiertime",
+           "generic sbs": "Generic SBS @Tiertime",
+           "generic tpu": "Generic TPU @Tiertime",
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP400 Pro",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP400 Pro 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP400 Pro",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP400 Pro",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP400 Pro",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP400 Pro",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP400 Pro 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP400 Pro 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP400 Pro 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP400 Pro 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS",
+           "ASA": "Tiertime Generic ASA",
+           "BVOH": "Tiertime Generic BVOH",
+           "EVA": "Tiertime Generic EVA",
+           "HIPS": "Tiertime Generic HIPS",
+           "PA": "Tiertime Generic PA",
+           "PA-CF": "Tiertime Generic PA-CF",
+           "PA6-CF": "Tiertime PA6-CF",
+           "PC": "Tiertime Generic PC",
+           "PCTG": "Tiertime Generic PCTG",
+           "PE": "Tiertime Generic PE",
+           "PE-CF": "Tiertime Generic PE-CF",
+           "PET-CF": "Tiertime PET-CF",
+           "PETG": "Tiertime Generic PETG",
+           "PETG-CF": "Tiertime Generic PETG-CF",
+           "PHA": "Tiertime Generic PHA",
+           "PLA": "Tiertime Generic PLA",
+           "PLA-CF": "Tiertime Generic PLA-CF",
+           "PP": "Tiertime Generic PP",
+           "PP-CF": "Tiertime Generic PP-CF",
+           "PP-GF": "Tiertime Generic PP-GF",
+           "PPA-CF": "Tiertime Generic PPA-CF",
+           "PPA-GF": "Tiertime Generic PPA-GF",
+           "PPS": "Tiertime Generic PPS",
+           "PPS-CF": "Tiertime Generic PPS-CF",
+           "PVA": "Tiertime Generic PVA",
+           "SBS": "Tiertime Generic SBS",
+           "TPU": "Tiertime Generic TPU"
+          },
+          "products": {
+           "tiertime abs": "Tiertime ABS",
+           "tiertime asa": "Tiertime ASA",
+           "tiertime generic abs": "Tiertime Generic ABS",
+           "tiertime generic asa": "Tiertime Generic ASA",
+           "tiertime generic bvoh": "Tiertime Generic BVOH",
+           "tiertime generic eva": "Tiertime Generic EVA",
+           "tiertime generic hips": "Tiertime Generic HIPS",
+           "tiertime generic pa": "Tiertime Generic PA",
+           "tiertime generic pa-cf": "Tiertime Generic PA-CF",
+           "tiertime generic pc": "Tiertime Generic PC",
+           "tiertime generic pctg": "Tiertime Generic PCTG",
+           "tiertime generic pe": "Tiertime Generic PE",
+           "tiertime generic pe-cf": "Tiertime Generic PE-CF",
+           "tiertime generic petg": "Tiertime Generic PETG",
+           "tiertime generic petg-cf": "Tiertime Generic PETG-CF",
+           "tiertime generic pha": "Tiertime Generic PHA",
+           "tiertime generic pla": "Tiertime Generic PLA",
+           "tiertime generic pla high speed": "Tiertime Generic PLA High Speed",
+           "tiertime generic pla silk": "Tiertime Generic PLA Silk",
+           "tiertime generic pla-cf": "Tiertime Generic PLA-CF",
+           "tiertime generic pp": "Tiertime Generic PP",
+           "tiertime generic pp-cf": "Tiertime Generic PP-CF",
+           "tiertime generic pp-gf": "Tiertime Generic PP-GF",
+           "tiertime generic ppa-cf": "Tiertime Generic PPA-CF",
+           "tiertime generic ppa-gf": "Tiertime Generic PPA-GF",
+           "tiertime generic pps": "Tiertime Generic PPS",
+           "tiertime generic pps-cf": "Tiertime Generic PPS-CF",
+           "tiertime generic pva": "Tiertime Generic PVA",
+           "tiertime generic sbs": "Tiertime Generic SBS",
+           "tiertime generic tpu": "Tiertime Generic TPU",
+           "tiertime pa6-cf": "Tiertime PA6-CF",
+           "tiertime pc": "Tiertime PC",
+           "tiertime pet-cf": "Tiertime PET-CF",
+           "tiertime petg": "Tiertime PETG",
+           "tiertime pla": "Tiertime PLA",
+           "tiertime pla-cf": "Tiertime PLA-CF",
+           "tiertime pva": "Tiertime PVA",
+           "tiertime tpu 95a": "Tiertime TPU 95A"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "tiertime-up600hs",
+   "brand": "tiertime",
+   "model": "UP600 HS",
+   "aliases": [
+    "tiertimeup600hs"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 500,
+    "y": 400,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_tiertime_up600_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime 300HS",
+           "ASA": "Generic ASA @Tiertime 300HS",
+           "BVOH": "Generic BVOH @Tiertime 300HS",
+           "EVA": "Generic EVA @Tiertime 300HS",
+           "HIPS": "Generic HIPS @Tiertime 300HS",
+           "PA": "Generic PA @Tiertime 300HS",
+           "PA-CF": "Generic PA-CF @Tiertime 300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Generic PC @Tiertime 300HS",
+           "PCTG": "Generic PCTG @Tiertime 300HS",
+           "PE": "Generic PE @Tiertime 300HS",
+           "PE-CF": "Generic PE-CF @Tiertime 300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Generic PETG @Tiertime 300HS",
+           "PETG-CF": "Generic PETG-CF @Tiertime 300HS",
+           "PHA": "Generic PHA @Tiertime 300HS",
+           "PLA": "Generic PLA @Tiertime 300HS",
+           "PLA-CF": "Generic PLA-CF @Tiertime 300HS",
+           "PP": "Generic PP @Tiertime 300HS",
+           "PP-CF": "Generic PP-CF @Tiertime 300HS",
+           "PP-GF": "Generic PP-GF @Tiertime 300HS",
+           "PPA-CF": "Generic PPA-CF @Tiertime 300HS",
+           "PPA-GF": "Generic PPA-GF @Tiertime 300HS",
+           "PPS": "Generic PPS @Tiertime 300HS",
+           "PPS-CF": "Generic PPS-CF @Tiertime 300HS",
+           "PVA": "Generic PVA @Tiertime 300HS",
+           "SBS": "Generic SBS @Tiertime 300HS",
+           "TPU": "Generic TPU @Tiertime 300HS"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime 300HS",
+           "generic asa": "Generic ASA @Tiertime 300HS",
+           "generic bvoh": "Generic BVOH @Tiertime 300HS",
+           "generic eva": "Generic EVA @Tiertime 300HS",
+           "generic hips": "Generic HIPS @Tiertime 300HS",
+           "generic pa": "Generic PA @Tiertime 300HS",
+           "generic pa-cf": "Generic PA-CF @Tiertime 300HS",
+           "generic pc": "Generic PC @Tiertime 300HS",
+           "generic pctg": "Generic PCTG @Tiertime 300HS",
+           "generic pe": "Generic PE @Tiertime 300HS",
+           "generic pe-cf": "Generic PE-CF @Tiertime 300HS",
+           "generic petg": "Generic PETG @Tiertime 300HS",
+           "generic petg-cf": "Generic PETG-CF @Tiertime 300HS",
+           "generic pha": "Generic PHA @Tiertime 300HS",
+           "generic pla": "Generic PLA @Tiertime 300HS",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime 300HS",
+           "generic pla silk": "Generic PLA Silk @Tiertime 300HS",
+           "generic pla-cf": "Generic PLA-CF @Tiertime 300HS",
+           "generic pp": "Generic PP @Tiertime 300HS",
+           "generic pp-cf": "Generic PP-CF @Tiertime 300HS",
+           "generic pp-gf": "Generic PP-GF @Tiertime 300HS",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime 300HS",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime 300HS",
+           "generic pps": "Generic PPS @Tiertime 300HS",
+           "generic pps-cf": "Generic PPS-CF @Tiertime 300HS",
+           "generic pva": "Generic PVA @Tiertime 300HS",
+           "generic sbs": "Generic SBS @Tiertime 300HS",
+           "generic tpu": "Generic TPU @Tiertime 300HS",
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime 300HS",
+           "ASA": "Generic ASA @Tiertime 300HS",
+           "BVOH": "Generic BVOH @Tiertime 300HS",
+           "EVA": "Generic EVA @Tiertime 300HS",
+           "HIPS": "Generic HIPS @Tiertime 300HS",
+           "PA": "Generic PA @Tiertime 300HS",
+           "PA-CF": "Generic PA-CF @Tiertime 300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Generic PC @Tiertime 300HS",
+           "PCTG": "Generic PCTG @Tiertime 300HS",
+           "PE": "Generic PE @Tiertime 300HS",
+           "PE-CF": "Generic PE-CF @Tiertime 300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Generic PETG @Tiertime 300HS",
+           "PETG-CF": "Generic PETG-CF @Tiertime 300HS",
+           "PHA": "Generic PHA @Tiertime 300HS",
+           "PLA": "Generic PLA @Tiertime 300HS",
+           "PLA-CF": "Generic PLA-CF @Tiertime 300HS",
+           "PP": "Generic PP @Tiertime 300HS",
+           "PP-CF": "Generic PP-CF @Tiertime 300HS",
+           "PP-GF": "Generic PP-GF @Tiertime 300HS",
+           "PPA-CF": "Generic PPA-CF @Tiertime 300HS",
+           "PPA-GF": "Generic PPA-GF @Tiertime 300HS",
+           "PPS": "Generic PPS @Tiertime 300HS",
+           "PPS-CF": "Generic PPS-CF @Tiertime 300HS",
+           "PVA": "Generic PVA @Tiertime 300HS",
+           "SBS": "Generic SBS @Tiertime 300HS",
+           "TPU": "Generic TPU @Tiertime 300HS"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime 300HS",
+           "generic asa": "Generic ASA @Tiertime 300HS",
+           "generic bvoh": "Generic BVOH @Tiertime 300HS",
+           "generic eva": "Generic EVA @Tiertime 300HS",
+           "generic hips": "Generic HIPS @Tiertime 300HS",
+           "generic pa": "Generic PA @Tiertime 300HS",
+           "generic pa-cf": "Generic PA-CF @Tiertime 300HS",
+           "generic pc": "Generic PC @Tiertime 300HS",
+           "generic pctg": "Generic PCTG @Tiertime 300HS",
+           "generic pe": "Generic PE @Tiertime 300HS",
+           "generic pe-cf": "Generic PE-CF @Tiertime 300HS",
+           "generic petg": "Generic PETG @Tiertime 300HS",
+           "generic petg-cf": "Generic PETG-CF @Tiertime 300HS",
+           "generic pha": "Generic PHA @Tiertime 300HS",
+           "generic pla": "Generic PLA @Tiertime 300HS",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime 300HS",
+           "generic pla silk": "Generic PLA Silk @Tiertime 300HS",
+           "generic pla-cf": "Generic PLA-CF @Tiertime 300HS",
+           "generic pp": "Generic PP @Tiertime 300HS",
+           "generic pp-cf": "Generic PP-CF @Tiertime 300HS",
+           "generic pp-gf": "Generic PP-GF @Tiertime 300HS",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime 300HS",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime 300HS",
+           "generic pps": "Generic PPS @Tiertime 300HS",
+           "generic pps-cf": "Generic PPS-CF @Tiertime 300HS",
+           "generic pva": "Generic PVA @Tiertime 300HS",
+           "generic sbs": "Generic SBS @Tiertime 300HS",
+           "generic tpu": "Generic TPU @Tiertime 300HS",
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Generic ABS @Tiertime 300HS",
+           "ASA": "Generic ASA @Tiertime 300HS",
+           "BVOH": "Generic BVOH @Tiertime 300HS",
+           "EVA": "Generic EVA @Tiertime 300HS",
+           "HIPS": "Generic HIPS @Tiertime 300HS",
+           "PA": "Generic PA @Tiertime 300HS",
+           "PA-CF": "Generic PA-CF @Tiertime 300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Generic PC @Tiertime 300HS",
+           "PCTG": "Generic PCTG @Tiertime 300HS",
+           "PE": "Generic PE @Tiertime 300HS",
+           "PE-CF": "Generic PE-CF @Tiertime 300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Generic PETG @Tiertime 300HS",
+           "PETG-CF": "Generic PETG-CF @Tiertime 300HS",
+           "PHA": "Generic PHA @Tiertime 300HS",
+           "PLA": "Generic PLA @Tiertime 300HS",
+           "PLA-CF": "Generic PLA-CF @Tiertime 300HS",
+           "PP": "Generic PP @Tiertime 300HS",
+           "PP-CF": "Generic PP-CF @Tiertime 300HS",
+           "PP-GF": "Generic PP-GF @Tiertime 300HS",
+           "PPA-CF": "Generic PPA-CF @Tiertime 300HS",
+           "PPA-GF": "Generic PPA-GF @Tiertime 300HS",
+           "PPS": "Generic PPS @Tiertime 300HS",
+           "PPS-CF": "Generic PPS-CF @Tiertime 300HS",
+           "PVA": "Generic PVA @Tiertime 300HS",
+           "SBS": "Generic SBS @Tiertime 300HS",
+           "TPU": "Generic TPU @Tiertime 300HS"
+          },
+          "products": {
+           "generic abs": "Generic ABS @Tiertime 300HS",
+           "generic asa": "Generic ASA @Tiertime 300HS",
+           "generic bvoh": "Generic BVOH @Tiertime 300HS",
+           "generic eva": "Generic EVA @Tiertime 300HS",
+           "generic hips": "Generic HIPS @Tiertime 300HS",
+           "generic pa": "Generic PA @Tiertime 300HS",
+           "generic pa-cf": "Generic PA-CF @Tiertime 300HS",
+           "generic pc": "Generic PC @Tiertime 300HS",
+           "generic pctg": "Generic PCTG @Tiertime 300HS",
+           "generic pe": "Generic PE @Tiertime 300HS",
+           "generic pe-cf": "Generic PE-CF @Tiertime 300HS",
+           "generic petg": "Generic PETG @Tiertime 300HS",
+           "generic petg-cf": "Generic PETG-CF @Tiertime 300HS",
+           "generic pha": "Generic PHA @Tiertime 300HS",
+           "generic pla": "Generic PLA @Tiertime 300HS",
+           "generic pla high speed": "Generic PLA High Speed @Tiertime 300HS",
+           "generic pla silk": "Generic PLA Silk @Tiertime 300HS",
+           "generic pla-cf": "Generic PLA-CF @Tiertime 300HS",
+           "generic pp": "Generic PP @Tiertime 300HS",
+           "generic pp-cf": "Generic PP-CF @Tiertime 300HS",
+           "generic pp-gf": "Generic PP-GF @Tiertime 300HS",
+           "generic ppa-cf": "Generic PPA-CF @Tiertime 300HS",
+           "generic ppa-gf": "Generic PPA-GF @Tiertime 300HS",
+           "generic pps": "Generic PPS @Tiertime 300HS",
+           "generic pps-cf": "Generic PPS-CF @Tiertime 300HS",
+           "generic pva": "Generic PVA @Tiertime 300HS",
+           "generic sbs": "Generic SBS @Tiertime 300HS",
+           "generic tpu": "Generic TPU @Tiertime 300HS",
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Tiertime UP600 HS",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Tiertime UP600 HS 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Tiertime UP600 HS",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Tiertime UP600 HS",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Tiertime UP600 HS",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Tiertime UP600 HS",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Tiertime UP600 HS",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Tiertime UP600 HS 0.6 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Tiertime UP600 HS 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ],
+       "0.8": [
+        {
+         "name": "Tiertime UP600 HS 0.8 nozzle",
+         "defaultProcess": "0.20mm Standard @Tiertime UP400 Pro",
+         "processes": [
+          {
+           "name": "0.24mm Fine @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.32mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.32
+          },
+          {
+           "name": "0.40mm Standard @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.48mm Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.48
+          },
+          {
+           "name": "0.56mm Extra Draft @Tiertime UP600 HS 0.8 nozzle",
+           "layerHeight": 0.56
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Tiertime Generic ABS@300HS",
+           "ASA": "Tiertime Generic ASA@300HS",
+           "BVOH": "Tiertime Generic BVOH@300HS",
+           "EVA": "Tiertime Generic EVA@300HS",
+           "HIPS": "Tiertime Generic HIPS@300HS",
+           "PA": "Tiertime Generic PA@300HS",
+           "PA-CF": "Tiertime Generic PA-CF@300HS",
+           "PA6-CF": "Tiertime PA6-CF@300HS",
+           "PC": "Tiertime Generic PC@300HS",
+           "PCTG": "Tiertime Generic PCTG@300HS",
+           "PE": "Tiertime Generic PE@300HS",
+           "PE-CF": "Tiertime Generic PE-CF@300HS",
+           "PET-CF": "Tiertime PET-CF@300HS",
+           "PETG": "Tiertime Generic PETG@300HS",
+           "PETG-CF": "Tiertime Generic PETG-CF@300HS",
+           "PHA": "Tiertime Generic PHA@300HS",
+           "PLA": "Tiertime Generic PLA@300HS",
+           "PLA-CF": "Tiertime Generic PLA-CF@300HS",
+           "PP": "Tiertime Generic PP@300HS",
+           "PP-CF": "Tiertime Generic PP-CF@300HS",
+           "PP-GF": "Tiertime Generic PP-GF@300HS",
+           "PPA-CF": "Tiertime Generic PPA-CF@300HS",
+           "PPA-GF": "Tiertime Generic PPA-GF@300HS",
+           "PPS": "Tiertime Generic PPS@300HS",
+           "PPS-CF": "Tiertime Generic PPS-CF@300HS",
+           "PVA": "Tiertime Generic PVA@300HS",
+           "SBS": "Tiertime Generic SBS@300HS",
+           "TPU": "Tiertime Generic TPU@300HS"
+          },
+          "products": {
+           "tiertime abs@300hs": "Tiertime ABS@300HS",
+           "tiertime asa@300hs": "Tiertime ASA@300HS",
+           "tiertime generic abs@300hs": "Tiertime Generic ABS@300HS",
+           "tiertime generic asa@300hs": "Tiertime Generic ASA@300HS",
+           "tiertime generic bvoh@300hs": "Tiertime Generic BVOH@300HS",
+           "tiertime generic eva@300hs": "Tiertime Generic EVA@300HS",
+           "tiertime generic hips@300hs": "Tiertime Generic HIPS@300HS",
+           "tiertime generic pa-cf@300hs": "Tiertime Generic PA-CF@300HS",
+           "tiertime generic pa@300hs": "Tiertime Generic PA@300HS",
+           "tiertime generic pc@300hs": "Tiertime Generic PC@300HS",
+           "tiertime generic pctg@300hs": "Tiertime Generic PCTG@300HS",
+           "tiertime generic pe-cf@300hs": "Tiertime Generic PE-CF@300HS",
+           "tiertime generic pe@300hs": "Tiertime Generic PE@300HS",
+           "tiertime generic petg-cf@300hs": "Tiertime Generic PETG-CF@300HS",
+           "tiertime generic petg@300hs": "Tiertime Generic PETG@300HS",
+           "tiertime generic pha@300hs": "Tiertime Generic PHA@300HS",
+           "tiertime generic pla high speed@300hs": "Tiertime Generic PLA High Speed@300HS",
+           "tiertime generic pla silk@300hs": "Tiertime Generic PLA Silk@300HS",
+           "tiertime generic pla-cf@300hs": "Tiertime Generic PLA-CF@300HS",
+           "tiertime generic pla@300hs": "Tiertime Generic PLA@300HS",
+           "tiertime generic pp-cf@300hs": "Tiertime Generic PP-CF@300HS",
+           "tiertime generic pp-gf@300hs": "Tiertime Generic PP-GF@300HS",
+           "tiertime generic pp@300hs": "Tiertime Generic PP@300HS",
+           "tiertime generic ppa-cf@300hs": "Tiertime Generic PPA-CF@300HS",
+           "tiertime generic ppa-gf@300hs": "Tiertime Generic PPA-GF@300HS",
+           "tiertime generic pps-cf@300hs": "Tiertime Generic PPS-CF@300HS",
+           "tiertime generic pps@300hs": "Tiertime Generic PPS@300HS",
+           "tiertime generic pva@300hs": "Tiertime Generic PVA@300HS",
+           "tiertime generic sbs@300hs": "Tiertime Generic SBS@300HS",
+           "tiertime generic tpu@300hs": "Tiertime Generic TPU@300HS",
+           "tiertime pa6-cf@300hs": "Tiertime PA6-CF@300HS",
+           "tiertime pc@300hs": "Tiertime PC@300HS",
+           "tiertime pet-cf@300hs": "Tiertime PET-CF@300HS",
+           "tiertime petg@300hs": "Tiertime PETG@300HS",
+           "tiertime pla-cf@300hs": "Tiertime PLA-CF@300HS",
+           "tiertime pla@300hs": "Tiertime PLA@300HS",
+           "tiertime pva@300hs": "Tiertime PVA@300HS",
+           "tiertime tpu 95a@300hs": "Tiertime TPU 95A@300HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

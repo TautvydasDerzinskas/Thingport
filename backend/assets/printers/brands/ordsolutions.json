@@ -1,0 +1,52 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "ordsolutions",
+  "name": "ORD Solutions"
+ },
+ "printers": [
+  {
+   "id": "ordsolutions-rova3d",
+   "brand": "ordsolutions",
+   "model": "RoVa3D",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 215,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 5,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "ord"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "ord",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -25,6 +25,7 @@ import { ImportLinkIcon } from "../Layout/topBarIcons";
 import SectionedDialog, { SectionNavButton, type DialogSection } from "../SectionedDialog";
 import { useCurrentToast } from "../ToastProvider";
 import { useImportQueue } from "./ImportQueueContext";
+import GrabWaitingBanner from "./GrabWaitingBanner";
 import JobCard, { JobCardSkeletons } from "./JobCard";
 import LineRow from "./LineRow";
 import { headingMark, keepingPanelFocus } from "./queueFocus";
@@ -181,6 +182,7 @@ function QueuePanel({ list, counts }: { list: QueueJob[]; counts: SectionCounts 
 
   return (
     <>
+      {!everyone && <GrabWaitingBanner waiting={queue.grabWaiting} />}
       <Box {...headingMark} sx={focusRingSx}>
         <PanelHeader
           title={t(`importQueue.sections.${section}`)}

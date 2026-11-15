@@ -11,12 +11,14 @@ handlers won't take a link straight from a self-hosted Thingport instance:
 - Cura's `cura://open` handler isn't domain-restricted, but its OS protocol registration is
   unreliable across its AppImage/Flatpak/Microsoft Store builds, so it's routed the same way for
   consistency.
+- QIDI Studio's `qidistudio://` (`qidistudioopen://` on macOS) asks whether to trust the site on
+  every link from anywhere but QIDI's own and MakerWorld, so it's launched by path instead.
 - Anycubic Slicer Next is an OrcaSlicer fork that handles the same links, but it registers
   OrcaSlicer's own `orcaslicer://` protocol instead of one of its own -- with both installed, only
   one of them gets those links. The Bridge launches it by path, so the slicer you picked opens.
 
-OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca and eufyMake Studio take a link from any
-address and download it themselves, so Thingport hands them the link directly. When one can't
+OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca, eufyMake Studio and Flash Studio take a link from
+any address and download it themselves, so Thingport hands them the link directly. When one can't
 download from your instance (it doesn't trust the instance's certificate, say), the user can send
 it through the Bridge instead: right-click it in Thingport's **Configuration → Slicer** and switch
 on **Through Thingport Bridge**.
@@ -65,6 +67,61 @@ stale, invalidly-signed binary rather than a Gatekeeper block -- re-sign it your
 ```bash
 codesign --force -s - ~/Downloads/thingport-bridge-macos
 ```
+
+## Update
+
+Download the new version and install it the same way, over the old one. There's nothing to remove first: installing
+replaces the old Bridge, and your `config.json` and log stay as they are.
+
+On macOS, installing also quits the Bridge that's running, so the next link opens the new version. Bridge 1.0.1 and
+older don't do this. If you're installing one of those, run `killall thingport-bridge` first, or the old version
+keeps opening links until you log out.
+
+Thingport tells you when there's a newer one: the first time an older Bridge opens a model after a release, you get a
+notification that takes you to the Downloads page, once per version. The Bridge names its version when it downloads
+the file, and the instance checks `bridge/package.json` in this repository for the newest.
+
+To see which version you have:
+
+- Windows (PowerShell): `& "$env:LOCALAPPDATA\Thingport\Bridge\thingport-bridge.exe" --version`
+- macOS: `~/Applications/Thingport\ Bridge.app/Contents/MacOS/thingport-bridge --version`, or **Get Info** on the app
+  in Finder (1.0.1 and older show 1.0 there)
+- Linux: `~/.local/bin/thingport-bridge --version`
+
+The newest is on the
+[`bridge-latest` release](https://github.com/TautvydasDerzinskas/Thingport/releases/tag/bridge-latest), and what each
+version changed is in [CHANGELOG.md](CHANGELOG.md).
+
+## Uninstall
+
+Windows (PowerShell):
+
+```powershell
+Remove-Item -Recurse "$env:LOCALAPPDATA\Thingport\Bridge"
+Remove-Item -Recurse "HKCU:\Software\Classes\thingport"
+```
+
+macOS:
+
+```bash
+killall thingport-bridge
+rm -rf ~/Applications/Thingport\ Bridge.app
+```
+
+Linux:
+
+```bash
+rm ~/.local/bin/thingport-bridge ~/.local/share/applications/thingport-bridge.desktop
+```
+
+That leaves your settings and log, and the files the Bridge downloaded for your slicers. Delete these folders too if
+you want nothing left behind:
+
+| OS      | Settings and log                                 | Downloaded files                    |
+| ------- | ------------------------------------------------ | ----------------------------------- |
+| Windows | `%APPDATA%\thingport-bridge`                     | `%LOCALAPPDATA%\thingport-bridge`   |
+| macOS   | `~/Library/Application Support/thingport-bridge` | `~/Library/Caches/thingport-bridge` |
+| Linux   | `~/.config/thingport-bridge`                     | `~/.cache/thingport-bridge`         |
 
 ## Build
 
@@ -177,7 +234,11 @@ Create a config file if you want custom slicer paths or arguments:
 
 Use `config.example.json` as a template.
 
-Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuStudio`
+Environment override (per slicer): `THINGPORT_SLICER_<ID>`, the slicer's id in capitals with `-` as `_`, e.g.
+`THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuStudio`. Your browser starts the Bridge, not a terminal, so a variable
+set in a shell doesn't reach it: on Windows make it a user environment variable (`setx`, then restart the browser), on
+Linux put it in your desktop session's environment (`~/.profile`, then sign in again), on macOS use
+`launchctl setenv` (kept until restart). `config.json` works the same everywhere and is simpler.
 
 ## Slicer IDs
 
@@ -187,6 +248,7 @@ Environment override (per slicer): `THINGPORT_SLICER_BAMBUSTUDIO=/path/to/BambuS
 - anycubicslicernext (Anycubic Slicer Next -- an OrcaSlicer fork that registers OrcaSlicer's own
   `orcaslicer://` protocol, so it's launched by path to avoid opening OrcaSlicer instead when both
   are installed)
+- qidistudio (QIDI Studio)
 - other (opens with the OS default app)
 
 Only when sent through the Bridge (see above):
@@ -196,6 +258,7 @@ Only when sent through the Bridge (see above):
 - elegooslicer (Elegoo Slicer)
 - snapmaker-orca (Snapmaker Orca)
 - eufystudio3d (eufyMake Studio)
+- orca-flashforge (Flash Studio, Flashforge's slicer, whose own links are `orcaflashforge://`)
 
 Cura's AppImage and Flatpak builds aren't on `PATH` and won't be auto-detected. If "Open in Cura"
 falls back to opening with your OS default app, add a `cura` entry to `config.json` (see
@@ -206,15 +269,26 @@ Anycubic Slicer Next is looked for as `AnycubicSlicerNext.app` or `Anycubic Slic
 on Linux. If yours is elsewhere (e.g. an AppImage), add an `anycubicslicernext` entry to
 `config.json` or set `THINGPORT_SLICER_ANYCUBICSLICERNEXT=/path/to/it`.
 
+QIDI Studio for Linux comes only as an AppImage, which the Bridge finds once it's on `PATH` as
+`qidi-studio`. Otherwise add a `qidistudio` entry to `config.json` or set
+`THINGPORT_SLICER_QIDISTUDIO=/path/to/QIDIStudio.AppImage`.
+
+Flash Studio's Windows installer doesn't say which folder it installs to, so the Bridge tries the ones its maker's
+and product's names make (below). If it isn't found there, add an `orca-flashforge` entry to `config.json` or set
+the `THINGPORT_SLICER_ORCA_FLASHFORGE` user environment variable to its `flash studio.exe` (see [Config](#config)).
+Its Linux builds on GitHub are AppImages, found once they're on `PATH` as `FlashStudio`.
+
 Where the others are looked for, as their official installers put them:
 
-| Slicer          | Windows                                                                                                                                                                 | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                              | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
-| Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
-| Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                          | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
-| Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                       | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |
-| eufyMake Studio | `%LOCALAPPDATA%\eufyMake Studio 3D\eufymake studio.exe`, or `AnkerMake Studio` before it was renamed                                                                    | `eufyMake Studio 3D.app`, `eufyMake Studio.app`, `AnkerMake Studio.app` | none (no Linux build)                                                                 |
+| Slicer          | Windows                                                                                                                                                                                                                                  | macOS                                                                   | Linux (`PATH`, or Flatpak's exported commands)                                        |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| OrcaSlicer      | `Program Files\OrcaSlicer\orca-slicer.exe`                                                                                                                                                                                               | `OrcaSlicer.app`                                                        | `orca-slicer`, Flatpak `com.orcaslicer.OrcaSlicer`                                    |
+| QIDI Studio     | `Program Files\QIDIStudio\qidi-studio.exe`                                                                                                                                                                                               | `QIDIStudio.app`                                                        | `qidi-studio`                                                                         |
+| Creality Print  | `Program Files\Creality\Creality Print <version>\CrealityPrint.exe` (6 and 7), `Program Files\Creality Print <version>\CrealityPrint.exe` (5); the newest version found                                                                  | `Creality Print.app`                                                    | `CrealityPrint`, `creality-print`, Flatpak `io.github.crealityofficial.CrealityPrint` |
+| Elegoo Slicer   | `Program Files\ElegooSlicer\elegoo-slicer.exe`                                                                                                                                                                                           | `ElegooSlicer.app`                                                      | `elegoo-slicer`                                                                       |
+| Snapmaker Orca  | `Program Files\Snapmaker_Orca\snapmaker-orca.exe`                                                                                                                                                                                        | `Snapmaker Orca.app`                                                    | `snapmaker-orca`, Flatpak `io.github.Snapmaker.Snapmaker_Orca`                        |
+| Flash Studio    | `Program Files\Flashforge\Flash Studio Desktop\flash studio.exe`, or another `Program Files\Flashforge\Flash Studio*` folder, `Program Files\Flashforge\Orca-Flashforge`, `Program Files\Flash Studio*`, `Program Files\Orca-Flashforge` | `Flash Studio.app`                                                      | `flash-slicer`, `FlashStudio`                                                         |
+| eufyMake Studio | `%LOCALAPPDATA%\eufyMake Studio 3D\eufymake studio.exe`, or `AnkerMake Studio` before it was renamed                                                                                                                                     | `eufyMake Studio 3D.app`, `eufyMake Studio.app`, `AnkerMake Studio.app` | none (no Linux build)                                                                 |
 
 eufyMake Studio 1.5.26 for Windows installed to `%LOCALAPPDATA%\eufyMake Studio`, which is also
 where eufyMake's app for its UV printer goes, so that folder isn't used. With that version, set

@@ -48,7 +48,7 @@ export default async function mount(thingport) {
         files: [{ name: `${name}.stl`, data: stl }],
       });
       output.textContent = "";
-      ui.toast(t("saved", { name: model.name, collection: collection.name }), "success");
+      ui.toast(t("saved", { name: model.name, collection: collection.name }), "success", { openModel: model.id });
     } catch (error) {
       output.textContent = t("failed", { reason: error.message });
     } finally {

@@ -1,0 +1,66 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "multicomppro",
+  "name": "Multicomp Pro"
+ },
+ "printers": [
+  {
+   "id": "multicomppro-mcpi200",
+   "brand": "multicomppro",
+   "model": "MCPI-200",
+   "aliases": [
+    "multicomppromcpi200"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "multicomp_mcpi200"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "multicomp_mcpi200",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

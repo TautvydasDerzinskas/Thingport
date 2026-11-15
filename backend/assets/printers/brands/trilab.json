@@ -1,0 +1,951 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "trilab",
+  "name": "TriLAB"
+ },
+ "printers": [
+  {
+   "id": "trilab-azteqdynamic",
+   "brand": "trilab",
+   "model": "AzteQ Dynamic",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 300.2,
+    "y": 300.2,
+    "origin": [
+     -150.1,
+     -150.1
+    ],
+    "diameter": 300.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "AQD"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "AzteQ Dynamic",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AzteQ Dynamic",
+         "defaultProcess": "0.20mm Normal @AQ",
+         "processes": [
+          {
+           "name": "0.15mm Detail @AQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strong @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @AQ",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-azteqindustrial",
+   "brand": "trilab",
+   "model": "AzteQ Industrial",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 300.2,
+    "y": 300.2,
+    "origin": [
+     -150.1,
+     -150.1
+    ],
+    "diameter": 300.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "AQI"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "AzteQ Industrial",
+      "presets": {
+       "0.4": [
+        {
+         "name": "AzteQ Industrial",
+         "defaultProcess": "0.20mm Normal @AQ",
+         "processes": [
+          {
+           "name": "0.15mm Detail @AQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Strong @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @AQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.25mm Fast @AQ",
+           "layerHeight": 0.25
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "AzteQ Industrial - 0.6 nozzle",
+         "defaultProcess": "0.30mm Normal @AQ 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Normal @AQ 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strong @AQ 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Fast @AQ 0.6 nozzle",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "AzteQ Industrial - 0.8 nozzle",
+         "defaultProcess": "0.40mm Normal @AQ 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Normal @AQ 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Vase @AQ 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2",
+   "brand": "trilab",
+   "model": "DeltiQ 2",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2",
+         "defaultProcess": "0.20mm Normal @DQ2",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "DeltiQ 2 - 0.25 nozzle",
+         "defaultProcess": "0.07mm Quality @DQ2 0.25 nozzle",
+         "processes": [
+          {
+           "name": "0.07mm Quality @DQ2 0.25 nozzle",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.20mm Normal @DQ2 0.25 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "DeltiQ 2 - 0.6 nozzle",
+         "defaultProcess": "0.30mm Normal @DQ2 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Normal @DQ2 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strong @DQ2 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Fast @DQ2 0.6 nozzle",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "DeltiQ 2 - 0.8 nozzle",
+         "defaultProcess": "0.40mm Normal @DQ2 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Normal @DQ2 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Vase @DQ2 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2plusflexprint",
+   "brand": "trilab",
+   "model": "DeltiQ 2 + FlexPrint",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2+FP"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2 + FlexPrint",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2 + FlexPrint",
+         "defaultProcess": "0.20mm FLEX @DQ2FP",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm FLEX @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2plusflexprint2",
+   "brand": "trilab",
+   "model": "DeltiQ 2 + FlexPrint 2",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2+FP2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2 + FlexPrint 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2 + FlexPrint 2",
+         "defaultProcess": "0.20mm FLEX @DQ2FP",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm FLEX @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2plus",
+   "brand": "trilab",
+   "model": "DeltiQ 2 Plus",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2P"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2 Plus",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2 Plus",
+         "defaultProcess": "0.20mm Normal @DQ2",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.25": [
+        {
+         "name": "DeltiQ 2 Plus - 0.25 nozzle",
+         "defaultProcess": "0.07mm Quality @DQ2 0.25 nozzle",
+         "processes": [
+          {
+           "name": "0.07mm Quality @DQ2 0.25 nozzle",
+           "layerHeight": 0.07
+          },
+          {
+           "name": "0.20mm Normal @DQ2 0.25 nozzle",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ],
+       "0.6": [
+        {
+         "name": "DeltiQ 2 Plus - 0.6 nozzle",
+         "defaultProcess": "0.30mm Normal @DQ2 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.30mm Normal @DQ2 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strong @DQ2 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.35mm Fast @DQ2 0.6 nozzle",
+           "layerHeight": 0.35
+          }
+         ]
+        }
+       ],
+       "0.8": [
+        {
+         "name": "DeltiQ 2 Plus - 0.8 nozzle",
+         "defaultProcess": "0.40mm Normal @DQ2 0.8 nozzle",
+         "processes": [
+          {
+           "name": "0.40mm Normal @DQ2 0.8 nozzle",
+           "layerHeight": 0.4
+          },
+          {
+           "name": "0.40mm Vase @DQ2 0.8 nozzle",
+           "layerHeight": 0.4
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2plusplusflexprint",
+   "brand": "trilab",
+   "model": "DeltiQ 2 Plus + FlexPrint",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2P+FP"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2 Plus + FlexPrint",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2 Plus + FlexPrint",
+         "defaultProcess": "0.20mm FLEX @DQ2FP",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm FLEX @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiq2plusplusflexprint2",
+   "brand": "trilab",
+   "model": "DeltiQ 2 Plus + FlexPrint 2",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250.2,
+    "y": 250.2,
+    "origin": [
+     -125.1,
+     -125.1
+    ],
+    "diameter": 250.2
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "reprapfirmware",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQ2P+FP2"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ 2 Plus + FlexPrint 2",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ 2 Plus + FlexPrint 2",
+         "defaultProcess": "0.20mm FLEX @DQ2FP",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm FLEX @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiql",
+   "brand": "trilab",
+   "model": "DeltiQ L",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     -125,
+     -125
+    ],
+    "diameter": 250
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQL"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ L",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ L",
+         "defaultProcess": "DeltiQ 0.20mm Normal",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiqm",
+   "brand": "trilab",
+   "model": "DeltiQ M",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 180,
+    "y": 180,
+    "origin": [
+     -90,
+     -90
+    ],
+    "diameter": 180
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQM"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ M",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ M",
+         "defaultProcess": "DeltiQ 0.20mm Normal",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "trilab-deltiqxl",
+   "brand": "trilab",
+   "model": "DeltiQ XL",
+   "aliases": [],
+   "bed": {
+    "shape": "circle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     -125,
+     -125
+    ],
+    "diameter": 250
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 500,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "repetier",
+   "relativeE": true,
+   "codes": {
+    "prusa": "DQXL"
+   },
+   "device": null,
+   "sources": [
+    "prusaslicer"
+   ],
+   "slicers": {
+    "prusaslicer": [
+     {
+      "model": "DeltiQ XL",
+      "presets": {
+       "0.4": [
+        {
+         "name": "DeltiQ XL",
+         "defaultProcess": "DeltiQ 0.20mm Normal",
+         "processes": [
+          {
+           "name": "0.10mm Detail @DQ",
+           "layerHeight": 0.1
+          },
+          {
+           "name": "0.15mm Normal @DQ",
+           "layerHeight": 0.15
+          },
+          {
+           "name": "0.20mm Normal @DQ",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.20mm Vase @DQ",
+           "layerHeight": 0.2
+          }
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}

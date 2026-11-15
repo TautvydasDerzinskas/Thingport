@@ -199,9 +199,9 @@ export default function CollectionsPage({ onUnauthorized, onBookmarksChanged, th
     name: collectionDisplayName(collection, t),
     count: collection.item_count,
     bookmarked: collection.bookmarked,
-    syncProvider: collection.sync
-      ? (importProviderInfo(collection.sync.provider)?.label ?? collection.sync.provider)
-      : null,
+    syncProviders: [
+      ...new Set(collection.syncs.map((sync) => importProviderInfo(sync.provider)?.label ?? sync.provider)),
+    ],
     thumbnail: collection.cover_items[0] ? (
       renderPreviewContent(collection.cover_items[0], "card", theme, t, previewMode)
     ) : (

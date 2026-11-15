@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "germanreprap",
+  "name": "German RepRap"
+ },
+ "printers": [
+  {
+   "id": "germanreprap-neo",
+   "brand": "germanreprap",
+   "model": "Neo",
+   "aliases": [
+    "germanreprapneo"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 150,
+    "y": 150,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "grr_neo"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "grr_neo",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

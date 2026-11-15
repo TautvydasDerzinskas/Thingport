@@ -398,6 +398,78 @@ describe("a partner's model, copied", () => {
     expect(copy.files.map((file) => file.filename)).toEqual(["notes.txt"]);
   });
 
+  // Files named alike in different folders: a partner that keeps folders copies them into theirs, and one too old to
+  // know them sees each named after its folder, as its own zip imports name them, rather than two of one name.
+  it("keeps its files' folders, and names them apart for a partner without folders", async () => {
+    const kim = await register("Kim");
+    const { print } = await createPrint(
+      kim.id,
+      { title: `Bandit ${stamp}` },
+      "bandit",
+      [
+        { filename: "Top.stl", folder: "Supported", tempFilePath: tmpFile("Top.stl", "solid supported endsolid") },
+        { filename: "Top.stl", folder: "Unsupported", tempFilePath: tmpFile("Top.stl", "solid bare endsolid") },
+        { filename: "Base.stl", tempFilePath: tmpFile("Base.stl", "solid base endsolid") },
+      ],
+      { describe: false, classify: false },
+    );
+    await saveFileFromTemp(kim.id, print.id, tmpFile("notes.txt", "glue it"), "notes.txt", "text/plain", {
+      folder: "Supported",
+    });
+    await share(kim, print.id);
+    const page = (await modelsPage(kim.id)) as { orderedItems: Record<string, unknown>[] };
+    const doc = page.orderedItems.find((item) => item.id === `${ORIGIN}/api/ap/models/${print.id}`)!;
+    const attachment = doc.attachment as { name: string; url: string; "thingport:path"?: string }[];
+    expect(attachment.map((file) => [file.name, file["thingport:path"]])).toEqual([
+      ["Supported - Top.stl", "Supported/Top.stl"],
+      ["Unsupported - Top.stl", "Unsupported/Top.stl"],
+      ["Base.stl", undefined],
+      ["notes.txt", "Supported/notes.txt"],
+    ]);
+
+    const remote = await indexed(kim, print.id);
+    const kept = await prisma.remoteModel.findUniqueOrThrow({ where: { id: remote } });
+    expect((kept.files as { name: string; folder?: string }[]).map((file) => [file.folder, file.name])).toEqual([
+      ["Supported", "Top.stl"],
+      ["Unsupported", "Top.stl"],
+      [undefined, "Base.stl"],
+      ["Supported", "notes.txt"],
+    ]);
+    const lee = await register("Lee");
+    const copy = await prisma.print.findUniqueOrThrow({
+      where: { id: await copied(lee, remote) },
+      include: { plates: { orderBy: { position: "asc" } }, files: { where: { role: { not: "LICENSE" } } } },
+    });
+    expect(copy.plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      ["Supported", "Top.stl"],
+      ["Unsupported", "Top.stl"],
+      [null, "Base.stl"],
+    ]);
+    expect(copy.plates[0].storagePath).toMatch(/\/Supported\/Top\.stl$/);
+    expect(copy.files.map((file) => [file.folder, file.filename])).toEqual([["Supported", "notes.txt"]]);
+
+    // As a partner from before folders keeps it: the names alone.
+    const old = await prisma.remoteModel.create({
+      data: {
+        peerId,
+        personId,
+        apId: `${ORIGIN}/api/ap/models/old-folders-${stamp}`,
+        title: "Old bandit",
+        images: [],
+        files: attachment.map((file) => ({ name: file.name, size: null, mediaType: null, url: file.url })),
+      },
+    });
+    const oldCopy = await prisma.print.findUniqueOrThrow({
+      where: { id: await copied(await register("Mo"), old.id) },
+      include: { plates: { orderBy: { position: "asc" } } },
+    });
+    expect(oldCopy.plates.map((plate) => [plate.folder, plate.filename])).toEqual([
+      [null, "Supported - Top.stl"],
+      [null, "Unsupported - Top.stl"],
+      [null, "Base.stl"],
+    ]);
+  });
+
   it("keeps a sliced print as its prepared print, and only one, whatever the partner lists", async () => {
     const printId = await sharedModel(owner, "Sliced", "sliced.stl");
     const tempPath = tmpFile("sliced.gcode.3mf", "sliced");

@@ -332,12 +332,13 @@ describe("a MakerWorld model with no print profiles", () => {
     return zipUrl;
   }
 
-  const EXPECTED_FILES = ["Holder_Top.stl", "2x2 Version - Holder_Bottom.stl", "3x2 Version - Holder_Bottom.stl"];
+  // Each in the folder the zip has it in: the two bottoms, named alike, told apart by theirs.
+  const EXPECTED_FILES = ["Holder_Top.stl", "2x2 Version/Holder_Bottom.stl", "3x2 Version/Holder_Bottom.stl"];
 
   async function filenamesOf(printId: string): Promise<string[]> {
     const plates = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
     expect(plates.every((p) => p.sourceInstanceId === null)).toBe(true);
-    return plates.map((p) => p.filename);
+    return plates.map((p) => (p.folder ? `${p.folder}/${p.filename}` : p.filename));
   }
 
   it("imports its raw files, unpacked, one file each", async () => {

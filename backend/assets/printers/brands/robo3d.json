@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "robo3d",
+  "name": "Robo 3D"
+ },
+ "printers": [
+  {
+   "id": "robo3d-r1",
+   "brand": "robo3d",
+   "model": "R1",
+   "aliases": [
+    "robo3dr1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 245,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 210,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "robo_3d_r1"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "robo_3d_r1",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

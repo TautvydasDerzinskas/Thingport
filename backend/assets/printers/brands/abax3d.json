@@ -1,0 +1,138 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "abax3d",
+  "name": "Abax 3D"
+ },
+ "printers": [
+  {
+   "id": "abax3d-abaxpri3",
+   "brand": "abax3d",
+   "model": "Abax PRi3",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 225,
+    "y": 220,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "abax_pri3"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "abax_pri3",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "abax3d-abaxpri5",
+   "brand": "abax3d",
+   "model": "Abax PRi5",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "abax_pri5"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "abax_pri5",
+      "nozzles": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "abax3d-abaxtitan",
+   "brand": "abax3d",
+   "model": "Abax Titan",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 310,
+    "y": 310,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 2.85,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "abax_titan"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "abax_titan",
+      "nozzles": []
+     }
+    ]
+   }
+  }
+ ]
+}

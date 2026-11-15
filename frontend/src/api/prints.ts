@@ -1,3 +1,5 @@
+import type { ThreeMfFormat } from "../adapter/format.generated";
+import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
@@ -12,11 +14,17 @@ export type PreparedPrint = {
   removable: boolean;
 };
 
+/** Where an adapted copy is: being made, made, failed (open the plate itself), or not needed for that slicer. */
+export type AdaptStatus = "ready" | "preparing" | "failed" | "original";
+
 export type Plate = {
   id: string;
   print_id: string;
   position: number; // dense, 0-based, ordered
-  filename: string;
+  filename: string; // unique within its folder, not the whole model
+  /** The folder its source kept it in, levels joined by "/" ("USB C version/Handles"); null or absent (from an older
+   *  backend) for none. */
+  folder?: string | null;
   mime: string;
   size: number;
   url: string; // /print/{printId}/plate/{plateId}/file/{filename}
@@ -30,6 +38,9 @@ export type Plate = {
   profile_id?: string | null;
   /** That profile as the model page shows it, from the detail fetch only. */
   profile?: PrintProfile | null;
+  /** What kind of 3MF it is, from which the page tells which slicers get an adapted copy; null for other files, and
+   *  absent from an older backend. */
+  format?: ThreeMfFormat | null;
 };
 
 export type ProfileFilament = { type: string | null; color: string | null; grams: number | null };
@@ -77,6 +88,8 @@ export type PrintProfiles = {
 export type PrintFile = {
   id: string;
   filename: string;
+  /** As Plate.folder. */
+  folder?: string | null;
   mime: string;
   size: number;
   url: string; // /print/{printId}/files/{fileId}
@@ -146,7 +159,7 @@ export type Print = {
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
-  generator_scripts?: { id: string; filename: string }[];
+  generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
    *  why, which a model that simply never had one wouldn't explain. */
   generator_script_withheld?: boolean;
@@ -312,6 +325,15 @@ export const printsApi = {
     return appendTokenToUrl(`${apiBase()}${rel}`);
   },
 
+  /** A plate's link as `slicer` opens it best (its adapted copy, or the plate itself), relative like `plate.url`, made
+   *  for `printer` when given. They're in the path, not a query: OrcaSlicer names the file after everything past the
+   *  URL's last slash. */
+  adaptedPlateUrl: (plate: Pick<Plate, "url">, slicer: string, printer?: { id: string; nozzle: string } | null) =>
+    plate.url.replace(/\/file\/([^/]+)$/, (_all, name: string) => {
+      const forPrinter = printer ? `/${encodeURIComponent(printer.id)}/${encodeURIComponent(printer.nozzle)}` : "";
+      return `/adapted/${encodeURIComponent(slicer)}${forPrinter}/${name}`;
+    }),
+
   /** An absolute file URL for a slicer to download, with the session in the path rather than `?token=`: OrcaSlicer
    *  and its forks name the file after everything past the last slash, query string included. */
   slicerFileUrl: (rel: string) => {
@@ -472,6 +494,8 @@ export const printsApi = {
       /** What the notification calls it: a model the customizer generated, or one a tool built. Left out for
        *  files the user picked, which is what "uploaded" describes. */
       origin?: "generated" | "created";
+      /** The tool that built it (origin "created"), by slug: kept on the model as what made it. */
+      createdWithTool?: string;
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -485,6 +509,7 @@ export const printsApi = {
     if (opts.mode && files.length > 1) fd.set("mode", opts.mode);
     if (opts.notify === false) fd.set("notify", "false");
     if (opts.origin) fd.set("origin", opts.origin);
+    if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,
@@ -497,6 +522,8 @@ export const printsApi = {
       const message = await readErrorMessage(res, "Upload failed");
       throw new Error(message);
     }
+    // A model a tool made counts towards its achievement.
+    if (opts.createdWithTool) requestAchievementCheck();
     return res.json();
   },
 
@@ -877,7 +904,8 @@ export const printsApi = {
     return res.json();
   },
 
-  downloadZip: async (opts: DownloadZipFilter & { filename?: string }) => {
+  /** `folder`: only the files in that folder of the models (Plate.folder) and the folders in it. */
+  downloadZip: async (opts: DownloadZipFilter & { filename?: string; folder?: string }) => {
     const res = await fetch(`${apiBase()}/download/zip`, {
       method: "POST",
       headers: authHeaders({ "Content-Type": "application/json" }),
@@ -906,17 +934,27 @@ export const printsApi = {
       body: JSON.stringify({ kind }),
     });
     assertOk(res, "Failed to record download");
+    // A download counts towards an achievement; opening it in a slicer doesn't.
+    if (kind === "download") requestAchievementCheck();
     return res.json();
   },
 
-  /** Starts preparing a normalized copy for "Open normalized in <slicer>" if needed; poll until "ready". */
-  normalizePlate: async (printId: string, plateId: string): Promise<{ status: "ready" | "preparing" | "failed" }> => {
-    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/normalize`, {
+  /** Starts preparing the copy of a plate `slicer` gets (the model page's "Open adapted in <slicer>") if needed; poll
+   *  until "ready". "original" when the slicer opens the plate itself as well as it can. */
+  /** `printer` makes the copy for one of the user's printers, as the adapted link with it does. */
+  adaptPlate: async (
+    printId: string,
+    plateId: string,
+    slicer: string,
+    printer?: { id: string; nozzle: string } | null,
+  ): Promise<{ status: AdaptStatus }> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/plate/${plateId}/adapt`, {
       method: "POST",
-      headers: authHeaders(),
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(printer ? { slicer, printer: { id: printer.id, nozzle: printer.nozzle } } : { slicer }),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to prepare normalized file"));
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to prepare the adapted file"));
     return res.json();
   },
 

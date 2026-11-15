@@ -1,0 +1,952 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "goofoo",
+  "name": "Goofoo"
+ },
+ "printers": [
+  {
+   "id": "goofoo-cube",
+   "brand": "goofoo",
+   "model": "Cube",
+   "aliases": [
+    "goofoocube"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 80,
+    "y": 80,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 80,
+   "nozzles": [
+    "0.7"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_cube"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_cube",
+      "nozzles": [
+       "0.7mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-eone",
+   "brand": "goofoo",
+   "model": "E-one",
+   "aliases": [
+    "goofooeone"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_e-one"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_e-one",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-gemini",
+   "brand": "goofoo",
+   "model": "Gemini",
+   "aliases": [
+    "goofoogemini"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 360,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_gemini"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_gemini",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-giant",
+   "brand": "goofoo",
+   "model": "Giant",
+   "aliases": [
+    "goofoogiant"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 600,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 1000,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_giant"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_giant",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-gp1",
+   "brand": "goofoo",
+   "model": "GP1",
+   "aliases": [
+    "goofoogp1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 250,
+    "y": 250,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 250,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "V003"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Goofoo GP1",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Goofoo GP1 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Goofoo GP1",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Goofoo GP1",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "goofoo-max",
+   "brand": "goofoo",
+   "model": "Max",
+   "aliases": [
+    "goofoomax"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 580,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 700,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_max"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_max",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-mido",
+   "brand": "goofoo",
+   "model": "Mido",
+   "aliases": [
+    "goofoomido"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_mido"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_mido",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-miniplus",
+   "brand": "goofoo",
+   "model": "Mini+",
+   "aliases": [
+    "goofoominiplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_miniplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_miniplus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-nova",
+   "brand": "goofoo",
+   "model": "Nova",
+   "aliases": [
+    "goofoonova"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 280,
+    "y": 280,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 300,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_nova"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_nova",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-plus",
+   "brand": "goofoo",
+   "model": "Plus",
+   "aliases": [
+    "goofooplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 360,
+    "y": 360,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 400,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_plus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_plus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-tone",
+   "brand": "goofoo",
+   "model": "T-one",
+   "aliases": [
+    "goofootone"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 200,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 150,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_t-one"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_t-one",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-tiny",
+   "brand": "goofoo",
+   "model": "Tiny",
+   "aliases": [
+    "goofootiny"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 100,
+    "y": 100,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 100,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_tiny"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_tiny",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-tinyplus",
+   "brand": "goofoo",
+   "model": "Tiny+",
+   "aliases": [
+    "goofootinyplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 120,
+    "y": 120,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 180,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6",
+    "0.8",
+    "1"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "nozzle": 500
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "goofoo_tinyplus"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "goofoo_tinyplus",
+      "nozzles": [
+       "0.2mm Nozzle",
+       "0.4mm Nozzle",
+       "0.6mm Nozzle",
+       "0.8mm Nozzle",
+       "1.0mm Nozzle"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "goofoo-turbom",
+   "brand": "goofoo",
+   "model": "TurboM",
+   "aliases": [
+    "goofooturbom"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 230,
+    "y": 200,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "V002"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Goofoo TurboM",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Goofoo TurboM 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Goofoo TurboM",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Goofoo TurboM",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "goofoo-veloplus",
+   "brand": "goofoo",
+   "model": "Velo+",
+   "aliases": [
+    "goofooveloplus"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 600,
+    "y": 500,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.2",
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "V001"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Goofoo Velo+",
+      "presets": {
+       "0.2": [
+        {
+         "name": "Goofoo Velo+ 0.2 nozzle",
+         "defaultProcess": "0.10mm Standard @Goofoo Velo+",
+         "processes": [
+          {
+           "name": "0.10mm Standard @Goofoo Velo+",
+           "layerHeight": 0.1
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ],
+       "0.4": [
+        {
+         "name": "Goofoo Velo+ 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Goofoo Velo+",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Goofoo Velo+",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Goofoo Velo+ 0.6 nozzle",
+         "defaultProcess": "0.30mm Standard @Goofoo Velo+",
+         "processes": [
+          {
+           "name": "0.30mm Standard @Goofoo Velo+",
+           "layerHeight": 0.3
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  },
+  {
+   "id": "goofoo-veloplustool",
+   "brand": "goofoo",
+   "model": "Velo+ Tool",
+   "aliases": [
+    "goofooveloplustool"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 300,
+    "y": 300,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 600,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "V006"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Goofoo Velo+ Tool",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Goofoo Velo+ Tool 0.4",
+         "defaultProcess": "0.20mm Standard @Goofoo Velo+",
+         "processes": [
+          {
+           "name": "0.20mm Standard @Goofoo Velo+",
+           "layerHeight": 0.2
+          }
+         ],
+         "defaultFilament": "Goofoo ABS @System"
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

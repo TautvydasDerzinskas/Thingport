@@ -1,0 +1,103 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "imade3d",
+  "name": "Imade3D"
+ },
+ "printers": [
+  {
+   "id": "imade3d-jellybox2",
+   "brand": "imade3d",
+   "model": "JellyBOX 2",
+   "aliases": [
+    "imade3djellybox2"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 180,
+    "y": 165,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 145,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "cura": "imade3d_jellybox_2"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "imade3d_jellybox_2",
+      "nozzles": [
+       "0.4 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "imade3d-jellyboxoriginal",
+   "brand": "imade3d",
+   "model": "JellyBOX Original",
+   "aliases": [
+    "imade3djellyboxoriginal"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 170,
+    "y": 160,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 145,
+   "nozzles": [
+    "0.4"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": true,
+   "codes": {
+    "cura": "imade3d_jellybox"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "imade3d_jellybox",
+      "nozzles": [
+       "0.4 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

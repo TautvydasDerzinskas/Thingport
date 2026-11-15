@@ -1,5 +1,6 @@
 // The History tab's "Recently viewed": the last model pages opened on any site Grab runs on.
 
+import { t } from "../shared/i18n";
 import { send } from "../shared/messages";
 import { clearError, els, showError } from "./dom";
 import { providerLogo, providerName } from "./sites";
@@ -16,10 +17,13 @@ export async function loadRecentlyViewed(): Promise<void> {
         url: model.url,
         title: model.title,
         image: model.image,
-        label: `Model on ${providerName(model.provider)}`,
+        label: t("modelOn", { site: providerName(model.provider) }),
         badge: logo,
       });
-      link.title = `${model.title ?? "Model"} · ${providerName(model.provider)}`;
+      link.title = t("recentlyViewedTitle", {
+        title: model.title ?? t("model"),
+        site: providerName(model.provider),
+      });
       return link;
     }),
   );
@@ -31,6 +35,6 @@ export async function loadRecentlyViewed(): Promise<void> {
 els.viewedClear.addEventListener("click", async () => {
   clearError(els.historyError);
   const res = await send("CLEAR_RECENTLY_VIEWED");
-  if (!res?.ok) showError(res?.error ?? "Couldn't clear", els.historyError);
+  if (!res?.ok) showError(res?.error ?? t("clearFailed"), els.historyError);
   await loadRecentlyViewed();
 });

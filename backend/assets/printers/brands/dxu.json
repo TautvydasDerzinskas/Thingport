@@ -1,0 +1,390 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "dxu",
+  "name": "DXU"
+ },
+ "printers": [
+  {
+   "id": "dxu-dual",
+   "brand": "dxu",
+   "model": "Dual",
+   "aliases": [
+    "dxudual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 238,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -1,
+      -1
+     ],
+     [
+      18,
+      -1
+     ],
+     [
+      18,
+      5
+     ],
+     [
+      -1,
+      5
+     ]
+    ],
+    [
+     [
+      239,
+      -1
+     ],
+     [
+      239,
+      5
+     ],
+     [
+      205,
+      5
+     ],
+     [
+      205,
+      -1
+     ]
+    ],
+    [
+     [
+      -1,
+      224
+     ],
+     [
+      -1,
+      218
+     ],
+     [
+      18,
+      218
+     ],
+     [
+      18,
+      224
+     ]
+    ],
+    [
+     [
+      239,
+      224
+     ],
+     [
+      205,
+      224
+     ],
+     [
+      205,
+      218
+     ],
+     [
+      239,
+      218
+     ]
+    ],
+    [
+     [
+      239,
+      224
+     ],
+     [
+      239,
+      184
+     ],
+     [
+      212,
+      184
+     ],
+     [
+      212,
+      224
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 203,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dxu_dual"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dxu_dual",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "dxu-dxu",
+   "brand": "dxu",
+   "model": "DXU",
+   "aliases": [],
+   "bed": {
+    "shape": "rectangle",
+    "x": 238,
+    "y": 223,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      -1,
+      -1
+     ],
+     [
+      18,
+      -1
+     ],
+     [
+      18,
+      5
+     ],
+     [
+      -1,
+      5
+     ]
+    ],
+    [
+     [
+      239,
+      -1
+     ],
+     [
+      239,
+      5
+     ],
+     [
+      205,
+      5
+     ],
+     [
+      205,
+      -1
+     ]
+    ],
+    [
+     [
+      -1,
+      224
+     ],
+     [
+      -1,
+      218
+     ],
+     [
+      18,
+      218
+     ],
+     [
+      18,
+      224
+     ]
+    ],
+    [
+     [
+      239,
+      224
+     ],
+     [
+      205,
+      224
+     ],
+     [
+      205,
+      218
+     ],
+     [
+      239,
+      218
+     ]
+    ],
+    [
+     [
+      239,
+      224
+     ],
+     [
+      239,
+      184
+     ],
+     [
+      212,
+      184
+     ],
+     [
+      212,
+      224
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 203,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dxu"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dxu",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "dxu-umoplusdxu",
+   "brand": "dxu",
+   "model": "UMO+ DXU",
+   "aliases": [
+    "umoplusdxudual"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 220,
+    "y": 205,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": [
+    [
+     [
+      210,
+      205
+     ],
+     [
+      220,
+      205
+     ],
+     [
+      220,
+      165
+     ],
+     [
+      210,
+      165
+     ]
+    ]
+   ],
+   "extruderBeds": null,
+   "height": 200,
+   "nozzles": [
+    "0.25",
+    "0.4",
+    "0.6",
+    "0.8"
+   ],
+   "extruders": 2,
+   "tools": [
+    {
+     "config": "Dual",
+     "tools": 2
+    }
+   ],
+   "multiMaterial": [
+    "dual extruder"
+   ],
+   "temps": {
+    "bed": 110
+   },
+   "materialDiameter": 1.75,
+   "gcodeFlavor": "marlin",
+   "relativeE": false,
+   "codes": {
+    "cura": "dxu_umo"
+   },
+   "device": null,
+   "sources": [
+    "cura"
+   ],
+   "slicers": {
+    "cura": [
+     {
+      "definition": "dxu_umo",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     },
+     {
+      "config": "Dual",
+      "definition": "dxu_umo_dual",
+      "nozzles": [
+       "0.25 mm",
+       "0.4 mm",
+       "0.6 mm",
+       "0.8 mm"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

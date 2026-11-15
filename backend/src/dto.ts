@@ -1,3 +1,4 @@
+import { storedFormat, type ThreeMfFormat } from "./adapter";
 import fs from "node:fs";
 import { readNotificationMessage, type NotificationMessage } from "./services/notificationMessage";
 import { LIKES_ID_PREFIX, PROVIDER_IDS, type ProviderId } from "./providers/index.generated";
@@ -110,7 +111,10 @@ export type PlateOut = {
   id: string;
   print_id: string;
   position: number;
+  /** Unique within its folder, not the whole model. */
   filename: string;
+  /** The folder its source kept it in, levels joined by "/" ("USB C version/Handles"); null for none. */
+  folder: string | null;
   mime: string;
   size: number;
   url: string;
@@ -130,11 +134,16 @@ export type PlateOut = {
   profile_id: string | null;
   /** That profile as the model page shows it, on the detail fetch only (services/printProfileService.ts). */
   profile?: PrintProfileOut | null;
+  /** What kind of 3MF it is (src/adapter/format.ts), from which the page tells which slicers get an adapted copy;
+   *  null for other files, and for an older 3MF until its model is opened. */
+  format: ThreeMfFormat | null;
 };
 
 export type PrintFileOut = {
   id: string;
   filename: string;
+  /** As PlateOut.folder. */
+  folder: string | null;
   mime: string;
   size: number;
   url: string;
@@ -195,7 +204,7 @@ export type PrintOut = {
   /** The scripts it can be generated again from, as `{ id, filename }`, out of the files kept beside it. Empty
    *  for an ordinary model. Here rather than behind a request of its own because the files are already loaded,
    *  and because a list of models needs it too: it is what marks one as generated rather than only printed. */
-  generator_scripts: { id: string; filename: string }[];
+  generator_scripts: { id: string; filename: string; folder: string | null }[];
   /** The source had a script for this model but its creator chose not to share it, so there is none to open.
    *  Without it, that is indistinguishable from a model that never had one. */
   generator_script_withheld: boolean;
@@ -286,13 +295,15 @@ export function plateThumbUrl(plateId: string, home: AssetHome): string | null {
   return versionedUrl(plateThumbPath(plateId, home), `/plate/${plateId}/thumb.jpg`);
 }
 
-function previewGlbUrl(plate: Plate): string | null {
-  if (!modelPreviewGlbExists(plate.id)) {
+function previewGlbUrl(plate: Plate, home: AssetHome): string | null {
+  const url = `/plate/${plate.id}/preview.glb`;
+  if (!modelPreviewGlbExists(plate.id, home)) {
     // Hand out the URL even with no cache yet: requesting it is what triggers generation.
-    return plate.filename.toLowerCase().endsWith(".3mf") ? `/plate/${plate.id}/preview.glb` : null;
+    return plate.filename.toLowerCase().endsWith(".3mf") ? url : null;
   }
-  const mtime = fs.statSync(modelPreviewGlbPath(plate.id)).mtimeMs;
-  return `/plate/${plate.id}/preview.glb?v=${mtime}`;
+  // Packing it smaller changes it in place, so the version follows the file; one gone since (moved with its model,
+  // say) is handed out unversioned, as before it was drawn.
+  return versionedUrl(modelPreviewGlbPath(plate.id, home), url) ?? url;
 }
 
 /** The plate's grey render for the browser to tint; unversioned until it exists, as asking for it queues it. */
@@ -308,15 +319,17 @@ export function toPlateOut(printId: string, plate: Plate, home: AssetHome): Plat
     print_id: printId,
     position: plate.position,
     filename: plate.filename,
+    folder: plate.folder ?? null,
     mime: plate.mime,
     size: plate.size,
     url: `/print/${printId}/plate/${plate.id}/file/${encodeURIComponent(plate.filename)}`,
     thumb_url: plateThumbUrl(plate.id, home),
     thumb_generated: plate.thumbGenerated,
-    preview_glb_url: previewGlbUrl(plate),
+    preview_glb_url: previewGlbUrl(plate, home),
     render_url: renderUrl(plate, home),
     own_colors: modelColorImagePath(plate.id, home) !== null,
     profile_id: plate.sourceInstanceId ?? null,
+    format: storedFormat(plate.format),
   };
 }
 
@@ -348,6 +361,7 @@ export function toPrintFileOut(printFile: PrintFile): PrintFileOut {
   return {
     id: printFile.id,
     filename: printFile.filename,
+    folder: printFile.folder ?? null,
     mime: printFile.mime,
     size: printFile.size,
     url: `/print/${printFile.printId}/files/${printFile.id}`,
@@ -381,7 +395,7 @@ export function toPrintOut(
   const supportingCount = supporting.length;
   const generatorScripts = supporting
     .filter((f) => f.filename.toLowerCase().endsWith(".scad"))
-    .map((f) => ({ id: f.id, filename: f.filename }));
+    .map((f) => ({ id: f.id, filename: f.filename, folder: f.folder ?? null }));
   // The model's own files: LICENSE.txt is Thingport's, written from its licence.
   const totalSize =
     plates.reduce((sum, p) => sum + p.size, 0) + files.reduce((sum, f) => sum + (f.role === "LICENSE" ? 0 : f.size), 0);
@@ -487,7 +501,9 @@ export type CollectionOut = {
   system_key: SystemCollectionKey | null;
   /** Always false for a system pseudo-collection, which can't be bookmarked. */
   bookmarked: boolean;
-  /** Set while the collection is synced with one on a provider. */
+  /** The provider collections it follows, oldest first; empty when it isn't synced. */
+  syncs: CollectionSyncOut[];
+  /** The first of `syncs`, or null. Kept for older clients and apps, which know only one. */
   sync: CollectionSyncOut | null;
   /** Set on the collection of a tool's models: fixed, and gone when the tool is uninstalled. */
   tool_id: string | null;
@@ -514,8 +530,12 @@ export type SharePersonOut = UserCardOut & {
 export type SyncProfileScope = "url" | "designer" | "all";
 
 export type CollectionSyncOut = {
+  /** Names this source in the routes that change or stop one of a collection's syncs. */
+  id: string;
   provider: string;
   source_url: string;
+  /** The provider collection's name when it was linked; null on older links and on Likes (see `likes_of`). */
+  title: string | null;
   profile_scope: SyncProfileScope;
   last_checked_at: string | null;
   last_error: string | null;
@@ -536,8 +556,10 @@ export { LIKES_ID_PREFIX, syncLikesUsername };
 export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   const syncNowAt = syncNowAvailableAt(sync.lastCheckedAt);
   return {
+    id: sync.id,
     provider: sync.provider,
     source_url: sync.sourceUrl,
+    title: sync.title,
     profile_scope: sync.profileScope as SyncProfileScope,
     last_checked_at: sync.lastCheckedAt?.toISOString() ?? null,
     last_error: sync.lastError,
@@ -548,14 +570,15 @@ export function toCollectionSyncOut(sync: CollectionSync): CollectionSyncOut {
   };
 }
 
-/** `coverPrints`: up to 4, in item position order. */
+/** `coverPrints`: up to 4, in item position order. `syncs`: the collection's, oldest first. */
 export function toCollectionOut(
   collection: Collection,
   itemCount: number,
   coverPrints: PrintOut[],
   bookmarked: boolean,
-  sync: CollectionSync | null = null,
+  syncs: CollectionSync[] = [],
 ): CollectionOut {
+  const syncsOut = syncs.map(toCollectionSyncOut);
   return {
     id: collection.id,
     name: collection.name,
@@ -566,7 +589,8 @@ export function toCollectionOut(
     created_at: collection.createdAt.toISOString(),
     system_key: null,
     bookmarked,
-    sync: sync ? toCollectionSyncOut(sync) : null,
+    syncs: syncsOut,
+    sync: syncsOut[0] ?? null,
     tool_id: collection.toolId ?? null,
     is_public: collection.visibility === "PUBLIC",
     visibility: visibilityOut(collection.visibility),
@@ -596,6 +620,7 @@ export function toSystemCollectionOut(
     created_at: new Date(0).toISOString(),
     system_key: key,
     bookmarked: false,
+    syncs: [],
     sync: null,
     tool_id: null,
     is_public: false,
@@ -754,6 +779,8 @@ type QueueJobOut = ImportJobOut & {
   /** Something for its owner to deal with; older failures just count as finished. */
   attention: boolean;
   failure_reason: string | null;
+  /** Its failed links that wait for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). */
+  grab_waiting: number;
   /** How a one-link job came out. */
   outcome: ImportOutcome | null;
   can_start: boolean;
@@ -787,6 +814,7 @@ export function toQueueJobOut(row: QueueJobView): QueueJobOut {
     sync_waiting: row.syncWaiting,
     attention: row.attention,
     failure_reason: message ?? summary ?? row.firstFailure,
+    grab_waiting: row.grabWaiting,
     outcome:
       payload.outcome === "created" || payload.outcome === "profile_added" || payload.outcome === "already_imported"
         ? payload.outcome
@@ -814,14 +842,20 @@ export type QueueOut = {
   finished_total: number;
   line: LineOut;
   settings: QueueSettingsOut;
+  /** Per provider, imports of one's own waiting for Thingport Grab to clear a block on its site, and where to send
+   *  the user to: MakerWorld's when its CAPTCHA stopped them. */
+  grab_waiting: GrabWaitingOut[];
 };
 
-export function toQueueOut(queue: OwnQueue): QueueOut {
+type GrabWaitingOut = { provider: string; count: number; url: string | null };
+
+export function toQueueOut(queue: OwnQueue, grabWaiting: GrabWaitingOut[] = []): QueueOut {
   return {
     jobs: queue.jobs.map(toQueueJobOut),
     finished_total: queue.finishedTotal,
     line: queue.line,
     settings: { start_grab_links: queue.startGrabLinks },
+    grab_waiting: grabWaiting,
   };
 }
 

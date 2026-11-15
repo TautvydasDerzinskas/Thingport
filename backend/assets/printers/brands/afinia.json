@@ -1,0 +1,344 @@
+{
+ "version": 1,
+ "brand": {
+  "id": "afinia",
+  "name": "Afinia"
+ },
+ "printers": [
+  {
+   "id": "afinia-hplus1hs",
+   "brand": "afinia",
+   "model": "H+1(HS)",
+   "aliases": [
+    "afiniahplus1hs",
+    "hplus1"
+   ],
+   "bed": {
+    "shape": "rectangle",
+    "x": 207,
+    "y": 255,
+    "origin": [
+     0,
+     0
+    ]
+   },
+   "exclude": null,
+   "extruderBeds": null,
+   "height": 230,
+   "nozzles": [
+    "0.4",
+    "0.6"
+   ],
+   "extruders": 1,
+   "tools": [],
+   "multiMaterial": [],
+   "temps": null,
+   "materialDiameter": null,
+   "gcodeFlavor": "klipper",
+   "relativeE": true,
+   "codes": {
+    "orca": "my_afinia_h_1_hs_01"
+   },
+   "device": null,
+   "sources": [
+    "orcaslicer",
+    "elegooslicer",
+    "snapmaker-orca"
+   ],
+   "slicers": {
+    "orcaslicer": [
+     {
+      "model": "Afinia H+1(HS)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Afinia H+1(HS) 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Afinia H+1(HS)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Afinia H+1(HS)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Afinia H+1(HS)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Afinia H+1(HS)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Afinia H+1(HS)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Afinia H+1(HS)",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Afinia H+1(HS) 0.6 nozzle",
+         "defaultProcess": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "elegooslicer": [
+     {
+      "model": "Afinia H+1(HS)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Afinia H+1(HS) 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Afinia H+1(HS)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Afinia H+1(HS)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Afinia H+1(HS)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Afinia H+1(HS)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Afinia H+1(HS)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Afinia H+1(HS)",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Afinia H+1(HS) 0.6 nozzle",
+         "defaultProcess": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ],
+    "snapmaker-orca": [
+     {
+      "model": "Afinia H+1(HS)",
+      "presets": {
+       "0.4": [
+        {
+         "name": "Afinia H+1(HS) 0.4 nozzle",
+         "defaultProcess": "0.20mm Standard @Afinia H+1(HS)",
+         "processes": [
+          {
+           "name": "0.12mm Fine @Afinia H+1(HS)",
+           "layerHeight": 0.12
+          },
+          {
+           "name": "0.16mm Optimal @Afinia H+1(HS)",
+           "layerHeight": 0.16
+          },
+          {
+           "name": "0.20mm Standard @Afinia H+1(HS)",
+           "layerHeight": 0.2
+          },
+          {
+           "name": "0.24mm Draft @Afinia H+1(HS)",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.28mm Extra Draft @Afinia H+1(HS)",
+           "layerHeight": 0.28
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ],
+       "0.6": [
+        {
+         "name": "Afinia H+1(HS) 0.6 nozzle",
+         "defaultProcess": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+         "processes": [
+          {
+           "name": "0.18mm Fine @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.18
+          },
+          {
+           "name": "0.24mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.24
+          },
+          {
+           "name": "0.30mm Standard @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.30mm Strength @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.3
+          },
+          {
+           "name": "0.36mm Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.36
+          },
+          {
+           "name": "0.42mm Extra Draft @Afinia H+1(HS) 0.6 nozzle",
+           "layerHeight": 0.42
+          }
+         ],
+         "filaments": {
+          "types": {
+           "ABS": "Afinia ABS@HS",
+           "PLA": "Afinia PLA@HS",
+           "TPU": "Afinia TPU@HS"
+          },
+          "products": {
+           "afinia abs@hs": "Afinia ABS@HS",
+           "afinia abs+@hs": "Afinia ABS+@HS",
+           "afinia pla@hs": "Afinia PLA@HS",
+           "afinia tpu@hs": "Afinia TPU@HS",
+           "afinia value abs@hs": "Afinia Value ABS@HS",
+           "afinia value pla@hs": "Afinia Value PLA@HS"
+          }
+         }
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "cover": true
+  }
+ ]
+}
