@@ -42,8 +42,10 @@ vi.mock("../src/services/singleImport", async (original) => ({
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { MAKERWORLD_CAPTCHA_CODE, MAKERWORLD_CAPTCHA_MESSAGE } from "../src/providers/makerworld/captcha";
+import { clearMakerworldGrabImports } from "../src/providers/makerworld/grabImports";
+import { PROVIDERS } from "../src/providers/registry";
 import { runLinksImportJob } from "../src/services/importJobRunner";
-import { deleteQueueJob, readOwnQueue } from "../src/services/importQueueService";
+import { clearFinishedJobs, deleteQueueJob, readOwnQueue, removeQueueItem } from "../src/services/importQueueService";
 import { HttpError } from "../src/utils/fileUtils";
 
 const app = createApp();
@@ -55,16 +57,32 @@ const auth = () => ({ Authorization: `Bearer ${token}` });
 const modelUrl = (id: number) => `https://makerworld.com/en/models/${(stamp % 1_000_000) + id}-thing`;
 const captcha = () => new HttpError(429, MAKERWORLD_CAPTCHA_MESSAGE, MAKERWORLD_CAPTCHA_CODE);
 
-/** A LINKS job of `urls`, run to its end. */
-async function runJob(urls: string[]) {
-  const body = { notes: null, tags: ["handed"], category_id: null, scope: "url" as const };
+/** A LINKS job of `urls`, each link with its own options from `scopes`, started; `run` is its runner, to its end. */
+async function startJob(urls: string[], { scopes = [] as (string | null)[], itemDelayMs = 0 } = {}) {
+  const body = { notes: null, tags: ["handed"], category_id: null, scope: "url" as const, itemDelayMs };
   const job = await prisma.importJob.create({
     data: { userId, type: "LINKS", status: "RUNNING", sourceUrl: urls[0], total: urls.length, payload: body },
   });
-  for (const url of urls) await prisma.importJobItem.create({ data: { jobId: job.id, url } });
-  await runLinksImportJob(job.id, userId, body);
-  return job.id;
+  for (const [index, url] of urls.entries()) {
+    const scope = scopes[index];
+    await prisma.importJobItem.create({ data: { jobId: job.id, url, ...(scope ? { payload: { scope } } : {}) } });
+  }
+  return { jobId: job.id, run: runLinksImportJob(job.id, userId, body) };
 }
+
+/** A LINKS job of `urls`, run to its end. */
+async function runJob(urls: string[], options?: Parameters<typeof startJob>[1]) {
+  const { jobId, run } = await startJob(urls, options);
+  await run;
+  return jobId;
+}
+
+const bringIn = (row: { id: string }) =>
+  request(app)
+    .post(`/api/import/makerworld/waiting/${row.id}`)
+    .set(auth())
+    .send({ resolved_download_url: "https://makerworld.bblmw.com/model/f.3mf" });
+const jobOf = (jobId: string) => prisma.importJob.findUniqueOrThrow({ where: { id: jobId } });
 
 const waiting = () =>
   prisma.grabImport.findMany({ where: { userId, provider: "makerworld" }, orderBy: { createdAt: "asc" } });
@@ -85,6 +103,7 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     imports.failure = captcha;
     imports.brought = [];
     await prisma.grabImport.deleteMany({ where: { userId } });
@@ -188,5 +207,129 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
 
     await deleteQueueJob(jobId, userId);
     expect(await waiting()).toEqual([]);
+  });
+
+  it("hands over the links after a CAPTCHA that stopped one it couldn't hand over", async () => {
+    // All of a model's print profiles, which one file from Grab wouldn't bring in, met the CAPTCHA first.
+    vi.spyOn(PROVIDERS.makerworld, "profileUrls").mockRejectedValue(captcha());
+    await pairGrab();
+    const jobId = await runJob([modelUrl(10), modelUrl(11)], { scopes: ["all"] });
+
+    expect((await waiting()).map((row) => row.url)).toEqual([modelUrl(11)]);
+    const items = await itemsOf(jobId);
+    expect(items.map((item) => item.status)).toEqual(["FAILED", "FAILED"]);
+    expect(items[1].errorMessage).toMatch(/^Waits for Thingport Grab/);
+  });
+
+  it("counts done only the links asking for the one model Grab brought in", async () => {
+    await pairGrab();
+    const handed = await runJob([modelUrl(12)]);
+    // The same link, for all of the model's print profiles, in another import.
+    const all = await prisma.importJob.create({
+      data: { userId, type: "LINKS", status: "DONE", sourceUrl: modelUrl(12), total: 1, failedCount: 1 },
+    });
+    await prisma.importJobItem.create({
+      data: { jobId: all.id, url: modelUrl(12), status: "FAILED", payload: { scope: "all" } },
+    });
+    const own = await readOwnQueue(userId);
+    expect(own.jobs.find((job) => job.id === all.id)?.grabWaiting).toBe(0);
+
+    const [row] = await waiting();
+    expect((await bringIn(row)).status).toBe(200);
+    expect((await itemsOf(handed))[0].status).toBe("DONE");
+    expect((await itemsOf(all.id))[0].status).toBe("FAILED");
+    expect(await jobOf(all.id)).toMatchObject({ failedCount: 1, imported: 0 });
+  });
+
+  it("counts every link Grab brings in at once", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(13), modelUrl(14)]);
+    const rows = await waiting();
+
+    const replies = await Promise.all(rows.map((row) => bringIn(row)));
+    expect(replies.map((reply) => reply.status)).toEqual([200, 200]);
+    expect(await jobOf(jobId)).toMatchObject({ failedCount: 0, imported: 2 });
+  });
+
+  it("keeps what Grab counts done while the import it failed in still runs", async () => {
+    await pairGrab();
+    const { jobId, run } = await startJob([modelUrl(15), modelUrl(16)], { itemDelayMs: 600 });
+    const first = await vi.waitFor(
+      async () => {
+        const [row] = await waiting();
+        expect((await itemsOf(jobId))[0].status).toBe("FAILED");
+        return row;
+      },
+      { timeout: 500, interval: 20 },
+    );
+    expect((await bringIn(first)).status).toBe(200);
+    await run;
+
+    expect((await itemsOf(jobId)).map((item) => item.status)).toEqual(["DONE", "FAILED"]);
+    expect(await jobOf(jobId)).toMatchObject({ imported: 1, failedCount: 1 });
+  });
+
+  it("keeps a waiting link whose import can't be counted done, to bring in again", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(17)]);
+    const [row] = await waiting();
+    vi.spyOn(prisma.importJobItem, "findMany").mockRejectedValueOnce(new Error("database gone"));
+
+    expect((await bringIn(row)).status).toBe(500);
+    expect((await waiting()).map((left) => [left.id, left.attempts])).toEqual([[row.id, 0]]);
+
+    expect((await bringIn(row)).status).toBe(200);
+    expect(await waiting()).toEqual([]);
+    expect((await itemsOf(jobId))[0].status).toBe("DONE");
+  });
+
+  it("keeps what waits for Grab while another import still wants it", async () => {
+    await pairGrab();
+    const first = await runJob([modelUrl(18)]);
+    const second = await runJob([modelUrl(18)]);
+    expect(await waiting()).toHaveLength(1);
+
+    await deleteQueueJob(first, userId);
+    expect(await waiting()).toHaveLength(1);
+    await deleteQueueJob(second, userId);
+    expect(await waiting()).toEqual([]);
+  });
+
+  it("drops what waits for Grab with a link taken out of its import, the last one too", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(19), modelUrl(20)]);
+    const [one, two] = await itemsOf(jobId);
+
+    await removeQueueItem(one.id, userId);
+    expect((await waiting()).map((row) => row.url)).toEqual([modelUrl(20)]);
+    expect(await removeQueueItem(two.id, userId)).toEqual({ jobDeleted: true });
+    expect(await waiting()).toEqual([]);
+  });
+
+  it("drops what waits for Grab with an old failure cleared from Finished", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(22)]);
+    // Out of Needs attention after a week, so the Finished section's Clear takes it.
+    await prisma.importJob.update({
+      where: { id: jobId },
+      data: { queuedAt: null, updatedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
+    });
+
+    expect(await clearFinishedJobs({ ownerId: userId, line: true })).toBe(1);
+    expect(await waiting()).toEqual([]);
+  });
+
+  it("keeps a link naming another print profile waiting once the model comes in", async () => {
+    const design = String((stamp % 1_000_000) + 21);
+    const link = (profile?: string) =>
+      `https://makerworld.com/en/models/${design}${profile ? `#profileId-${profile}` : ""}`;
+    for (const url of [link("10"), link("20"), link()]) {
+      await prisma.grabImport.create({ data: { userId, provider: "makerworld", url } });
+    }
+
+    await clearMakerworldGrabImports(userId, design, []);
+    expect((await waiting()).map((row) => row.url)).toEqual([link("10"), link("20")]);
+    await clearMakerworldGrabImports(userId, design, ["10"]);
+    expect((await waiting()).map((row) => row.url)).toEqual([link("20")]);
   });
 });

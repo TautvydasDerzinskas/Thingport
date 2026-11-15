@@ -97,6 +97,31 @@ describe("clearing MakerWorld's CAPTCHA with its own puzzle", () => {
     expect(asks).toHaveLength(2);
   });
 
+  it("waits for a puzzle the page shows already, which isn't this one, then opens its own", async () => {
+    answers = [ANSWER];
+    api({ status: 200, body: { name: "file.3mf", url: FILE } });
+    // One MakerWorld opened itself, for another of its requests or a download clicked by hand.
+    let pageShowsOne = true;
+    const box = { getBoundingClientRect: () => ({ width: 340, height: 390 }) };
+    vi.stubGlobal(
+      "document",
+      Object.assign(new EventTarget(), {
+        querySelectorAll: () => (pageShowsOne ? [box] : []),
+        getElementById: () => null,
+      }),
+    );
+    vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible", opacity: "1" }));
+
+    const outcome = solveMakerworldPuzzle(refusal().puzzle!);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(opened).toEqual([]);
+    pageShowsOne = false;
+
+    expect(await outcome).toEqual({ kind: "solved", resolved: { ...TARGET, downloadUrl: FILE } });
+    expect(opened).toEqual([CHALLENGE]);
+    expect(asks.map((ask) => ask.url)).toEqual([REFUSED_URL]);
+  });
+
   it("leaves it to the user where the page can't open MakerWorld's puzzle", async () => {
     pageShowsPuzzles = false;
     expect(await solveMakerworldPuzzle(refusal().puzzle!)).toEqual({ kind: "unavailable" });

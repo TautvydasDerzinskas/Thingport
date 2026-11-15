@@ -283,10 +283,12 @@ export type GrabFallback = {
   /** Only for someone whose Grab can be told about it. */
   available(userId: string): Promise<boolean>;
   queue(userId: string, url: string, options?: GrabImportOptions): Promise<void>;
-  /** Imported, however it came in: nothing waits for the model any more. */
-  clear(userId: string, modelId: string): Promise<void>;
-  /** An import deleted from the queue: its links mustn't come in through Grab either. */
-  drop(userId: string, urls: string[]): Promise<void>;
+  /** Imported, however it came in: nothing waits for the model any more, but a link naming one of its print profiles
+   *  that `profileIds`, those its print has now, lack. */
+  clear(userId: string, modelId: string, profileIds: string[]): Promise<void>;
+  /** Forgets what no import wants any more, its own deleted from the queue or taken out of one: it mustn't come in
+   *  through Grab either. `userId`'s, or everyone's. */
+  dropUnwanted(userId?: string): Promise<void>;
   /** What a failed link that waits says, or with `count`, a batch's summary of that many. */
   waitingText(count?: number): string;
   /** How many of `userId`'s imports wait for Grab here, and the first one's link, to send them to the site with. */
@@ -363,8 +365,9 @@ export const PROVIDERS = {
       available: async (userId) => (await makerworldGrabImports()).hasPairedGrab(userId),
       queue: async (userId, url, options) =>
         (await makerworldGrabImports()).queueMakerworldGrabImport(userId, url, options),
-      clear: async (userId, designId) => (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId),
-      drop: async (userId, urls) => (await makerworldGrabImports()).dropMakerworldGrabImports(userId, urls),
+      clear: async (userId, designId, profileIds) =>
+        (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId, profileIds),
+      dropUnwanted: async (userId) => (await makerworldGrabImports()).dropUnwantedMakerworldGrabImports(userId),
       waitingText: (count) =>
         `${count === undefined ? "Waits" : `${count} ${count === 1 ? "waits" : "wait"}`} for Thingport Grab: solve ` +
         `${name("makerworld")}'s puzzle on ${siteHost("makerworld")} and Grab finishes ` +

@@ -680,11 +680,23 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     const filedBefore = syncFiled(job);
     // MakerOnline links, handed to Thingport Grab: only it can get their files.
     let waitingForGrab = 0;
-    // Links a block stopped that wait for Grab to clear it too, the provider whose block that was, and whether its
-    // owner has a Grab to tell (asked once).
+    // Links a block stopped that wait for Grab to clear it too, the provider whose block that was (from the link that
+    // met it, handed over or not), and whether its owner has a Grab to tell (asked once).
     let handedToGrab = 0;
     let grabBlock: ProviderId | null = null;
     let grabPaired: boolean | null = null;
+    // This run's counts as far as the job's row has them. Added to it rather than set: Grab can count one of the job's
+    // failed links done while it runs (settleHandedLinks).
+    const written = { imported: 0, alreadyInLibrary: 0 };
+    const writeCounts = async (data: Prisma.ImportJobUpdateInput) => {
+      const counts = { imported, alreadyInLibrary };
+      await updateJob(jobId, {
+        ...data,
+        imported: { increment: counts.imported - written.imported },
+        alreadyInLibrary: { increment: counts.alreadyInLibrary - written.alreadyInLibrary },
+      });
+      Object.assign(written, counts);
+    };
 
     for (const [index, item] of items.entries()) {
       if (index > 0 && body.itemDelayMs) await sleep(body.itemDelayMs);
@@ -833,7 +845,11 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       // A block Grab can clear on the provider's site: the link waits for it as well as failing, for someone with a
       // paired Grab, and so do the links after it that the block stopped, from the same provider.
       const fallback = itemProvider ? PROVIDERS[itemProvider].grabFallback : undefined;
-      const blocked = itemFailure ? fallback?.blocks(itemFailure) : grabBlock !== null && grabBlock === itemProvider;
+      const blocked = itemFailure
+        ? Boolean(fallback?.blocks(itemFailure))
+        : grabBlock !== null && grabBlock === itemProvider;
+      // Whether this link is handed over or not: the links after it that the block stopped can be.
+      if (itemFailure && blocked) grabBlock = itemProvider;
       if (fallback && blocked && itemError && !partlyIn && (itemBody.scope ?? "url") === "url") {
         grabPaired ??= await fallback.available(userId).catch(() => false);
         if (grabPaired && URLS[itemProvider!].parseModel(item.url)) {
@@ -850,7 +866,6 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
             );
           if (queued) {
             handedToGrab++;
-            grabBlock = itemProvider;
             itemError = fallback.waitingText();
             failure = itemError;
           }
@@ -862,10 +877,8 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         errorMessage: itemError,
       }).catch(() => undefined);
       processed++;
-      await updateJob(jobId, {
+      await writeCounts({
         processed,
-        imported: job.imported + imported,
-        alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
         failedCount: await countJobItems(jobId, "FAILED"),
         // With every link: a sync's run can end at any of them, by giving way, a person's pause or a restart.
         ...(job.collectionSyncId
@@ -895,12 +908,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         ? await prisma.print.findUnique({ where: { id: printId }, select: { id: true, name: true, title: true } })
         : null;
     const singleTrail = single && !waitingForGrab && (failedCount > 0 || singlePrint !== null);
-    await updateJob(jobId, {
+    await writeCounts({
       status: "DONE",
       errorMessage: null,
       processed,
-      imported: totalImported,
-      alreadyInLibrary: job.alreadyInLibrary + alreadyInLibrary,
       failedCount,
       // A model already in the library must still open.
       resultPrintId: totalImported === 1 || singleTrail ? (printId ?? job.resultPrintId) : null,

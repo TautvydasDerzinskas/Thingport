@@ -210,13 +210,23 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
     overlays.show(spotlight);
     const outcome = await mine.outcome;
     // Torn down meanwhile by a re-render, whose own card takes the outcome.
-    if (overlays.current() !== spotlight || !spotlight.isConnected) return;
+    const shown = (overlay: HTMLElement) => overlays.current() === overlay && overlay.isConnected;
+    if (!shown(spotlight)) return;
+    if (outcome.kind === "solved") {
+      // Kept until the step goes on, so a re-render during "Solved" takes this outcome too rather than asking again,
+      // and resumes in place of this card.
+      const solved = solvedOverlay(progressHtml(job));
+      overlays.show(solved);
+      setTimeout(() => {
+        if (!shown(solved)) return;
+        if (solving === mine) solving = null;
+        resume(outcome.resolved);
+      }, SOLVED_MS);
+      return;
+    }
     if (solving === mine) solving = null;
     if (outcome.kind === "clear") resume(outcome.resolved);
-    else if (outcome.kind === "solved") {
-      overlays.show(solvedOverlay(progressHtml(job)));
-      setTimeout(() => resume(outcome.resolved), SOLVED_MS);
-    } else if (outcome.kind === "closed") {
+    else if (outcome.kind === "closed") {
       overlays.show(
         closedOverlay({
           extraHtml: progressHtml(job),
@@ -274,7 +284,9 @@ export function spotlightOverlay(
     const bottom = box?.bottom ?? (innerHeight + PUZZLE_HEIGHT) / 2;
     const below = top - height - SPOTLIGHT_GAP < SPOTLIGHT_MARGIN;
     card.classList.toggle("tg-spotlight--below", below);
-    card.style.top = `${Math.max(SPOTLIGHT_MARGIN, below ? bottom + SPOTLIGHT_GAP : top - height - SPOTLIGHT_GAP)}px`;
+    // On screen whatever the puzzle's size, over its foot if it must be: Stop is on this card.
+    const wanted = below ? bottom + SPOTLIGHT_GAP : top - height - SPOTLIGHT_GAP;
+    card.style.top = `${Math.max(SPOTLIGHT_MARGIN, Math.min(wanted, innerHeight - height - SPOTLIGHT_MARGIN))}px`;
     if (box) card.style.left = `${box.left + box.width / 2}px`;
   };
   const watch = setInterval(() => (card.isConnected ? place() : clearInterval(watch)), 250);

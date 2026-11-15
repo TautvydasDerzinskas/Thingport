@@ -156,9 +156,11 @@ export function toQueueSnapshot(raw: Partial<QueueOut> | null | undefined, now: 
 
 function toGrabWaiting(rows: unknown): GrabWaitingOut[] {
   if (!Array.isArray(rows)) return [];
-  return (rows as Partial<GrabWaitingOut>[])
-    .filter((row) => typeof row?.provider === "string" && numberOr0(row.count) > 0)
-    .map((row) => ({ provider: row.provider!, count: numberOr0(row.count), url: textOrNull(row.url) }));
+  return (rows as Partial<GrabWaitingOut>[]).flatMap((row) =>
+    typeof row?.provider === "string" && numberOr0(row.count) > 0
+      ? [{ provider: row.provider, count: numberOr0(row.count), url: textOrNull(row.url) }]
+      : [],
+  );
 }
 
 export type EveryoneQueue = {

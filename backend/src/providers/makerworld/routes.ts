@@ -70,8 +70,10 @@ router.post(
         );
         throw err;
       }
+      // Settled before the row goes, and failing the task if it can't be: kept, the row brings the link in again,
+      // as already imported, and settles it then.
+      await settleHandedLinks(userId, row.url, described.import_outcome === "already_imported");
       await clearMakerworldGrabImport(row).catch(() => undefined);
-      await settleHandedLinks(userId, row.url, described.import_outcome === "already_imported").catch(() => undefined);
       return described;
     };
     if (req.query.async === "1") {

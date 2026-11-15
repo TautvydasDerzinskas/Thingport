@@ -32,6 +32,8 @@ const LATER_KEY = "makerworldWaitingLaterUntil";
 // Between two of MakerWorld's downloads, as the instance paces its own.
 const GAP_MS = 4000;
 const TASK_POLL_MS = 1500;
+// Longer than any one model's import takes: an import still going then counts as failed here, and the run goes on.
+const TASK_WAIT_MS = 10 * 60 * 1000;
 // How long the run's last word stays before it goes by itself.
 const DONE_MS = 8000;
 
@@ -81,20 +83,21 @@ function showOffer(waiting: WaitingImport[]): void {
   });
 }
 
-/** Hands a resolved file to the instance, and waits for its import: true once it's in. */
-async function bringIn(row: WaitingImport, resolved: ResolvedDownload): Promise<boolean> {
+/** Hands a resolved file to the instance, and waits for its import: true once it's in. False once `stopped` says so,
+ *  or the import takes too long; either goes on on the instance. */
+async function bringIn(row: WaitingImport, resolved: ResolvedDownload, stopped: () => boolean): Promise<boolean> {
   try {
     const { task_id } = await api<{ task_id: string }>("POST", `/import/${PROVIDER}/waiting/${row.id}?async=1`, {
       resolved_download_url: resolved.downloadUrl,
       resolved_instance_id: resolved.instanceId,
       makerworld_design: resolved.design ?? null,
     });
-    for (;;) {
+    for (const end = Date.now() + TASK_WAIT_MS; !stopped() && Date.now() < end; await sleep(TASK_POLL_MS)) {
       const task = await api<TaskState>("GET", `/import/tasks/${task_id}`);
       if (task.status === "done") return true;
       if (task.status === "error") return false;
-      await sleep(TASK_POLL_MS);
     }
+    return false;
   } catch {
     return false;
   }
@@ -204,7 +207,7 @@ async function run(waiting: WaitingImport[]): Promise<void> {
         failed++;
         continue;
       }
-      if (await bringIn(row, resolved)) imported++;
+      if (await bringIn(row, resolved, () => stopped)) imported++;
       else failed++;
     }
   } finally {

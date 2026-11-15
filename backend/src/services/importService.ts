@@ -1408,9 +1408,11 @@ export async function importPrintFromUrl(
   // However it came in, nothing need wait for Grab to bring it.
   const provider = result.print.sourceProvider;
   const backend = isProviderId(provider) ? PROVIDERS[provider] : undefined;
-  const waiting = backend?.grabQueue ?? backend?.grabFallback;
-  if (!keepGrabImports && waiting && result.print.sourceExternalId) {
-    await waiting.clear(userId, result.print.sourceExternalId).catch(() => undefined);
+  const modelId = result.print.sourceExternalId;
+  if (!keepGrabImports && backend && modelId) {
+    await backend.grabQueue?.clear(userId, modelId).catch(() => undefined);
+    const profileIds = result.plates.flatMap((plate) => plate.sourceInstanceId ?? []);
+    await backend.grabFallback?.clear(userId, modelId, profileIds).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);

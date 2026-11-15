@@ -1,5 +1,6 @@
-import type { GrabImport } from "@prisma/client";
+import type { GrabImport, ImportJobItemStatus } from "@prisma/client";
 import { prisma } from "../../db";
+import { isOneModelLink } from "../../services/importJobService";
 import { createNotification } from "../../services/notificationService";
 import { HttpError } from "../../utils/fileUtils";
 import type { GrabImportOptions } from "../makeronline/grabImports";
@@ -66,13 +67,25 @@ export async function getMakerworldGrabImport(userId: string, id: string): Promi
   return row;
 }
 
-/** Imported, however it came in: nothing waits for this model any more. */
-export async function clearMakerworldGrabImports(userId: string, designId: string): Promise<void> {
+/** Imported, however it came in: nothing waits for this model any more, as far as `profileIds`, the print profiles
+ *  its print has now, go. A link naming another profile still waits for it; one naming none is any profile's. */
+export async function clearMakerworldGrabImports(
+  userId: string,
+  designId: string,
+  profileIds: string[],
+): Promise<void> {
   const rows = await prisma.grabImport.findMany({
     where: { userId, provider: PROVIDER },
     select: { id: true, url: true },
   });
-  const done = rows.filter((row) => parseMakerworldModelUrl(row.url)?.designId === designId).map((row) => row.id);
+  const done = rows
+    .filter((row) => {
+      const link = parseMakerworldModelUrl(row.url);
+      return (
+        link?.designId === designId && (!link.requestedInstanceId || profileIds.includes(link.requestedInstanceId))
+      );
+    })
+    .map((row) => row.id);
   if (done.length) await prisma.grabImport.deleteMany({ where: { id: { in: done } } });
 }
 
@@ -81,9 +94,38 @@ export async function clearMakerworldGrabImport(row: GrabImport): Promise<void> 
   await prisma.grabImport.deleteMany({ where: { id: row.id, userId: row.userId } });
 }
 
-/** The links of an import deleted from the queue: Grab mustn't bring in what its owner threw away. */
-export async function dropMakerworldGrabImports(userId: string, urls: string[]): Promise<void> {
-  if (urls.length) await prisma.grabImport.deleteMany({ where: { userId, provider: PROVIDER, url: { in: urls } } });
+/** The links of link lists Grab bringing in one of `urls` finishes, by `status`: their own, or with `userId` unset,
+ *  everyone's. */
+async function linksGrabFinishes(userId: string | undefined, urls: string[], status: ImportJobItemStatus[]) {
+  const items = await prisma.importJobItem.findMany({
+    where: { url: { in: urls }, status: { in: status }, job: { type: "LINKS", ...(userId ? { userId } : {}) } },
+    select: {
+      id: true,
+      jobId: true,
+      url: true,
+      payload: true,
+      job: { select: { userId: true, type: true, payload: true } },
+    },
+  });
+  return items.filter((item) => isOneModelLink(item, item.job));
+}
+
+/** Waiting links no import wants any more, its own deleted from the queue or taken out of one: Grab mustn't bring in
+ *  what its owner threw away. `userId`'s, or with it unset, everyone's. */
+export async function dropUnwantedMakerworldGrabImports(userId?: string): Promise<void> {
+  const rows = await prisma.grabImport.findMany({
+    where: { provider: PROVIDER, ...(userId ? { userId } : {}) },
+    select: { id: true, userId: true, url: true },
+  });
+  if (!rows.length) return;
+  const links = await linksGrabFinishes(
+    userId,
+    [...new Set(rows.map((row) => row.url))],
+    ["PENDING", "RUNNING", "FAILED"],
+  );
+  const wanted = new Set(links.map((item) => `${item.job.userId}|${item.url}`));
+  const dropped = rows.filter((row) => !wanted.has(`${row.userId}|${row.url}`)).map((row) => row.id);
+  if (dropped.length) await prisma.grabImport.deleteMany({ where: { id: { in: dropped } } });
 }
 
 /** A failed try in Grab. The last one drops the model and says why. */
@@ -110,14 +152,13 @@ export async function hasPairedGrab(userId: string): Promise<boolean> {
 }
 
 /** Grab brought a waiting link in: where it failed in an import here, that link counts as done now, and its import
- *  leaves Needs attention once nothing else of it failed. */
+ *  leaves Needs attention once nothing else of it failed. Only links asking for that one model: one for all of its
+ *  profiles, say, isn't done by one file. */
 export async function settleHandedLinks(userId: string, url: string, alreadyInLibrary: boolean): Promise<void> {
-  const items = await prisma.importJobItem.findMany({
-    where: { url, status: "FAILED", job: { userId } },
-    select: { id: true, jobId: true },
-  });
   const byJob = new Map<string, string[]>();
-  for (const item of items) byJob.set(item.jobId, [...(byJob.get(item.jobId) ?? []), item.id]);
+  for (const item of await linksGrabFinishes(userId, [url], ["FAILED"])) {
+    byJob.set(item.jobId, [...(byJob.get(item.jobId) ?? []), item.id]);
+  }
   for (const [jobId, ids] of byJob) {
     await prisma.$transaction(async (tx) => {
       const { count } = await tx.importJobItem.updateMany({
@@ -125,15 +166,15 @@ export async function settleHandedLinks(userId: string, url: string, alreadyInLi
         data: { status: "DONE", errorMessage: null },
       });
       if (!count) return;
-      const job = await tx.importJob.findUnique({ where: { id: jobId }, select: { failedCount: true } });
-      if (!job) return;
-      await tx.importJob.update({
+      // Added, never set: its runner may be writing its own counts. And first, as this holds the job's row until the
+      // end, so another link settled beside this one counts its failures after this, not over it.
+      const counted = await tx.importJob.updateMany({
         where: { id: jobId },
-        data: {
-          failedCount: Math.max(0, job.failedCount - count),
-          ...(alreadyInLibrary ? { alreadyInLibrary: { increment: count } } : { imported: { increment: count } }),
-        },
+        data: alreadyInLibrary ? { alreadyInLibrary: { increment: count } } : { imported: { increment: count } },
       });
+      if (!counted.count) return;
+      const failedCount = await tx.importJobItem.count({ where: { jobId, status: "FAILED" } });
+      await tx.importJob.update({ where: { id: jobId }, data: { failedCount } });
     });
   }
 }

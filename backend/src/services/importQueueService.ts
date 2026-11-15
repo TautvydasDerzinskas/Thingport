@@ -7,7 +7,7 @@ import type { ImportJob, Prisma } from "@prisma/client";
 import { AUTH_SECRET } from "../config";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
-import { detectProvider, type ProviderId } from "../providers/index.generated";
+import { detectProvider, PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import type { ProfileScope } from "../providers/types";
 import { storedImportBody, type StoredRequest } from "../routes/importRequest";
 import { HttpError } from "../utils/fileUtils";
@@ -26,6 +26,7 @@ import {
   countJobItems,
   createJobItems,
   hasSavedRequest,
+  isOneModelLink,
   jobPayload,
   linkTotals,
   listJobItems,
@@ -637,25 +638,28 @@ async function describeJobs<T extends ImportJob>(
 }
 
 /** Each job's failed links that wait in Grab's list too: a link Grab finishes only fails here when a block it can clear
- *  stopped it, as one Grab alone imports is parked as done. */
+ *  stopped it, as one Grab alone imports is parked as done. Only those it finishes by bringing that one model in. */
 async function countGrabWaiting(db: Prisma.TransactionClient, jobs: ImportJob[]): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
-  const failedJobs = jobs.filter((job) => job.failedCount > 0);
+  const failedJobs = jobs.filter((job) => job.type === "LINKS" && job.failedCount > 0);
   if (!failedJobs.length) return counts;
-  const owners = new Map(failedJobs.map((job) => [job.id, job.userId]));
+  const byId = new Map(failedJobs.map((job) => [job.id, job]));
   const [failed, waiting] = await Promise.all([
     db.importJobItem.findMany({
-      where: { jobId: { in: [...owners.keys()] }, status: "FAILED" },
-      select: { jobId: true, url: true },
+      where: { jobId: { in: [...byId.keys()] }, status: "FAILED" },
+      select: { jobId: true, url: true, payload: true },
     }),
     db.grabImport.findMany({
-      where: { userId: { in: [...new Set(owners.values())] } },
+      where: { userId: { in: [...new Set(failedJobs.map((job) => job.userId))] } },
       select: { userId: true, url: true },
     }),
   ]);
   const waits = new Set(waiting.map((row) => `${row.userId}|${row.url}`));
   for (const item of failed) {
-    if (waits.has(`${owners.get(item.jobId)}|${item.url}`)) counts.set(item.jobId, (counts.get(item.jobId) ?? 0) + 1);
+    const job = byId.get(item.jobId);
+    if (job && isOneModelLink(item, job) && waits.has(`${job.userId}|${item.url}`)) {
+      counts.set(item.jobId, (counts.get(item.jobId) ?? 0) + 1);
+    }
   }
   return counts;
 }
@@ -772,38 +776,24 @@ async function deleteJob(job: ImportJob): Promise<void> {
   forgetManualStart(job.id);
 }
 
-/** The links' providers forget them in Grab's list. Loaded when used: the registry reaches this service. */
-async function dropGrabWaiting(userId: string, urls: string[]): Promise<void> {
+/** What waits for Grab and no import wants any more, gone from the queue: `userId`'s, or everyone's. Loaded when used:
+ *  the registry reaches this service. */
+async function dropUnwantedGrabWaiting(userId?: string): Promise<void> {
   const { PROVIDERS } = await import("../providers/registry");
-  const byProvider = new Map<ProviderId, string[]>();
-  for (const url of urls) {
-    const provider = detectProvider(url);
-    if (provider && PROVIDERS[provider].grabFallback)
-      byProvider.set(provider, [...(byProvider.get(provider) ?? []), url]);
-  }
   await Promise.all(
-    [...byProvider].map(([provider, links]) =>
-      PROVIDERS[provider].grabFallback?.drop(userId, links).catch(() => undefined),
-    ),
+    PROVIDER_IDS.map((provider) => PROVIDERS[provider].grabFallback?.dropUnwanted(userId).catch(() => undefined)),
   );
 }
 
-/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. Its failed
- *  links stop waiting for Grab too: what its owner threw away mustn't come in that way. */
+/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. Its links stop
+ *  waiting for Grab too: what its owner threw away mustn't come in that way. */
 export async function deleteQueueJob(jobId: string, ownerId?: string): Promise<void> {
   const { userId } = await getQueueJob(jobId, ownerId);
   await withImportUserLock(userId, async () => {
     const job = await getQueueJob(jobId, ownerId);
     assertIdle(job);
-    const failed = job.failedCount
-      ? await prisma.importJobItem.findMany({ where: { jobId, status: "FAILED" }, select: { url: true } })
-      : [];
     await deleteJob(job);
-    if (failed.length)
-      await dropGrabWaiting(
-        userId,
-        failed.map((item) => item.url),
-      );
+    await dropUnwantedGrabWaiting(userId);
   });
 }
 
@@ -821,6 +811,7 @@ export async function removeQueueItem(itemId: string, ownerId?: string): Promise
     assertIdle(job);
     const removed = await prisma.importJobItem.deleteMany({ where: { id: itemId } });
     if (!removed.count) throw notFound();
+    await dropUnwantedGrabWaiting(job.userId);
     const left = await prisma.importJobItem.count({ where: { jobId: job.id } });
     if (!left) {
       await deleteJob(job);
@@ -862,6 +853,7 @@ export async function clearFinishedJobs(scope: BulkScope = {}): Promise<number> 
   const { count } = await prisma.importJob.deleteMany({
     where: { ...finished, ...ownerOf(scope), id: { notIn: liveRunnerIds() } },
   });
+  if (count) await dropUnwantedGrabWaiting(scope.ownerId);
   return count;
 }
 

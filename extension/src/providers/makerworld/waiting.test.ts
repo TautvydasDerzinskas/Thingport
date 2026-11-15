@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Grab's offer of the imports MakerWorld's CAPTCHA stopped on the instance, and its run through them once asked. The
 // instance, the page's resolution, MakerWorld's puzzle and the cards are stand-ins.
@@ -19,6 +19,8 @@ const calls = vi.hoisted(() => ({
   puzzle: { kind: "solved" } as Record<string, unknown>,
   puzzles: 0,
   store: {} as Record<string, unknown>,
+  task: (() => "done") as (path: string) => string,
+  onSleep: () => undefined as void,
 }));
 
 vi.mock("../../content/runtime", () => ({
@@ -29,10 +31,10 @@ vi.mock("../../content/runtime", () => ({
       return calls.waiting;
     }
     if (method === "POST" && path.endsWith("?async=1")) return { task_id: `task-${path}` };
-    if (method === "GET" && path.startsWith("/import/tasks/")) return { status: "done" };
+    if (method === "GET" && path.startsWith("/import/tasks/")) return { status: calls.task(path) };
     return null;
   }),
-  sleep: async () => undefined,
+  sleep: async () => calls.onSleep(),
   escapeHtml: (value: string) => value,
 }));
 vi.mock("../../content/providerSettings", () => ({ providerEnabled: async () => true }));
@@ -122,7 +124,10 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     calls.store = {};
     calls.puzzle = { kind: "solved", resolved: fileOf(MODEL_A, null) };
     calls.resolve = async (url, instanceId) => fileOf(url, instanceId);
+    calls.task = () => "done";
+    calls.onSleep = () => undefined;
   });
+  afterEach(() => vi.restoreAllMocks());
 
   it("are offered by the icon, and nothing opens until asked", async () => {
     await freshOffer();
@@ -198,5 +203,22 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
 
     const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
     expect(posts).toEqual(["/import/makerworld/waiting/w1/failed", "/import/makerworld/waiting/w2?async=1"]);
+  });
+
+  it("go on past an import the instance doesn't finish in time", async () => {
+    calls.task = (path) => (path.includes("/w1?") ? "running" : "done");
+    // Time passes only while Grab waits between its asks.
+    let now = Date.now();
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    calls.onSleep = () => void (now += 60_000);
+    await freshOffer();
+    await solve();
+
+    const asks = calls.api.filter(({ path }) => path.startsWith("/import/tasks/") && path.includes("/w1?"));
+    expect(asks.length).toBeGreaterThan(1);
+    expect(asks.length).toBeLessThanOrEqual(11);
+    const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
+    expect(posts).toEqual(["/import/makerworld/waiting/w1?async=1", "/import/makerworld/waiting/w2?async=1"]);
+    expect(calls.shown.at(-1)).toBe("done");
   });
 });

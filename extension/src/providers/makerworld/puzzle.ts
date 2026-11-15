@@ -8,14 +8,15 @@ import {
   answerRefusal,
   MakerworldCaptchaError,
   type MakerworldPuzzle,
-  puzzleOnPage,
   resolveMakerworldViaApi,
 } from "./downloadResolver";
 import type { PuzzleAnswer, PuzzleChallenge } from "./pagePuzzle";
-import { puzzleBox } from "./puzzleBox";
+import { puzzleGone } from "./puzzleBox";
 
 // A puzzle solved whose answer MakerWorld still refuses gets one more go before it counts as not solved.
 const MAX_PUZZLES = 2;
+// How long one the page shows already may keep ours waiting.
+const PAGE_PUZZLE_MS = 10 * 60 * 1000;
 // Only a header of MakerWorld's own kind is sent on: the answer comes from its page.
 const ANSWER_HEADER = /^x-[\w-]+$/i;
 
@@ -53,17 +54,18 @@ async function openPuzzle(challenge: PuzzleChallenge): Promise<PuzzleAnswer | "u
   return opened?.ok && opened.data ? answer : "unavailable";
 }
 
-/** Shows the puzzle that clears `puzzle` and goes on with the file once it's solved. MakerWorld's own, where its page
- *  already shows it, rather than a second one over it. */
+/** Shows the puzzle that clears `puzzle` and goes on with the file once it's solved. A puzzle the page shows already,
+ *  for a request of its own or a download someone clicked, isn't this one: its file would be another's, so this opens
+ *  once that's gone, rather than over it. */
 export async function solveMakerworldPuzzle(puzzle: MakerworldPuzzle): Promise<PuzzleOutcome> {
   let current: MakerworldPuzzle | null = puzzle;
   for (let shown = 0; current && shown < MAX_PUZZLES; shown++) {
-    const onPage = "onPage" in current ? current.onPage : puzzleBox() ? puzzleOnPage() : null;
-    if (onPage) {
-      const downloadUrl = await onPage;
+    if ("onPage" in current) {
+      const downloadUrl = await current.onPage;
       return downloadUrl ? { kind: "solved", resolved: { ...current.target, downloadUrl } } : { kind: "closed" };
     }
-    const { refused, target } = current as Extract<MakerworldPuzzle, { refused: unknown }>;
+    const { refused, target } = current;
+    await puzzleGone(PAGE_PUZZLE_MS);
     const answer = await openPuzzle(refused.challenge);
     if (answer === "unavailable") return { kind: "unavailable" };
     if (!answer) return { kind: "closed" };
