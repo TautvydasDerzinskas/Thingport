@@ -105,15 +105,21 @@ export function guideCommands(
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
     // leaves out containers a `docker compose run` left behind.
     storage: `docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
-    // rsync makes only the last folder of the path, so the rest is made first. ssh hands its command to the far
-    // server's shell, hence the folder quoted twice.
+    // rsync makes only the last folder of the path, so the rest is made first: as the SSH user, or where only root
+    // can, as under /srv, with sudo and given to that user, so rsync can write there. A folder already there is left
+    // as it is. ssh hands its command to the far server's shell, hence it's quoted as one word, the folder in it again;
+    // -t, so sudo can ask for a password.
     bring: [
-      `ssh ${shellWord(host.ssh)} mkdir -p ${shellWord(shellWord(folder))}`,
+      `ssh -t ${shellWord(host.ssh)} ${shellWord(`mkdir -p ${shellWord(folder)} 2>/dev/null || sudo install -d -o "$(id -u)" ${shellWord(folder)}`)}`,
       `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
     ].join("\n"),
     // Whoever copied them, the backend's user then owns the two, and only it can read the dump. Only the two: the
-    // folder may be one that holds other things.
-    hand: `sudo chown -R ${uid}:${gid} ${shellWord(`${folder}/${DUMP}`)} ${shellWord(`${folder}/${STORAGE}`)}`,
+    // folder may be one that holds other things, so it only gets go+x, letting the backend in, as a stricter umask
+    // than 022 makes it private to whoever made it. That lets no one list it.
+    hand: [
+      `sudo chown -R ${uid}:${gid} ${shellWord(`${folder}/${DUMP}`)} ${shellWord(`${folder}/${STORAGE}`)}`,
+      `sudo chmod go+x ${shellWord(folder)}`,
+    ].join("\n"),
     mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, ...volume].join("\n"),
     restart: "docker compose up -d backend",
   };

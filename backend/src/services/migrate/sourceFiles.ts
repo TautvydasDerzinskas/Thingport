@@ -119,8 +119,10 @@ async function insideRoot(given: string): Promise<string> {
   try {
     real = await fs.realpath(trimmed);
   } catch (err) {
-    // Missing, unreadable, or it doesn't stay inside: told apart only for paths that would have been inside.
-    if (path.resolve(trimmed).startsWith(root + path.sep)) {
+    // Missing, unreadable, or it doesn't stay inside: told apart only for paths that would have been inside, by the
+    // folder's name or its real path, as where MIGRATE_DIR is a link.
+    const asked = path.resolve(trimmed);
+    if ([root, realRoot].some((base) => asked.startsWith(base + path.sep))) {
       // A folder on the way this server's user can't enter, as the guide's handover left undone does.
       if ((err as NodeJS.ErrnoException).code === "EACCES") throw unreadable(trimmed);
       throw new MigrateError("folder_missing", `There's no folder at ${trimmed} on this server.`, { folder: trimmed });

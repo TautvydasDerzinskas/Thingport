@@ -99,29 +99,37 @@ This copies it into `old-storage`, beside the dump, whether its Compose file kee
 or in a Docker volume. It needs as much free space as the storage takes. `/app/storage` is the old backend's
 `FILE_STORAGE`, which the Compose files set: if you changed it, use yours.
 
-On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `rsync`
-below, put the dump beside the folder and mount the folder that holds both. The Source step then takes the storage
-folder by its own name, such as `/app/migrate/storage`, rather than `/app/migrate/old-storage`.
+On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `ssh` and
+`rsync` lines below, put the dump beside the folder and mount the folder that holds both. In the hand-over below, give
+only the dump, not the storage folder: that stays the old backend's, and this one reads it as it is, as Thingport
+writes its files readable by every user. The Source step takes the storage folder by its own name, such as
+`/app/migrate/storage`, rather than `/app/migrate/old-storage`.
 
 Then bring both to this server, over SSH or on a disk. On the same server, move them instead. Use this server's address
-and a folder of your own. The first line makes the folder, as rsync makes only the last folder of a path:
+and a folder of your own. The first line makes the folder, as rsync makes only the last folder of a path. Where only
+root can, as under `/srv`, it does that with `sudo`, asking for your password on this server, and gives the folder to
+the SSH user so rsync can write there. A folder that's already there is left as it is.
 
 ```sh
-ssh 192.168.1.20 mkdir -p /srv/old-thingport
+ssh -t 192.168.1.20 'mkdir -p /srv/old-thingport 2>/dev/null || sudo install -d -o "$(id -u)" /srv/old-thingport'
 rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
 For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than
-3.2.4 splits the path on this server; in the `ssh` line, quote the folder twice, as this server's shell reads it again.
-`-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync has none: where one is older, use a folder
-without spaces or symbols, which any rsync takes as it is. An IPv6 address goes in brackets in the `rsync` line
-(`[2001:db8::20]:/srv/old-thingport/`) but not in the `ssh` one. **How do I make these?** writes both lines for you.
+3.2.4 splits the path on this server; in the `ssh` line, quote the folder again, in double quotes inside the single
+ones, as this server's shell reads it again. `-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync
+has none: where one is older, use a folder without spaces or symbols, which any rsync takes as it is. An IPv6 address
+goes in brackets in the `rsync` line (`[2001:db8::20]:/srv/old-thingport/`) but not in the `ssh` one.
+**How do I make these?** writes both lines for you.
 
 On this server, hand the two to the user the backend runs as, `PUID`:`PGID` (1000:1000 unless you changed them), so it
-can read them and no one else can read the dump. Only the two, not the folder, which may hold other things:
+can read them and no one else can read the dump. Only the two, as the folder may hold other things: the folder only
+gets `go+x`, which lets the backend into it, as a stricter umask than `022` keeps it to whoever made it, but lets no
+one list it.
 
 ```sh
 sudo chown -R 1000:1000 /srv/old-thingport/thingport.dump /srv/old-thingport/old-storage
+sudo chmod go+x /srv/old-thingport
 ```
 
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
@@ -195,6 +203,7 @@ what came over already is skipped. Running the same dump again later brings noth
 | The database user can't create databases and roles | The working copy is a database of its own, restored as a role made for it, with no rights on this instance's data. Give the database user `CREATEDB` and `CREATEROLE`.                                                                        |
 | pg_restore isn't installed on this server          | The Thingport image has it. Running the backend outside Docker, install the PostgreSQL client tools.                                                                                                                                          |
 | None of its files are in that folder               | The path is wrong, or this server can't read it. Change it on the Check step.                                                                                                                                                                 |
+| This server can't read …                           | Hand the dump and `old-storage` to the backend's user and let it into their folder, as in [step 3](#3-bring-the-storage-folder-over).                                                                                                         |
 | Give a path inside /app/migrate                    | Mount the old instance's files there, as above, and give the paths below it.                                                                                                                                                                  |
 | This server can't reach the address                | The address is as this server sees it, not your browser. From Docker, `localhost` is the container itself.                                                                                                                                    |
 | The old instance turned the token down             | It expired (after 24 hours), was revoked, or another was made since. A run it stopped can't go on: remove it from the list, which files what it brought, make a new token there and start a new migration. What came over already is skipped. |
