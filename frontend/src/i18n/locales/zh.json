@@ -2915,7 +2915,7 @@
           "database": "数据库",
           "databaseHelp": "旧实例的 POSTGRES_DB（如果你改过）。",
           "storagePath": "存储路径",
-          "storagePathHelp": "旧后端的 FILE_STORAGE（如果你改过）。",
+          "storagePathHelp": "旧后端的 FILE_STORAGE（如果你改过）。相对路径从 /app 算起：./files 即 /app/files。",
           "storageLead": "在同一文件夹中运行。它会把存储复制到转储旁边的 old-storage，无论存储是文件夹还是 Docker 卷。所需空闲空间与存储占用的空间相同。如果之前的尝试留下了 old-storage，该命令会停止：请先删除它，因为复制到其中会保留之后已删除的文件。",
           "bringLead": "把两者复制到此服务器，或用磁盘带过来。如果是同一台服务器，直接移到该文件夹即可。如果只有 root 能创建该文件夹（例如在 /srv 下），第一行会在此服务器上请求 sudo。",
           "host": "此服务器的地址",

@@ -3109,7 +3109,7 @@
           "database": "Base de données",
           "databaseHelp": "Le POSTGRES_DB de l’ancienne instance, si vous l’avez changé.",
           "storagePath": "Chemin du stockage",
-          "storagePathHelp": "Le FILE_STORAGE de l’ancien backend, si vous l’avez changé.",
+          "storagePathHelp": "Le FILE_STORAGE de l’ancien backend, si vous l’avez changé. Un chemin relatif part de /app : ./files est /app/files.",
           "storageLead": "Depuis le même dossier. Cela copie son stockage dans old-storage, à côté du dump, qu’il s’agisse d’un dossier ou d’un volume Docker. Il faut autant d’espace libre que le stockage en occupe. La commande s’arrête si une tentative précédente a laissé old-storage : supprimez-le d’abord, car copier dedans garderait des fichiers supprimés depuis.",
           "bringLead": "Copiez les deux sur ce serveur, ou apportez-les sur un disque. Sur le même serveur, déplacez-les simplement dans le dossier. Là où seul root peut créer le dossier, comme sous /srv, la première ligne demande sudo sur ce serveur.",
           "host": "Adresse de ce serveur",

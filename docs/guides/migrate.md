@@ -97,10 +97,11 @@ mkdir -m 700 old-storage && docker compose cp backend:/app/storage/. old-storage
 
 This copies it into `old-storage`, beside the dump, whether its Compose file keeps the storage in a folder on the server
 or in a Docker volume. It needs as much free space as the storage takes. `/app/storage` is the old backend's
-`FILE_STORAGE`, which the Compose files set: if you changed it, use yours. `mkdir` stops it if an earlier try left an
-`old-storage` there: remove that first, as copying into it would keep files the old instance has removed since. The
-folder is made readable by you only (`-m 700`), as the files in it are readable by everyone, and it stays so here and
-on this server.
+`FILE_STORAGE`, which the Compose files set: if you changed it, use yours, as a full path. The backend reads a relative
+one from `/app`, but `docker compose cp` from `/`, so `./files` is `/app/files`. `mkdir` stops it if an earlier try
+left an `old-storage` there: remove that first, as copying into it would keep files the old instance has removed
+since. The folder is made readable by you only (`-m 700`), as the files in it are readable by everyone, and it stays
+so here and on this server.
 
 On the same server, a storage folder (not a volume) can be read where it is instead: skip the copy and the `ssh` and
 `rsync` lines below, put the dump beside the folder and mount the folder that holds both. In the hand-over below, give
@@ -125,12 +126,12 @@ ssh -t 192.168.1.20 'mkdir -p -m 755 /srv/old-thingport 2>/dev/null || { sudo mk
 rsync -a --delete thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
-For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than
-3.2.4 splits the path on this server; in the `ssh` line, quote the folder again, in double quotes inside the single
-ones, as this server's shell reads it again. `-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync
-has none: where one is older, use a folder without spaces or symbols, which any rsync takes as it is. An IPv6 address
-goes in brackets in the `rsync` line, quoted, as zsh reads brackets as a pattern
-(`'[2001:db8::20]:/srv/old-thingport/'`), but not in the `ssh` one. **How do I make these?** writes both lines for you.
+A folder with spaces or symbols in its path, such as `$`, has to be quoted for two shells, the old server's and this
+one's, which reads the `ssh` line once more: let **How do I make these?** write both lines for it. It also adds `-s`
+(`rsync -as`), as an rsync older than 3.2.4 splits the path on this server otherwise. `-s` takes rsync 3.0.0 or later
+on both servers, and macOS's own rsync has none: where one is older, use a folder without spaces or symbols, which any
+rsync takes as it is. An IPv6 address goes in brackets in the `rsync` line, quoted, as zsh reads brackets as a pattern
+(`'[2001:db8::20]:/srv/old-thingport/'`), but not in the `ssh` one.
 
 On this server, hand the two to the user the backend runs as, `PUID`:`PGID` (1000:1000 unless you changed them), so it
 can read them and no one else can read the dump. Only the two, not the folder, which may hold other things:
