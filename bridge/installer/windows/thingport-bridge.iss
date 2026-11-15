@@ -45,7 +45,7 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [CustomMessages]
 LegacyExeRemovalFailed=The previous Bridge executable could not be removed. Close Thingport Bridge and remove this file manually:
-ru.LegacyExeRemovalFailed=Не удалось удалить предыдущий файл Bridge. Закройте Thingport Bridge и удалите этот файл вручную:
+russian.LegacyExeRemovalFailed=Не удалось удалить предыдущий файл Bridge. Закройте Thingport Bridge и удалите этот файл вручную:
 
 [Files]
 Source: "..\..\dist\thingport-bridge-windows-amd64.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
