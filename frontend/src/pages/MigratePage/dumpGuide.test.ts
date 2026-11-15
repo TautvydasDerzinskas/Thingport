@@ -5,6 +5,7 @@ import {
   folderIsAbsolute,
   folderNeedsProtect,
   guessHost,
+  hostForms,
   guideCommands,
   guidePaths,
   shellWord,
@@ -22,7 +23,9 @@ describe("dump guide", () => {
       "docker compose stop backend\ndocker compose exec -T db pg_dump -U tp -Fc library > thingport.dump",
     );
     expect(commands.storage).toBe("docker compose cp backend:/app/storage/. old-storage");
-    expect(commands.bring).toBe("rsync -a thingport.dump old-storage 192.168.1.20:/data/old/");
+    expect(commands.bring).toBe(
+      "ssh 192.168.1.20 mkdir -p /data/old\nrsync -a thingport.dump old-storage 192.168.1.20:/data/old/",
+    );
     expect(commands.mount).toContain("      - /data/old:/app/migrate:ro");
     expect(commands.mount).toContain("      # ...its own volumes, as they are...");
   });
@@ -30,7 +33,9 @@ describe("dump guide", () => {
   it("takes the defaults for a field left empty", () => {
     const commands = guideCommands({ user: " ", database: "", host: "", folder: "" }, where);
     expect(commands.dump).toContain(`-U ${DEFAULT_NAMES.user} -Fc ${DEFAULT_NAMES.database} >`);
-    expect(commands.bring).toBe(`rsync -a thingport.dump old-storage this-server:${DEFAULT_NAMES.folder}/`);
+    expect(commands.bring.split("\n").at(-1)).toBe(
+      `rsync -a thingport.dump old-storage this-server:${DEFAULT_NAMES.folder}/`,
+    );
   });
 
   it("quotes what the shell would read as more than a name", () => {
@@ -44,7 +49,25 @@ describe("dump guide", () => {
     );
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
     // -s, or an older rsync's remote shell splits the path the local one kept whole.
-    expect(commands.bring).toBe("rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'");
+    // Quoted twice for ssh, whose far shell reads the command again; -s, or an older rsync's far shell splits it.
+    expect(commands.bring).toBe(
+      "ssh 192.168.1.20 mkdir -p ''\\''/srv/old library'\\'''\n" +
+        "rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'",
+    );
+  });
+
+  it("brackets an IPv6 address for rsync but not for ssh", () => {
+    expect(hostForms("2001:db8::20")).toEqual({ rsync: "[2001:db8::20]", ssh: "2001:db8::20" });
+    expect(hostForms("[2001:db8::20]")).toEqual({ rsync: "[2001:db8::20]", ssh: "2001:db8::20" });
+    expect(hostForms("me@2001:db8::20")).toEqual({ rsync: "me@[2001:db8::20]", ssh: "me@2001:db8::20" });
+    for (const host of ["192.168.1.20", "me@thingport.lan", "this-server"]) {
+      expect(hostForms(host)).toEqual({ rsync: host, ssh: host });
+    }
+    const { bring } = guideCommands({ ...DEFAULT_NAMES, host: "2001:db8::20" }, where);
+    expect(bring).toBe(
+      "ssh 2001:db8::20 mkdir -p /srv/old-thingport\n" +
+        "rsync -a thingport.dump old-storage '[2001:db8::20]:/srv/old-thingport/'",
+    );
   });
 
   it("says when the folder needs -s, which macOS's own rsync lacks", () => {

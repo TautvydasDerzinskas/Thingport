@@ -54,12 +54,23 @@ export function folderNeedsProtect(value: string): boolean {
   return Boolean(folder) && shellWord(folder) !== folder;
 }
 
+/** The address as each command takes it. rsync splits `host:path` at the first colon, so an IPv6 address goes in
+ *  brackets, which it takes off again; ssh looks the name up as given, brackets and all, so there it goes without. */
+export function hostForms(value: string): { rsync: string; ssh: string } {
+  const at = value.lastIndexOf("@");
+  const user = value.slice(0, at + 1);
+  const name = value.slice(at + 1).replace(/^\[(.*)\]$/, "$1");
+  const ipv6 = (name.match(/:/g) ?? []).length > 1;
+  return { rsync: user + (ipv6 ? `[${name}]` : name), ssh: user + name };
+}
+
 /** The commands for each step, with the names given, or their defaults where a field is left empty. `root` is where
  *  this server's backend reads a migration from, `comment` the Compose file's note that its other volumes stay. */
 export function guideCommands(given: GuideNames, { root, comment }: { root: string; comment: string }) {
   const pick = (key: keyof GuideNames) => given[key].trim() || DEFAULT_NAMES[key];
   const folder = pick("folder").replace(/\/+$/, "") || DEFAULT_NAMES.folder;
   const protect = folderNeedsProtect(folder) ? "s" : "";
+  const host = hostForms(pick("host"));
   // Compose splits the short form on `:`, so a folder with one past a drive letter is written out in full. It hands
   // the long form on as a short one too while it may create the folder, hence create_host_path off.
   const volume = folder.replace(/^[A-Za-z]:/, "").includes(":")
@@ -80,7 +91,12 @@ export function guideCommands(given: GuideNames, { root, comment }: { root: stri
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
     // leaves out containers a `docker compose run` left behind.
     storage: `docker compose cp backend:/app/storage/. ${STORAGE}`,
-    bring: `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${pick("host")}:${folder}/`)}`,
+    // rsync makes only the last folder of the path, so the rest is made first. ssh hands its command to the far
+    // server's shell, hence the folder quoted twice.
+    bring: [
+      `ssh ${shellWord(host.ssh)} mkdir -p ${shellWord(shellWord(folder))}`,
+      `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
+    ].join("\n"),
     mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, ...volume].join("\n"),
     restart: "docker compose up -d backend",
   };

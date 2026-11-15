@@ -103,20 +103,24 @@ below, put the dump beside the folder and mount the folder that holds both. The 
 folder by its own name, such as `/app/migrate/storage`, rather than `/app/migrate/old-storage`.
 
 Then bring both to this server, over SSH or on a disk. On the same server, move them instead. Use this server's address
-and a folder of your own:
+and a folder of your own. The first line makes the folder, as rsync makes only the last folder of a path:
 
 ```sh
+ssh 192.168.1.20 mkdir -p /srv/old-thingport
 rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
 For a folder with a space in its path, quote the address and folder and add `-s` (`rsync -as`), or an rsync older than
-3.2.4 splits the path on this server. `-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync has none:
-where one is older, use a folder without spaces or symbols, which any rsync takes as it is.
+3.2.4 splits the path on this server; in the `ssh` line, quote the folder twice, as this server's shell reads it again.
+`-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync has none: where one is older, use a folder
+without spaces or symbols, which any rsync takes as it is. An IPv6 address goes in brackets in the `rsync` line
+(`[2001:db8::20]:/srv/old-thingport/`) but not in the `ssh` one. **How do I make these?** writes both lines for you.
 
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
-inside its container, so mount the folder that holds them there. Read-only is enough: files are copied, never moved.
-Add the one line to the backend's volumes and leave the ones it has, its `/app/storage` among them, as they are. The
-Compose files in the repository have it commented out.
+inside its container, so mount the folder that holds them there. That's its `MIGRATE_DIR`: if you've set one, use it
+wherever this guide says `/app/migrate`. Read-only is enough: files are copied, never moved. Add the one line to the
+backend's volumes and leave the ones it has, its `/app/storage` among them, as they are. The Compose files in the
+repository have it commented out.
 
 ```yaml
 services:
