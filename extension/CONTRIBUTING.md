@@ -254,9 +254,10 @@ Two workflows, for two different jobs.
 touching this folder: typecheck, lint, the Chrome/Edge build, and `web-ext lint` on the Firefox
 build. It publishes nothing.
 
-**Versioned releases -- `.github/workflows/extension-store-release.yml`.** Every **Friday at 13:00
-Polish time**, or whenever you start it (**Actions > Extension store release > Run workflow**, or
-`gh workflow run extension-store-release.yml`), it releases whatever changed in the extension since
+**Versioned releases -- `.github/workflows/extension-store-release.yml`.** Only when you start it on
+`main` (**Actions > Extension store release > Run workflow**, with `main` picked as the branch, or
+`gh workflow run extension-store-release.yml --ref main`; a run on any other branch fails at once),
+it releases whatever changed in the extension since
 the last release, with [semantic-release](https://semantic-release.gitbook.io/) (see below): bumps
 the version, writes `CHANGELOG.md`, commits both to `main`, tags it, creates a GitHub release with
 the store zips, and publishes to the Chrome Web Store, Edge Add-ons and Firefox Add-ons. It also
@@ -282,8 +283,8 @@ commits never move the extension's version. Of those:
 | `feat!: ...`, or a `BREAKING CHANGE:` footer                       | major -- 1.2.0 → 2.0.0 |
 | `docs:`, `refactor:`, `chore:`, `ci:`, `test:`, `style:`, `build:` | none on its own        |
 
-The highest one wins, so a week of three fixes and one feature is one minor release. Two things
-follow from this:
+The highest one wins, so three fixes and one feature since the last release are one minor release.
+Two things follow from this:
 
 - **Pick the type for extension users, not for the code.** A "refactor" that changes what users
   see or fixes something for them is a `fix:` or `feat:` -- otherwise it's never released.
