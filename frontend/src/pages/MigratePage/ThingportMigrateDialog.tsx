@@ -16,7 +16,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import type { Theme } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import { UnauthorizedError } from "../../api/client";
-import { migrateApi, type MigrateRunError, type ThingportRun } from "../../api/migrate";
+import { migrateApi, type MigrateOwner, type MigrateRunError, type ThingportRun } from "../../api/migrate";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToastHost } from "../../components/ToastProvider";
 import CheckStep, { canStart } from "./CheckStep";
@@ -48,6 +48,8 @@ type Props = {
   initial: ThingportRun | null;
   /** Where on the server the dump and the storage folder must be. */
   root: string;
+  /** Who the backend reads them as. */
+  owner: MigrateOwner | null;
   onClose: () => void;
   /** Something in the list changed: one started, finished or went. */
   onChanged: () => void;
@@ -56,7 +58,7 @@ type Props = {
 
 /** From another Thingport instance, in steps: its dump and storage folder, the check, its people, what comes, start.
  *  A plain stepper rather than the app's sectioned dialog: the steps follow each other, and each needs the last. */
-export default function ThingportMigrateDialog({ initial, root, onClose, onChanged, onUnauthorized }: Props) {
+export default function ThingportMigrateDialog({ initial, root, owner, onClose, onChanged, onUnauthorized }: Props) {
   const { t } = useTranslation(["app", "common"]);
   const confirm = useConfirm();
   const paperRef = useToastHost(true);
@@ -191,7 +193,16 @@ export default function ThingportMigrateDialog({ initial, root, onClose, onChang
 
   let content: React.ReactNode = null;
   if (step === 0) {
-    content = <SourceStep input={source} onChange={setSource} uploading={uploading} disabled={sending} root={root} />;
+    content = (
+      <SourceStep
+        input={source}
+        onChange={setSource}
+        uploading={uploading}
+        disabled={sending}
+        root={root}
+        owner={owner}
+      />
+    );
   } else if (run && step === 1) {
     content = <CheckStep run={run} onChangeFolder={changeFolder} />;
   } else if (run && step === 2) {

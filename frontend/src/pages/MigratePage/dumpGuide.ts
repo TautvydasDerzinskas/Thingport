@@ -1,14 +1,20 @@
-/** What the dump guide's commands are made from: the old instance's Postgres names, and this server's address and
- *  folder the two go to. */
-export type GuideNames = { user: string; database: string; host: string; folder: string };
+import type { MigrateOwner } from "../../api/migrate";
+
+/** What the dump guide's commands are made from: the old instance's Postgres names and storage path in its backend,
+ *  and this server's address and folder the two go to. */
+export type GuideNames = { user: string; database: string; storage: string; host: string; folder: string };
 
 /** What a field left empty stands for. The address's is a placeholder, plain enough to see it needs changing. */
 export const DEFAULT_NAMES: GuideNames = {
   user: "thingport",
   database: "thingport",
+  storage: "/app/storage",
   host: "this-server",
   folder: "/srv/old-thingport",
 };
+
+/** Who the folder goes to when the backend can't say: PUID and PGID's defaults. */
+const DEFAULT_OWNER: MigrateOwner = { uid: 1000, gid: 1000 };
 
 /** This server's address as the browser reached it, a likely guess at how the old server reaches it, except a loopback
  *  one, which on the old server would mean the old server. */
@@ -65,10 +71,16 @@ export function hostForms(value: string): { rsync: string; ssh: string } {
 }
 
 /** The commands for each step, with the names given, or their defaults where a field is left empty. `root` is where
- *  this server's backend reads a migration from, `comment` the Compose file's note that its other volumes stay. */
-export function guideCommands(given: GuideNames, { root, comment }: { root: string; comment: string }) {
+ *  this server's backend reads a migration from, `owner` who it runs as, `comment` the Compose file's note that its
+ *  other volumes stay. */
+export function guideCommands(
+  given: GuideNames,
+  { root, owner, comment }: { root: string; owner: MigrateOwner | null; comment: string },
+) {
   const pick = (key: keyof GuideNames) => given[key].trim() || DEFAULT_NAMES[key];
   const folder = pick("folder").replace(/\/+$/, "") || DEFAULT_NAMES.folder;
+  const storage = pick("storage").replace(/\/+$/, "") || DEFAULT_NAMES.storage;
+  const { uid, gid } = owner ?? DEFAULT_OWNER;
   const protect = folderNeedsProtect(folder) ? "s" : "";
   const host = hostForms(pick("host"));
   // Compose splits the short form on `:`, so a folder with one past a drive letter is written out in full. It hands
@@ -84,19 +96,23 @@ export function guideCommands(given: GuideNames, { root, comment }: { root: stri
       ]
     : [`      - ${composeValue(`${folder}:${root}:ro`)}`];
   return {
+    // The dump holds password hashes and provider sign-ins, so it's made readable by its owner only, and rsync -a
+    // keeps that; the parentheses keep the umask to this one command.
     dump: [
       "docker compose stop backend",
-      `docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP}`,
+      `(umask 077 && docker compose exec -T db pg_dump -U ${shellWord(pick("user"))} -Fc ${shellWord(pick("database"))} > ${DUMP})`,
     ].join("\n"),
     // compose cp reads the stopped backend, its mounts included, so a bind folder and a volume copy alike, and
     // leaves out containers a `docker compose run` left behind.
-    storage: `docker compose cp backend:/app/storage/. ${STORAGE}`,
-    // rsync makes only the last folder of the path, so the rest is made first. ssh hands its command to the far
-    // server's shell, hence the folder quoted twice.
+    storage: `docker compose cp ${shellWord(`backend:${storage}/.`)} ${STORAGE}`,
+    // rsync makes only the last folder of the path, so the rest is made first, for its owner only. ssh hands its
+    // command to the far server's shell, hence the folder quoted twice.
     bring: [
-      `ssh ${shellWord(host.ssh)} mkdir -p ${shellWord(shellWord(folder))}`,
+      `ssh ${shellWord(host.ssh)} mkdir -p -m 700 ${shellWord(shellWord(folder))}`,
       `rsync -a${protect} ${DUMP} ${STORAGE} ${shellWord(`${host.rsync}:${folder}/`)}`,
     ].join("\n"),
+    // Whoever copied them, the backend's user then owns them, and only it can read the dump.
+    hand: `sudo chown -R ${uid}:${gid} ${shellWord(folder)}`,
     mount: ["services:", "  backend:", "    volumes:", `      # ${comment}`, ...volume].join("\n"),
     restart: "docker compose up -d backend",
   };

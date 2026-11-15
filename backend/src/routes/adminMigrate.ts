@@ -48,10 +48,16 @@ const oneDump: RequestHandler = (req, res, next) =>
     next(new HttpError(400, "Send one database dump, as `dump`"));
   });
 
+/** Who this backend runs as, for the dump guide's line handing the migrate folder to it; none on a platform without
+ *  such ids. */
+function processOwner(): { uid: number; gid: number } | null {
+  return process.getuid && process.getgid ? { uid: process.getuid(), gid: process.getgid() } : null;
+}
+
 router.get(
   "/",
   asyncHandler(async (_req, res) => {
-    res.json({ runs: await listRuns(), root: migrateRoot() });
+    res.json({ runs: await listRuns(), root: migrateRoot(), owner: processOwner() });
   }),
 );
 

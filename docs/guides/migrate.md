@@ -78,10 +78,12 @@ twice, and a site that renews a sign-in only once signs one of them out.
 On the old instance's server, from the same folder:
 
 ```sh
-docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump
+(umask 077 && docker compose exec -T db pg_dump -U thingport -Fc thingport > thingport.dump)
 ```
 
-Use your own user and database names if you changed `POSTGRES_USER` or `POSTGRES_DB`. The `-Fc` matters: a plain SQL
+The dump holds the old instance's password hashes and provider sign-ins, so `umask 077` makes it readable by you only;
+the parentheses keep that to this one command. Use your own user and database names if you changed `POSTGRES_USER` or
+`POSTGRES_DB`. The `-Fc` matters: a plain SQL
 dump is turned away, as it's a script whose commands could reach this server itself. A `-Fc` dump can hold SQL too,
 which runs as it's restored, but as a role made for its working copy, with no rights on this instance's data (see
 below). Restore dumps of instances you trust.
@@ -103,10 +105,10 @@ below, put the dump beside the folder and mount the folder that holds both. The 
 folder by its own name, such as `/app/migrate/storage`, rather than `/app/migrate/old-storage`.
 
 Then bring both to this server, over SSH or on a disk. On the same server, move them instead. Use this server's address
-and a folder of your own. The first line makes the folder, as rsync makes only the last folder of a path:
+and a folder of your own. The first line makes the folder, for you only, as rsync makes only the last folder of a path:
 
 ```sh
-ssh 192.168.1.20 mkdir -p /srv/old-thingport
+ssh 192.168.1.20 mkdir -p -m 700 /srv/old-thingport
 rsync -a thingport.dump old-storage 192.168.1.20:/srv/old-thingport/
 ```
 
@@ -115,6 +117,13 @@ For a folder with a space in its path, quote the address and folder and add `-s`
 `-s` takes rsync 3.0.0 or later on both servers, and macOS's own rsync has none: where one is older, use a folder
 without spaces or symbols, which any rsync takes as it is. An IPv6 address goes in brackets in the `rsync` line
 (`[2001:db8::20]:/srv/old-thingport/`) but not in the `ssh` one. **How do I make these?** writes both lines for you.
+
+On this server, hand the folder to the user the backend runs as, `PUID`:`PGID` (1000:1000 unless you changed them), so
+it can read the dump and no one else can:
+
+```sh
+sudo chown -R 1000:1000 /srv/old-thingport
+```
 
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. That's its `MIGRATE_DIR`: if you've set one, use it
@@ -144,8 +153,8 @@ services:
           create_host_path: false # else Compose turns it back into the line above
 ```
 
-Restart the backend (`docker compose up -d backend`) after adding the line. The backend runs as `PUID`/`PGID`, so that
-user has to be able to read the folder. Running the backend outside Docker, set `MIGRATE_DIR` to the folder instead.
+Restart the backend (`docker compose up -d backend`) after adding the line. Running the backend outside Docker, set
+`MIGRATE_DIR` to the folder instead, and hand the folder to the user it runs as.
 
 ## 4. Run the migration
 

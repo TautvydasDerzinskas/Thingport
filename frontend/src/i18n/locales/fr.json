@@ -3108,6 +3108,8 @@
           "userHelp": "Le POSTGRES_USER de l’ancienne instance, si vous l’avez changé.",
           "database": "Base de données",
           "databaseHelp": "Le POSTGRES_DB de l’ancienne instance, si vous l’avez changé.",
+          "storagePath": "Chemin du stockage",
+          "storagePathHelp": "Le FILE_STORAGE de l’ancien backend, si vous l’avez changé.",
           "storageLead": "Depuis le même dossier. Cela copie son stockage dans old-storage, à côté du dump, qu’il s’agisse d’un dossier ou d’un volume Docker. Il faut autant d’espace libre que le stockage en occupe.",
           "bringLead": "Copiez les deux sur ce serveur, ou apportez-les sur un disque. Sur le même serveur, déplacez-les simplement dans le dossier.",
           "host": "Adresse de ce serveur",
@@ -3116,7 +3118,7 @@
           "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}.",
           "folderAbsolute": "Indiquez le chemin complet, par exemple {{example}}.",
           "folderProtect": "rsync -s nécessite la version 3.0 ou plus récente sur les deux serveurs, pas celle de macOS. Sans espaces ni symboles, n'importe quel rsync convient.",
-          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : ajoutez la ligne aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
+          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez le dossier à l’utilisateur du backend, pour que lui seul lise le dump, ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
           "keepVolumes": "...ses volumes, tels quels...",
           "use": "Utiliser ces chemins",
           "guide": "Guide complet"

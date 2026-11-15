@@ -2914,6 +2914,8 @@
           "userHelp": "旧实例的 POSTGRES_USER（如果你改过）。",
           "database": "数据库",
           "databaseHelp": "旧实例的 POSTGRES_DB（如果你改过）。",
+          "storagePath": "存储路径",
+          "storagePathHelp": "旧后端的 FILE_STORAGE（如果你改过）。",
           "storageLead": "在同一文件夹中运行。它会把存储复制到转储旁边的 old-storage，无论存储是文件夹还是 Docker 卷。所需空闲空间与存储占用的空间相同。",
           "bringLead": "把两者复制到此服务器，或用磁盘带过来。如果是同一台服务器，直接移到该文件夹即可。",
           "host": "此服务器的地址",
@@ -2922,7 +2924,7 @@
           "folderHelp": "转储和 old-storage 放在这里。此实例的后端将它视为 {{root}}。",
           "folderAbsolute": "请填写完整路径，例如 {{example}}。",
           "folderProtect": "rsync -s 需要两台服务器都是 3.0 或更高版本，macOS 自带的不行。不含空格和符号时，任何 rsync 都可以。",
-          "mountLead": "在此服务器上，于其 docker-compose.yml 所在的文件夹中：把这一行加到后端的 volumes 中，已有的保持不变，然后重启后端。",
+          "mountLead": "在此服务器上，于其 docker-compose.yml 所在的文件夹中：把该文件夹交给后端的用户，让只有它能读取转储，把这一项加到后端的 volumes 中，已有的保持不变，然后重启后端。",
           "keepVolumes": "……原有的卷，保持不变……",
           "use": "使用这些路径",
           "guide": "完整指南"

@@ -11,31 +11,36 @@ import {
   shellWord,
 } from "./dumpGuide";
 
-const where = { root: "/app/migrate", comment: "...its own volumes, as they are..." };
+const where = { root: "/app/migrate", owner: null, comment: "...its own volumes, as they are..." };
 
 describe("dump guide", () => {
   it("fills the commands in from the names given", () => {
     const commands = guideCommands(
-      { user: "tp", database: "library", host: "192.168.1.20", folder: "/data/old/" },
-      where,
+      { user: "tp", database: "library", storage: "/data/storage/", host: "192.168.1.20", folder: "/data/old/" },
+      { ...where, owner: { uid: 99, gid: 100 } },
     );
     expect(commands.dump).toBe(
-      "docker compose stop backend\ndocker compose exec -T db pg_dump -U tp -Fc library > thingport.dump",
+      "docker compose stop backend\n" +
+        "(umask 077 && docker compose exec -T db pg_dump -U tp -Fc library > thingport.dump)",
     );
-    expect(commands.storage).toBe("docker compose cp backend:/app/storage/. old-storage");
+    expect(commands.storage).toBe("docker compose cp backend:/data/storage/. old-storage");
     expect(commands.bring).toBe(
-      "ssh 192.168.1.20 mkdir -p /data/old\nrsync -a thingport.dump old-storage 192.168.1.20:/data/old/",
+      "ssh 192.168.1.20 mkdir -p -m 700 /data/old\nrsync -a thingport.dump old-storage 192.168.1.20:/data/old/",
     );
+    expect(commands.hand).toBe("sudo chown -R 99:100 /data/old");
     expect(commands.mount).toContain("      - /data/old:/app/migrate:ro");
     expect(commands.mount).toContain("      # ...its own volumes, as they are...");
   });
 
   it("takes the defaults for a field left empty", () => {
-    const commands = guideCommands({ user: " ", database: "", host: "", folder: "" }, where);
+    const commands = guideCommands({ user: " ", database: "", storage: "", host: "", folder: "" }, where);
     expect(commands.dump).toContain(`-U ${DEFAULT_NAMES.user} -Fc ${DEFAULT_NAMES.database} >`);
+    expect(commands.storage).toBe("docker compose cp backend:/app/storage/. old-storage");
     expect(commands.bring.split("\n").at(-1)).toBe(
       `rsync -a thingport.dump old-storage this-server:${DEFAULT_NAMES.folder}/`,
     );
+    // The backend couldn't say who it runs as: PUID and PGID's defaults.
+    expect(commands.hand).toBe(`sudo chown -R 1000:1000 ${DEFAULT_NAMES.folder}`);
   });
 
   it("quotes what the shell would read as more than a name", () => {
@@ -44,16 +49,17 @@ describe("dump guide", () => {
     expect(shellWord("it's")).toBe("'it'\\''s'");
     expect(shellWord("$(reboot)")).toBe("'$(reboot)'");
     const commands = guideCommands(
-      { user: "a b", database: "x;y", host: "192.168.1.20", folder: "/srv/old library" },
+      { user: "a b", database: "x;y", storage: "/data/my storage", host: "192.168.1.20", folder: "/srv/old library" },
       where,
     );
     expect(commands.dump).toContain("-U 'a b' -Fc 'x;y' >");
-    // -s, or an older rsync's remote shell splits the path the local one kept whole.
+    expect(commands.storage).toBe("docker compose cp 'backend:/data/my storage/.' old-storage");
     // Quoted twice for ssh, whose far shell reads the command again; -s, or an older rsync's far shell splits it.
     expect(commands.bring).toBe(
-      "ssh 192.168.1.20 mkdir -p ''\\''/srv/old library'\\'''\n" +
+      "ssh 192.168.1.20 mkdir -p -m 700 ''\\''/srv/old library'\\'''\n" +
         "rsync -as thingport.dump old-storage '192.168.1.20:/srv/old library/'",
     );
+    expect(commands.hand).toBe("sudo chown -R 1000:1000 '/srv/old library'");
   });
 
   it("brackets an IPv6 address for rsync but not for ssh", () => {
@@ -65,7 +71,7 @@ describe("dump guide", () => {
     }
     const { bring } = guideCommands({ ...DEFAULT_NAMES, host: "2001:db8::20" }, where);
     expect(bring).toBe(
-      "ssh 2001:db8::20 mkdir -p /srv/old-thingport\n" +
+      "ssh 2001:db8::20 mkdir -p -m 700 /srv/old-thingport\n" +
         "rsync -a thingport.dump old-storage '[2001:db8::20]:/srv/old-thingport/'",
     );
   });

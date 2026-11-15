@@ -11,6 +11,7 @@ import { alpha } from "@mui/material/styles";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import Segmented from "../../components/controls/Segmented";
+import type { MigrateOwner } from "../../api/migrate";
 import HelpTip from "../../components/HelpTip";
 import DumpGuideDialog from "./DumpGuideDialog";
 import { formatBytes, k } from "./parts";
@@ -49,10 +50,12 @@ type Props = {
   disabled: boolean;
   /** Where on the server both must be. */
   root: string;
+  /** Who the backend reads them as. */
+  owner: MigrateOwner | null;
 };
 
 /** The old instance's database dump, uploaded or already on the server, and its storage folder. */
-export default function SourceStep({ input, onChange, uploading, disabled, root }: Props) {
+export default function SourceStep({ input, onChange, uploading, disabled, root, owner }: Props) {
   const { t, i18n } = useTranslation("app");
   const picker = React.useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = React.useState(false);
@@ -204,6 +207,7 @@ export default function SourceStep({ input, onChange, uploading, disabled, root 
       {guiding && (
         <DumpGuideDialog
           root={root}
+          owner={owner}
           onClose={() => setGuiding(false)}
           onUse={(paths) => {
             setGuiding(false);
