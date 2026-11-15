@@ -170,7 +170,7 @@ import {
   MAKERWORLD_REJECTED_ERROR,
   withStoredMakerworldCookie,
 } from "./makerworld/session";
-import { liftCaptchaCooloffByHand } from "./makerworld/captcha";
+import { isMakerworldCaptchaFailure, liftCaptchaCooloffByHand } from "./makerworld/captcha";
 import { makerworldProfileFacts } from "./makerworld/profileFacts";
 import { snapmakerProfileFacts } from "./snapmaker/profileFacts";
 import { makeronlineProfileFacts } from "./makeronline/profileFacts";
@@ -249,6 +249,9 @@ export type ProviderBackend = {
   /** For a provider whose files only Thingport Grab can fetch, on its own pages: where imports that start anywhere
    *  else wait for its next visit there. */
   grabQueue?: GrabQueue;
+  /** For a provider whose imports Thingport Grab can finish when a block stops them here (MakerWorld's CAPTCHA, which
+   *  Grab clears with the site's own puzzle): where an import the block stopped waits for it, beside failing. */
+  grabFallback?: GrabFallback;
   /** The import body with the user's stored sign-in where the request brought none, for the provider a link import
    *  of no provider's goes through (LINK_PROVIDER). */
   withStoredAuth?<T extends ImportCookies>(userId: string, body: T): Promise<T>;
@@ -273,12 +276,42 @@ export type GrabQueue = {
   clear(userId: string, modelId: string): Promise<void>;
 };
 
+/** Imports a block stopped here, waiting for Thingport Grab to clear it on the provider's site. */
+export type GrabFallback = {
+  /** The failure Grab can clear. */
+  blocks(err: unknown): boolean;
+  /** Only for someone whose Grab can be told about it. */
+  available(userId: string): Promise<boolean>;
+  queue(userId: string, url: string, options?: GrabImportOptions): Promise<void>;
+  /** Imported, however it came in: nothing waits for the model any more. */
+  clear(userId: string, modelId: string): Promise<void>;
+  /** An import deleted from the queue: its links mustn't come in through Grab either. */
+  drop(userId: string, urls: string[]): Promise<void>;
+  /** What a failed link that waits says, or with `count`, a batch's summary of that many. */
+  waitingText(count?: number): string;
+  /** How many of `userId`'s imports wait for Grab here, and the first one's link, to send them to the site with. */
+  waiting(userId: string): Promise<{ count: number; url: string | null }>;
+};
+
 /** The provider whose session a page link of no provider's is imported with. */
 export const LINK_PROVIDER: ProviderId = "makerworld";
 
 /** A link import's body with LINK_PROVIDER's stored sign-in, where the request brought none. */
 export function withLinkAuth<T extends ImportCookies>(userId: string, body: T): Promise<T> {
   return PROVIDERS[LINK_PROVIDER].withStoredAuth?.(userId, body) ?? Promise.resolve(body);
+}
+
+/** Per provider with a GrabFallback, how many of `userId`'s imports wait for Grab to clear its block. */
+export async function grabFallbackWaiting(
+  userId: string,
+): Promise<{ provider: ProviderId; count: number; url: string | null }[]> {
+  const waiting = await Promise.all(
+    PROVIDER_IDS.map(async (provider) => {
+      const fallback = PROVIDERS[provider].grabFallback;
+      return fallback ? { provider, ...(await fallback.waiting(userId)) } : null;
+    }),
+  );
+  return waiting.filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.count > 0);
 }
 
 /** A retry the user asked for: every provider's pause after a block ends. */
@@ -288,6 +321,7 @@ export function liftProviderHolds(): void {
 
 // Loaded when used: their waiting imports reach the services that read this registry.
 const grabImports = () => import("./makeronline/grabImports");
+const makerworldGrabImports = () => import("./makerworld/grabImports");
 const owlcadExports = () => import("./owlcad/grabExports");
 
 type Manifests = typeof MANIFESTS;
@@ -324,6 +358,19 @@ export const PROVIDERS = {
       (await import("./makerworld/jobs")).runMakerworldProfilesJob(jobId, userId, body),
     withStoredAuth: withStoredMakerworldCookie,
     liftHolds: liftCaptchaCooloffByHand,
+    grabFallback: {
+      blocks: isMakerworldCaptchaFailure,
+      available: async (userId) => (await makerworldGrabImports()).hasPairedGrab(userId),
+      queue: async (userId, url, options) =>
+        (await makerworldGrabImports()).queueMakerworldGrabImport(userId, url, options),
+      clear: async (userId, designId) => (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId),
+      drop: async (userId, urls) => (await makerworldGrabImports()).dropMakerworldGrabImports(userId, urls),
+      waitingText: (count) =>
+        `${count === undefined ? "Waits" : `${count} ${count === 1 ? "waits" : "wait"}`} for Thingport Grab: solve ` +
+        `${name("makerworld")}'s puzzle on ${siteHost("makerworld")} and Grab finishes ` +
+        `${(count ?? 1) === 1 ? "it" : "them"}, or retry once it clears (usually 1-4 hours)`,
+      waiting: async (userId) => (await makerworldGrabImports()).makerworldPuzzleWaiting(userId),
+    },
     // Its models import by the shared link import, which doesn't know whose cookie it was.
     markRejected: (userId) => markMakerworldCookieRejected(userId),
     stopTexts: {

@@ -2219,7 +2219,12 @@
         "error": "Помилка",
         "partial": "Не все вдалося імпортувати",
         "done": "Готово",
-        "unknown": "Невідомо"
+        "unknown": "Невідомо",
+        "grabWaiting": "Чекає перевірки",
+        "grabWaitingSome_one": "{{count}} чекає перевірки",
+        "grabWaitingSome_few": "{{count}} чекають перевірки",
+        "grabWaitingSome_many": "{{count}} чекають перевірки",
+        "grabWaitingSome_other": "{{count}} чекають перевірки"
       },
       "statusHint": {
         "running": "Імпорт виконується.",
@@ -2231,7 +2236,11 @@
         "partialModels": "Завершено, але деякі моделі не вдалося імпортувати.",
         "done": "Усі посилання імпортовано.",
         "doneModels": "Усі моделі імпортовано.",
-        "unknown": "Ця версія Thingport не знає такого стану."
+        "unknown": "Ця версія Thingport не знає такого стану.",
+        "grabWaiting_one": "Сайт просить пройти перевірку. Thingport Grab завершить імпорт там, або повторіть, коли обмеження зникне.",
+        "grabWaiting_few": "Сайт просить пройти перевірку. Thingport Grab завершить їх там, або повторіть, коли обмеження зникне.",
+        "grabWaiting_many": "Сайт просить пройти перевірку. Thingport Grab завершить їх там, або повторіть, коли обмеження зникне.",
+        "grabWaiting_other": "Сайт просить пройти перевірку. Thingport Grab завершить їх там, або повторіть, коли обмеження зникне."
       },
       "progress": "{{processed}} з {{total}}",
       "progressFailed": "{{processed}} з {{total}}, не вдалося: {{failed}}",
@@ -2320,7 +2329,27 @@
         "finishedManyFailed_one": "Завершено {{count}} імпорт, з проблемами.",
         "finishedManyFailed_few": "Завершено {{count}} імпорти, з проблемами.",
         "finishedManyFailed_many": "Завершено {{count}} імпортів, деякі з проблемами.",
-        "finishedManyFailed_other": "Завершено {{count}} імпорту, деякі з проблемами."
+        "finishedManyFailed_other": "Завершено {{count}} імпорту, деякі з проблемами.",
+        "finishedGrabWaiting": "«{{name}}» чекає на Thingport Grab",
+        "finishedGrabWaitingSome_one": "«{{name}}»: {{count}} чекає на Thingport Grab",
+        "finishedGrabWaitingSome_few": "«{{name}}»: {{count}} чекають на Thingport Grab",
+        "finishedGrabWaitingSome_many": "«{{name}}»: {{count}} чекають на Thingport Grab",
+        "finishedGrabWaitingSome_other": "«{{name}}»: {{count}} чекають на Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} з {{total}}, {{count}} чекає на Grab",
+      "progressGrabWaiting_few": "{{processed}} з {{total}}, {{count}} чекають на Grab",
+      "progressGrabWaiting_many": "{{processed}} з {{total}}, {{count}} чекають на Grab",
+      "progressGrabWaiting_other": "{{processed}} з {{total}}, {{count}} чекають на Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} імпорт чекає перевірки {{site}}",
+        "title_few": "{{count}} імпорти чекають перевірки {{site}}",
+        "title_many": "{{count}} імпортів чекають перевірки {{site}}",
+        "title_other": "{{count}} імпорту чекають перевірки {{site}}",
+        "text_one": "Thingport Grab завершить його на {{host}}.",
+        "text_few": "Thingport Grab завершить їх на {{host}}.",
+        "text_many": "Thingport Grab завершить їх на {{host}}.",
+        "text_other": "Thingport Grab завершить їх на {{host}}.",
+        "solve": "Пройти на {{site}}"
       }
     },
     "tools": {

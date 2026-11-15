@@ -254,8 +254,9 @@ describe("provider-module freeze", () => {
           )
           .map((path) => `${id}: ${path}`),
       ),
-    ).toEqual(["imports: /import/makeronline/waiting"]);
+    ).toEqual(["imports: /import/makeronline/waiting", "imports: /import/makerworld/waiting"]);
     expect(scopeForPath("/import/makeronline/waiting")).toBe("imports");
+    expect(scopeForPath("/import/makerworld/waiting")).toBe("imports");
   });
 
   it("pins the Express method and path inventory for provider routes and their routers", () => {

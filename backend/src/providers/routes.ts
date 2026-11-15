@@ -3,11 +3,13 @@
 
 import { Router } from "express";
 import makeronlineRoutes from "./makeronline/routes";
+import makerworldRoutes from "./makerworld/routes";
 import owlcadRoutes, { bodyLimit as owlcadBodyLimit } from "./owlcad/routes";
 import printablesRoutes from "./printables/routes";
 
 const router = Router();
 router.use(makeronlineRoutes);
+router.use(makerworldRoutes);
 router.use(owlcadRoutes);
 router.use(printablesRoutes);
 

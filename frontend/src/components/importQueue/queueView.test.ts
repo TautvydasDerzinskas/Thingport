@@ -233,13 +233,34 @@ describe("toQueueJob", () => {
 
 describe("toQueueSnapshot and toEveryoneQueue", () => {
   it("fills in whatever an answer lacks", () => {
-    expect(toQueueSnapshot({}, NOW)).toEqual({ jobs: [], finishedTotal: 0, line: EMPTY_LINE, startGrabLinks: false });
+    expect(toQueueSnapshot({}, NOW)).toEqual({
+      jobs: [],
+      finishedTotal: 0,
+      line: EMPTY_LINE,
+      startGrabLinks: false,
+      grabWaiting: [],
+    });
     expect(toQueueSnapshot(null, NOW).jobs).toEqual([]);
     expect(toQueueSnapshot({ jobs: "nope" } as never, NOW).jobs).toEqual([]);
   });
 
   it("drops rows that aren't rows", () => {
     expect(toQueueSnapshot({ jobs: [null, {}, { id: "a" }] } as never, NOW).jobs.map((row) => row.id)).toEqual(["a"]);
+  });
+
+  it("reads what waits for Grab, leaving out what doesn't wait for anything", () => {
+    const url = "https://makerworld.com/en/models/1-a";
+    const snapshot = toQueueSnapshot(
+      {
+        grab_waiting: [
+          { provider: "makerworld", count: 2, url },
+          { provider: "makeronline", count: 0, url: null },
+          { count: 3 },
+        ],
+      } as never,
+      NOW,
+    );
+    expect(snapshot.grabWaiting).toEqual([{ provider: "makerworld", count: 2, url }]);
   });
 
   it("reads the line and the setting", () => {
@@ -1576,6 +1597,60 @@ describe("whyText", () => {
     expect(whyText(job({ status: "PAUSED", sync_waiting: true, failure_reason: "x" }), t)).toBeNull();
     expect(whyText(job({ status: "DONE" }), t)).toBeNull();
     expect(whyText(job({ status: "ERROR" }), t)).toBeNull();
+  });
+});
+
+describe("a job waiting for Grab", () => {
+  const waiting = (fields: Partial<QueueJob> = {}) =>
+    job({
+      status: "DONE",
+      attention: true,
+      total: 3,
+      processed: 3,
+      imported: 1,
+      failed_count: 2,
+      failed_items_count: 2,
+      grab_waiting: 2,
+      failure_reason: "Waits for Thingport Grab: solve MakerWorld's puzzle on makerworld.com and Grab finishes it",
+      ...fields,
+    });
+
+  it("reads as waiting rather than failed, with the banner saying what to do", () => {
+    expect(jobChip(waiting(), t)).toMatchObject({ tone: "info", live: false, label: "2 wait for puzzle" });
+    expect(
+      jobChip(waiting({ single: true, total: 1, failed_count: 1, failed_items_count: 1, grab_waiting: 1 }), t),
+    ).toMatchObject({ tone: "info", label: "Waiting for puzzle" });
+    expect(whyText(waiting(), t)).toBeNull();
+    expect(jobBar(waiting(), t)).toMatchObject({ tone: "info", text: "3 of 3, 2 wait for Grab" });
+  });
+
+  it("is a plain failure where something else failed too", () => {
+    const mixed = waiting({ failed_count: 3, failed_items_count: 3, grab_waiting: 2 });
+    expect(jobChip(mixed, t).tone).toBe("warning");
+    expect(whyText(mixed, t)).toMatch(/^Waits for Thingport Grab/);
+    expect(jobBar(mixed, t)?.text).toBe("3 of 3, 3 failed");
+  });
+
+  it("says so as it finishes, and opens where it is", () => {
+    const one = { single: true, source_label: "corn sheller", failed_count: 1, failed_items_count: 1, grab_waiting: 1 };
+    expect(finishToastOf([waiting(one)], t)).toEqual({
+      message: '"corn sheller" waits for Thingport Grab',
+      severity: "info",
+      open: { section: "att" },
+    });
+  });
+
+  it("is a plain finished job on a backend that doesn't say", () => {
+    const older = job({
+      status: "DONE",
+      total: 1,
+      processed: 1,
+      failed_count: 1,
+      failed_items_count: 1,
+      attention: true,
+    });
+    expect(older.grab_waiting).toBe(0);
+    expect(jobChip(older, t).label).not.toMatch(/puzzle/);
   });
 });
 

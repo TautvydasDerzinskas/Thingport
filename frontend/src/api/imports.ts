@@ -106,6 +106,9 @@ export type QueueJobOut = ImportJob & {
   /** A problem someone should look at. Older failures sit in Finished without it. */
   attention: boolean;
   failure_reason: string | null;
+  /** Its failed links waiting for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). 0 from
+   *  a backend older than that. */
+  grab_waiting: number;
   outcome: ImportOutcome | null;
   /** The page title of a links job's only link, when it has just the one. */
   link_title: string | null;
@@ -126,12 +129,18 @@ export type LineOut = {
 
 export type QueueSettingsOut = { start_grab_links: boolean };
 
+/** Imports of one's own waiting for Thingport Grab to clear a block on a provider's site (MakerWorld's puzzle), and the
+ *  first one's link to send someone there with. */
+export type GrabWaitingOut = { provider: string; count: number; url: string | null };
+
 export type QueueOut = {
   jobs: QueueJobOut[];
   /** Every finished job not needing attention, which `jobs` holds only the newest of. */
   finished_total: number;
   line: LineOut;
   settings: QueueSettingsOut;
+  /** Missing from a backend older than Grab finishing them. */
+  grab_waiting?: GrabWaitingOut[];
 };
 
 /** The admin list of every user's jobs. A backend older than the line sends the rows without the queue's fields. */

@@ -843,7 +843,11 @@
         "error": "Error",
         "partial": "Algunos fallaron",
         "done": "Terminada",
-        "unknown": "Desconocido"
+        "unknown": "Desconocido",
+        "grabWaiting": "Esperando el rompecabezas",
+        "grabWaitingSome_one": "{{count}} espera el rompecabezas",
+        "grabWaitingSome_many": "{{count}} esperan el rompecabezas",
+        "grabWaitingSome_other": "{{count}} esperan el rompecabezas"
       },
       "statusHint": {
         "running": "Importando ahora.",
@@ -855,7 +859,10 @@
         "partialModels": "Terminada, pero algunos modelos han fallado.",
         "done": "Todos los enlaces importados.",
         "doneModels": "Todos los modelos importados.",
-        "unknown": "Esta versión de Thingport no conoce este estado."
+        "unknown": "Esta versión de Thingport no conoce este estado.",
+        "grabWaiting_one": "El sitio pide resolver su rompecabezas. Thingport Grab la termina allí, o reintenta cuando pase.",
+        "grabWaiting_many": "El sitio pide resolver su rompecabezas. Thingport Grab las termina allí, o reintenta cuando pase.",
+        "grabWaiting_other": "El sitio pide resolver su rompecabezas. Thingport Grab las termina allí, o reintenta cuando pase."
       },
       "progress": "{{processed}} de {{total}}",
       "progressFailed": "{{processed}} de {{total}}, {{failed}} con error",
@@ -933,7 +940,23 @@
         "finishedMany_other": "{{count}} importaciones terminadas.",
         "finishedManyFailed_one": "{{count}} importación terminada, con problemas.",
         "finishedManyFailed_many": "{{count}} importaciones terminadas, algunas con problemas.",
-        "finishedManyFailed_other": "{{count}} importaciones terminadas, algunas con problemas."
+        "finishedManyFailed_other": "{{count}} importaciones terminadas, algunas con problemas.",
+        "finishedGrabWaiting": "«{{name}}» espera a Thingport Grab",
+        "finishedGrabWaitingSome_one": "«{{name}}»: {{count}} espera a Thingport Grab",
+        "finishedGrabWaitingSome_many": "«{{name}}»: {{count}} esperan a Thingport Grab",
+        "finishedGrabWaitingSome_other": "«{{name}}»: {{count}} esperan a Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} de {{total}}, {{count}} espera a Grab",
+      "progressGrabWaiting_many": "{{processed}} de {{total}}, {{count}} esperan a Grab",
+      "progressGrabWaiting_other": "{{processed}} de {{total}}, {{count}} esperan a Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} importación espera el rompecabezas de {{site}}",
+        "title_many": "{{count}} importaciones esperan el rompecabezas de {{site}}",
+        "title_other": "{{count}} importaciones esperan el rompecabezas de {{site}}",
+        "text_one": "Thingport Grab la termina en {{host}}.",
+        "text_many": "Thingport Grab las termina en {{host}}.",
+        "text_other": "Thingport Grab las termina en {{host}}.",
+        "solve": "Resolver en {{site}}"
       }
     },
     "dashboard": {

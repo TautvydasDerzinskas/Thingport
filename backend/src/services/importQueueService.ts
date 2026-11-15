@@ -574,6 +574,8 @@ export type QueueJobView = ImportJob & {
   syncWaiting: boolean;
   attention: boolean;
   firstFailure: string | null;
+  /** Its failed links waiting for Thingport Grab to clear the block that stopped them (MakerWorld's CAPTCHA). */
+  grabWaiting: number;
   /** The page title of a link list's only link. */
   linkTitle: string | null;
   actions: JobActions;
@@ -603,6 +605,7 @@ async function describeJobs<T extends ImportJob>(
     : [[], [], []];
   const places = new Map(line.map((job, index) => [job.id, index + 1]));
   const firstFailures = new Map(failures.map((item) => [item.jobId, item.errorMessage]));
+  const grabWaiting = await countGrabWaiting(db, jobs);
   const linkCounts = new Map<string, number>();
   for (const g of grouped) linkCounts.set(g.jobId, (linkCounts.get(g.jobId) ?? 0) + g._count.status);
   const onlyLinks = jobs.filter((job) => job.type === "LINKS" && linkCounts.get(job.id) === 1).map((job) => job.id);
@@ -626,10 +629,35 @@ async function describeJobs<T extends ImportJob>(
       syncWaiting: isWaitingSyncJob(job),
       attention: isAttention(job, now),
       firstFailure: firstFailures.get(job.id) ?? null,
+      grabWaiting: grabWaiting.get(job.id) ?? 0,
       linkTitle: linkTitles.get(job.id) ?? null,
       actions: jobActions(job, counts, runnerLive),
     });
   });
+}
+
+/** Each job's failed links that wait in Grab's list too: a link Grab finishes only fails here when a block it can clear
+ *  stopped it, as one Grab alone imports is parked as done. */
+async function countGrabWaiting(db: Prisma.TransactionClient, jobs: ImportJob[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const failedJobs = jobs.filter((job) => job.failedCount > 0);
+  if (!failedJobs.length) return counts;
+  const owners = new Map(failedJobs.map((job) => [job.id, job.userId]));
+  const [failed, waiting] = await Promise.all([
+    db.importJobItem.findMany({
+      where: { jobId: { in: [...owners.keys()] }, status: "FAILED" },
+      select: { jobId: true, url: true },
+    }),
+    db.grabImport.findMany({
+      where: { userId: { in: [...new Set(owners.values())] } },
+      select: { userId: true, url: true },
+    }),
+  ]);
+  const waits = new Set(waiting.map((row) => `${row.userId}|${row.url}`));
+  for (const item of failed) {
+    if (waits.has(`${owners.get(item.jobId)}|${item.url}`)) counts.set(item.jobId, (counts.get(item.jobId) ?? 0) + 1);
+  }
+  return counts;
 }
 
 const newestFirst = (a: ImportJob, b: ImportJob) => b.createdAt.getTime() - a.createdAt.getTime();
@@ -744,13 +772,38 @@ async function deleteJob(job: ImportJob): Promise<void> {
   forgetManualStart(job.id);
 }
 
-/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. */
+/** The links' providers forget them in Grab's list. Loaded when used: the registry reaches this service. */
+async function dropGrabWaiting(userId: string, urls: string[]): Promise<void> {
+  const { PROVIDERS } = await import("../providers/registry");
+  const byProvider = new Map<ProviderId, string[]>();
+  for (const url of urls) {
+    const provider = detectProvider(url);
+    if (provider && PROVIDERS[provider].grabFallback)
+      byProvider.set(provider, [...(byProvider.get(provider) ?? []), url]);
+  }
+  await Promise.all(
+    [...byProvider].map(([provider, links]) =>
+      PROVIDERS[provider].grabFallback?.drop(userId, links).catch(() => undefined),
+    ),
+  );
+}
+
+/** Under the owner's lock, or it could land between queueLink finding the job and adding a link to it. Its failed
+ *  links stop waiting for Grab too: what its owner threw away mustn't come in that way. */
 export async function deleteQueueJob(jobId: string, ownerId?: string): Promise<void> {
   const { userId } = await getQueueJob(jobId, ownerId);
   await withImportUserLock(userId, async () => {
     const job = await getQueueJob(jobId, ownerId);
     assertIdle(job);
+    const failed = job.failedCount
+      ? await prisma.importJobItem.findMany({ where: { jobId, status: "FAILED" }, select: { url: true } })
+      : [];
     await deleteJob(job);
+    if (failed.length)
+      await dropGrabWaiting(
+        userId,
+        failed.map((item) => item.url),
+      );
   });
 }
 

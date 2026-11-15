@@ -680,6 +680,11 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     const filedBefore = syncFiled(job);
     // MakerOnline links, handed to Thingport Grab: only it can get their files.
     let waitingForGrab = 0;
+    // Links a block stopped that wait for Grab to clear it too, the provider whose block that was, and whether its
+    // owner has a Grab to tell (asked once).
+    let handedToGrab = 0;
+    let grabBlock: ProviderId | null = null;
+    let grabPaired: boolean | null = null;
 
     for (const [index, item] of items.entries()) {
       if (index > 0 && body.itemDelayMs) await sleep(body.itemDelayMs);
@@ -721,6 +726,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
       await updateJobItem(item.id, { status: "RUNNING" }).catch(() => undefined);
       let attempts = item.attempts;
       let itemError: string | null = null;
+      let itemFailure: unknown = null;
       // Some of the link's print profiles got in, though others failed.
       let partlyIn = false;
       let settled = false;
@@ -772,6 +778,7 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
           }
         } catch (err) {
           itemError = failureMessage(err);
+          itemFailure = err;
           failure = err instanceof HttpError ? err.message : isDownloadCutOff(err) ? itemError : SINGLE_FAILED_TEXT;
           stopReason = asStopReason(classifyImportFailure(err)) ?? stopReason;
           if (classifyImportFailure(err) === "disabled") providerOff = true;
@@ -822,6 +829,32 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
         }).catch(() => undefined);
         await pauseSyncJob(job, stopReason, newPrintIds);
         return;
+      }
+      // A block Grab can clear on the provider's site: the link waits for it as well as failing, for someone with a
+      // paired Grab, and so do the links after it that the block stopped, from the same provider.
+      const fallback = itemProvider ? PROVIDERS[itemProvider].grabFallback : undefined;
+      const blocked = itemFailure ? fallback?.blocks(itemFailure) : grabBlock !== null && grabBlock === itemProvider;
+      if (fallback && blocked && itemError && !partlyIn && (itemBody.scope ?? "url") === "url") {
+        grabPaired ??= await fallback.available(userId).catch(() => false);
+        if (grabPaired && URLS[itemProvider!].parseModel(item.url)) {
+          const queued = await fallback
+            .queue(userId, item.url, {
+              collectionId: options.collection_id,
+              categoryId: body.category_id,
+              tags: body.tags,
+              notes: body.notes,
+            })
+            .then(
+              () => true,
+              () => false,
+            );
+          if (queued) {
+            handedToGrab++;
+            grabBlock = itemProvider;
+            itemError = fallback.waitingText();
+            failure = itemError;
+          }
+        }
       }
       await updateJobItem(item.id, {
         status: itemError ? "FAILED" : "DONE",
@@ -905,7 +938,10 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
     }
 
     const failureParts: string[] = [];
-    if (stopReason === "rateLimited") {
+    const grabFallback = grabBlock ? PROVIDERS[grabBlock].grabFallback : undefined;
+    if (grabFallback && handedToGrab) {
+      failureParts.push(grabFallback.waitingText(handedToGrab));
+    } else if (stopReason === "rateLimited") {
       failureParts.push(
         `the rest not imported: ${rateLimitText(stopUrl ?? job.sourceUrl)} — this usually clears in 1-4 hours, then retry the failed links`,
       );

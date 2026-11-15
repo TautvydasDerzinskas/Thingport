@@ -457,6 +457,8 @@ just stops showing progress, it doesn't cancel anything.
 A MakerWorld collection is imported in the tab instead, one model page after the next. If MakerWorld wants its puzzle
 solved partway, the run opens MakerWorld's own puzzle on that page and carries on from the same model once it's solved;
 closed unsolved, it waits with **Show puzzle**. An import from one model page's panel opens the puzzle the same way.
+Imports you started in Thingport that MakerWorld's CAPTCHA stopped wait for Grab too: on any MakerWorld page it offers
+them by its icon, and **Solve** opens the puzzle and brings them in; **Later** asks again in a few hours.
 
 ### Synced collections
 

@@ -843,7 +843,11 @@
         "error": "Erreur",
         "partial": "Échecs partiels",
         "done": "Terminée",
-        "unknown": "Inconnu"
+        "unknown": "Inconnu",
+        "grabWaiting": "En attente du puzzle",
+        "grabWaitingSome_one": "{{count}} attend le puzzle",
+        "grabWaitingSome_many": "{{count}} attendent le puzzle",
+        "grabWaitingSome_other": "{{count}} attendent le puzzle"
       },
       "statusHint": {
         "running": "Importation en cours.",
@@ -855,7 +859,10 @@
         "partialModels": "Terminée, mais certains modèles ont échoué.",
         "done": "Tous les liens ont été importés.",
         "doneModels": "Tous les modèles ont été importés.",
-        "unknown": "Cette version de Thingport ne connaît pas cet état."
+        "unknown": "Cette version de Thingport ne connaît pas cet état.",
+        "grabWaiting_one": "Le site demande de résoudre son puzzle. Thingport Grab la termine là-bas, ou réessayez une fois levé.",
+        "grabWaiting_many": "Le site demande de résoudre son puzzle. Thingport Grab les termine là-bas, ou réessayez une fois levé.",
+        "grabWaiting_other": "Le site demande de résoudre son puzzle. Thingport Grab les termine là-bas, ou réessayez une fois levé."
       },
       "progress": "{{processed}} sur {{total}}",
       "progressFailed": "{{processed}} sur {{total}}, {{failed}} en échec",
@@ -933,7 +940,23 @@
         "finishedMany_other": "{{count}} importations terminées.",
         "finishedManyFailed_one": "{{count}} importation terminée, avec des problèmes.",
         "finishedManyFailed_many": "{{count}} importations terminées, certaines avec des problèmes.",
-        "finishedManyFailed_other": "{{count}} importations terminées, certaines avec des problèmes."
+        "finishedManyFailed_other": "{{count}} importations terminées, certaines avec des problèmes.",
+        "finishedGrabWaiting": "« {{name}} » attend Thingport Grab",
+        "finishedGrabWaitingSome_one": "« {{name}} » : {{count}} attend Thingport Grab",
+        "finishedGrabWaitingSome_many": "« {{name}} » : {{count}} attendent Thingport Grab",
+        "finishedGrabWaitingSome_other": "« {{name}} » : {{count}} attendent Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} sur {{total}}, {{count}} attend Grab",
+      "progressGrabWaiting_many": "{{processed}} sur {{total}}, {{count}} attendent Grab",
+      "progressGrabWaiting_other": "{{processed}} sur {{total}}, {{count}} attendent Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} import attend le puzzle de {{site}}",
+        "title_many": "{{count}} imports attendent le puzzle de {{site}}",
+        "title_other": "{{count}} imports attendent le puzzle de {{site}}",
+        "text_one": "Thingport Grab le termine sur {{host}}.",
+        "text_many": "Thingport Grab les termine sur {{host}}.",
+        "text_other": "Thingport Grab les termine sur {{host}}.",
+        "solve": "Résoudre sur {{site}}"
       }
     },
     "dashboard": {
