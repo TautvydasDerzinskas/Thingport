@@ -47,7 +47,6 @@ Name: "belarusian"; MessagesFile: "languages\Belarusian.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "lithuanian"; MessagesFile: "compiler:Languages\Lithuanian.isl"
-Name: "chinese"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [CustomMessages]
 LegacyExeRemovalFailed=The previous Bridge executable could not be removed. Close Thingport Bridge and remove this file manually:
@@ -57,7 +56,6 @@ belarusian.LegacyExeRemovalFailed=Не ўдалося выдаліць папя�
 spanish.LegacyExeRemovalFailed=No se pudo eliminar el archivo anterior de Bridge. Cierre Thingport Bridge y elimine este archivo manualmente:
 french.LegacyExeRemovalFailed=Impossible de supprimer l’ancien fichier Bridge. Fermez Thingport Bridge et supprimez ce fichier manuellement :
 lithuanian.LegacyExeRemovalFailed=Nepavyko pašalinti ankstesnio „Bridge“ failo. Uždarykite „Thingport Bridge“ ir pašalinkite šį failą rankiniu būdu:
-chinese.LegacyExeRemovalFailed=无法删除旧版 Bridge 文件。请关闭 Thingport Bridge，然后手动删除该文件：
 
 [Files]
 Source: "..\..\dist\thingport-bridge-windows-amd64.exe"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
