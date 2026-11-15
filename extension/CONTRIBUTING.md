@@ -254,8 +254,9 @@ Two workflows, for two different jobs.
 touching this folder: typecheck, lint, the Chrome/Edge build, and `web-ext lint` on the Firefox
 build. It publishes nothing.
 
-**Versioned releases -- `.github/workflows/extension-store-release.yml`.** Only when you start it
-(**Actions > Extension store release > Run workflow**, or `gh workflow run extension-store-release.yml`),
+**Versioned releases -- `.github/workflows/extension-store-release.yml`.** Only when you start it on
+`main` (**Actions > Extension store release > Run workflow**, with `main` picked as the branch, or
+`gh workflow run extension-store-release.yml --ref main`; a run on any other branch fails at once),
 it releases whatever changed in the extension since
 the last release, with [semantic-release](https://semantic-release.gitbook.io/) (see below): bumps
 the version, writes `CHANGELOG.md`, commits both to `main`, tags it, creates a GitHub release with

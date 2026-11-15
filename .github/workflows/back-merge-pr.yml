@@ -6,7 +6,9 @@ name: Back-merge PR
 # A run that only skipped its jobs wouldn't do: the update checker (versionService.ts) takes the newest successful push
 # run as the newest :dev build, so :dev installs would be told about an update with no image behind it.
 on:
-  pull_request:
+  # The base's side: pull_request runs nothing while a pull request has conflicts, so a back-merge opened with some
+  # would stay unmarked. Nothing is checked out, and the title only reaches the shell through the environment.
+  pull_request_target:
     types: [opened, reopened, edited]
     branches: [develop]
 

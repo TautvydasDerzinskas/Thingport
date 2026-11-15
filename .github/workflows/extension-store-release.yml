@@ -23,6 +23,13 @@ jobs:
       run:
         working-directory: extension
     steps:
+      # semantic-release only releases from main; started on develop, the default, a run would end having done nothing.
+      - name: Started on main?
+        if: github.ref != 'refs/heads/main'
+        working-directory: . # extension/ isn't there before the checkout
+        run: |
+          echo "::error::Start this workflow on main: gh workflow run extension-store-release.yml --ref main"
+          exit 1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # semantic-release needs the full history and tags
