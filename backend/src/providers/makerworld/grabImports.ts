@@ -18,7 +18,8 @@ export const MAKERWORLD_GRAB_MAX_ATTEMPTS = 3;
 /** Whose rows these are: GrabImport holds MakerOnline's and OwlCAD's too. */
 const PROVIDER = manifest.id;
 
-/** Parks a MakerWorld model for Grab. The same link again keeps one entry, with the newest options. */
+/** Parks a MakerWorld model for Grab. The same link again keeps one entry, with the newest options, its tries started
+ *  over and its revision bumped. */
 export async function queueMakerworldGrabImport(
   userId: string,
   url: string,
@@ -35,7 +36,7 @@ export async function queueMakerworldGrabImport(
   await prisma.grabImport.upsert({
     where: { userId_url: { userId, url } },
     create: { userId, provider: PROVIDER, url, ...data },
-    update: { ...data, attempts: 0, lastError: null },
+    update: { ...data, attempts: 0, lastError: null, revision: { increment: 1 } },
   });
 }
 
@@ -129,21 +130,20 @@ export async function dropUnwantedMakerworldGrabImports(userId?: string): Promis
   if (dropped.length) await prisma.grabImport.deleteMany({ where: { id: { in: dropped } } });
 }
 
-/** A failed try in Grab. The last one drops the model and says why. Counted on the row as it stands, so tries that
- *  fail at once each count; only the one that drops it says so, and only the row as it counted it: queued again since,
- *  its tries start over. By its tries too, as a queue in the same millisecond keeps `updatedAt`. */
+/** A failed try in Grab at `row`'s link as it was queued then. The last one drops the model and says why. Counted on the
+ *  row as it stands, so tries that fail at once each count, and only the one that drops it says so. Queued again
+ *  since, the link's tries have started over: a try begun before doesn't count against it. */
 export async function recordMakerworldGrabImportFailure(row: GrabImport, error: string): Promise<void> {
+  const queued = { id: row.id, revision: row.revision };
   const tried = await prisma.grabImport
     .update({
-      where: { id: row.id },
+      where: queued,
       data: { attempts: { increment: 1 }, lastError: error.slice(0, 1000) },
-      select: { attempts: true, updatedAt: true },
+      select: { attempts: true },
     })
     .catch(() => null);
   if (!tried || tried.attempts < MAKERWORLD_GRAB_MAX_ATTEMPTS) return;
-  const { count } = await prisma.grabImport.deleteMany({
-    where: { id: row.id, updatedAt: tried.updatedAt, attempts: { gte: MAKERWORLD_GRAB_MAX_ATTEMPTS } },
-  });
+  const { count } = await prisma.grabImport.deleteMany({ where: queued });
   if (!count) return;
   await createNotification(row.userId, {
     type: "import",
@@ -166,7 +166,7 @@ export async function hasPairedGrab(userId: string): Promise<boolean> {
  *  to bring in, and counts its links done then. */
 export async function finishMakerworldGrabImport(row: GrabImport, alreadyInLibrary: boolean): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    const { count } = await tx.grabImport.deleteMany({ where: { id: row.id, updatedAt: row.updatedAt } });
+    const { count } = await tx.grabImport.deleteMany({ where: { id: row.id, revision: row.revision } });
     if (count) await settleHandedLinks(tx, row.userId, row.url, alreadyInLibrary);
   });
 }

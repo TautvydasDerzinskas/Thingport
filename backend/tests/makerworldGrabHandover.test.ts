@@ -51,7 +51,11 @@ vi.mock("../src/services/importJobService", async (original) => {
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { MAKERWORLD_CAPTCHA_CODE, MAKERWORLD_CAPTCHA_MESSAGE } from "../src/providers/makerworld/captcha";
-import { clearMakerworldGrabImports } from "../src/providers/makerworld/grabImports";
+import {
+  clearMakerworldGrabImports,
+  queueMakerworldGrabImport,
+  recordMakerworldGrabImportFailure,
+} from "../src/providers/makerworld/grabImports";
 import { PROVIDERS } from "../src/providers/registry";
 import { runLinksImportJob } from "../src/services/importJobRunner";
 import { isOneModelLink } from "../src/services/importJobService";
@@ -354,7 +358,7 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     expect((await waiting()).map((row) => row.url)).toEqual([link("20")]);
   });
 
-  it("leaves a link queued again during Grab's import waiting, with its newer options", async () => {
+  it("leaves a link queued again during Grab's import waiting, with its newer options, in the same millisecond too", async () => {
     await pairGrab();
     const first = await runJob([modelUrl(23)]);
     const [row] = await waiting();
@@ -365,7 +369,8 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
       const { jobId, run } = await startJob([modelUrl(23)]);
       second = jobId;
       await run;
-      await prisma.grabImport.update({ where: { id: row.id }, data: { tags: ["newer"] } });
+      // Its newer options, written as the row was: `updatedAt` alone wouldn't tell the two apart.
+      await prisma.grabImport.update({ where: { id: row.id }, data: { tags: ["newer"], updatedAt: row.updatedAt } });
     };
 
     expect((await bringIn(row)).status).toBe(200);
@@ -395,10 +400,7 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     expect(told).toHaveLength(1);
   });
 
-  it.each([
-    ["a millisecond later", 1],
-    ["in the same millisecond", 0],
-  ])("keeps a link queued again %s as its last try in Grab failed, its tries started over", async (_when, later) => {
+  it("keeps a link queued again as its last try in Grab failed, in the same millisecond too", async () => {
     await pairGrab();
     await runJob([modelUrl(25)]);
     const [row] = await waiting();
@@ -407,10 +409,8 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
     const drop = prisma.grabImport.deleteMany.bind(prisma.grabImport);
     vi.spyOn(prisma.grabImport, "deleteMany").mockImplementationOnce(async (args) => {
       const counted = await prisma.grabImport.findUniqueOrThrow({ where: { id: row.id } });
-      await prisma.grabImport.update({
-        where: { id: row.id },
-        data: { attempts: 0, tags: ["newer"], updatedAt: new Date(counted.updatedAt.getTime() + later) },
-      });
+      await queueMakerworldGrabImport(userId, row.url, { tags: ["newer"] });
+      await prisma.grabImport.update({ where: { id: row.id }, data: { updatedAt: counted.updatedAt } });
       return drop(args);
     });
 
@@ -424,5 +424,25 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
       where: { userId, externalUrl: row.url, title: { startsWith: "Couldn't import" } },
     });
     expect(told).toEqual([]);
+  });
+
+  it("doesn't count tries begun before a link was queued again against it", async () => {
+    await pairGrab();
+    await runJob([modelUrl(26)]);
+    // Three tries in Grab under way, each with the row as it was then.
+    const [begun] = await waiting();
+    await queueMakerworldGrabImport(userId, begun.url, { tags: ["newer"] });
+
+    for (let attempt = 0; attempt < 3; attempt++) await recordMakerworldGrabImportFailure(begun, "no file");
+    expect((await waiting()).map((left) => [left.id, left.attempts, left.tags])).toEqual([[begun.id, 0, ["newer"]]]);
+    const told = await prisma.notification.findMany({
+      where: { userId, externalUrl: begun.url, title: { startsWith: "Couldn't import" } },
+    });
+    expect(told).toEqual([]);
+
+    // Tries at the link as it's queued now count as before.
+    const [now] = await waiting();
+    for (let attempt = 0; attempt < 3; attempt++) await recordMakerworldGrabImportFailure(now, "no file");
+    expect(await waiting()).toEqual([]);
   });
 });
