@@ -139,6 +139,14 @@ can read them and no one else can read the dump. Only the two, not the folder, w
 sudo chown -R 1000:1000 /srv/old-thingport/thingport.dump /srv/old-thingport/old-storage
 ```
 
+To bring them again later, as after a failed try, give them back first when the SSH user isn't the backend's, as
+`rsync` can't otherwise get into `old-storage` to update it. As the SSH user, on this server, then hand them over again
+after the copy:
+
+```sh
+sudo chown -R "$USER" /srv/old-thingport/thingport.dump /srv/old-thingport/old-storage
+```
+
 Then let this instance's backend read the folder they're in. It reads them from one folder only, `/app/migrate`
 inside its container, so mount the folder that holds them there. That's its `MIGRATE_DIR`: if you've set one, use it
 wherever this guide says `/app/migrate`. Read-only is enough: files are copied, never moved. Add the one line to the
