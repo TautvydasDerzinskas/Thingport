@@ -1,5 +1,14 @@
 # Thingport Bridge changelog
 
+# [thingport-bridge-v1.1.0](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-bridge-v1.0.1...thingport-bridge-v1.1.0) (2026-11-15)
+
+
+### Features
+
+* add QIDI Studio support ([#326](https://github.com/TautvydasDerzinskas/Thingport/issues/326)) ([531ce39](https://github.com/TautvydasDerzinskas/Thingport/commit/531ce3912d4dbe346c76d47dfd2b2f7bfbb1eb13))
+* import from VoxelShare, with Flash Studio support and its China site ([#343](https://github.com/TautvydasDerzinskas/Thingport/issues/343)) ([3b49cd5](https://github.com/TautvydasDerzinskas/Thingport/commit/3b49cd5eb30623d392d73389c623be1bef32a627)), closes [#profileId-](https://github.com/TautvydasDerzinskas/Thingport/issues/profileId-) [#344](https://github.com/TautvydasDerzinskas/Thingport/issues/344) [#345](https://github.com/TautvydasDerzinskas/Thingport/issues/345) [#347](https://github.com/TautvydasDerzinskas/Thingport/issues/347)
+* tell people when a newer Thingport Bridge is out, and make updating it safe on macOS ([#300](https://github.com/TautvydasDerzinskas/Thingport/issues/300)) ([9dd36de](https://github.com/TautvydasDerzinskas/Thingport/commit/9dd36de9d1260840c8f3d15707986536a7f51119))
+
 # [thingport-bridge-v1.0.1](https://github.com/TautvydasDerzinskas/Thingport/compare/thingport-bridge-v1.0.0...thingport-bridge-v1.0.1) (2026-11-10)
 
 
