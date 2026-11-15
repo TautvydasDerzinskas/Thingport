@@ -3115,10 +3115,10 @@
           "host": "Adresse de ce serveur",
           "hostHelp": "Telle que l’ancien serveur le joint en SSH.",
           "folder": "Dossier sur ce serveur",
-          "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}.",
+          "folderHelp": "Où vont le dump et old-storage. Le backend de cette instance le voit comme {{root}}. Un dossier déjà présent est laissé tel quel : l’utilisateur SSH doit pouvoir y écrire, et celui du backend y entrer.",
           "folderAbsolute": "Indiquez le chemin complet, par exemple {{example}}.",
           "folderProtect": "rsync -s nécessite la version 3.0 ou plus récente sur les deux serveurs, pas celle de macOS. Sans espaces ni symboles, n'importe quel rsync convient.",
-          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez les deux à l’utilisateur du backend, pour que lui seul lise le dump, et laissez-le entrer dans leur dossier ; ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels ; puis redémarrez le backend.",
+          "mountLead": "Sur ce serveur, depuis le dossier de son docker-compose.yml : confiez les deux à l’utilisateur du backend, pour que lui seul lise le dump, ajoutez l’entrée aux volumes du backend, en laissant ceux qu’il a tels quels, puis redémarrez le backend.",
           "keepVolumes": "...ses volumes, tels quels...",
           "use": "Utiliser ces chemins",
           "guide": "Guide complet"
