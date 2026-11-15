@@ -255,9 +255,10 @@ describe("toQueueSnapshot and toEveryoneQueue", () => {
         grab_waiting: [
           { provider: "makerworld", count: 2, url },
           { provider: "makeronline", count: 0, url: null },
+          // @ts-expect-error -- a row naming no provider, as a broken backend might send
           { count: 3 },
         ],
-      } as never,
+      },
       NOW,
     );
     expect(snapshot.grabWaiting).toEqual([{ provider: "makerworld", count: 2, url }]);

@@ -5,14 +5,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../../auth";
-import { prisma } from "../../db";
-import { addPrintsToCollection } from "../../services/collectionService";
 import { startImportTask } from "../../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../../services/singleImport";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { parseBody } from "../../utils/validate";
 import manifest from "./manifest.generated";
 import {
+  fileMakerworldGrabImport,
   finishMakerworldGrabImport,
   getMakerworldGrabImport,
   listMakerworldGrabImports,
@@ -64,10 +63,7 @@ router.post(
         });
         // Only this row is cleared, once it's filed, so a failed filing keeps the collection to try again with.
         described = await importAndDescribe(userId, url, body, { keepGrabImports: true });
-        if (row.collectionId) {
-          const collection = await prisma.collection.findFirst({ where: { id: row.collectionId, userId } });
-          if (collection) await addPrintsToCollection(collection.id, [described.id]);
-        }
+        await fileMakerworldGrabImport(row, described.id);
       } catch (err) {
         // The import ran with the link as it's queued now, but the try was at the one Grab listed.
         await recordMakerworldGrabImportFailure(

@@ -24,6 +24,7 @@ const calls = vi.hoisted(() => ({
   // Holds the instance's list back until released.
   listGate: null as Promise<void> | null,
   spotlight: null as unknown,
+  progressStop: null as unknown,
   removed: 0,
 }));
 
@@ -62,7 +63,10 @@ const card = (name: string) => () => {
 };
 vi.mock("../../content/overlays", () => ({
   overlaySwitcher: () => ({ show: () => undefined, current: () => null }),
-  progressOverlay: card("progress"),
+  progressOverlay: (_title: string, _line: string, _percent: number, stop: unknown) => {
+    calls.progressStop = stop;
+    return card("progress")();
+  },
   spotlightOverlay: (_line: string, options: unknown) => {
     calls.spotlight = options;
     return card("spotlight")();
@@ -136,6 +140,7 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     calls.onSleep = () => undefined;
     calls.listGate = null;
     calls.spotlight = null;
+    calls.progressStop = null;
     calls.removed = 0;
   });
   afterEach(() => vi.restoreAllMocks());
@@ -315,5 +320,33 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
 
     await waiting.offerMakerworldWaiting();
     expect(calls.callout).toMatchObject({ title: "2 imports wait for MakerWorld's puzzle" });
+  });
+
+  it("can be stopped while one is being brought in", async () => {
+    await freshOffer();
+    await solve();
+    expect(calls.progressStop).toMatchObject({ label: "Stop" });
+  });
+
+  it("are offered once a run Grab being turned off stopped has finished, where it's on again by then", async () => {
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    let release!: () => void;
+    calls.resolve = async (url, instanceId) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      return fileOf(url, instanceId);
+    };
+    await waiting.offerMakerworldWaiting();
+    calls.callout!.primary();
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    waiting.stopMakerworldWaiting();
+    calls.callout = null;
+    // On again while the stopped run still waits for MakerWorld.
+    await waiting.offerMakerworldWaiting();
+    expect(calls.callout).toBeNull();
+
+    release();
+    await vi.waitFor(() => expect(calls.callout).not.toBeNull());
+    expect(calls.api.filter(({ method }) => method === "POST")).toEqual([]);
   });
 });

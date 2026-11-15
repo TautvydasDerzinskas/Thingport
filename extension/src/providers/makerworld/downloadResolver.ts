@@ -201,14 +201,22 @@ async function armCapture(): Promise<boolean> {
 const FILE_LINK = /\.(3mf|zip|stl|step|stp|obj)$/i;
 
 /** MakerWorld starts a download by clicking a temporary link to the file. Taking that click first
- *  reads the URL with no browser download at all (no download bubble, no "Save as" dialog). */
-function interceptFileLink(timeoutMs: number): { url: Promise<string | null>; stop: () => void } {
+ *  reads the URL with no browser download at all (no download bubble, no "Save as" dialog). One `wanted` no longer
+ *  says is for what was asked (the page went on to another model or profile) is left to download as the user's own. */
+function interceptFileLink(
+  timeoutMs: number,
+  wanted: () => boolean = () => true,
+): { url: Promise<string | null>; stop: () => void } {
   let resolveUrl!: (found: string | null) => void;
   const url = new Promise<string | null>((resolve) => (resolveUrl = resolve));
   const onClick = (event: MouseEvent) => {
     const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
     if (!link || !/^https?:/i.test(link.href)) return;
     if (!link.hasAttribute("download") && !FILE_LINK.test(new URL(link.href).pathname)) return;
+    if (!wanted()) {
+      finish(null);
+      return;
+    }
     event.preventDefault();
     event.stopImmediatePropagation();
     finish(link.href);
@@ -224,12 +232,14 @@ function interceptFileLink(timeoutMs: number): { url: Promise<string | null>; st
 }
 
 /** MakerWorld's own puzzle, opened by its download button, until it's gone: the file its download links to once it's
- *  solved, or null once it's closed. */
-export function puzzleOnPage(): Promise<string | null> {
-  const link = interceptFileLink(PUZZLE_ON_PAGE_MS);
+ *  solved, or null once it's closed, or once `wanted` says the page has gone on to another model or profile. */
+export function puzzleOnPage(wanted: () => boolean = () => true): Promise<string | null> {
+  const link = interceptFileLink(PUZZLE_ON_PAGE_MS, wanted);
   let goneSince = 0;
   const watch = setInterval(() => {
     if (puzzleBox()) goneSince = 0;
+    // Closed, and the page has gone on: nothing of this one's to wait for.
+    else if (!wanted()) link.stop();
     else if (!goneSince) goneSince = Date.now();
     else if (Date.now() - goneSince > AFTER_PUZZLE_MS) link.stop();
   }, 250);
@@ -311,7 +321,7 @@ async function captureViaRealClick(
   // Otherwise the still-armed capture would swallow the user's next real download.
   void send("DISARM_DOWNLOAD_CAPTURE");
   // Taken over straight away, so the page's download after the puzzle is caught rather than saved.
-  if (puzzle) return puzzles ? { onPage: puzzleOnPage(), isProfile } : null;
+  if (puzzle) return puzzles ? { onPage: puzzleOnPage(stillWanted), isProfile } : null;
   if (!isProfile) closeFilesDialog();
   return url ? { url, isProfile } : null;
 }

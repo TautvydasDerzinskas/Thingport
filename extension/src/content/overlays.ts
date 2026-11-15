@@ -5,6 +5,7 @@ import type { MakerworldJob, ResolvedDownload } from "../shared/messages";
 import { send } from "../shared/messages";
 import { type PuzzleOutcome, solvePausedStep } from "../providers/makerworld/puzzle";
 import { puzzleBox } from "../providers/makerworld/puzzleBox";
+import { makerworldStepKey } from "../providers/makerworld/step";
 import { fillIcons } from "../shared/icon";
 import { t } from "../shared/i18n";
 import { escapeHtml } from "./runtime";
@@ -147,12 +148,9 @@ export function mountJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
 /** The puzzle being cleared for a paused step, shared by the cards a re-render mounts for it, so none opens a second. */
 let solving: { step: string; outcome: Promise<PuzzleOutcome> } | null = null;
 
-function resume(resolved: ResolvedDownload | null): void {
-  void send("RESUME_MAKERWORLD_JOB", { resolved });
-}
-
-function stepKey(job: MakerworldJob): string {
-  return `${job.runId}:${job.index}:${job.profiles?.done ?? 0}`;
+/** For `step` only: the run has moved on from one it's no longer on. */
+function resume(resolved: ResolvedDownload | null, step: string): void {
+  void send("RESUME_MAKERWORLD_JOB", { resolved, step });
 }
 
 /** A button that ends whatever waits on the puzzle, saying so once pressed. */
@@ -198,7 +196,7 @@ export function overlaySwitcher(root: ShadowRoot): { show(overlay: HTMLElement):
 export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): void {
   const overlays = overlaySwitcher(root);
   const attempt = async () => {
-    const key = stepKey(job);
+    const key = makerworldStepKey(job);
     if (solving?.step !== key) {
       // The model the run paused on, which needn't be the page this tab has gone to since.
       const model = job.urls[job.index] ?? location.href;
@@ -207,7 +205,11 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
     const mine = solving;
     const spotlight = spotlightOverlay(t("puzzleProgress", { imported: job.imported, total: job.total }), {
       stop: abortJob(),
-      askAgain: () => resume(null),
+      // Its puzzle never showed: the step is asked anew, by a solve of its own should it pause here again.
+      askAgain: () => {
+        if (solving === mine) solving = null;
+        resume(null, key);
+      },
     });
     overlays.show(spotlight);
     const outcome = await mine.outcome;
@@ -222,12 +224,12 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
       setTimeout(() => {
         if (!shown(solved)) return;
         if (solving === mine) solving = null;
-        resume(outcome.resolved);
+        resume(outcome.resolved, key);
       }, SOLVED_MS);
       return;
     }
     if (solving === mine) solving = null;
-    if (outcome.kind === "clear") resume(outcome.resolved);
+    if (outcome.kind === "clear") resume(outcome.resolved, key);
     else if (outcome.kind === "closed") {
       overlays.show(
         closedOverlay({
@@ -348,7 +350,7 @@ export function closedOverlay({
 }
 
 /** Docked, as the page stays usable: a run's progress, its bar, and what it's on. */
-export function progressOverlay(title: string, line: string, percent: number): HTMLElement {
+export function progressOverlay(title: string, line: string, percent: number, stop?: StopButton): HTMLElement {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay tg-overlay--docked";
   overlay.setAttribute("role", "region");
@@ -357,7 +359,9 @@ export function progressOverlay(title: string, line: string, percent: number): H
     title,
     `<div class="tg-overlay__count" role="status">${escapeHtml(line)}</div>
      <div class="tg-progress"><div class="tg-progress__bar" style="width:${Math.round(percent)}%"></div></div>`,
+    stop ? stopButtonHtml(stop) : "",
   );
+  if (stop) wireStop(overlay, stop);
   return overlay;
 }
 
@@ -401,7 +405,7 @@ function byHandCard(job: MakerworldJob): HTMLElement {
   resumeBtn.addEventListener("click", () => {
     resumeBtn.disabled = true;
     resumeBtn.textContent = t("resuming");
-    void send("RESUME_MAKERWORLD_JOB", {});
+    void send("RESUME_MAKERWORLD_JOB", { step: makerworldStepKey(job) });
   });
   return overlay;
 }

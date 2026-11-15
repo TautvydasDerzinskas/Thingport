@@ -441,8 +441,11 @@ if (!window.thingportGrabInjected) {
         () => undefined,
       );
     }
-    if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) reinit();
-    else if (STORAGE_KEYS.locale in changes) relocalize(changes[STORAGE_KEYS.locale].newValue);
+    if (CONFIG_CHANGE_KEYS.some((key) => key in changes)) {
+      // Another instance, or another pairing: what waited was listed by the one before.
+      stopMakerworldWaiting();
+      reinit();
+    } else if (STORAGE_KEYS.locale in changes) relocalize(changes[STORAGE_KEYS.locale].newValue);
     else if (ADAPT_CHANGE_KEYS.some((key) => key in changes)) reinitForAdapt();
   });
 

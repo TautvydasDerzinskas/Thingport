@@ -1,5 +1,6 @@
 import type { GrabImport, ImportJobItemStatus, Prisma } from "@prisma/client";
 import { prisma } from "../../db";
+import { addPrintsToCollection } from "../../services/collectionService";
 import { isOneModelLink } from "../../services/importJobService";
 import { createNotification } from "../../services/notificationService";
 import { HttpError } from "../../utils/fileUtils";
@@ -51,6 +52,7 @@ export type MakerworldGrabImportOut = {
 };
 
 export async function listMakerworldGrabImports(userId: string): Promise<MakerworldGrabImportOut[]> {
+  await dropUnwantedMakerworldGrabImports(userId);
   const rows = await prisma.grabImport.findMany({
     where: { userId, provider: PROVIDER },
     orderBy: { createdAt: "asc" },
@@ -65,32 +67,40 @@ export async function listMakerworldGrabImports(userId: string): Promise<Makerwo
   }));
 }
 
+/** A waiting import as it stands. One no import wants any more is gone first: its import's deletion drops it, but
+ *  that may not have got through. */
 export async function getMakerworldGrabImport(userId: string, id: string): Promise<GrabImport> {
+  await dropUnwantedMakerworldGrabImports(userId);
   const row = await prisma.grabImport.findFirst({ where: { id, userId, provider: PROVIDER } });
   if (!row) throw new HttpError(404, "This waiting import is gone -- it may have been imported already");
   return row;
 }
 
-/** Imported, however it came in: nothing waits for this model any more, as far as `profileIds`, the print profiles
- *  its print has now, go. A link naming another profile still waits for it; one naming none is any profile's. */
+/** Imported, however it came in, as `printId`: nothing waits for this model any more, as far as `profileIds`, the
+ *  print profiles its print has now, go. A link naming another profile still waits for it; one naming none is any
+ *  profile's. Each is finished as Grab would have: filed where it was meant to go, its links counted done. */
 export async function clearMakerworldGrabImports(
   userId: string,
   designId: string,
   profileIds: string[],
+  printId: string,
 ): Promise<void> {
-  const rows = await prisma.grabImport.findMany({
-    where: { userId, provider: PROVIDER },
-    select: { id: true, url: true },
+  const rows = await prisma.grabImport.findMany({ where: { userId, provider: PROVIDER } });
+  const done = rows.filter((row) => {
+    const link = parseMakerworldModelUrl(row.url);
+    return link?.designId === designId && (!link.requestedInstanceId || profileIds.includes(link.requestedInstanceId));
   });
-  const done = rows
-    .filter((row) => {
-      const link = parseMakerworldModelUrl(row.url);
-      return (
-        link?.designId === designId && (!link.requestedInstanceId || profileIds.includes(link.requestedInstanceId))
-      );
-    })
-    .map((row) => row.id);
-  if (done.length) await prisma.grabImport.deleteMany({ where: { id: { in: done } } });
+  for (const row of done) {
+    await fileMakerworldGrabImport(row, printId);
+    await finishMakerworldGrabImport(row, true);
+  }
+}
+
+/** Into the collection the waiting import was meant for, if its owner still has it. */
+export async function fileMakerworldGrabImport(row: GrabImport, printId: string): Promise<void> {
+  if (!row.collectionId) return;
+  const collection = await prisma.collection.findFirst({ where: { id: row.collectionId, userId: row.userId } });
+  if (collection) await addPrintsToCollection(collection.id, [printId]);
 }
 
 /** The links of link lists Grab bringing in one of `urls` finishes, by `status`: their own, or with `userId` unset,
@@ -216,6 +226,7 @@ async function settleHandedLinks(
 
 /** For the import queue: what the user's imports wait on Grab for, the first link to send them to. */
 export async function makerworldPuzzleWaiting(userId: string): Promise<{ count: number; url: string | null }> {
+  await dropUnwantedMakerworldGrabImports(userId);
   const [count, first] = await Promise.all([
     prisma.grabImport.count({ where: { userId, provider: PROVIDER } }),
     prisma.grabImport.findFirst({ where: { userId, provider: PROVIDER }, orderBy: { createdAt: "asc" } }),

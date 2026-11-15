@@ -18,6 +18,7 @@ import { type BackgroundMessages, type Handlers, senderTabId } from "../../share
 import { makerworldModelUrl, parseMakerworldModelUrl } from "./urls.generated";
 import { backgroundText } from "../../background/localize";
 import { showMakerworldPuzzle } from "./puzzleBackground";
+import { makerworldStepKey } from "./step";
 
 const JOB_STORAGE_KEY = "makerworldCollectionJob";
 const JOB_ERROR_STORAGE_KEY = "makerworldJobError";
@@ -103,18 +104,20 @@ export async function abortJob(tabId: number): Promise<null> {
 }
 
 /** Takes up the step the run paused on, once MakerWorld's puzzle is solved. With the file the page got by solving it,
- *  the step imports that, on the page already open; without, the model's page loads again and the step asks anew. */
-export async function resumeJob(tabId: number, resolved?: ResolvedDownload | null): Promise<null> {
+ *  the step imports that, on the page already open; without, the model's page loads again and the step asks anew.
+ *  `step`, the one the page meant: a resume for a step the run has left behind, or another run's, does nothing. */
+export async function resumeJob(tabId: number, resolved?: ResolvedDownload | null, step?: string): Promise<null> {
   const job = await getJob();
   if (!job || job.tabId !== tabId || !job.paused) return null;
+  if (step !== undefined && step !== makerworldStepKey(job)) return null;
   const resumed: MakerworldJob = { ...job, paused: false, awaitingLoad: true, startAt: 0, handed: null };
   if (!resolved?.downloadUrl) {
     await setJob(resumed);
     await chrome.tabs.update(tabId, { url: job.urls[job.index] });
     return null;
   }
-  const { index, profile } = stepOf(job);
-  await setJob({ ...resumed, handed: { index, profile, download: resolved } });
+  const { index, profile, runId } = stepOf(job);
+  await setJob({ ...resumed, handed: { index, profile, runId, download: resolved } });
   const reply = await sendToTab(tabId, "MAKERWORLD_JOB_UPDATED").catch(() => undefined);
   if (!reply?.ok) await chrome.tabs.reload(tabId).catch(() => undefined);
   return null;
@@ -125,7 +128,14 @@ export async function resumeJob(tabId: number, resolved?: ResolvedDownload | nul
 function takeHanded(job: MakerworldJob, instanceId: string | null): ResolvedDownload | null {
   const handed = job.handed;
   job.handed = null;
-  if (!handed || handed.index !== job.index || handed.profile !== (job.profiles?.done ?? 0)) return null;
+  if (
+    !handed ||
+    handed.runId !== job.runId ||
+    handed.index !== job.index ||
+    handed.profile !== (job.profiles?.done ?? 0)
+  ) {
+    return null;
+  }
   return instanceId && handed.download.instanceId !== instanceId ? null : handed.download;
 }
 
@@ -387,7 +397,7 @@ export const makerworldHandlers: Partial<Handlers<BackgroundMessages>> = {
   START_MAKERWORLD_COLLECTION_JOB: (payload, sender) => startJob(senderTabId(sender), payload),
   ABORT_MAKERWORLD_COLLECTION_JOB: (_payload, sender) => abortJob(senderTabId(sender)),
   FORCE_ADVANCE_MAKERWORLD_JOB: (_payload, sender) => forceAdvanceJob(senderTabId(sender)),
-  RESUME_MAKERWORLD_JOB: ({ resolved }, sender) => resumeJob(senderTabId(sender), resolved),
+  RESUME_MAKERWORLD_JOB: ({ resolved, step }, sender) => resumeJob(senderTabId(sender), resolved, step),
   SHOW_MAKERWORLD_PUZZLE: (payload, sender) => showMakerworldPuzzle(payload, sender),
   // Not awaited: the step runs for as long as the import takes.
   MAKERWORLD_JOB_STEP_DUE: (_payload, sender) => {

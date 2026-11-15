@@ -1412,7 +1412,7 @@ export async function importPrintFromUrl(
   if (!keepGrabImports && backend && modelId) {
     await backend.grabQueue?.clear(userId, modelId).catch(() => undefined);
     const profileIds = result.plates.flatMap((plate) => plate.sourceInstanceId ?? []);
-    await backend.grabFallback?.clear(userId, modelId, profileIds).catch(() => undefined);
+    await backend.grabFallback?.clear(userId, modelId, profileIds, result.print.id).catch(() => undefined);
   }
   if (!result.alreadyImported && !result.profileAdded && !importingQuietly()) {
     void recordActivity(userId, "import", result.print.id, result.print.name);

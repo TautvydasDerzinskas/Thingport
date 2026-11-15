@@ -60,6 +60,7 @@ vi.stubGlobal("chrome", {
 });
 
 const { abortJob, advanceJob, forceAdvanceJob, resumeJob, startJob } = await import("./job");
+const { makerworldStepKey } = await import("./step");
 
 const job = () => store.makerworldCollectionJob as MakerworldJob | undefined;
 const importedUrls = () => imported.map(({ url }) => url);
@@ -221,6 +222,21 @@ describe("the guided MakerWorld collection import", () => {
     await step();
     expect(imported).toEqual([{ url: MODEL_A, resolved: solved }]);
     expect(visited).toEqual([MODEL_B]);
+  });
+
+  it("takes a resume only for the step it's paused on", async () => {
+    await start([MODEL_A, MODEL_B], "url");
+    page.RESOLVE_MAKERWORLD_DOWNLOAD_URL = () => ({ ok: false, error: MAKERWORLD_CAPTCHA_REPLY });
+    await step();
+    const solved = { downloadUrl: "https://s3.example.com/solved.3mf", instanceId: "10" };
+
+    // Sent for an earlier run's step that looked the same.
+    await resumeJob(TAB, solved, "another-run:0:0");
+    expect(job()).toMatchObject({ paused: true, handed: null });
+
+    await resumeJob(TAB, solved, makerworldStepKey(job()!));
+    await step();
+    expect(imported).toEqual([{ url: MODEL_A, resolved: solved }]);
   });
 
   it("moves past a stuck profile on Import next, not past the whole model", async () => {

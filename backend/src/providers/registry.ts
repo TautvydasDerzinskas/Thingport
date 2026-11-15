@@ -283,9 +283,9 @@ export type GrabFallback = {
   /** Only for someone whose Grab can be told about it. */
   available(userId: string): Promise<boolean>;
   queue(userId: string, url: string, options?: GrabImportOptions): Promise<void>;
-  /** Imported, however it came in: nothing waits for the model any more, but a link naming one of its print profiles
-   *  that `profileIds`, those its print has now, lack. */
-  clear(userId: string, modelId: string, profileIds: string[]): Promise<void>;
+  /** Imported, however it came in, as `printId`: nothing waits for the model any more, but a link naming one of its
+   *  print profiles that `profileIds`, those its print has now, lack. What waited is finished as Grab would have. */
+  clear(userId: string, modelId: string, profileIds: string[], printId: string): Promise<void>;
   /** Forgets what no import wants any more, its own deleted from the queue or taken out of one: it mustn't come in
    *  through Grab either. `userId`'s, or everyone's. */
   dropUnwanted(userId?: string): Promise<void>;
@@ -365,8 +365,8 @@ export const PROVIDERS = {
       available: async (userId) => (await makerworldGrabImports()).hasPairedGrab(userId),
       queue: async (userId, url, options) =>
         (await makerworldGrabImports()).queueMakerworldGrabImport(userId, url, options),
-      clear: async (userId, designId, profileIds) =>
-        (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId, profileIds),
+      clear: async (userId, designId, profileIds, printId) =>
+        (await makerworldGrabImports()).clearMakerworldGrabImports(userId, designId, profileIds, printId),
       dropUnwanted: async (userId) => (await makerworldGrabImports()).dropUnwantedMakerworldGrabImports(userId),
       waitingText: (count) =>
         `${count === undefined ? "Waits" : `${count} ${count === 1 ? "waits" : "wait"}`} for Thingport Grab: solve ` +

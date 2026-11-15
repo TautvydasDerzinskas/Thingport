@@ -53,6 +53,8 @@ let running = false;
 // Bumped when Grab is turned off: an offer on its way, or a run under way, stops there.
 let generation = 0;
 let stopRun: (() => void) | null = null;
+// Grab on again while the run it stopped still finishes: the offer comes once it has.
+let offerAfterRun = false;
 
 async function laterUntil(): Promise<number> {
   const stored = await chrome.storage.local.get(LATER_KEY).catch(() => ({}) as Record<string, unknown>);
@@ -62,7 +64,11 @@ async function laterUntil(): Promise<number> {
 
 /** Once per tab, on any makerworld.com page with Grab set up: the offer, if anything waits and it wasn't put off. */
 export async function offerMakerworldWaiting(): Promise<void> {
-  if (offered || running) return;
+  if (offered) return;
+  if (running) {
+    offerAfterRun = true;
+    return;
+  }
   offered = true;
   const mine = generation;
   if (!(await providerEnabled(PROVIDER))) return;
@@ -77,6 +83,7 @@ export async function offerMakerworldWaiting(): Promise<void> {
 export function stopMakerworldWaiting(): void {
   generation++;
   offered = false;
+  offerAfterRun = false;
   stopRun?.();
   removeSideHost();
 }
@@ -187,6 +194,7 @@ async function run(waiting: WaitingImport[]): Promise<void> {
         t("waitingImportingTitle"),
         t("waitingImportingLine", { current: index + 1, total: waiting.length }),
         (index / waiting.length) * 100,
+        stop,
       );
       progress.classList.add("tg-overlay--by-fab");
       overlays.show(progress);
@@ -247,5 +255,9 @@ async function run(waiting: WaitingImport[]): Promise<void> {
     }
   } finally {
     if (running) await finish();
+    if (offerAfterRun && !running) {
+      offerAfterRun = false;
+      void offerMakerworldWaiting();
+    }
   }
 }

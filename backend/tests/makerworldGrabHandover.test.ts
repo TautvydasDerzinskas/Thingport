@@ -364,9 +364,9 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
       await prisma.grabImport.create({ data: { userId, provider: "makerworld", url } });
     }
 
-    await clearMakerworldGrabImports(userId, design, []);
+    await clearMakerworldGrabImports(userId, design, [], "print-elsewhere");
     expect((await waiting()).map((row) => row.url)).toEqual([link("10"), link("20")]);
-    await clearMakerworldGrabImports(userId, design, ["10"]);
+    await clearMakerworldGrabImports(userId, design, ["10"], "print-elsewhere");
     expect((await waiting()).map((row) => row.url)).toEqual([link("20")]);
   });
 
@@ -570,5 +570,52 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
 
     for (let attempt = 0; attempt < 3; attempt++) expect((await bring(1)).status).toBe(500);
     expect(await waiting()).toEqual([]);
+  });
+
+  it("hands over the links after a CAPTCHA one of a model's print profiles met", async () => {
+    await pairGrab();
+    // All of the first model's profiles, the first of which meets the CAPTCHA, which the rest then aren't tried for.
+    vi.spyOn(PROVIDERS.makerworld, "profileUrls").mockResolvedValue({
+      title: "Profiles",
+      urls: [`${modelUrl(33)}#profileId-1`, `${modelUrl(33)}#profileId-2`],
+    });
+    const jobId = await runJob([modelUrl(33), modelUrl(34)], { scopes: ["all"] });
+
+    expect((await waiting()).map((row) => row.url)).toEqual([modelUrl(34)]);
+    expect((await itemsOf(jobId))[1].errorMessage).toMatch(/^Waits for Thingport Grab/);
+  });
+
+  it("offers Grab nothing no import wants any more, should its import's deletion not have dropped it", async () => {
+    await pairGrab();
+    // Left by an import deleted while dropping what waited for it failed.
+    const orphan = await prisma.grabImport.create({ data: { userId, provider: "makerworld", url: modelUrl(35) } });
+
+    expect((await request(app).get("/api/import/makerworld/waiting").set(auth()).expect(200)).body).toEqual([]);
+    expect(await waiting()).toEqual([]);
+    expect((await bringIn(orphan)).status).toBe(404);
+  });
+
+  it("files a link waiting for Grab where it was meant to go when its model comes in another way", async () => {
+    await pairGrab();
+    const jobId = await runJob([modelUrl(36)]);
+    const [row] = await waiting();
+    const collection = await prisma.collection.create({
+      data: { userId, name: "Handed", nameNormalized: "handed" },
+    });
+    await prisma.grabImport.update({ where: { id: row.id }, data: { collectionId: collection.id } });
+    const print = await prisma.print.create({ data: { userId, name: "Thing", nameNormalized: "thing" } });
+    try {
+      await clearMakerworldGrabImports(userId, String((stamp % 1_000_000) + 36), [], print.id);
+
+      expect(await waiting()).toEqual([]);
+      expect((await itemsOf(jobId))[0].status).toBe("DONE");
+      expect(await jobOf(jobId)).toMatchObject({ alreadyInLibrary: 1, failedCount: 0 });
+      const filed = await prisma.collectionItem.findMany({ where: { collectionId: collection.id } });
+      expect(filed.map((item) => item.printId)).toEqual([print.id]);
+    } finally {
+      // A model with no files mustn't be left for the storage tests that go over every one.
+      await prisma.collection.delete({ where: { id: collection.id } });
+      await prisma.print.delete({ where: { id: print.id } });
+    }
   });
 });

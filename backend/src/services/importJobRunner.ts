@@ -142,6 +142,8 @@ export type ProfileImportTotals = {
   failed: number;
   printId: string | null;
   stopReason: StopReason | null;
+  /** The failure that set `stopReason`, for a block Thingport Grab can clear (MakerWorld's CAPTCHA) to be told apart. */
+  stopError?: unknown;
   /** `shouldStop` said so: the profiles left weren't tried. */
   stopped: boolean;
 };
@@ -185,6 +187,7 @@ export async function importProfileUrlsSequentially(
       } catch (err) {
         totals.failed++;
         totals.stopReason = asStopReason(classifyImportFailure(err));
+        if (totals.stopReason) totals.stopError = err;
         log.warn("profile import failed", { url: profileUrl, reason: classifyImportFailure(err), error: err });
       }
     }
@@ -789,6 +792,8 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
             partlyIn = result.failed < result.processed;
             if (result.stopReason) {
               stopReason = result.stopReason;
+              // So a block Grab can clear is known by what it was, as a link's own failure is.
+              itemFailure = result.stopError ?? null;
               itemError += {
                 rateLimited: ` (${rateLimitText(item.url)} — retry once it clears)`,
                 downloadLimit: ` (${downloadLimitSite(item.url)}'s daily download limit — retry tomorrow)`,

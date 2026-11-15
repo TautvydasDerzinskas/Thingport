@@ -184,7 +184,7 @@ export type MakerworldJob = {
   paused: boolean;
   /** The file the page got for the step it paused on, once the puzzle was solved: that step imports it rather than ask
    *  MakerWorld again. Used once, and only by that step. */
-  handed?: { index: number; profile: number; download: ResolvedDownload } | null;
+  handed?: { index: number; profile: number; runId?: string; download: ResolvedDownload } | null;
   /** The models imported so far, for the run's one notification. Missing on a run saved by an older version. */
   printIds?: string[];
   /** Tells this run's steps from those of an earlier run in the same tab. Missing on a run saved by an older version. */
@@ -305,7 +305,8 @@ export type BackgroundMessages = {
   ABORT_MAKERWORLD_COLLECTION_JOB: { payload: void; result: null };
   /** `resolved`: the paused step's file, which the page got with the puzzle's answer. Without it the page is loaded
    *  again and the step asks anew. */
-  RESUME_MAKERWORLD_JOB: { payload: { resolved?: ResolvedDownload | null }; result: null };
+  /** `step`: the step the page resumes (makerworldStepKey); one the run has moved on from is ignored. */
+  RESUME_MAKERWORLD_JOB: { payload: { resolved?: ResolvedDownload | null; step?: string }; result: null };
   /** Opens MakerWorld's own puzzle in the page that asks, for a request MakerWorld refused; true when it opened. The
    *  answer comes to the page itself, on `eventName`. */
   SHOW_MAKERWORLD_PUZZLE: { payload: { challenge: PuzzleChallenge; eventName: string }; result: boolean };
