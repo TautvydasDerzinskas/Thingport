@@ -3473,6 +3473,16 @@
       "yes": "是",
       "no": "否"
     },
+    "support": {
+      "link": "喜欢 Thingport？",
+      "linkLong": "喜欢 Thingport？表达你的支持",
+      "title": "喜欢 Thingport？表达你的支持",
+      "text": "开发 Thingport，并在它导入的网站不断变化时让它持续可用，需要投入大量时间和精力。每一份支持都很重要。谢谢！",
+      "coffee": "一次性的感谢，金额随你。",
+      "sponsors": "每月支持 Thingport，或只支持一次。",
+      "later": "以后再说",
+      "newTab": "（在新标签页中打开）"
+    },
     "whatsNew": {
       "label": "更新内容",
       "versionLabel": "Thingport {{version}}",

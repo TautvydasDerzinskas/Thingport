@@ -29,6 +29,8 @@ declare module "@mui/material/styles" {
       headingText: string;
       /** Charts: hues for categories, in this order and never cycled, and a neutral for "everything else". */
       chart: { series: string[]; other: string };
+      /** The support dialog's heart and the two ways' own brand colours, the same in both themes. */
+      support: SupportColors;
     };
   }
   interface ThemeOptions {
@@ -43,9 +45,15 @@ declare module "@mui/material/styles" {
       selectedNavText: string;
       headingText: string;
       chart: { series: string[]; other: string };
+      support: SupportColors;
     };
   }
 }
+
+type SupportColors = { heart: string; coffee: string; onCoffee: string; sponsors: string };
+
+/** Buy Me a Coffee's yellow and GitHub Sponsors' pink are theirs, so they don't follow the theme. */
+const SUPPORT_COLORS: SupportColors = { heart: "#e5484d", coffee: "#ffdd00", onCoffee: "#1b1b1b", sponsors: "#db61a2" };
 
 type ThemeDef = {
   mode: "light" | "dark";
@@ -279,6 +287,7 @@ export function buildTheme(id: ResolvedTheme, accent: AccentColor = DEFAULT_ACCE
       selectedNavText: d.selectedNavText,
       headingText: d.headingText,
       chart: d.chart,
+      support: SUPPORT_COLORS,
     },
   };
   return createTheme(options);

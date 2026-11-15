@@ -3634,6 +3634,16 @@
       "yes": "Yes",
       "no": "No"
     },
+    "support": {
+      "link": "Love Thingport?",
+      "linkLong": "Love Thingport? Show your support",
+      "title": "Love Thingport? Show your support",
+      "text": "Thingport takes a lot of time and effort to build, and to keep working as the sites it imports from change. Every bit of support matters. Thank you!",
+      "coffee": "A one-off thank you, any amount you like.",
+      "sponsors": "Back Thingport every month, or just once.",
+      "later": "Maybe later",
+      "newTab": "(opens in a new tab)"
+    },
     "whatsNew": {
       "label": "What's new",
       "versionLabel": "Thingport {{version}}",

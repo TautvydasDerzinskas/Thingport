@@ -3798,6 +3798,16 @@
       "yes": "Sí",
       "no": "No"
     },
+    "support": {
+      "link": "¿Te gusta Thingport?",
+      "linkLong": "¿Te gusta Thingport? Demuestra tu apoyo",
+      "title": "¿Te gusta Thingport? Demuestra tu apoyo",
+      "text": "Crear Thingport, y mantenerlo funcionando mientras cambian los sitios de los que importa, lleva mucho tiempo y esfuerzo. Todo apoyo cuenta. ¡Gracias!",
+      "coffee": "Un agradecimiento puntual, de la cantidad que quieras.",
+      "sponsors": "Apoya Thingport cada mes, o solo una vez.",
+      "later": "Quizá más tarde",
+      "newTab": "(se abre en una pestaña nueva)"
+    },
     "whatsNew": {
       "label": "Novedades",
       "versionLabel": "Thingport {{version}}",

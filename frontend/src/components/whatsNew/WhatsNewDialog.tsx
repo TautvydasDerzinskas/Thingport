@@ -35,6 +35,7 @@ import {
 } from "../../api/releaseNotes";
 import CodeBlock from "../CodeBlock";
 import { ListRowSkeletons } from "../ListSkeleton";
+import SupportLink from "../SupportLink";
 
 export type WhatsNewRequest = {
   /** This instance's version when null. */
@@ -519,18 +520,30 @@ export default function WhatsNewDialog({ request, onClose }: Props) {
           justifyContent="space-between"
           sx={{ px: 3, py: 1.5, borderTop: 1, borderColor: "divider", flexShrink: 0 }}
         >
-          <Link
-            href={releasesUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="body2"
-            underline="hover"
-            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
-          >
-            {t("whatsNew.allReleases")}
-            <OpenInNewIcon sx={{ fontSize: 14 }} />
-          </Link>
-          <Button variant="contained" onClick={onClose}>
+          <Stack direction="row" alignItems="center" spacing={1.25} useFlexGap sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
+            <Link
+              href={releasesUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="body2"
+              underline="hover"
+              sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+            >
+              {t("whatsNew.allReleases")}
+              <OpenInNewIcon sx={{ fontSize: 14 }} />
+            </Link>
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.disabled"
+              aria-hidden
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              |
+            </Typography>
+            <SupportLink />
+          </Stack>
+          <Button variant="contained" onClick={onClose} sx={{ flexShrink: 0 }}>
             {t("whatsNew.gotIt")}
           </Button>
         </Stack>
