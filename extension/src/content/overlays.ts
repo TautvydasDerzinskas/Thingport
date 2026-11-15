@@ -246,11 +246,11 @@ export function mountPausedJobOverlay(root: ShadowRoot, job: MakerworldJob): voi
 export const PUZZLE_SOLVED_MS = SOLVED_MS;
 
 /** The dimmed page with a card beside MakerWorld's puzzle, which sits a z-index above it. Not modal: the puzzle is the
- *  page's, and Tab has to reach it. `line` says what carries on once it's solved. `askAgain`, offered where the puzzle
- *  never shows (its script blocked, say), carries on without it. */
+ *  page's, and Tab has to reach it. `line` says what carries on once it's solved. `askAgain`, offered as Resume where
+ *  the puzzle never shows (its script blocked, say), carries on without it; without one, Stop is all there is. */
 export function spotlightOverlay(
   line: string,
-  { stop, askAgain }: { stop: StopButton; askAgain: () => void },
+  { stop, askAgain }: { stop: StopButton; askAgain?: () => void },
 ): HTMLElement {
   const overlay = document.createElement("div");
   overlay.className = "tg-overlay";
@@ -263,17 +263,17 @@ export function spotlightOverlay(
         <div class="tg-overlay__title" id="tg-overlay-title">${escapeHtml(t("solveMakerworldPuzzle"))}</div>
         <div class="tg-overlay__count">${escapeHtml(line)}</div>
       </div>
-      <button class="tg-btn tg-btn--secondary" type="button" data-action="again" hidden>${escapeHtml(t("resume"))}</button>
+      ${askAgain ? `<button class="tg-btn tg-btn--secondary" type="button" data-action="again" hidden>${escapeHtml(t("resume"))}</button>` : ""}
       ${stopButtonHtml(stop)}
       <span class="tg-spotlight__arrow" aria-hidden="true"></span>
     </div>`;
   wireStop(overlay, stop);
   const card = overlay.querySelector<HTMLElement>(".tg-spotlight")!;
-  const againBtn = overlay.querySelector<HTMLButtonElement>("[data-action=again]")!;
-  againBtn.addEventListener("click", () => {
+  const againBtn = overlay.querySelector<HTMLButtonElement>("[data-action=again]");
+  againBtn?.addEventListener("click", () => {
     againBtn.disabled = true;
     againBtn.textContent = t("resuming");
-    askAgain();
+    askAgain?.();
   });
   // Above the puzzle where there's room, below it where there isn't. Until it shows, where it will.
   let seen = false;
@@ -294,7 +294,7 @@ export function spotlightOverlay(
   const watch = setInterval(() => (card.isConnected ? place() : clearInterval(watch)), 250);
   requestAnimationFrame(place);
   setTimeout(() => {
-    if (!seen && card.isConnected) againBtn.hidden = false;
+    if (againBtn && !seen && card.isConnected) againBtn.hidden = false;
   }, JOB_STUCK_REVEAL_MS);
   return overlay;
 }

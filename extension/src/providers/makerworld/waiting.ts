@@ -50,6 +50,9 @@ type TaskState = { status: "running" } | { status: "done" } | { status: "error";
 
 let offered = false;
 let running = false;
+// Bumped when Grab is turned off: an offer on its way, or a run under way, stops there.
+let generation = 0;
+let stopRun: (() => void) | null = null;
 
 async function laterUntil(): Promise<number> {
   const stored = await chrome.storage.local.get(LATER_KEY).catch(() => ({}) as Record<string, unknown>);
@@ -61,11 +64,21 @@ async function laterUntil(): Promise<number> {
 export async function offerMakerworldWaiting(): Promise<void> {
   if (offered || running) return;
   offered = true;
+  const mine = generation;
   if (!(await providerEnabled(PROVIDER))) return;
   if ((await laterUntil()) > Date.now()) return;
   const waiting = await api<WaitingImport[]>("GET", `/import/${PROVIDER}/waiting`).catch(() => null);
-  if (!Array.isArray(waiting) || !waiting.length) return;
+  if (!Array.isArray(waiting) || !waiting.length || mine !== generation) return;
   showOffer(waiting);
+}
+
+/** Grab turned off: the offer goes, and a run through what waits stops, as everything else of Grab's pauses. Turned on
+ *  again, the page offers them anew. */
+export function stopMakerworldWaiting(): void {
+  generation++;
+  offered = false;
+  stopRun?.();
+  removeSideHost();
 }
 
 function showOffer(waiting: WaitingImport[]): void {
@@ -130,6 +143,9 @@ async function run(waiting: WaitingImport[]): Promise<void> {
   for (const old of root.querySelectorAll(".tg-overlay")) old.remove();
   const overlays = overlaySwitcher(root);
   let stopped = false;
+  stopRun = () => {
+    stopped = true;
+  };
   const stop: StopButton = {
     label: t("waitingStop"),
     busyLabel: t("waitingStopping"),
@@ -142,6 +158,7 @@ async function run(waiting: WaitingImport[]): Promise<void> {
   let failed = 0;
   const finish = async () => {
     running = false;
+    stopRun = null;
     overlays.current()?.remove();
     if (stopped || (!imported && !failed)) return;
     const state = await send("GET_STATE").catch(() => undefined);
@@ -184,10 +201,9 @@ async function run(waiting: WaitingImport[]): Promise<void> {
         if (!err.puzzle) return;
         const left = waiting.length - index;
         overlays.show(
-          // Its puzzle never showing leaves nothing to solve here: the rest wait for a later visit.
+          // Nothing to resume where its puzzle never shows: Stop leaves the rest for a later visit.
           spotlightOverlay(t(left === 1 ? "waitingPuzzleLine_one" : "waitingPuzzleLine_other", { count: left }), {
             stop,
-            askAgain: stop.onClick,
           }),
         );
         const outcome = await solveMakerworldPuzzle(err.puzzle, { stopped: () => stopped }).catch(() => ({

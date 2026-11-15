@@ -21,12 +21,17 @@ const calls = vi.hoisted(() => ({
   store: {} as Record<string, unknown>,
   task: (() => "done") as (path: string) => string,
   onSleep: () => undefined as void,
+  // Holds the instance's list back until released.
+  listGate: null as Promise<void> | null,
+  spotlight: null as unknown,
+  removed: 0,
 }));
 
 vi.mock("../../content/runtime", () => ({
   api: vi.fn(async (method: string, path: string, body?: unknown) => {
     calls.api.push({ method, path, body });
     if (method === "GET" && path === "/import/makerworld/waiting") {
+      if (calls.listGate) await calls.listGate;
       if (calls.waiting instanceof Error) throw calls.waiting;
       return calls.waiting;
     }
@@ -40,7 +45,7 @@ vi.mock("../../content/runtime", () => ({
 vi.mock("../../content/providerSettings", () => ({ providerEnabled: async () => true }));
 vi.mock("../../content/shell", () => ({
   sideHost: () => ({ querySelector: () => null, querySelectorAll: () => [] }),
-  removeSideHost: () => undefined,
+  removeSideHost: () => void calls.removed++,
 }));
 vi.mock("../../content/callout", () => ({
   mountCallout: (
@@ -58,7 +63,10 @@ const card = (name: string) => () => {
 vi.mock("../../content/overlays", () => ({
   overlaySwitcher: () => ({ show: () => undefined, current: () => null }),
   progressOverlay: card("progress"),
-  spotlightOverlay: card("spotlight"),
+  spotlightOverlay: (_line: string, options: unknown) => {
+    calls.spotlight = options;
+    return card("spotlight")();
+  },
   solvedOverlay: card("solved"),
   closedOverlay: card("closed"),
   doneOverlay: card("done"),
@@ -126,6 +134,9 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     calls.resolve = async (url, instanceId) => fileOf(url, instanceId);
     calls.task = () => "done";
     calls.onSleep = () => undefined;
+    calls.listGate = null;
+    calls.spotlight = null;
+    calls.removed = 0;
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -184,6 +195,8 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
       },
     ]);
     expect(calls.shown).toEqual(["progress", "spotlight", "solved", "progress", "done"]);
+    // Nothing to resume where the puzzle never shows: only Stop.
+    expect(Object.keys(calls.spotlight as object)).toEqual(["stop"]);
   });
 
   it("leave the rest waiting where the puzzle is closed", async () => {
@@ -227,5 +240,36 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
     const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
     expect(posts).toEqual(["/import/makerworld/waiting/w1?async=1", "/import/makerworld/waiting/w2?async=1"]);
     expect(calls.shown.at(-1)).toBe("done");
+  });
+
+  it("aren't offered once Grab is turned off while the list was on its way", async () => {
+    let release!: () => void;
+    calls.listGate = new Promise((resolve) => (release = resolve));
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    const offering = waiting.offerMakerworldWaiting();
+    waiting.stopMakerworldWaiting();
+    release();
+    await offering;
+
+    expect(calls.callout).toBeNull();
+    expect(calls.removed).toBe(1);
+  });
+
+  it("stop being brought in when Grab is turned off during the run", async () => {
+    vi.resetModules();
+    const waiting = await import("./waiting");
+    calls.task = (path) => {
+      if (path.includes("/w1?")) waiting.stopMakerworldWaiting();
+      return "running";
+    };
+    await waiting.offerMakerworldWaiting();
+    calls.callout!.primary();
+    await vi.waitFor(() => expect(calls.removed).toBe(1));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const posts = calls.api.filter(({ method }) => method === "POST").map(({ path }) => path);
+    expect(posts).toEqual(["/import/makerworld/waiting/w1?async=1"]);
+    expect(calls.shown).not.toContain("done");
   });
 });

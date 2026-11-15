@@ -17,6 +17,7 @@ import {
   resolveMakerworldProfileDownload,
 } from "../providers/makerworld/downloadResolver";
 import { notePuzzle } from "../providers/makerworld/puzzle";
+import { stopMakerworldWaiting } from "../providers/makerworld/waiting";
 import {
   adaptedReveal,
   loadPageAdapt,
@@ -159,6 +160,8 @@ async function init(): Promise<void> {
   if (isStale()) return;
   if (stateRes?.ok) showInLocale(stateRes.data.locale);
   if (!stateRes?.ok || stateRes.data.disabled) {
+    // The imports waiting for MakerWorld's puzzle keep their own host through the page's start-overs, but not this.
+    if (stateRes?.ok) stopMakerworldWaiting();
     reportTabIconState(false);
     return;
   }
