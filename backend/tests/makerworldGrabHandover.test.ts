@@ -45,7 +45,11 @@ vi.mock("../src/services/singleImport", async (original) => ({
 // Counting a link done is made to fail where a test says, by the check of which links Grab's import finishes.
 vi.mock("../src/services/importJobService", async (original) => {
   const actual = await original<typeof import("../src/services/importJobService")>();
-  return { ...actual, isOneModelLink: vi.fn<typeof actual.isOneModelLink>(actual.isOneModelLink) };
+  return {
+    ...actual,
+    isOneModelLink: vi.fn<typeof actual.isOneModelLink>(actual.isOneModelLink),
+    updateJobItem: vi.fn<typeof actual.updateJobItem>(actual.updateJobItem),
+  };
 });
 
 // Telling the owner a model was given up on is made to fail where a test says.
@@ -65,7 +69,7 @@ import {
 } from "../src/providers/makerworld/grabImports";
 import { PROVIDERS } from "../src/providers/registry";
 import { runLinksImportJob } from "../src/services/importJobRunner";
-import { isOneModelLink } from "../src/services/importJobService";
+import { isOneModelLink, updateJobItem } from "../src/services/importJobService";
 import { createNotification } from "../src/services/notificationService";
 import { clearFinishedJobs, deleteQueueJob, readOwnQueue, removeQueueItem } from "../src/services/importQueueService";
 import { HttpError } from "../src/utils/fileUtils";
@@ -523,5 +527,48 @@ describe("imports MakerWorld's CAPTCHA stopped, handed to Grab", () => {
 
     await removeQueueItem(item.id, userId);
     expect((await waiting()).map((left) => [left.url, left.tags])).toEqual([[modelUrl(30), ["newer"]]]);
+  });
+
+  it("doesn't hand a link over that it couldn't mark as failed", async () => {
+    await pairGrab();
+    const write = vi.mocked(updateJobItem).getMockImplementation()!;
+    vi.mocked(updateJobItem).mockImplementation(async (id, data) => {
+      if (typeof data.errorMessage === "string" && data.errorMessage.startsWith("Waits for")) {
+        throw new Error("database gone");
+      }
+      return write(id, data);
+    });
+    try {
+      const jobId = await runJob([modelUrl(31)]);
+      expect(await waiting()).toEqual([]);
+      expect((await itemsOf(jobId)).map((item) => [item.status, item.errorMessage])).toEqual([
+        ["FAILED", MAKERWORLD_CAPTCHA_MESSAGE],
+      ]);
+    } finally {
+      vi.mocked(updateJobItem).mockImplementation(write);
+    }
+  });
+
+  it("doesn't count a failed import of Grab's at an earlier queueing of a link against a newer one", async () => {
+    await pairGrab();
+    await runJob([modelUrl(32)]);
+    const [row] = await waiting();
+    await queueMakerworldGrabImport(userId, row.url, { tags: ["newer"] });
+    imports.meanwhile = async () => {
+      throw new Error("MakerWorld's file went away");
+    };
+    const bring = (revision: number) =>
+      request(app)
+        .post(`/api/import/makerworld/waiting/${row.id}`)
+        .set(auth())
+        .send({ resolved_download_url: "https://makerworld.bblmw.com/model/f.3mf", revision });
+
+    for (let attempt = 0; attempt < 3; attempt++) expect((await bring(0)).status).toBe(500);
+    expect((await waiting()).map((left) => [left.attempts, left.revision])).toEqual([[0, 1]]);
+    // What Grab resolved reaches the import, its revision doesn't.
+    expect(imports.brought.at(-1)?.body).not.toHaveProperty("revision");
+
+    for (let attempt = 0; attempt < 3; attempt++) expect((await bring(1)).status).toBe(500);
+    expect(await waiting()).toEqual([]);
   });
 });

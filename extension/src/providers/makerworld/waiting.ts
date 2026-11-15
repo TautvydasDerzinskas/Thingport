@@ -99,6 +99,8 @@ async function bringIn(row: WaitingImport, resolved: ResolvedDownload, stopped: 
       resolved_download_url: resolved.downloadUrl,
       resolved_instance_id: resolved.instanceId,
       makerworld_design: resolved.design ?? null,
+      // Which queueing of the link this is, should its import fail.
+      revision: row.revision,
     });
     for (const end = Date.now() + TASK_WAIT_MS; !stopped() && Date.now() < end; await sleep(TASK_POLL_MS)) {
       const task = await api<TaskState>("GET", `/import/tasks/${task_id}`);

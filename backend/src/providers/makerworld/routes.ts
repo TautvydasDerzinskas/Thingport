@@ -38,6 +38,10 @@ const resolvedSchema = z.object({
   makerworld_design: z.record(z.unknown()).nullable().optional(),
 });
 
+/** Which queueing of the link Grab's list had: a try at an earlier one doesn't count against a newer one. An older
+ *  Grab sends none, and its try counts against the link as it's queued now. */
+const revisionSchema = z.object({ revision: z.number().int().nonnegative().optional() });
+
 /** Grab resolved a waiting model's file: imported like any link with what it resolved, filed where it was meant to go,
  *  and counted done in the import it failed in. Asynchronous with `?async=1`, as /import is. */
 router.post(
@@ -45,6 +49,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const userId = req.userId!;
     const resolved = parseBody(resolvedSchema, req.body);
+    const { revision } = parseBody(revisionSchema, req.body);
     const row = await getMakerworldGrabImport(userId, req.params.id);
     const run = async () => {
       let described;
@@ -64,9 +69,11 @@ router.post(
           if (collection) await addPrintsToCollection(collection.id, [described.id]);
         }
       } catch (err) {
-        await recordMakerworldGrabImportFailure(row, err instanceof Error ? err.message : "Import failed").catch(
-          () => undefined,
-        );
+        // The import ran with the link as it's queued now, but the try was at the one Grab listed.
+        await recordMakerworldGrabImportFailure(
+          { ...row, revision: revision ?? row.revision },
+          err instanceof Error ? err.message : "Import failed",
+        ).catch(() => undefined);
         throw err;
       }
       await finishMakerworldGrabImport(row, described.import_outcome === "already_imported");
@@ -80,16 +87,11 @@ router.post(
   }),
 );
 
-/** Grab couldn't resolve a waiting model's file, the puzzle solved or not. `revision`, from the list Grab worked from:
- *  a try at an earlier queueing of the link doesn't count against a newer one. An older Grab sends none, and its try
- *  counts against the link as it's queued now. */
+/** Grab couldn't resolve a waiting model's file, the puzzle solved or not, at the queueing its list had. */
 router.post(
   `/import/${MAKERWORLD}/waiting/:id/failed`,
   asyncHandler(async (req, res) => {
-    const body = parseBody(
-      z.object({ error: z.string().max(1000), revision: z.number().int().nonnegative().optional() }),
-      req.body,
-    );
+    const body = parseBody(revisionSchema.extend({ error: z.string().max(1000) }), req.body);
     const row = await getMakerworldGrabImport(req.userId!, req.params.id);
     await recordMakerworldGrabImportFailure({ ...row, revision: body.revision ?? row.revision }, body.error);
     res.json({ ok: true });

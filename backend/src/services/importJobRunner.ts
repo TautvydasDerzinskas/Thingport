@@ -870,18 +870,23 @@ async function runLinks(jobId: string, userId: string, body: LinksImportJobBody)
           // Failed, and saying it waits, before Grab can see it waiting: Grab bringing it in at once then finds it to
           // count done, and that's left as it is.
           const waits = fallback.waitingText();
-          await updateJobItem(item.id, { status: "FAILED", attempts, errorMessage: waits }).catch(() => undefined);
-          handed = await fallback
-            .queue(userId, item.url, {
-              collectionId: options.collection_id,
-              categoryId: body.category_id,
-              tags: body.tags,
-              notes: body.notes,
-            })
-            .then(
-              () => true,
-              () => false,
-            );
+          const marked = await updateJobItem(item.id, { status: "FAILED", attempts, errorMessage: waits }).then(
+            () => true,
+            () => false,
+          );
+          handed =
+            marked &&
+            (await fallback
+              .queue(userId, item.url, {
+                collectionId: options.collection_id,
+                categoryId: body.category_id,
+                tags: body.tags,
+                notes: body.notes,
+              })
+              .then(
+                () => true,
+                () => false,
+              ));
           if (handed) {
             handedToGrab++;
             itemError = waits;

@@ -169,6 +169,7 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
           resolved_download_url: fileOf(MODEL_A, null).downloadUrl,
           resolved_instance_id: null,
           makerworld_design: { id: 1 },
+          revision: 2,
         },
       },
       {
@@ -178,6 +179,7 @@ describe("the imports waiting for MakerWorld's puzzle", () => {
           resolved_download_url: fileOf(MODEL_B, "20").downloadUrl,
           resolved_instance_id: "20",
           makerworld_design: { id: 1 },
+          revision: 0,
         },
       },
     ]);
