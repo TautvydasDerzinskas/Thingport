@@ -8,16 +8,27 @@ import { useSendReason } from "../../components/sendTo/useSendReason";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import type { ModelFile } from "./useOpenInSlicer";
 
+/** The tab a link reuses, if it's one: never a name the browser keeps for itself, like "_self", which is this tab. */
+function namedTab(target: SendTargetSummary): string | null {
+  if (target.kind !== "link" || target.open !== "named") return null;
+  return target.tab && !target.tab.startsWith("_") ? target.tab : "thingport";
+}
+
 /** A tab for a link, opened in the click itself. A new one gets no hold on Thingport's page. A named one keeps it:
  *  without it the browser no longer finds that tab by its name, nor lets this page send it anywhere, so each send
  *  would open another. */
 function tabFor(target: SendTargetSummary): Window | null {
   if (target.kind !== "link" || target.open === "same") return null;
-  if (target.open === "named") return window.open("about:blank", target.tab ?? "thingport");
+  const name = namedTab(target);
+  if (name) return window.open("about:blank", name);
   const tab = window.open("about:blank", "_blank");
   if (tab) tab.opener = null;
   return tab;
 }
+
+// The send each named tab is for now. Destinations can share one, and a send started later takes it over: an earlier
+// one coming back then neither moves it nor closes it.
+const tabSends = new Map<string, object>();
 
 /**
  * The user's Send to destinations for the file picked on a model's page, split by where they show, and sending to
@@ -51,14 +62,20 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
   const send = async (target: SendTargetSummary) => {
     if (!file || inFlight.current.has(target.id)) return;
     const tab = tabFor(target);
-    const drop = () => tab?.close();
+    const name = namedTab(target);
+    const claim = {};
+    if (name) tabSends.set(name, claim);
+    const ours = () => !name || tabSends.get(name) === claim;
+    const drop = () => {
+      if (ours()) tab?.close();
+    };
     settle(target.id, true);
     try {
       const result = await sendTargetsApi.send(printId, target.id, file.key);
       if ("open" in result) {
         if (shown.current !== printId) return drop();
         if (tab && /^https?:/i.test(result.open.url)) {
-          tab.location.replace(result.open.url);
+          if (ours()) tab.location.replace(result.open.url);
         } else {
           drop();
           // An app's own address, or this tab.
@@ -93,6 +110,7 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else toast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
     } finally {
+      if (name && ours()) tabSends.delete(name);
       settle(target.id, false);
     }
   };

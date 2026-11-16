@@ -247,6 +247,8 @@ describe("a user's destinations", () => {
       400,
     );
     expect((await bad({ type: "preset", preset: "octoprint", address: "ftp://printer.lan" })).status).toBe(400);
+    // The browser's own names would open it in Thingport's tab.
+    expect((await bad({ type: "link", url: "https://example.com/", open: "named", tab: "_self" })).status).toBe(400);
   });
 
   it("take the largest a destination can be, one at a time and fifty in a file", async () => {

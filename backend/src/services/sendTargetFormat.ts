@@ -110,7 +110,13 @@ const linkSchema = z.object({
   url: template(false),
   /** "new": a new tab; "named": the tab called `tab`, reused; "same": this one. */
   open: z.enum(["new", "named", "same"]).default("new"),
-  tab: z.string().trim().max(60).optional(),
+  /** Not one of the browser's own, such as "_self", which would open it in Thingport's tab. */
+  tab: z
+    .string()
+    .trim()
+    .max(60)
+    .refine((name) => !name.startsWith("_"), "A tab name can't start with _")
+    .optional(),
 });
 
 const headerSchema = z.object({
