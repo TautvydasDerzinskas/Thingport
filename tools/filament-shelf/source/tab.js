@@ -2,7 +2,7 @@
 // their spool that matches, and the list edited in place for everyone who sees what the editor shares.
 
 import { PALETTE, normaliseHex } from "./colour.js";
-import { MAX_FILAMENTS, NEEDS, loadForModel, matchAll, needsFor, newId } from "./shelf.js";
+import { MAX_FILAMENTS, forgetReads, loadForModel, matchAll, needsFor, needsKey, newId } from "./shelf.js";
 import {
   addStyle,
   avatar,
@@ -330,7 +330,11 @@ export function modelTab(thingport) {
     saving = true;
     render();
     try {
-      await shared.set(`${NEEDS}${context.modelId}`, { filaments }, { model: context.modelId });
+      await shared.set(
+        needsKey(context.modelId, data.profile),
+        { profile: data.profile, filaments },
+        { model: context.modelId },
+      );
       draft = null;
       await load();
     } catch (error) {
@@ -353,7 +357,11 @@ export function modelTab(thingport) {
     });
     if (!sure || closed) return;
     try {
-      await shared.set(`${NEEDS}${context.modelId}`, { filaments: null }, { model: context.modelId });
+      await shared.set(
+        needsKey(context.modelId, data.profile),
+        { profile: data.profile, filaments: null },
+        { model: context.modelId },
+      );
       await load();
     } catch (error) {
       failed(error);
@@ -446,8 +454,16 @@ export function modelTab(thingport) {
     }
   });
 
-  const stop = shared.onChange?.(() => void load()) ?? (() => {});
-  const stopReturn = onReturn(() => void load());
+  const stop =
+    shared.onChange?.(() => {
+      forgetReads();
+      void load();
+    }) ?? (() => {});
+  // Others' changes, from their own browsers, are read afresh too, not from what a part read a moment ago.
+  const stopReturn = onReturn(() => {
+    forgetReads();
+    void load();
+  });
   render();
   void load();
 

@@ -134,10 +134,10 @@ export function spoolsOf(entries) {
   return entries.filter((entry) => entry.key.startsWith(SPOOL) && isSpool(entry.value) && (entry.mine || entry.user));
 }
 
-/** The reader, then everyone with a spool that reaches them, by name. The reader's own details come from any entry of
- *  theirs; with none, only `mine` says who they are. */
-export function people(entries) {
-  const reader = entries.find((entry) => entry.mine && entry.user)?.user ?? null;
+/** The reader, then everyone with a spool that reaches them, by name. The reader is `user` where Thingport says who's
+ *  signed in, else whoever wrote any entry of theirs; with neither, only `mine` says who they are. */
+export function people(entries, user = null) {
+  const reader = user ?? entries.find((entry) => entry.mine && entry.user)?.user ?? null;
   const others = new Map();
   for (const entry of spoolsOf(entries)) {
     if (entry.mine) continue;
@@ -161,11 +161,13 @@ const isNeed = (value) =>
 /** The most filaments an edit keeps: a longer list isn't read as one. */
 export const MAX_FILAMENTS = 64;
 
-/** Whether a shared value is an edit of a model's filaments: a list, or null for "back to the profile". */
+/** Whether a shared value is an edit of a model's filaments for one of its profiles: a list, or null for "back to the
+ *  profile". */
 export function isNeedsValue(value) {
   return (
     Boolean(value) &&
     typeof value === "object" &&
+    isText(value.profile, 300) &&
     (value.filaments === null ||
       (Array.isArray(value.filaments) && value.filaments.length <= MAX_FILAMENTS && value.filaments.every(isNeed)))
   );
@@ -176,11 +178,32 @@ const timeOf = (iso) => {
   return Number.isNaN(at) ? 0 : at;
 };
 
-/** The edit in force on a model: the newest anyone made, unless that one went back to the profile. */
-export function currentEdit(entries) {
+/** Which profile of a model an edit is for: the provider's id where the file is one, which every copy of the model
+ *  shares, else the file's name, which a copy keeps. */
+export function profileKey(file) {
+  if (!file) return "model";
+  return file.profile?.id ? `profile:${file.profile.id}` : `file:${file.name}`;
+}
+
+/** The entry an edit of that profile is kept under. A key holds only a few kinds of character, so the profile's is
+ *  hashed, twice over, 64 bits in all: two of one person's files sharing a key would lose one's edit to the other's. */
+export function needsKey(modelId, profile) {
+  let djb = 5381;
+  let fnv = 0x811c9dc5;
+  for (const char of profile) {
+    const code = char.codePointAt(0);
+    djb = ((djb * 33) ^ code) >>> 0;
+    fnv = Math.imul(fnv ^ code, 0x01000193) >>> 0;
+  }
+  return `${NEEDS}${modelId}:${djb.toString(36)}${fnv.toString(36).padStart(7, "0")}`;
+}
+
+/** The edit in force on a profile of a model: the newest anyone made, unless that one went back to the profile. */
+export function currentEdit(entries, profile) {
   let newest = null;
   for (const entry of entries) {
     if (!entry.key.startsWith(NEEDS) || !isNeedsValue(entry.value) || !(entry.mine || entry.user)) continue;
+    if (entry.value.profile !== profile) continue;
     if (!newest || timeOf(entry.updatedAt) > timeOf(newest.updatedAt)) newest = entry;
   }
   if (!newest || newest.value.filaments === null) return null;
@@ -302,20 +325,56 @@ export async function readAll(shared, options = {}, page = PAGE) {
   return all;
 }
 
+// What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each.
+const READ_FOR_MS = 2000;
+const reads = new Map();
+// A change already forgotten for: every part hears it, and the first to read again starts what the others share.
+let forgetting = false;
+
+function readOnce(key, read) {
+  const now = Date.now();
+  // Old ones go as new ones come, so moving from model to model keeps none of them.
+  for (const [other, kept] of reads) if (now - kept.at >= READ_FOR_MS) reads.delete(other);
+  const kept = reads.get(key);
+  if (kept) return kept.promise;
+  const promise = read();
+  reads.set(key, { at: now, promise });
+  promise.catch(() => {
+    if (reads.get(key)?.promise === promise) reads.delete(key);
+  });
+  return promise;
+}
+
+/** Forgets every read, as a change on the page makes them old: once for each change, however many parts hear it, so
+ *  the reads the first starts again are the others' too. */
+export function forgetReads() {
+  if (forgetting) return;
+  forgetting = true;
+  reads.clear();
+  queueMicrotask(() => {
+    forgetting = false;
+  });
+}
+
 /** What a model's page shows: the model, the filaments it needs, the household's spools and how they match. */
-export async function loadForModel({ models, shared }, modelId, fileId) {
+export async function loadForModel({ models, shared, user }, modelId, fileId) {
+  // As the signed-in user: what reaches one account isn't another's, should the page change hands.
+  const who = user?.id ?? "?";
   const [model, spoolEntries, needEntries] = await Promise.all([
-    models.get(modelId),
-    readAll(shared, { prefix: SPOOL }),
-    readAll(shared, { prefix: NEEDS, model: modelId }),
+    readOnce(`${who}:model:${modelId}`, () => models.get(modelId)),
+    readOnce(`${who}:spools`, () => readAll(shared, { prefix: SPOOL })),
+    readOnce(`${who}:needs:${modelId}`, () => readAll(shared, { prefix: NEEDS, model: modelId })),
   ]);
-  const edit = currentEdit(needEntries);
+  const file = pickFile(model, fileId);
+  const profile = profileKey(file);
+  const edit = currentEdit(needEntries, profile);
   const needs = needsFor(model, fileId, edit);
   const spools = spoolsOf(spoolEntries);
-  const everyone = people([...spoolEntries, ...needEntries]);
+  const everyone = people([...spoolEntries, ...needEntries], user ?? null);
   return {
     model,
-    file: pickFile(model, fileId),
+    file,
+    profile,
     edit,
     needs,
     spools,

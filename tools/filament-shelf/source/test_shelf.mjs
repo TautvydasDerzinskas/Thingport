@@ -9,9 +9,12 @@ import {
   amountPercent,
   bestSpool,
   currentEdit,
+  forgetReads,
   family,
   grade,
   isNeedsValue,
+  needsKey,
+  profileKey,
   isSpool,
   listNames,
   loadForModel,
@@ -167,6 +170,8 @@ test("people are the reader first, then whoever has a spool, by name", () => {
   // The reader has nothing here, so only "mine" says who they are.
   assert.equal(everyone[0].id, null);
   assert.equal(people([...list, entry("needs:x", me, { filaments: null }, true)])[0].name, "Ann");
+  // Thingport says who's signed in, so the reader has their name before they share anything.
+  assert.deepEqual(people(list, me)[0], { ...me, key: "me", mine: true });
 });
 
 const profileModel = {
@@ -246,27 +251,44 @@ test("a model needs its profile's filaments, with the plates each is on", () => 
   assert.equal(edited[0].brand, null);
 });
 
-test("the newest edit wins, and a newer reset puts the profile back", () => {
-  const edit = (user, mine, at, filaments) => entry(`needs:${user.id}`, user, { filaments }, mine, at);
+test("the newest edit of the picked profile wins, and a newer reset puts the profile back", () => {
+  const profile = "profile:p1";
+  const edit = (user, mine, at, filaments, of = profile) =>
+    entry(needsKey(user.id, of), user, { profile: of, filaments }, mine, at);
   const red = [{ type: "PLA", color: "#C62828", grams: 8 }];
   const blue = [{ type: "PETG", color: "#1F5FBF", grams: null }];
-  assert.equal(currentEdit([]), null);
-  const won = currentEdit([
-    edit(me, true, "2026-11-02T00:00:00.000Z", red),
-    edit(dad, false, "2026-11-03T00:00:00.000Z", blue),
-  ]);
+  assert.equal(currentEdit([], profile), null);
+  const won = currentEdit(
+    [
+      edit(me, true, "2026-11-02T00:00:00.000Z", red),
+      edit(dad, false, "2026-11-03T00:00:00.000Z", blue),
+      // Another profile's, however new, isn't this one's.
+      edit(dad, false, "2026-11-09T00:00:00.000Z", red, "file:dragon.3mf"),
+    ],
+    profile,
+  );
   assert.deepEqual(won.filaments, blue);
   assert.equal(won.user, dad);
   assert.equal(
-    currentEdit([edit(dad, false, "2026-11-03T00:00:00.000Z", blue), edit(me, true, "2026-11-04T00:00:00.000Z", null)]),
+    currentEdit(
+      [edit(dad, false, "2026-11-03T00:00:00.000Z", blue), edit(me, true, "2026-11-04T00:00:00.000Z", null)],
+      profile,
+    ),
     null,
   );
   // A malformed one, however new, is skipped.
-  const bad = entry("needs:x", mum, { filaments: [{ type: 5 }] }, false, "2026-12-01T00:00:00.000Z");
-  assert.deepEqual(currentEdit([bad, edit(me, true, "2026-11-02T00:00:00.000Z", red)]).filaments, red);
-  assert.ok(isNeedsValue({ filaments: [] }));
-  assert.ok(!isNeedsValue({ filaments: [{ type: "PLA", color: "#c62828", grams: "8" }] }));
+  const bad = entry("needs:x", mum, { profile, filaments: [{ type: 5 }] }, false, "2026-12-01T00:00:00.000Z");
+  assert.deepEqual(currentEdit([bad, edit(me, true, "2026-11-02T00:00:00.000Z", red)], profile).filaments, red);
+  assert.ok(isNeedsValue({ profile, filaments: [] }));
+  assert.ok(!isNeedsValue({ filaments: [] }));
+  assert.ok(!isNeedsValue({ profile, filaments: [{ type: "PLA", color: "#c62828", grams: "8" }] }));
   assert.ok(!isNeedsValue({}));
+  // A profile is known by the provider's id in every copy, else by the file's name; its key is a valid one.
+  assert.equal(profileKey({ name: "a.3mf", profile: { id: "p1" } }), "profile:p1");
+  assert.equal(profileKey({ name: "a b.3mf", profile: null }), "file:a b.3mf");
+  assert.match(needsKey("m1", "file:a b (2).3mf"), /^needs:m1:[0-9a-z]+$/);
+  // These two shared a key when it was one 32-bit hash.
+  assert.notEqual(needsKey("m1", "file:aZCB.3mf"), needsKey("m1", "file:aZBc.3mf"));
 });
 
 test("a spool matches on its material family and how close its colour looks", () => {
@@ -373,18 +395,51 @@ test("every page of entries is read, however many there are", async () => {
   assert.equal(asked.length, 1);
 });
 
-test("a model's page reads the model, everyone's spools and the edits about it", async () => {
+test("a model's page reads the model, everyone's spools and the edits about it, once for all its parts", async () => {
+  forgetReads();
+  await Promise.resolve();
   const asked = [];
+  let gets = 0;
   const shared = {
     async list(options) {
       asked.push(options);
       if (options.prefix === "spool:") return [entry("spool:r", dad, spool("PLA", "#C62828"))];
-      return [entry("needs:m1", dad, { filaments: [{ type: "PLA", color: "#C62828", grams: 8 }] })];
+      return [
+        entry("needs:m1:x", dad, {
+          profile: "file:dragon.3mf",
+          filaments: [{ type: "PLA", color: "#C62828", grams: 8 }],
+        }),
+      ];
     },
   };
-  const models = { get: async (id) => ({ ...profileModel, id }) };
-  const data = await loadForModel({ models, shared }, "m1", "f1");
+  const models = {
+    get: async (id) => {
+      gets += 1;
+      return { ...profileModel, id };
+    },
+  };
+  const [data] = await Promise.all([
+    loadForModel({ models, shared, user: me }, "m1", "f1"),
+    loadForModel({ models, shared, user: me }, "m1", "f1"),
+  ]);
   assert.deepEqual(asked, [{ prefix: "spool:" }, { prefix: "needs:", model: "m1" }]);
+  assert.equal(gets, 1);
+  assert.equal(data.everyone[0].name, "Ann");
+  // A change on the page reads them again, once for every part that hears it.
+  forgetReads();
+  await Promise.all([
+    loadForModel({ models, shared, user: me }, "m1", "f1"),
+    (forgetReads(), loadForModel({ models, shared, user: me }, "m1", "f1")),
+  ]);
+  assert.equal(gets, 2);
+  // The next change, however soon, is forgotten for too.
+  await Promise.resolve();
+  forgetReads();
+  await loadForModel({ models, shared, user: me }, "m1", "f1");
+  assert.equal(gets, 3);
+  // Another account reading at once reads for itself.
+  await loadForModel({ models, shared, user: dad }, "m1", "f1");
+  assert.equal(gets, 4);
   assert.equal(data.file.id, "f1");
   assert.equal(data.edit.user, dad);
   assert.equal(data.needs.length, 1);

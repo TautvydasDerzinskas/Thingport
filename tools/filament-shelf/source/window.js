@@ -16,7 +16,9 @@ import {
   newId,
   ownerKey,
   people,
+  pickFile,
   prefillFor,
+  profileKey,
   readAll,
   spoolValue,
   spoolsOf,
@@ -155,7 +157,7 @@ export default function mount(thingport) {
       return;
     }
     const spools = spoolsOf(entries);
-    everyone = people([...entries, ...needEntries]);
+    everyone = people([...entries, ...needEntries], thingport.user ?? null);
     if (filter.who && !everyone.some((person) => person.key === filter.who)) filter.who = null;
     const theirs = filter.who ? spools.filter((entry) => ownerKey(entry) === filter.who) : spools;
     drawPeople();
@@ -235,7 +237,10 @@ export default function mount(thingport) {
   }
 
   function drawNeeds(spools) {
-    needs = model && needsRead ? needsFor(model, context.fileId, currentEdit(needEntries)) : [];
+    needs =
+      model && needsRead
+        ? needsFor(model, context.fileId, currentEdit(needEntries, profileKey(pickFile(model, context.fileId))))
+        : [];
     needsStrip.hidden = !needs.length;
     if (!needs.length) return;
     const missing = new Set(missingOnShelf(needs, spools));

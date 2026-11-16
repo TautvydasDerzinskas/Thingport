@@ -18,6 +18,7 @@ import { buildUserLibrary, toCollection as toSdkCollection } from "../../sdk/use
 import { apiAsUser, downloadFile } from "../../sdk/widgetSdk";
 import { buildAchievements } from "../../sdk/achievements";
 import { onToolSharedChange, toolSharedChanged } from "./toolSharedEvents";
+import { readUser } from "../../utils/auth";
 
 // The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
 // the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
@@ -99,6 +100,8 @@ export function buildToolSdk({
   pickAudience,
 }: Build): ToolSdk {
   const translate: Translate = translator(tool.locales ?? {}, language);
+  // Kept with the session, as the app keeps it, so every place a tool runs knows who's signed in.
+  const viewer = readUser();
   // An unsaved tool's data lasts as long as its preview does.
   const draftData = new Map<string, unknown>();
   const saved = (what: string) => {
@@ -181,6 +184,7 @@ export function buildToolSdk({
       version: tool.manifest.version,
       source: tool.source,
     },
+    user: viewer && { id: viewer.id, name: viewer.display_name, avatarUrl: viewer.avatar_url ?? null },
     context: { ...context },
     models,
     // Only a tool has a "save where?" dialog to offer.

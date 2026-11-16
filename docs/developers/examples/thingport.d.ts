@@ -95,6 +95,8 @@ export interface SdkModelFile {
 
 /** A print profile, as a model's page shows it. */
 export interface SdkPrintProfile {
+  /** The provider's id for it, the same in every copy of the model; null for a file whose own 3MF names the filaments. */
+  id: string | null;
   /** Its title, as the provider or the 3MF names it. */
   name: string | null;
   /** The printer it's set up for ("Bambu Lab P1S"). */
@@ -1138,6 +1140,13 @@ export interface ToolSdk extends SdkBase {
    * @group Tool only
    */
   tool: { id: string | null; slug: string; name: string; version: string; source: "repo" | "own" };
+  /**
+   * Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and
+   * picture before they've shared anything. Null only where nobody is signed in.
+   *
+   * @group Tool only
+   */
+  user: SdkPerson | null;
   /**
    * What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a
    * model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`,

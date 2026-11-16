@@ -52,6 +52,7 @@ For a tool, the type is `ToolSdk`.
 | [`library`](#libraryname)                 |   ✓    |  ✓   | A library Thingport carries, for a job a script can't fit inside itself.                                                                                      |
 | [`libraries`](#libraries)                 |   ✓    |  ✓   | The names `library()` takes.                                                                                                                                  |
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
+| [`user`](#user)                           |        |  ✓   | Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything.     |
 | [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
 | [`shared`](#shared)                       |        |  ✓   | JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it.                        |
@@ -1178,6 +1179,18 @@ thingport.tool: { id: string | null; slug: string; name: string; version: string
 
 The tool itself. `id` is null in the editor's preview of a tool not saved yet; `source` is `"repo"` for one installed from the repository and `"own"` for the user's own.
 
+### `user`
+
+_Tools only_
+
+```ts
+thingport.user: SdkPerson | null
+```
+
+Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything. Null only where nobody is signed in.
+
+See [`SdkPerson`](#sdkperson).
+
 ### `context`
 
 _Tools only_
@@ -1489,12 +1502,13 @@ One of a model's 3D files.
 
 A print profile, as a model's page shows it.
 
-| Field       | Type                                                                  | What it is                                                            |
-| ----------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `name`      | `string \| null`                                                      | Its title, as the provider or the 3MF names it.                       |
-| `printer`   | `string \| null`                                                      | The printer it's set up for ("Bambu Lab P1S").                        |
-| `filaments` | `SdkFilament[]`                                                       | Each filament it prints with, once, in the order the slicer has them. |
-| `plates`    | `{ index: number; name: string \| null; filaments: SdkFilament[] }[]` | Its build plates, numbered from 1, with the filaments each uses.      |
+| Field       | Type                                                                  | What it is                                                                                                        |
+| ----------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string \| null`                                                      | The provider's id for it, the same in every copy of the model; null for a file whose own 3MF names the filaments. |
+| `name`      | `string \| null`                                                      | Its title, as the provider or the 3MF names it.                                                                   |
+| `printer`   | `string \| null`                                                      | The printer it's set up for ("Bambu Lab P1S").                                                                    |
+| `filaments` | `SdkFilament[]`                                                       | Each filament it prints with, once, in the order the slicer has them.                                             |
+| `plates`    | `{ index: number; name: string \| null; filaments: SdkFilament[] }[]` | Its build plates, numbered from 1, with the filaments each uses.                                                  |
 
 ### `SdkFilament`
 
