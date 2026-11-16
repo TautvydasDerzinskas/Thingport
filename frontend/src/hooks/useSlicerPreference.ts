@@ -74,6 +74,9 @@ export async function switchSlicer(slicer: string): Promise<void> {
     stored = saved.slicer;
     saves++;
     if (version === at) return setCachedSlicerSettings(saved);
+    // Read or changed meanwhile: what came stays, with this slicer if it's still the one picked last, as a read
+    // answered before the save would show the one before. Then it's all read again, below.
+    if (mine === switches && cached) setCachedSlicerSettings({ ...cached, slicer: saved.slicer });
   } catch {
     // Back to the one stored, by the latest switch only: an earlier one failing mustn't undo a later pick, which may
     // still be saved. The one stored, not the one before this switch, which may have been another still saving.
