@@ -57,6 +57,8 @@ export function templateProblem(template: string, web: boolean): string | null {
   if (authorityOf(url) !== authorityOf(other))
     return "Placeholders go in the path or the query, never in the scheme or the host";
   if (web && url.protocol !== "http:" && url.protocol !== "https:") return "Only http and https addresses";
+  // A request can't carry them (fetch refuses one), and an export would: a key goes in a secret header instead.
+  if (web && (url.username || url.password)) return "No user name or password in the address: use a secret header";
   if (UNSAFE_SCHEMES.has(url.protocol)) return `A link can't use ${url.protocol}`;
   return null;
 }

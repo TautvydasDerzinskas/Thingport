@@ -282,6 +282,34 @@ describe("merging a working copy", () => {
     await hereIdOf(jo.email);
   });
 
+  it("brings someone's Send to destinations with their keys, once however often it runs", async () => {
+    const lou = await person("lou", true);
+    const how = { type: "preset", preset: "octoprint", address: "http://octopi.local", start: true };
+    await source.sendTarget.create({
+      data: {
+        id: `send${tag}`,
+        userId: lou.sourceId,
+        name: "OctoPrint",
+        how,
+        secrets: { apiKey: "k3y" },
+        placement: "button",
+        fileTypes: ["gcode", "3mf"],
+      },
+    });
+    expect((await merge([lou.sourceId])).failures).toEqual([]);
+    expect((await merge([lou.sourceId])).failures).toEqual([]);
+    const here = await prisma.sendTarget.findMany({ where: { userId: lou.hereId! } });
+    expect(here).toEqual([
+      expect.objectContaining({
+        name: "OctoPrint",
+        how,
+        secrets: { apiKey: "k3y" },
+        placement: "button",
+        fileTypes: ["gcode", "3mf"],
+      }),
+    ]);
+  });
+
   it("has whom someone's tool entries reach in place before the entries come", async () => {
     const kit = await person("kit");
     const toolId = `tool${tag}`;

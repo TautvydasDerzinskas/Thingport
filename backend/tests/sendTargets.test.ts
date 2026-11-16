@@ -86,6 +86,8 @@ describe("a destination's addresses", () => {
     expect(templateProblem("https://studio.lan/?load={file_url}", true)).toBeNull();
     expect(templateProblem("myslicer://open?file={file_url}", false)).toBeNull();
     expect(templateProblem("myslicer://open?file={file_url}", true)).toMatch(/Only http/);
+    expect(templateProblem("http://pi:secret@octopi.local", true)).toMatch(/No user name or password/);
+    expect(templateProblem("http://pi@octopi.local/api", true)).toMatch(/No user name or password/);
     expect(templateProblem("https://{model_name}.example.com/", true)).toMatch(/never in the scheme or the host/);
     expect(templateProblem("http://printer.lan:8080/upload", true)).toBeNull();
     // Read as the URL parser does, a missing, single or back slash or a tab still puts it in the host.
