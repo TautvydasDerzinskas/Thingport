@@ -20,7 +20,8 @@ function load(): Promise<SlicerSettings> {
         if (version === at) cached = res;
         return cached ?? res;
       })
-      .catch(() => EMPTY)
+      // What a reload brought in meanwhile stays.
+      .catch(() => cached ?? EMPTY)
       .finally(() => {
         inFlight = null;
       });

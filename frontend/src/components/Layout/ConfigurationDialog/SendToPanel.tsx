@@ -209,6 +209,8 @@ export default function SendToPanel({ onUnauthorized }: Props) {
               endIcon={<ArrowDropDownIcon />}
               onClick={(e) => setAddAnchor(e.currentTarget)}
               aria-haspopup="menu"
+              // Until the list is read, so it can't land over what was added.
+              disabled={targets === null}
             >
               {s("add")}
             </Button>
@@ -232,6 +234,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
 
       <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
         <MenuItem
+          disabled={targets === null}
           onClick={() => {
             setMoreAnchor(null);
             fileInput.current?.click();
