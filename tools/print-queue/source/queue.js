@@ -108,3 +108,20 @@ export function listNames(entries, and) {
   if (names.length < 2) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} ${and} ${names.at(-1)}`;
 }
+
+/**
+ * Runs each write after the ones queued under the same key before it, whether they worked or not, so two quick
+ * changes to one entry are stored in the order they were made rather than the order their requests finish.
+ */
+export function writesInTurn() {
+  const tails = new Map();
+  return (key, write) => {
+    const run = (tails.get(key) ?? Promise.resolve()).then(write);
+    const tail = run.catch(() => undefined);
+    tails.set(key, tail);
+    void tail.then(() => {
+      if (tails.get(key) === tail) tails.delete(key);
+    });
+    return run;
+  };
+}

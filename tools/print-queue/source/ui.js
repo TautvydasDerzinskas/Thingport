@@ -15,6 +15,7 @@ import {
   people,
   statusDate,
   summaryOf,
+  writesInTurn,
 } from "./queue.js";
 
 const MORE_ICON =
@@ -42,18 +43,30 @@ function avatar(user) {
   return `<span class="pq-av" style="${style}" aria-hidden="true">${inner}</span>`;
 }
 
+// Writes to one entry go one after another, so the last change made is the one stored.
+const inTurn = writesInTurn();
+
 /** Saved with the model it's about, so others' copies of it find it; without, once that model is gone. */
-async function saveJob(shared, key, job) {
-  try {
-    await shared.set(key, job, { model: job.modelId });
-  } catch (error) {
-    if (!/no such model/i.test(error?.message ?? "")) throw error;
-    await shared.set(key, job);
-  }
+function saveJob(shared, key, job) {
+  return inTurn(key, async () => {
+    try {
+      await shared.set(key, job, { model: job.modelId });
+    } catch (error) {
+      if (!/no such model/i.test(error?.message ?? "")) throw error;
+      await shared.set(key, job);
+    }
+  });
 }
 
-/** Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. */
-async function tellModelPage(shared, modelId, entries) {
+/**
+ * Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. `read`
+ * gives the jobs when it's this one's turn, so the last of several quick changes is what the page shows.
+ */
+function tellModelPage(shared, modelId, read) {
+  return inTurn(`${ABOUT}${modelId}`, async () => summarise(shared, modelId, await read()));
+}
+
+async function summarise(shared, modelId, entries) {
   const jobs = entries
     .filter((entry) => entry.mine && entry.key.startsWith(JOB) && isJob(entry.value) && entry.value.modelId === modelId)
     .map((entry) => entry.value);
@@ -87,7 +100,7 @@ export async function run(command, thingport) {
   }
   const file = model.files.find((candidate) => candidate.id === context.fileId) ?? null;
   await saveJob(shared, `${JOB}${newId()}`, newJob(model, file));
-  await tellModelPage(shared, model.id, await shared.list({ prefix: JOB }));
+  await tellModelPage(shared, model.id, () => shared.list({ prefix: JOB }));
   ui.toast(t("toast.queued", { name: model.name }), "success");
 }
 
@@ -103,10 +116,17 @@ export default function mount(thingport) {
   let who = null;
   let here = new Set();
   let editing = null;
+  // The note being written, kept apart from the textarea so drawing the board again doesn't lose it.
+  let draft = "";
   let menu = null;
   let dragKey = null;
   let scrolled = false;
   let closed = false;
+  // Changes made here and saves of them still going: a read of the board one of them may postdate is dropped, as
+  // it would put back what was there before.
+  let changes = 0;
+  let saving = 0;
+  let saveFailed = false;
   // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
   // so it's never stored in what's shared.
   const looks = new Map();
@@ -141,15 +161,17 @@ export default function mount(thingport) {
   };
 
   async function load() {
+    const at = changes;
     const [all, about] = await Promise.all([
       shared.list({ prefix: JOB }),
       context.modelId ? shared.list({ prefix: JOB, model: context.modelId }).catch(() => []) : [],
     ]);
-    if (closed) return;
+    if (closed || saving || at !== changes) return;
     entries = all;
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
     render();
   }
+  const refresh = safely(load);
 
   function renderPeople() {
     const everyone = people(entries ?? []);
@@ -177,7 +199,7 @@ export default function mount(thingport) {
         <span class="pq-meta">${avatar(entry.user)}<span>${escapeHtml(person)} · ${escapeHtml(dateText(statusDate(job)))}${job.fileName ? ` · ${escapeHtml(job.fileName)}` : ""}</span></span>
         ${
           editingThis
-            ? `<span class="pq-edit"><textarea aria-label="${escapeHtml(t("note.label"))}" placeholder="${escapeHtml(t("note.placeholder"))}" maxlength="2000">${escapeHtml(job.note)}</textarea><div><button type="button" class="pq-cancel">${escapeHtml(t("note.cancel"))}</button><button type="button" class="pq-save">${escapeHtml(t("note.save"))}</button></div></span>`
+            ? `<span class="pq-edit"><textarea aria-label="${escapeHtml(t("note.label"))}" placeholder="${escapeHtml(t("note.placeholder"))}" maxlength="2000">${escapeHtml(draft)}</textarea><div><button type="button" class="pq-cancel">${escapeHtml(t("note.cancel"))}</button><button type="button" class="pq-save">${escapeHtml(t("note.save"))}</button></div></span>`
             : job.note
               ? `<span class="pq-note">${escapeHtml(job.note)}</span>`
               : ""
@@ -222,14 +244,50 @@ export default function mount(thingport) {
   }
 
   const find = (key, mine = true) => entries?.find((entry) => entry.key === key && (!mine || entry.mine));
+  const tell = (modelId) => tellModelPage(shared, modelId, () => entries ?? []);
+
+  /** Counts a change made here while `write` stores it; once a failed one's done, the board is read again. */
+  async function change(write) {
+    changes += 1;
+    saving += 1;
+    try {
+      await write();
+    } catch (error) {
+      saveFailed = true;
+      throw error;
+    } finally {
+      saving -= 1;
+      changes += 1;
+      if (!saving && saveFailed) {
+        saveFailed = false;
+        void refresh();
+      }
+    }
+  }
+
+  /** Saves a job already changed on the board; when that fails, the board goes back to what's stored. */
+  const keep = (entry, before, after) =>
+    change(async () => {
+      try {
+        await saveJob(shared, entry.key, after);
+      } catch (error) {
+        // Unless a later change has taken its place, which is saved after it.
+        if (entry.value === after) {
+          entry.value = before;
+          render();
+        }
+        throw error;
+      }
+    });
 
   const move = safely(async (key, status) => {
     const entry = find(key);
     if (!entry || entry.value.status === status) return;
-    entry.value = moved(entry.value, status);
+    const before = entry.value;
+    entry.value = moved(before, status);
     render();
-    await saveJob(shared, key, entry.value);
-    await tellModelPage(shared, entry.value.modelId, entries);
+    await keep(entry, before, entry.value);
+    await tell(entry.value.modelId);
   });
 
   const remove = safely(async (key) => {
@@ -242,19 +300,22 @@ export default function mount(thingport) {
       destructive: true,
     });
     if (!sure) return;
-    await shared.remove(key);
-    entries = entries.filter((other) => other !== entry);
+    const { modelId } = entry.value;
+    await change(() => inTurn(key, () => shared.remove(key)));
+    // By key: the board may have been read again while the question was open.
+    entries = entries.filter((other) => !(other.mine && other.key === key));
     render();
-    await tellModelPage(shared, entry.value.modelId, entries);
+    await tell(modelId);
   });
 
   const saveNote = safely(async (key, note) => {
     const entry = find(key);
     if (!entry) return;
-    entry.value = { ...entry.value, note: note.trim() };
-    editing = null;
-    render();
-    await saveJob(shared, key, entry.value);
+    const before = entry.value;
+    const after = { ...before, note: note.trim() };
+    entry.value = after;
+    endEdit();
+    await keep(entry, before, after);
   });
 
   function closeMenu({ restore = false } = {}) {
@@ -274,7 +335,14 @@ export default function mount(thingport) {
     if (entry.mine) {
       for (const status of STATUSES)
         if (status !== entry.value.status) items.push({ label: t(`move.${status}`), act: () => move(key, status) });
-      items.push({ label: t("note.edit"), act: () => ((editing = key), render()) });
+      items.push({
+        label: t("note.edit"),
+        act: () => {
+          editing = key;
+          draft = entry.value.note;
+          render();
+        },
+      });
     }
     if (readable) items.push({ label: t("card.open"), act: () => ui.openModel(entry.value.modelId) });
     if (entry.mine) items.push("hr", { label: t("remove.confirm"), act: () => remove(key), danger: true });
@@ -337,10 +405,10 @@ export default function mount(thingport) {
     if (!li) return;
     if (event.target.closest(".pq-more")) return void openMenu(li.dataset.key, event.target.closest(".pq-more"));
     if (event.target.closest(".pq-save")) return void saveNote(li.dataset.key, li.querySelector("textarea").value);
-    if (event.target.closest(".pq-cancel")) {
-      editing = null;
-      render();
-    }
+    if (event.target.closest(".pq-cancel")) endEdit();
+  });
+  board.addEventListener("input", (event) => {
+    if (event.target.matches(".pq-edit textarea")) draft = event.target.value;
   });
   board.addEventListener("dragstart", (event) => {
     const li = event.target.closest(".pq-card.pq-mine");
@@ -388,12 +456,20 @@ export default function mount(thingport) {
   document.addEventListener("pointerdown", onOutside, true);
   shell.addEventListener("keydown", onKey);
 
-  // Others' changes show up while it's open: now and then, and on coming back to the window.
-  const refresh = safely(load);
-  const timer = setInterval(() => {
-    if (!menu && !editing && !dragKey) void refresh();
-  }, 30000);
-  window.addEventListener("focus", refresh);
+  // Others' changes show up while it's open: now and then, and on coming back to the window. Not in the middle of
+  // writing a note, using a menu or dragging; a refresh due then comes once the note is done.
+  let due = false;
+  const refreshWhenIdle = () => {
+    due = Boolean(menu || editing || dragKey);
+    if (!due) void refresh();
+  };
+  function endEdit() {
+    editing = null;
+    render();
+    if (due) refreshWhenIdle();
+  }
+  const timer = setInterval(refreshWhenIdle, 30000);
+  window.addEventListener("focus", refreshWhenIdle);
 
   labels();
   render();
@@ -404,7 +480,7 @@ export default function mount(thingport) {
     closed = true;
     closeMenu();
     clearInterval(timer);
-    window.removeEventListener("focus", refresh);
+    window.removeEventListener("focus", refreshWhenIdle);
     document.removeEventListener("pointerdown", onOutside, true);
     shell.removeEventListener("keydown", onKey);
   };
