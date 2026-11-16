@@ -49,12 +49,13 @@ type Props = {
   /** The user's Send to destinations shown in the menu, after the slicers; none leaves the menu as it was. */
   sendTargets?: SendTargetSummary[];
   onSend?: (target: SendTargetSummary) => void;
-  /** The one being sent to, while it is. */
-  sending?: string | null;
+  /** Those being sent to, while they are. */
+  sending?: ReadonlySet<string>;
 };
 
 const NO_COMMANDS: OfferedCommand[] = [];
 const NO_TARGETS: SendTargetSummary[] = [];
+const NONE_SENDING: ReadonlySet<string> = new Set();
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
 function LogoTile({ id, size }: { id: string; size: number }) {
@@ -101,7 +102,7 @@ export default function OpenInSlicerButton({
   onToolCommand,
   sendTargets = NO_TARGETS,
   onSend,
-  sending = null,
+  sending = NONE_SENDING,
 }: Props) {
   const { t } = useTranslation(["models"]);
   // Those the user sends through the Bridge, picked in the Slicer settings.
@@ -204,14 +205,14 @@ export default function OpenInSlicerButton({
           sendTargets.map((target) => (
             <MenuItem
               key={target.id}
-              disabled={sending === target.id}
+              disabled={sending.has(target.id)}
               onClick={() => {
                 onSend?.(target);
                 close();
               }}
             >
               <ListItemIcon>
-                {sending === target.id ? (
+                {sending.has(target.id) ? (
                   <CircularProgress size={16} color="inherit" />
                 ) : (
                   <SendKindIcon kind={kindOf(target)} size={22} />

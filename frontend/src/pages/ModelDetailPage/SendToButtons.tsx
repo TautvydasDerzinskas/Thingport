@@ -8,7 +8,8 @@ import { SendKindIcon, kindOf } from "../../components/sendTo/sendKinds";
 
 type Props = {
   targets: SendTargetSummary[];
-  sending: string | null;
+  /** Those being sent to, while they are. */
+  sending: ReadonlySet<string>;
   onSend: (target: SendTargetSummary) => void;
 };
 
@@ -23,10 +24,10 @@ export default function SendToButtons({ targets, sending, onSend }: Props) {
           key={target.id}
           variant="outlined"
           fullWidth
-          disabled={sending === target.id}
+          disabled={sending.has(target.id)}
           onClick={() => onSend(target)}
           startIcon={
-            sending === target.id ? (
+            sending.has(target.id) ? (
               <CircularProgress size={16} color="inherit" />
             ) : (
               <SendKindIcon kind={kindOf(target)} size={20} />

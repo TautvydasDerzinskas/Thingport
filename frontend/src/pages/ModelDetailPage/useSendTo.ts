@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
 import { sendTargetsApi, type SendTargetSummary } from "../../api/sendTargets";
@@ -7,6 +7,17 @@ import { takesFile } from "../../components/sendTo/sendKinds";
 import { useSendReason } from "../../components/sendTo/useSendReason";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import type { ModelFile } from "./useOpenInSlicer";
+
+/** A tab for a link, opened in the click itself. A new one gets no hold on Thingport's page. A named one keeps it:
+ *  without it the browser no longer finds that tab by its name, nor lets this page send it anywhere, so each send
+ *  would open another. */
+function tabFor(target: SendTargetSummary): Window | null {
+  if (target.kind !== "link" || target.open === "same") return null;
+  if (target.open === "named") return window.open("about:blank", target.tab ?? "thingport");
+  const tab = window.open("about:blank", "_blank");
+  if (tab) tab.opener = null;
+  return tab;
+}
 
 /**
  * The user's Send to destinations for the file picked on a model's page, split by where they show, and sending to
@@ -18,33 +29,44 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
   const toast = useToast();
   const reasonText = useSendReason();
   const { sendTargets } = useSlicerSettings();
-  const [sending, setSending] = useState<string | null>(null);
+  // Each destination on its way, so one can't be sent twice at once and each finishes on its own.
+  const [sending, setSending] = useState<ReadonlySet<string>>(new Set());
+  const inFlight = useRef(new Set<string>());
+  // The model the page is on, null once it's left: a link that comes back for another opens nothing.
+  const shown = useRef<string | null>(printId);
+  useEffect(() => {
+    shown.current = printId;
+    return () => {
+      shown.current = null;
+    };
+  }, [printId]);
   const offered = file ? sendTargets.filter((target) => takesFile(target.file_types, file.filename)) : [];
 
+  const settle = (id: string, busy: boolean) => {
+    if (busy) inFlight.current.add(id);
+    else inFlight.current.delete(id);
+    setSending(new Set(inFlight.current));
+  };
+
   const send = async (target: SendTargetSummary) => {
-    if (!file) return;
-    // Opened now, while the click still allows it; pointed at the link once it comes back.
-    const tab =
-      target.kind === "link" && target.open !== "same"
-        ? window.open("about:blank", target.open === "named" ? (target.tab ?? "thingport") : "_blank")
-        : null;
-    setSending(target.id);
+    if (!file || inFlight.current.has(target.id)) return;
+    const tab = tabFor(target);
+    const drop = () => tab?.close();
+    settle(target.id, true);
     try {
       const result = await sendTargetsApi.send(printId, target.id, file.key);
       if ("open" in result) {
-        const web = /^https?:/i.test(result.open.url);
-        if (tab && web) {
-          // The page it opens gets no hold on Thingport's.
-          tab.opener = null;
+        if (shown.current !== printId) return drop();
+        if (tab && /^https?:/i.test(result.open.url)) {
           tab.location.replace(result.open.url);
         } else {
-          tab?.close();
+          drop();
           // An app's own address, or this tab.
           window.location.assign(result.open.url);
         }
         return;
       }
-      tab?.close();
+      drop();
       if (result.ok) {
         const thenOpen = result.then_open;
         toast({
@@ -67,11 +89,11 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
         });
       }
     } catch (err) {
-      tab?.close();
+      drop();
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else toast({ message: err instanceof Error ? err.message : String(err), severity: "error" });
     } finally {
-      setSending(null);
+      settle(target.id, false);
     }
   };
 
