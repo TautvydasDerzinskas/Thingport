@@ -38,13 +38,14 @@ A webhook gets JSON with a link to the file, which works for an hour without sig
 
 ## Your own
 
-A **custom link** is an address the browser opens, in a new tab, a named tab that's reused, or this tab. An app's own
-address works too, such as `myslicer://open?file={file_url}`. A **custom request** is made by Thingport's server: a
-`POST` or `PUT` with the file in a form, the file itself as the body, or JSON as above, with headers of your own.
-Thingport sets `Host`, `Content-Type`, `Content-Length`, `Connection` and `Transfer-Encoding` itself, and never sends a
-`Cookie`, so those can't be added. Mark a header **Secret** and its value stays on the server, never shown again. **Then
-open** offers an address once it's sent, such as the printer's own page. **Test** tries the settings as they are in the
-editor, before you save them.
+A **custom link** is an address the browser opens, in a new tab, a named tab that's reused, or this tab. A page in a
+named tab can also send Thingport's tab to another address, so pick a named tab only for an address you trust, and look
+at the links in a file before you import it. An app's own address works too, such as `myslicer://open?file={file_url}`.
+A **custom request** is made by Thingport's server: a `POST` or `PUT` with the file in a form, the file itself as the
+body, or JSON as above, with headers of your own. Thingport sets `Host`, `Content-Type`, `Content-Length`, `Connection`
+and `Transfer-Encoding` itself, and never sends a `Cookie`, so those can't be added. Mark a header **Secret** and its
+value stays on the server, never shown again. **Then open** offers an address once it's sent, such as the printer's own
+page. **Test** tries the settings as they are in the editor, before you save them.
 
 These are filled in when you send, encoded for an address. They go in the path or the query, never in the host:
 

@@ -3717,7 +3717,7 @@
           "startPrinting": "Empezar a imprimir",
           "url": "Dirección",
           "opens": "Se abre en",
-          "opensHelp": "Una pestaña con nombre se reutiliza: volver a enviar va a la misma pestaña.",
+          "opensHelp": "Una pestaña con nombre se reutiliza: volver a enviar va a la misma pestaña. La página que se abre en ella también puede llevar la pestaña de Thingport a otra dirección, así que úsala solo con direcciones de confianza.",
           "newTab": "Pestaña nueva",
           "namedTab": "Pestaña con nombre",
           "sameTab": "Esta pestaña",

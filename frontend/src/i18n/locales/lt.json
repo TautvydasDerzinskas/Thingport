@@ -3825,7 +3825,7 @@
           "startPrinting": "Pradėti spausdinti",
           "url": "Adresas",
           "opens": "Atveriama",
-          "opensHelp": "Pavadinta kortelė naudojama vėl, tad kitas siuntimas pateks į tą pačią kortelę.",
+          "opensHelp": "Pavadinta kortelė naudojama vėl, tad kitas siuntimas pateks į tą pačią kortelę. Joje atidarytas puslapis gali ir Thingport kortelę nukreipti kitur, tad naudokite ją tik adresui, kuriuo pasitikite.",
           "newTab": "Naujoje kortelėje",
           "namedTab": "Pavadintoje kortelėje",
           "sameTab": "Šioje kortelėje",

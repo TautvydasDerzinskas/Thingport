@@ -3552,7 +3552,7 @@
           "startPrinting": "Start printing",
           "url": "Address",
           "opens": "Opens in",
-          "opensHelp": "A named tab is reused, so sending again goes to the same tab.",
+          "opensHelp": "A named tab is reused, so sending again goes to the same tab. The page in it can also send Thingport's tab elsewhere, so use one only for an address you trust.",
           "newTab": "New tab",
           "namedTab": "Named tab",
           "sameTab": "This tab",

@@ -3730,7 +3730,7 @@
           "startPrinting": "Lancer l’impression",
           "url": "Adresse",
           "opens": "S’ouvre dans",
-          "opensHelp": "Un onglet nommé est réutilisé : un nouvel envoi va dans le même onglet.",
+          "opensHelp": "Un onglet nommé est réutilisé : un nouvel envoi va dans le même onglet. La page qui s’y ouvre peut aussi envoyer l’onglet de Thingport ailleurs : ne l’utilisez que pour une adresse de confiance.",
           "newTab": "Nouvel onglet",
           "namedTab": "Onglet nommé",
           "sameTab": "Cet onglet",
