@@ -165,6 +165,14 @@ export const sendTargetInputSchema = sendTargetSchema.extend({
 });
 export type SendTargetInput = z.infer<typeof sendTargetInputSchema>;
 
+/** A saved one's settings: its placement, left out, stays as it is, since the row's own toggle sets that. */
+export const sendTargetUpdateSchema = sendTargetInputSchema.extend({
+  placement: z.enum(["button", "menu"]).optional(),
+});
+export type SendTargetUpdate = z.infer<typeof sendTargetUpdateSchema>;
+
+export const sendPlacementSchema = z.object({ placement: z.enum(["button", "menu"]) });
+
 export const SEND_EXPORT_KIND = "thingport-send-to";
 export const sendExportSchema = z.object({
   kind: z.literal(SEND_EXPORT_KIND),
@@ -178,7 +186,7 @@ export type SendSecrets = { apiKey?: string; headers?: Record<string, string> };
 /** What's kept of a destination: its `how` without secret values, and those values apart. A secret left out keeps
  *  the one `previous` held. */
 export function splitSecrets(
-  input: SendTargetInput,
+  input: SendTargetUpdate,
   previous: SendSecrets | null,
 ): { how: SendHow; secrets: SendSecrets } {
   const secrets: SendSecrets = {};

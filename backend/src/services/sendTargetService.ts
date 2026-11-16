@@ -27,6 +27,7 @@ import {
   type SendHow,
   type SendSecrets,
   type SendTargetInput,
+  type SendTargetUpdate,
 } from "./sendTargetFormat";
 import { readablePrintWhere } from "./socialService";
 
@@ -105,11 +106,11 @@ export async function sendTargetSummaries(userId: string): Promise<SendTargetSum
   }));
 }
 
-function rowData(input: SendTargetInput, previous: SendSecrets | null) {
+function rowData(input: SendTargetUpdate, previous: SendSecrets | null) {
   const { how, secrets } = splitSecrets(input, previous);
   return {
     name: input.name,
-    placement: input.placement,
+    ...(input.placement ? { placement: input.placement } : {}),
     fileTypes: input.fileTypes,
     how: how as Prisma.InputJsonValue,
     secrets: Object.keys(secrets).length ? (secrets as Prisma.InputJsonValue) : ({} as Prisma.InputJsonValue),
@@ -123,10 +124,20 @@ export async function createSendTarget(userId: string, input: SendTargetInput): 
   return out(row);
 }
 
-export async function updateSendTarget(userId: string, id: string, input: SendTargetInput): Promise<SendTargetOut> {
+export async function updateSendTarget(userId: string, id: string, input: SendTargetUpdate): Promise<SendTargetOut> {
   const current = await ownTarget(userId, id);
   const row = await prisma.sendTarget.update({ where: { id: current.id }, data: rowData(input, secretsOf(current)) });
   return out(row);
+}
+
+/** Its own button, or in the menu: that alone, so a save of its other settings at the same time isn't undone. */
+export async function placeSendTarget(
+  userId: string,
+  id: string,
+  placement: SendTargetOut["placement"],
+): Promise<SendTargetOut> {
+  const current = await ownTarget(userId, id);
+  return out(await prisma.sendTarget.update({ where: { id: current.id }, data: { placement } }));
 }
 
 export async function deleteSendTarget(userId: string, id: string): Promise<void> {

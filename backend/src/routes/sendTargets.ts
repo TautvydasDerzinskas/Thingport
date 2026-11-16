@@ -7,13 +7,14 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { HttpError } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { getPublicUrl } from "../services/settingsService";
-import { sendTargetInputSchema } from "../services/sendTargetFormat";
+import { sendPlacementSchema, sendTargetInputSchema, sendTargetUpdateSchema } from "../services/sendTargetFormat";
 import {
   createSendTarget,
   deleteSendTarget,
   exportSendTargets,
   fileFromGrant,
   importSendTargets,
+  placeSendTarget,
   listSendTargets,
   sendToTarget,
   testSendTarget,
@@ -80,7 +81,15 @@ router.post(
 router.put(
   "/me/send-targets/:id",
   asyncHandler(async (req, res) => {
-    res.json(await updateSendTarget(req.userId!, String(req.params.id), parseBody(sendTargetInputSchema, req.body)));
+    res.json(await updateSendTarget(req.userId!, String(req.params.id), parseBody(sendTargetUpdateSchema, req.body)));
+  }),
+);
+
+router.put(
+  "/me/send-targets/:id/placement",
+  asyncHandler(async (req, res) => {
+    const { placement } = parseBody(sendPlacementSchema, req.body);
+    res.json(await placeSendTarget(req.userId!, String(req.params.id), placement));
   }),
 );
 

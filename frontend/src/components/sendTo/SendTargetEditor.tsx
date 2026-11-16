@@ -142,7 +142,9 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
     setSaving(true);
     setError(null);
     try {
-      onSaved(target ? await sendTargetsApi.update(target.id, input()) : await sendTargetsApi.create(input()));
+      // A saved one's placement is left out, so a toggle of it while this saves isn't undone.
+      const { placement: _placement, ...settings } = input();
+      onSaved(target ? await sendTargetsApi.update(target.id, settings) : await sendTargetsApi.create(input()));
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : String(err));

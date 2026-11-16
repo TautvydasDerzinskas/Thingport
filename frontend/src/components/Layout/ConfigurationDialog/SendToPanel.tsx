@@ -28,7 +28,7 @@ import { sendTargetsApi, type SendTarget } from "../../../api/sendTargets";
 import { useConfirm } from "../../ConfirmProvider";
 import Segmented from "../../controls/Segmented";
 import { ListRowSkeletons } from "../../ListSkeleton";
-import SendTargetEditor, { inputOf } from "../../sendTo/SendTargetEditor";
+import SendTargetEditor from "../../sendTo/SendTargetEditor";
 import { SEND_GROUPS, SEND_KINDS, SendKindIcon, kindOfHow, type SendKind } from "../../sendTo/sendKinds";
 import { useToast } from "../../ToastProvider";
 import { reloadSlicerSettings } from "../../../hooks/useSlicerPreference";
@@ -98,8 +98,16 @@ export default function SendToPanel({ onUnauthorized }: Props) {
     setTargets((list) => update(list ?? []));
     void reloadSlicerSettings();
   };
-  const replaced = (saved: SendTarget) => (list: SendTarget[]) =>
-    list.map((other) => (other.id === saved.id ? saved : other));
+  // Each answer takes only what its request set: a placement, or the rest. So two of them for one destination, the
+  // row's toggle and its editor, can come back in either order.
+  const replaced = (saved: SendTarget, only: "placement" | "settings") => (list: SendTarget[]) =>
+    list.map((other) =>
+      other.id !== saved.id
+        ? other
+        : only === "placement"
+          ? { ...other, placement: saved.placement }
+          : { ...saved, placement: other.placement },
+    );
 
   const add = (kind: SendKind) => {
     setAddAnchor(null);
@@ -126,18 +134,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
 
   const place = async (target: SendTarget, placement: SendTarget["placement"]) => {
     try {
-      const saved = await sendTargetsApi.update(
-        target.id,
-        inputOf({
-          name: target.name,
-          placement,
-          fileTypes: target.file_types,
-          how: target.how,
-          apiKey: "",
-          clearKey: false,
-        }),
-      );
-      changed(replaced(saved));
+      changed(replaced(await sendTargetsApi.place(target.id, placement), "placement"));
     } catch (err) {
       failed(err);
     }
@@ -388,7 +385,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                     onCancel={() => setEditing(null)}
                     onSaved={(saved) => {
                       setEditing(null);
-                      changed(replaced(saved));
+                      changed(replaced(saved, "settings"));
                       toast({ message: s("saved", { name: saved.name }), severity: "success" });
                     }}
                     onUnauthorized={onUnauthorized}

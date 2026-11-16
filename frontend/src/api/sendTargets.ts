@@ -116,10 +116,21 @@ export const sendTargetsApi = {
     return res.json();
   },
 
-  update: async (id: string, input: SendTargetInput): Promise<SendTarget> => {
+  /** Its settings but where it shows, which `place` sets and this leaves as it is. */
+  update: async (id: string, input: Omit<SendTargetInput, "placement">): Promise<SendTarget> => {
     const res = await fetch(`${apiBase()}/me/send-targets/${encodeURIComponent(id)}`, {
       method: "PUT",
       ...json(input),
+    });
+    if (!res.ok) return failed(res, "Failed to save the destination");
+    return res.json();
+  },
+
+  /** Its own button, or in the menu: that alone. */
+  place: async (id: string, placement: SendPlacement): Promise<SendTarget> => {
+    const res = await fetch(`${apiBase()}/me/send-targets/${encodeURIComponent(id)}/placement`, {
+      method: "PUT",
+      ...json({ placement }),
     });
     if (!res.ok) return failed(res, "Failed to save the destination");
     return res.json();

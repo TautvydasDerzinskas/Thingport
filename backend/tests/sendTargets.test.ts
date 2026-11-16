@@ -269,6 +269,37 @@ describe("a user's destinations", () => {
     expect(imported.body.targets).toHaveLength(49);
     await prisma.sendTarget.deleteMany({ where: { userId: other.id } });
   });
+
+  it("change where one shows on its own, and keep it through a save of the rest", async () => {
+    const made = (
+      await create(owner, { name: "Hook", placement: "menu", how: { type: "request", url: `${base}/hook` } })
+    ).body;
+    // A save of its other settings that leaves its placement out, as the editor's does.
+    const renamed = await request(app)
+      .put(`/api/me/send-targets/${made.id}`)
+      .set(auth(owner.token))
+      .send({ name: "Webhook", how: { type: "request", url: `${base}/hook` } });
+    expect(renamed.body).toMatchObject({ name: "Webhook", placement: "menu" });
+    const placed = await request(app)
+      .put(`/api/me/send-targets/${made.id}/placement`)
+      .set(auth(owner.token))
+      .send({ placement: "button" });
+    expect(placed.body).toMatchObject({ name: "Webhook", placement: "button" });
+    const again = await request(app)
+      .put(`/api/me/send-targets/${made.id}`)
+      .set(auth(owner.token))
+      .send({ name: "Webhook 2", how: { type: "request", url: `${base}/hook` } });
+    expect(again.body).toMatchObject({ name: "Webhook 2", placement: "button" });
+    expect(
+      (
+        await request(app)
+          .put(`/api/me/send-targets/${made.id}/placement`)
+          .set(auth(other.token))
+          .send({ placement: "menu" })
+      ).status,
+    ).toBe(404);
+    await prisma.sendTarget.deleteMany({ where: { userId: owner.id } });
+  });
 });
 
 describe("sending a model's file", () => {
