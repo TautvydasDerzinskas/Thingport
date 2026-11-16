@@ -268,19 +268,38 @@ export async function modelInfoFor(user: ToolUser, printId: string): Promise<Mod
   if (!tools.length) return { tools: [] };
   const keys = await readableModel(user, printId);
   const toolIds = tools.map((tool) => tool.id);
-  const rows = await prisma.toolSharedData.findMany({
-    where: {
-      AND: [
-        { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
-        sameModel(keys),
-        await visibleTo(toolIds, user.id),
-      ],
-    },
-    orderBy: { updatedAt: "desc" },
-    select: { toolId: true, userId: true, info: true, updatedAt: true },
-    take: LIST_MAX,
+  const where: Prisma.ToolSharedDataWhereInput = {
+    AND: [
+      { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
+      sameModel(keys),
+      await visibleTo(toolIds, user.id),
+    ],
+  };
+  // When each person last wrote in each tool, so one who wrote a great many can't crowd the others out of the rows.
+  const newest = await prisma.toolSharedData.groupBy({
+    by: ["toolId", "userId"],
+    where,
+    _max: { updatedAt: true },
   });
-  // Newest first, so each person's first row in a tool is the one shown.
+  const rows = newest.length
+    ? await prisma.toolSharedData.findMany({
+        where: {
+          AND: [
+            where,
+            {
+              OR: newest.map((group) => ({
+                toolId: group.toolId,
+                userId: group.userId,
+                updatedAt: group._max.updatedAt!,
+              })),
+            },
+          ],
+        },
+        orderBy: { updatedAt: "desc" },
+        select: { toolId: true, userId: true, info: true, updatedAt: true },
+      })
+    : [];
+  // Two written in the same moment: the first is the one shown.
   const shown = new Set<string>();
   const latest = rows.filter((row) => {
     const who = `${row.toolId}:${row.userId}`;
