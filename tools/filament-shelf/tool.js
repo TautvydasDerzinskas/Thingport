@@ -879,10 +879,15 @@ export function modelTab(thingport) {
       if (closed || read !== reads) return;
       problem = error?.message || String(error);
     }
-    // A change from elsewhere mid-edit shows in the people's columns, leaving the rows being typed in alone.
-    if (draft && data) updateMatches();
+    // A change from elsewhere mid-edit shows in the people's columns, leaving the rows being typed in alone, unless
+    // the people changed: then the columns are drawn again, the rows from what's typed.
+    if (draft && data && peopleOf(data) === drawnPeople) updateMatches();
     else render();
   }
+
+  // Whose columns the grid has, so a change that adds or takes one away draws it whole.
+  let drawnPeople = "";
+  const peopleOf = (shown) => shown.everyone.map((person) => person.key).join("|");
 
   const draftNeeds = () =>
     needsFor(data.model, context.fileId, {
@@ -995,6 +1000,7 @@ export function modelTab(thingport) {
 
   function render() {
     box.setAttribute("aria-busy", String(!data && !problem));
+    drawnPeople = data ? peopleOf(data) : "";
     if (!data) {
       box.innerHTML = problem
         ? `<div class="fs-problem">${icon("warn")}<span>${escapeHtml(t("tab.failed", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
@@ -1090,7 +1096,11 @@ export function modelTab(thingport) {
       failed(error);
     } finally {
       saving = false;
-      if (!closed) render();
+      if (!closed) {
+        render();
+        // Saved, so the editor's gone: back to the button that opened it.
+        if (!draft) box.querySelector('[data-act="edit"]')?.focus();
+      }
     }
   }
 
@@ -1121,7 +1131,8 @@ export function modelTab(thingport) {
     if (act === "save") return void save();
     if (act === "cancel") {
       draft = null;
-      return render();
+      render();
+      return void box.querySelector('[data-act="edit"]')?.focus();
     }
     if (act === "add") {
       const row = blankRow();
@@ -1320,7 +1331,7 @@ export function modelImage(thingport) {
   function drawPopover(box) {
     const { match } = data;
     const kind = tone(match);
-    box.innerHTML = `
+    const html = `
       <h3 class="fs-pop-head" id="${titleId}">${icon("palette")}<span>${escapeHtml(t("pop.title"))}</span><button type="button" class="fs-icon-btn" data-act="close" aria-label="${escapeHtml(t("pop.closeLabel"))}" title="${escapeHtml(t("pop.closeLabel"))}">${icon("close")}</button></h3>
       <ul class="fs-pop-rows">${match.rows
         .map(
@@ -1329,6 +1340,13 @@ export function modelImage(thingport) {
         )
         .join("")}</ul>
       <div class="fs-pop-foot"><span class="fs-pop-sum ${kind}">${icon(kind === "fs-all" ? "check" : "warn")}<span>${escapeHtml(shortSummary(t, match))}</span></span><button type="button" class="fs-btn fs-small" data-act="details">${escapeHtml(t("pop.details"))}${icon("chevron")}</button></div>`;
+    // Drawn again only when it says something new, and then with the focus where it was, so a change elsewhere
+    // neither replays the rows coming in nor drops a keyboard user back to the page's start.
+    if (html === box.dataset.html) return;
+    const focused = box.contains(document.activeElement) ? document.activeElement.dataset.act : null;
+    box.dataset.html = html;
+    box.innerHTML = html;
+    if (focused) box.querySelector(`[data-act="${focused}"]`)?.focus();
   }
 
   button.addEventListener("click", () => {
@@ -1405,6 +1423,8 @@ export default function mount(thingport) {
   // Everything read under spool:, as stored; validated where it's used.
   let entries = null;
   let needEntries = [];
+  // Whether the edits about the model have been read: until then its needs aren't known, rather than the profile's.
+  let needsRead = false;
   let model = null;
   let everyone = [];
   let problem = null;
@@ -1430,12 +1450,16 @@ export default function mount(thingport) {
     const at = writes;
     const [spoolList, needList, picked] = await Promise.all([
       readAll(shared, { prefix: SPOOL }),
-      context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => []) : [],
+      context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => null) : [],
       context.modelId && !model ? models.get(context.modelId).catch(() => null) : model,
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
-    needEntries = needList;
+    // A failed read of the edits keeps the last that worked: as none, an edit would read as the profile's list.
+    if (needList) {
+      needEntries = needList;
+      needsRead = true;
+    }
     model = picked;
     problem = null;
     render();
@@ -1476,6 +1500,8 @@ export default function mount(thingport) {
 
   function render() {
     const loading = entries === null;
+    // Nothing to add to until the shelf is read: a spool added before would be lost.
+    $("add").disabled = loading;
     cards.setAttribute("aria-busy", String(loading && !problem));
     if (loading) {
       showEmpty(problem ? { title: t("shelf.failed"), hint: problem, act: "retry", label: t("shelf.retry") } : null);
@@ -1566,7 +1592,7 @@ export default function mount(thingport) {
   }
 
   function drawNeeds(spools) {
-    needs = model ? needsFor(model, context.fileId, currentEdit(needEntries)) : [];
+    needs = model && needsRead ? needsFor(model, context.fileId, currentEdit(needEntries)) : [];
     needsStrip.hidden = !needs.length;
     if (!needs.length) return;
     const missing = new Set(missingOnShelf(needs, spools));
@@ -1861,6 +1887,7 @@ export default function mount(thingport) {
   }
 
   function openDialog({ key = null, value = null, queue = [] } = {}) {
+    if (entries === null) return;
     closeMenu();
     const opener = root.contains(document.activeElement) ? document.activeElement : null;
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());
