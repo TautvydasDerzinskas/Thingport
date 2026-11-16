@@ -174,6 +174,8 @@ type FileToSend = {
   mime: string;
   kind: "plate" | "prepared";
   plateId: string | null;
+  /** The prepared print's file record: what a link to it is bound to, so a replaced one isn't served in its place. */
+  preparedId: string | null;
   print: { id: string; name: string; sourceUrl: string | null };
 };
 
@@ -197,13 +199,29 @@ async function fileToSend(userId: string, printId: string, fileKey: string): Pro
     const filePath = managedPrintFilePath(record);
     if (!fs.existsSync(filePath)) throw new HttpError(404, "No such file");
     const mime = record.mime || "application/octet-stream";
-    return { path: filePath, filename: record.filename, mime, kind: "prepared", plateId: null, print: model };
+    return {
+      path: filePath,
+      filename: record.filename,
+      mime,
+      kind: "prepared",
+      plateId: null,
+      preparedId: record.id,
+      print: model,
+    };
   }
   const plate = await prisma.plate.findFirst({ where: { id: fileKey, printId: print.id } });
   const filePath = plate ? resolvePlateFilePath(plate) : null;
   if (!plate || !filePath || !fs.existsSync(filePath)) throw new HttpError(404, "No such file");
   const mime = plate.mime || "application/octet-stream";
-  return { path: filePath, filename: plate.filename, mime, kind: "plate", plateId: plate.id, print: model };
+  return {
+    path: filePath,
+    filename: plate.filename,
+    mime,
+    kind: "plate",
+    plateId: plate.id,
+    preparedId: null,
+    print: model,
+  };
 }
 
 // A link to one file, for an hour, that needs no sign-in: what a link or a webhook hands on. Signed with a key of its
@@ -238,18 +256,20 @@ export function readFileGrant(
   }
 }
 
-/** The file a link names, while its user may still read it. */
+/** The file a link names, while its user may still read it. A prepared print's link names its file record, so it
+ *  opens nothing once that's replaced. */
 export async function fileFromGrant(grant: string): Promise<{ path: string; filename: string; mime: string }> {
   const granted = readFileGrant(grant);
   const user = granted ? await prisma.user.findUnique({ where: { id: granted.userId }, select: { id: true } }) : null;
   if (!granted || !user) throw new HttpError(404, "Not found");
-  const file = await fileToSend(user.id, granted.printId, granted.fileKey).catch(() => null);
-  if (!file) throw new HttpError(404, "Not found");
+  const [fileKey, preparedId] = granted.fileKey.split(":");
+  const file = await fileToSend(user.id, granted.printId, fileKey).catch(() => null);
+  if (!file || (file.kind === "prepared" && file.preparedId !== preparedId)) throw new HttpError(404, "Not found");
   return file;
 }
 
 function fileUrlOf(origin: string, userId: string, file: FileToSend): string {
-  const grant = makeFileGrant(userId, file.print.id, file.plateId ?? PREPARED_FILE);
+  const grant = makeFileGrant(userId, file.print.id, file.plateId ?? `${PREPARED_FILE}:${file.preparedId}`);
   return `${origin}/api/send-file/${grant}/${encodeURIComponent(file.filename)}`;
 }
 
@@ -338,7 +358,8 @@ export async function sendToTarget(
   const linkWanted =
     how.type === "link"
       ? wantsFileUrl(how.url)
-      : request!.body === "json" || wantsFileUrl(request!.url, request!.thenOpen);
+      : request!.body === "json" ||
+        wantsFileUrl(request!.url, request!.thenOpen, ...request!.fields.map((field) => field.value));
   const values: PlaceholderValues = {
     file_url: linkWanted ? fileUrlOf(origin, user.id, file) : "",
     filename: file.filename,

@@ -1,8 +1,11 @@
+import fs from "node:fs";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { dirname, join } from "node:path";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
+import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { templateProblem } from "../src/services/sendTargetFormat";
 import { makeFileGrant, readFileGrant } from "../src/services/sendTargetService";
@@ -274,6 +277,43 @@ describe("sending a model's file", () => {
     expect(readFileGrant(old)).toBeNull();
     expect((await request(app).get(`/api/send-file/${old}/f.gcode`)).status).toBe(404);
     expect((await request(app).get("/api/me/send-targets").set(auth(grant))).status).toBe(401);
+  });
+
+  it("fills the file's link into a form field that asks for it", async () => {
+    const target = await create(owner, {
+      name: "Form",
+      how: { type: "request", url: `${base}/hook`, fields: [{ name: "link", value: "{file_url}" }] },
+    });
+    expect((await send(owner, target.body.id)).body).toEqual({ ok: true, status: 200 });
+    expect(last().body.toString("utf8")).toMatch(
+      /name="link"\r\n\r\nhttp:\/\/[^\r]+\/api\/send-file\/[^/]+\/corner%20bracket\.gcode\r\n/,
+    );
+  });
+
+  it("links to the prepared print it was sent, never to one that replaced it", async () => {
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: plateId } });
+    // The model goes back to having no prepared print, as the tests after this one expect.
+    onTestFinished(() =>
+      prisma.print.update({ where: { id: printId }, data: { preparedFileId: null } }).then(() => {}),
+    );
+    const prepared = async (filename: string) => {
+      const storagePath = join(dirname(plate.storagePath), filename);
+      fs.writeFileSync(join(STORAGE, storagePath), filename);
+      const record = await prisma.printFile.create({
+        data: { printId, role: "PREPARED", filename, mime: "application/octet-stream", storagePath },
+      });
+      await prisma.print.update({ where: { id: printId }, data: { preparedFileId: record.id } });
+    };
+    await prepared("first.gcode.3mf");
+    const target = await create(owner, { name: "Hook", how: { type: "request", url: `${base}/hook`, body: "json" } });
+    expect((await send(owner, target.body.id, "prepared")).body).toEqual({ ok: true, status: 200 });
+    const link = new URL(JSON.parse(last().body.toString("utf8")).file_url).pathname;
+    const first = await request(app).get(link);
+    expect(first.status).toBe(200);
+    expect(Buffer.from(first.body as Buffer).toString("utf8") || first.text).toBe("first.gcode.3mf");
+
+    await prepared("second.gcode.3mf");
+    expect((await request(app).get(link)).status).toBe(404);
   });
 
   it("fills a link in for the browser to open", async () => {
