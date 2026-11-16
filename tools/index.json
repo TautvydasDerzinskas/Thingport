@@ -9,6 +9,7 @@
     "keyring-generator",
     "qr-code-generator",
     "openscad-customizer",
-    "print-queue"
+    "print-queue",
+    "filament-shelf"
   ]
 }
