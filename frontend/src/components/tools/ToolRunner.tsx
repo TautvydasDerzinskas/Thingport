@@ -194,7 +194,9 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
         openModel,
         // A part of a page isn't the tool's to close.
         close: () => (place ? undefined : latest.current.onClose()),
+        // A run that's stopped, as for another picked file, may still finish its work: it changes nothing on the page.
         popover: (anchor, draw, options) => {
+          if (cancelled) return { close: () => undefined };
           const id = ++popovers.current;
           closePopover();
           shownPopover.current = id;
@@ -209,10 +211,14 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
           return { close: () => closePopover(id) };
         },
         showTab: () => {
-          if (tool.id && tool.manifest.modelPage?.tab) latest.current.page?.showTab(tool.id);
+          if (!cancelled && tool.id && tool.manifest.modelPage?.tab) latest.current.page?.showTab(tool.id);
         },
-        selectFile: (fileId) => latest.current.page?.selectFile(fileId),
-        openWindow: () => latest.current.page?.openWindow(tool),
+        selectFile: (fileId) => {
+          if (!cancelled) latest.current.page?.selectFile(fileId);
+        },
+        openWindow: () => {
+          if (!cancelled) latest.current.page?.openWindow(tool);
+        },
       },
       pickAudience: () => shareAsks.ask({}),
     });

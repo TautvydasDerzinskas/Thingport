@@ -176,25 +176,40 @@ export function modelInfo(thingport) {
     return button;
   }
 
+  // Chips from a read that worked are showing: a failed read after it leaves them be.
+  let shown = false;
+  let lastRead = 0;
+
   async function draw() {
     const read = ++reads;
+    lastRead = Date.now();
     let entries;
     try {
       entries = await jobsOn(shared, context.modelId);
     } catch {
       // A read a later one has overtaken says nothing, failing or not.
-      if (!closed && read === reads) chips.replaceChildren(addButton());
+      if (!closed && read === reads && !shown) chips.replaceChildren(addButton());
       return;
     }
     if (closed || read !== reads) return;
+    shown = true;
     chips.replaceChildren(...chipsOf(entries).map(chip), addButton());
   }
 
+  // Others change their jobs in their own browsers, which tells this page nothing: it reads again on coming back to
+  // it, once however many ways it says so.
+  const back = () => {
+    if (document.visibilityState === "visible" && Date.now() - lastRead > 1000) void draw();
+  };
+  document.addEventListener("visibilitychange", back);
+  window.addEventListener("focus", back);
   const stop = shared.onChange(() => void draw());
   void draw();
   return () => {
     closed = true;
     stop();
+    document.removeEventListener("visibilitychange", back);
+    window.removeEventListener("focus", back);
   };
 }
 

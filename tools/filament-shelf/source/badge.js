@@ -3,13 +3,14 @@
 
 import { loadForModel } from "./shelf.js";
 import {
-  BASE_CSS,
   addStyle,
   avatar,
+  BASE_CSS,
   escapeHtml,
   filamentDetail,
   filamentLabel,
   icon,
+  onReturn,
   personName,
   shortSummary,
   swatch,
@@ -182,11 +183,13 @@ export function modelImage(thingport) {
   });
 
   const stop = shared.onChange?.(() => void load()) ?? (() => {});
+  const stopReturn = onReturn(() => void load());
   void load();
 
   return () => {
     closed = true;
     stop();
+    stopReturn();
     popover?.close();
   };
 }

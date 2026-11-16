@@ -271,6 +271,23 @@ export function shortSummary(t, match) {
 }
 
 /** Runs `fn`, showing what went wrong in a toast rather than leaving it unhandled. */
+/** Calls back when the reader comes back to the page, once a second at most: what others change in their own browsers
+ *  tells it nothing otherwise. Gives back what stops it. */
+export function onReturn(callback) {
+  let last = 0;
+  const back = () => {
+    if (document.visibilityState !== "visible" || Date.now() - last < 1000) return;
+    last = Date.now();
+    callback();
+  };
+  document.addEventListener("visibilitychange", back);
+  window.addEventListener("focus", back);
+  return () => {
+    document.removeEventListener("visibilitychange", back);
+    window.removeEventListener("focus", back);
+  };
+}
+
 export function toastFailures(thingport, fn, isClosed = () => false) {
   return async (...args) => {
     try {

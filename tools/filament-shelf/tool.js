@@ -308,13 +308,16 @@ const isNeed = (value) =>
   (value.color === null || isHex(value.color)) &&
   isGrams(value.grams);
 
+/** The most filaments an edit keeps: a longer list isn't read as one. */
+export const MAX_FILAMENTS = 64;
+
 /** Whether a shared value is an edit of a model's filaments: a list, or null for "back to the profile". */
 export function isNeedsValue(value) {
   return (
     Boolean(value) &&
     typeof value === "object" &&
     (value.filaments === null ||
-      (Array.isArray(value.filaments) && value.filaments.length <= 64 && value.filaments.every(isNeed)))
+      (Array.isArray(value.filaments) && value.filaments.length <= MAX_FILAMENTS && value.filaments.every(isNeed)))
   );
 }
 
@@ -765,6 +768,23 @@ export function shortSummary(t, match) {
 }
 
 /** Runs `fn`, showing what went wrong in a toast rather than leaving it unhandled. */
+/** Calls back when the reader comes back to the page, once a second at most: what others change in their own browsers
+ *  tells it nothing otherwise. Gives back what stops it. */
+export function onReturn(callback) {
+  let last = 0;
+  const back = () => {
+    if (document.visibilityState !== "visible" || Date.now() - last < 1000) return;
+    last = Date.now();
+    callback();
+  };
+  document.addEventListener("visibilitychange", back);
+  window.addEventListener("focus", back);
+  return () => {
+    document.removeEventListener("visibilitychange", back);
+    window.removeEventListener("focus", back);
+  };
+}
+
 export function toastFailures(thingport, fn, isClosed = () => false) {
   return async (...args) => {
     try {
@@ -950,7 +970,7 @@ export function modelTab(thingport) {
       .join("");
     const grams = needs.reduce((sum, need) => sum + (need.grams ?? 0), 0);
     const lead = draft
-      ? `<button type="button" class="fs-btn fs-small" data-act="add">${icon("add")}${escapeHtml(t("edit.add"))}</button>`
+      ? `<button type="button" class="fs-btn fs-small" data-act="add"${draft.length >= MAX_FILAMENTS ? " disabled" : ""}>${icon("add")}${escapeHtml(t("edit.add"))}</button>`
       : grams
         ? escapeHtml(t("grid.total", { grams: formatGrams(grams, language) }))
         : "";
@@ -1020,6 +1040,8 @@ export function modelTab(thingport) {
              <div class="fs-actions"><button type="button" class="fs-btn fs-quiet fs-small" data-act="cancel"${saving ? " disabled" : ""}>${escapeHtml(t("edit.cancel"))}</button><button type="button" class="fs-btn fs-primary fs-small" data-act="save"${saving ? " disabled" : ""}>${escapeHtml(t("edit.save"))}</button></div>`
           : "");
     box.innerHTML = toolbar() + body + (needs.length ? together(match) : "");
+    // While a save goes, the rows are what it sends: nothing in them changes until it's done.
+    if (saving) for (const control of box.querySelectorAll(".fs-grid input, .fs-grid button")) control.disabled = true;
   }
 
   /** While editing: the people's columns, the counts and the summary follow what's typed, the inputs left alone. */
@@ -1067,7 +1089,7 @@ export function modelTab(thingport) {
       color: need.color,
       grams: need.grams,
     }));
-    if (withRow || !draft.length) {
+    if ((withRow || !draft.length) && draft.length < MAX_FILAMENTS) {
       const row = blankRow();
       draft.push(row);
       fresh = row.id;
@@ -1124,6 +1146,8 @@ export function modelTab(thingport) {
     if (!target || target.disabled) return;
     const act = target.dataset.act;
     if (act === "open") return ui.openWindow();
+    // A save owns the rows until it's done.
+    if (saving) return;
     if (act === "edit") return startEdit();
     if (act === "start") return startEdit(true);
     if (act === "retry") return void load();
@@ -1135,6 +1159,7 @@ export function modelTab(thingport) {
       return void box.querySelector('[data-act="edit"]')?.focus();
     }
     if (act === "add") {
+      if (draft.length >= MAX_FILAMENTS) return;
       const row = blankRow();
       draft.push(row);
       fresh = row.id;
@@ -1161,6 +1186,7 @@ export function modelTab(thingport) {
   });
 
   box.addEventListener("input", (event) => {
+    if (saving) return;
     const input = event.target;
     if (input.dataset.type !== undefined) {
       draft[Number(input.dataset.type)].type = input.value;
@@ -1189,7 +1215,7 @@ export function modelTab(thingport) {
   });
 
   box.addEventListener("keydown", (event) => {
-    if (!draft) return;
+    if (!draft || saving) return;
     if (event.key === "Escape") {
       event.stopPropagation();
       draft = null;
@@ -1202,12 +1228,14 @@ export function modelTab(thingport) {
   });
 
   const stop = shared.onChange?.(() => void load()) ?? (() => {});
+  const stopReturn = onReturn(() => void load());
   render();
   void load();
 
   return () => {
     closed = true;
     stop();
+    stopReturn();
   };
 }
 
@@ -1382,11 +1410,13 @@ export function modelImage(thingport) {
   });
 
   const stop = shared.onChange?.(() => void load()) ?? (() => {});
+  const stopReturn = onReturn(() => void load());
   void load();
 
   return () => {
     closed = true;
     stop();
+    stopReturn();
     popover?.close();
   };
 }
@@ -1678,7 +1708,7 @@ export default function mount(thingport) {
 
   // ---- changes ----
 
-  const putSpool = safely(async (key, value) => {
+  const putSpool = safely(async (key, value, onFailed = () => {}) => {
     const existing = entries.find((entry) => entry.mine && entry.key === key);
     const before = existing?.value;
     if (existing) Object.assign(existing, { value, saving: true });
@@ -1701,6 +1731,7 @@ export default function mount(thingport) {
         if (still) Object.assign(still, { value: before, saving: false });
       } else entries = entries.filter((entry) => !(entry.mine && entry.key === key));
       render();
+      onFailed();
       throw error;
     }
   });
@@ -2008,8 +2039,12 @@ export default function mount(thingport) {
       note: state.note,
     });
     const key = dialog.key ?? `${SPOOL}${newId()}`;
+    const editing = dialog.key;
     advance(value.brand);
-    void putSpool(key, value);
+    // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
+    void putSpool(key, value, () => {
+      if (!dialog && !closed) openDialog({ key: editing, value });
+    });
   }
 
   form.addEventListener("submit", (event) => {

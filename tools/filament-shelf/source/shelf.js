@@ -158,13 +158,16 @@ const isNeed = (value) =>
   (value.color === null || isHex(value.color)) &&
   isGrams(value.grams);
 
+/** The most filaments an edit keeps: a longer list isn't read as one. */
+export const MAX_FILAMENTS = 64;
+
 /** Whether a shared value is an edit of a model's filaments: a list, or null for "back to the profile". */
 export function isNeedsValue(value) {
   return (
     Boolean(value) &&
     typeof value === "object" &&
     (value.filaments === null ||
-      (Array.isArray(value.filaments) && value.filaments.length <= 64 && value.filaments.every(isNeed)))
+      (Array.isArray(value.filaments) && value.filaments.length <= MAX_FILAMENTS && value.filaments.every(isNeed)))
   );
 }
 
