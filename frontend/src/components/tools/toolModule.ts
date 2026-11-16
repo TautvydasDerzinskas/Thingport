@@ -1,12 +1,12 @@
-import type { RunnableTool } from "./toolSdk";
+import type { RunnableTool, ToolSdk } from "./toolSdk";
 
-type Draw = (thingport: Record<string, unknown>) => unknown;
+type Draw = (thingport: ToolSdk) => unknown;
 
 /** What a tool's script exports: `default` mounts its window; `run` does a command that has no window; `modelInfo`,
  *  `modelTab` and `modelImage` draw its parts of a model's page. */
 export type ToolModule = {
   default?: Draw;
-  run?: (command: string, thingport: Record<string, unknown>) => unknown;
+  run?: (command: string, thingport: ToolSdk) => unknown;
   modelInfo?: Draw;
   modelTab?: Draw;
   modelImage?: Draw;

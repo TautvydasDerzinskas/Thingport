@@ -221,7 +221,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
           throw new Error(
             place ? latest.current.t("tools.runner.noPartExport", { name }) : latest.current.t("tools.runner.noExport"),
           );
-        const returned = await draw(thingport as unknown as Record<string, unknown>);
+        const returned = await draw(thingport);
         if (cancelled) {
           if (typeof returned === "function") returned();
           return;

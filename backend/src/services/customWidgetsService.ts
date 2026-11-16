@@ -479,14 +479,16 @@ export function hostAllowed(url: URL, hosts: string[]): boolean {
   });
 }
 
-// Link-local addresses, where clouds serve instance metadata and credentials (169.254.169.254, fd00:ec2::254), and one
-// cloud's own (100.100.100.200). The LAN stays reachable, and the rest of 100.64/10 with it, which VPNs give out:
-// these never hold a printer or a NAS a widget would want.
+// Where clouds serve instance metadata and credentials: link-local addresses (169.254.169.254, fe80::), and the clouds'
+// own (fd00:ec2::254, fd20:ce::254, 100.100.100.200). The LAN stays reachable, and the rest of 100.64/10 with it, which
+// VPNs give out. A device that took a link-local address of its own for want of DHCP, a printer among them, is out of
+// reach too, widgets' and Send to's alike: keeping the credentials safe is worth that.
 const BLOCKED_ADDRESSES = new BlockList();
 BLOCKED_ADDRESSES.addSubnet("169.254.0.0", 16, "ipv4");
 BLOCKED_ADDRESSES.addAddress("100.100.100.200", "ipv4");
 BLOCKED_ADDRESSES.addSubnet("fe80::", 10, "ipv6");
 BLOCKED_ADDRESSES.addAddress("fd00:ec2::254", "ipv6");
+BLOCKED_ADDRESSES.addAddress("fd20:ce::254", "ipv6");
 
 function blockedAddress(address: string): boolean {
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)?.[1];

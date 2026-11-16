@@ -102,6 +102,7 @@ describe("metadata", () => {
   it("tells cloud metadata addresses from the LAN", () => {
     expect(metadataHost("169.254.169.254")).toBe(true);
     expect(metadataHost("[fd00:ec2::254]")).toBe(true);
+    expect(metadataHost("[fd20:ce::254]")).toBe(true);
     expect(metadataHost("[::ffff:169.254.169.254]")).toBe(true);
     expect(metadataHost("metadata.google.internal")).toBe(true);
     expect(metadataHost("100.100.100.200")).toBe(true);
