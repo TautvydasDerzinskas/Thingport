@@ -84,6 +84,18 @@ describe("a destination's addresses", () => {
     expect(templateProblem("myslicer://open?file={file_url}", false)).toBeNull();
     expect(templateProblem("myslicer://open?file={file_url}", true)).toMatch(/Only http/);
     expect(templateProblem("https://{model_name}.example.com/", true)).toMatch(/never in the scheme or the host/);
+    expect(templateProblem("http://printer.lan:8080/upload", true)).toBeNull();
+    // Read as the URL parser does, a missing, single or back slash or a tab still puts it in the host.
+    for (const hidden of [
+      "http:{model_name}/upload",
+      "http:/{model_name}",
+      "http:\\\\{model_name}",
+      "http:/\t/{model_name}",
+    ])
+      expect(templateProblem(hidden, true)).toMatch(/never in the scheme or the host/);
+    expect(templateProblem("https:{model_name}", false)).toMatch(/never in the scheme or the host/);
+    expect(templateProblem("http://{model_name}@printer.lan/", true)).toMatch(/never in the scheme or the host/);
+    expect(templateProblem("myslicer:{file_url}", false)).toBeNull();
     expect(templateProblem("http://printer.lan/{password}", true)).toMatch(/isn't a placeholder/);
     expect(templateProblem("javascript:alert({filename})", false)).toMatch(/can't use javascript:/);
     expect(templateProblem("data:text/html,hi", false)).toMatch(/can't use data:/);

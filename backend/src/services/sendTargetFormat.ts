@@ -38,25 +38,24 @@ const RESERVED_HEADERS = new Set([
   "transfer-encoding",
 ]);
 
-/** The part of an address before its path: the scheme and the host, where a filled-in value could send the file
- *  somewhere else. */
-function head(template: string): string {
-  return /^[a-z][a-z0-9+.-]*:(\/\/[^/?#]*)?/i.exec(template)?.[0] ?? "";
-}
+/** The scheme, sign-in and host an address comes to: where a filled-in value could send the file somewhere else. */
+const authorityOf = (url: URL) => [url.protocol, url.username, url.password, url.host].join("\n");
 
 /** What's wrong with an address template, or null. `web`: only http and https; otherwise an app's own scheme too. */
 export function templateProblem(template: string, web: boolean): string | null {
-  const start = head(template);
-  if (!start) return "Not an address";
-  if (start.includes("{")) return "Placeholders go in the path or the query, never in the scheme or the host";
   for (const [, name] of template.matchAll(PLACEHOLDER))
     if (!(PLACEHOLDERS as readonly string[]).includes(name)) return `{${name}} isn't a placeholder Thingport fills in`;
   let url: URL;
+  let other: URL;
   try {
     url = new URL(template.replace(PLACEHOLDER, "x"));
+    other = new URL(template.replace(PLACEHOLDER, "y"));
   } catch {
     return "Not an address";
   }
+  // Judged as the URL parser reads it, not as written: "http:{model_name}/" has its host in the placeholder too.
+  if (authorityOf(url) !== authorityOf(other))
+    return "Placeholders go in the path or the query, never in the scheme or the host";
   if (web && url.protocol !== "http:" && url.protocol !== "https:") return "Only http and https addresses";
   if (UNSAFE_SCHEMES.has(url.protocol)) return `A link can't use ${url.protocol}`;
   return null;
