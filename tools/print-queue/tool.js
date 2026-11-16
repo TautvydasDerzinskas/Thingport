@@ -21,14 +21,12 @@ export function newId(now = Date.now(), random = Math.random) {
   return `${now.toString(36)}${random().toString(36).slice(2, 8)}`;
 }
 
-/** A model, and the file picked on its page, as a job in the queue. */
-export function newJob(model, file, now = new Date()) {
+/** A model as a job in the queue. */
+export function newJob(model, now = new Date()) {
   return {
     status: "queued",
     modelId: model.id,
     name: model.name,
-    fileId: file?.id ?? null,
-    fileName: file?.name ?? null,
     note: "",
     queuedAt: now.toISOString(),
     startedAt: null,
@@ -50,8 +48,6 @@ export function isJob(value) {
     text(value.queuedAt) &&
     maybeText(value.startedAt) &&
     maybeText(value.finishedAt) &&
-    maybeText(value.fileId) &&
-    maybeText(value.fileName) &&
     text(value.note)
   );
 }
@@ -248,8 +244,7 @@ export async function run(command, thingport) {
     const message = t(others.length ? "dup.message" : "dup.again", { name: model.name });
     if (!(await ui.confirm({ title, message, confirmLabel: t("dup.add") }))) return;
   }
-  const file = model.files.find((candidate) => candidate.id === context.fileId) ?? null;
-  await saveJob(shared, `${JOB}${newId()}`, newJob(model, file));
+  await saveJob(shared, `${JOB}${newId()}`, newJob(model));
   ui.toast(t("toast.queued", { name: model.name }), "success");
 }
 
@@ -401,6 +396,11 @@ export default function mount(thingport) {
   let readAgain = false;
   // Reads of the board started, so one that ends after a later one doesn't put back what that one replaced.
   let reads = 0;
+  // What the last read found, so one that finds the same draws nothing again.
+  let lastRead = null;
+  // Cards drawn, by person, key and column: only a card new to its column comes in with an animation.
+  let drawn = new Set();
+  let drawing = new Set();
   // The user's jobs as stored, as far as the board knows: each change is saved onto this, so one still saving, which
   // may fail, isn't saved along with it.
   const stored = new Map();
@@ -458,12 +458,16 @@ export default function mount(thingport) {
       return;
     }
     entries = all;
+    const retry = missed.size > 0;
     for (const modelId of missed) looks.delete(modelId);
     missed.clear();
     stored.clear();
     for (const entry of all) if (entry.mine) stored.set(entry.key, entry.value);
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
-    render();
+    const found = JSON.stringify([all.map((entry) => [entry.user?.id, entry.key, entry.value]), [...here]]);
+    // Nothing new, and no thumbnail to ask for again: the board stays as it is, focus and all.
+    if (found !== lastRead || retry) render();
+    lastRead = found;
   }
   const refresh = safely(load);
 
@@ -480,7 +484,9 @@ export default function mount(thingport) {
   function card(entry) {
     const job = entry.value;
     const li = document.createElement("li");
-    li.className = `pq-card${entry.mine ? " pq-mine" : ""}${here.has(`${entry.user?.id}:${entry.key}`) ? " pq-here" : ""}`;
+    const place = `${entry.user?.id}:${entry.key}:${job.status}`;
+    li.className = `pq-card${entry.mine ? " pq-mine" : ""}${here.has(`${entry.user?.id}:${entry.key}`) ? " pq-here" : ""}${drawn.has(place) ? "" : " pq-new"}`;
+    drawing.add(place);
     // A key is the writer's own, so two people's can match: a card is known by both.
     li.dataset.who = entry.user?.id ?? "";
     li.dataset.key = entry.key;
@@ -494,7 +500,7 @@ export default function mount(thingport) {
       <span class="pq-thumb" aria-hidden="true">${escapeHtml(job.name.trim().slice(0, 1).toUpperCase())}</span>
       <span class="pq-body">
         <span class="pq-name" title="${escapeHtml(job.name)}">${escapeHtml(job.name)}</span>
-        <span class="pq-meta">${avatar(entry.user)}<span>${escapeHtml(person)} · ${escapeHtml(dateText(statusDate(job)))}${job.fileName ? ` · ${escapeHtml(job.fileName)}` : ""}</span></span>
+        <span class="pq-meta">${avatar(entry.user)}<span>${escapeHtml(person)} · ${escapeHtml(dateText(statusDate(job)))}</span></span>
         ${
           editingThis
             ? `<span class="pq-edit"><textarea aria-label="${escapeHtml(t("note.label"))}" placeholder="${escapeHtml(t("note.placeholder"))}" maxlength="2000">${escapeHtml(draft)}</textarea><div><button type="button" class="pq-cancel">${escapeHtml(t("note.cancel"))}</button><button type="button" class="pq-save">${escapeHtml(t("note.save"))}</button></div></span>`
@@ -524,6 +530,11 @@ export default function mount(thingport) {
     }
     const cols = columns(entries, who);
     const any = STATUSES.some((status) => cols[status].length);
+    // A card's button that had focus has it again in the card drawn for it, so a keyboard user isn't sent back.
+    const focused = board.contains(document.activeElement) ? document.activeElement : null;
+    const focusedCard = focused?.closest(".pq-card");
+    const focusedClass = focused?.classList[0];
+    drawing = new Set();
     empty.hidden = any || who !== null;
     board.hidden = !any && who === null;
     for (const col of board.querySelectorAll(".pq-col")) {
@@ -532,6 +543,13 @@ export default function mount(thingport) {
       const list = col.querySelector(".pq-list");
       list.replaceChildren(...jobs.map(card));
       if (!jobs.length) list.innerHTML = `<li class="pq-none">${escapeHtml(t("board.none"))}</li>`;
+    }
+    drawn = drawing;
+    if (focusedCard && !focusedCard.isConnected && focusedClass !== undefined) {
+      const again = board.querySelector(
+        `.pq-card[data-who="${CSS.escape(focusedCard.dataset.who)}"][data-key="${CSS.escape(focusedCard.dataset.key)}"]`,
+      );
+      (focused === focusedCard ? again : again?.querySelector(`.${CSS.escape(focusedClass)}`))?.focus();
     }
     // Opened from a model's page: its cards are outlined, and the first is scrolled to once.
     const first = board.querySelector(".pq-here");

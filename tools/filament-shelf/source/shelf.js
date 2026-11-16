@@ -244,6 +244,8 @@ export function needsFor(model, fileId, edit) {
 
 /** How well a spool stands in for a needed filament: the same, close, or not at all (null). */
 export function grade(needed, spool) {
+  // Weighed at nothing: there's none of it left, however well it would match. An unweighed spool still counts.
+  if (spool.grams === 0) return null;
   if (needed.type && family(needed.type) !== family(spool.material)) return null;
   if (!needed.color) return { grade: "same", delta: 0 };
   const delta = colourDistance(needed.color, spool.color);

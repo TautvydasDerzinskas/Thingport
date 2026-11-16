@@ -1,5 +1,5 @@
 // The Filaments tab on a model's page: what the picked profile needs down the side, a column per person naming
-// their spool that matches, and the list edited in place for everyone who sees the model.
+// their spool that matches, and the list edited in place for everyone who sees what the editor shares.
 
 import { PALETTE, normaliseHex } from "./colour.js";
 import { MAX_FILAMENTS, forgetReads, loadForModel, matchAll, needsFor, needsKey, newId } from "./shelf.js";

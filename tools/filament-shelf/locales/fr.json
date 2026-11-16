@@ -103,7 +103,7 @@
   "pop.title": "Filaments de ce profil",
   "remove.message": "Elle quitte votre étagère et les modèles ne la comptent plus.",
   "remove.title": "Retirer {name} ?",
-  "reset.message": "La modification disparaît pour tout le monde et les filaments du profil reviennent.",
+  "reset.message": "La modification disparaît pour tous ceux qui voient ce que vous partagez et les filaments du profil reviennent.",
   "reset.title": "Revenir au profil ?",
   "share.everyone": "Tout le monde voit les vôtres",
   "share.onlyYou": "Vous seul voyez les vôtres",

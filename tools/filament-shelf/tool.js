@@ -394,6 +394,8 @@ export function needsFor(model, fileId, edit) {
 
 /** How well a spool stands in for a needed filament: the same, close, or not at all (null). */
 export function grade(needed, spool) {
+  // Weighed at nothing: there's none of it left, however well it would match. An unweighed spool still counts.
+  if (spool.grams === 0) return null;
   if (needed.type && family(needed.type) !== family(spool.material)) return null;
   if (!needed.color) return { grade: "same", delta: 0 };
   const delta = colourDistance(needed.color, spool.color);
@@ -858,7 +860,7 @@ export function toastFailures(thingport, fn, isClosed = () => false) {
 // ---- tab.js ----
 
 // The Filaments tab on a model's page: what the picked profile needs down the side, a column per person naming
-// their spool that matches, and the list edited in place for everyone who sees the model.
+// their spool that matches, and the list edited in place for everyone who sees what the editor shares.
 
 
 const TAB_CSS = `
@@ -1564,7 +1566,8 @@ export default function mount(thingport) {
     const [spoolList, needList, picked] = await Promise.all([
       readAll(shared, { prefix: SPOOL }),
       context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => null) : [],
-      context.modelId && !model ? models.get(context.modelId).catch(() => null) : model,
+      // Read each time, as the tab and badge do, so a changed profile shows here too.
+      context.modelId ? models.get(context.modelId).catch(() => undefined) : null,
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
@@ -1573,7 +1576,8 @@ export default function mount(thingport) {
       needEntries = needList;
       needsRead = true;
     }
-    model = picked;
+    // A failed read keeps the model as last read.
+    if (picked !== undefined) model = picked;
     problem = null;
     render();
   }

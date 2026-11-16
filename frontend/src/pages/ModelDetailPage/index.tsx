@@ -161,6 +161,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
         setPrint(data);
         setActiveImageIndex(0);
         setSelectedFileKey(null);
+        // The side panel says which plate is picked once it shows this model; until then, none of the last one's.
+        setPickedPlateId(null);
         setDescriptionTab("description");
         setRenderUnavailable(false);
       } catch (err) {

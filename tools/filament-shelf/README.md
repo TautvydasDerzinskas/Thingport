@@ -5,13 +5,13 @@ filaments it needs and who has them, so a multicolour print starts with the righ
 
 - **The shelf** is the tool's window: a card per spool with its colour, brand, owner and how much is left. Filter it by
   person, material, brand and colour. Your own cards have a ⋮ menu (or right-click): **Edit**, **Used up** and
-  **Remove**; everyone else's are read only. **Everyone sees yours** picks whom your spools reach: everyone who can use
-  tools, or only the people you choose.
+  **Remove**; everyone else's are read only. **Everyone sees yours** picks whom your spools and your edits reach:
+  everyone who can use tools, or only the people you choose.
 - **The Filaments tab** on a model's page lists what the picked print profile needs, with a column per person naming
   their spool that matches: **Has it**, **≈ Close**, or nothing. The picker switches between the model's profiles.
-  **Edit** changes the picked profile's list in place, for everyone who sees the model and on every copy of it; the
-  model's other profiles keep theirs. A sync or a metadata refresh never touches an edit; **Reset to profile** goes
-  back to the profile's filaments.
+  **Edit** changes the picked profile's list in place, on every copy of the model, for everyone who sees what you
+  share; the model's other profiles keep theirs. A sync or a metadata refresh never touches an edit; **Reset to
+  profile** goes back to the profile's filaments.
 - **The badge** in the corner of the model's picture is a ring filled by how many of the filaments the household has.
   Click it to see who has each one, and **Details** for the tab.
 - Opened from a model, the shelf also shows what the model needs and offers **Add what this model needs**, one spool
@@ -32,7 +32,9 @@ The filaments come from the print profile Thingport already keeps for the file, 
 ## What it keeps
 
 Everything stays in Thingport, through `thingport.shared`: it reaches no outside service and lists no hosts. Each entry
-is its writer's, and every entry read is checked, so a malformed one is skipped.
+is its writer's, and every entry read is checked, so a malformed one is skipped. An entry reaches whom its writer
+picked under **Everyone sees yours**, spools and edits alike: someone who limits theirs limits their edits too, and the
+others see the profile's filaments, or an edit they can see.
 
 - `spool:<id>`, one per spool: `{ brand, line, material, colorName, color, left, grams, note }`, with `color` as
   `#RRGGBB`, `left` as `full`, `half`, `low` or null, and `grams` when the spool was weighed.

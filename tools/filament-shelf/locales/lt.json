@@ -102,7 +102,7 @@
   "pop.title": "Šio profilio gijos",
   "remove.message": "Ji dings iš jūsų lentynos, ir modeliai jos nebeskaičiuos.",
   "remove.title": "Pašalinti „{name}“?",
-  "reset.message": "Pakeitimas dings visiems, ir vėl bus rodomos profilio gijos.",
+  "reset.message": "Pakeitimas dings visiems, kurie mato tai, kuo dalijatės, ir vėl bus rodomos profilio gijos.",
   "reset.title": "Grąžinti profilio gijas?",
   "share.everyone": "Jūsų mato visi",
   "share.onlyYou": "Jūsų matote tik jūs",
