@@ -24,7 +24,9 @@ describe("readErrorMessage", () => {
 
   it("says a proxy answered, and where its settings are, when the error isn't the backend's", async () => {
     const message = await readErrorMessage(page(500), "Request failed (500)");
-    expect(message).toMatch(/^This Thingport instance didn't get the request: .*HTTP 500/);
+    expect(message).toMatch(
+      /^A proxy in front of this Thingport instance answered with HTTP 500, and no message from Thingport came through/,
+    );
     expect(message).toContain("https://thingport.net/docs/guides/reverse-proxy/");
     expect(await readErrorMessage(new Response("Bad Request", { status: 400 }), "x")).toMatch(/HTTP 400/);
     expect(await readErrorMessage(new Response(JSON.stringify({ error: "no" }), { status: 403 }), "x")).toMatch(

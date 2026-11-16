@@ -24,7 +24,9 @@ describe("instanceErrorText", () => {
 
   it("says a proxy answered when the error isn't Thingport's", async () => {
     // A reverse proxy's 500 for an import's body, as Nginx Proxy Manager answered one in issue #333.
-    await expect(instanceErrorText(html(500))).resolves.toMatch(/^Thingport didn't get this request: .*HTTP 500/);
+    await expect(instanceErrorText(html(500))).resolves.toMatch(
+      /^A proxy in front of your Thingport instance answered with HTTP 500, and no message from Thingport came through/,
+    );
     await expect(instanceErrorText(json(403, { error: "Forbidden" }))).resolves.toMatch(/HTTP 403/);
     await expect(instanceErrorText(new Response(null, { status: 502 }))).resolves.toMatch(
       /isn't answering \(HTTP 502\)/,

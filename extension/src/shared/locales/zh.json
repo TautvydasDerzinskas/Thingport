@@ -390,7 +390,7 @@
   "reloginCredentialsRejected": "Thingport 拒绝了 Thingport Grab 中保存的邮箱或密码（{detail}）。请打开扩展弹窗，点击该实例并重新登录。",
   "grabNotConfigured": "Thingport Grab 尚未配置——请先打开扩展弹窗。",
   "grabDisabled": "Thingport Grab 已停用——请从扩展弹窗中重新启用。",
-  "proxyRefused": "Thingport 没有收到这个请求：你的 Thingport 实例前面的代理代替它作出了回应（HTTP {status}）。原因可查看代理的日志，Thingport 需要的设置见 thingport.net/docs/guides/reverse-proxy/",
+  "proxyRefused": "你的 Thingport 实例前面的代理作出了回应（HTTP {status}），没有收到 Thingport 本身的消息。原因可查看代理的日志，Thingport 需要的设置见 thingport.net/docs/guides/reverse-proxy/",
   "proxyTooLarge": "这个请求对你的 Thingport 实例前面的代理来说太大了（HTTP 413）。请调高它的请求大小上限：见 thingport.net/docs/guides/reverse-proxy/",
   "proxyNoAnswer": "你的 Thingport 实例没有响应（HTTP {status}）。它可能正在启动或已停止，或者它前面的代理连接不到它。",
   "proxyTimedOut": "你的 Thingport 实例响应太慢，它前面的代理已放弃等待（HTTP 504）。",

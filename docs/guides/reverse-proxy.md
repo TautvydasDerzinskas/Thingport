@@ -7,7 +7,7 @@ backend, so the proxy needs one host and no path rules of its own. HTTPS is up t
 too.
 
 The proxy has to let through what Thingport sends. When it turns a request down, the Thingport web app and the
-Thingport Grab extension say that a proxy answered instead of Thingport, with the HTTP status it gave, and point here.
+Thingport Grab extension say that a proxy answered, with the HTTP status it gave, and point here.
 
 ## What the proxy has to allow
 
@@ -85,9 +85,9 @@ whether it holds an upload back until it's whole.
 
 ## What the errors mean
 
-| The message says                         | What happened                                                      | Fix                                                                                                   |
-| ---------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| A proxy answered with HTTP 500, 400, 403 | The proxy turned the request down before Thingport got it          | Its error log says why. In Nginx Proxy Manager, add the [lines above](#nginx-proxy-manager).          |
-| Too large (HTTP 413)                     | The request was bigger than the proxy's body size limit            | Raise it to 512 MB (`client_max_body_size 512m;`).                                                    |
-| Isn't answering (HTTP 502 or 503)        | Thingport is starting up or stopped, or the proxy points elsewhere | Check that Thingport's containers are running (`docker compose ps`) and the proxy's address and port. |
-| Took too long (HTTP 504)                 | The proxy stopped waiting before Thingport answered                | Raise its timeout to 5 minutes (`proxy_read_timeout 300s;`).                                          |
+| The message says                         | What happened                                                                        | Fix                                                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A proxy answered with HTTP 500, 400, 403 | The proxy turned the request down, or put its own error page in place of Thingport's | Its error log says why. In Nginx Proxy Manager, add the [lines above](#nginx-proxy-manager). Turn its own error pages off (`proxy_intercept_errors off;`). |
+| Too large (HTTP 413)                     | The request was bigger than the proxy's body size limit                              | Raise it to 512 MB (`client_max_body_size 512m;`).                                                                                                         |
+| Isn't answering (HTTP 502 or 503)        | Thingport is starting up or stopped, or the proxy points elsewhere                   | Check that Thingport's containers are running (`docker compose ps`) and the proxy's address and port.                                                      |
+| Took too long (HTTP 504)                 | The proxy stopped waiting before Thingport answered                                  | Raise its timeout to 5 minutes (`proxy_read_timeout 300s;`).                                                                                               |

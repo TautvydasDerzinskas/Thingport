@@ -390,7 +390,7 @@
   "reloginCredentialsRejected": "Thingport адхіліў эл. пошту або пароль, захаваныя ў Thingport Grab ({detail}). Адкрыйце ўсплывальнае акно пашырэння, выберыце экземпляр і ўвайдзіце зноў.",
   "grabNotConfigured": "Thingport Grab яшчэ не наладжаны — спачатку адкрыйце ўсплывальнае акно пашырэння.",
   "grabDisabled": "Thingport Grab выключаны — зноў уключыце яго ва ўсплывальным акне пашырэння.",
-  "proxyRefused": "Thingport не атрымаў гэты запыт: замест яго адказаў проксі перад вашым экземплярам Thingport (HTTP {status}). Прычына — у яго журналах, а патрэбныя Thingport налады апісаны на thingport.net/docs/guides/reverse-proxy/",
+  "proxyRefused": "Адказаў проксі перад вашым экземплярам Thingport (HTTP {status}), а паведамленне ад Thingport не дайшло. Прычына — у журналах проксі; патрэбныя Thingport налады апісаны на thingport.net/docs/guides/reverse-proxy/",
   "proxyTooLarge": "Запыт завялікі для проксі перад вашым экземплярам Thingport (HTTP 413). Павялічце яго ліміт памеру запыту: гл. thingport.net/docs/guides/reverse-proxy/",
   "proxyNoAnswer": "Ваш экземпляр Thingport не адказвае (HTTP {status}). Магчыма, ён запускаецца або спынены, або проксі перад ім не можа да яго дастукацца.",
   "proxyTimedOut": "Ваш экземпляр Thingport адказваў занадта доўга, і проксі перад ім перастаў чакаць (HTTP 504).",

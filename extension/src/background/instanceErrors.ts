@@ -19,7 +19,7 @@ export function proxyErrorText(status: number): Promise<string> {
   return backgroundText("proxyRefused", { status });
 }
 
-/** The instance's message for an error response, or, where it never got the request, what stopped it. */
+/** The instance's message for an error response, or, where something in front of it answered, what that means. */
 export async function instanceErrorText(res: Response): Promise<string> {
   return (await thingportDetail(res)) ?? proxyErrorText(res.status);
 }

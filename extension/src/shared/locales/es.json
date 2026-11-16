@@ -390,7 +390,7 @@
   "reloginCredentialsRejected": "Thingport rechazó el correo electrónico o la contraseña guardada en Thingport Grab ({detail}). Abre el popup de la extensión, haz clic en la instancia e inicia sesión de nuevo.",
   "grabNotConfigured": "Thingport Grab aún no está configurado -- abre primero el popup de la extensión.",
   "grabDisabled": "Thingport Grab está deshabilitado -- vuelve a habilitarlo desde el popup de la extensión.",
-  "proxyRefused": "Thingport no recibió esta solicitud: un proxy delante de tu instancia Thingport respondió en su lugar con HTTP {status}. Sus registros dicen por qué, y thingport.net/docs/guides/reverse-proxy/ indica los ajustes que Thingport necesita.",
+  "proxyRefused": "Un proxy delante de tu instancia Thingport respondió con HTTP {status} y no llegó ningún mensaje de Thingport. Los registros del proxy dicen por qué, y thingport.net/docs/guides/reverse-proxy/ indica los ajustes que Thingport necesita.",
   "proxyTooLarge": "Esta solicitud era demasiado grande para un proxy delante de tu instancia Thingport (HTTP 413). Aumenta su límite de tamaño: consulta thingport.net/docs/guides/reverse-proxy/",
   "proxyNoAnswer": "Tu instancia Thingport no responde (HTTP {status}). Puede que esté arrancando o detenida, o que un proxy delante de ella no llegue a ella.",
   "proxyTimedOut": "Tu instancia Thingport tardó demasiado en responder y un proxy delante de ella dejó de esperar (HTTP 504).",

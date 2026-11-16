@@ -5285,7 +5285,7 @@
     "moreActions": "Plus d’actions",
     "open": "Ouvrir",
     "proxyErrors": {
-      "refused": "Cette instance Thingport n’a pas reçu la requête : un proxy placé devant elle a répondu à sa place (HTTP {{status}}). Ses journaux en donnent la raison, et {{url}} liste les réglages dont Thingport a besoin.",
+      "refused": "Un proxy placé devant cette instance Thingport a répondu (HTTP {{status}}), et aucun message de Thingport n’est parvenu. Les journaux du proxy en donnent la raison, et {{url}} liste les réglages dont Thingport a besoin.",
       "tooLarge": "Cette requête était trop volumineuse pour un proxy ou un serveur web placé devant cette instance Thingport (HTTP 413). Augmentez sa taille maximale de requête : voir {{url}}",
       "noAnswer": "Cette instance Thingport ne répond pas (HTTP {{status}}). Elle démarre peut-être ou est arrêtée, ou un proxy placé devant elle ne parvient pas à la joindre.",
       "timedOut": "Cette instance Thingport a mis trop de temps à répondre, et un proxy placé devant elle a abandonné (HTTP 504). Son délai est peut-être trop court : voir {{url}}"
