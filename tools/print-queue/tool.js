@@ -177,11 +177,23 @@ function saveJob(shared, key, job) {
 }
 
 /**
- * Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. `read`
- * gives the jobs when it's this one's turn, so the last of several quick changes is what the page shows.
+ * Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. The jobs
+ * are read as stored when it's this one's turn, so the last of several quick changes is what the page shows, and a
+ * move that's still saving, and may fail, isn't.
  */
-function tellModelPage(shared, modelId, read) {
-  return inTurn(`${ABOUT}${modelId}`, async () => summarise(shared, modelId, await read()));
+function tellModelPage(shared, modelId) {
+  return inTurn(`${ABOUT}${modelId}`, async () => summarise(shared, modelId, await storedJobs(shared, modelId)));
+}
+
+/** The jobs on a model, read by the model, so a long history of others can't push the user's out of the read. */
+async function storedJobs(shared, modelId) {
+  try {
+    return await shared.list({ prefix: JOB, model: modelId });
+  } catch (error) {
+    // A model deleted since: nothing left for its page to show.
+    if (/no such model/i.test(error?.message ?? "")) return [];
+    throw error;
+  }
 }
 
 async function summarise(shared, modelId, entries) {
@@ -218,7 +230,7 @@ export async function run(command, thingport) {
   }
   const file = model.files.find((candidate) => candidate.id === context.fileId) ?? null;
   await saveJob(shared, `${JOB}${newId()}`, newJob(model, file));
-  await tellModelPage(shared, model.id, () => shared.list({ prefix: JOB }));
+  await tellModelPage(shared, model.id);
   ui.toast(t("toast.queued", { name: model.name }), "success");
 }
 
@@ -246,6 +258,10 @@ export default function mount(thingport) {
   let saving = 0;
   let saveFailed = false;
   let readAgain = false;
+  // Reads of the board started, so one that ends after a later one doesn't put back what that one replaced.
+  let reads = 0;
+  // Models whose page a failed write left showing something older, told again once the board is next read.
+  const untold = new Set();
   // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
   // so it's never stored in what's shared.
   const looks = new Map();
@@ -281,11 +297,12 @@ export default function mount(thingport) {
 
   async function load() {
     const at = changes;
+    const read = ++reads;
     const [all, about] = await Promise.all([
       shared.list({ prefix: JOB }),
       context.modelId ? shared.list({ prefix: JOB, model: context.modelId }).catch(() => []) : [],
     ]);
-    if (closed) return;
+    if (closed || read !== reads) return;
     if (saving || at !== changes) {
       readAgain = true;
       if (!saving) settled();
@@ -294,6 +311,7 @@ export default function mount(thingport) {
     entries = all;
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
     render();
+    for (const modelId of untold) void tell(modelId).catch(() => undefined);
   }
   const refresh = safely(load);
 
@@ -368,8 +386,15 @@ export default function mount(thingport) {
   }
 
   const find = (key, mine = true) => entries?.find((entry) => entry.key === key && (!mine || entry.mine));
-  // From the jobs as stored when its turn comes, not the board: a move still saving there may yet fail.
-  const tell = (modelId) => tellModelPage(shared, modelId, () => shared.list({ prefix: JOB }));
+  async function tell(modelId) {
+    try {
+      await tellModelPage(shared, modelId);
+      untold.delete(modelId);
+    } catch (error) {
+      untold.add(modelId);
+      throw error;
+    }
+  }
 
   /** Once no save is going: the board is read again after a failed one, or a read dropped while they went. */
   function settled() {

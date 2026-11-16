@@ -276,6 +276,31 @@ describe("a model's page", () => {
     expect((await modelInfo(dad, dadsModel)).tools[0].entries).toHaveLength(1);
   });
 
+  it("shows everyone's latest, however many more someone else wrote since", async () => {
+    writeRepo();
+    toolId = await install();
+    const dadsModel = await upload(dad, "many.stl");
+    const sonsCopy = await upload(son, "many.stl");
+    await prisma.print.update({ where: { id: sonsCopy }, data: { originalId: dadsModel, copiedFromId: dadsModel } });
+    expect((await share(son, "job:mine", { value: 1, model: sonsCopy, info: { label: "Queued" } })).status).toBe(204);
+    // More of the dad's, all newer, than a read takes.
+    await prisma.toolSharedData.createMany({
+      data: Array.from({ length: 5000 }, (_, i) => ({
+        toolId,
+        userId: dad.id,
+        key: `job:${i}`,
+        value: i,
+        size: 1,
+        printId: dadsModel,
+        originKey: `orig:${dadsModel}`,
+        info: { label: "Printing", tone: "active" },
+        updatedAt: new Date(Date.now() + 60_000 + i),
+      })),
+    });
+    const entries = (await modelInfo(son, sonsCopy)).tools[0].entries;
+    expect(entries.map((entry: { mine: boolean }) => entry.mine).toSorted()).toEqual([false, true]);
+  });
+
   it("asks nothing of a library whose tools show nothing there", async () => {
     const someModel = await upload(dad, "plain.stl");
     expect(await modelInfo(dad, someModel)).toEqual({ tools: [] });
