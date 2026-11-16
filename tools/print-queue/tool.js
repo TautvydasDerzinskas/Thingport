@@ -38,17 +38,31 @@ export function newJob(model, file, now = new Date()) {
   };
 }
 
-/** Whether a shared value is a job this tool wrote. */
+const text = (value) => typeof value === "string";
+const maybeText = (value) => value === null || typeof value === "string";
+
+/** Whether a shared value is a job this tool wrote, whole: anyone can write anything, and the board sorts by these. */
 export function isJob(value) {
   return (
-    Boolean(value) && typeof value === "object" && STATUSES.includes(value.status) && typeof value.name === "string"
+    Boolean(value) &&
+    typeof value === "object" &&
+    STATUSES.includes(value.status) &&
+    text(value.name) &&
+    text(value.modelId) &&
+    text(value.queuedAt) &&
+    maybeText(value.startedAt) &&
+    maybeText(value.finishedAt) &&
+    maybeText(value.fileId) &&
+    maybeText(value.fileName) &&
+    text(value.note)
   );
 }
 
 /** The job in another status, with the times that status keeps. */
 export function moved(job, status, now = new Date()) {
   const at = now.toISOString();
-  if (status === "queued") return { ...job, status, startedAt: null, finishedAt: null };
+  // Back in the queue: at its end, as though queued now.
+  if (status === "queued") return { ...job, status, queuedAt: at, startedAt: null, finishedAt: null };
   if (status === "printing") return { ...job, status, startedAt: at, finishedAt: null };
   return { ...job, status, finishedAt: at };
 }
@@ -109,12 +123,13 @@ export function clashes(entries) {
 /** A read of shared entries gives 5,000 at most, newest first. */
 const PAGE = 5000;
 
-/** Everyone's jobs, read on page by page, so an old one still queued can't fall off the board behind newer ones. */
-export async function allJobs(shared, page = PAGE) {
-  let read = await shared.list({ prefix: JOB });
+/** Everyone's jobs, or those on a model (`{ model }`), read on page by page, so an old one still queued can't fall
+ *  off behind newer ones. */
+export async function allJobs(shared, options = {}, page = PAGE) {
+  let read = await shared.list({ ...options, prefix: JOB });
   const all = [...read];
   while (read.length >= page) {
-    read = await shared.list({ prefix: JOB, before: read.at(-1).cursor });
+    read = await shared.list({ ...options, prefix: JOB, before: read.at(-1).cursor });
     all.push(...read);
   }
   return all;
@@ -205,7 +220,7 @@ function tellModelPage(shared, modelId) {
 /** The jobs on a model, read by the model, so a long history of others can't push the user's out of the read. */
 async function storedJobs(shared, modelId) {
   try {
-    return await shared.list({ prefix: JOB, model: modelId });
+    return await allJobs(shared, { model: modelId });
   } catch (error) {
     // A model deleted since: nothing left for its page to show.
     if (/no such model/i.test(error?.message ?? "")) return [];
@@ -214,9 +229,8 @@ async function storedJobs(shared, modelId) {
 }
 
 async function summarise(shared, modelId, entries) {
-  const jobs = entries
-    .filter((entry) => entry.mine && entry.key.startsWith(JOB) && isJob(entry.value) && entry.value.modelId === modelId)
-    .map((entry) => entry.value);
+  // The user's jobs on it or on any copy of it, as its page and every copy's show the newest summary of them.
+  const jobs = entries.filter((entry) => entry.mine && isJob(entry.value)).map((entry) => entry.value);
   const info = summaryOf(jobs);
   const key = `${ABOUT}${modelId}`;
   if (!info) return shared.remove(key);
@@ -234,7 +248,7 @@ export async function run(command, thingport) {
   if (command !== "queue") return;
   const { models, shared, ui, t, context } = thingport;
   const model = await models.get(context.modelId);
-  const { others, mine } = clashes(await shared.list({ prefix: JOB, model: model.id }));
+  const { others, mine } = clashes(await allJobs(shared, { model: model.id }));
   if (others.length || mine.length) {
     const printing = others.filter((entry) => entry.value.status === "printing");
     const title = printing.length
@@ -287,13 +301,18 @@ export default function mount(thingport) {
   // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
   // so it's never stored in what's shared.
   const looks = new Map();
+  // Models whose look-up failed for a while, as when offline, asked again on the board's next read.
+  const missed = new Set();
   const look = (modelId) => {
     if (!looks.has(modelId))
       looks.set(
         modelId,
         models.get(modelId).then(
           (model) => ({ thumbnail: model.thumbnail, readable: true }),
-          () => ({ thumbnail: null, readable: false }),
+          (error) => {
+            if (!/no such model/i.test(error?.message ?? "")) missed.add(modelId);
+            return { thumbnail: null, readable: false };
+          },
         ),
       );
     return looks.get(modelId);
@@ -322,7 +341,7 @@ export default function mount(thingport) {
     const read = ++reads;
     const [all, about] = await Promise.all([
       allJobs(shared),
-      context.modelId ? shared.list({ prefix: JOB, model: context.modelId }).catch(() => []) : [],
+      context.modelId ? allJobs(shared, { model: context.modelId }).catch(() => []) : [],
     ]);
     if (closed || read !== reads) return;
     if (saving || at !== changes) {
@@ -331,6 +350,8 @@ export default function mount(thingport) {
       return;
     }
     entries = all;
+    for (const modelId of missed) looks.delete(modelId);
+    missed.clear();
     stored.clear();
     for (const entry of all) if (entry.mine) stored.set(entry.key, entry.value);
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
@@ -353,13 +374,15 @@ export default function mount(thingport) {
     const job = entry.value;
     const li = document.createElement("li");
     li.className = `pq-card${entry.mine ? " pq-mine" : ""}${here.has(`${entry.user?.id}:${entry.key}`) ? " pq-here" : ""}`;
+    // A key is the writer's own, so two people's can match: a card is known by both.
+    li.dataset.who = entry.user?.id ?? "";
     li.dataset.key = entry.key;
     li.dataset.status = job.status;
     const gone = entry.mine && removing.has(entry.key);
     if (gone) li.classList.add("pq-removing");
     li.draggable = entry.mine && !gone;
     const person = entry.mine ? t("board.you") : (entry.user?.name ?? "");
-    const editingThis = editing === entry.key;
+    const editingThis = entry.mine && editing === entry.key;
     li.innerHTML = `
       <span class="pq-thumb" aria-hidden="true">${escapeHtml(job.name.trim().slice(0, 1).toUpperCase())}</span>
       <span class="pq-body">
@@ -411,9 +434,8 @@ export default function mount(thingport) {
     }
   }
 
-  /** A card by key; by default only one of the user's that can still be changed. */
-  const find = (key, mine = true) =>
-    entries?.find((entry) => entry.key === key && (!mine || (entry.mine && !removing.has(key))));
+  /** One of the user's cards, by key, that can still be changed. */
+  const find = (key) => entries?.find((entry) => entry.mine && entry.key === key && !removing.has(key));
   async function tell(modelId) {
     try {
       await tellModelPage(shared, modelId);
@@ -522,11 +544,15 @@ export default function mount(thingport) {
     if (restore) opener?.focus();
   }
 
-  async function openMenu(key, opener) {
+  // Menus asked for: only the latest opens, once its model is looked up.
+  let menus = 0;
+  async function openMenu(who, key, opener) {
     closeMenu();
-    const entry = find(key, false);
+    const asked = ++menus;
+    const entry = entries?.find((other) => other.key === key && (other.user?.id ?? "") === who);
     if (!entry) return;
     const { readable } = await look(entry.value.modelId);
+    if (closed || asked !== menus) return;
     const own = entry.mine && !removing.has(key);
     const items = [];
     if (own) {
@@ -600,7 +626,8 @@ export default function mount(thingport) {
   board.addEventListener("click", (event) => {
     const li = event.target.closest(".pq-card");
     if (!li) return;
-    if (event.target.closest(".pq-more")) return void openMenu(li.dataset.key, event.target.closest(".pq-more"));
+    if (event.target.closest(".pq-more"))
+      return void openMenu(li.dataset.who, li.dataset.key, event.target.closest(".pq-more"));
     if (event.target.closest(".pq-save")) return void saveNote(li.dataset.key, li.querySelector("textarea").value);
     if (event.target.closest(".pq-cancel")) endEdit();
   });

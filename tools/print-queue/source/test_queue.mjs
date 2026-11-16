@@ -43,6 +43,9 @@ test("a new job waits in the queue, with the file picked when there was one", ()
   assert.ok(isJob(job));
   assert.ok(!isJob({ status: "lost", name: "x" }));
   assert.ok(!isJob("job"));
+  // Anyone can share anything under a job's key: one missing what the board sorts by isn't one.
+  assert.ok(!isJob({ status: "queued", name: "Bad" }));
+  assert.ok(!isJob({ ...job, startedAt: 5 }));
 });
 
 test("moving a job keeps the times its status has", () => {
@@ -55,6 +58,8 @@ test("moving a job keeps the times its status has", () => {
   const again = moved(printed, "queued", at(4));
   assert.equal(again.startedAt, null);
   assert.equal(again.finishedAt, null);
+  // Back at the end of the queue, as though queued then.
+  assert.equal(again.queuedAt, "2026-11-04T12:00:00.000Z");
 });
 
 test("a person's chip shows a print happening, then one waiting, then the latest finished", () => {
@@ -161,8 +166,12 @@ test("the board reads every page of jobs, and stops at the first that isn't full
     },
   };
   assert.deepEqual(
-    (await allJobs(shared, 3)).map((e) => e.key),
+    (await allJobs(shared, { model: "m1" }, 3)).map((e) => e.key),
     stored.map((e) => e.key),
   );
-  assert.deepEqual(asked, [{ prefix: "job:" }, { prefix: "job:", before: "c2" }, { prefix: "job:", before: "c5" }]);
+  assert.deepEqual(asked, [
+    { model: "m1", prefix: "job:" },
+    { model: "m1", prefix: "job:", before: "c2" },
+    { model: "m1", prefix: "job:", before: "c5" },
+  ]);
 });

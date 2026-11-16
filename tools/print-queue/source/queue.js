@@ -34,17 +34,31 @@ export function newJob(model, file, now = new Date()) {
   };
 }
 
-/** Whether a shared value is a job this tool wrote. */
+const text = (value) => typeof value === "string";
+const maybeText = (value) => value === null || typeof value === "string";
+
+/** Whether a shared value is a job this tool wrote, whole: anyone can write anything, and the board sorts by these. */
 export function isJob(value) {
   return (
-    Boolean(value) && typeof value === "object" && STATUSES.includes(value.status) && typeof value.name === "string"
+    Boolean(value) &&
+    typeof value === "object" &&
+    STATUSES.includes(value.status) &&
+    text(value.name) &&
+    text(value.modelId) &&
+    text(value.queuedAt) &&
+    maybeText(value.startedAt) &&
+    maybeText(value.finishedAt) &&
+    maybeText(value.fileId) &&
+    maybeText(value.fileName) &&
+    text(value.note)
   );
 }
 
 /** The job in another status, with the times that status keeps. */
 export function moved(job, status, now = new Date()) {
   const at = now.toISOString();
-  if (status === "queued") return { ...job, status, startedAt: null, finishedAt: null };
+  // Back in the queue: at its end, as though queued now.
+  if (status === "queued") return { ...job, status, queuedAt: at, startedAt: null, finishedAt: null };
   if (status === "printing") return { ...job, status, startedAt: at, finishedAt: null };
   return { ...job, status, finishedAt: at };
 }
@@ -105,12 +119,13 @@ export function clashes(entries) {
 /** A read of shared entries gives 5,000 at most, newest first. */
 const PAGE = 5000;
 
-/** Everyone's jobs, read on page by page, so an old one still queued can't fall off the board behind newer ones. */
-export async function allJobs(shared, page = PAGE) {
-  let read = await shared.list({ prefix: JOB });
+/** Everyone's jobs, or those on a model (`{ model }`), read on page by page, so an old one still queued can't fall
+ *  off behind newer ones. */
+export async function allJobs(shared, options = {}, page = PAGE) {
+  let read = await shared.list({ ...options, prefix: JOB });
   const all = [...read];
   while (read.length >= page) {
-    read = await shared.list({ prefix: JOB, before: read.at(-1).cursor });
+    read = await shared.list({ ...options, prefix: JOB, before: read.at(-1).cursor });
     all.push(...read);
   }
   return all;
