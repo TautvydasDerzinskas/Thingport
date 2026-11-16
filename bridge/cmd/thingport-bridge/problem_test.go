@@ -52,6 +52,10 @@ func TestServeLinkOnlyLogsLinksItRefuses(t *testing.T) {
 		"thingport://open?url=" + url.QueryEscape("https://example.com/evil.exe"),
 		"thingport://open?url=file:///etc/passwd",
 		"thingport://delete?url=https://example.com/model.stl",
+		// Pass the scheme check, but no request can be made from them.
+		openLinkTo("http://%zz/model.stl", "model.stl"),
+		openLinkTo("http:///model.stl", "model.stl"),
+		openLinkTo("https://example.com:port/model.stl", "model.stl"),
 	} {
 		serveLink(raw, Config{DownloadDir: t.TempDir()})
 	}
@@ -122,30 +126,47 @@ func TestExplainSaysWhatWentWrong(t *testing.T) {
 		{"no name", &url.Error{Op: "Get", Err: &net.DNSError{Err: "no such host", Name: "x"}}, "can't find " + host},
 		{"timeout", &url.Error{Op: "Get", Err: &net.OpError{Op: "dial", Err: timeoutError{}}}, "took too long"},
 		{"unknown", errors.New("weird"), "Something went wrong"},
+		// Only on macOS 15 and later is the Local Network permission a likely cause.
+		{"unreachable", dialError(syscall.EHOSTUNREACH), "This computer can't reach " + host},
+		{"blocked", dialError(syscall.EHOSTUNREACH), "may be blocking it from your local network"},
 	}
-	if runtime.GOOS == "darwin" {
-		tests = append(tests, struct {
-			name string
-			err  error
-			want string
-		}{"blocked", dialError(syscall.EHOSTUNREACH), "Privacy & Security → Local Network"})
-	} else {
-		tests = append(tests, struct {
-			name string
-			err  error
-			want string
-		}{"unreachable", dialError(syscall.EHOSTUNREACH), "can't reach " + host})
+	for _, privacy := range []bool{false, true} {
+		withLocalNetworkPrivacy(t, privacy)
+		for _, tc := range tests {
+			if tc.name == "unreachable" && privacy || tc.name == "blocked" && !privacy {
+				continue
+			}
+			p := explain(l, tc.err)
+			if !strings.Contains(p.reason, tc.want) {
+				t.Errorf("%s: reason %q doesn't say %q", tc.name, p.reason, tc.want)
+			}
+			if p.title != "Couldn't open model.stl" {
+				t.Errorf("%s: title %q", tc.name, p.title)
+			}
+			if wantSettings := tc.name == "blocked"; p.localNetwork != wantSettings {
+				t.Errorf("%s: localNetwork = %v", tc.name, p.localNetwork)
+			}
+		}
 	}
-	for _, tc := range tests {
-		p := explain(l, tc.err)
-		if !strings.Contains(p.reason, tc.want) {
-			t.Errorf("%s: reason %q doesn't say %q", tc.name, p.reason, tc.want)
-		}
-		if p.title != "Couldn't open model.stl" {
-			t.Errorf("%s: title %q", tc.name, p.title)
-		}
-		if wantSettings := tc.name == "blocked"; p.localNetwork != wantSettings {
-			t.Errorf("%s: localNetwork = %v", tc.name, p.localNetwork)
+}
+
+func withLocalNetworkPrivacy(t *testing.T, on bool) {
+	t.Helper()
+	old := localNetworkPrivacy
+	localNetworkPrivacy = on
+	t.Cleanup(func() { localNetworkPrivacy = old })
+}
+
+func TestHasLocalNetworkPrivacyFromMacOS15(t *testing.T) {
+	for release, want := range map[string]bool{
+		"21.6.0": false, // macOS 12
+		"23.6.0": false, // macOS 14
+		"24.0.0": true,  // macOS 15
+		"25.1.0": true,  // macOS 26
+		"":       true,
+	} {
+		if got := hasLocalNetworkPrivacy(release); got != want {
+			t.Errorf("hasLocalNetworkPrivacy(%q) = %v", release, got)
 		}
 	}
 }
@@ -179,17 +200,24 @@ func TestExplainNamesAConnectionNothingAnswers(t *testing.T) {
 }
 
 func TestRetryWhileBlockedGivesUpOnOtherErrors(t *testing.T) {
+	withLocalNetworkPrivacy(t, true)
 	tries := 0
 	err := retryWhileBlocked(time.Minute, func() error { tries++; return dialError(syscall.ECONNREFUSED) })
+	if err == nil || tries != 1 {
+		t.Fatalf("expected one try, got %d (%v)", tries, err)
+	}
+
+	// Before macOS 15, or off macOS, "no route to host" is only that.
+	withLocalNetworkPrivacy(t, false)
+	tries = 0
+	err = retryWhileBlocked(time.Minute, func() error { tries++; return dialError(syscall.EHOSTUNREACH) })
 	if err == nil || tries != 1 {
 		t.Fatalf("expected one try, got %d (%v)", tries, err)
 	}
 }
 
 func TestRetryWhileBlockedWaitsForLocalNetworkAccess(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		t.Skip("only macOS blocks the local network")
-	}
+	withLocalNetworkPrivacy(t, true)
 	old := blockedPoll
 	blockedPoll = time.Millisecond
 	defer func() { blockedPoll = old }()

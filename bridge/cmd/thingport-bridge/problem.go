@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -71,10 +72,17 @@ const (
 	wsaHostUnreach = syscall.Errno(10065)
 )
 
-// localNetworkBlocked is macOS refusing the Bridge a connection to an address on the local network: macOS 15
-// and later ask before an app may, and fail the connection with "no route to host" until it's allowed.
+// localNetworkBlocked is how macOS 15 and later fail a connection to an address on the local network until the
+// Bridge is allowed it: "no route to host". A host that's down can fail the same way, so it's only a likely cause.
 func localNetworkBlocked(err error) bool {
-	return runtime.GOOS == "darwin" && errors.Is(err, syscall.EHOSTUNREACH)
+	return localNetworkPrivacy && errors.Is(err, syscall.EHOSTUNREACH)
+}
+
+// hasLocalNetworkPrivacy is a Darwin release (kern.osrelease) of macOS 15 or later, which is Darwin 24. One that
+// can't be read is taken for a current macOS.
+func hasLocalNetworkPrivacy(darwinRelease string) bool {
+	major, err := strconv.Atoi(strings.SplitN(darwinRelease, ".", 2)[0])
+	return err != nil || major >= 24
 }
 
 // explain turns a failed open into words for the error dialog. The error itself, which the log has in full, goes in
@@ -128,8 +136,8 @@ func reasonFor(err error, host string) string {
 		}
 		return "Couldn't start " + appName(launch.command) + "."
 	case localNetworkBlocked(err):
-		return "macOS is blocking Thingport Bridge from your local network, so it can't reach " + host +
-			". Allow it in System Settings → Privacy & Security → Local Network."
+		return "Thingport Bridge can't reach " + host + ". macOS may be blocking it from your local network: " +
+			"allow it in System Settings → Privacy & Security → Local Network."
 	case errors.As(err, &cert):
 		return "This computer doesn't trust the certificate of " + host + ". Trust it on this computer and try again."
 	case errors.As(err, &dns):

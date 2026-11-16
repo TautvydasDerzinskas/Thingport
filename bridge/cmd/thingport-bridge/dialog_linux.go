@@ -35,4 +35,6 @@ func askAboutFailure(p problem) choice {
 }
 
 // Only macOS blocks the local network.
+var localNetworkPrivacy = false
+
 func openLocalNetworkSettings() {}

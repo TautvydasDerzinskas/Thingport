@@ -305,14 +305,17 @@ After install, paste this into your browser's address bar (replace the URL):
 
 ## When a model doesn't open
 
-The Bridge shows a dialog that says what went wrong, with **Try Again**. Older versions only write it to the log.
+The Bridge shows a dialog that says what went wrong, with **Try Again**. On Linux the dialog needs `zenity` or
+`kdialog`, which most desktops have: without either, install one or look in the [log](#logs). Older versions only
+write it to the log.
 
-- **macOS is blocking Thingport Bridge from your local network** (`connect: no route to host` in the log): macOS 15
-  and later ask before an app may reach an address on your home network, and refuse it until you allow it. Click
+- **macOS may be blocking Thingport Bridge from your local network** (`connect: no route to host` in the log): macOS
+  15 and later ask before an app may reach an address on your home network, and refuse it until you allow it. Click
   **Open Settings** in the dialog and turn on Thingport Bridge: the model opens as soon as you do. (It's under System
   Settings -> Privacy & Security -> Local Network.) If it isn't in the list, run `killall thingport-bridge`, open a
   model again and click **Allow** when macOS asks. Your browser and Terminal have their own permission, so the
-  instance opening there, or `ping` reaching it, doesn't mean the Bridge can.
+  instance opening there, or `ping` reaching it, doesn't mean the Bridge can. If the Bridge is already on, the
+  instance is down or at another address.
 - **The link has expired**: the link carries your sign-in, which lasts 12 hours. Open the model again from Thingport.
 - **This computer doesn't trust the certificate**: your instance's certificate isn't one the system trusts. Add it to
   the system's trusted certificates, or open Thingport by its `http://` address.

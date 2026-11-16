@@ -157,12 +157,18 @@ func parseLink(raw string) (link, error) {
 	if !strings.HasPrefix(downloadURL, "http://") && !strings.HasPrefix(downloadURL, "https://") {
 		return link{}, fmt.Errorf("unsupported url: %s", redactURL(downloadURL))
 	}
+	// Refused here, as a request can't be made from it, rather than failing in the download with a dialog.
+	download, err := url.Parse(downloadURL)
+	if err != nil {
+		return link{}, fmt.Errorf("parse download url: %w", scrubURL(err))
+	}
+	if download.Host == "" {
+		return link{}, fmt.Errorf("download url has no host: %s", redactURL(downloadURL))
+	}
 
 	filename := strings.TrimSpace(q.Get("filename"))
 	if filename == "" {
-		if u, err := url.Parse(downloadURL); err == nil {
-			filename = path.Base(u.Path)
-		}
+		filename = path.Base(download.Path)
 	}
 	filename = sanitizeFilename(filename)
 	// Any website can make a thingport:// link, and a file that isn't a model may be a program the OS

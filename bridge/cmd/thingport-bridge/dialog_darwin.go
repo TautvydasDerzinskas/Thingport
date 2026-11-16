@@ -13,6 +13,7 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
+	"syscall"
 	"unsafe"
 )
 
@@ -20,6 +21,12 @@ import (
 func init() {
 	runtime.LockOSThread()
 }
+
+// macOS 14 and older have no Local Network permission, so "no route to host" there is only that.
+var localNetworkPrivacy = func() bool {
+	release, _ := syscall.Sysctl("kern.osrelease")
+	return hasLocalNetworkPrivacy(release)
+}()
 
 // The Local Network list in Privacy & Security.
 const localNetworkSettingsURL = "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork"
