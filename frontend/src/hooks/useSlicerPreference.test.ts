@@ -80,4 +80,22 @@ describe("switching slicer", () => {
     await c;
     expect(slicers.slicerSettingsNow()?.slicer).toBe("b");
   });
+
+  it("shows a switch that was saved when a read answered while it saved, and the read after fails", async () => {
+    const { settingsApi } = await import("../api/settings");
+    const slicers = await import("./useSlicerPreference");
+    vi.spyOn(settingsApi, "getSlicer")
+      .mockResolvedValueOnce(settings("a"))
+      .mockResolvedValueOnce(settings("a"))
+      .mockRejectedValue(new Error("offline"));
+    await slicers.reloadSlicerSettings();
+    const toB = deferred();
+    vi.spyOn(settingsApi, "updateSlicer").mockReturnValueOnce(toB.promise);
+    const b = slicers.switchSlicer("b");
+    // A read answers with a while b saves, then b is saved, and the read that follows fails.
+    await slicers.reloadSlicerSettings();
+    toB.resolve(settings("b"));
+    await b;
+    expect(slicers.slicerSettingsNow()?.slicer).toBe("b");
+  });
 });
