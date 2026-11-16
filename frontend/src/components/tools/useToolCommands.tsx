@@ -91,7 +91,7 @@ export function useToolCommands(
       });
       const module = await loadToolModule(tool);
       if (typeof module.run !== "function") throw new Error(t("tools.runner.noRun"));
-      await module.run(context.command ?? "", thingport as unknown as Record<string, unknown>);
+      await module.run(context.command ?? "", thingport);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();

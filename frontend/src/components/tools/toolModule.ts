@@ -1,9 +1,9 @@
-import type { RunnableTool } from "./toolSdk";
+import type { RunnableTool, ToolSdk } from "./toolSdk";
 
 /** What a tool's script exports: `default` mounts its window; `run` does a command that has no window. */
 export type ToolModule = {
-  default?: (thingport: Record<string, unknown>) => unknown;
-  run?: (command: string, thingport: Record<string, unknown>) => unknown;
+  default?: (thingport: ToolSdk) => unknown;
+  run?: (command: string, thingport: ToolSdk) => unknown;
 };
 
 // One module per version of a tool's script, shared by every window and command running it.

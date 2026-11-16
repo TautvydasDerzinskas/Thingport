@@ -117,7 +117,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         const module = await loadToolModule(tool);
         if (cancelled) return;
         if (typeof module.default !== "function") throw new Error(latest.current.t("tools.runner.noExport"));
-        const returned = await module.default(thingport as unknown as Record<string, unknown>);
+        const returned = await module.default(thingport);
         if (cancelled) {
           if (typeof returned === "function") returned();
           return;

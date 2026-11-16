@@ -115,8 +115,10 @@ export async function run(command, thingport) {
   }
   const file = model.files.find((candidate) => candidate.id === context.fileId) ?? null;
   await saveJob(shared, `${JOB}${newId()}`, newJob(model, file));
-  await tellModelPage(shared, model.id);
   ui.toast(t("toast.queued", { name: model.name }), "success");
+  // The job is in whatever happens here: a page still showing something older is told again, or with the next change
+  // to the model's jobs, which reads them all afresh.
+  await tellModelPage(shared, model.id).catch(() => tellModelPage(shared, model.id).catch(() => undefined));
 }
 
 export default function mount(thingport) {

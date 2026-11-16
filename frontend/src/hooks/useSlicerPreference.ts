@@ -9,6 +9,8 @@ let inFlight: Promise<SlicerSettings> | null = null;
 const listeners = new Set<(value: SlicerSettings) => void>();
 // Moved on by every read and change, so a read that's overtaken never lands over what came after it.
 let version = 0;
+// Switches made, so only the latest one puts the slicer back when its save fails.
+let switches = 0;
 
 function load(): Promise<SlicerSettings> {
   if (cached !== undefined) return Promise.resolve(cached);
@@ -52,12 +54,14 @@ export async function switchSlicer(slicer: string): Promise<void> {
   if (previous.slicer === slicer) return;
   setCachedSlicerSettings({ ...previous, slicer });
   const at = version;
+  const mine = ++switches;
   try {
     const saved = await settingsApi.updateSlicer({ slicer });
     if (version === at) return setCachedSlicerSettings(saved);
   } catch {
-    // Back to the one stored, unless another was picked meanwhile, whatever a read did or didn't bring.
-    if (cached?.slicer === slicer) setCachedSlicerSettings({ ...cached, slicer: previous.slicer });
+    // Back to the one stored, unless another was picked meanwhile, whatever a read did or didn't bring: a later pick
+    // of this same slicer may have been saved.
+    if (mine === switches && cached?.slicer === slicer) setCachedSlicerSettings({ ...cached, slicer: previous.slicer });
   }
   // Settings read meanwhile, or kept from landing by this switch, such as a new Send to destination: read again.
   void reloadSlicerSettings();
