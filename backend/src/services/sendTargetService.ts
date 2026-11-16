@@ -125,8 +125,17 @@ export async function createSendTarget(userId: string, input: SendTargetInput): 
 }
 
 export async function updateSendTarget(userId: string, id: string, input: SendTargetUpdate): Promise<SendTargetOut> {
-  const current = await ownTarget(userId, id);
-  const row = await prisma.sendTarget.update({ where: { id: current.id }, data: rowData(input, secretsOf(current)) });
+  const row = await prisma.$transaction(
+    async (tx) => {
+      // Locked first, so a secret left out keeps the one stored when this save lands, not one read before another
+      // save at the same moment replaced or cleared it.
+      await tx.$queryRaw`SELECT id FROM "SendTarget" WHERE id = ${id} AND "userId" = ${userId} FOR UPDATE`;
+      const current = await tx.sendTarget.findFirst({ where: { id, userId } });
+      if (!current) throw new HttpError(404, "No such destination");
+      return tx.sendTarget.update({ where: { id: current.id }, data: rowData(input, secretsOf(current)) });
+    },
+    { isolationLevel: "ReadCommitted" },
+  );
   return out(row);
 }
 

@@ -60,9 +60,12 @@ export default function SendToPanel({ onUnauthorized }: Props) {
   const toast = useToast();
   const confirm = useConfirm();
   const [targets, setTargets] = React.useState<SendTarget[] | null>(null);
-  // The row open for editing, or a new one of a kind not saved yet.
+  // The row open for editing, or a new one of a kind not saved yet: a new form each time one is opened, so a save that
+  // ends after another was opened closes only its own.
   const [editing, setEditing] = React.useState<string | null>(null);
-  const [adding, setAdding] = React.useState<SendKind | null>(null);
+  const [adding, setAdding] = React.useState<{ kind: SendKind } | null>(null);
+  // Destinations whose placement is being saved, and to what: one at a time each, so answers can't land out of order.
+  const [placing, setPlacing] = React.useState<ReadonlyMap<string, SendTarget["placement"]>>(new Map());
   const [addAnchor, setAddAnchor] = React.useState<HTMLElement | null>(null);
   const [moreAnchor, setMoreAnchor] = React.useState<HTMLElement | null>(null);
   const [rowMenu, setRowMenu] = React.useState<{ anchor: HTMLElement; target: SendTarget } | null>(null);
@@ -112,7 +115,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
   const add = (kind: SendKind) => {
     setAddAnchor(null);
     setEditing(null);
-    setAdding(kind);
+    setAdding((current) => (current?.kind === kind ? current : { kind }));
   };
 
   const remove = async (target: SendTarget) => {
@@ -133,10 +136,18 @@ export default function SendToPanel({ onUnauthorized }: Props) {
   };
 
   const place = async (target: SendTarget, placement: SendTarget["placement"]) => {
+    if (placing.has(target.id) || target.placement === placement) return;
+    setPlacing((current) => new Map(current).set(target.id, placement));
     try {
       changed(replaced(await sendTargetsApi.place(target.id, placement), "placement"));
     } catch (err) {
       failed(err);
+    } finally {
+      setPlacing((current) => {
+        const next = new Map(current);
+        next.delete(target.id);
+        return next;
+      });
     }
   };
 
@@ -269,19 +280,19 @@ export default function SendToPanel({ onUnauthorized }: Props) {
           {adding && (
             <Paper variant="outlined" sx={{ p: 1.5, borderColor: "primary.main" }}>
               <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 1.25 }}>
-                <SendKindIcon kind={adding} />
+                <SendKindIcon kind={adding.kind} />
                 <Typography fontWeight={600} sx={{ color: (theme) => theme.thingport.headingText }}>
-                  {nameOf(adding)}
+                  {nameOf(adding.kind)}
                 </Typography>
               </Stack>
               <SendTargetEditor
-                key={adding}
+                key={adding.kind}
                 target={null}
-                kind={adding}
-                defaultName={nameOf(adding)}
+                kind={adding.kind}
+                defaultName={nameOf(adding.kind)}
                 onCancel={() => setAdding(null)}
                 onSaved={(saved) => {
-                  setAdding(null);
+                  setAdding((current) => (current === adding ? null : current));
                   changed((list) => [...list, saved]);
                 }}
                 onUnauthorized={onUnauthorized}
@@ -361,8 +372,9 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                 </Box>
                 <Segmented
                   label={s("placementLabel", { name: target.name })}
-                  value={target.placement}
+                  value={placing.get(target.id) ?? target.placement}
                   onChange={(placement) => void place(target, placement)}
+                  disabled={placing.has(target.id)}
                   options={[
                     { value: "button", label: s("placement.button") },
                     { value: "menu", label: s("placement.menu") },
@@ -387,7 +399,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                     defaultName={target.name}
                     onCancel={() => setEditing(null)}
                     onSaved={(saved) => {
-                      setEditing(null);
+                      setEditing((current) => (current === saved.id ? null : current));
                       changed(replaced(saved, "settings"));
                       toast({ message: s("saved", { name: saved.name }), severity: "success" });
                     }}

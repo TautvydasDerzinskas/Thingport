@@ -955,7 +955,8 @@ model SendTarget {
   /// How it's reached: a preset and its fields, a link, or a request (services/sendTargetFormat.ts). Secret values
   /// aren't in it.
   how       Json
-  /// The secret values `how` names, such as an API key: never sent back to the browser, never exported.
+  /// The secret values `how` names, such as an API key: never sent back to the browser, never in a Send to export.
+  /// A migration brings them with their owner, so the destination still works on the new instance.
   secrets   Json?
   /// "button": its own button under the model's Open button; "menu": in that button's menu, under Send to.
   placement String   @default("menu")

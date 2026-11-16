@@ -74,8 +74,11 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
       const result = await sendTargetsApi.send(printId, target.id, file.key);
       if ("open" in result) {
         if (shown.current !== printId) return drop();
-        if (tab && /^https?:/i.test(result.open.url)) {
-          if (ours()) tab.location.replace(result.open.url);
+        // A later send has the tab: this one opens nothing, here or there.
+        if (!ours()) return;
+        // By how the server opens it now, as it may have been changed elsewhere since the page read it.
+        if (tab && result.open.mode !== "same" && /^https?:/i.test(result.open.url)) {
+          tab.location.replace(result.open.url);
         } else {
           drop();
           // An app's own address, or this tab.

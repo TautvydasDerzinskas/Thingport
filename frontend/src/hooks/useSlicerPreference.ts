@@ -51,10 +51,15 @@ export async function switchSlicer(slicer: string): Promise<void> {
   const previous = cached ?? EMPTY;
   if (previous.slicer === slicer) return;
   setCachedSlicerSettings({ ...previous, slicer });
+  const at = version;
   try {
-    setCachedSlicerSettings(await settingsApi.updateSlicer({ slicer }));
+    const saved = await settingsApi.updateSlicer({ slicer });
+    // Settings read meanwhile, such as a new Send to destination, may postdate the answer: read them again instead.
+    if (version === at) setCachedSlicerSettings(saved);
+    else void reloadSlicerSettings();
   } catch {
-    setCachedSlicerSettings(previous);
+    if (version === at) setCachedSlicerSettings(previous);
+    else void reloadSlicerSettings();
   }
 }
 
