@@ -78,6 +78,9 @@ export function createApp(): Express {
   // first: a limit this far above the global one would otherwise buffer and parse anyone's hundreds of megabytes
   // before the route behind it turned the request away.
   for (const { paths, limit } of providerBodyLimits) app.use(paths, requireAuth, express.json({ limit }));
+  // A Send to destination with every field and header at its longest is past the default on its own, and an import
+  // holds up to 50 of them: room for that, escaping included, for someone signed in.
+  app.use("/api/me/send-targets", requireAuth, express.json({ limit: "16mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
   // Refuses changes to the models and collections tools bring, whichever router would make them.

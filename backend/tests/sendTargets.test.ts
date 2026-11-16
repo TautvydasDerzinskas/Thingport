@@ -248,6 +248,27 @@ describe("a user's destinations", () => {
     );
     expect((await bad({ type: "preset", preset: "octoprint", address: "ftp://printer.lan" })).status).toBe(400);
   });
+
+  it("take the largest a destination can be, one at a time and fifty in a file", async () => {
+    const long = "x".repeat(2048);
+    const how = {
+      type: "request",
+      url: `${base}/hook`,
+      fields: Array.from({ length: 20 }, (_, i) => ({ name: `f${i}`, value: long })),
+      headers: Array.from({ length: 20 }, (_, i) => ({ name: `X-H${i}`, value: long })),
+    };
+    const one = await create(other, { name: "Big", how });
+    expect(one.status).toBe(200);
+    const file = {
+      kind: "thingport-send-to",
+      version: 1,
+      targets: Array.from({ length: 49 }, () => ({ name: "Big", how })),
+    };
+    const imported = await request(app).post("/api/me/send-targets/import").set(auth(other.token)).send(file);
+    expect(imported.status).toBe(200);
+    expect(imported.body.targets).toHaveLength(49);
+    await prisma.sendTarget.deleteMany({ where: { userId: other.id } });
+  });
 });
 
 describe("sending a model's file", () => {
