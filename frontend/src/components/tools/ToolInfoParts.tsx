@@ -74,7 +74,10 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
   const language = matchLanguage(i18n.language);
   const tools = useTools();
   const parts = useMemo(
-    () => (tools?.access.canUse ? tools.tools.filter((tool) => tool.manifest.modelInfo) : []),
+    () =>
+      tools?.access.canUse
+        ? tools.tools.flatMap((tool) => (tool.manifest.modelInfo ? [{ tool, part: tool.manifest.modelInfo }] : []))
+        : [],
     [tools],
   );
   const [info, setInfo] = useState<ToolModelInfo | null>(null);
@@ -88,18 +91,23 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
   useEffect(() => {
     if (!hasParts) return;
     let active = true;
-    const load = () =>
-      toolsApi.modelInfo(printId).then(
+    // Only the latest read lands, so an older answer arriving late can't put back what a newer one replaced.
+    let latest = 0;
+    const load = () => {
+      const asked = ++latest;
+      const current = () => active && asked === latest;
+      return toolsApi.modelInfo(printId).then(
         (answer) => {
-          if (active) setInfo(answer);
+          if (current()) setInfo(answer);
         },
         (err) => {
-          if (!active) return;
+          if (!current()) return;
           if (err instanceof UnauthorizedError) unauthorized.current?.();
           // A failed read leaves the part with its command only, rather than breaking the page.
           setInfo({ tools: [] });
         },
       );
+    };
     setInfo(null);
     void load();
     const stop = onToolInfoChange(() => void load());
@@ -113,8 +121,7 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
 
   return (
     <>
-      {parts.map((tool) => {
-        const part = tool.manifest.modelInfo!;
+      {parts.map(({ tool, part }) => {
         const say = translator(tool.locales ?? {}, language);
         const titleKey = "modelInfo.title";
         const title = say(titleKey) === titleKey ? part.title : say(titleKey);
