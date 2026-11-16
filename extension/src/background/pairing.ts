@@ -16,6 +16,7 @@ import { fetchInstance, storeApprovedConnection } from "./api";
 import { getStoredConfig } from "./config";
 import { carryAdaptPicks } from "./adaptSettings";
 import { backgroundText } from "./localize";
+import { instanceErrorText } from "./instanceErrors";
 
 let resuming: Promise<null> | null = null;
 let rerunRequested = false;
@@ -158,21 +159,13 @@ async function attemptPairingIntentResume(retry: boolean): Promise<boolean> {
   }
 }
 
-async function errorDetail(res: Response): Promise<string> {
-  try {
-    const body = (await res.json()) as { detail?: string } | null;
-    if (body?.detail) return body.detail;
-  } catch {}
-  return backgroundText("thingportAnswered", { status: res.status });
-}
-
 async function claim(pending: PendingPairing, code: string): Promise<void> {
   const res = await fetchInstance(apiUrl(pending.instanceUrl, "/grab/pairings/claim"), {
     method: "POST",
     headers: { "X-Thingport-Client": "grab", "Content-Type": "application/json" },
     body: JSON.stringify({ code, verifier: pending.verifier }),
   });
-  if (!res.ok) throw new Error(await errorDetail(res));
+  if (!res.ok) throw new Error(await instanceErrorText(res));
   const data = (await res.json()) as LoginResult & { connection_token: string };
   await storeApprovedConnection(pending.instanceUrl, data.connection_token, data);
 }

@@ -62,6 +62,21 @@ describe("browser sessions", () => {
     expect(([] as string[]).concat(res.headers["set-cookie"]).join("\n")).toMatch(/thingport_session=[^;]+;.*Secure/);
   });
 
+  it("goes by the page's own address over what a proxy says", async () => {
+    const cookieFor = async (origin: string, proto: string) => {
+      const res = await request(app)
+        .post("/api/login")
+        .set("Origin", origin)
+        .set("X-Forwarded-Proto", proto)
+        .send({ email: account.email, password });
+      return ([] as string[]).concat(res.headers["set-cookie"]).find((c) => c.startsWith("thingport_session="))!;
+    };
+    // A proxy claiming https for a page on http: a Secure cookie there would be dropped, and nobody stays signed in.
+    expect(await cookieFor("http://192.168.1.20:8080", "https")).not.toMatch(/Secure/);
+    // Thingport's own nginx telling the backend http for a page a proxy serves over https.
+    expect(await cookieFor("https://thingport.example", "http")).toMatch(/Secure/);
+  });
+
   it("gets a new token from the cookie once the old one has run out, keeping the sign-in time", async () => {
     const res = await request(app)
       .post("/api/refresh")

@@ -22,7 +22,9 @@ describe("background localization", () => {
 
   it("falls back to English when saved locale storage is missing or invalid", async () => {
     store.locale = "not-a-locale";
-    await expect(backgroundText("requestFailed", { status: 500 })).resolves.toBe("Request failed (500)");
+    await expect(backgroundText("proxyNoAnswer", { status: 502 })).resolves.toMatch(
+      /^Your Thingport instance isn't answering \(HTTP 502\)/,
+    );
   });
 
   it("uses the saved locale for an error that can outlive a page", async () => {
