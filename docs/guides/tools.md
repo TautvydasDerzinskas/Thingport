@@ -35,7 +35,7 @@ every device:
 
 ## The tools in the repository
 
-Nine come with Thingport, for an admin to install:
+Ten come with Thingport, for an admin to install:
 
 | Tool                      | Shelf       | What it does                                                                                                                                                       |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -47,6 +47,7 @@ Nine come with Thingport, for an admin to install:
 | Keyring generator         | Generators  | Your text as a keyring, with key rings and magnet pockets, in a 3MF that gives each piece its filament.                                                            |
 | Script customizer         | Generators  | Generates a model again from an OpenSCAD script: the one a model in your library came with, or a `.scad` file.                                                     |
 | Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
+| Print queue               | Planners    | A print queue the household shares: who has a model queued, printing or printed, on its page, and a board to move each print along.                                |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its

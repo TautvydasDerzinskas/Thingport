@@ -3652,6 +3652,18 @@
         "noRun": "脚本没有供无窗口命令调用的 run 导出",
         "commandFailed": "{{name}} 未能完成：{{error}}"
       },
+      "share": {
+        "title": "谁能看到你的{{name}}？",
+        "everyone": "所有人",
+        "people": "仅我选择的人",
+        "everyoneHint": "这里所有能使用工具的人都能看到你在其中分享的内容。",
+        "picked_other": "已与 {{count}} 人分享",
+        "onlyYou": "尚未选择任何人，所以只有你能看到。"
+      },
+      "info": {
+        "you": "你",
+        "someone": "某人"
+      },
       "picker": {
         "title": "选择合集",
         "search": "查找合集",

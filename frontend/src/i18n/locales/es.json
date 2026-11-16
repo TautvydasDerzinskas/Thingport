@@ -3979,6 +3979,20 @@
         "noRun": "El script no tiene una exportación run para un comando sin ventana",
         "commandFailed": "{{name}} no pudo hacerlo: {{error}}"
       },
+      "share": {
+        "title": "¿Quién ve tu {{name}}?",
+        "everyone": "Todos",
+        "people": "Solo quien yo elija",
+        "everyoneHint": "Todos los que pueden usar herramientas aquí ven lo que compartes en ella.",
+        "picked_one": "Compartido con {{count}} persona",
+        "picked_many": "Compartido con {{count}} personas",
+        "picked_other": "Compartido con {{count}} personas",
+        "onlyYou": "Aún no has elegido a nadie, así que solo lo ves tú."
+      },
+      "info": {
+        "you": "Tú",
+        "someone": "Alguien"
+      },
       "picker": {
         "title": "Elige una colección",
         "search": "Buscar una colección",

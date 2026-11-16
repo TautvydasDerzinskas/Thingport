@@ -75,7 +75,7 @@ export async function assertCanUseTools(user: ToolUser): Promise<ToolAccessOut> 
 }
 
 /** Everyone who can use tools now. */
-async function toolUsers(): Promise<string[]> {
+export async function toolUsers(): Promise<string[]> {
   const access = await getToolsAccess();
   const where: Prisma.UserWhereInput =
     access.audience === "everyone"
@@ -130,7 +130,7 @@ function localesOf(tool: Pick<Tool, "locales">): ToolLocales {
   return parsed.success ? parsed.data : {};
 }
 
-function manifestOf(tool: Pick<Tool, "manifest">): ToolManifest | null {
+export function manifestOf(tool: Pick<Tool, "manifest">): ToolManifest | null {
   const parsed = toolManifestSchema.safeParse(tool.manifest);
   return parsed.success ? parsed.data : null;
 }

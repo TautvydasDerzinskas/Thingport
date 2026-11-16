@@ -54,6 +54,7 @@ For a tool, the type is `ToolSdk`.
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
 | [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
+| [`shared`](#shared)                       |        |  ✓   | JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it.                        |
 | [`toolModels`](#toolmodels)               |        |  ✓   | The models a tool from the repository brings, by the keys its metadata gives them.                                                                            |
 | [`fetchToolModels`](#fetchtoolmodelskeys) |        |  ✓   | Fetches the tool's models that aren't here yet and gives the user their copies.                                                                               |
 
@@ -1202,6 +1203,88 @@ Every key kept.
 const drafts = (await thingport.storage.keys()).filter((key) => key.startsWith("draft:"));
 ```
 
+### `shared`
+
+_Tools only_
+
+```ts
+thingport.shared: SdkShared
+```
+
+JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it. In the editor's preview of a tool not saved yet, it reads nothing and keeps nothing.
+
+#### `shared.list(options?)`
+
+```ts
+thingport.shared.list(options?: { prefix?: string; model?: string }): Promise<SdkSharedEntry[]>
+```
+
+The entries the user may read, newest first: their own and everyone else's that reach them, up to 5,000.
+
+| Parameter | What it is                                                                                                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options` | `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy of it in anyone's library (the same original, or imported from the same page). |
+
+See [`SdkSharedEntry`](#sdksharedentry).
+
+```js
+const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
+```
+
+#### `shared.set(key, value, options?)`
+
+```ts
+thingport.shared.set(key: string, value: unknown, options?: { model?: string; info?: SdkModelInfo }): Promise<void>
+```
+
+Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and 5,000 entries a user.
+
+| Parameter | What it is                                                                                                                                          |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`.                                                                                                    |
+| `value`   | Anything JSON can hold.                                                                                                                             |
+| `options` | `model`: the model it's about, one the user can open. `info`: what that model's page shows for it, when the tool's metadata has a `modelInfo` part. |
+
+See [`SdkModelInfo`](#sdkmodelinfo).
+
+```js
+await thingport.shared.set(`job:${id}`, job, { model: modelId, info: { label: "status.queued", tone: "waiting" } });
+```
+
+#### `shared.remove(key)`
+
+```ts
+thingport.shared.remove(key: string): Promise<void>
+```
+
+Removes one of the user's entries.
+
+| Parameter | What it is |
+| --------- | ---------- |
+| `key`     | The key.   |
+
+#### `shared.audience()`
+
+```ts
+thingport.shared.audience(): Promise<SdkAudience>
+```
+
+Whom the user's entries reach now.
+
+See [`SdkAudience`](#sdkaudience).
+
+#### `shared.share()`
+
+```ts
+thingport.shared.share(): Promise<SdkAudience | null>
+```
+
+Opens Thingport's own dialog asking whom the user's entries reach: everyone who can use the tool, or only the people they pick.
+
+**Returns:** What they chose, or `null` when they closed it.
+
+See [`SdkAudience`](#sdkaudience).
+
 ### `toolModels()`
 
 _Tools only_
@@ -1260,6 +1343,7 @@ Thingport's colours and font, as the theme the user has on shows them.
 | `error`           | `string`            | `--tp-error`      | Something failed.                                                                                                                                                                        |
 | `warning`         | `string`            | `--tp-warning`    | Something needs a look.                                                                                                                                                                  |
 | `success`         | `string`            | `--tp-success`    | Something worked.                                                                                                                                                                        |
+| `info`            | `string`            | `--tp-info`       | Something waiting, or to know about.                                                                                                                                                     |
 | `fontFamily`      | `string`            | `--tp-font`       | The font stack Thingport's own text is set in.                                                                                                                                           |
 
 ### `SdkSize`
@@ -1569,5 +1653,48 @@ One of the things a 3MF holds.
 | `mesh`  | `SdkMesh`                              |                                                                                                                                                |
 | `name?` | `string`                               | What a slicer's object list calls it. A count belongs here, "8x8 Core Tile x4", since a 3MF holds one copy of a shape however many are wanted. |
 | `at?`   | `{ x: number; y: number; z?: number }` | Millimetres from the origin. Left out, the part stays where its mesh is, so several land on top of each other: see `layoutRow`.                |
+
+### `SdkPerson`
+
+Another of the instance's users, as a tool sees them: never their email.
+
+| Field       | Type             | What it is |
+| ----------- | ---------------- | ---------- |
+| `id`        | `string`         |            |
+| `name`      | `string`         |            |
+| `avatarUrl` | `string \| null` |            |
+
+### `SdkModelInfo`
+
+What a model's page shows for a shared entry, in the part the tool's `modelInfo` metadata asks for: one chip per person, from their latest entry about the model or any copy of it.
+
+| Field   | Type                                                       | What it is                                                                                                   |
+| ------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `label` | `string`                                                   | One of the tool's label keys, so each reader sees it in their language, or plain words. Up to 60 characters. |
+| `tone?` | `"waiting" \| "active" \| "done" \| "failed" \| "neutral"` | Colours the chip's dot: "waiting", "active", "done", "failed", or "neutral" when left out.                   |
+| `date?` | `string`                                                   | When, as an ISO date, shown beside the label.                                                                |
+
+### `SdkSharedEntry`
+
+One of the entries the tool's users share, as the reader sees it.
+
+| Field       | Type                   | What it is                                                                                        |
+| ----------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| `key`       | `string`               |                                                                                                   |
+| `value`     | `any`                  |                                                                                                   |
+| `user`      | `SdkPerson \| null`    | Who wrote it.                                                                                     |
+| `mine`      | `boolean`              | Whether the reader wrote it, and so may change it.                                                |
+| `modelId`   | `string \| null`       | The model it's about, as its writer has it: another user's id may not be one the reader can open. |
+| `info`      | `SdkModelInfo \| null` |                                                                                                   |
+| `updatedAt` | `string`               |                                                                                                   |
+
+### `SdkAudience`
+
+Whom the user's shared entries in this tool reach: everyone who can use it, or only `people`.
+
+| Field      | Type          | What it is |
+| ---------- | ------------- | ---------- |
+| `everyone` | `boolean`     |            |
+| `people`   | `SdkPerson[]` |            |
 
 <!-- /sdk:reference -->

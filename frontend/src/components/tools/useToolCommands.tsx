@@ -10,11 +10,13 @@ import { scriptToast } from "../../sdk/toast";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import { commandsFor, type CommandFile, type OfferedCommand } from "./toolCommands";
+import type { SdkAudience } from "../../sdk/types";
 import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
 const CollectionPickerDialog = lazy(() => import("./CollectionPickerDialog"));
+const ToolShareDialog = lazy(() => import("./ToolShareDialog"));
 
 type Picker = { title?: string; resolve: (picked: ToolCollection | null) => void };
 
@@ -27,7 +29,13 @@ export function useToolCommands(
   modelId: string,
   file: CommandFile | null,
   onUnauthorized?: () => void,
-): { commands: OfferedCommand[]; run: (offered: OfferedCommand) => void; element: ReactNode } {
+): {
+  commands: OfferedCommand[];
+  run: (offered: OfferedCommand) => void;
+  /** Opens a tool's window on the model, with no command: from a person's chip in its part of the page. */
+  openTool: (tool: RunnableTool) => void;
+  element: ReactNode;
+} {
   const { t, i18n } = useTranslation("app");
   const tools = useTools();
   const muiTheme = useTheme();
@@ -37,6 +45,10 @@ export function useToolCommands(
   const language = matchLanguage(i18n.language);
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
   const [picker, setPicker] = useState<Picker | null>(null);
+  const [share, setShare] = useState<{
+    tool: { id: string; name: string };
+    resolve: (audience: SdkAudience | null) => void;
+  } | null>(null);
 
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
@@ -76,6 +88,8 @@ export function useToolCommands(
           openModel,
           close: () => undefined,
         },
+        pickAudience: () =>
+          new Promise((resolve) => setShare({ tool: { id: tool.id ?? "", name: tool.manifest.name }, resolve })),
       });
       const module = await loadToolModule(tool);
       if (typeof module.run !== "function") throw new Error(t("tools.runner.noRun"));
@@ -103,7 +117,7 @@ export function useToolCommands(
   };
 
   const element =
-    open || picker ? (
+    open || picker || share ? (
       <Suspense fallback={null}>
         {open && (
           <ToolWindow
@@ -124,8 +138,20 @@ export function useToolCommands(
             }}
           />
         )}
+        {share && (
+          <ToolShareDialog
+            tool={share.tool}
+            onUnauthorized={onUnauthorized}
+            onClose={(audience) => {
+              share.resolve(audience);
+              setShare(null);
+            }}
+          />
+        )}
       </Suspense>
     ) : null;
 
-  return { commands, run, element };
+  const openTool = (tool: RunnableTool) => setOpen({ tool, context: { modelId } });
+
+  return { commands, run, openTool, element };
 }

@@ -4086,6 +4086,21 @@
         "noRun": "Scenarijus neturi run eksporto komandai be lango",
         "commandFailed": "{{name}} nepavyko to atlikti: {{error}}"
       },
+      "share": {
+        "title": "Kas mato jūsų „{{name}}“?",
+        "everyone": "Visi",
+        "people": "Tik mano pasirinkti",
+        "everyoneHint": "Visi, kurie čia gali naudoti įrankius, mato, kuo juo dalijatės.",
+        "picked_one": "Bendrinama su {{count}} žmogumi",
+        "picked_few": "Bendrinama su {{count}} žmonėmis",
+        "picked_many": "Bendrinama su {{count}} žmonių",
+        "picked_other": "Bendrinama su {{count}} žmonių",
+        "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs."
+      },
+      "info": {
+        "you": "Jūs",
+        "someone": "Kažkas"
+      },
       "picker": {
         "title": "Pasirinkite kolekciją",
         "search": "Rasti kolekciją",

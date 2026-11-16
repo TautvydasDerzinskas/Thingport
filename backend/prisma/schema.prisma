@@ -144,6 +144,8 @@ model User {
   customWidgets            CustomWidget[]
   tools                    Tool[]
   toolData                 ToolData[]
+  toolSharedData           ToolSharedData[]
+  toolAudiences            ToolAudience[]
   icons                    UserIcon[]
   printers                 UserPrinter[]
   studioDesigns            StudioDesign[]
@@ -802,7 +804,7 @@ model CustomWidget {
 /// A tool: a small app that opens in a window from the Tools page. An admin installs one from the repository's tools
 /// folder for the whole instance, or a user makes their own (services/toolsService.ts).
 model Tool {
-  id           String       @id @default(cuid())
+  id           String           @id @default(cuid())
   /// "repo" for one installed from the repository, "own" for one a user made.
   source       String
   /// "repo" for a repository tool, its owner's id for an own one: the unique index covers both, where a null owner
@@ -811,7 +813,7 @@ model Tool {
   slug         String
   /// The maker of an own tool; null for a repository one.
   userId       String?
-  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// The validated metadata: name, description, icon, window size, hosts and, for a repository tool, its models.
   manifest     Json
   script       String
@@ -825,10 +827,12 @@ model Tool {
   /// The models that couldn't be fetched at the last try, as { [key]: reason }.
   modelsFailed Json?
   data         ToolData[]
+  sharedData   ToolSharedData[]
+  audiences    ToolAudience[]
   collections  Collection[]
   prints       Print[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@unique([scope, slug])
   @@index([userId])
@@ -908,6 +912,49 @@ model ToolData {
   updatedAt DateTime @updatedAt
 
   @@unique([toolId, userId, key])
+  @@index([userId])
+}
+
+/// What a tool keeps for one user that the tool's other users may read, such as their print queue. Each entry is its
+/// writer's alone to change; who reads it follows their ToolAudience. One may be about a model, and then that model's
+/// page, and every other user's copy of it, shows its `info`.
+model ToolSharedData {
+  id        String   @id @default(cuid())
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     Json
+  /// The value's size as JSON, so the quota is a sum rather than a scan of every value.
+  size      Int
+  /// The model it's about, as its writer has it. No relation, so a history outlasts the model.
+  printId   String?
+  /// How that model is known in anyone's library: by its first original ("orig:<id>"), and by the page it was
+  /// imported from ("src:<provider>:<id>"), the two ways a copy of it is recognised.
+  originKey String?
+  sourceKey String?
+  /// What the model's page shows for it: { label, tone, date }. Null for an entry the page doesn't show.
+  info      Json?
+  updatedAt DateTime @updatedAt
+
+  @@unique([toolId, userId, key])
+  @@index([toolId, originKey])
+  @@index([toolId, sourceKey])
+  @@index([userId])
+}
+
+/// Whom a user's shared entries in a tool reach, when it isn't everyone who can use the tool: only these people.
+/// No row means everyone.
+model ToolAudience {
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userIds   String[]
+  updatedAt DateTime @updatedAt
+
+  @@id([toolId, userId])
   @@index([userId])
 }
 

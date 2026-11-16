@@ -122,6 +122,20 @@ export async function run(command, thingport) {
 }
 \`\`\`
 
+## Shared with the tool's other users
+
+\`thingport.storage\` is the user's own; \`thingport.shared\` is what the tool's users share with each other, such as a
+household's print queue. Each entry is its writer's: \`set\` and \`remove\` touch only the user's own, \`list\` reads
+everyone's with who wrote each and whether it's \`mine\`. Whom a user's entries reach is their choice: \`share()\` opens
+Thingport's dialog for it. \`set(key, value, { model })\` ties an entry to a model, and \`list({ model })\` finds everyone's
+entries about that model or any copy of it.
+
+With \`"modelInfo": { "title": "Print queue", "command": "queue" }\` in the metadata, every model's page gets a part
+showing, per person, their latest entry about the model that was set with \`info\`:
+\`{ label: "status.printing", tone: "active", date }\`. \`label\` is one of the tool's label keys, \`tone\` is
+\`waiting\`, \`active\`, \`done\`, \`failed\` or \`neutral\`, and \`command\` is offered there too. Never put anything private
+in a shared value, such as a model's thumbnail address, which carries the user's session.
+
 ## What \`thingport\` has
 
 ${TOOL_SDK_REFERENCE}

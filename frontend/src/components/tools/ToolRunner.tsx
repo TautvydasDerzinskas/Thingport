@@ -8,6 +8,8 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
+import ToolShareDialog from "./ToolShareDialog";
+import type { SdkAudience } from "../../sdk/types";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
 import { loadToolModule } from "./toolModule";
@@ -39,6 +41,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
   const [picker, setPicker] = useState<{ title?: string; resolve: (picked: ToolCollection | null) => void } | null>(
     null,
   );
+  const [share, setShare] = useState<{ resolve: (audience: SdkAudience | null) => void } | null>(null);
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
@@ -104,6 +107,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         openModel,
         close: () => latest.current.onClose(),
       },
+      pickAudience: () => new Promise((resolve) => setShare({ resolve })),
     });
 
     void (async () => {
@@ -173,6 +177,14 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         onClose={(picked) => {
           picker?.resolve(picked);
           setPicker(null);
+        }}
+      />
+      <ToolShareDialog
+        tool={share && tool.id ? { id: tool.id, name: tool.manifest.name } : null}
+        onUnauthorized={onUnauthorized}
+        onClose={(audience) => {
+          share?.resolve(audience);
+          setShare(null);
         }}
       />
     </Box>

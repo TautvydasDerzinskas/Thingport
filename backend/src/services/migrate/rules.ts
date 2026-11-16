@@ -40,6 +40,8 @@ export const MERGE_RULES = {
   CustomWidget: { part: "widgets" },
   Tool: { part: "tools" },
   ToolData: { part: "tools" },
+  ToolSharedData: { part: "tools" },
+  ToolAudience: { part: "tools" },
   StudioDesign: { part: "studio" },
   StudioRevision: { part: "studio" },
   StudioMessage: { part: "studio" },

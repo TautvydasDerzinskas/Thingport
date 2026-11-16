@@ -3814,6 +3814,19 @@
         "noRun": "The script has no run export for a command without a window",
         "commandFailed": "{{name}} couldn't do that: {{error}}"
       },
+      "share": {
+        "title": "Who sees your {{name}}?",
+        "everyone": "Everyone",
+        "people": "Only people I pick",
+        "everyoneHint": "Everyone who can use tools here sees what you share in it.",
+        "picked_one": "Shared with {{count}} person",
+        "picked_other": "Shared with {{count}} people",
+        "onlyYou": "Nobody picked yet, so only you see it."
+      },
+      "info": {
+        "you": "You",
+        "someone": "Someone"
+      },
       "picker": {
         "title": "Choose a collection",
         "search": "Find a collection",

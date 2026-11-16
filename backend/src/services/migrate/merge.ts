@@ -116,6 +116,8 @@ export const MERGED_TABLES = new Set<Prisma.ModelName>([
   "CustomWidget",
   "Tool",
   "ToolData",
+  "ToolSharedData",
+  "ToolAudience",
   "StudioDesign",
   "StudioRevision",
   "StudioMessage",
@@ -970,6 +972,35 @@ export class Merge {
         : [];
     });
     if (kept.length) await prisma.toolData.createMany({ data: kept, skipDuplicates: true });
+
+    // What they share through tools, still about the same models: an original kept under another id here keeps its
+    // copies' entries pointing at it.
+    const model = (id: string | null) => (id ? (this.prints.get(id) ?? id) : null);
+    const shared = await this.source.toolSharedData.findMany({ where: { userId: { in: sourceIds } } });
+    const sharedKept = shared.flatMap((entry) => {
+      const toolId = this.tools.get(entry.toolId);
+      if (!toolId) return [];
+      const original = entry.originKey?.startsWith("orig:") ? entry.originKey.slice(5) : null;
+      return [
+        rowFor<Prisma.ToolSharedDataCreateManyInput>("ToolSharedData", {
+          ...entry,
+          toolId,
+          userId: this.users.get(entry.userId)!,
+          printId: model(entry.printId),
+          originKey: original ? `orig:${model(original)}` : entry.originKey,
+        }),
+      ];
+    });
+    if (sharedKept.length) await prisma.toolSharedData.createMany({ data: sharedKept, skipDuplicates: true });
+    // Whom they shared with, among the people who came along.
+    const audiences = await this.source.toolAudience.findMany({ where: { userId: { in: sourceIds } } });
+    const audiencesKept = audiences.flatMap((row) => {
+      const toolId = this.tools.get(row.toolId);
+      if (!toolId) return [];
+      const userIds = row.userIds.flatMap((id) => this.users.get(id) ?? []);
+      return [{ toolId, userId: this.users.get(row.userId)!, userIds, updatedAt: row.updatedAt }];
+    });
+    if (audiencesKept.length) await prisma.toolAudience.createMany({ data: audiencesKept, skipDuplicates: true });
   }
 
   private async mergeStudio(sourceIds: string[]) {

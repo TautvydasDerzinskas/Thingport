@@ -42,6 +42,8 @@ export type ToolManifest = {
   locales?: string[];
   /** What it offers to do with a model, from the model page's main button menu. */
   commands?: ToolCommand[];
+  /** A part of every model's page showing its users' shared entries about the model, with `command` offered there. */
+  modelInfo?: { title: string; command?: string };
 };
 
 /** Something a tool offers to do with a model, listed on the model page without the tool running. Its title
@@ -55,6 +57,35 @@ export type ToolCommand = {
   fileTypes?: string[];
   /** False for one the tool's `run` export does without opening its window. */
   window: boolean;
+};
+
+/** Another of the instance's users as a tool shows them: a name and an avatar, never an email. */
+export type ToolPerson = { id: string; display_name: string; avatar_url: string | null };
+
+/** What a model's page shows for a shared entry: a label (a key in the tool's labels, or words), its tone, and when. */
+export type SharedInfo = { label: string; tone: "waiting" | "active" | "done" | "failed" | "neutral"; date?: string };
+
+/** One of the entries a tool's users share, as the reader sees it. */
+export type SharedEntry = {
+  key: string;
+  value: unknown;
+  user: ToolPerson | null;
+  mine: boolean;
+  /** The model it's about, as its writer has it. */
+  model_id: string | null;
+  info: SharedInfo | null;
+  updated_at: string;
+};
+
+/** Whom the user's shared entries in a tool reach. */
+export type ToolAudience = { everyone: boolean; people: ToolPerson[] };
+
+/** What the tools show on a model's page: each person's latest entry about it, tool by tool. */
+export type ToolModelInfo = {
+  tools: {
+    tool_id: string;
+    entries: { user: ToolPerson | null; mine: boolean; info: SharedInfo; updated_at: string }[];
+  }[];
 };
 
 /** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */
@@ -205,6 +236,62 @@ export const toolsApi = {
       headers: authHeaders(),
     });
     if (!res.ok) return failed(res, "Failed to delete the tool's data");
+  },
+
+  sharedList: async (id: string, query: { prefix?: string; model?: string } = {}): Promise<SharedEntry[]> => {
+    const params = new URLSearchParams();
+    if (query.prefix) params.set("prefix", query.prefix);
+    if (query.model) params.set("model", query.model);
+    const res = await fetch(`${apiBase()}/tools/${id}/shared?${params}`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read what the tool's users share");
+    return (await res.json()).entries;
+  },
+
+  sharedSet: async (
+    id: string,
+    key: string,
+    body: { value: unknown; model?: string | null; info?: SharedInfo | null },
+  ): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      ...json(body),
+    });
+    if (!res.ok) return failed(res, "Failed to share the tool's data");
+  },
+
+  sharedDelete: async (id: string, key: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to delete the tool's shared data");
+  },
+
+  audience: async (id: string): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read who sees what you share");
+    return res.json();
+  },
+
+  setAudience: async (id: string, body: { everyone: boolean; userIds: string[] }): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { method: "PUT", ...json(body) });
+    if (!res.ok) return failed(res, "Failed to save who sees what you share");
+    return res.json();
+  },
+
+  /** The others who can use tools, by name, for sharing with. */
+  people: async (id: string, q: string): Promise<ToolPerson[]> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/people?${new URLSearchParams({ q })}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to find people");
+    return (await res.json()).people;
+  },
+
+  modelInfo: async (printId: string): Promise<ToolModelInfo> => {
+    const res = await fetch(`${apiBase()}/tools/model-info/${encodeURIComponent(printId)}`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read what the tools note about the model");
+    return res.json();
   },
 
   /** A tool's request to a host it declares, made by the server; as a Response, as `fetch` gives. */
