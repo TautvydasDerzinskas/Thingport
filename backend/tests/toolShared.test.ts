@@ -245,6 +245,11 @@ describe("shared entries", () => {
     expect(
       (await share(dad, "job:1", { value: {}, model: dadsModel, info: { label: "Queued", tone: "loud" } })).status,
     ).toBe(400);
+    // A date the format allows, but with no end to its fraction of a second.
+    const longDate = `2026-11-16T00:00:00.${"0".repeat(100)}Z`;
+    expect(
+      (await share(dad, "job:1", { value: {}, model: dadsModel, info: { label: "Queued", date: longDate } })).status,
+    ).toBe(400);
   });
 });
 

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -434,7 +434,9 @@ describe("merging a working copy", () => {
       },
     });
 
-    // Joe first, so his copy would be reached before the original if they went by person alone.
+    // Joe joined first, so people go in his order and his copy would be reached before the original if they went by
+    // person alone.
+    await source.user.update({ where: { id: joe.sourceId }, data: { createdAt: new Date(Date.now() - 60_000) } });
     const report = await merge([joe.sourceId, kim.sourceId]);
     expect(report.failures).toEqual([]);
     expect(await prisma.print.findUnique({ where: { id: copy } })).toBeNull();
@@ -465,6 +467,10 @@ describe("merging a working copy", () => {
     await source.toolSharedData.create({
       data: { toolId: sourceTool, userId: lee.sourceId, key: "job:1", value: { n: 1 }, size: 7 },
     });
+    // A value of JSON null comes along as that, beside the others in its batch.
+    await source.toolSharedData.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, key: "job:2", value: Prisma.JsonNull, size: 4 },
+    });
     await source.toolAudience.create({
       data: { toolId: sourceTool, userId: lee.sourceId, userIds: [`srcboth${tag}`] },
     });
@@ -485,7 +491,14 @@ describe("merging a working copy", () => {
     });
 
     expect((await merge([lee.sourceId, `srcboth${tag}`], noFiles().files, { tools: true })).failures).toEqual([]);
-    expect(await prisma.toolSharedData.count({ where: { toolId: hereTool.id, userId: lee.hereId! } })).toBe(1);
+    const kept = await prisma.toolSharedData.findMany({
+      where: { toolId: hereTool.id, userId: lee.hereId! },
+      orderBy: { key: "asc" },
+    });
+    expect(kept.map((entry) => [entry.key, entry.value])).toEqual([
+      ["job:1", { n: 1 }],
+      ["job:2", null],
+    ]);
     const audience = await prisma.toolAudience.findUniqueOrThrow({
       where: { toolId_userId: { toolId: hereTool.id, userId: lee.hereId! } },
     });

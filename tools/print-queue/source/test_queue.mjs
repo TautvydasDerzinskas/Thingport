@@ -26,20 +26,17 @@ function entry(key, user, job, mine = false) {
   return { key, user, mine, value: job, info: null, modelId: job.modelId, updatedAt: job.queuedAt };
 }
 
-test("a new job waits in the queue, with the file picked when there was one", () => {
-  const job = newJob(model, { id: "p1", name: "bracket.stl" }, at(1));
+test("a new job waits in the queue", () => {
+  const job = newJob(model, at(1));
   assert.deepEqual(job, {
     status: "queued",
     modelId: "m1",
     name: "Bracket",
-    fileId: "p1",
-    fileName: "bracket.stl",
     note: "",
     queuedAt: "2026-11-01T12:00:00.000Z",
     startedAt: null,
     finishedAt: null,
   });
-  assert.equal(newJob(model, null, at(1)).fileId, null);
   assert.ok(isJob(job));
   assert.ok(!isJob({ status: "lost", name: "x" }));
   assert.ok(!isJob("job"));
@@ -49,7 +46,7 @@ test("a new job waits in the queue, with the file picked when there was one", ()
 });
 
 test("moving a job keeps the times its status has", () => {
-  const queued = newJob(model, null, at(1));
+  const queued = newJob(model, at(1));
   const printing = moved(queued, "printing", at(2));
   assert.equal(printing.startedAt, "2026-11-02T12:00:00.000Z");
   const printed = moved(printing, "printed", at(3));
@@ -63,9 +60,9 @@ test("moving a job keeps the times its status has", () => {
 });
 
 test("a person's chip shows a print happening, then one waiting, then the latest finished", () => {
-  const queued = newJob(model, null, at(1));
-  const printed = moved(moved(newJob(model, null, at(1)), "printing", at(2)), "printed", at(3));
-  const failed = moved(newJob(model, null, at(1)), "failed", at(5));
+  const queued = newJob(model, at(1));
+  const printed = moved(moved(newJob(model, at(1)), "printing", at(2)), "printed", at(3));
+  const failed = moved(newJob(model, at(1)), "failed", at(5));
   assert.equal(summaryOf([]), null);
   assert.deepEqual(summaryOf([printed, queued]), {
     label: "status.queued",
@@ -78,10 +75,10 @@ test("a person's chip shows a print happening, then one waiting, then the latest
 
 test("the board sorts each column, the queue oldest first and the rest newest first", () => {
   const entries = [
-    entry("job:b", dad, newJob(model, null, at(3))),
-    entry("job:a", me, newJob(model, null, at(1)), true),
-    entry("job:c", dad, moved(newJob(model, null, at(1)), "printed", at(2))),
-    entry("job:d", mum, moved(newJob(model, null, at(1)), "printed", at(4))),
+    entry("job:b", dad, newJob(model, at(3))),
+    entry("job:a", me, newJob(model, at(1)), true),
+    entry("job:c", dad, moved(newJob(model, at(1)), "printed", at(2))),
+    entry("job:d", mum, moved(newJob(model, at(1)), "printed", at(4))),
     entry("about:m1", me, { jobs: 1 }, true),
   ];
   const cols = columns(entries);
@@ -106,10 +103,10 @@ test("the board sorts each column, the queue oldest first and the rest newest fi
 
 test("someone else's print waiting or happening is a clash; a finished one isn't", () => {
   const entries = [
-    entry("job:1", dad, newJob(model, null, at(1))),
-    entry("job:2", mum, moved(newJob(model, null, at(1)), "printed", at(2))),
-    entry("job:3", me, newJob(model, null, at(1)), true),
-    entry("job:4", mum, moved(newJob(model, null, at(1)), "printing", at(2))),
+    entry("job:1", dad, newJob(model, at(1))),
+    entry("job:2", mum, moved(newJob(model, at(1)), "printed", at(2))),
+    entry("job:3", me, newJob(model, at(1)), true),
+    entry("job:4", mum, moved(newJob(model, at(1)), "printing", at(2))),
   ];
   const { others, mine } = clashes(entries);
   assert.deepEqual(
@@ -122,7 +119,7 @@ test("someone else's print waiting or happening is a clash; a finished one isn't
   );
   assert.equal(listNames(others, "and"), "Dad and Mum");
   assert.equal(listNames([others[0], others[0]], "and"), "Dad");
-  assert.equal(listNames([...others, entry("job:5", me, newJob(model, null, at(1)))], "and"), "Dad, Mum and Ann");
+  assert.equal(listNames([...others, entry("job:5", me, newJob(model, at(1)))], "and"), "Dad, Mum and Ann");
 });
 
 test("ids differ without crypto.randomUUID", () => {

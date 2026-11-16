@@ -177,6 +177,8 @@
     border: 1px solid var(--tp-divider);
     border-radius: 8px;
     background: var(--tp-paper);
+  }
+  .pq-card.pq-new {
     animation: pq-in 180ms ease-out;
   }
   .pq-card.pq-mine {
@@ -374,7 +376,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .pq-card,
+    .pq-card.pq-new,
     .pq-menu,
     .pq-skeleton {
       animation: none;

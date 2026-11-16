@@ -36,6 +36,11 @@ export default function ToolShareDialog({ open, tool, onClose, onUnauthorized }:
   const [loadFailed, setLoadFailed] = useState(false);
   const reads = useRef(0);
   const toolId = tool?.id ?? null;
+  // The same one from render to render, so the picker's search isn't sent again with each pick.
+  const search = useCallback(
+    (query: string) => (toolId ? toolsApi.people(toolId, query) : Promise.resolve([])),
+    [toolId],
+  );
 
   // Only the latest read lands: closing, or reading again, leaves an earlier one unheard.
   const read = useCallback(
@@ -127,7 +132,7 @@ export default function ToolShareDialog({ open, tool, onClose, onUnauthorized }:
               ) : (
                 <>
                   <PeoplePicker
-                    search={(query) => (toolId ? toolsApi.people(toolId, query) : Promise.resolve([]))}
+                    search={search}
                     selected={people}
                     onSelectedChange={setPeople}
                     disabled={saving}

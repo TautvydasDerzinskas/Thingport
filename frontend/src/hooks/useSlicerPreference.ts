@@ -45,7 +45,7 @@ export async function reloadSlicerSettings(): Promise<void> {
   try {
     const res = await settingsApi.getSlicer();
     if (saves === savesAt) stored = res.slicer;
-    if (version === at) setCachedSlicerSettings(res);
+    if (version === at) publish(res);
   } catch {
     // The page keeps what it had.
   }
@@ -56,32 +56,39 @@ export function slicerSettingsNow(): SlicerSettings | undefined {
   return cached;
 }
 
-export function setCachedSlicerSettings(value: SlicerSettings) {
+function publish(value: SlicerSettings) {
   version++;
   cached = value;
   listeners.forEach((listener) => listener(value));
+}
+
+/** Shows settings the server just gave, so they're also what a failed switch goes back to. */
+export function setCachedSlicerSettings(value: SlicerSettings) {
+  stored = value.slicer;
+  saves++;
+  publish(value);
 }
 
 /** Makes `slicer` the one models open in, shown straight away and put back if the save fails. */
 export async function switchSlicer(slicer: string): Promise<void> {
   const previous = cached ?? EMPTY;
   if (previous.slicer === slicer) return;
-  setCachedSlicerSettings({ ...previous, slicer });
+  publish({ ...previous, slicer });
   const at = version;
   const mine = ++switches;
   try {
     const saved = await settingsApi.updateSlicer({ slicer });
     stored = saved.slicer;
     saves++;
-    if (version === at) return setCachedSlicerSettings(saved);
+    if (version === at) return publish(saved);
     // Read or changed meanwhile: what came stays, with this slicer if it's still the one picked last, as a read
     // answered before the save would show the one before. Then it's all read again, below.
-    if (mine === switches && cached) setCachedSlicerSettings({ ...cached, slicer: saved.slicer });
+    if (mine === switches && cached) publish({ ...cached, slicer: saved.slicer });
   } catch {
     // Back to the one stored, by the latest switch only: an earlier one failing mustn't undo a later pick, which may
     // still be saved. The one stored, not the one before this switch, which may have been another still saving.
     if (mine === switches && cached?.slicer === slicer)
-      setCachedSlicerSettings({ ...cached, slicer: stored === undefined ? previous.slicer : stored });
+      publish({ ...cached, slicer: stored === undefined ? previous.slicer : stored });
   }
   // Settings read meanwhile, or kept from landing by this switch, such as a new Send to destination: read again.
   void reloadSlicerSettings();

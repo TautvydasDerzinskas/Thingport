@@ -19,14 +19,12 @@ export function newId(now = Date.now(), random = Math.random) {
   return `${now.toString(36)}${random().toString(36).slice(2, 8)}`;
 }
 
-/** A model, and the file picked on its page, as a job in the queue. */
-export function newJob(model, file, now = new Date()) {
+/** A model as a job in the queue. */
+export function newJob(model, now = new Date()) {
   return {
     status: "queued",
     modelId: model.id,
     name: model.name,
-    fileId: file?.id ?? null,
-    fileName: file?.name ?? null,
     note: "",
     queuedAt: now.toISOString(),
     startedAt: null,
@@ -48,8 +46,6 @@ export function isJob(value) {
     text(value.queuedAt) &&
     maybeText(value.startedAt) &&
     maybeText(value.finishedAt) &&
-    maybeText(value.fileId) &&
-    maybeText(value.fileName) &&
     text(value.note)
   );
 }

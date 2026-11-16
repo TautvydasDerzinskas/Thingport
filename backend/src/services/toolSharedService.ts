@@ -26,7 +26,7 @@ export const INFO_TONES = ["waiting", "active", "done", "failed", "neutral"] as 
 export const sharedInfoSchema = z.object({
   label: z.string().trim().min(1).max(60),
   tone: z.enum(INFO_TONES).default("neutral"),
-  date: z.string().datetime({ offset: true }).optional(),
+  date: z.string().max(40).datetime({ offset: true }).optional(),
 });
 export type SharedInfo = z.infer<typeof sharedInfoSchema>;
 
