@@ -2,7 +2,7 @@
 // their spool that matches, and the list edited in place for everyone who sees the model.
 
 import { PALETTE, normaliseHex } from "./colour.js";
-import { NEEDS, loadForModel, matchAll, needsFor, newId } from "./shelf.js";
+import { forgetReads, loadForModel, matchAll, needsFor, needsKey, newId } from "./shelf.js";
 import {
   BASE_CSS,
   addStyle,
@@ -321,7 +321,11 @@ export function modelTab(thingport) {
     saving = true;
     render();
     try {
-      await shared.set(`${NEEDS}${context.modelId}`, { filaments }, { model: context.modelId });
+      await shared.set(
+        needsKey(context.modelId, data.profile),
+        { profile: data.profile, filaments },
+        { model: context.modelId },
+      );
       draft = null;
       await load();
     } catch (error) {
@@ -340,7 +344,11 @@ export function modelTab(thingport) {
     });
     if (!sure || closed) return;
     try {
-      await shared.set(`${NEEDS}${context.modelId}`, { filaments: null }, { model: context.modelId });
+      await shared.set(
+        needsKey(context.modelId, data.profile),
+        { profile: data.profile, filaments: null },
+        { model: context.modelId },
+      );
       await load();
     } catch (error) {
       failed(error);
@@ -428,7 +436,11 @@ export function modelTab(thingport) {
     }
   });
 
-  const stop = shared.onChange?.(() => void load()) ?? (() => {});
+  const stop =
+    shared.onChange?.(() => {
+      forgetReads();
+      void load();
+    }) ?? (() => {});
   render();
   void load();
 

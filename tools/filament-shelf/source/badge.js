@@ -1,7 +1,7 @@
 // The mark on a model's picture: a ring filled by how many of the filaments the household has, the first few
 // colours inside it, and a popover naming who has each.
 
-import { loadForModel } from "./shelf.js";
+import { forgetReads, loadForModel } from "./shelf.js";
 import {
   BASE_CSS,
   addStyle,
@@ -174,7 +174,11 @@ export function modelImage(thingport) {
     );
   });
 
-  const stop = shared.onChange?.(() => void load()) ?? (() => {});
+  const stop =
+    shared.onChange?.(() => {
+      forgetReads();
+      void load();
+    }) ?? (() => {});
   void load();
 
   return () => {
