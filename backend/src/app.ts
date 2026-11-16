@@ -9,6 +9,7 @@ import healthRoutes from "./routes/health";
 import mcpRoutes from "./routes/mcp";
 import iconRoutes from "./routes/icons";
 import printerRoutes from "./routes/printers";
+import sendTargetRoutes, { sendFileRoutes } from "./routes/sendTargets";
 import profileRoutes from "./routes/profile";
 import captchaRoutes from "./routes/captcha";
 import authRoutes from "./routes/auth";
@@ -77,6 +78,9 @@ export function createApp(): Express {
   // first: a limit this far above the global one would otherwise buffer and parse anyone's hundreds of megabytes
   // before the route behind it turned the request away.
   for (const { paths, limit } of providerBodyLimits) app.use(paths, requireAuth, express.json({ limit }));
+  // A Send to destination with every field and header at its longest is past the default on its own, and an import
+  // holds up to 50 of them: room for that, escaping included, for someone signed in.
+  app.use("/api/me/send-targets", requireAuth, express.json({ limit: "16mb" }));
   app.use(express.json());
   app.use("/api", trackClients);
   // Refuses changes to the models and collections tools bring, whichever router would make them.
@@ -95,6 +99,8 @@ export function createApp(): Express {
   app.use("/api", releaseNotesFilesRoutes);
   // And a catalogue printer's picture.
   app.use("/api", printerRoutes);
+  // And a file a Send to link names, which carries its own signed grant.
+  app.use("/api", sendFileRoutes);
   app.use("/api", captchaRoutes);
   app.use("/api", authRoutes);
   app.use("/api", oidcRoutes);
@@ -128,6 +134,7 @@ export function createApp(): Express {
   app.use("/api", dashboardRoutes);
   app.use("/api", widgetRoutes);
   app.use("/api", toolRoutes);
+  app.use("/api", sendTargetRoutes);
   app.use("/api", studioRoutes);
   app.use("/api", activityRoutes);
   app.use("/api", achievementRoutes);

@@ -36,6 +36,8 @@ export interface SdkTheme {
   warning: string;
   /** Something worked. */
   success: string;
+  /** Something waiting, or to know about. */
+  info: string;
   /** The font stack Thingport's own text is set in. */
   fontFamily: string;
 }
@@ -700,7 +702,7 @@ export interface SdkStorage {
   /**
    * What's kept under a key.
    *
-   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`.
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @returns The value as it was kept, or `undefined` when nothing is.
    * @example
    * const last = (await thingport.storage.get("last")) ?? { width: 40 };
@@ -709,7 +711,7 @@ export interface SdkStorage {
   /**
    * Keeps a value under a key, replacing what was there. At most 1 MB a value as JSON, 20 MB and 2,000 keys a tool.
    *
-   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`.
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @param value Anything JSON can hold.
    * @example
    * await thingport.storage.set("last", { width: 60 });
@@ -728,6 +730,104 @@ export interface SdkStorage {
    * const drafts = (await thingport.storage.keys()).filter((key) => key.startsWith("draft:"));
    */
   keys(): Promise<string[]>;
+}
+
+/** Another of the instance's users, as a tool sees them: never their email. */
+export interface SdkPerson {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
+/**
+ * What a model's page shows for a shared entry, in the part the tool's `modelInfo` metadata asks for: one chip per
+ * person, from their latest entry about the model or any copy of it.
+ */
+export interface SdkModelInfo {
+  /** One of the tool's label keys, so each reader sees it in their language, or plain words. Up to 60 characters. */
+  label: string;
+  /** Colours the chip's dot: "waiting", "active", "done", "failed", or "neutral" when left out. */
+  tone?: "waiting" | "active" | "done" | "failed" | "neutral";
+  /** When, as an ISO date, shown beside the label. */
+  date?: string;
+}
+
+/** One of the entries the tool's users share, as the reader sees it. */
+export interface SdkSharedEntry {
+  key: string;
+  value: any;
+  /** Who wrote it. */
+  user: SdkPerson | null;
+  /** Whether the reader wrote it, and so may change it. */
+  mine: boolean;
+  /** The model it's about, as its writer has it: another user's id may not be one the reader can open. */
+  modelId: string | null;
+  info: SdkModelInfo | null;
+  updatedAt: string;
+  /** Where it is in the order a read gives: `before` in the next read, for the entries after it. */
+  cursor: string;
+}
+
+/** Whom the user's shared entries in this tool reach: everyone who can use it, or only `people`. */
+export interface SdkAudience {
+  everyone: boolean;
+  people: SdkPerson[];
+}
+
+/**
+ * JSON the tool's users share with each other, such as a print queue a household keeps together. Each entry belongs to
+ * whoever wrote it, so a user changes and removes only their own; they all read each other's, unless someone keeps
+ * theirs to the people they picked (`share()`).
+ */
+export interface SdkShared {
+  /**
+   * The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read.
+   * When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
+   *
+   * @param options `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy
+   * of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for
+   * the entries after it.
+   * @example
+   * const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
+   * @example
+   * // Every entry, however many there are.
+   * let page = await thingport.shared.list();
+   * const all = [...page];
+   * while (page.length === 5000) {
+   *   page = await thingport.shared.list({ before: page.at(-1).cursor });
+   *   all.push(...page);
+   * }
+   */
+  list(options?: { prefix?: string; model?: string; before?: string }): Promise<SdkSharedEntry[]>;
+  /**
+   * Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and
+   * 5,000 entries a user.
+   *
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
+   * @param value Anything JSON can hold.
+   * @param options `model`: the model it's about, one the user can open. `info`: what that model's page shows for it,
+   * when the tool's metadata has a `modelInfo` part.
+   * @example
+   * await thingport.shared.set(`job:${id}`, job, { model: modelId, info: { label: "status.queued", tone: "waiting" } });
+   */
+  set(key: string, value: unknown, options?: { model?: string; info?: SdkModelInfo }): Promise<void>;
+  /**
+   * Removes one of the user's entries.
+   *
+   * @param key The key.
+   */
+  remove(key: string): Promise<void>;
+  /**
+   * Whom the user's entries reach now.
+   */
+  audience(): Promise<SdkAudience>;
+  /**
+   * Opens Thingport's own dialog asking whom the user's entries reach: everyone who can use the tool, or only the
+   * people they pick.
+   *
+   * @returns What they chose, or `null` when they closed it.
+   */
+  share(): Promise<SdkAudience | null>;
 }
 
 // --- The object itself -----------------------------------------------------------------------------------------------
@@ -1008,6 +1108,13 @@ export interface ToolSdk extends SdkBase {
    * @group Tool only
    */
   storage: SdkStorage;
+  /**
+   * JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that
+   * shows the ones about it. In the editor's preview of a tool not saved yet, it reads nothing and keeps nothing.
+   *
+   * @group Tool only
+   */
+  shared: SdkShared;
   /**
    * The models a tool from the repository brings, by the keys its metadata gives them. An admin may install a tool
    * without them, which is usual where they're large, so `printId` is null for one that isn't here yet. A user's own

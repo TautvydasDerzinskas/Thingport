@@ -53,7 +53,10 @@ import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import UserAvatar from "../../components/UserAvatar";
 import { useToolCommands } from "../../components/tools/useToolCommands";
+import ToolInfoParts from "../../components/tools/ToolInfoParts";
 import { useCopyToLibrary } from "./useCopyToLibrary";
+import { useSendTo } from "./useSendTo";
+import SendToButtons from "./SendToButtons";
 
 const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
 
@@ -197,6 +200,8 @@ export default function ModelSidePanel({
   const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
   const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
   const adaptedTarget = adaptedTargetFor(selectedFile);
+  // Where the user sends the picked file: printers, webhooks and their own addresses (Configuration → Send to).
+  const sendTo = useSendTo(print.id, selectedFile, onUnauthorized);
   // What the installed tools offer to do with it, on the picked file where a command takes one.
   const toolCommands = useToolCommands(
     print.id,
@@ -438,6 +443,16 @@ export default function ModelSidePanel({
             </Box>
           )}
 
+          {/* What the installed tools note about the model, such as who has it in their print queue; nothing without
+            such a tool. */}
+          <ToolInfoParts
+            printId={print.id}
+            commands={toolCommands.commands}
+            onCommand={toolCommands.run}
+            onOpenTool={toolCommands.openTool}
+            onUnauthorized={onUnauthorized}
+          />
+
           {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script.
             A model that does have one needs no chip: it leads with Customize. */}
           {print.generator_script_withheld && !hasGeneratorScript(print) && (
@@ -599,8 +614,16 @@ export default function ModelSidePanel({
               openingInStudio={studio.opening}
               toolCommands={toolCommands.commands}
               onToolCommand={toolCommands.run}
+              sendTargets={sendTo.menu}
+              onSend={(target) => void sendTo.send(target)}
+              sending={sendTo.sending}
             />
           )}
+          <SendToButtons
+            targets={sendTo.buttons}
+            sending={sendTo.sending}
+            onSend={(target) => void sendTo.send(target)}
+          />
           {/* With no file there's no main button, so the commands on the whole model get one of their own. */}
           {!selectedFile && toolCommands.commands.length > 0 && (
             <ToolCommandsButton commands={toolCommands.commands} onRun={toolCommands.run} />

@@ -26,6 +26,12 @@ Switch on the ones you have installed under **Configuration → Slicer**, from t
 right-click it and choose **Activate** (or **Deactivate**). With none switched on, or only **Other / Manual**, the
 button downloads the file instead, for when you'd rather open files yourself.
 
+## Send to a printer or another app
+
+Under the same arrow, **Send to** sends the file to your own destinations: OctoPrint, Klipper or PrusaLink, a webhook
+for Home Assistant, n8n or Node-RED, or a link or request of your own. Set them up under **Configuration → Send to**;
+each can also have a button of its own. See [Send to](../guides/send-to.md).
+
 ## Thingport Bridge
 
 Bambu Studio, PrusaSlicer, Cura and Anycubic Slicer Next won't open a link from a self-hosted server on their own, and

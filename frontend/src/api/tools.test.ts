@@ -75,4 +75,12 @@ describe("toolsApi", () => {
       await expect(sent[0].text()).resolves.not.toBe("");
     },
   );
+
+  // The browser resolves "." and ".." in a path, escaped or not: "shared/.." is the tool itself, which a delete removes.
+  it.each([".", ".."])("never sends a request for the key %s", async (key) => {
+    await expect(toolsApi.storageDelete("id", key)).rejects.toThrow("A key can't be . or ..");
+    await expect(toolsApi.sharedDelete("id", key)).rejects.toThrow("A key can't be . or ..");
+    await expect(toolsApi.sharedSet("id", key, { value: 1 })).rejects.toThrow("A key can't be . or ..");
+    expect(sent).toEqual([]);
+  });
 });

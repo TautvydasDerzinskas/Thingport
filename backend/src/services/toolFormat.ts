@@ -169,6 +169,17 @@ export const toolManifestSchema = z.object({
     .refine((commands) => new Set(commands.map((command) => command.id)).size === commands.length, {
       message: "Two commands share an id",
     }),
+  /**
+   * A part of every model's page, titled `title`, showing what the tool's users noted about the model: one chip per
+   * person, from the shared entries they tied to it (`thingport.shared.set` with `info`). `command`, one of its
+   * commands, is offered there as a chip of its own.
+   */
+  modelInfo: z
+    .object({
+      title: z.string().trim().min(1).max(40),
+      command: z.string().trim().regex(COMMAND_ID, "Not a command id").optional(),
+    })
+    .optional(),
 });
 export type ToolManifest = z.infer<typeof toolManifestSchema>;
 
@@ -186,6 +197,9 @@ export function parseToolManifest(text: string): ToolManifest {
 export function validateToolManifest(raw: unknown): ToolManifest {
   const parsed = toolManifestSchema.safeParse(raw);
   if (!parsed.success) throw new HttpError(400, `The metadata isn't right: ${describeIssues(parsed.error)}`);
+  const offered = parsed.data.modelInfo?.command;
+  if (offered && !parsed.data.commands.some((command) => command.id === offered))
+    throw new HttpError(400, `The metadata isn't right: modelInfo.command "${offered}" isn't one of its commands`);
   return parsed.data;
 }
 

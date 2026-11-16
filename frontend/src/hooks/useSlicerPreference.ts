@@ -1,23 +1,27 @@
 import { useEffect, useState } from "react";
 import { settingsApi, type SlicerSettings } from "../api/settings";
 
-const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {} };
+const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {}, sendTargets: [] };
 
 // Shared by every mounted instance so there's one request, and saves propagate to all of them.
 let cached: SlicerSettings | undefined; // undefined = not loaded yet
 let inFlight: Promise<SlicerSettings> | null = null;
 const listeners = new Set<(value: SlicerSettings) => void>();
+// Moved on by every read and change, so a read that's overtaken never lands over what came after it.
+let version = 0;
 
 function load(): Promise<SlicerSettings> {
   if (cached !== undefined) return Promise.resolve(cached);
   if (!inFlight) {
+    const at = version;
     inFlight = settingsApi
       .getSlicer()
       .then((res) => {
-        cached = res;
-        return cached;
+        if (version === at) cached = res;
+        return cached ?? res;
       })
-      .catch(() => EMPTY)
+      // What a reload brought in meanwhile stays.
+      .catch(() => cached ?? EMPTY)
       .finally(() => {
         inFlight = null;
       });
@@ -25,7 +29,19 @@ function load(): Promise<SlicerSettings> {
   return inFlight;
 }
 
+/** Reads them again, e.g. after the user changed where they send models. */
+export async function reloadSlicerSettings(): Promise<void> {
+  const at = ++version;
+  try {
+    const res = await settingsApi.getSlicer();
+    if (version === at) setCachedSlicerSettings(res);
+  } catch {
+    // The page keeps what it had.
+  }
+}
+
 export function setCachedSlicerSettings(value: SlicerSettings) {
+  version++;
   cached = value;
   listeners.forEach((listener) => listener(value));
 }
@@ -35,10 +51,15 @@ export async function switchSlicer(slicer: string): Promise<void> {
   const previous = cached ?? EMPTY;
   if (previous.slicer === slicer) return;
   setCachedSlicerSettings({ ...previous, slicer });
+  const at = version;
   try {
-    setCachedSlicerSettings(await settingsApi.updateSlicer({ slicer }));
+    const saved = await settingsApi.updateSlicer({ slicer });
+    // Settings read meanwhile, such as a new Send to destination, may postdate the answer: read them again instead.
+    if (version === at) setCachedSlicerSettings(saved);
+    else void reloadSlicerSettings();
   } catch {
-    setCachedSlicerSettings(previous);
+    if (version === at) setCachedSlicerSettings(previous);
+    else void reloadSlicerSettings();
   }
 }
 

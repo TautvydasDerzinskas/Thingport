@@ -1,11 +1,14 @@
-import { toolsApi, type ToolLocales, type ToolManifest } from "../../api/tools";
+import { toolsApi, type ToolLocales, type ToolManifest, type ToolPerson } from "../../api/tools";
 import { applyLabels, translator, type Translate } from "../../sdk/labels";
 import { LIBRARIES, library } from "../../sdk/libraries";
 import type {
+  SdkAudience,
   SdkCollection,
   SdkFileInput,
   SdkLanguage,
   SdkModel,
+  SdkPerson,
+  SdkShared,
   SdkStorage,
   SdkTheme,
   ToolSdk,
@@ -14,6 +17,7 @@ import type {
 import { buildUserLibrary, toCollection as toSdkCollection } from "../../sdk/userLibrary";
 import { apiAsUser, downloadFile } from "../../sdk/widgetSdk";
 import { buildAchievements } from "../../sdk/achievements";
+import { toolInfoChanged } from "./toolInfoEvents";
 
 // The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
 // the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
@@ -65,7 +69,12 @@ type Build = {
   size: () => { width: number; height: number };
   onResize: (listener: (size: { width: number; height: number }) => void) => () => void;
   ui: ToolUi;
+  /** Thingport's dialog asking whom the user's shared entries reach; what they chose, or null when closed. */
+  pickAudience: () => Promise<SdkAudience | null>;
 };
+
+const person = (p: ToolPerson | null): SdkPerson | null =>
+  p && { id: p.id, name: p.display_name, avatarUrl: p.avatar_url };
 
 /** The object a tool's default export is called with. */
 export function buildToolSdk({
@@ -79,6 +88,7 @@ export function buildToolSdk({
   size,
   onResize,
   ui,
+  pickAudience,
 }: Build): ToolSdk {
   const translate: Translate = translator(tool.locales ?? {}, language);
   // An unsaved tool's data lasts as long as its preview does.
@@ -104,6 +114,43 @@ export function buildToolSdk({
     },
     keys: async () =>
       tool.id ? (await toolsApi.storageKeys(tool.id)).map((entry) => entry.key) : [...draftData.keys()],
+  };
+
+  // Each entry is the writer's; a model's page showing the ones about it is told when one changes.
+  const shared: SdkShared = {
+    list: async (options) =>
+      tool.id
+        ? (await toolsApi.sharedList(tool.id, options)).map((entry) => ({
+            key: entry.key,
+            value: entry.value,
+            user: person(entry.user),
+            mine: entry.mine,
+            modelId: entry.model_id,
+            info: entry.info,
+            updatedAt: entry.updated_at,
+            cursor: entry.cursor,
+          }))
+        : [],
+    set: async (key, value, options) => {
+      await toolsApi.sharedSet(saved("thingport.shared"), key, {
+        value,
+        model: options?.model ?? null,
+        info: options?.info ? { tone: "neutral", ...options.info } : null,
+      });
+      toolInfoChanged();
+    },
+    remove: async (key) => {
+      await toolsApi.sharedDelete(saved("thingport.shared"), key);
+      toolInfoChanged();
+    },
+    audience: async () => {
+      const audience = await toolsApi.audience(saved("thingport.shared"));
+      return { everyone: audience.everyone, people: audience.people.flatMap((p) => person(p) ?? []) };
+    },
+    share: () => {
+      saved("thingport.shared");
+      return pickAudience();
+    },
   };
 
   // What each member does is written once, in sdk/types.ts, which the reference is generated from.
@@ -136,6 +183,7 @@ export function buildToolSdk({
     fetchToolModels: async (keys: string[]) =>
       tool.id ? toolsApi.fetchNeededModels(tool.id, keys) : { ready: [], failed: [] },
     storage,
+    shared,
     fetch: (url: string, init?: RequestInit) => toolsApi.fetchVia(saved("thingport.fetch"), url, init),
     api: apiAsUser,
     download: downloadFile,

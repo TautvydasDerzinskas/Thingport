@@ -19,6 +19,17 @@ import {
   toolModelsOf,
   type ToolUser,
 } from "../services/toolsService";
+import {
+  audienceSchema,
+  deleteSharedData,
+  getAudience,
+  listSharedData,
+  modelInfoFor,
+  setAudience,
+  setSharedData,
+  shareablePeople,
+  sharedSetSchema,
+} from "../services/toolSharedService";
 
 // The tools a user may open, their own, and what a tool's script calls back for: the data it keeps, its models and
 // the hosts it declares. Its other calls (collections, models, search) go to the API's own routes, as the user.
@@ -117,6 +128,68 @@ router.delete(
   asyncHandler(async (req, res) => {
     await deleteToolData(userOf(req), String(req.params.id), String(req.params.key));
     res.status(204).end();
+  }),
+);
+
+// What the tools show on a model's page: each person's latest entry about it, tool by tool.
+router.get(
+  "/tools/model-info/:printId",
+  asyncHandler(async (req, res) => {
+    res.json(await modelInfoFor(userOf(req), String(req.params.printId)));
+  }),
+);
+
+// Entries the tool's users may read: the user's own, and the others' that reach them.
+const sharedListSchema = z.object({
+  prefix: z.string().max(200).optional(),
+  model: z.string().min(1).max(100).optional(),
+  before: z.string().min(1).max(200).optional(),
+});
+router.get(
+  "/tools/:id/shared",
+  asyncHandler(async (req, res) => {
+    const query = parseBody(sharedListSchema, req.query);
+    res.json({ entries: await listSharedData(userOf(req), String(req.params.id), query) });
+  }),
+);
+
+router.put(
+  "/tools/:id/shared/:key",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(sharedSetSchema, req.body);
+    await setSharedData(userOf(req), String(req.params.id), String(req.params.key), body);
+    res.status(204).end();
+  }),
+);
+
+router.delete(
+  "/tools/:id/shared/:key",
+  asyncHandler(async (req, res) => {
+    await deleteSharedData(userOf(req), String(req.params.id), String(req.params.key));
+    res.status(204).end();
+  }),
+);
+
+// Whom the user's shared entries in the tool reach, and the people they may pick.
+router.get(
+  "/tools/:id/audience",
+  asyncHandler(async (req, res) => {
+    res.json(await getAudience(userOf(req), String(req.params.id)));
+  }),
+);
+
+router.put(
+  "/tools/:id/audience",
+  asyncHandler(async (req, res) => {
+    res.json(await setAudience(userOf(req), String(req.params.id), parseBody(audienceSchema, req.body)));
+  }),
+);
+
+router.get(
+  "/tools/:id/people",
+  asyncHandler(async (req, res) => {
+    const { q } = parseBody(z.object({ q: z.string().max(100).default("") }), req.query);
+    res.json({ people: await shareablePeople(userOf(req), String(req.params.id), q) });
   }),
 );
 

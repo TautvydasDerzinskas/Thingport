@@ -53,6 +53,7 @@ in [`tools/index.json`](../tools/index.json).
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
 | `commands`    | Up to 10 things it offers on a model's page, below                                             |
+| `modelInfo`   | `{ title, command }`: a part of every model's page showing what its users shared, below        |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
 
@@ -127,6 +128,42 @@ export async function run(command, thingport) {
 ```
 
 Print cost estimator's **Estimate print cost** is the example in this repository.
+
+### Shared with the tool's other users
+
+`thingport.storage` is each user's own. `thingport.shared` is what a tool's users share with each other, such as a print
+queue the household keeps together:
+
+- **Each entry is its writer's.** `set(key, value)` and `remove(key)` change only the user's own entries, and two
+  users' entries under the same key are two entries. `list({ prefix })` reads everyone's, newest first, with who wrote
+  each one and whether it's `mine`: 5,000 a read, and `before` set to the last one's `cursor` reads the next ones.
+- **Who reads them is the writer's choice.** Everyone who can use tools, unless they keep theirs to the people they
+  pick: `share()` opens Thingport's own dialog for that, and `audience()` says what they chose.
+- **An entry can be about a model.** `set(key, value, { model })` ties it to a model the user can open, and
+  `list({ model })` finds everyone's entries about that model or any copy of it: the same original, or imported from
+  the same page. That's how a tool warns that someone else has the model queued.
+
+A tool whose metadata has `modelInfo` gets a part of every model's page, titled `title` (a label `modelInfo.title`
+translates it). An entry set with `info` shows there as a chip: the writer's avatar, a dot coloured by `tone` and a
+`label`, which is one of the tool's label keys so each reader sees their own language. Each person's latest entry about
+the model shows, and clicking it opens the tool's window on the model. `command`, one of the tool's commands, is offered
+there as a chip of its own:
+
+```js
+await thingport.shared.set(
+  `about:${modelId}`,
+  { jobs: 2 },
+  {
+    model: modelId,
+    info: { label: "status.printing", tone: "active", date: new Date().toISOString() },
+  },
+);
+```
+
+Tones are `waiting`, `active`, `done`, `failed` and `neutral`. A value is at most 256 KB as JSON, and a user shares at
+most 5 MB and 5,000 entries a tool. Nothing in a shared value should be private to its writer: a model's thumbnail
+address, for one, carries their session, so read it as the viewer instead. **Print queue** in this repository uses all
+of it.
 
 ### The words it shows
 

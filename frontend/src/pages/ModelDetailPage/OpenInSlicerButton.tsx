@@ -21,6 +21,8 @@ import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
 import ToolIcon from "../../components/tools/ToolIcon";
 import type { OfferedCommand } from "../../components/tools/toolCommands";
+import type { SendTargetSummary } from "../../api/sendTargets";
+import { SendKindIcon, kindOf } from "../../components/sendTo/sendKinds";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
@@ -45,9 +47,16 @@ type Props = {
   /** What the installed tools offer to do with the model, last in the menu; none leaves the menu as it was. */
   toolCommands?: OfferedCommand[];
   onToolCommand?: (offered: OfferedCommand) => void;
+  /** The user's Send to destinations shown in the menu, after the slicers; none leaves the menu as it was. */
+  sendTargets?: SendTargetSummary[];
+  onSend?: (target: SendTargetSummary) => void;
+  /** Those being sent to, while they are. */
+  sending?: ReadonlySet<string>;
 };
 
 const NO_COMMANDS: OfferedCommand[] = [];
+const NO_TARGETS: SendTargetSummary[] = [];
+const NONE_SENDING: ReadonlySet<string> = new Set();
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
 function LogoTile({ id, size }: { id: string; size: number }) {
@@ -92,6 +101,9 @@ export default function OpenInSlicerButton({
   openingInStudio,
   toolCommands = NO_COMMANDS,
   onToolCommand,
+  sendTargets = NO_TARGETS,
+  onSend,
+  sending = NONE_SENDING,
 }: Props) {
   const { t } = useTranslation(["models"]);
   // Those the user sends through the Bridge, picked in the Slicer settings.
@@ -107,7 +119,8 @@ export default function OpenInSlicerButton({
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
   const offersTools = Boolean(onToolCommand) && toolCommands.length > 0;
-  const offersAbove = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const offersSending = Boolean(onSend) && sendTargets.length > 0;
+  const offersAbove = offersSlicers || offersSending || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
   const hasMenu = offersAbove || offersTools;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
@@ -186,6 +199,29 @@ export default function OpenInSlicerButton({
               <ListItemText primaryTypographyProps={{ variant: "body2" }}>{option.label}</ListItemText>
             </MenuItem>
           ))}
+        {offersSending && (
+          <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.sendTo.heading")}</ListSubheader>
+        )}
+        {offersSending &&
+          sendTargets.map((target) => (
+            <MenuItem
+              key={target.id}
+              disabled={sending.has(target.id)}
+              onClick={() => {
+                onSend?.(target);
+                close();
+              }}
+            >
+              <ListItemIcon>
+                {sending.has(target.id) ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <SendKindIcon kind={kindOf(target)} size={22} />
+                )}
+              </ListItemIcon>
+              <ListItemText primaryTypographyProps={{ variant: "body2" }}>{target.name}</ListItemText>
+            </MenuItem>
+          ))}
         {onOpenInStudio && (
           <MenuItem
             disabled={openingInStudio}
@@ -204,7 +240,7 @@ export default function OpenInSlicerButton({
             <ListItemText primaryTypographyProps={{ variant: "body2" }}>{t("models:detail.openInStudio")}</ListItemText>
           </MenuItem>
         )}
-        {(offersSlicers || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
+        {(offersSlicers || offersSending || onOpenInStudio) && (offersDownload || zipCount > 1) && <Divider />}
         {offersDownload && (
           <MenuItem
             disabled={downloading}

@@ -9,7 +9,13 @@ import { STORAGE } from "../src/config";
 import { deletePrint } from "../src/services/printEditService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
-import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
+import {
+  STORAGE_KEY,
+  setToolsRepoForTest,
+  syncToolModels,
+  toolFetchSettled,
+  toolsSource,
+} from "../src/services/toolsService";
 import { toolLocks } from "../src/routes/toolLocks";
 
 const app = createApp();
@@ -165,6 +171,17 @@ describe("metadata", () => {
       /without the dot/,
     );
     expect(() => parseToolManifest(manifest([{ id: "a", title: "A", fileTypes: ["stl"] }]))).toThrow(/on: "file"/);
+  });
+
+  it("takes a part of the model page, offering one of its own commands there", () => {
+    const commands = [{ id: "queue", title: "Add to queue", window: false }];
+    expect(
+      parseToolManifest(JSON.stringify({ name: "x", commands, modelInfo: { title: "Print queue", command: "queue" } }))
+        .modelInfo,
+    ).toEqual({ title: "Print queue", command: "queue" });
+    expect(() =>
+      parseToolManifest(JSON.stringify({ name: "x", commands, modelInfo: { title: "Print queue", command: "other" } })),
+    ).toThrow(/isn't one of its commands/);
   });
 });
 
@@ -696,6 +713,9 @@ describe("users' own tools", () => {
     });
     expect((await request(app).get(base).set(as)).body.keys).toMatchObject([{ key: "plan" }]);
     expect((await request(app).put(`${base}/bad key`).set(as).send({ value: 1 })).status).toBe(400);
+    // A client resolves these in a path, even escaped, so they're never keys; dots among other characters are.
+    expect(["..", "."].filter((key) => STORAGE_KEY.test(key))).toEqual([]);
+    expect(["...", "a.b", ".x"].every((key) => STORAGE_KEY.test(key))).toBe(true);
     expect((await request(app).delete(`${base}/plan`).set(as)).status).toBe(204);
     expect((await request(app).get(base).set(as)).body.keys).toEqual([]);
     // Another user can't reach someone's own tool at all.
