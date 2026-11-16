@@ -42,11 +42,15 @@ Its body size limit is 2000 MB already.
 ## nginx
 
 A server block that passes Thingport on with the settings above. Replace `192.168.1.20:8080` with your Thingport
-instance's address and port, and add your certificate lines if you serve it over HTTPS:
+instance's address and port. To serve it over HTTPS as well, uncomment the three `ssl` lines and point them at your
+certificate:
 
 ```nginx
 server {
     listen 80;
+    # listen 443 ssl;
+    # ssl_certificate     /etc/ssl/certs/thingport.example.com.crt;
+    # ssl_certificate_key /etc/ssl/private/thingport.example.com.key;
     server_name thingport.example.com;
 
     client_max_body_size 512m;
