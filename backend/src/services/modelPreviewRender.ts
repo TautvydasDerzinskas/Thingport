@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import * as cheerio from "cheerio";
+import { findStartPart, partNames } from "../adapter/format";
 import { listZipEntries, readZipEntry, walkZipEntries } from "../utils/zipReader";
 import { decodePaintState, readColor, readColorGroups, sharePalette, type ThreeMfColors } from "./threeMfColors";
 
@@ -640,22 +641,28 @@ type ParsedModel = {
   missingParts: number;
 };
 
-const MAIN_MODEL_PATH = "3D/3dmodel.model";
 // Counted after expanding components and placements: a Bambu file's main model has almost none.
 const MAX_TRIANGLES = 8_000_000;
 // V8 can't hold a string past ~512MB. Checked from the zip's central directory before inflating.
 const MAX_MODEL_ENTRY_BYTES = 500 * 1024 * 1024;
 const MAX_MODEL_TOTAL_BYTES = 1024 * 1024 * 1024;
+const MAX_RELS_BYTES = 1024 * 1024;
 
 /** "too-complex" is over budget (the browser mustn't try either); "unsupported" is a layout this
  * parser doesn't handle, which the browser's loaders may still manage. */
 export type PreviewRefusal = "too-complex" | "unsupported";
 
 async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewRefusal> {
-  const modelEntries = (await listZipEntries(srcPath)).filter(
-    (entry) => !entry.isDirectory && entry.name.toLowerCase().endsWith(".model"),
+  const entries = (await listZipEntries(srcPath)).filter((entry) => !entry.isDirectory);
+  const names = entries.map((entry) => entry.name);
+  const entryNamed = partNames(names);
+  const relsName = entryNamed("_rels/.rels");
+  const rels = relsName ? await readZipEntry(srcPath, relsName, MAX_RELS_BYTES).catch(() => null) : null;
+  const mainModelPath = findStartPart(names, rels?.toString("utf-8") ?? null);
+  if (!mainModelPath) return "unsupported";
+  const modelEntries = entries.filter(
+    (entry) => entry.name === mainModelPath || entry.name.toLowerCase().endsWith(".model"),
   );
-  if (!modelEntries.some((entry) => entry.name === MAIN_MODEL_PATH)) return "unsupported";
   if (modelEntries.some((entry) => entry.size > MAX_MODEL_ENTRY_BYTES)) return "too-complex";
   if (modelEntries.reduce((sum, entry) => sum + entry.size, 0) > MAX_MODEL_TOTAL_BYTES) return "too-complex";
 
@@ -670,7 +677,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
     (entry) => {
       if (entry.name === "Metadata/model_settings.config") return true;
       if (entry.name === "Metadata/project_settings.config") return true;
-      if (entry.name === MAIN_MODEL_PATH) return true;
+      if (entry.name === mainModelPath) return true;
       if (/^Metadata\/plate_\d+\.json$/.test(entry.name)) return true;
       if (/^Metadata\/(plate|top)_\d+\.png$/.test(entry.name)) return true;
       return false;
@@ -682,7 +689,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
 
       if (entry.name === "Metadata/model_settings.config") modelSettingsText = buf.toString("utf-8");
       else if (entry.name === "Metadata/project_settings.config") projectSettingsText = buf.toString("utf-8");
-      else if (entry.name === MAIN_MODEL_PATH) mainModelText = buf.toString("utf-8");
+      else if (entry.name === mainModelPath) mainModelText = buf.toString("utf-8");
       else {
         const plateMatch = entry.name.match(/^Metadata\/plate_(\d+)\.json$/);
         if (plateMatch)
@@ -726,7 +733,7 @@ async function parseThreeMfFast(srcPath: string): Promise<ParsedModel | PreviewR
   const externalModelCache = new Map<string, string | null>();
   let missingParts = 0;
   const loadExternalModel = async (rawPath: string): Promise<string | null> => {
-    const normalized = rawPath.startsWith("/") ? rawPath.slice(1) : rawPath;
+    const normalized = entryNamed(rawPath) ?? (rawPath.startsWith("/") ? rawPath.slice(1) : rawPath);
     if (externalModelCache.has(normalized)) return externalModelCache.get(normalized) ?? null;
     const buf = await readZipEntry(srcPath, normalized, MAX_MODEL_ENTRY_BYTES);
     const text = buf ? buf.toString("utf-8") : null;

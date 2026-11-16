@@ -4,6 +4,7 @@
 // family wrote it, which app and version, and the printer it was made for.
 
 import { asArray, firstValue, settingsDialectOf, type Settings, type SettingsDialect } from "./settings.generated";
+import { decodeXml } from "./xml.generated";
 
 /** Bumped when classification changes, so stored formats are read again. */
 export const FORMAT_VERSION = 3;
@@ -67,6 +68,39 @@ export function parseGenerator(text: string | null | undefined): { app: string |
   const m = /^(.*?)[- ]V?(\d+(?:\.\d+)+)/.exec(value);
   if (!m || !m[1].trim()) return { app: value, version: null };
   return { app: m[1].trim(), version: m[2] };
+}
+
+const MODEL_RELATIONSHIP = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel";
+// Under any namespace prefix; a tag inside a comment isn't an element.
+const RELATIONSHIP_RE = /<(?:[\w.-]+:)?Relationship\b[^>]*>/gi;
+const XML_COMMENT_RE = /<!--[\s\S]*?-->/g;
+
+function xmlAttr(tag: string, name: string): string | null {
+  const m = new RegExp(String.raw`\b${name}\s*=\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(tag);
+  return m ? decodeXml(m[1] ?? m[2]) : null;
+}
+
+/** Finds entries by package part name, which ignores case and may start with "/"; the name as the zip spells it. */
+export function partNames(entries: Iterable<string>): (part: string) => string | null {
+  const byKey = new Map<string, string>();
+  for (const entry of entries) {
+    const key = entry.toLowerCase();
+    if (!byKey.has(key)) byKey.set(key, entry);
+  }
+  return (part) => byKey.get(part.replace(/^\/+/, "").toLowerCase()) ?? null;
+}
+
+/** The entry holding a 3MF's model: the one _rels/.rels names, else 3D/3dmodel.model, in any case; null with neither.
+ *  Windows' 3D Builder writes 3D/3DModel.model. */
+export function findStartPart(entries: Iterable<string>, rels: string | null): string | null {
+  const named = partNames(entries);
+  for (const tag of rels?.replace(XML_COMMENT_RE, "").match(RELATIONSHIP_RE) ?? []) {
+    const target = xmlAttr(tag, "Target");
+    if (!target || xmlAttr(tag, "Type")?.toLowerCase() !== MODEL_RELATIONSHIP) continue;
+    const found = named(target);
+    if (found) return found;
+  }
+  return named("3D/3dmodel.model");
 }
 
 function readJson(text: string | null): Settings | null {

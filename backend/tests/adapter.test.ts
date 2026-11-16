@@ -17,6 +17,7 @@ import {
   type AdaptPlan,
   type ThreeMfFormat,
 } from "../src/adapter";
+import { findStartPart, partNames } from "../src/adapter/format";
 import { decodePaintState, encodePaintState, stateToMaterialIndex } from "../src/adapter/paint";
 import { parseModelSettings, parsePlates } from "../src/adapter/readers/bambuProject";
 import {
@@ -400,6 +401,53 @@ describe("paint state", () => {
     expect(stateToMaterialIndex(1, 2, 5)).toBe(0);
     expect(stateToMaterialIndex(0, 2, 5)).toBe(1);
     expect(stateToMaterialIndex(5, 1, 5)).toBe(4);
+  });
+});
+
+describe("a 3MF's start part", () => {
+  const rels = (target: string, type = "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel") =>
+    `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r" Target='${target}' Type="${type}"/></Relationships>`;
+
+  it("is the model _rels/.rels names, matched in any case, as the zip spells it", () => {
+    expect(findStartPart(["_rels/.rels", "3D/3DModel.model"], rels("/3D/3DModel.model"))).toBe("3D/3DModel.model");
+    expect(findStartPart(["3D/main.model", "3D/3dmodel.model"], rels("/3D/Main.model"))).toBe("3D/main.model");
+  });
+
+  it("is 3D/3dmodel.model in any case without a relationship that leads anywhere", () => {
+    expect(findStartPart(["3D/3DModel.model"], null)).toBe("3D/3DModel.model");
+    expect(findStartPart(["3D/3dmodel.model"], rels("/3D/gone.model"))).toBe("3D/3dmodel.model");
+    expect(findStartPart(["3D/3dmodel.model", "3D/thumb.model"], rels("/3D/thumb.model", "urn:other"))).toBe(
+      "3D/3dmodel.model",
+    );
+  });
+
+  it("reads a relationship under a namespace prefix", () => {
+    const prefixed = `<r:Relationships xmlns:r="http://schemas.openxmlformats.org/package/2006/relationships"><r:Relationship Id="r" Target="/3D/main.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></r:Relationships>`;
+    expect(findStartPart(["3D/main.model"], prefixed)).toBe("3D/main.model");
+  });
+
+  it("passes over a relationship that's commented out", () => {
+    const commented = rels("/3D/main.model").replace(
+      "<Relationship ",
+      `<!-- <Relationship Id="old" Target="/3D/old.model" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/> --><Relationship `,
+    );
+    expect(findStartPart(["3D/old.model", "3D/main.model"], commented)).toBe("3D/main.model");
+  });
+
+  it("reads a target written with character references", () => {
+    expect(findStartPart(["3D/main.model"], rels("/3D/ma&#105;n.model"))).toBe("3D/main.model");
+    expect(findStartPart(["3D/a&b.model"], rels("/3D/a&amp;b.model"))).toBe("3D/a&b.model");
+  });
+
+  it("is nothing for a zip with neither", () => {
+    expect(findStartPart(["3D/model.model"], null)).toBeNull();
+  });
+
+  it("finds a part with or without its leading slash", () => {
+    const named = partNames(["3D/Objects/Part_1.model"]);
+    expect(named("/3D/Objects/part_1.model")).toBe("3D/Objects/Part_1.model");
+    expect(named("3d/objects/PART_1.model")).toBe("3D/Objects/Part_1.model");
+    expect(named("3D/Objects/part_2.model")).toBeNull();
   });
 });
 

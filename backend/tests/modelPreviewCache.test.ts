@@ -13,9 +13,11 @@ import {
   generateModelPreviewGlb,
   isPreviewCompressed,
   modelPreviewGlbExists,
+  modelImageState,
   modelPreviewGlbPath,
   modelPreviewState,
 } from "../src/services/modelPreviewCache";
+import { RENDER_FILE_TAG } from "../src/services/modelAssets";
 
 // A small 2-object/2-extruder/2-plate Bambu-style .3mf.
 const MODEL_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -506,6 +508,77 @@ describe("modelPreviewCache -- multi-part objects sharing one part file", () => 
   });
 });
 
+describe("modelPreviewCache -- where the model is", () => {
+  const plateIds: string[] = [];
+
+  afterAll(async () => {
+    for (const id of plateIds) {
+      for (const ext of [".v5.glb", ".v5.error", ".pending"])
+        await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
+    }
+  });
+
+  const relsTo = (target: string) => `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+ <Relationship Target="/Metadata/thumbnail.png" Id="rel1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"/>
+ <Relationship Target="${target}" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
+</Relationships>`;
+
+  /** Renders a 3MF of the given entries: how many meshes its preview drew, or its state when it drew none. */
+  async function previewOf(label: string, files: Record<string, string>): Promise<number | string> {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-start-part-"));
+    const entries = await Promise.all(
+      Object.entries(files).map(async ([arcname, text], index) => {
+        const filePath = path.join(dir, `entry-${index}`);
+        await fs.writeFile(filePath, text);
+        return { arcname, filePath };
+      }),
+    );
+    const fixture = path.join(dir, `${label}.3mf`);
+    await writeZip(fixture, entries);
+    const plateId = `test-fixture-start-${label}-${Date.now()}`;
+    plateIds.push(plateId);
+    await generateModelPreviewGlb(plateId, fixture);
+    const state = modelPreviewState(plateId);
+    return state === "ready" ? (await loadGlbMeshes(plateId)).length : state;
+  }
+
+  const oneObject = singleItemModelXml(`<object id="1" type="model">${ONE_TRIANGLE_MESH}</object>`, "1");
+
+  it("reads 3D/3DModel.model, as Windows' 3D Builder names it", async () => {
+    await fs.mkdir(cacheDir(), { recursive: true });
+    expect(
+      await previewOf("builder", { "_rels/.rels": relsTo("/3D/3DModel.model"), "3D/3DModel.model": oneObject }),
+    ).toBe(1);
+    expect(await previewOf("no-rels", { "3D/3DModel.model": oneObject })).toBe(1);
+  });
+
+  it("reads the model wherever _rels/.rels puts it, in any case", async () => {
+    expect(await previewOf("elsewhere", { "_rels/.rels": relsTo("/3D/Main.model"), "3D/main.model": oneObject })).toBe(
+      1,
+    );
+  });
+
+  it("falls back to the usual name when _rels/.rels points at nothing", async () => {
+    expect(
+      await previewOf("dangling", { "_rels/.rels": relsTo("/3D/gone.model"), "3D/3dmodel.model": oneObject }),
+    ).toBe(1);
+  });
+
+  it("finds a part file named in another case than the zip's", async () => {
+    const main = `<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" unit="millimeter">
+ <resources><object id="9" type="model"><components><component p:path="/3D/Objects/part.model" objectid="1" /></components></object></resources>
+ <build><item objectid="9" /></build>
+</model>`;
+    const part = `<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="millimeter"><resources>
+ <object id="1" type="model">${ONE_TRIANGLE_MESH}</object>
+</resources></model>`;
+    expect(await previewOf("part-case", { "3D/3dmodel.model": main, "3D/Objects/Part.model": part })).toBe(1);
+  });
+});
+
 describe("modelPreviewState", () => {
   const plateIds: string[] = [];
   const newPlateId = (label: string) => {
@@ -536,11 +609,28 @@ describe("modelPreviewState", () => {
     const modelPath = path.join(dir, "model.model");
     await fs.writeFile(modelPath, singleItemModelXml(`<object id="1" type="model">${ONE_TRIANGLE_MESH}</object>`, "1"));
     const fixture = path.join(dir, "elsewhere.3mf");
-    // Valid 3MF (the path comes from _rels/.rels), but not where this parser looks.
+    // No _rels/.rels to say where the model is, and not where one usually is.
     await writeZip(fixture, [{ arcname: "3D/model.model", filePath: modelPath }]);
     const plateId = newPlateId("unsupported");
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewState(plateId)).toBe("unsupported");
+  });
+
+  it("gives a file an older reader refused another try", async () => {
+    const fixture = path.join(await fs.mkdtemp(path.join(os.tmpdir(), "thingport-state-")), "ok.3mf");
+    await buildModelOnly3mf(
+      fixture,
+      singleItemModelXml(`<object id="1" type="model">${ONE_TRIANGLE_MESH}</object>`, "1"),
+    );
+    const plateId = newPlateId("stale-refusal");
+    await fs.mkdir(cacheDir(), { recursive: true });
+    await fs.writeFile(path.join(cacheDir(), `${plateId}.v5.error`), "permanent: unsupported");
+    await fs.writeFile(path.join(cacheDir(), `${plateId}.${RENDER_FILE_TAG}.error`), "permanent: unsupported");
+    expect(modelPreviewState(plateId)).toBe("generating");
+    expect(modelImageState(plateId, null)).toBe("generating");
+    await generateModelPreviewGlb(plateId, fixture);
+    expect(modelPreviewState(plateId)).toBe("ready");
+    await fs.rm(path.join(cacheDir(), `${plateId}.${RENDER_FILE_TAG}.error`), { force: true });
   });
 
   it("says generating while a render is queued or running", async () => {

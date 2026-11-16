@@ -22,7 +22,7 @@ const GENERATED = /\.generated\.ts$/;
 
 // What each copy takes: the web app plans but makes no copies, so it has no writers (nor JSZip); Grab takes it all.
 const TARGETS = [
-  { dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/"] },
+  { dir: "frontend/src/adapter", files: ["format.ts", "plan.ts", "settings.ts", "slicers/", "xml.ts"] },
   { dir: "extension/src/adapter", files: ["/"] },
 ];
 
