@@ -379,6 +379,40 @@ describe("merging a working copy", () => {
     expect(entry).toMatchObject({ printId: here.id, originKey: `orig:${brought.originalId}` });
   });
 
+  it("takes the copy someone has here already for theirs of an original that's another model here", async () => {
+    const kim = await person("kim", true);
+    const joe = await person("joe", true);
+    const page = { sourceProvider: "printables", sourceExternalId: `78${tag}` };
+    const here = await prisma.print.create({
+      data: { userId: kim.hereId!, name: "Clip", nameNormalized: "clip", ...page },
+    });
+    // Joe copied Kim's model here; there, his copy is of the one Kim brings, which is that model.
+    await prisma.print.create({
+      data: { userId: joe.hereId!, name: "Clip", nameNormalized: "clip", originalId: here.id, copiedFromId: here.id },
+    });
+    const original = `clip${tag}`;
+    const copy = `clipcopy${tag}`;
+    await source.print.create({
+      data: { id: original, userId: kim.sourceId, name: "Clip", nameNormalized: "clip", ...page },
+    });
+    await source.print.create({
+      data: {
+        id: copy,
+        userId: joe.sourceId,
+        name: "Clip",
+        nameNormalized: "clip",
+        originalId: original,
+        copiedFromId: original,
+      },
+    });
+
+    // Joe first, so his copy would be reached before the original if they went by person alone.
+    const report = await merge([joe.sourceId, kim.sourceId]);
+    expect(report.failures).toEqual([]);
+    expect(await prisma.print.findUnique({ where: { id: copy } })).toBeNull();
+    expect(await prisma.print.count({ where: { userId: joe.hereId! } })).toBe(1);
+  });
+
   it("keeps someone's tool entries from whoever either account kept them from", async () => {
     const lee = await person("lee", true);
     const both = await prisma.user.create({ data: { email: `both-${tag}@example.com`, displayName: "Both" } });

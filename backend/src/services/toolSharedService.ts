@@ -83,8 +83,12 @@ function assertKey(key: string): void {
  * Leaves out the entries of the writers in these tools who keep theirs from `readerId` (those whose audience leaves
  * them out), in the query itself, so their entries don't use up the rows a read takes.
  */
-async function visibleTo(toolIds: string[], readerId: string): Promise<Prisma.ToolSharedDataWhereInput> {
-  const hidden = await prisma.toolAudience.findMany({
+async function visibleTo(
+  db: Prisma.TransactionClient,
+  toolIds: string[],
+  readerId: string,
+): Promise<Prisma.ToolSharedDataWhereInput> {
+  const hidden = await db.toolAudience.findMany({
     where: { toolId: { in: toolIds }, userId: { not: readerId }, NOT: { userIds: { has: readerId } } },
     select: { toolId: true, userId: true },
   });
@@ -125,19 +129,25 @@ export async function listSharedData(
 ): Promise<SharedEntryOut[]> {
   const tool = await usableTool(user, toolId);
   const keys = options.model ? await readableModel(user, options.model) : null;
-  const rows = await prisma.toolSharedData.findMany({
-    where: {
-      AND: [
-        { toolId: tool.id },
-        options.prefix ? { key: { startsWith: options.prefix } } : {},
-        keys ? sameModel(keys) : {},
-        options.before ? afterCursor(options.before) : {},
-        await visibleTo([tool.id], user.id),
-      ],
-    },
-    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-    take: LIST_MAX,
-  });
+  // Who keeps theirs from the user, and the entries, read in one snapshot: an entry written just after its writer
+  // narrowed whom theirs reach is never read under what reached the user before.
+  const rows = await prisma.$transaction(
+    async (tx) =>
+      tx.toolSharedData.findMany({
+        where: {
+          AND: [
+            { toolId: tool.id },
+            options.prefix ? { key: { startsWith: options.prefix } } : {},
+            keys ? sameModel(keys) : {},
+            options.before ? afterCursor(options.before) : {},
+            await visibleTo(tx, [tool.id], user.id),
+          ],
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        take: LIST_MAX,
+      }),
+    { isolationLevel: "RepeatableRead" },
+  );
   const cards = await userCards(rows.map((row) => row.userId));
   return rows.map((row) => ({
     key: row.key,
@@ -284,17 +294,18 @@ export async function modelInfoFor(user: ToolUser, printId: string): Promise<Mod
   if (!tools.length) return { tools: [] };
   const keys = await readableModel(user, printId);
   const toolIds = tools.map((tool) => tool.id);
-  const where: Prisma.ToolSharedDataWhereInput = {
-    AND: [
-      { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
-      sameModel(keys),
-      await visibleTo(toolIds, user.id),
-    ],
-  };
   // When each person last wrote in each tool, so one who wrote a great many can't crowd the others out of the rows.
-  // Both reads see one snapshot: a write between them would move that time on, and the person's entry would be lost.
+  // All read in one snapshot: a write between the reads would move that time on, and the person's entry would be
+  // lost; one just after its writer narrowed whom theirs reach would be read under what reached the user before.
   const rows = await prisma.$transaction(
     async (tx) => {
+      const where: Prisma.ToolSharedDataWhereInput = {
+        AND: [
+          { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
+          sameModel(keys),
+          await visibleTo(tx, toolIds, user.id),
+        ],
+      };
       const newest = await tx.toolSharedData.groupBy({
         by: ["toolId", "userId"],
         where,
