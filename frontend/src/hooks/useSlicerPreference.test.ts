@@ -57,4 +57,27 @@ describe("switching slicer", () => {
     await first;
     expect(slicers.slicerSettingsNow()?.slicer).toBe("b");
   });
+
+  it("doesn't take a read answered after a save for the slicer stored", async () => {
+    const { settingsApi } = await import("../api/settings");
+    const slicers = await import("./useSlicerPreference");
+    const slowRead = deferred();
+    vi.spyOn(settingsApi, "getSlicer")
+      .mockResolvedValueOnce(settings("a"))
+      .mockReturnValueOnce(slowRead.promise)
+      .mockRejectedValue(new Error("offline"));
+    await slicers.reloadSlicerSettings();
+    // A read starts, then b is saved, then the read answers with a, from before the save.
+    const reading = slicers.reloadSlicerSettings();
+    const toC = deferred();
+    vi.spyOn(settingsApi, "updateSlicer").mockResolvedValueOnce(settings("b")).mockReturnValueOnce(toC.promise);
+    await slicers.switchSlicer("b");
+    slowRead.resolve(settings("a"));
+    await reading;
+    // c fails, and goes back to b, the one saved.
+    const c = slicers.switchSlicer("c");
+    toC.reject(new Error("offline"));
+    await c;
+    expect(slicers.slicerSettingsNow()?.slicer).toBe("b");
+  });
 });

@@ -13,15 +13,19 @@ let version = 0;
 let switches = 0;
 // The slicer the server last said it has: what a failed switch goes back to, whatever was picked meanwhile.
 let stored: string | null | undefined;
+// Saves that went through, so a read started before one, and answered after, doesn't say the slicer is still the one
+// before it.
+let saves = 0;
 
 function load(): Promise<SlicerSettings> {
   if (cached !== undefined) return Promise.resolve(cached);
   if (!inFlight) {
     const at = version;
+    const savesAt = saves;
     inFlight = settingsApi
       .getSlicer()
       .then((res) => {
-        stored = res.slicer;
+        if (saves === savesAt) stored = res.slicer;
         if (version === at) cached = res;
         return cached ?? res;
       })
@@ -37,9 +41,10 @@ function load(): Promise<SlicerSettings> {
 /** Reads them again, e.g. after the user changed where they send models. */
 export async function reloadSlicerSettings(): Promise<void> {
   const at = ++version;
+  const savesAt = saves;
   try {
     const res = await settingsApi.getSlicer();
-    stored = res.slicer;
+    if (saves === savesAt) stored = res.slicer;
     if (version === at) setCachedSlicerSettings(res);
   } catch {
     // The page keeps what it had.
@@ -67,6 +72,7 @@ export async function switchSlicer(slicer: string): Promise<void> {
   try {
     const saved = await settingsApi.updateSlicer({ slicer });
     stored = saved.slicer;
+    saves++;
     if (version === at) return setCachedSlicerSettings(saved);
   } catch {
     // Back to the one stored, by the latest switch only: an earlier one failing mustn't undo a later pick, which may
