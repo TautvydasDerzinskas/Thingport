@@ -88,7 +88,13 @@ export default function ToolShareDialog({ open, tool, onClose, onUnauthorized }:
   };
 
   return (
-    <Dialog open={open && Boolean(tool)} onClose={() => onClose(null)} maxWidth="xs" fullWidth>
+    <Dialog
+      open={open && Boolean(tool)}
+      // Not while saving, as Cancel can't be either: the save would still go on and answer after.
+      onClose={() => !saving && onClose(null)}
+      maxWidth="xs"
+      fullWidth
+    >
       <DialogTitle>{t("tools.share.title", { name: tool?.name ?? "" })}</DialogTitle>
       <DialogContent>
         {loadFailed ? (

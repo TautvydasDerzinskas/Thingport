@@ -82,6 +82,8 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
   );
   const [info, setInfo] = useState<ToolModelInfo | null>(null);
   const hasParts = parts.length > 0;
+  // Which tools have a part, so installing another one reads the notes again with its own in them.
+  const partTools = parts.map(({ tool }) => tool.id).join(",");
   // Read through a ref, so a new callback each render doesn't read the notes again.
   const unauthorized = useRef(onUnauthorized);
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
   });
 
   useEffect(() => {
-    if (!hasParts) return;
+    if (!partTools) return;
     let active = true;
     // Only the latest read lands, so an older answer arriving late can't put back what a newer one replaced.
     let latest = 0;
@@ -115,7 +117,7 @@ export default function ToolInfoParts({ printId, commands, onCommand, onOpenTool
       active = false;
       stop();
     };
-  }, [printId, hasParts]);
+  }, [printId, partTools]);
 
   if (!hasParts) return null;
 
