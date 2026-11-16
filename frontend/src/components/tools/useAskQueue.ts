@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
-type Asked<Q, A> = Q & { id: number; owner: object; resolve: (answer: A) => void };
+type Asked<Q, A> = Q & { id: number; owner: { ended: boolean }; resolve: (answer: A) => void };
 
 /** One run of a tool's questions. Once it has ended, its unanswered ones and any it asks later never answer, so
  * nothing in a stopped run carries on, and a newer run's questions don't wait behind them. */
@@ -17,18 +17,17 @@ export function useAskQueue<Q extends object, A>() {
   const ids = useRef(0);
 
   const session = useCallback((): AskSession<Q, A> => {
-    const owner = {};
-    let ended = false;
+    const owner = { ended: false };
     return {
       ask: (question) =>
         new Promise<A>((resolve) => {
-          if (ended) return;
+          if (owner.ended) return;
           ids.current += 1;
           const asked = { ...question, id: ids.current, owner, resolve };
           setState((now) => ({ ...now, queue: [...now.queue, asked] }));
         }),
       end: () => {
-        ended = true;
+        owner.ended = true;
         setState((now) => {
           const queue = now.queue.filter((asked) => asked.owner !== owner);
           // Where the dialog's own question is dropped and none waits, it closes on that one.
@@ -39,8 +38,9 @@ export function useAskQueue<Q extends object, A>() {
   }, []);
 
   const current = state.queue[0] ?? null;
+  // A dialog's answer can come after its session has ended, as when a save it waited on finishes: it's dropped.
   const answer = (given: A) => {
-    if (!current) return;
+    if (!current || current.owner.ended) return;
     current.resolve(given);
     setState((now) => ({ queue: now.queue.filter((asked) => asked !== current), last: current }));
   };
