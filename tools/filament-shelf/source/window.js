@@ -66,6 +66,8 @@ export default function mount(thingport) {
   // Everything read under spool:, as stored; validated where it's used.
   let entries = null;
   let needEntries = [];
+  // Whether the edits about the model have been read: until then its needs aren't known, rather than the profile's.
+  let needsRead = false;
   let model = null;
   let everyone = [];
   let problem = null;
@@ -91,12 +93,16 @@ export default function mount(thingport) {
     const at = writes;
     const [spoolList, needList, picked] = await Promise.all([
       readAll(shared, { prefix: SPOOL }),
-      context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => []) : [],
+      context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => null) : [],
       context.modelId && !model ? models.get(context.modelId).catch(() => null) : model,
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
-    needEntries = needList;
+    // A failed read of the edits keeps the last that worked: as none, an edit would read as the profile's list.
+    if (needList) {
+      needEntries = needList;
+      needsRead = true;
+    }
     model = picked;
     problem = null;
     render();
@@ -137,6 +143,8 @@ export default function mount(thingport) {
 
   function render() {
     const loading = entries === null;
+    // Nothing to add to until the shelf is read: a spool added before would be lost.
+    $("add").disabled = loading;
     cards.setAttribute("aria-busy", String(loading && !problem));
     if (loading) {
       showEmpty(problem ? { title: t("shelf.failed"), hint: problem, act: "retry", label: t("shelf.retry") } : null);
@@ -227,9 +235,10 @@ export default function mount(thingport) {
   }
 
   function drawNeeds(spools) {
-    needs = model
-      ? needsFor(model, context.fileId, currentEdit(needEntries, profileKey(pickFile(model, context.fileId))))
-      : [];
+    needs =
+      model && needsRead
+        ? needsFor(model, context.fileId, currentEdit(needEntries, profileKey(pickFile(model, context.fileId))))
+        : [];
     needsStrip.hidden = !needs.length;
     if (!needs.length) return;
     const missing = new Set(missingOnShelf(needs, spools));
@@ -524,6 +533,7 @@ export default function mount(thingport) {
   }
 
   function openDialog({ key = null, value = null, queue = [] } = {}) {
+    if (entries === null) return;
     closeMenu();
     const opener = root.contains(document.activeElement) ? document.activeElement : null;
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());

@@ -150,19 +150,27 @@ export function modelInfo(thingport) {
     return button;
   }
 
+  // One add at a time, whichever button drew it: the chips are drawn again while it saves, and a second add then could
+  // pass the duplicate check before the first is stored.
+  let adding = false;
+
   function addButton() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "pqp-chip pqp-add";
     button.textContent = `+ ${t("part.add")}`;
+    button.disabled = adding;
     button.addEventListener("click", async () => {
-      button.disabled = true;
+      if (adding) return;
+      adding = true;
+      for (const other of chips.querySelectorAll(".pqp-add")) other.disabled = true;
       try {
         await run("queue", thingport);
       } catch (error) {
         ui.toast(t("toast.failed", { error: error?.message || String(error) }), "error");
       } finally {
-        button.disabled = false;
+        adding = false;
+        for (const other of chips.querySelectorAll(".pqp-add")) other.disabled = false;
       }
     });
     return button;
@@ -170,16 +178,20 @@ export function modelInfo(thingport) {
 
   async function draw() {
     const read = ++reads;
-    const entries = await jobsOn(shared, context.modelId);
+    let entries;
+    try {
+      entries = await jobsOn(shared, context.modelId);
+    } catch {
+      // A read a later one has overtaken says nothing, failing or not.
+      if (!closed && read === reads) chips.replaceChildren(addButton());
+      return;
+    }
     if (closed || read !== reads) return;
     chips.replaceChildren(...chipsOf(entries).map(chip), addButton());
   }
 
-  const failed = () => {
-    if (!closed) chips.replaceChildren(addButton());
-  };
-  const stop = shared.onChange(() => void draw().catch(failed));
-  void draw().catch(failed);
+  const stop = shared.onChange(() => void draw());
+  void draw();
   return () => {
     closed = true;
     stop();

@@ -117,10 +117,15 @@ export function modelTab(thingport) {
       if (closed || read !== reads) return;
       problem = error?.message || String(error);
     }
-    // A change from elsewhere mid-edit shows in the people's columns, leaving the rows being typed in alone.
-    if (draft && data) updateMatches();
+    // A change from elsewhere mid-edit shows in the people's columns, leaving the rows being typed in alone, unless
+    // the people changed: then the columns are drawn again, the rows from what's typed.
+    if (draft && data && peopleOf(data) === drawnPeople) updateMatches();
     else render();
   }
+
+  // Whose columns the grid has, so a change that adds or takes one away draws it whole.
+  let drawnPeople = "";
+  const peopleOf = (shown) => shown.everyone.map((person) => person.key).join("|");
 
   const draftNeeds = () =>
     needsFor(data.model, context.fileId, {
@@ -233,6 +238,7 @@ export function modelTab(thingport) {
 
   function render() {
     box.setAttribute("aria-busy", String(!data && !problem));
+    drawnPeople = data ? peopleOf(data) : "";
     if (!data) {
       box.innerHTML = problem
         ? `<div class="fs-problem">${icon("warn")}<span>${escapeHtml(t("tab.failed", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
@@ -332,7 +338,11 @@ export function modelTab(thingport) {
       failed(error);
     } finally {
       saving = false;
-      if (!closed) render();
+      if (!closed) {
+        render();
+        // Saved, so the editor's gone: back to the button that opened it.
+        if (!draft) box.querySelector('[data-act="edit"]')?.focus();
+      }
     }
   }
 
@@ -367,7 +377,8 @@ export function modelTab(thingport) {
     if (act === "save") return void save();
     if (act === "cancel") {
       draft = null;
-      return render();
+      render();
+      return void box.querySelector('[data-act="edit"]')?.focus();
     }
     if (act === "add") {
       const row = blankRow();

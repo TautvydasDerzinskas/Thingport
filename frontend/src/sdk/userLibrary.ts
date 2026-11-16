@@ -29,7 +29,8 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
     type: f.type,
     color: f.color,
     grams: f.grams,
-    brand: own.find((o) => o.color && same(o.color, f.color) && same(o.type, f.type))?.brand ?? null,
+    // By colour only: a filament the profile gives no colour could be any of the project's.
+    brand: (f.color && own.find((o) => o.color && same(o.color, f.color) && same(o.type, f.type))?.brand) || null,
   });
   const profile = plate.profile;
   if (profile)

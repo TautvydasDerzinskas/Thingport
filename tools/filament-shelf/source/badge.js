@@ -131,7 +131,7 @@ export function modelImage(thingport) {
   function drawPopover(box) {
     const { match } = data;
     const kind = tone(match);
-    box.innerHTML = `
+    const html = `
       <h3 class="fs-pop-head" id="${titleId}">${icon("palette")}<span>${escapeHtml(t("pop.title"))}</span><button type="button" class="fs-icon-btn" data-act="close" aria-label="${escapeHtml(t("pop.closeLabel"))}" title="${escapeHtml(t("pop.closeLabel"))}">${icon("close")}</button></h3>
       <ul class="fs-pop-rows">${match.rows
         .map(
@@ -140,6 +140,13 @@ export function modelImage(thingport) {
         )
         .join("")}</ul>
       <div class="fs-pop-foot"><span class="fs-pop-sum ${kind}">${icon(kind === "fs-all" ? "check" : "warn")}<span>${escapeHtml(shortSummary(t, match))}</span></span><button type="button" class="fs-btn fs-small" data-act="details">${escapeHtml(t("pop.details"))}${icon("chevron")}</button></div>`;
+    // Drawn again only when it says something new, and then with the focus where it was, so a change elsewhere
+    // neither replays the rows coming in nor drops a keyboard user back to the page's start.
+    if (html === box.dataset.html) return;
+    const focused = box.contains(document.activeElement) ? document.activeElement.dataset.act : null;
+    box.dataset.html = html;
+    box.innerHTML = html;
+    if (focused) box.querySelector(`[data-act="${focused}"]`)?.focus();
   }
 
   button.addEventListener("click", () => {
