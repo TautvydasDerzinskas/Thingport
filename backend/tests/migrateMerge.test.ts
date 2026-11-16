@@ -321,6 +321,64 @@ describe("merging a working copy", () => {
     });
   });
 
+  it("knows a copy, and what's shared about its original, by the model that original is here", async () => {
+    const mo = await person("mo", true);
+    const pat = await person("pat");
+    const page = { sourceProvider: "printables", sourceExternalId: `77${tag}` };
+    // Mo has the model here already, imported from the same page as the one they bring.
+    const here = await prisma.print.create({
+      data: { userId: mo.hereId!, name: "Hinge", nameNormalized: "hinge", ...page },
+    });
+    const original = `hinge${tag}`;
+    const copy = `hingecopy${tag}`;
+    await source.print.create({
+      data: { id: original, userId: mo.sourceId, name: "Hinge", nameNormalized: "hinge", ...page },
+    });
+    await source.print.create({
+      data: {
+        id: copy,
+        userId: pat.sourceId,
+        name: "Hinge",
+        nameNormalized: "hinge",
+        originalId: original,
+        copiedFromId: original,
+      },
+    });
+    const toolId = `tool3${tag}`;
+    await source.tool.create({
+      data: {
+        id: toolId,
+        source: "own",
+        scope: mo.sourceId,
+        slug: `queue3-${tag}`,
+        userId: mo.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: {
+        toolId,
+        userId: mo.sourceId,
+        key: "about:1",
+        value: { jobs: 1 },
+        size: 10,
+        printId: original,
+        originKey: `orig:${original}`,
+        info: { label: "Queued" },
+      },
+    });
+
+    expect((await merge([mo.sourceId, pat.sourceId], noFiles().files, { tools: true })).failures).toEqual([]);
+    await hereIdOf(pat.email);
+    const brought = await prisma.print.findUniqueOrThrow({ where: { id: copy } });
+    expect(brought).toMatchObject({ originalId: here.id, copiedFromId: here.id });
+    const entry = await prisma.toolSharedData.findFirstOrThrow({ where: { toolId, userId: mo.hereId! } });
+    // The key the copy's page reads by.
+    expect(entry).toMatchObject({ printId: here.id, originKey: `orig:${brought.originalId}` });
+  });
+
   it("keeps someone's tool entries from whoever either account kept them from", async () => {
     const lee = await person("lee", true);
     const both = await prisma.user.create({ data: { email: `both-${tag}@example.com`, displayName: "Both" } });

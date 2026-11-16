@@ -192,6 +192,10 @@ export class Merge {
   private created = new Set<string>();
   private categories = new Map<string, string>();
   private prints = new Map<string, string>();
+  /** Models brought, or found brought by an earlier try, that were copies there: by id, their first original's id. */
+  private originals: [string, string][] = [];
+  /** A model here, by how its copies know it: its own first original, else itself. */
+  private rootsHere = new Map<string, string>();
   private collections = new Map<string, string>();
   private tools = new Map<string, string>();
   private oidc = new Map<string, string>();
@@ -451,6 +455,7 @@ export class Merge {
       this.prints.set(print.id, print.id);
       // Brought by a try that stopped before linking it to its original.
       if (print.copiedFromId && !earlier.copiedFromId) this.copies.push([print.id, print.copiedFromId]);
+      if (print.originalId) this.originals.push([print.id, print.originalId]);
       this.report.models.earlier += 1;
       return;
     }
@@ -546,6 +551,7 @@ export class Merge {
     }
     this.prints.set(print.id, print.id);
     if (print.copiedFromId) this.copies.push([print.id, print.copiedFromId]);
+    if (print.originalId) this.originals.push([print.id, print.originalId]);
     this.report.models.brought += 1;
     if (name !== print.name) this.report.models.renamed += 1;
   }
@@ -655,6 +661,26 @@ export class Merge {
       if (here && here !== id)
         await prisma.print.update({ where: { id }, data: { copiedFromId: here } }).catch(() => undefined);
     }
+    // A first original that's another model here is known by that one's, as what's shared about it is. Left as it
+    // was where they have a copy of that one already.
+    for (const [id, original] of this.originals) {
+      const root = await this.rootHere(original);
+      if (root !== original && root !== id)
+        await prisma.print.update({ where: { id }, data: { originalId: root } }).catch(() => undefined);
+    }
+  }
+
+  /** How copies here know a first original there: by the model it is here, and that one's own first original. */
+  private async rootHere(original: string): Promise<string> {
+    const here = this.prints.get(original);
+    if (!here || here === original) return original;
+    let root = this.rootsHere.get(here);
+    if (!root) {
+      const row = await prisma.print.findUnique({ where: { id: here }, select: { originalId: true } });
+      root = row?.originalId ?? here;
+      this.rootsHere.set(here, root);
+    }
+    return root;
   }
 
   // --- Collections ---
@@ -1000,21 +1026,27 @@ export class Merge {
     }
     const fresh = audiencesKept.filter((row) => !heldFor.has(`${row.toolId}:${row.userId}`));
     if (fresh.length) await prisma.toolAudience.createMany({ data: fresh, skipDuplicates: true });
-    // What they share through tools, still about the same models: an original kept under another id here keeps its
-    // copies' entries pointing at it.
+    // What they share through tools, still about the same models: an original that's another model here is known
+    // by that one's first original, as its copies are.
     const model = (id: string | null) => (id ? (this.prints.get(id) ?? id) : null);
     const shared = await this.source.toolSharedData.findMany({ where: { userId: { in: sourceIds } } });
+    const originalOf = (key: string | null) => (key?.startsWith("orig:") ? key.slice(5) : null);
+    const roots = new Map<string, string>();
+    for (const entry of shared) {
+      const original = originalOf(entry.originKey);
+      if (original && !roots.has(original)) roots.set(original, await this.rootHere(original));
+    }
     const sharedKept = shared.flatMap((entry) => {
       const toolId = this.tools.get(entry.toolId);
       if (!toolId) return [];
-      const original = entry.originKey?.startsWith("orig:") ? entry.originKey.slice(5) : null;
+      const original = originalOf(entry.originKey);
       return [
         rowFor<Prisma.ToolSharedDataCreateManyInput>("ToolSharedData", {
           ...entry,
           toolId,
           userId: this.users.get(entry.userId)!,
           printId: model(entry.printId),
-          originKey: original ? `orig:${model(original)}` : entry.originKey,
+          originKey: original ? `orig:${roots.get(original)}` : entry.originKey,
         }),
       ];
     });
