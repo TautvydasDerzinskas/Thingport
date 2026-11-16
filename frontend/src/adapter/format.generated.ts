@@ -4,6 +4,7 @@
 // family wrote it, which app and version, and the printer it was made for.
 
 import { asArray, firstValue, settingsDialectOf, type Settings, type SettingsDialect } from "./settings.generated";
+import { decodeXml } from "./xml.generated";
 
 /** Bumped when classification changes, so stored formats are read again. */
 export const FORMAT_VERSION = 3;
@@ -76,7 +77,7 @@ const XML_COMMENT_RE = /<!--[\s\S]*?-->/g;
 
 function xmlAttr(tag: string, name: string): string | null {
   const m = new RegExp(String.raw`\b${name}\s*=\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(tag);
-  return m ? (m[1] ?? m[2]) : null;
+  return m ? decodeXml(m[1] ?? m[2]) : null;
 }
 
 /** Finds entries by package part name, which ignores case and may start with "/"; the name as the zip spells it. */

@@ -434,6 +434,11 @@ describe("a 3MF's start part", () => {
     expect(findStartPart(["3D/old.model", "3D/main.model"], commented)).toBe("3D/main.model");
   });
 
+  it("reads a target written with character references", () => {
+    expect(findStartPart(["3D/main.model"], rels("/3D/ma&#105;n.model"))).toBe("3D/main.model");
+    expect(findStartPart(["3D/a&b.model"], rels("/3D/a&amp;b.model"))).toBe("3D/a&b.model");
+  });
+
   it("is nothing for a zip with neither", () => {
     expect(findStartPart(["3D/model.model"], null)).toBeNull();
   });
