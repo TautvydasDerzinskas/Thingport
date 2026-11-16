@@ -549,12 +549,13 @@ export default function mount(thingport) {
     return [...seen.values()].map((brand) => `<option value="${escapeHtml(brand)}"></option>`).join("");
   }
 
-  function openDialog({ key = null, value = null, queue = [], opener: given = null } = {}) {
+  /** `key` is the spool being edited; `newKey` the one a new spool goes under, kept from a try that may have landed. */
+  function openDialog({ key = null, newKey = null, value = null, queue = [], opener: given = null } = {}) {
     if (entries === null) return;
     closeMenu();
     const opener = given ?? (root.contains(document.activeElement) ? document.activeElement : null);
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());
-    dialog = { key, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
+    dialog = { key, newKey, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
     fillDialog();
     veil.hidden = false;
     input("brand").focus();
@@ -633,6 +634,7 @@ export default function mount(thingport) {
     const next = prefillFor(dialog.queue[0]);
     if (!next.brand) next.brand = lastBrand;
     dialog.key = null;
+    dialog.newKey = null;
     dialog.state = stateOf(next);
     fillDialog();
     body.classList.remove("fs-next");
@@ -672,14 +674,16 @@ export default function mount(thingport) {
       grams,
       note: state.note,
     });
-    const key = dialog.key ?? `${SPOOL}${newId()}`;
-    const editing = dialog.key;
+    const key = dialog.key ?? dialog.newKey ?? `${SPOOL}${newId()}`;
+    // Should it not be saved, it comes back as it was sent, to try again under the same key: a save that landed with
+    // its answer lost is then saved over, not added twice.
+    const again = dialog.key ? { key, value } : { newKey: key, value };
     advance(value.brand);
-    // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
+    // The form goes as the spool shows.
     void putSpool(key, value, () => {
       if (closed) return;
-      if (dialog) unsaved.push({ key: editing, value });
-      else openDialog({ key: editing, value });
+      if (dialog) unsaved.push(again);
+      else openDialog(again);
     });
   }
 

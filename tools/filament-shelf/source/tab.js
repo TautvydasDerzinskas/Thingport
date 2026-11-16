@@ -109,6 +109,8 @@ export function modelTab(thingport) {
   // The rows being edited, each with the hex as typed and the last colour it read as.
   let draft = null;
   let saving = false;
+  // The save going, as whether it landed: a drawing taken down mid-save hands it on with the edit.
+  let writing = null;
   let fresh = null;
   let closed = false;
   let reads = 0;
@@ -126,6 +128,7 @@ export function modelTab(thingport) {
       problem = null;
       if (kept) {
         ({ draft, focus: refocus } = kept);
+        if (kept.saving) waitFor(kept.saving);
         kept = null;
       }
     } catch (error) {
@@ -358,6 +361,19 @@ export function modelTab(thingport) {
     box.querySelector("[data-type]")?.focus();
   }
 
+  /** A save the tab's last drawing left going: waited on as that one did, the editor closing once it lands. One that
+   *  doesn't leaves it open to try again, its toast already shown. */
+  function waitFor(write) {
+    saving = true;
+    writing = write;
+    void write.then((ok) => {
+      if (closed || writing !== write) return;
+      saving = false;
+      if (ok) draft = null;
+      render();
+    });
+  }
+
   const failed = (error) => ui.toast(t("toast.failed", { error: error?.message || String(error) }), "error");
 
   async function save() {
@@ -369,6 +385,8 @@ export function modelTab(thingport) {
       grams: row.grams ?? null,
     }));
     saving = true;
+    let landed;
+    writing = new Promise((resolve) => (landed = resolve));
     render();
     try {
       await shared.set(
@@ -376,9 +394,11 @@ export function modelTab(thingport) {
         { profile: data.profile, filaments },
         { model: context.modelId },
       );
+      landed(true);
       draft = null;
       await load();
     } catch (error) {
+      landed(false);
       failed(error);
     } finally {
       saving = false;
@@ -511,8 +531,8 @@ export function modelTab(thingport) {
   return () => {
     closed = true;
     // Taken down mid-edit: what's typed waits for the tab's next drawing on this model and file, as does an edit kept
-    // for this one that it hadn't read far enough to take up. A save going finishes as it is.
-    const unsaved = draft && !saving ? { draft, focus: focusedRow() } : kept;
+    // for this one that it hadn't read far enough to take up. A save going goes with it, to be waited on there.
+    const unsaved = draft ? { draft, focus: focusedRow(), saving: saving ? writing : null } : kept;
     if (unsaved) keptDrafts.set(draftKey, unsaved);
     stop();
     stopReturn();

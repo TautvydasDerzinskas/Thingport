@@ -40,8 +40,8 @@ others see the profile's filaments, or an edit they can see.
   `#RRGGBB`, `left` as `full`, `half`, `low` or null, and `grams` when the spool was weighed.
 - `needs:<model id>:<hash>`, one profile's filaments as someone edited them, tied to the model so its copies find it:
   `{ profile, filaments: [{ type, color, grams }] }`, or `{ profile, filaments: null }` once someone resets it.
-  `profile` is `profile:<provider's id>`, the same in every copy, or `file:<file name>` for a 3MF that isn't a
-  provider's profile. The newest entry for the profile, whoever wrote it, is the one in force.
+  `profile` is `profile:<provider's id>`, the same in every copy, or `file:<folder>/<file name>` (`file:<file name>`
+  at the top) for a 3MF that isn't a provider's profile. The newest entry for the profile, whoever wrote it, is the one in force.
 
 ## For tool authors
 

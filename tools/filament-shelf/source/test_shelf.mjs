@@ -283,9 +283,18 @@ test("the newest edit of the picked profile wins, and a newer reset puts the pro
   assert.ok(!isNeedsValue({ filaments: [] }));
   assert.ok(!isNeedsValue({ profile, filaments: [{ type: "PLA", color: "#c62828", grams: "8" }] }));
   assert.ok(!isNeedsValue({}));
-  // A profile is known by the provider's id in every copy, else by the file's name; its key is a valid one.
-  assert.equal(profileKey({ name: "a.3mf", profile: { id: "p1" } }), "profile:p1");
-  assert.equal(profileKey({ name: "a b.3mf", profile: null }), "file:a b.3mf");
+  // A profile is known by the provider's id in every copy, else by the file's folder and name; its key is a valid one.
+  assert.equal(profileKey({ name: "a.3mf", folder: "Left", profile: { id: "p1" } }), "profile:p1");
+  assert.equal(profileKey({ name: "a b.3mf", folder: null, profile: null }), "file:a b.3mf");
+  // One name in two folders is two profiles.
+  assert.equal(profileKey({ name: "part.3mf", folder: "USB C/Handles", profile: null }), "file:USB C/Handles/part.3mf");
+  assert.notEqual(
+    needsKey("m1", profileKey({ name: "part.3mf", folder: "A", profile: null })),
+    needsKey("m1", profileKey({ name: "part.3mf", folder: "B", profile: null })),
+  );
+  // The longest folder and name a file can have still make an edit that's read.
+  const deep = profileKey({ name: `${"n".repeat(251)}.3mf`, folder: "f".repeat(500), profile: null });
+  assert.ok(isNeedsValue({ profile: deep, filaments: [] }));
   assert.match(needsKey("m1", "file:a b (2).3mf"), /^needs:m1:[0-9a-z]+$/);
   // These two shared a key when it was one 32-bit hash.
   assert.notEqual(needsKey("m1", "file:aZCB.3mf"), needsKey("m1", "file:aZBc.3mf"));

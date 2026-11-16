@@ -12,7 +12,10 @@ export function onToolSharedChange(toolId: string, listener: () => void): () => 
 }
 
 export function toolSharedChanged(toolId: string): void {
-  for (const listener of listeners.get(toolId) ?? []) {
+  // Those listening as it's told: one that stops and listens again would otherwise be told over and over. One stopped
+  // along the way isn't told.
+  for (const listener of Array.from(listeners.get(toolId) ?? [])) {
+    if (!listeners.get(toolId)?.has(listener)) continue;
     try {
       listener();
     } catch {

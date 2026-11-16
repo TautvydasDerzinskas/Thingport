@@ -82,8 +82,11 @@ export interface SdkModel {
 /** One of a model's 3D files. */
 export interface SdkModelFile {
   id: string;
-  /** Its file name, with the extension. */
+  /** Its file name, with the extension: unique within its folder, not the whole model. */
   name: string;
+  /** The folder of the model it's in, levels joined by "/" ("USB C version/Handles"); null at the top. A copy of the
+   *  model keeps it, as it does the name. */
+  folder: string | null;
   /** In bytes. */
   size: number;
   /** An address it can be read from as the user, e.g. by `fetch`. */

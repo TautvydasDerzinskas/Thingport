@@ -167,7 +167,8 @@ export function isNeedsValue(value) {
   return (
     Boolean(value) &&
     typeof value === "object" &&
-    isText(value.profile, 300) &&
+    // A file's folder is up to 500 characters, its name up to 255.
+    isText(value.profile, 1000) &&
     (value.filaments === null ||
       (Array.isArray(value.filaments) && value.filaments.length <= MAX_FILAMENTS && value.filaments.every(isNeed)))
   );
@@ -179,10 +180,11 @@ const timeOf = (iso) => {
 };
 
 /** Which profile of a model an edit is for: the provider's id where the file is one, which every copy of the model
- *  shares, else the file's name, which a copy keeps. */
+ *  shares, else the file's folder and name, which a copy keeps; one name can be in two folders. */
 export function profileKey(file) {
   if (!file) return "model";
-  return file.profile?.id ? `profile:${file.profile.id}` : `file:${file.name}`;
+  if (file.profile?.id) return `profile:${file.profile.id}`;
+  return `file:${file.folder ? `${file.folder}/` : ""}${file.name}`;
 }
 
 /** The entry an edit of that profile is kept under. A key holds only a few kinds of character, so the profile's is

@@ -317,7 +317,8 @@ export function isNeedsValue(value) {
   return (
     Boolean(value) &&
     typeof value === "object" &&
-    isText(value.profile, 300) &&
+    // A file's folder is up to 500 characters, its name up to 255.
+    isText(value.profile, 1000) &&
     (value.filaments === null ||
       (Array.isArray(value.filaments) && value.filaments.length <= MAX_FILAMENTS && value.filaments.every(isNeed)))
   );
@@ -329,10 +330,11 @@ const timeOf = (iso) => {
 };
 
 /** Which profile of a model an edit is for: the provider's id where the file is one, which every copy of the model
- *  shares, else the file's name, which a copy keeps. */
+ *  shares, else the file's folder and name, which a copy keeps; one name can be in two folders. */
 export function profileKey(file) {
   if (!file) return "model";
-  return file.profile?.id ? `profile:${file.profile.id}` : `file:${file.name}`;
+  if (file.profile?.id) return `profile:${file.profile.id}`;
+  return `file:${file.folder ? `${file.folder}/` : ""}${file.name}`;
 }
 
 /** The entry an edit of that profile is kept under. A key holds only a few kinds of character, so the profile's is
@@ -952,6 +954,8 @@ export function modelTab(thingport) {
   // The rows being edited, each with the hex as typed and the last colour it read as.
   let draft = null;
   let saving = false;
+  // The save going, as whether it landed: a drawing taken down mid-save hands it on with the edit.
+  let writing = null;
   let fresh = null;
   let closed = false;
   let reads = 0;
@@ -969,6 +973,7 @@ export function modelTab(thingport) {
       problem = null;
       if (kept) {
         ({ draft, focus: refocus } = kept);
+        if (kept.saving) waitFor(kept.saving);
         kept = null;
       }
     } catch (error) {
@@ -1201,6 +1206,19 @@ export function modelTab(thingport) {
     box.querySelector("[data-type]")?.focus();
   }
 
+  /** A save the tab's last drawing left going: waited on as that one did, the editor closing once it lands. One that
+   *  doesn't leaves it open to try again, its toast already shown. */
+  function waitFor(write) {
+    saving = true;
+    writing = write;
+    void write.then((ok) => {
+      if (closed || writing !== write) return;
+      saving = false;
+      if (ok) draft = null;
+      render();
+    });
+  }
+
   const failed = (error) => ui.toast(t("toast.failed", { error: error?.message || String(error) }), "error");
 
   async function save() {
@@ -1212,6 +1230,8 @@ export function modelTab(thingport) {
       grams: row.grams ?? null,
     }));
     saving = true;
+    let landed;
+    writing = new Promise((resolve) => (landed = resolve));
     render();
     try {
       await shared.set(
@@ -1219,9 +1239,11 @@ export function modelTab(thingport) {
         { profile: data.profile, filaments },
         { model: context.modelId },
       );
+      landed(true);
       draft = null;
       await load();
     } catch (error) {
+      landed(false);
       failed(error);
     } finally {
       saving = false;
@@ -1354,8 +1376,8 @@ export function modelTab(thingport) {
   return () => {
     closed = true;
     // Taken down mid-edit: what's typed waits for the tab's next drawing on this model and file, as does an edit kept
-    // for this one that it hadn't read far enough to take up. A save going finishes as it is.
-    const unsaved = draft && !saving ? { draft, focus: focusedRow() } : kept;
+    // for this one that it hadn't read far enough to take up. A save going goes with it, to be waited on there.
+    const unsaved = draft ? { draft, focus: focusedRow(), saving: saving ? writing : null } : kept;
     if (unsaved) keptDrafts.set(draftKey, unsaved);
     stop();
     stopReturn();
@@ -2067,12 +2089,13 @@ export default function mount(thingport) {
     return [...seen.values()].map((brand) => `<option value="${escapeHtml(brand)}"></option>`).join("");
   }
 
-  function openDialog({ key = null, value = null, queue = [], opener: given = null } = {}) {
+  /** `key` is the spool being edited; `newKey` the one a new spool goes under, kept from a try that may have landed. */
+  function openDialog({ key = null, newKey = null, value = null, queue = [], opener: given = null } = {}) {
     if (entries === null) return;
     closeMenu();
     const opener = given ?? (root.contains(document.activeElement) ? document.activeElement : null);
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());
-    dialog = { key, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
+    dialog = { key, newKey, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
     fillDialog();
     veil.hidden = false;
     input("brand").focus();
@@ -2151,6 +2174,7 @@ export default function mount(thingport) {
     const next = prefillFor(dialog.queue[0]);
     if (!next.brand) next.brand = lastBrand;
     dialog.key = null;
+    dialog.newKey = null;
     dialog.state = stateOf(next);
     fillDialog();
     body.classList.remove("fs-next");
@@ -2190,14 +2214,16 @@ export default function mount(thingport) {
       grams,
       note: state.note,
     });
-    const key = dialog.key ?? `${SPOOL}${newId()}`;
-    const editing = dialog.key;
+    const key = dialog.key ?? dialog.newKey ?? `${SPOOL}${newId()}`;
+    // Should it not be saved, it comes back as it was sent, to try again under the same key: a save that landed with
+    // its answer lost is then saved over, not added twice.
+    const again = dialog.key ? { key, value } : { newKey: key, value };
     advance(value.brand);
-    // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
+    // The form goes as the spool shows.
     void putSpool(key, value, () => {
       if (closed) return;
-      if (dialog) unsaved.push({ key: editing, value });
-      else openDialog({ key: editing, value });
+      if (dialog) unsaved.push(again);
+      else openDialog(again);
     });
   }
 

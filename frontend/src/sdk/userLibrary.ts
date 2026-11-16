@@ -32,13 +32,16 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
     // By colour only: a filament the profile gives no colour could be any of the project's.
     brand: (f.color && own.find((o) => o.color && same(o.color, f.color) && same(o.type, f.type))?.brand) || null,
   });
+  const fromProject = (): SdkFilament[] =>
+    own.map((o) => ({ type: o.type, color: o.color, grams: null, brand: o.brand }));
   const profile = plate.profile;
   if (profile)
     return {
       id: plate.profile_id ?? null,
       name: profile.title,
       printer: profile.printer,
-      filaments: profile.filaments.map(filament),
+      // A provider that gives none, for a project that isn't sliced: the project's own still say what it prints with.
+      filaments: profile.filaments.length ? profile.filaments.map(filament) : fromProject(),
       plates: profile.plates.map((p) => ({ index: p.index, name: p.name, filaments: p.filaments.map(filament) })),
     };
   if (!own.length) return null;
@@ -46,7 +49,7 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
     id: null,
     name: null,
     printer: plate.format?.printer ?? null,
-    filaments: own.map((o) => ({ type: o.type, color: o.color, grams: null, brand: o.brand })),
+    filaments: fromProject(),
     plates: [],
   };
 }
@@ -60,6 +63,7 @@ const toModel = (print: Print): SdkModel => ({
   files: (print.plates ?? []).map((plate) => ({
     id: plate.id,
     name: plate.filename,
+    folder: plate.folder || null,
     size: plate.size,
     url: printsApi.fileUrl(plate.url),
     profile: profileOf(plate),

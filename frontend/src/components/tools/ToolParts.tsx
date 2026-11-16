@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import { useTools } from "../../hooks/useTools";
 import type { Tool } from "../../api/tools";
@@ -70,13 +70,21 @@ export function useToolWindowHost(
   modelId: string,
   onUnauthorized?: () => void,
 ): { open: (tool: RunnableTool) => void; element: ReactNode } {
-  const [tool, setTool] = useState<RunnableTool | null>(null);
+  // Held with the model it was opened on: the page stays as another model opens, and the window doesn't go with it.
+  const [shown, setShown] = useState<{ tool: RunnableTool; modelId: string } | null>(null);
+  if (shown && shown.modelId !== modelId) setShown(null);
+  const open = useCallback((tool: RunnableTool) => setShown({ tool, modelId }), [modelId]);
   const context = useMemo(() => ({ modelId }), [modelId]);
   return {
-    open: setTool,
-    element: tool && (
+    open,
+    element: shown?.modelId === modelId && (
       <Suspense fallback={null}>
-        <ToolWindow tool={tool} context={context} onClose={() => setTool(null)} onUnauthorized={onUnauthorized} />
+        <ToolWindow
+          tool={shown.tool}
+          context={context}
+          onClose={() => setShown(null)}
+          onUnauthorized={onUnauthorized}
+        />
       </Suspense>
     ),
   };
