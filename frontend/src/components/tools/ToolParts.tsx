@@ -42,8 +42,12 @@ export function ToolPart({ tool, place, modelId, fileId, onUnauthorized }: PartP
   return (
     <Box
       data-tool-part={place}
-      // An empty part takes no room, nor the spacing a list of them would give it.
-      sx={{ minWidth: 0, "&:empty, &:has(> [id]:empty:only-child)": { display: "none" } }}
+      // An empty part takes no room, nor the spacing a list of them would give it; one that failed says so.
+      sx={{
+        minWidth: 0,
+        "&:empty, &:not(:has([role='alert'])):has(> [data-tool-frame]:empty, > [data-tool-frame] > :empty:only-child)":
+          { display: "none" },
+      }}
     >
       <Suspense fallback={null}>
         <ToolRunner tool={tool} place={place} context={context} onClose={noClose} onUnauthorized={onUnauthorized} />

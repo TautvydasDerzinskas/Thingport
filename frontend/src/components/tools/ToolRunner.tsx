@@ -131,21 +131,27 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
   );
 
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
+    const frame = rootRef.current;
+    if (!frame) return;
+    // Each run draws into an element of its own, so one that's stopped, as for another picked file, and finishes late
+    // draws into nothing on the page rather than over the run after it.
+    const root = document.createElement("div");
+    root.id = rootId;
+    if (!place) root.style.height = "100%";
+    frame.replaceChildren(root);
     let cancelled = false;
     let cleanup: (() => void) | null = null;
     // This run's questions, dropped when it stops so the next run's don't wait behind them.
     const asks = picks.session();
     const shareAsks = shares.session();
     const listeners = new Set<(size: { width: number; height: number }) => void>();
-    const measure = () => ({ width: Math.round(root.offsetWidth), height: Math.round(root.offsetHeight) });
+    const measure = () => ({ width: Math.round(frame.offsetWidth), height: Math.round(frame.offsetHeight) });
     let size = measure();
     const observer = new ResizeObserver(() => {
       size = measure();
       listeners.forEach((listener) => listener(size));
     });
-    observer.observe(root);
+    observer.observe(frame);
 
     setError(null);
     // The theme as CSS variables on the window itself, before the tool's HTML goes in, so a tool's stylesheet can
@@ -244,7 +250,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
       } catch {
         // A tool's own cleanup failing mustn't stop the next run.
       }
-      root.innerHTML = "";
+      root.remove();
     };
     // The tool runs again when its code, the theme, the language or what it's on changes; the objects themselves are
     // rebuilt each render.
@@ -271,7 +277,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
   if (place) {
     return (
       <>
-        <Box id={rootId} ref={rootRef} hidden={Boolean(error)} />
+        <Box ref={rootRef} data-tool-frame hidden={Boolean(error)} />
         {error && (
           <Typography
             variant="caption"
@@ -304,7 +310,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
 
   return (
     <Box sx={{ position: "relative", height: "100%", minHeight: 0 }}>
-      <Box id={rootId} ref={rootRef} sx={{ height: "100%", overflow: "auto" }} />
+      <Box ref={rootRef} data-tool-frame sx={{ height: "100%", overflow: "auto" }} />
       {popoverElement}
       {error && (
         <Box
