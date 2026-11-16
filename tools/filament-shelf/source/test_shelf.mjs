@@ -287,6 +287,8 @@ test("the newest edit of the picked profile wins, and a newer reset puts the pro
   assert.equal(profileKey({ name: "a.3mf", profile: { id: "p1" } }), "profile:p1");
   assert.equal(profileKey({ name: "a b.3mf", profile: null }), "file:a b.3mf");
   assert.match(needsKey("m1", "file:a b (2).3mf"), /^needs:m1:[0-9a-z]+$/);
+  // These two shared a key when it was one 32-bit hash.
+  assert.notEqual(needsKey("m1", "file:aZCB.3mf"), needsKey("m1", "file:aZBc.3mf"));
 });
 
 test("a spool matches on its material family and how close its colour looks", () => {
@@ -423,6 +425,9 @@ test("a model's page reads the model, everyone's spools and the edits about it, 
   forgetReads(Infinity);
   await loadForModel({ models, shared, user: me }, "m1", "f1");
   assert.equal(gets, 2);
+  // Another account reading at once reads for itself.
+  await loadForModel({ models, shared, user: dad }, "m1", "f1");
+  assert.equal(gets, 3);
   assert.equal(data.file.id, "f1");
   assert.equal(data.edit.user, dad);
   assert.equal(data.needs.length, 1);

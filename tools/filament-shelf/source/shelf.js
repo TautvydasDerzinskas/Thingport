@@ -182,11 +182,17 @@ export function profileKey(file) {
   return file.profile?.id ? `profile:${file.profile.id}` : `file:${file.name}`;
 }
 
-/** The entry an edit of that profile is kept under: a key holds only a few characters, so the profile's is hashed. */
+/** The entry an edit of that profile is kept under. A key holds only a few kinds of character, so the profile's is
+ *  hashed, twice over, 64 bits in all: two of one person's files sharing a key would lose one's edit to the other's. */
 export function needsKey(modelId, profile) {
-  let hash = 5381;
-  for (const char of profile) hash = ((hash * 33) ^ char.codePointAt(0)) >>> 0;
-  return `${NEEDS}${modelId}:${hash.toString(36)}`;
+  let djb = 5381;
+  let fnv = 0x811c9dc5;
+  for (const char of profile) {
+    const code = char.codePointAt(0);
+    djb = ((djb * 33) ^ code) >>> 0;
+    fnv = Math.imul(fnv ^ code, 0x01000193) >>> 0;
+  }
+  return `${NEEDS}${modelId}:${djb.toString(36)}${fnv.toString(36).padStart(7, "0")}`;
 }
 
 /** The edit in force on a profile of a model: the newest anyone made, unless that one went back to the profile. */
@@ -337,10 +343,12 @@ export function forgetReads(before = Date.now()) {
 
 /** What a model's page shows: the model, the filaments it needs, the household's spools and how they match. */
 export async function loadForModel({ models, shared, user }, modelId, fileId) {
+  // As the signed-in user: what reaches one account isn't another's, should the page change hands.
+  const who = user?.id ?? "?";
   const [model, spoolEntries, needEntries] = await Promise.all([
-    readOnce(`model:${modelId}`, () => models.get(modelId)),
-    readOnce("spools", () => readAll(shared, { prefix: SPOOL })),
-    readOnce(`needs:${modelId}`, () => readAll(shared, { prefix: NEEDS, model: modelId })),
+    readOnce(`${who}:model:${modelId}`, () => models.get(modelId)),
+    readOnce(`${who}:spools`, () => readAll(shared, { prefix: SPOOL })),
+    readOnce(`${who}:needs:${modelId}`, () => readAll(shared, { prefix: NEEDS, model: modelId })),
   ]);
   const file = pickFile(model, fileId);
   const profile = profileKey(file);
