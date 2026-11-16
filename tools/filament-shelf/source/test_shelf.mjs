@@ -281,6 +281,9 @@ test("a spool matches on its material family and how close its colour looks", ()
   // No colour asked for: any colour of the material is the same; no material: any material.
   assert.deepEqual(grade({ type: "PETG", color: null }, spool("PETG HF", "#1F5FBF")), { grade: "same", delta: 0 });
   assert.equal(grade({ type: null, color: "#C62828" }, spool("ABS", "#C62828")).grade, "same");
+  // A spool weighed at 0 g has none left; one never weighed still counts.
+  assert.equal(grade(white, spool("PLA", "#F3F2EE", { left: null, grams: 0 })), null);
+  assert.equal(grade(white, spool("PLA", "#F3F2EE", { left: null, grams: null })).grade, "same");
 });
 
 test("each person's best spool: the same beats close, then the nearer colour", () => {

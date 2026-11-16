@@ -173,7 +173,26 @@ function filamentsOf(colours: unknown[], types: unknown[], vendors: unknown[], p
   }));
 }
 
-const prusaList = (config: string | null, key: string) => prusaValue(config, key)?.split(";") ?? [];
+/** A list setting's items: split at each `;` outside quotes, as PrusaSlicer quotes a name with a space in it
+ *  (`"Prusament PLA";Generic`), then unquoted and unescaped. */
+function prusaList(config: string | null, key: string): string[] {
+  const value = prusaValue(config, key);
+  if (!value) return [];
+  const items: string[] = [];
+  let item = "";
+  let quoted = false;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (quoted && char === "\\" && i + 1 < value.length) item += value[++i];
+    else if (char === '"') quoted = !quoted;
+    else if (char === ";" && !quoted) {
+      items.push(item.trim());
+      item = "";
+    } else item += char;
+  }
+  items.push(item.trim());
+  return items;
+}
 
 export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
   const names = files.entries.map((entry) => entry.replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase());

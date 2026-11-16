@@ -101,7 +101,7 @@
   "pop.title": "此配置所需的耗材",
   "remove.message": "它会从你的耗材架上移除，模型也不再计入它。",
   "remove.title": "移除 {name}？",
-  "reset.message": "修改会对所有人撤销，重新显示配置中的耗材。",
+  "reset.message": "修改会对所有能看到你分享内容的人撤销，重新显示配置中的耗材。",
   "reset.title": "恢复为配置中的耗材？",
   "share.everyone": "所有人可见",
   "share.onlyYou": "仅你可见",

@@ -92,7 +92,8 @@ export default function mount(thingport) {
     const [spoolList, needList, picked] = await Promise.all([
       readAll(shared, { prefix: SPOOL }),
       context.modelId ? readAll(shared, { prefix: NEEDS, model: context.modelId }).catch(() => null) : [],
-      context.modelId && !model ? models.get(context.modelId).catch(() => null) : model,
+      // Read each time, as the tab and badge do, so a changed profile shows here too.
+      context.modelId ? models.get(context.modelId).catch(() => undefined) : null,
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
@@ -101,7 +102,8 @@ export default function mount(thingport) {
       needEntries = needList;
       needsRead = true;
     }
-    model = picked;
+    // A failed read keeps the model as last read.
+    if (picked !== undefined) model = picked;
     problem = null;
     render();
   }

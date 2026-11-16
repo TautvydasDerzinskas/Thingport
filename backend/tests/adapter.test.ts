@@ -505,6 +505,24 @@ describe("classify3mf", () => {
       { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
       { type: "PLA", color: "#3C3C3C", brand: null },
     ]);
+    // Names with spaces in them come quoted, and a quoted one may hold a ";" of its own.
+    const quoted = classify3mf({
+      ...base,
+      projectSettings: null,
+      entries: ["3D/3dmodel.model", "Metadata/Slic3r_PE.config"],
+      modelHead: '<model><metadata name="Application">PrusaSlicer-2.9.2</metadata>',
+      prusaConfig: [
+        "; filament_colour = #FF8000;#3C3C3C;#FFFFFF",
+        "; filament_type = PETG;PLA;PLA",
+        '; filament_vendor = "Prusa Polymers";Generic;""',
+        '; filament_settings_id = "Prusament PETG";"Generic; PLA";"Bambu PLA Basic @BBL X1C"',
+      ].join("\n"),
+    });
+    expect(quoted.filamentList).toEqual([
+      { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
+      { type: "PLA", color: "#3C3C3C", brand: null },
+      { type: "PLA", color: "#FFFFFF", brand: "Bambu Lab" },
+    ]);
   });
 
   it("tells PrusaSlicer projects, sliced files, Cura projects and plain 3MFs apart", () => {
