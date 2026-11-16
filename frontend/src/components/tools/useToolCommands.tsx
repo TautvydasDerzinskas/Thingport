@@ -10,13 +10,12 @@ import { scriptToast } from "../../sdk/toast";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import { commandsFor, type CommandFile, type OfferedCommand } from "./toolCommands";
-import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
+import type { RunnableTool, ToolContext } from "./toolSdk";
+import { useCollectionPicks } from "./useCollectionPicks";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
 const CollectionPickerDialog = lazy(() => import("./CollectionPickerDialog"));
-
-type Picker = { title?: string; resolve: (picked: ToolCollection | null) => void };
 
 /**
  * The tools' commands for a model and the file picked on its page, and what runs one: its tool's window opens on the
@@ -36,7 +35,7 @@ export function useToolCommands(
   const confirm = useConfirm();
   const language = matchLanguage(i18n.language);
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
-  const [picker, setPicker] = useState<Picker | null>(null);
+  const picks = useCollectionPicks();
 
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
@@ -72,7 +71,7 @@ export function useToolCommands(
               confirmLabel: options.confirmLabel,
               destructive: options.destructive,
             })) === true,
-          pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+          pickCollection: (options) => picks.pick(options?.title),
           openModel,
           close: () => undefined,
         },
@@ -103,7 +102,7 @@ export function useToolCommands(
   };
 
   const element =
-    open || picker ? (
+    open || picks.shown ? (
       <Suspense fallback={null}>
         {open && (
           <ToolWindow
@@ -113,15 +112,13 @@ export function useToolCommands(
             onUnauthorized={onUnauthorized}
           />
         )}
-        {picker && (
+        {picks.shown && (
           <CollectionPickerDialog
-            open
-            title={picker.title}
+            key={picks.shown.id}
+            open={picks.open}
+            title={picks.shown.title}
             onUnauthorized={onUnauthorized}
-            onClose={(picked) => {
-              picker.resolve(picked);
-              setPicker(null);
-            }}
+            onClose={picks.answer}
           />
         )}
       </Suspense>

@@ -9,8 +9,9 @@ import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
-import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
+import { buildToolSdk, type RunnableTool, type ToolContext, type ToolTheme } from "./toolSdk";
 import { loadToolModule } from "./toolModule";
+import { useCollectionPicks } from "./useCollectionPicks";
 import { scriptToast } from "../../sdk/toast";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
@@ -36,9 +37,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
   const confirm = useConfirm();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [picker, setPicker] = useState<{ title?: string; resolve: (picked: ToolCollection | null) => void } | null>(
-    null,
-  );
+  const picks = useCollectionPicks();
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
@@ -100,7 +99,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+        pickCollection: (options) => picks.pick(options?.title),
         openModel,
         close: () => latest.current.onClose(),
       },
@@ -167,13 +166,11 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         </Box>
       )}
       <CollectionPickerDialog
-        open={Boolean(picker)}
-        title={picker?.title}
+        key={picks.shown?.id ?? 0}
+        open={picks.open}
+        title={picks.shown?.title}
         onUnauthorized={onUnauthorized}
-        onClose={(picked) => {
-          picker?.resolve(picked);
-          setPicker(null);
-        }}
+        onClose={picks.answer}
       />
     </Box>
   );
