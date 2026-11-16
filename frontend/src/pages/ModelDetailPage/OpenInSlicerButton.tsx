@@ -18,6 +18,8 @@ import FolderZipIcon from "@mui/icons-material/FolderZip";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
+import ToolIcon from "../../components/tools/ToolIcon";
+import type { OfferedCommand } from "../../components/tools/toolCommands";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
@@ -39,7 +41,12 @@ type Props = {
   /** Set when the file can open in Studio as a new design. */
   onOpenInStudio?: () => void;
   openingInStudio?: boolean;
+  /** What the installed tools offer to do with the model, last in the menu; none leaves the menu as it was. */
+  toolCommands?: OfferedCommand[];
+  onToolCommand?: (offered: OfferedCommand) => void;
 };
+
+const NO_COMMANDS: OfferedCommand[] = [];
 
 /** A slicer's logo on the white tile it's drawn for, so the dark parts stay visible in dark mode. */
 function LogoTile({ id, size }: { id: string; size: number }) {
@@ -82,6 +89,8 @@ export default function OpenInSlicerButton({
   onCustomize,
   onOpenInStudio,
   openingInStudio,
+  toolCommands = NO_COMMANDS,
+  onToolCommand,
 }: Props) {
   const { t } = useTranslation(["models"]);
   // Those the user sends through the Bridge, picked in the Slicer settings.
@@ -96,7 +105,9 @@ export default function OpenInSlicerButton({
   const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
   // Likewise the download: in the menu unless it is the main button.
   const offersDownload = customizes || opensSlicer;
-  const hasMenu = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const offersTools = Boolean(onToolCommand) && toolCommands.length > 0;
+  const offersAbove = offersSlicers || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
+  const hasMenu = offersAbove || offersTools;
   const close = () => setAnchor(null);
   const downloadIcon = downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon fontSize="small" />;
 
@@ -221,6 +232,29 @@ export default function OpenInSlicerButton({
             </ListItemText>
           </MenuItem>
         )}
+        {offersTools && offersAbove && <Divider />}
+        {offersTools && <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.toolsHeading")}</ListSubheader>}
+        {offersTools &&
+          toolCommands.map((offered) => (
+            <MenuItem
+              key={offered.key}
+              onClick={() => {
+                onToolCommand?.(offered);
+                close();
+              }}
+            >
+              <ListItemIcon sx={{ color: "primary.main" }}>
+                <ToolIcon iconUrl={offered.tool.manifest.iconUrl} size={18} />
+              </ListItemIcon>
+              <ListItemText
+                primary={offered.label}
+                secondary={offered.tool.manifest.name}
+                primaryTypographyProps={{ variant: "body2" }}
+                secondaryTypographyProps={{ variant: "caption" }}
+                sx={{ my: 0 }}
+              />
+            </MenuItem>
+          ))}
       </Menu>
     </>
   );

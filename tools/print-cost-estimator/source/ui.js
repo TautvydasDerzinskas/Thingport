@@ -1724,6 +1724,26 @@ export default async function mount(thingport) {
   labels();
   renderAll();
 
+  // Opened from "Estimate print cost" on a model's page: the file picked there goes straight in.
+  const { command, modelId, fileId } = thingport.context ?? {};
+  if (command === "estimate" && modelId) {
+    void safely(async () => {
+      const model = await models.get(modelId);
+      const file =
+        model.files.find((candidate) => candidate.id === fileId) ??
+        model.files.find((candidate) => isMeshFile(candidate.name) || isSlicedName(candidate.name));
+      if (!file || closed) return;
+      add([
+        {
+          name: file.name,
+          size: file.size,
+          read: async () => new Uint8Array(await models.file(model.id, file.id)),
+          source: { modelId: model.id, modelName: model.name, fileId: file.id },
+        },
+      ]);
+    })();
+  }
+
   return () => {
     closed = true;
     closeMenu();

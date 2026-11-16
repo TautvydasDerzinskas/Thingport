@@ -52,6 +52,7 @@ import RollingNumber from "../../components/RollingNumber";
 import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import UserAvatar from "../../components/UserAvatar";
+import { useToolCommands } from "../../components/tools/useToolCommands";
 import { useCopyToLibrary } from "./useCopyToLibrary";
 
 const statChipSx = { flex: 1, px: 0.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 2 };
@@ -196,6 +197,12 @@ export default function ModelSidePanel({
   const selectedFile = files.find((file) => file.key === selectedKey) ?? firstProfileFile ?? files[0] ?? null;
   const otherFiles = profilesShown ? files.filter((file) => !entries.some((entry) => entry.key === file.key)) : [];
   const adaptedTarget = adaptedTargetFor(selectedFile);
+  // What the installed tools offer to do with it, on the picked file where a command takes one.
+  const toolCommands = useToolCommands(
+    print.id,
+    selectedFile ? { filename: selectedFile.filename, plateId: selectedFile.plate?.id ?? null } : null,
+    onUnauthorized,
+  );
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -590,8 +597,11 @@ export default function ModelSidePanel({
               onCustomize={customize.available ? customize.start : undefined}
               onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
               openingInStudio={studio.opening}
+              toolCommands={toolCommands.commands}
+              onToolCommand={toolCommands.run}
             />
           )}
+          {toolCommands.element}
           {slicerOption && adaptedTarget && (
             <AdaptedOpenButton
               target={adaptedTarget}

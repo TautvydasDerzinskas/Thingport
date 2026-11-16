@@ -99,6 +99,35 @@ const collectionSchema = z
     message: "Two models share a key",
   });
 
+// A command's id, which `thingport.context.command` hands the tool back.
+const COMMAND_ID = /^[a-z0-9][a-z0-9-]{0,39}$/;
+// A file type as the end of a file's name, without the dot: "stl", "gcode.3mf".
+const FILE_TYPE = /^[a-z0-9]+(\.[a-z0-9]+)*$/;
+
+/**
+ * Something a tool offers to do with a model, listed on the model page without the tool running: in the main button's
+ * menu, under Tools. Its title translates through the tool's labels, as `commands.<id>`.
+ */
+const toolCommandSchema = z
+  .object({
+    id: z.string().trim().regex(COMMAND_ID, "1-40 lowercase letters, digits and dashes"),
+    title: z.string().trim().min(1).max(60),
+    /** "file": the file picked on the model page, as `thingport.context.fileId`; "model": the model as a whole. */
+    on: z.enum(["model", "file"]).default("model"),
+    /** The file types a "file" command takes; any when left out. */
+    fileTypes: z
+      .array(z.string().trim().toLowerCase().regex(FILE_TYPE, 'A file type without the dot, e.g. "stl"'))
+      .min(1)
+      .max(20)
+      .optional(),
+    /** False for one the tool's `run` export does without opening its window. */
+    window: z.boolean().default(true),
+  })
+  .refine((command) => !command.fileTypes || command.on === "file", {
+    message: 'fileTypes is for a command with on: "file"',
+  });
+export type ToolCommand = z.infer<typeof toolCommandSchema>;
+
 /**
  * The shelves the Tools page sorts tools onto. A small fixed set, so that one Thingport's shelves read like
  * another's and a tool from the repository lands somewhere sensible without anyone filing it.
@@ -132,6 +161,14 @@ export const toolManifestSchema = z.object({
   /** The models it needs, kept in a collection of their own in every user's library that can use tools: only a
    *  repository tool brings them, as its files are what the review reads. */
   collection: collectionSchema.optional(),
+  /** What it offers to do with a model, from the model page's main button menu. */
+  commands: z
+    .array(toolCommandSchema)
+    .max(10)
+    .default([])
+    .refine((commands) => new Set(commands.map((command) => command.id)).size === commands.length, {
+      message: "Two commands share an id",
+    }),
 });
 export type ToolManifest = z.infer<typeof toolManifestSchema>;
 

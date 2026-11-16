@@ -5,6 +5,7 @@
   "bar.setup": "Ajustes",
   "batch.parts": "{parts} piezas",
   "batch.toPrint": ", {units} a imprimir",
+  "commands.estimate": "Estimar el coste de impresión",
   "common.nothingToShow": "No hay nada que mostrar.",
   "common.unnamed": "Sin nombre",
   "csv.cost": "Coste",

@@ -3988,7 +3988,9 @@
       },
       "runner": {
         "failed": "{{name}} s'est arrêté sur une erreur",
-        "noExport": "Le script n'a pas d'export par défaut à appeler"
+        "noExport": "Le script n'a pas d'export par défaut à appeler",
+        "noRun": "Le script n'a pas d'export run pour une commande sans fenêtre",
+        "commandFailed": "{{name}} n'a pas pu le faire : {{error}}"
       },
       "picker": {
         "title": "Choisir une collection",
@@ -6158,6 +6160,7 @@
       "moreOpenOptions": "Autres slicers et téléchargements",
       "openActions": "Ouvrir ou télécharger",
       "openInHeading": "Ouvrir dans",
+      "toolsHeading": "Outils",
       "toolOwned": "Appartient à un outil",
       "toolOwnedHint": "Il ne peut être ni modifié ni supprimé",
       "customize": "Personnaliser…",

@@ -10,25 +10,9 @@ import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
+import { loadToolModule } from "./toolModule";
 import { scriptToast } from "../../sdk/toast";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
-
-type Mount = (thingport: Record<string, unknown>) => unknown;
-
-// One module per version of a tool's script, shared by every window running it.
-const modules = new Map<string, Promise<{ default?: Mount }>>();
-
-function loadModule(tool: RunnableTool): Promise<{ default?: Mount }> {
-  let loaded = modules.get(tool.sha);
-  if (!loaded) {
-    const url = URL.createObjectURL(new Blob([tool.script], { type: "text/javascript" }));
-    loaded = import(/* @vite-ignore */ url);
-    modules.set(tool.sha, loaded);
-    // A script that fails to load is tried afresh next time.
-    loaded.catch(() => modules.delete(tool.sha)).finally(() => URL.revokeObjectURL(url));
-  }
-  return loaded;
-}
 
 type Props = {
   tool: RunnableTool;
@@ -124,7 +108,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
 
     void (async () => {
       try {
-        const module = await loadModule(tool);
+        const module = await loadToolModule(tool);
         if (cancelled) return;
         if (typeof module.default !== "function") throw new Error(latest.current.t("tools.runner.noExport"));
         const returned = await module.default(thingport as unknown as Record<string, unknown>);

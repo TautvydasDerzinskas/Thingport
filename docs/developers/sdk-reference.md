@@ -52,7 +52,7 @@ For a tool, the type is `ToolSdk`.
 | [`library`](#libraryname)                 |   ✓    |  ✓   | A library Thingport carries, for a job a script can't fit inside itself.                                                                                      |
 | [`libraries`](#libraries)                 |   ✓    |  ✓   | The names `library()` takes.                                                                                                                                  |
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
-| [`context`](#context)                     |        |  ✓   | What the tool was opened on: `{ modelId }` when it's opened on a model, and empty when it's opened from the Tools page.                                       |
+| [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
 | [`toolModels`](#toolmodels)               |        |  ✓   | The models a tool from the repository brings, by the keys its metadata gives them.                                                                            |
 | [`fetchToolModels`](#fetchtoolmodelskeys) |        |  ✓   | Fetches the tool's models that aren't here yet and gives the user their copies.                                                                               |
@@ -1123,10 +1123,15 @@ The tool itself. `id` is null in the editor's preview of a tool not saved yet; `
 _Tools only_
 
 ```ts
-thingport.context: { modelId?: string }
+thingport.context: { modelId?: string; fileId?: string; command?: string }
 ```
 
-What the tool was opened on: `{ modelId }` when it's opened on a model, and empty when it's opened from the Tools page.
+What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`.
+
+```js
+const { command, modelId, fileId } = thingport.context;
+if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
+```
 
 ### `storage`
 

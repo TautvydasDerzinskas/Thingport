@@ -3810,7 +3810,9 @@
       },
       "runner": {
         "failed": "{{name}} stopped with an error",
-        "noExport": "The script has no default export to call"
+        "noExport": "The script has no default export to call",
+        "noRun": "The script has no run export for a command without a window",
+        "commandFailed": "{{name}} couldn't do that: {{error}}"
       },
       "picker": {
         "title": "Choose a collection",
@@ -5915,6 +5917,7 @@
       "moreOpenOptions": "Other slicers and downloads",
       "openActions": "Open or download",
       "openInHeading": "Open in",
+      "toolsHeading": "Tools",
       "toolOwned": "Belongs to a tool",
       "toolOwnedHint": "It can't be edited or deleted",
       "customize": "Customize…",

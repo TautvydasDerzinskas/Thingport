@@ -4082,7 +4082,9 @@
       },
       "runner": {
         "failed": "{{name}} sustojo dėl klaidos",
-        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti"
+        "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti",
+        "noRun": "Scenarijus neturi run eksporto komandai be lango",
+        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}"
       },
       "picker": {
         "title": "Pasirinkite kolekciją",
@@ -6270,6 +6272,7 @@
       "moreOpenOptions": "Kitos pjaustyklės ir atsisiuntimai",
       "openActions": "Atverti arba atsisiųsti",
       "openInHeading": "Atverti su",
+      "toolsHeading": "Įrankiai",
       "toolOwned": "Priklauso įrankiui",
       "toolOwnedHint": "Jo negalima redaguoti ar ištrinti",
       "customize": "Keisti…",

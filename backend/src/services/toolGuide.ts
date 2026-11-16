@@ -93,6 +93,35 @@ What the \`thingport\` argument has is listed under **What \`thingport\` has** b
 window as CSS variables as well (the \`SdkTheme\` table names them), so a stylesheet can use them without the script
 copying anything across.
 
+## Commands on a model's page
+
+A tool that works on a model can offer that on the model's own page: its \`commands\` show in the menu beside the
+model's Open button, under **Tools**, and Thingport lists them from the metadata without running the tool.
+
+\`\`\`json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf"] },
+  { "id": "queue", "title": "Add to my print queue", "window": false }
+]
+\`\`\`
+
+- **id**: 1-40 lowercase letters, digits and dashes, different for each command; at most 10 commands.
+- **title**: up to 60 characters, as the menu shows it. A label \`commands.<id>\` in the tool's words translates it.
+- **on**: \`"model"\` (the default) for the model as a whole, or \`"file"\` for the file picked on its page, which only
+  offers the command for one of its **fileTypes** (endings without the dot; any file when left out).
+- **window**: picking it opens the tool's window, and \`thingport.context\` says what it was opened on:
+  \`{ command, modelId, fileId }\`, \`fileId\` being one of the model's \`files\` for a command on a file. With
+  \`"window": false\` the window stays shut and Thingport calls the script's \`run\` export instead, with the same
+  \`thingport\`: tell the user what happened with \`ui.toast\`, and ask with \`ui.confirm\` when you must.
+
+\`\`\`js
+export async function run(command, thingport) {
+  const { modelId } = thingport.context;
+  // …do it, then say so
+  thingport.ui.toast(thingport.t("queued"), "success");
+}
+\`\`\`
+
 ## What \`thingport\` has
 
 ${TOOL_SDK_REFERENCE}

@@ -132,6 +132,40 @@ describe("metadata", () => {
     expect(parseToolManifest('{"name":"x","category":"planners"}').category).toBe("planners");
     expect(() => parseToolManifest('{"name":"x","category":"gadgets"}')).toThrow(/category/);
   });
+
+  it("takes the commands it offers on the model page, defaulting to a model and a window", () => {
+    expect(parseToolManifest('{"name":"x"}').commands).toEqual([]);
+    const { commands } = parseToolManifest(
+      JSON.stringify({
+        name: "x",
+        commands: [
+          { id: "queue", title: "Add to queue", window: false },
+          { id: "estimate", title: "Estimate", on: "file", fileTypes: ["STL", "gcode.3mf"] },
+        ],
+      }),
+    );
+    expect(commands).toEqual([
+      { id: "queue", title: "Add to queue", on: "model", window: false },
+      { id: "estimate", title: "Estimate", on: "file", fileTypes: ["stl", "gcode.3mf"], window: true },
+    ]);
+  });
+
+  it("refuses commands it couldn't tell apart or offer", () => {
+    const manifest = (commands: unknown) => JSON.stringify({ name: "x", commands });
+    expect(() =>
+      parseToolManifest(
+        manifest([
+          { id: "a", title: "A" },
+          { id: "a", title: "B" },
+        ]),
+      ),
+    ).toThrow(/share an id/);
+    expect(() => parseToolManifest(manifest([{ id: "Open In", title: "A" }]))).toThrow(/lowercase/);
+    expect(() => parseToolManifest(manifest([{ id: "a", title: "A", on: "file", fileTypes: [".stl"] }]))).toThrow(
+      /without the dot/,
+    );
+    expect(() => parseToolManifest(manifest([{ id: "a", title: "A", fileTypes: ["stl"] }]))).toThrow(/on: "file"/);
+  });
 });
 
 describe("the Tools page's arrangement", () => {

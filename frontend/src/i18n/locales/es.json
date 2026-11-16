@@ -3975,7 +3975,9 @@
       },
       "runner": {
         "failed": "{{name}} se detuvo con un error",
-        "noExport": "El script no tiene una exportación por defecto a la que llamar"
+        "noExport": "El script no tiene una exportación por defecto a la que llamar",
+        "noRun": "El script no tiene una exportación run para un comando sin ventana",
+        "commandFailed": "{{name}} no pudo hacerlo: {{error}}"
       },
       "picker": {
         "title": "Elige una colección",
@@ -6145,6 +6147,7 @@
       "moreOpenOptions": "Otros slicers y descargas",
       "openActions": "Abrir o descargar",
       "openInHeading": "Abrir en",
+      "toolsHeading": "Herramientas",
       "toolOwned": "Pertenece a una herramienta",
       "toolOwnedHint": "No se puede editar ni eliminar",
       "customize": "Personalizar…",

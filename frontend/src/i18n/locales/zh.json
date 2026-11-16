@@ -3648,7 +3648,9 @@
       },
       "runner": {
         "failed": "{{name}} 因出错而停止",
-        "noExport": "脚本没有可调用的默认导出"
+        "noExport": "脚本没有可调用的默认导出",
+        "noRun": "脚本没有供无窗口命令调用的 run 导出",
+        "commandFailed": "{{name}} 未能完成：{{error}}"
       },
       "picker": {
         "title": "选择合集",
@@ -5686,6 +5688,7 @@
       "moreOpenOptions": "其他切片软件和下载",
       "openActions": "打开或下载",
       "openInHeading": "打开方式",
+      "toolsHeading": "工具",
       "toolOwned": "属于某个工具",
       "toolOwnedHint": "无法编辑或删除",
       "customize": "自定义…",

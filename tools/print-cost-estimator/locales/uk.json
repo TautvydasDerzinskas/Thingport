@@ -5,6 +5,7 @@
   "bar.setup": "Налаштування",
   "batch.parts": "Деталей: {parts}",
   "batch.toPrint": ", надрукувати: {units}",
+  "commands.estimate": "Оцінити вартість друку",
   "common.nothingToShow": "Немає чого показати.",
   "common.unnamed": "Без назви",
   "csv.cost": "Собівартість",

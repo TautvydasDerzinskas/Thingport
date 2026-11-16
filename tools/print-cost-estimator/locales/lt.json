@@ -5,6 +5,7 @@
   "bar.setup": "Nustatymai",
   "batch.parts": "{parts} dalys",
   "batch.toPrint": ", {units} spausdinti",
+  "commands.estimate": "Įvertinti spausdinimo kainą",
   "common.nothingToShow": "Nėra ko rodyti.",
   "common.unnamed": "Be pavadinimo",
   "csv.cost": "Savikaina",

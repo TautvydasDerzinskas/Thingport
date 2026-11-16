@@ -40,6 +40,21 @@ export type ToolManifest = {
   collection?: { name: string; description?: string; models: ToolModelSpec[] };
   /** The languages it has labels for, as `locales/<code>.json` beside tool.json. */
   locales?: string[];
+  /** What it offers to do with a model, from the model page's main button menu. */
+  commands?: ToolCommand[];
+};
+
+/** Something a tool offers to do with a model, listed on the model page without the tool running. Its title
+ *  translates through the tool's labels, as `commands.<id>`. */
+export type ToolCommand = {
+  id: string;
+  title: string;
+  /** "file": the file picked on the model page, as `thingport.context.fileId`; "model": the model as a whole. */
+  on: "model" | "file";
+  /** The file types a "file" command takes, without the dot; any when left out. */
+  fileTypes?: string[];
+  /** False for one the tool's `run` export does without opening its window. */
+  window: boolean;
 };
 
 /** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */

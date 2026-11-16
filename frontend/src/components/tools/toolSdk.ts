@@ -50,8 +50,9 @@ export type ToolUi = SdkToolUi;
 /** A collection as a tool sees it; the picker dialog hands its choice back through this. */
 export const toCollection = toSdkCollection;
 
-/** What a tool was opened on, where it was opened from something rather than from the Tools page. */
-export type ToolContext = { modelId?: string };
+/** What a tool was opened on, where it was opened from something rather than from the Tools page: a model, and from
+ *  one of its commands, which one and the file it was picked on. */
+export type ToolContext = { modelId?: string; fileId?: string; command?: string };
 
 type Build = {
   tool: RunnableTool;

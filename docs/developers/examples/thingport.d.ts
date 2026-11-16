@@ -986,12 +986,16 @@ export interface ToolSdk extends SdkBase {
    */
   tool: { id: string | null; slug: string; name: string; version: string; source: "repo" | "own" };
   /**
-   * What the tool was opened on: `{ modelId }` when it's opened on a model, and empty when it's opened from the Tools
-   * page.
+   * What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a
+   * model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`,
+   * the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`.
    *
    * @group Tool only
+   * @example
+   * const { command, modelId, fileId } = thingport.context;
+   * if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
    */
-  context: { modelId?: string };
+  context: { modelId?: string; fileId?: string; command?: string };
   /**
    * JSON kept for this user and this tool, so the window opens where they left it. In the editor's preview of a tool
    * not saved yet, it lasts only as long as the preview.

@@ -52,6 +52,7 @@ in [`tools/index.json`](../tools/index.json).
 | `locales`     | The language codes it has labels for, up to 40                                                 |
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
+| `commands`    | Up to 10 things it offers on a model's page, below                                             |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
 
@@ -90,6 +91,42 @@ the geometry behind them. The 3MF writer comes with it — `writeThreeMf(parts, 
 `meshBounds(mesh)` — so a tool that works out a dozen parts saves one 3MF with each of them named inside, rather
 than handing over a dozen downloads. A 3MF carries one copy of a shape however many are wanted, so a part's name is
 where its count belongs: `"8x8 Core Tile x4"`.
+
+### Commands on a model's page
+
+A tool that works on a model can offer that from the model's page: its `commands` show in the menu beside the Open
+button, under **Tools**, after a divider. Thingport reads them from the metadata, so it lists them without running the
+tool, and a tool with none changes nothing there.
+
+```json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf", "gcode"] },
+  { "id": "queue", "title": "Add to my print queue", "window": false }
+]
+```
+
+| Field       | What it does                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| `id`        | 1–40 lowercase letters, digits and dashes, different for each command                              |
+| `title`     | Up to 60 characters. A label `commands.<id>` in `locales/` translates it                           |
+| `on`        | `"model"` (default) for the model, or `"file"` for the file picked on the page                     |
+| `fileTypes` | For `"file"`: the endings it takes, without the dot (`"stl"`, `"gcode.3mf"`); any file when absent |
+| `window`    | `true` (default) opens the tool's window; `false` calls its `run` export with no window            |
+
+A command that opens the window finds what it was picked on in `thingport.context`: `{ command, modelId, fileId }`,
+`fileId` being one of the model's `files` for a command on a file (the prepared print isn't one, so a file command
+isn't offered for it). One with `"window": false` gets the same `thingport` in its `run` export, and reports back
+through `ui.toast`, asking through `ui.confirm` where it must:
+
+```js
+export async function run(command, thingport) {
+  const { modelId } = thingport.context;
+  // …do it, then say so
+  thingport.ui.toast(thingport.t("queued"), "success");
+}
+```
+
+Print cost estimator's **Estimate print cost** is the example in this repository.
 
 ### The words it shows
 
