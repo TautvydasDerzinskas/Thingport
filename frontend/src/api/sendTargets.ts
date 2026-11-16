@@ -133,11 +133,11 @@ export const sendTargetsApi = {
     if (!res.ok) return failed(res, "Failed to delete the destination");
   },
 
-  test: async (id: string): Promise<SendOutcome> => {
-    const res = await fetch(`${apiBase()}/me/send-targets/${encodeURIComponent(id)}/test`, {
-      method: "POST",
-      headers: authHeaders(),
-    });
+  /** Tests the settings as they're being edited: `id` null for a new one, else a saved one's with its kept secrets
+   *  where none were typed in. */
+  test: async (id: string | null, input: SendTargetInput): Promise<SendOutcome> => {
+    const at = id ? `${encodeURIComponent(id)}/test` : "test";
+    const res = await fetch(`${apiBase()}/me/send-targets/${at}`, { method: "POST", ...json(input) });
     if (!res.ok) return failed(res, "Failed to test the destination");
     return res.json();
   },

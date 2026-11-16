@@ -92,11 +92,14 @@ export default function SendToPanel({ onUnauthorized }: Props) {
     };
   }, [failed]);
 
-  // Every change reaches the model pages too, through the slicer settings they read.
-  const changed = (list: SendTarget[]) => {
-    setTargets(list);
+  // Every change reaches the model pages too, through the slicer settings they read. Applied to the list as it is
+  // when the answer comes, so two saves at once both stay.
+  const changed = (update: (list: SendTarget[]) => SendTarget[]) => {
+    setTargets((list) => update(list ?? []));
     void reloadSlicerSettings();
   };
+  const replaced = (saved: SendTarget) => (list: SendTarget[]) =>
+    list.map((other) => (other.id === saved.id ? saved : other));
 
   const add = (kind: SendKind) => {
     setAddAnchor(null);
@@ -115,7 +118,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
     if (!sure) return;
     try {
       await sendTargetsApi.remove(target.id);
-      changed((targets ?? []).filter((other) => other.id !== target.id));
+      changed((list) => list.filter((other) => other.id !== target.id));
     } catch (err) {
       failed(err);
     }
@@ -134,7 +137,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
           clearKey: false,
         }),
       );
-      changed((targets ?? []).map((other) => (other.id === saved.id ? saved : other)));
+      changed(replaced(saved));
     } catch (err) {
       failed(err);
     }
@@ -165,7 +168,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
         throw new Error(s("importFailed"));
       }
       const list = await sendTargetsApi.importAll(parsed);
-      changed(list);
+      changed(() => list);
       toast({ message: s("imported", { count: list.length - before }), severity: "success" });
     } catch (err) {
       failed(err);
@@ -273,13 +276,14 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                 </Typography>
               </Stack>
               <SendTargetEditor
+                key={adding}
                 target={null}
                 kind={adding}
                 defaultName={nameOf(adding)}
                 onCancel={() => setAdding(null)}
                 onSaved={(saved) => {
                   setAdding(null);
-                  changed([...(targets ?? []), saved]);
+                  changed((list) => [...list, saved]);
                 }}
                 onUnauthorized={onUnauthorized}
               />
@@ -385,7 +389,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                     onCancel={() => setEditing(null)}
                     onSaved={(saved) => {
                       setEditing(null);
-                      changed((targets ?? []).map((other) => (other.id === saved.id ? saved : other)));
+                      changed(replaced(saved));
                       toast({ message: s("saved", { name: saved.name }), severity: "success" });
                     }}
                     onUnauthorized={onUnauthorized}

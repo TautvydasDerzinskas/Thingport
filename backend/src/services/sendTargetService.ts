@@ -407,12 +407,20 @@ export async function sendToTarget(
 }
 
 /** Whether a destination answers, without sending a file: a printer's version, a webhook's test event, or a custom
- *  request's host. A link has nothing to reach. */
-export async function testSendTarget(userId: string, targetId: string): Promise<SendOutcome> {
-  const target = await ownTarget(userId, targetId);
-  const how = howOf(target);
+ *  request's host. A link has nothing to reach. `draft`: settings as they're being edited, not saved yet, with the
+ *  saved destination's secrets where none were typed in; `targetId` null for a new one. */
+export async function testSendTarget(
+  userId: string,
+  targetId: string | null,
+  draft?: SendTargetInput,
+): Promise<SendOutcome> {
+  const target = targetId ? await ownTarget(userId, targetId) : null;
+  if (!target && !draft) throw new HttpError(400, "Nothing to test");
+  const { how, secrets } = draft
+    ? splitSecrets(draft, target && secretsOf(target))
+    : { how: howOf(target!), secrets: secretsOf(target!) };
   if (how.type === "link") throw new HttpError(400, "A link has nothing to test");
-  const test = testRequestOf(how, secretsOf(target));
+  const test = testRequestOf(how, secrets);
   const headers = Object.fromEntries(test.headers.map((header) => [header.name, header.value]));
   if (test.json) headers["Content-Type"] = "application/json";
   const result = await reach(

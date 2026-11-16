@@ -41,6 +41,8 @@ type Draft = {
   clearKey: boolean;
 };
 
+type PresetHow = Extract<SendHow, { type: "preset" }>;
+type LinkHow = Extract<SendHow, { type: "link" }>;
 type RequestHow = Extract<SendHow, { type: "request" }>;
 
 const mono = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12.5 } as const;
@@ -109,7 +111,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-/** A destination's settings, opened in place on its row. */
+/** A destination's settings, opened in place on its row. A saved one's placement is the row's own toggle. */
 export default function SendTargetEditor({ target, kind, defaultName, onSaved, onCancel, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const reasonText = useSendReason();
@@ -117,7 +119,8 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
-  const [tested, setTested] = useState<SendOutcome | null>(null);
+  // What a test came to, shown while the settings are still the ones it tested.
+  const [tested, setTested] = useState<{ outcome: SendOutcome; of: Draft } | null>(null);
   // Keys for the rows of form fields and headers, which have no ids of their own.
   const [rowIds, setRowIds] = useState(() => ({
     fields: draft.how.type === "request" ? draft.how.fields.map(() => newLocalId()) : [],
@@ -126,15 +129,20 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
   const info = SEND_KINDS[kindOfHow(draft.how)];
   const how = draft.how;
   const k = (key: string) => t(`configuration.sendTo.fields.${key}`);
-  const setHow = (next: Partial<SendHow>) => setDraft((d) => ({ ...d, how: { ...d.how, ...next } as SendHow }));
-  const setRequest = (next: Partial<RequestHow>) => setHow(next as Partial<SendHow>);
+  // Each changes its own kind's settings only, so a draft never mixes two kinds'.
+  const setPreset = (next: Partial<Omit<PresetHow, "type">>) =>
+    setDraft((d) => (d.how.type === "preset" ? { ...d, how: { ...d.how, ...next } } : d));
+  const setLink = (next: Partial<Omit<LinkHow, "type">>) =>
+    setDraft((d) => (d.how.type === "link" ? { ...d, how: { ...d.how, ...next } } : d));
+  const setRequest = (next: Partial<Omit<RequestHow, "type">>) =>
+    setDraft((d) => (d.how.type === "request" ? { ...d, how: { ...d.how, ...next } } : d));
+  const input = () => inputOf({ ...draft, placement: target?.placement ?? draft.placement });
 
   const save = async () => {
     setSaving(true);
     setError(null);
     try {
-      const input = inputOf(draft);
-      onSaved(target ? await sendTargetsApi.update(target.id, input) : await sendTargetsApi.create(input));
+      onSaved(target ? await sendTargetsApi.update(target.id, input()) : await sendTargetsApi.create(input()));
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : String(err));
@@ -144,11 +152,12 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
   };
 
   const test = async () => {
-    if (!target) return;
+    const of = draft;
     setTesting(true);
     setTested(null);
+    setError(null);
     try {
-      setTested(await sendTargetsApi.test(target.id));
+      setTested({ outcome: await sendTargetsApi.test(target?.id ?? null, input()), of });
     } catch (err) {
       if (err instanceof UnauthorizedError) onUnauthorized?.();
       else setError(err instanceof Error ? err.message : String(err));
@@ -195,7 +204,7 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
             label={info.group === "webhooks" ? k("webhook") : k("address")}
             placeholder={info.example}
             value={how.address}
-            onChange={(e) => setHow({ address: e.target.value })}
+            onChange={(e) => setPreset({ address: e.target.value })}
             InputProps={{ sx: mono }}
           />
           {info.apiKey && (
@@ -235,7 +244,7 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
               <Segmented
                 label={k("after")}
                 value={how.start ? "print" : "upload"}
-                onChange={(value) => setHow({ start: value === "print" })}
+                onChange={(value) => setPreset({ start: value === "print" })}
                 options={[
                   { value: "upload", label: k("justUpload") },
                   { value: "print", label: k("startPrinting") },
@@ -256,17 +265,17 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
               label={k("url")}
               placeholder={info.example}
               value={how.url}
-              onChange={(e) => setHow({ url: e.target.value })}
+              onChange={(e) => setLink({ url: e.target.value })}
               InputProps={{ sx: mono }}
             />
-            {placeholderChips((name) => setHow({ url: `${how.url}${name}` }))}
+            {placeholderChips((name) => setLink({ url: `${how.url}${name}` }))}
           </Box>
           <Box>
             {label(k("opens"), k("opensHelp"))}
             <Segmented
               label={k("opens")}
               value={how.open}
-              onChange={(open) => setHow({ open })}
+              onChange={(open) => setLink({ open })}
               options={[
                 { value: "new", label: k("newTab") },
                 { value: "named", label: k("namedTab") },
@@ -281,7 +290,7 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
               label={k("tabName")}
               placeholder="thingport"
               value={how.tab ?? ""}
-              onChange={(e) => setHow({ tab: e.target.value })}
+              onChange={(e) => setLink({ tab: e.target.value })}
             />
           )}
         </>
@@ -489,40 +498,46 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
         />
       </Box>
 
-      <Box>
-        {label(k("showAs"))}
-        <Segmented
-          label={k("showAs")}
-          value={draft.placement}
-          onChange={(placement) => setDraft((d) => ({ ...d, placement }))}
-          options={[
-            { value: "button", label: t("configuration.sendTo.placement.button") },
-            { value: "menu", label: t("configuration.sendTo.placement.menu") },
-          ]}
-          fullWidth
-        />
-      </Box>
+      {!target && (
+        <Box>
+          {label(k("showAs"))}
+          <Segmented
+            label={k("showAs")}
+            value={draft.placement}
+            onChange={(placement) => setDraft((d) => ({ ...d, placement }))}
+            options={[
+              { value: "button", label: t("configuration.sendTo.placement.button") },
+              { value: "menu", label: t("configuration.sendTo.placement.menu") },
+            ]}
+            fullWidth
+          />
+        </Box>
+      )}
 
       {error && <Alert severity="error">{error}</Alert>}
 
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-        {target && how.type !== "link" && (
+        {how.type !== "link" && (
           <Button
             size="small"
             variant="outlined"
             onClick={() => void test()}
-            disabled={testing || saving}
+            disabled={testing || saving || !draft.name.trim()}
             startIcon={testing ? <CircularProgress size={14} color="inherit" /> : undefined}
           >
             {t("configuration.sendTo.test")}
           </Button>
         )}
-        {tested && (
+        {tested?.of === draft && (
           <Chip
             size="small"
-            color={tested.ok ? "success" : "error"}
+            color={tested.outcome.ok ? "success" : "error"}
             variant="outlined"
-            label={tested.ok ? t("configuration.sendTo.testOk", { status: tested.status }) : reasonText(tested)}
+            label={
+              tested.outcome.ok
+                ? t("configuration.sendTo.testOk", { status: tested.outcome.status })
+                : reasonText(tested.outcome)
+            }
           />
         )}
         <Box sx={{ flex: 1 }} />

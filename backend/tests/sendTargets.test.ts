@@ -195,9 +195,48 @@ describe("a user's destinations", () => {
     await prisma.sendTarget.deleteMany({ where: { userId: { in: [owner.id, other.id] } } });
   });
 
+  it("test the settings being edited, with the saved key where none was typed", async () => {
+    const saved = await create(owner, {
+      name: "OctoPi",
+      how: { type: "preset", preset: "octoprint", address: base },
+      apiKey: "key-t",
+    });
+    const test = (url: string, body?: object) =>
+      request(app)
+        .post(url)
+        .set(auth(owner.token))
+        .send(body ?? {});
+    const draft = (address: string) => ({ name: "OctoPi", how: { type: "preset", preset: "octoprint", address } });
+
+    expect((await test(`/api/me/send-targets/${saved.body.id}/test`)).body).toEqual({ ok: true, status: 200 });
+    // An address changed but not saved yet is the one tested, still with the kept key.
+    expect((await test(`/api/me/send-targets/${saved.body.id}/test`, draft("http://127.0.0.1:9"))).body).toEqual({
+      ok: false,
+      reason: "unreachable",
+    });
+    expect((await test(`/api/me/send-targets/${saved.body.id}/test`, draft(base))).body).toEqual({
+      ok: true,
+      status: 200,
+    });
+    expect(last()).toMatchObject({ method: "GET", url: "/api/version" });
+    expect(last().headers["x-api-key"]).toBe("key-t");
+
+    // A new one is tested with the key typed in, and nothing is saved.
+    const before = (await request(app).get("/api/me/send-targets").set(auth(owner.token))).body.targets.length;
+    expect((await test("/api/me/send-targets/test", { ...draft(base), apiKey: "key-new" })).body.ok).toBe(true);
+    expect(last().headers["x-api-key"]).toBe("key-new");
+    expect((await request(app).get("/api/me/send-targets").set(auth(owner.token))).body.targets).toHaveLength(before);
+    // Someone else's can't lend its key to a test.
+    expect(
+      (await request(app).post(`/api/me/send-targets/${saved.body.id}/test`).set(auth(other.token)).send(draft(base)))
+        .status,
+    ).toBe(404);
+  });
+
   it("refuse what they couldn't send safely", async () => {
     const bad = (how: object) => create(owner, { name: "Bad", how });
     expect((await bad({ type: "request", url: "https://{model_name}.evil/" })).status).toBe(400);
+    expect((await bad({ type: "request", url: "http:{model_name}/upload" })).status).toBe(400);
     expect((await bad({ type: "link", url: "javascript:alert(1)" })).status).toBe(400);
     expect((await bad({ type: "request", url: `${base}/x`, headers: [{ name: "Cookie", value: "a" }] })).status).toBe(
       400,

@@ -92,10 +92,20 @@ router.delete(
   }),
 );
 
+// A test of a new one's settings, before it's saved.
+router.post(
+  "/me/send-targets/test",
+  asyncHandler(async (req, res) => {
+    res.json(await testSendTarget(req.userId!, null, parseBody(sendTargetInputSchema, req.body)));
+  }),
+);
+
+// A saved one's, as it's being edited (with its kept secrets where none are typed in), or as saved with no body.
 router.post(
   "/me/send-targets/:id/test",
   asyncHandler(async (req, res) => {
-    res.json(await testSendTarget(req.userId!, String(req.params.id)));
+    const draft = req.body?.how === undefined ? undefined : parseBody(sendTargetInputSchema, req.body);
+    res.json(await testSendTarget(req.userId!, String(req.params.id), draft));
   }),
 );
 
