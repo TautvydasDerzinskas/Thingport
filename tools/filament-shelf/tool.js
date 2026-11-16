@@ -1353,9 +1353,10 @@ export function modelTab(thingport) {
 
   return () => {
     closed = true;
-    // Taken down mid-edit: what's typed waits for the tab's next drawing on this model and file. A save going finishes
-    // as it is.
-    if (draft && !saving) keptDrafts.set(draftKey, { draft, focus: focusedRow() });
+    // Taken down mid-edit: what's typed waits for the tab's next drawing on this model and file, as does an edit kept
+    // for this one that it hadn't read far enough to take up. A save going finishes as it is.
+    const unsaved = draft && !saving ? { draft, focus: focusedRow() } : kept;
+    if (unsaved) keptDrafts.set(draftKey, unsaved);
     stop();
     stopReturn();
   };
