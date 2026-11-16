@@ -162,6 +162,53 @@ describe("shared entries", () => {
     expect(byPart.body.people).toEqual([]);
   });
 
+  it("keep JSON's null as a value", async () => {
+    writeRepo();
+    toolId = await install();
+    expect((await share(dad, "flag", { value: null })).status).toBe(204);
+    expect(await list(dad)).toEqual([expect.objectContaining({ key: "flag", value: null })]);
+  });
+
+  it("aren't crowded out of a read by entries kept from the reader", async () => {
+    writeRepo();
+    toolId = await install();
+    const dadsModel = await upload(dad, "crowd.stl");
+    const sonsCopy = await upload(son, "crowd.stl");
+    await prisma.print.update({ where: { id: sonsCopy }, data: { originalId: dadsModel, copiedFromId: dadsModel } });
+    expect((await share(son, "job:mine", { value: 1, model: sonsCopy, info: { label: "Queued" } })).status).toBe(204);
+    // More of the dad's, newer and kept from the son, than a read takes.
+    await prisma.toolSharedData.createMany({
+      data: Array.from({ length: 5000 }, (_, i) => ({
+        toolId,
+        userId: dad.id,
+        key: `job:${i}`,
+        value: i,
+        size: 1,
+        printId: dadsModel,
+        originKey: `orig:${dadsModel}`,
+        info: { label: "Queued", tone: "waiting" },
+        updatedAt: new Date(Date.now() + 60_000),
+      })),
+    });
+    await request(app).put(`/api/tools/${toolId}/audience`).set(auth(dad.token)).send({ everyone: false });
+    expect((await list(son)).map((entry) => entry.key)).toEqual(["job:mine"]);
+    expect((await modelInfo(son, sonsCopy)).tools[0].entries).toEqual([expect.objectContaining({ mine: true })]);
+  });
+
+  it("stay within a writer's limit when several are written at once", async () => {
+    writeRepo();
+    toolId = await install();
+    await prisma.toolSharedData.createMany({
+      data: Array.from({ length: 4998 }, (_, i) => ({ toolId, userId: dad.id, key: `old:${i}`, value: i, size: 1 })),
+    });
+    const tries = await Promise.all(
+      Array.from({ length: 6 }, (_, i) => share(dad, `new:${i}`, { value: i }).then((res) => res.status)),
+    );
+    expect(tries.filter((status) => status === 204)).toHaveLength(2);
+    expect(tries.filter((status) => status === 413)).toHaveLength(4);
+    expect(await prisma.toolSharedData.count({ where: { toolId, userId: dad.id } })).toBe(5000);
+  });
+
   it("are about a model the writer can read, and what a model's page shows needs one", async () => {
     writeRepo();
     toolId = await install();

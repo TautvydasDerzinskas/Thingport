@@ -16,6 +16,8 @@ const SHARED_MAX_BYTES = 5 * 1024 * 1024;
 const SHARED_MAX_KEYS = 5000;
 const LIST_MAX = 5000;
 const AUDIENCE_MAX = 100;
+// Each statement sees what's committed, so what's counted after the lock is all of it, whatever the default.
+const COUNTED_AFTER_LOCK = { isolationLevel: "ReadCommitted" } as const;
 
 export const INFO_TONES = ["waiting", "active", "done", "failed", "neutral"] as const;
 
@@ -77,14 +79,16 @@ function assertKey(key: string): void {
     throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores");
 }
 
-/** The writers in these tools who keep their entries from `readerId`: those whose audience leaves them out. */
-async function hiddenFrom(toolIds: string[], readerId: string): Promise<Set<string>> {
-  if (!toolIds.length) return new Set();
-  const rows = await prisma.toolAudience.findMany({
+/**
+ * Leaves out the entries of the writers in these tools who keep theirs from `readerId` (those whose audience leaves
+ * them out), in the query itself, so their entries don't use up the rows a read takes.
+ */
+async function visibleTo(toolIds: string[], readerId: string): Promise<Prisma.ToolSharedDataWhereInput> {
+  const hidden = await prisma.toolAudience.findMany({
     where: { toolId: { in: toolIds }, userId: { not: readerId }, NOT: { userIds: { has: readerId } } },
     select: { toolId: true, userId: true },
   });
-  return new Set(rows.map((row) => `${row.toolId}:${row.userId}`));
+  return hidden.length ? { NOT: hidden.map(({ toolId, userId }) => ({ toolId, userId })) } : {};
 }
 
 export type SharedEntryOut = {
@@ -107,19 +111,20 @@ export async function listSharedData(
 ): Promise<SharedEntryOut[]> {
   const tool = await usableTool(user, toolId);
   const keys = options.model ? await readableModel(user, options.model) : null;
-  const hidden = await hiddenFrom([tool.id], user.id);
   const rows = await prisma.toolSharedData.findMany({
     where: {
-      toolId: tool.id,
-      ...(options.prefix ? { key: { startsWith: options.prefix } } : {}),
-      ...(keys ? sameModel(keys) : {}),
+      AND: [
+        { toolId: tool.id },
+        options.prefix ? { key: { startsWith: options.prefix } } : {},
+        keys ? sameModel(keys) : {},
+        await visibleTo([tool.id], user.id),
+      ],
     },
     orderBy: { updatedAt: "desc" },
     take: LIST_MAX,
   });
-  const visible = rows.filter((row) => !hidden.has(`${tool.id}:${row.userId}`));
-  const cards = await userCards(visible.map((row) => row.userId));
-  return visible.map((row) => ({
+  const cards = await userCards(rows.map((row) => row.userId));
+  return rows.map((row) => ({
     key: row.key,
     value: row.value,
     user: cards.get(row.userId) ?? null,
@@ -145,15 +150,6 @@ export async function setSharedData(
   if (size > SHARED_VALUE_MAX_BYTES) throw new HttpError(413, "A shared value is at most 256 KB as JSON");
   const model = input.model ? await readableModel(user, input.model) : null;
   const where = { toolId: tool.id, userId: user.id };
-  const [used, count, current] = await Promise.all([
-    prisma.toolSharedData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } }),
-    prisma.toolSharedData.count({ where: { ...where, key: { not: key } } }),
-    prisma.toolSharedData.findUnique({ where: { toolId_userId_key: { ...where, key } }, select: { id: true } }),
-  ]);
-  if ((used._sum.size ?? 0) + size > SHARED_MAX_BYTES)
-    throw new HttpError(413, "This tool shares 5 MB at most for you; delete something first");
-  if (!current && count >= SHARED_MAX_KEYS)
-    throw new HttpError(413, `This tool shares ${SHARED_MAX_KEYS} entries at most for you`);
   const data = {
     value: input.value as Prisma.InputJsonValue,
     size,
@@ -162,11 +158,25 @@ export async function setSharedData(
     sourceKey: model?.sourceKey ?? null,
     info: input.info ? (input.info as Prisma.InputJsonValue) : Prisma.DbNull,
   };
-  await prisma.toolSharedData.upsert({
-    where: { toolId_userId_key: { ...where, key } },
-    create: { ...where, key, ...data },
-    update: data,
-  });
+  await prisma.$transaction(async (tx) => {
+    // One write at a time per writer in a tool, so two at once can't both take the room that's left.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('tool-shared'), hashtext(${`${tool.id}:${user.id}`}))`;
+    const used = await tx.toolSharedData.aggregate({ where: { ...where, key: { not: key } }, _sum: { size: true } });
+    const count = await tx.toolSharedData.count({ where: { ...where, key: { not: key } } });
+    const current = await tx.toolSharedData.findUnique({
+      where: { toolId_userId_key: { ...where, key } },
+      select: { id: true },
+    });
+    if ((used._sum.size ?? 0) + size > SHARED_MAX_BYTES)
+      throw new HttpError(413, "This tool shares 5 MB at most for you; delete something first");
+    if (!current && count >= SHARED_MAX_KEYS)
+      throw new HttpError(413, `This tool shares ${SHARED_MAX_KEYS} entries at most for you`);
+    await tx.toolSharedData.upsert({
+      where: { toolId_userId_key: { ...where, key } },
+      create: { ...where, key, ...data },
+      update: data,
+    });
+  }, COUNTED_AFTER_LOCK);
 }
 
 export async function deleteSharedData(user: ToolUser, toolId: string, key: string): Promise<void> {
@@ -258,20 +268,23 @@ export async function modelInfoFor(user: ToolUser, printId: string): Promise<Mod
   if (!tools.length) return { tools: [] };
   const keys = await readableModel(user, printId);
   const toolIds = tools.map((tool) => tool.id);
-  const [rows, hidden] = await Promise.all([
-    prisma.toolSharedData.findMany({
-      where: { toolId: { in: toolIds }, info: { not: Prisma.DbNull }, ...sameModel(keys) },
-      orderBy: { updatedAt: "desc" },
-      select: { toolId: true, userId: true, info: true, updatedAt: true },
-      take: LIST_MAX,
-    }),
-    hiddenFrom(toolIds, user.id),
-  ]);
+  const rows = await prisma.toolSharedData.findMany({
+    where: {
+      AND: [
+        { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
+        sameModel(keys),
+        await visibleTo(toolIds, user.id),
+      ],
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { toolId: true, userId: true, info: true, updatedAt: true },
+    take: LIST_MAX,
+  });
   // Newest first, so each person's first row in a tool is the one shown.
   const shown = new Set<string>();
   const latest = rows.filter((row) => {
     const who = `${row.toolId}:${row.userId}`;
-    if (hidden.has(who) || shown.has(who)) return false;
+    if (shown.has(who)) return false;
     shown.add(who);
     return true;
   });
