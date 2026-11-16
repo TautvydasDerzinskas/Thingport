@@ -24,9 +24,13 @@ async function sessionLifetimeSeconds(): Promise<number> {
   return Math.max(remember, access);
 }
 
-// nginx in front of the backend passes the scheme on. A Secure cookie sent over plain http is dropped, which would
-// leave a LAN install at http://192.168.x.x unable to stay signed in.
+// A Secure cookie sent over plain http is dropped, which would leave a LAN install at http://192.168.x.x unable to
+// stay signed in. So the page's own address decides, where the browser gives it: a proxy may claim https for a page
+// on http. Without one (the sign-in provider's redirect back), the scheme nginx in front of the backend passes on.
 function isHttps(req: Request): boolean {
+  const origin = req.header("origin");
+  if (origin?.startsWith("https://")) return true;
+  if (origin?.startsWith("http://")) return false;
   const forwarded = req.header("x-forwarded-proto")?.split(",")[0].trim();
   return forwarded ? forwarded === "https" : req.secure;
 }
