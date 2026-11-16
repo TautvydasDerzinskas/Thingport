@@ -935,6 +935,10 @@ const MATERIAL_SUGGESTIONS = [
   "HIPS",
 ];
 
+// Edits not saved yet, by reader, model and file: kept when the tab is taken down mid-edit, as when the page draws its
+// parts again once the profiles fill in or the theme changes, and picked up when it's drawn again.
+const keptDrafts = new Map();
+
 export function modelTab(thingport) {
   const { root, shared, ui, t, context, language } = thingport;
   addStyle(root, BASE_CSS + TAB_CSS);
@@ -951,22 +955,41 @@ export function modelTab(thingport) {
   let fresh = null;
   let closed = false;
   let reads = 0;
+  const draftKey = `${thingport.user?.id ?? "?"}:${context.modelId}:${context.fileId ?? ""}`;
+  let kept = keptDrafts.get(draftKey) ?? null;
+  keptDrafts.delete(draftKey);
 
   async function load() {
     const read = ++reads;
+    let refocus = null;
     try {
       const next = await loadForModel(thingport, context.modelId, context.fileId);
       if (closed || read !== reads) return;
       data = next;
       problem = null;
+      if (kept) {
+        ({ draft, focus: refocus } = kept);
+        kept = null;
+      }
     } catch (error) {
       if (closed || read !== reads) return;
       problem = error?.message || String(error);
     }
     // A change from elsewhere mid-edit shows in the people's columns, leaving the rows being typed in alone, unless
     // the people changed: then the columns are drawn again, the rows from what's typed.
-    if (draft && data && peopleOf(data) === drawnPeople) updateMatches();
-    else render();
+    if (draft && data && peopleOf(data) === drawnPeople) {
+      updateMatches();
+      updateStale();
+    } else render();
+    if (refocus) box.querySelector(`input[${refocus.attr}="${refocus.index}"]`)?.focus();
+  }
+
+  /** The row input being typed in, to come back to when the tab is drawn again. */
+  function focusedRow() {
+    const active = box.contains(document.activeElement) ? document.activeElement : null;
+    for (const attr of ["data-type", "data-hex"])
+      if (active?.matches(`input[${attr}]`)) return { attr, index: active.getAttribute(attr) };
+    return null;
   }
 
   // Whose columns the grid has, so a change that adds or takes one away draws it whole.
@@ -1103,13 +1126,25 @@ export function modelTab(thingport) {
           ? `<datalist id="${materialsId}">${MATERIAL_SUGGESTIONS.map((name) => `<option value="${name}"></option>`).join("")}</datalist>
              <div class="fs-actions"><button type="button" class="fs-btn fs-quiet fs-small" data-act="cancel"${saving ? " disabled" : ""}>${escapeHtml(t("edit.cancel"))}</button><button type="button" class="fs-btn fs-primary fs-small" data-act="save"${saving ? " disabled" : ""}>${escapeHtml(t("edit.save"))}</button></div>`
           : "");
-    // Read before, then not since: what was read stays, said to be maybe out of date, with a way to read again.
-    const stale = problem
-      ? `<div class="fs-problem fs-stale" role="alert">${icon("warn")}<span>${escapeHtml(t("tab.stale", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
-      : "";
-    box.innerHTML = toolbar() + stale + body + (needs.length ? together(match) : "");
+    box.innerHTML = toolbar() + staleLine() + body + (needs.length ? together(match) : "");
     // While a save goes, the rows are what it sends: nothing in them changes until it's done.
     if (saving) for (const control of box.querySelectorAll(".fs-grid input, .fs-grid button")) control.disabled = true;
+  }
+
+  /** Read before, then not since: what was read stays, said to be maybe out of date, with a way to read again. */
+  function staleLine() {
+    return problem
+      ? `<div class="fs-problem fs-stale" role="alert">${icon("warn")}<span>${escapeHtml(t("tab.stale", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
+      : "";
+  }
+
+  /** The stale line as the last read left it, put in or taken out under the toolbar, the rows being typed left alone. */
+  function updateStale() {
+    const old = box.querySelector(".fs-stale");
+    const next = staleLine();
+    if (old && next) old.querySelector("span").textContent = t("tab.stale", { error: problem });
+    else if (old) old.remove();
+    else if (next) box.querySelector(".fs-tools")?.insertAdjacentHTML("afterend", next);
   }
 
   /** While editing: the people's columns, the counts and the summary follow what's typed, the inputs left alone. */
@@ -1318,6 +1353,9 @@ export function modelTab(thingport) {
 
   return () => {
     closed = true;
+    // Taken down mid-edit: what's typed waits for the tab's next drawing on this model and file. A save going finishes
+    // as it is.
+    if (draft && !saving) keptDrafts.set(draftKey, { draft, focus: focusedRow() });
     stop();
     stopReturn();
   };
