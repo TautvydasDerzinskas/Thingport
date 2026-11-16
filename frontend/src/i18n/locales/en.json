@@ -5054,7 +5054,13 @@
     "language": "Language",
     "more": "More",
     "moreActions": "More actions",
-    "open": "Open"
+    "open": "Open",
+    "proxyErrors": {
+      "refused": "This Thingport instance didn't get the request: a proxy in front of it answered with HTTP {{status}} instead. Its logs say why, and {{url}} lists the settings Thingport needs.",
+      "tooLarge": "This request was too large for a proxy or web server in front of this Thingport instance (HTTP 413). Raise its body size limit: see {{url}}",
+      "noAnswer": "This Thingport instance isn't answering (HTTP {{status}}). It may be starting up or stopped, or a proxy in front of it can't reach it.",
+      "timedOut": "This Thingport instance took too long to answer, and a proxy in front of it gave up (HTTP 504). Its time limit may be too short: see {{url}}"
+    }
   },
   "library": {
     "grid": {

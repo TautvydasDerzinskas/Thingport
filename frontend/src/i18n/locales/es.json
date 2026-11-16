@@ -5270,7 +5270,13 @@
     "language": "Idioma",
     "more": "Más",
     "moreActions": "Más acciones",
-    "open": "Abrir"
+    "open": "Abrir",
+    "proxyErrors": {
+      "refused": "Esta instancia Thingport no recibió la solicitud: un proxy delante de ella respondió en su lugar con HTTP {{status}}. Sus registros dicen por qué, y {{url}} indica los ajustes que Thingport necesita.",
+      "tooLarge": "Esta solicitud era demasiado grande para un proxy o servidor web delante de esta instancia Thingport (HTTP 413). Aumenta su límite de tamaño: consulta {{url}}",
+      "noAnswer": "Esta instancia Thingport no responde (HTTP {{status}}). Puede que esté arrancando o detenida, o que un proxy delante de ella no llegue a ella.",
+      "timedOut": "Esta instancia Thingport tardó demasiado en responder y un proxy delante de ella dejó de esperar (HTTP 504). Puede que su límite de tiempo sea demasiado corto: consulta {{url}}"
+    }
   },
   "library": {
     "grid": {

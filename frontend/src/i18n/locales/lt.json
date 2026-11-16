@@ -5395,7 +5395,13 @@
     "language": "Kalba",
     "more": "Daugiau",
     "moreActions": "Daugiau veiksmų",
-    "open": "Atidaryti"
+    "open": "Atidaryti",
+    "proxyErrors": {
+      "refused": "Šis Thingport serveris užklausos negavo: vietoj jo atsakė tarpinis serveris prieš jį (HTTP {{status}}). Priežastis rasite jo žurnaluose, o Thingport reikalingi nustatymai aprašyti {{url}}",
+      "tooLarge": "Ši užklausa per didelė tarpiniam ar žiniatinklio serveriui prieš šį Thingport serverį (HTTP 413). Padidinkite jo užklausos dydžio ribą: žr. {{url}}",
+      "noAnswer": "Šis Thingport serveris neatsako (HTTP {{status}}). Galbūt jis dar paleidžiamas ar sustabdytas, arba tarpinis serveris prieš jį jo nepasiekia.",
+      "timedOut": "Šis Thingport serveris per ilgai neatsakė, ir tarpinis serveris prieš jį nustojo laukti (HTTP 504). Jo laiko riba gali būti per trumpa: žr. {{url}}"
+    }
   },
   "library": {
     "grid": {

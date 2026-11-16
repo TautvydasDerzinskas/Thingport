@@ -4841,7 +4841,13 @@
     "language": "语言",
     "more": "更多",
     "moreActions": "更多操作",
-    "open": "打开"
+    "open": "打开",
+    "proxyErrors": {
+      "refused": "这个 Thingport 实例没有收到请求：它前面的代理代替它作出了回应（HTTP {{status}}）。原因可查看代理的日志，Thingport 需要的设置见 {{url}}",
+      "tooLarge": "这个请求对这个 Thingport 实例前面的代理或 Web 服务器来说太大了（HTTP 413）。请调高它的请求大小上限：见 {{url}}",
+      "noAnswer": "这个 Thingport 实例没有响应（HTTP {{status}}）。它可能正在启动或已停止，或者它前面的代理连接不到它。",
+      "timedOut": "这个 Thingport 实例响应太慢，它前面的代理已放弃等待（HTTP 504）。它的超时时间可能太短：见 {{url}}"
+    }
   },
   "library": {
     "grid": {
