@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { settingsApi, type SlicerSettings } from "../api/settings";
 
-const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {} };
+const EMPTY: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {}, sendTargets: [] };
 
 // Shared by every mounted instance so there's one request, and saves propagate to all of them.
 let cached: SlicerSettings | undefined; // undefined = not loaded yet
@@ -23,6 +23,15 @@ function load(): Promise<SlicerSettings> {
       });
   }
   return inFlight;
+}
+
+/** Reads them again, e.g. after the user changed where they send models. */
+export async function reloadSlicerSettings(): Promise<void> {
+  try {
+    setCachedSlicerSettings(await settingsApi.getSlicer());
+  } catch {
+    // The page keeps what it had.
+  }
 }
 
 export function setCachedSlicerSettings(value: SlicerSettings) {

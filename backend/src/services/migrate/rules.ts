@@ -26,6 +26,7 @@ export const MERGE_RULES = {
   Activity: { part: "people" },
   SystemReceipt: { part: "people" },
   UserPrinter: { part: "people" },
+  SendTarget: { part: "people" },
   UserIcon: { part: "people" },
   UserIdentity: { part: "people" },
   UserAchievement: { part: "people" },

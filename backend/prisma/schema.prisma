@@ -146,6 +146,7 @@ model User {
   toolData                 ToolData[]
   toolSharedData           ToolSharedData[]
   toolAudiences            ToolAudience[]
+  sendTargets              SendTarget[]
   icons                    UserIcon[]
   printers                 UserPrinter[]
   studioDesigns            StudioDesign[]
@@ -942,6 +943,29 @@ model ToolSharedData {
   @@index([toolId, originKey])
   @@index([toolId, sourceKey])
   @@index([userId])
+}
+
+/// A place a user sends a model's file to from its page, set up under Configuration → Send to: a printer (OctoPrint,
+/// Klipper, PrusaLink), a webhook, a link the browser opens or a request Thingport's server makes. Theirs alone.
+model SendTarget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  /// How it's reached: a preset and its fields, a link, or a request (services/sendTargetFormat.ts). Secret values
+  /// aren't in it.
+  how       Json
+  /// The secret values `how` names, such as an API key: never sent back to the browser, never exported.
+  secrets   Json?
+  /// "button": its own button under the model's Open button; "menu": in that button's menu, under Send to.
+  placement String   @default("menu")
+  /// The file endings it's offered for, without the dot; any file when empty.
+  fileTypes String[]
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, position])
 }
 
 /// Whom a user's shared entries in a tool reach, when it isn't everyone who can use the tool: only these people.
