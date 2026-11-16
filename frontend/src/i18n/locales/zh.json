@@ -3761,7 +3761,10 @@
         "failed": "{{name}} 因出错而停止",
         "noExport": "脚本没有可调用的默认导出",
         "noRun": "脚本没有供无窗口命令调用的 run 导出",
-        "commandFailed": "{{name}} 未能完成：{{error}}"
+        "commandFailed": "{{name}} 未能完成：{{error}}",
+        "noPartExport": "脚本没有用于绘制此部分的 {{name}} 导出",
+        "partFailed": "{{name}} 无法显示此内容",
+        "noPopover": "没有窗口的命令无法打开弹出框"
       },
       "share": {
         "title": "谁能看到你的{{name}}？",
@@ -3771,10 +3774,6 @@
         "picked_other": "已与 {{count}} 人分享",
         "onlyYou": "尚未选择任何人，所以只有你能看到。",
         "loadFailed": "无法读取谁能看到，所以暂时无法更改。"
-      },
-      "info": {
-        "you": "你",
-        "someone": "某人"
       },
       "picker": {
         "title": "选择合集",

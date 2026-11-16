@@ -9,7 +9,7 @@ import type { UserCardOut } from "../dto";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
 import { readablePrintWhere, userCards } from "./socialService";
-import { STORAGE_KEY, manifestOf, toolAccessOf, toolUsers, usableTool, type ToolUser } from "./toolsService";
+import { STORAGE_KEY, toolUsers, usableTool, type ToolUser } from "./toolsService";
 
 const SHARED_VALUE_MAX_BYTES = 256 * 1024;
 const SHARED_MAX_BYTES = 5 * 1024 * 1024;
@@ -19,23 +19,10 @@ const AUDIENCE_MAX = 100;
 // Each statement sees what's committed, so what's counted after the lock is all of it, whatever the default.
 const COUNTED_AFTER_LOCK = { isolationLevel: "ReadCommitted" } as const;
 
-export const INFO_TONES = ["waiting", "active", "done", "failed", "neutral"] as const;
-
-/** What a model's page shows for an entry: a label (one of the tool's label keys, or words), how it reads (`tone`
- *  colours its dot) and when. */
-export const sharedInfoSchema = z.object({
-  label: z.string().trim().min(1).max(60),
-  tone: z.enum(INFO_TONES).default("neutral"),
-  date: z.string().datetime({ offset: true }).optional(),
-});
-export type SharedInfo = z.infer<typeof sharedInfoSchema>;
-
 export const sharedSetSchema = z.object({
   value: z.unknown(),
   /** The model it's about: one the writer can read. */
   model: z.string().min(1).max(100).nullable().optional(),
-  /** What that model's page shows for it; needs `model`. */
-  info: sharedInfoSchema.nullable().optional(),
 });
 
 export const audienceSchema = z.object({
@@ -103,7 +90,6 @@ export type SharedEntryOut = {
   mine: boolean;
   /** The model it's about, as its writer has it. */
   model_id: string | null;
-  info: SharedInfo | null;
   updated_at: string;
   /** Where it is in the order, for reading the entries after it. */
   cursor: string;
@@ -155,7 +141,6 @@ export async function listSharedData(
     user: cards.get(row.userId) ?? null,
     mine: row.userId === user.id,
     model_id: row.printId,
-    info: (row.info as SharedInfo | null) ?? null,
     updated_at: row.updatedAt.toISOString(),
     cursor: cursorOf(row),
   }));
@@ -170,7 +155,6 @@ export async function setSharedData(
 ): Promise<void> {
   assertKey(key);
   if (input.value === undefined) throw new HttpError(400, "There's no value to keep");
-  if (input.info && !input.model) throw new HttpError(400, "What a model's page shows needs the model it's about");
   const tool = await usableTool(user, toolId);
   const size = Buffer.byteLength(JSON.stringify(input.value));
   if (size > SHARED_VALUE_MAX_BYTES) throw new HttpError(413, "A shared value is at most 256 KB as JSON");
@@ -182,7 +166,6 @@ export async function setSharedData(
     printId: model?.id ?? null,
     originKey: model?.originKey ?? null,
     sourceKey: model?.sourceKey ?? null,
-    info: input.info ? (input.info as Prisma.InputJsonValue) : Prisma.DbNull,
   };
   await prisma.$transaction(async (tx) => {
     // One write at a time per writer in a tool, so two at once can't both take the room that's left.
@@ -268,89 +251,4 @@ export async function shareablePeople(user: ToolUser, toolId: string, query: str
   });
   const cards = await userCards(found.map((row) => row.id));
   return found.flatMap((row) => cards.get(row.id) ?? []);
-}
-
-export type ModelInfoOut = {
-  tools: {
-    tool_id: string;
-    entries: { user: UserCardOut | null; mine: boolean; info: SharedInfo; updated_at: string }[];
-  }[];
-};
-
-/**
- * What the user's tools show on a model's page: for each tool with a `modelInfo` part, each person's latest entry
- * about the model, or about any copy of it, that reaches the user. Nothing at all, and no reading, when no tool the
- * user may open has such a part.
- */
-export async function modelInfoFor(user: ToolUser, printId: string): Promise<ModelInfoOut> {
-  const access = await toolAccessOf(user);
-  if (!access.canUse) return { tools: [] };
-  const tools = (
-    await prisma.tool.findMany({
-      where: { OR: [{ source: "repo" }, ...(access.canCreate ? [{ source: "own", userId: user.id }] : [])] },
-      select: { id: true, manifest: true },
-    })
-  ).filter((tool) => manifestOf(tool)?.modelInfo);
-  if (!tools.length) return { tools: [] };
-  const keys = await readableModel(user, printId);
-  const toolIds = tools.map((tool) => tool.id);
-  // When each person last wrote in each tool, so one who wrote a great many can't crowd the others out of the rows.
-  // All read in one snapshot: a write between the reads would move that time on, and the person's entry would be
-  // lost; one just after its writer narrowed whom theirs reach would be read under what reached the user before.
-  const rows = await prisma.$transaction(
-    async (tx) => {
-      const where: Prisma.ToolSharedDataWhereInput = {
-        AND: [
-          { toolId: { in: toolIds }, info: { not: Prisma.DbNull } },
-          sameModel(keys),
-          await visibleTo(tx, toolIds, user.id),
-        ],
-      };
-      const newest = await tx.toolSharedData.groupBy({
-        by: ["toolId", "userId"],
-        where,
-        _max: { updatedAt: true },
-      });
-      if (!newest.length) return [];
-      return tx.toolSharedData.findMany({
-        where: {
-          AND: [
-            where,
-            {
-              OR: newest.map((group) => ({
-                toolId: group.toolId,
-                userId: group.userId,
-                updatedAt: group._max.updatedAt!,
-              })),
-            },
-          ],
-        },
-        orderBy: { updatedAt: "desc" },
-        select: { toolId: true, userId: true, info: true, updatedAt: true },
-      });
-    },
-    { isolationLevel: "RepeatableRead" },
-  );
-  // Two written in the same moment: the first is the one shown.
-  const shown = new Set<string>();
-  const latest = rows.filter((row) => {
-    const who = `${row.toolId}:${row.userId}`;
-    if (shown.has(who)) return false;
-    shown.add(who);
-    return true;
-  });
-  const cards = await userCards(latest.map((row) => row.userId));
-  return {
-    tools: toolIds.map((toolId) => ({
-      tool_id: toolId,
-      entries: latest
-        .filter((row) => row.toolId === toolId)
-        .map((row) => ({
-          user: cards.get(row.userId) ?? null,
-          mine: row.userId === user.id,
-          info: row.info as SharedInfo,
-          updated_at: row.updatedAt.toISOString(),
-        })),
-    })),
-  };
 }

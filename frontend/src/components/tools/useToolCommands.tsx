@@ -13,6 +13,7 @@ import { commandsFor, type CommandFile, type OfferedCommand } from "./toolComman
 import type { SdkAudience } from "../../sdk/types";
 import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
 import { useAskQueue } from "./useAskQueue";
+import { useModelPageTools } from "./modelPageTools";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
@@ -31,8 +32,6 @@ export function useToolCommands(
 ): {
   commands: OfferedCommand[];
   run: (offered: OfferedCommand) => void;
-  /** Opens a tool's window on the model, with no command: from a person's chip in its part of the page. */
-  openTool: (tool: RunnableTool) => void;
   element: ReactNode;
 } {
   const { t, i18n } = useTranslation("app");
@@ -41,6 +40,7 @@ export function useToolCommands(
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
+  const page = useModelPageTools();
   const language = matchLanguage(i18n.language);
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
   const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
@@ -86,6 +86,14 @@ export function useToolCommands(
           pickCollection: (options) => asks.ask({ title: options?.title }),
           openModel,
           close: () => undefined,
+          popover: () => {
+            throw new Error(t("tools.runner.noPopover"));
+          },
+          showTab: () => {
+            if (tool.id && tool.manifest.modelPage?.tab) page?.showTab(tool.id);
+          },
+          selectFile: (fileId) => page?.selectFile(fileId),
+          openWindow: () => setOpen({ tool, context: { modelId } }),
         },
         pickAudience: () => shareAsks.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });
@@ -146,7 +154,5 @@ export function useToolCommands(
       </Suspense>
     ) : null;
 
-  const openTool = (tool: RunnableTool) => setOpen({ tool, context: { modelId } });
-
-  return { commands, run, openTool, element };
+  return { commands, run, element };
 }

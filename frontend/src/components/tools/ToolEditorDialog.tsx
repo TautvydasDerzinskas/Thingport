@@ -157,13 +157,13 @@ function Editor({ tool, onClose, onSaved, onUnauthorized }: Omit<Props, "open">)
       onSaved(
         await toolsApi.save({
           slug: draft.slug.trim(),
-          // The form has no place for commands or a model page part, so a tool's own (set over MCP or as JSON) are
+          // The form has no place for commands or model page parts, so a tool's own (set over MCP or as JSON) are
           // kept as they were.
           metadata: JSON.stringify({
             ...manifest,
             locales: Object.keys(labelsOf(labels)),
             commands: tool?.manifest.commands ?? [],
-            modelInfo: tool?.manifest.modelInfo,
+            modelPage: tool?.manifest.modelPage,
           }),
           script,
           html: html.trim() ? html : null,

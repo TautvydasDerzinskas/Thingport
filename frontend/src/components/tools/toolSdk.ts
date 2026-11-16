@@ -17,7 +17,7 @@ import type {
 import { buildUserLibrary, toCollection as toSdkCollection } from "../../sdk/userLibrary";
 import { apiAsUser, downloadFile } from "../../sdk/widgetSdk";
 import { buildAchievements } from "../../sdk/achievements";
-import { toolInfoChanged } from "./toolInfoEvents";
+import { onToolSharedChange, toolSharedChanged } from "./toolSharedEvents";
 
 // The `thingport` object a tool's script gets. Most of it is the SDK a dashboard widget gets as well — the theme,
 // the libraries, the labels and the user's library all come from `src/sdk/` — and what's added here is what only a
@@ -55,8 +55,16 @@ export type ToolUi = SdkToolUi;
 export const toCollection = toSdkCollection;
 
 /** What a tool was opened on, where it was opened from something rather than from the Tools page: a model, and from
- *  one of its commands, which one and the file it was picked on. */
-export type ToolContext = { modelId?: string; fileId?: string; command?: string };
+ *  one of its commands, which one and the file it was picked on; or, for a part of a model's page, which part. */
+export type ToolContext = { modelId?: string; fileId?: string; command?: string; place?: ModelPagePlace };
+
+/** Where on a model's page a tool draws a part, and the export that draws it. */
+export type ModelPagePlace = "info" | "tab" | "image";
+export const PLACE_EXPORTS: Record<ModelPagePlace, "modelInfo" | "modelTab" | "modelImage"> = {
+  info: "modelInfo",
+  tab: "modelTab",
+  image: "modelImage",
+};
 
 type Build = {
   tool: RunnableTool;
@@ -116,7 +124,7 @@ export function buildToolSdk({
       tool.id ? (await toolsApi.storageKeys(tool.id)).map((entry) => entry.key) : [...draftData.keys()],
   };
 
-  // Each entry is the writer's; a model's page showing the ones about it is told when one changes.
+  // Each entry is the writer's; the tool's parts of a model's page are told when one changes.
   const shared: SdkShared = {
     list: async (options) =>
       tool.id
@@ -126,22 +134,19 @@ export function buildToolSdk({
             user: person(entry.user),
             mine: entry.mine,
             modelId: entry.model_id,
-            info: entry.info,
             updatedAt: entry.updated_at,
             cursor: entry.cursor,
           }))
         : [],
     set: async (key, value, options) => {
-      await toolsApi.sharedSet(saved("thingport.shared"), key, {
-        value,
-        model: options?.model ?? null,
-        info: options?.info ? { tone: "neutral", ...options.info } : null,
-      });
-      toolInfoChanged();
+      const id = saved("thingport.shared");
+      await toolsApi.sharedSet(id, key, { value, model: options?.model ?? null });
+      toolSharedChanged(id);
     },
     remove: async (key) => {
-      await toolsApi.sharedDelete(saved("thingport.shared"), key);
-      toolInfoChanged();
+      const id = saved("thingport.shared");
+      await toolsApi.sharedDelete(id, key);
+      toolSharedChanged(id);
     },
     audience: async () => {
       const audience = await toolsApi.audience(saved("thingport.shared"));
@@ -151,6 +156,7 @@ export function buildToolSdk({
       saved("thingport.shared");
       return pickAudience();
     },
+    onChange: (listener) => (tool.id ? onToolSharedChange(tool.id, listener) : () => undefined),
   };
 
   // What each member does is written once, in sdk/types.ts, which the reference is generated from.

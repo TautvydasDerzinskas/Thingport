@@ -1,13 +1,52 @@
 import { collectionsApi, type Collection } from "../api/collections";
-import { printsApi, type Print } from "../api/prints";
+import { printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
 import { searchApi } from "../api/search";
-import type { SdkCollection, SdkCollections, SdkFileInput, SdkModel, SdkModels, SdkRelatedFile } from "./types";
+import type {
+  SdkCollection,
+  SdkCollections,
+  SdkFileInput,
+  SdkFilament,
+  SdkModel,
+  SdkModels,
+  SdkPrintProfile,
+  SdkRelatedFile,
+} from "./types";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
 // script may do with the library is one list, in one place, however the script is run.
 
 export type { SdkCollection, SdkFileInput, SdkModel, SdkRelatedFile } from "./types";
+
+/**
+ * A file's print profile as a script sees it: the one its provider and 3MF describe, or, for a 3MF that isn't one, the
+ * filaments its project sets up. The project names their makers, which no site does, so a profile takes them from it.
+ */
+function profileOf(plate: Plate): SdkPrintProfile | null {
+  const own = plate.format?.filamentList ?? [];
+  const same = (a: string | null, b: string | null) => !a || !b || a.toLowerCase() === b.toLowerCase();
+  const filament = (f: ProfileFilament): SdkFilament => ({
+    type: f.type,
+    color: f.color,
+    grams: f.grams,
+    brand: own.find((o) => o.color && same(o.color, f.color) && same(o.type, f.type))?.brand ?? null,
+  });
+  const profile = plate.profile;
+  if (profile)
+    return {
+      name: profile.title,
+      printer: profile.printer,
+      filaments: profile.filaments.map(filament),
+      plates: profile.plates.map((p) => ({ index: p.index, name: p.name, filaments: p.filaments.map(filament) })),
+    };
+  if (!own.length) return null;
+  return {
+    name: null,
+    printer: plate.format?.printer ?? null,
+    filaments: own.map((o) => ({ type: o.type, color: o.color, grams: null, brand: o.brand })),
+    plates: [],
+  };
+}
 
 const toModel = (print: Print): SdkModel => ({
   id: print.id,
@@ -20,6 +59,7 @@ const toModel = (print: Print): SdkModel => ({
     name: plate.filename,
     size: plate.size,
     url: printsApi.fileUrl(plate.url),
+    profile: profileOf(plate),
   })),
   relatedCount: print.supporting_file_count ?? 0,
   toolOwned: Boolean(print.tool_id),

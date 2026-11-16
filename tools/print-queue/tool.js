@@ -13,8 +13,6 @@ export const ACTIVE = new Set(["queued", "printing"]);
 
 /** A job's key among the user's shared entries. */
 export const JOB = "job:";
-/** The entry that tells a model's page about the user's jobs on it, one per model. */
-export const ABOUT = "about:";
 
 const TONES = { queued: "waiting", printing: "active", printed: "done", failed: "failed" };
 
@@ -82,6 +80,22 @@ export function summaryOf(jobs) {
     (a, b) => RANK[a.status] - RANK[b.status] || statusDate(b).localeCompare(statusDate(a)),
   );
   return { label: `status.${shown.status}`, tone: TONES[shown.status], date: statusDate(shown) };
+}
+
+/** A model page's chips: each person with jobs on the model, or on a copy of it, once with what their jobs come to; the
+ *  user first, then by name. */
+export function chipsOf(entries) {
+  const byPerson = new Map();
+  for (const entry of entries) {
+    if (!entry.key.startsWith(JOB) || !isJob(entry.value)) continue;
+    const id = entry.user?.id ?? (entry.mine ? "me" : "someone");
+    const person = byPerson.get(id) ?? { user: entry.user, mine: entry.mine, jobs: [] };
+    person.jobs.push(entry.value);
+    byPerson.set(id, person);
+  }
+  return [...byPerson.values()]
+    .map(({ user, mine, jobs }) => ({ user, mine, summary: summaryOf(jobs) }))
+    .toSorted((a, b) => Number(b.mine) - Number(a.mine) || (a.user?.name ?? "").localeCompare(b.user?.name ?? ""));
 }
 
 /** Shared entries that are jobs, with each one's user, in the board's columns: the queue oldest first, as it's worked
@@ -208,38 +222,13 @@ function saveJob(shared, key, job) {
   });
 }
 
-/**
- * Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. The jobs
- * are read as stored when it's this one's turn, so the last of several quick changes is what the page shows, and a
- * move that's still saving, and may fail, isn't.
- */
-function tellModelPage(shared, modelId) {
-  return inTurn(`${ABOUT}${modelId}`, async () => summarise(shared, modelId, await storedJobs(shared, modelId)));
-}
-
-/** The jobs on a model, read by the model, so a long history of others can't push the user's out of the read. */
-async function storedJobs(shared, modelId) {
+/** The jobs on a model and its copies, everyone's that reach the user; none for a model deleted since. */
+async function jobsOn(shared, modelId) {
   try {
     return await allJobs(shared, { model: modelId });
   } catch (error) {
-    // A model deleted since: nothing left for its page to show.
     if (/no such model/i.test(error?.message ?? "")) return [];
     throw error;
-  }
-}
-
-async function summarise(shared, modelId, entries) {
-  // The user's jobs on it or on any copy of it, as its page and every copy's show the newest summary of them.
-  const jobs = entries.filter((entry) => entry.mine && isJob(entry.value)).map((entry) => entry.value);
-  const info = summaryOf(jobs);
-  const key = `${ABOUT}${modelId}`;
-  if (!info) return shared.remove(key);
-  try {
-    await shared.set(key, { jobs: jobs.length }, { model: modelId, info });
-  } catch (error) {
-    // A model deleted since has no page to tell.
-    if (!/no such model/i.test(error?.message ?? "")) throw error;
-    await shared.remove(key);
   }
 }
 
@@ -261,8 +250,102 @@ export async function run(command, thingport) {
   }
   const file = model.files.find((candidate) => candidate.id === context.fileId) ?? null;
   await saveJob(shared, `${JOB}${newId()}`, newJob(model, file));
-  await tellModelPage(shared, model.id);
   ui.toast(t("toast.queued", { name: model.name }), "success");
+}
+
+const TONE_COLOURS = {
+  waiting: "var(--tp-info)",
+  active: "var(--tp-warning)",
+  done: "var(--tp-success)",
+  failed: "var(--tp-error)",
+};
+
+const PART_CSS = `
+.pqp{display:flex;flex-direction:column;gap:4px;font-family:var(--tp-font);color:var(--tp-text)}
+.pqp-title{font-size:12px;color:var(--tp-text-muted)}
+.pqp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pqp-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 3px;border:1px solid var(--tp-divider);
+  border-radius:13px;background:none;color:var(--tp-text);font:inherit;font-size:12.5px;line-height:1;cursor:pointer}
+.pqp-chip:hover{background:color-mix(in srgb,var(--tp-text) 7%,transparent)}
+.pqp-chip:focus-visible{outline:2px solid var(--tp-accent);outline-offset:2px}
+.pqp-add{border-style:dashed;padding:0 10px 0 8px;color:var(--tp-text-muted)}
+.pqp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pqp-skeleton{width:96px;height:26px;border-radius:13px;background:var(--tp-divider);animation:pqp-pulse 1s ease-in-out infinite alternate}
+.pqp .pq-av{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;background:var(--pq-person);overflow:hidden}
+.pqp .pq-av img{width:100%;height:100%;object-fit:cover}
+@keyframes pqp-pulse{to{opacity:.45}}
+@media (prefers-reduced-motion: reduce){.pqp-skeleton{animation:none}}
+`;
+
+/**
+ * The part of a model's page: one chip per person with the model, or a copy of it, in their queue, showing where their
+ * prints of it are; then one that adds it to the user's. A person's chip opens the board on the model.
+ */
+export function modelInfo(thingport) {
+  const { root, shared, ui, t, language, context } = thingport;
+  root.innerHTML = `<style>${PART_CSS}</style><div class="pqp"><span class="pqp-title"></span><div class="pqp-chips"><span class="pqp-skeleton"></span></div></div>`;
+  root.querySelector(".pqp-title").textContent = t("part.title");
+  const chips = root.querySelector(".pqp-chips");
+  let reads = 0;
+  let closed = false;
+
+  const when = (iso) => {
+    const at = new Date(iso);
+    return Number.isNaN(at.getTime())
+      ? ""
+      : at.toLocaleString(language, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+
+  function chip(person) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pqp-chip";
+    const name = person.mine ? t("board.you") : (person.user?.name ?? t("part.someone"));
+    const status = t(person.summary.label);
+    const dot = TONE_COLOURS[person.summary.tone] ?? "var(--tp-text-muted)";
+    button.innerHTML = `${avatar(person.user)}<span class="pqp-dot" style="background:${dot}"></span><span>${escapeHtml(status)}</span>`;
+    const said = t("part.chip", { name, status, date: when(person.summary.date) });
+    button.title = said;
+    button.setAttribute("aria-label", said);
+    button.addEventListener("click", () => ui.openWindow());
+    return button;
+  }
+
+  function addButton() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pqp-chip pqp-add";
+    button.textContent = `+ ${t("part.add")}`;
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await run("queue", thingport);
+      } catch (error) {
+        ui.toast(t("toast.failed", { error: error?.message || String(error) }), "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+    return button;
+  }
+
+  async function draw() {
+    const read = ++reads;
+    const entries = await jobsOn(shared, context.modelId);
+    if (closed || read !== reads) return;
+    chips.replaceChildren(...chipsOf(entries).map(chip), addButton());
+  }
+
+  const failed = () => {
+    if (!closed) chips.replaceChildren(addButton());
+  };
+  const stop = shared.onChange(() => void draw().catch(failed));
+  void draw().catch(failed);
+  return () => {
+    closed = true;
+    stop();
+  };
 }
 
 export default function mount(thingport) {
@@ -291,8 +374,6 @@ export default function mount(thingport) {
   let readAgain = false;
   // Reads of the board started, so one that ends after a later one doesn't put back what that one replaced.
   let reads = 0;
-  // Models whose page a failed write left showing something older, told again once the board is next read.
-  const untold = new Set();
   // The user's jobs as stored, as far as the board knows: each change is saved onto this, so one still saving, which
   // may fail, isn't saved along with it.
   const stored = new Map();
@@ -356,7 +437,6 @@ export default function mount(thingport) {
     for (const entry of all) if (entry.mine) stored.set(entry.key, entry.value);
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
     render();
-    for (const modelId of untold) void tell(modelId).catch(() => undefined);
   }
   const refresh = safely(load);
 
@@ -436,15 +516,6 @@ export default function mount(thingport) {
 
   /** One of the user's cards, by key, that can still be changed. */
   const find = (key) => entries?.find((entry) => entry.mine && entry.key === key && !removing.has(key));
-  async function tell(modelId) {
-    try {
-      await tellModelPage(shared, modelId);
-      untold.delete(modelId);
-    } catch (error) {
-      untold.add(modelId);
-      throw error;
-    }
-  }
 
   /** Once no save is going: the board is read again after a failed one, or a read dropped while they went. */
   function settled() {
@@ -496,7 +567,6 @@ export default function mount(thingport) {
     if (!entry || entry.value.status === status) return;
     const at = new Date();
     await keep(entry, (job) => moved(job, status, at));
-    await tell(entry.value.modelId);
   });
 
   const remove = safely(async (key) => {
@@ -509,7 +579,6 @@ export default function mount(thingport) {
       destructive: true,
     });
     if (!sure || removing.has(key)) return;
-    const { modelId } = entry.value;
     removing.add(key);
     render();
     try {
@@ -524,7 +593,6 @@ export default function mount(thingport) {
     // By key: the board may have been read again while the question was open.
     entries = entries.filter((other) => !(other.mine && other.key === key));
     render();
-    await tell(modelId);
   });
 
   const saveNote = safely(async (key, note) => {
