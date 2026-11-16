@@ -393,7 +393,8 @@ test("every page of entries is read, however many there are", async () => {
 });
 
 test("a model's page reads the model, everyone's spools and the edits about it, once for all its parts", async () => {
-  forgetReads(Infinity);
+  forgetReads();
+  await Promise.resolve();
   const asked = [];
   let gets = 0;
   const shared = {
@@ -421,13 +422,21 @@ test("a model's page reads the model, everyone's spools and the edits about it, 
   assert.deepEqual(asked, [{ prefix: "spool:" }, { prefix: "needs:", model: "m1" }]);
   assert.equal(gets, 1);
   assert.equal(data.everyone[0].name, "Ann");
-  // A change on the page reads them again.
-  forgetReads(Infinity);
-  await loadForModel({ models, shared, user: me }, "m1", "f1");
+  // A change on the page reads them again, once for every part that hears it.
+  forgetReads();
+  await Promise.all([
+    loadForModel({ models, shared, user: me }, "m1", "f1"),
+    (forgetReads(), loadForModel({ models, shared, user: me }, "m1", "f1")),
+  ]);
   assert.equal(gets, 2);
+  // The next change, however soon, is forgotten for too.
+  await Promise.resolve();
+  forgetReads();
+  await loadForModel({ models, shared, user: me }, "m1", "f1");
+  assert.equal(gets, 3);
   // Another account reading at once reads for itself.
   await loadForModel({ models, shared, user: dad }, "m1", "f1");
-  assert.equal(gets, 3);
+  assert.equal(gets, 4);
   assert.equal(data.file.id, "f1");
   assert.equal(data.edit.user, dad);
   assert.equal(data.needs.length, 1);

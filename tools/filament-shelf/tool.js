@@ -476,22 +476,32 @@ export async function readAll(shared, options = {}, page = PAGE) {
 // What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each.
 const READ_FOR_MS = 2000;
 const reads = new Map();
+// A change already forgotten for: every part hears it, and the first to read again starts what the others share.
+let forgetting = false;
 
 function readOnce(key, read) {
+  const now = Date.now();
+  // Old ones go as new ones come, so moving from model to model keeps none of them.
+  for (const [other, kept] of reads) if (now - kept.at >= READ_FOR_MS) reads.delete(other);
   const kept = reads.get(key);
-  if (kept && Date.now() - kept.at < READ_FOR_MS) return kept.promise;
+  if (kept) return kept.promise;
   const promise = read();
-  reads.set(key, { at: Date.now(), promise });
+  reads.set(key, { at: now, promise });
   promise.catch(() => {
     if (reads.get(key)?.promise === promise) reads.delete(key);
   });
   return promise;
 }
 
-/** Forgets what was read before now, as a change on the page makes it old. Each part hears the change: the first to
- *  read again starts the read the others then share. */
-export function forgetReads(before = Date.now()) {
-  for (const [key, kept] of reads) if (kept.at < before) reads.delete(key);
+/** Forgets every read, as a change on the page makes them old: once for each change, however many parts hear it, so
+ *  the reads the first starts again are the others' too. */
+export function forgetReads() {
+  if (forgetting) return;
+  forgetting = true;
+  reads.clear();
+  queueMicrotask(() => {
+    forgetting = false;
+  });
 }
 
 /** What a model's page shows: the model, the filaments it needs, the household's spools and how they match. */
