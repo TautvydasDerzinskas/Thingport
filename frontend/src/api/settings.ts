@@ -54,9 +54,12 @@ export type SlicerSettings = {
   sendTargets: SendTargetSummary[];
 };
 
+/** The slicer settings as the server sends them: what's older than a field leaves it out. */
+type SlicerSettingsBody = Partial<Omit<SlicerSettings, "sendTargets">> & { send_targets?: SendTargetSummary[] };
+
 /** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. One
  *  older than `bridged` sends none through the Bridge. */
-function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
+function toSlicerSettings(body: SlicerSettingsBody): SlicerSettings {
   const slicer = body.slicer ?? null;
   return {
     slicer,
@@ -64,7 +67,7 @@ function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
     bridged: body.bridged ?? [],
     unadapted: body.unadapted ?? [],
     printers: body.printers ?? {},
-    sendTargets: (body as { send_targets?: SendTargetSummary[] }).send_targets ?? [],
+    sendTargets: body.send_targets ?? [],
   };
 }
 

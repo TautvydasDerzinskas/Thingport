@@ -117,10 +117,23 @@ function rowData(input: SendTargetUpdate, previous: SendSecrets | null) {
   };
 }
 
+/** Adds to the user's destinations one add or import at a time, so two at once can't both take the room that's left. */
+function addingFor<T>(userId: string, add: (tx: Prisma.TransactionClient, count: number) => Promise<T>): Promise<T> {
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('send-targets'), hashtext(${userId}))`;
+      return add(tx, await tx.sendTarget.count({ where: { userId } }));
+    },
+    // Each statement sees what's committed, so what's counted after the lock is all of it.
+    { isolationLevel: "ReadCommitted" },
+  );
+}
+
 export async function createSendTarget(userId: string, input: SendTargetInput): Promise<SendTargetOut> {
-  const count = await prisma.sendTarget.count({ where: { userId } });
-  if (count >= MAX_TARGETS) throw new HttpError(413, `${MAX_TARGETS} destinations at most`);
-  const row = await prisma.sendTarget.create({ data: { userId, position: count, ...rowData(input, null) } });
+  const row = await addingFor(userId, (tx, count) => {
+    if (count >= MAX_TARGETS) throw new HttpError(413, `${MAX_TARGETS} destinations at most`);
+    return tx.sendTarget.create({ data: { userId, position: count, ...rowData(input, null) } });
+  });
   return out(row);
 }
 
@@ -175,16 +188,19 @@ export async function exportSendTargets(userId: string) {
 export async function importSendTargets(userId: string, raw: unknown): Promise<SendTargetOut[]> {
   const parsed = sendExportSchema.safeParse(raw);
   if (!parsed.success) throw new HttpError(400, "That isn't a Send to file Thingport exported");
-  const count = await prisma.sendTarget.count({ where: { userId } });
-  if (count + parsed.data.targets.length > MAX_TARGETS)
-    throw new HttpError(413, `${MAX_TARGETS} destinations at most; remove some first`);
-  const created = await prisma.$transaction(
-    parsed.data.targets.map((target, index) =>
-      prisma.sendTarget.create({
-        data: { userId, position: count + index, ...rowData(sendTargetInputSchema.parse(target), null) },
-      }),
-    ),
-  );
+  const created = await addingFor(userId, async (tx, count) => {
+    if (count + parsed.data.targets.length > MAX_TARGETS)
+      throw new HttpError(413, `${MAX_TARGETS} destinations at most; remove some first`);
+    const rows = [];
+    for (const [index, target] of parsed.data.targets.entries()) {
+      rows.push(
+        await tx.sendTarget.create({
+          data: { userId, position: count + index, ...rowData(sendTargetInputSchema.parse(target), null) },
+        }),
+      );
+    }
+    return rows;
+  });
   return created.map(out);
 }
 

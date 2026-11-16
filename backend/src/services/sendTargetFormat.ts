@@ -72,7 +72,8 @@ const template = (web: boolean) =>
       if (problem) ctx.addIssue({ code: "custom", message: problem });
     });
 
-/** A printer's or a service's own address, without placeholders: "http://octopi.local". */
+/** A printer's or a service's own address, without placeholders: "http://octopi.local". A webhook's is kept as it's
+ *  written, as a service may tell "/hook/" from "/hook". */
 const address = z
   .string()
   .trim()
@@ -81,8 +82,10 @@ const address = z
   .superRefine((value, ctx) => {
     const problem = value.includes("{") ? "No placeholders in an address" : templateProblem(value, true);
     if (problem) ctx.addIssue({ code: "custom", message: problem });
-  })
-  .transform((value) => value.replace(/\/+$/, ""));
+  });
+
+/** A printer's address, for its own paths to follow. */
+const printerBase = (written: string) => written.replace(/\/+$/, "");
 
 /** Fills a template in, each value encoded for its place in an address. */
 export function fillIn(templateText: string, values: PlaceholderValues, encode = true): string {
@@ -241,7 +244,7 @@ export function requestOf(how: Exclude<SendHow, { type: "link" }>, secrets: Send
     };
   }
   const key = secrets?.apiKey ? [{ name: "X-Api-Key", value: secrets.apiKey }] : [];
-  const at = how.address;
+  const at = PRINTER_PRESETS.has(how.preset) ? printerBase(how.address) : how.address;
   switch (how.preset) {
     case "octoprint":
       return {
@@ -296,7 +299,7 @@ export function testRequestOf(
     const path = { octoprint: "/api/version", moonraker: "/server/info", prusalink: "/api/version" }[
       how.preset as "octoprint" | "moonraker" | "prusalink"
     ];
-    return { method: "GET", url: `${how.address}${path}`, headers: built.headers };
+    return { method: "GET", url: `${printerBase(how.address)}${path}`, headers: built.headers };
   }
   if (how.type === "preset") return { method: "POST", url: built.url, headers: built.headers, json: TEST_EVENT };
   // A custom request's address may name the file; its host is what a test can reach without sending one.

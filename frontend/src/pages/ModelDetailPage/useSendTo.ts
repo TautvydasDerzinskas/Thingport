@@ -8,21 +8,43 @@ import { useSendReason } from "../../components/sendTo/useSendReason";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import type { ModelFile } from "./useOpenInSlicer";
 
-/** The tab a link reuses, if it's one: never a name the browser keeps for itself, like "_self", which is this tab. */
+/** A tab name to reuse: never one the browser keeps for itself, like "_self", which is this tab. */
+const tabName = (tab: string | null | undefined) => (tab && !tab.startsWith("_") ? tab : "thingport");
+
+/** The tab a link reuses, if it's one. */
 function namedTab(target: SendTargetSummary): string | null {
-  if (target.kind !== "link" || target.open !== "named") return null;
-  return target.tab && !target.tab.startsWith("_") ? target.tab : "thingport";
+  return target.kind === "link" && target.open === "named" ? tabName(target.tab) : null;
 }
 
-/** A tab for a link, opened in the click itself. A new one gets no hold on Thingport's page. A named one keeps it:
- *  without it the browser no longer finds that tab by its name, nor lets this page send it anywhere, so each send
- *  would open another. */
-function tabFor(target: SendTargetSummary): Window | null {
-  if (target.kind !== "link" || target.open === "same") return null;
+/** Whether a tab is still the empty one just opened: one showing another site can't be read at all. */
+function blank(tab: Window): boolean {
+  try {
+    return tab.location.href === "about:blank";
+  } catch {
+    return false;
+  }
+}
+
+/** A tab for a link, opened in the click itself, and whether this send made it. A new one gets no hold on Thingport's
+ *  page. A named one keeps it: without it the browser no longer finds that tab by its name, nor lets this page send
+ *  it anywhere, so each send would open another. One open already is only found, not emptied, so a send that fails
+ *  leaves what it shows. */
+function tabFor(target: SendTargetSummary): { tab: Window | null; made: boolean } {
+  if (target.kind !== "link" || target.open === "same") return { tab: null, made: false };
   const name = namedTab(target);
-  if (name) return window.open("about:blank", name);
+  if (name) {
+    const tab = window.open("", name);
+    return { tab, made: tab !== null && blank(tab) };
+  }
   const tab = window.open("about:blank", "_blank");
   if (tab) tab.opener = null;
+  return { tab, made: true };
+}
+
+/** A link in a tab after the click is over, which the browser may block: null then. */
+function openLate(url: string, name: string | null): Window | null {
+  const tab = window.open(url, name ?? "_blank");
+  if (tab && !name) tab.opener = null;
   return tab;
 }
 
@@ -61,13 +83,13 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
 
   const send = async (target: SendTargetSummary) => {
     if (!file || inFlight.current.has(target.id)) return;
-    const tab = tabFor(target);
+    const { tab, made } = tabFor(target);
     const name = namedTab(target);
     const claim = {};
     if (name) tabSends.set(name, claim);
     const ours = () => !name || tabSends.get(name) === claim;
     const drop = () => {
-      if (ours()) tab?.close();
+      if (ours() && made) tab?.close();
     };
     settle(target.id, true);
     try {
@@ -76,13 +98,22 @@ export function useSendTo(printId: string, file: ModelFile | null, onUnauthorize
         if (shown.current !== printId) return drop();
         // A later send has the tab: this one opens nothing, here or there.
         if (!ours()) return;
-        // By how the server opens it now, as it may have been changed elsewhere since the page read it.
-        if (tab && result.open.mode !== "same" && /^https?:/i.test(result.open.url)) {
-          tab.location.replace(result.open.url);
-        } else {
-          drop();
-          // An app's own address, or this tab.
-          window.location.assign(result.open.url);
+        // As the server opens it now, which may have been changed elsewhere since the page read it.
+        const { url, mode } = result.open;
+        const wanted = mode === "named" ? tabName(result.open.tab) : null;
+        const web = /^https?:/i.test(url);
+        if (tab && web && mode !== "same" && wanted === name) return tab.location.replace(url);
+        drop();
+        // An app's own address, or this tab.
+        if (!web || mode === "same") return window.location.assign(url);
+        // Another tab than the one opened in the click: offered once the browser blocks it.
+        if (!openLate(url, wanted)) {
+          toast({
+            message: t("models:detail.sendTo.sent", { name: target.name }),
+            severity: "success",
+            action: { label: t("models:detail.sendTo.openAfter"), onClick: () => void openLate(url, wanted) },
+            autoHideMs: 8000,
+          });
         }
         return;
       }

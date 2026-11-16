@@ -116,7 +116,7 @@ describe("a user's destinations", () => {
     expect(made.body).toMatchObject({
       name: "OctoPrint",
       placement: "menu",
-      how: { type: "preset", preset: "octoprint", address: base, start: false },
+      how: { type: "preset", preset: "octoprint", address: `${base}/`, start: false },
       secrets: { api_key: true, headers: [] },
     });
     const listed = await request(app).get("/api/me/send-targets").set(auth(owner.token));
@@ -272,6 +272,23 @@ describe("a user's destinations", () => {
     await prisma.sendTarget.deleteMany({ where: { userId: other.id } });
   });
 
+  it("are fifty at most, however many imports go at once", async () => {
+    const file = {
+      kind: "thingport-send-to",
+      version: 1,
+      targets: Array.from({ length: 30 }, (_, i) => ({
+        name: `Hook ${i}`,
+        how: { type: "request", url: `${base}/hook` },
+      })),
+    };
+    const tries = await Promise.all(
+      [0, 1, 2].map(() => request(app).post("/api/me/send-targets/import").set(auth(other.token)).send(file)),
+    );
+    expect(tries.map((res) => res.status).toSorted()).toEqual([200, 413, 413]);
+    expect(await prisma.sendTarget.count({ where: { userId: other.id } })).toBe(30);
+    await prisma.sendTarget.deleteMany({ where: { userId: other.id } });
+  });
+
   it("change where one shows on its own, and keep it through a save of the rest", async () => {
     const made = (
       await create(owner, { name: "Hook", placement: "menu", how: { type: "request", url: `${base}/hook` } })
@@ -366,6 +383,8 @@ describe("sending a model's file", () => {
     const file = await request(app).get(link.pathname);
     expect(file.status).toBe(200);
     expect(file.headers["cache-control"]).toBe("private, no-store");
+    // The name as it is, not escaped as in the link: not every client decodes a quoted one.
+    expect(file.headers["content-disposition"]).toBe('attachment; filename="corner bracket.gcode"');
     expect(Buffer.from(file.body as Buffer).toString("utf8") || file.text).toBe(STL);
 
     // Tampered with, expired, or used as a session, it opens nothing.
@@ -375,6 +394,15 @@ describe("sending a model's file", () => {
     expect(readFileGrant(old)).toBeNull();
     expect((await request(app).get(`/api/send-file/${old}/f.gcode`)).status).toBe(404);
     expect((await request(app).get("/api/me/send-targets").set(auth(grant))).status).toBe(401);
+  });
+
+  it("sends to a webhook's address as it's written, a slash at its end too", async () => {
+    const target = await create(owner, {
+      name: "Home Assistant",
+      how: { type: "preset", preset: "homeassistant", address: `${base}/hook/?next=/` },
+    });
+    await send(owner, target.body.id);
+    expect(last().url).toBe("/hook/?next=/");
   });
 
   it("fills the file's link into a form field that asks for it", async () => {

@@ -62,7 +62,9 @@ export default function SendToPanel({ onUnauthorized }: Props) {
   const [targets, setTargets] = React.useState<SendTarget[] | null>(null);
   // The row open for editing, or a new one of a kind not saved yet: a new form each time one is opened, so a save that
   // ends after another was opened closes only its own.
-  const [editing, setEditing] = React.useState<string | null>(null);
+  const [editing, setEditing] = React.useState<{ id: string; session: number } | null>(null);
+  const sessions = React.useRef(0);
+  const edit = (id: string) => setEditing({ id, session: ++sessions.current });
   const [adding, setAdding] = React.useState<{ kind: SendKind } | null>(null);
   // Destinations whose placement is being saved, and to what: one at a time each, so answers can't land out of order.
   const [placing, setPlacing] = React.useState<ReadonlyMap<string, SendTarget["placement"]>>(new Map());
@@ -320,7 +322,8 @@ export default function SendToPanel({ onUnauthorized }: Props) {
 
         {targets?.map((target) => {
           const kind = kindOfHow(target.how);
-          const open = editing === target.id;
+          const open = editing?.id === target.id;
+          const session = open ? editing : null;
           const needsKey = SEND_KINDS[kind].apiKey === "required" && !target.secrets.api_key;
           return (
             <Paper
@@ -340,7 +343,8 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                   type="button"
                   onClick={() => {
                     setAdding(null);
-                    setEditing(open ? null : target.id);
+                    if (open) setEditing(null);
+                    else edit(target.id);
                   }}
                   aria-expanded={open}
                   sx={{
@@ -399,7 +403,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
                     defaultName={target.name}
                     onCancel={() => setEditing(null)}
                     onSaved={(saved) => {
-                      setEditing((current) => (current === saved.id ? null : current));
+                      setEditing((current) => (current === session ? null : current));
                       changed(replaced(saved, "settings"));
                       toast({ message: s("saved", { name: saved.name }), severity: "success" });
                     }}
@@ -415,7 +419,7 @@ export default function SendToPanel({ onUnauthorized }: Props) {
       <Menu anchorEl={rowMenu?.anchor} open={Boolean(rowMenu)} onClose={() => setRowMenu(null)}>
         <MenuItem
           onClick={() => {
-            if (rowMenu) setEditing(rowMenu.target.id);
+            if (rowMenu && editing?.id !== rowMenu.target.id) edit(rowMenu.target.id);
             setAdding(null);
             setRowMenu(null);
           }}

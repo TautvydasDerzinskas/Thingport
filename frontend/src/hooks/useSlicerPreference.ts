@@ -54,13 +54,13 @@ export async function switchSlicer(slicer: string): Promise<void> {
   const at = version;
   try {
     const saved = await settingsApi.updateSlicer({ slicer });
-    // Settings read meanwhile, such as a new Send to destination, may postdate the answer: read them again instead.
-    if (version === at) setCachedSlicerSettings(saved);
-    else void reloadSlicerSettings();
+    if (version === at) return setCachedSlicerSettings(saved);
   } catch {
-    if (version === at) setCachedSlicerSettings(previous);
-    else void reloadSlicerSettings();
+    // Back to the one stored, unless another was picked meanwhile, whatever a read did or didn't bring.
+    if (cached?.slicer === slicer) setCachedSlicerSettings({ ...cached, slicer: previous.slicer });
   }
+  // Settings read meanwhile, or kept from landing by this switch, such as a new Send to destination: read again.
+  void reloadSlicerSettings();
 }
 
 export function useSlicerSettings(): SlicerSettings {
