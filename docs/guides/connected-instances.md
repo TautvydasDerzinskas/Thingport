@@ -96,7 +96,7 @@ instances that reach each other.
   connect to the same instance: give yours an address of its own.
 - **A reverse proxy** in front of the instance on the internet should pass uploads to `/api/ap/link/replies/` on as
   they come, whatever their size (in nginx, `proxy_request_buffering off` and `client_max_body_size 0`). Thingport's own
-  nginx does.
+  nginx does. [Behind a reverse proxy](reverse-proxy.md#nginx) has a server block that does.
 
 ## Answer a request
 
