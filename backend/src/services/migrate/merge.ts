@@ -973,6 +973,16 @@ export class Merge {
     });
     if (kept.length) await prisma.toolData.createMany({ data: kept, skipDuplicates: true });
 
+    // Whom they shared with, among the people who came along: in place before what they shared, so an entry kept to
+    // a few is never everyone's for a moment, nor for good when this fails.
+    const audiences = await this.source.toolAudience.findMany({ where: { userId: { in: sourceIds } } });
+    const audiencesKept = audiences.flatMap((row) => {
+      const toolId = this.tools.get(row.toolId);
+      if (!toolId) return [];
+      const userIds = row.userIds.flatMap((id) => this.users.get(id) ?? []);
+      return [{ toolId, userId: this.users.get(row.userId)!, userIds, updatedAt: row.updatedAt }];
+    });
+    if (audiencesKept.length) await prisma.toolAudience.createMany({ data: audiencesKept, skipDuplicates: true });
     // What they share through tools, still about the same models: an original kept under another id here keeps its
     // copies' entries pointing at it.
     const model = (id: string | null) => (id ? (this.prints.get(id) ?? id) : null);
@@ -992,15 +1002,6 @@ export class Merge {
       ];
     });
     if (sharedKept.length) await prisma.toolSharedData.createMany({ data: sharedKept, skipDuplicates: true });
-    // Whom they shared with, among the people who came along.
-    const audiences = await this.source.toolAudience.findMany({ where: { userId: { in: sourceIds } } });
-    const audiencesKept = audiences.flatMap((row) => {
-      const toolId = this.tools.get(row.toolId);
-      if (!toolId) return [];
-      const userIds = row.userIds.flatMap((id) => this.users.get(id) ?? []);
-      return [{ toolId, userId: this.users.get(row.userId)!, userIds, updatedAt: row.updatedAt }];
-    });
-    if (audiencesKept.length) await prisma.toolAudience.createMany({ data: audiencesKept, skipDuplicates: true });
   }
 
   private async mergeStudio(sourceIds: string[]) {
