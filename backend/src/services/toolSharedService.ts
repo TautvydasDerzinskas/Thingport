@@ -76,7 +76,7 @@ async function readableModel(user: ToolUser, printId: string): Promise<ModelKeys
 
 function assertKey(key: string): void {
   if (!STORAGE_KEY.test(key))
-    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores");
+    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores, and not . or ..");
 }
 
 /**
@@ -101,13 +101,27 @@ export type SharedEntryOut = {
   model_id: string | null;
   info: SharedInfo | null;
   updated_at: string;
+  /** Where it is in the order, for reading the entries after it. */
+  cursor: string;
 };
 
-/** The entries the user may read, newest first: their own and everyone else's that reach them. */
+const cursorOf = (row: { updatedAt: Date; id: string }) =>
+  Buffer.from(`${row.updatedAt.toISOString()}|${row.id}`).toString("base64url");
+
+/** The entries after an entry's `cursor`, in the order a read gives them: older, or as old with a smaller id. */
+function afterCursor(cursor: string): Prisma.ToolSharedDataWhereInput {
+  const [at, id] = Buffer.from(cursor, "base64url").toString().split("|");
+  const updatedAt = new Date(at ?? "");
+  if (!id || Number.isNaN(updatedAt.getTime())) throw new HttpError(400, "That isn't a cursor a read gave");
+  return { OR: [{ updatedAt: { lt: updatedAt } }, { updatedAt, id: { lt: id } }] };
+}
+
+/** The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 a read; `before`,
+ *  the last one's `cursor`, reads the next ones. */
 export async function listSharedData(
   user: ToolUser,
   toolId: string,
-  options: { prefix?: string; model?: string },
+  options: { prefix?: string; model?: string; before?: string },
 ): Promise<SharedEntryOut[]> {
   const tool = await usableTool(user, toolId);
   const keys = options.model ? await readableModel(user, options.model) : null;
@@ -117,10 +131,11 @@ export async function listSharedData(
         { toolId: tool.id },
         options.prefix ? { key: { startsWith: options.prefix } } : {},
         keys ? sameModel(keys) : {},
+        options.before ? afterCursor(options.before) : {},
         await visibleTo([tool.id], user.id),
       ],
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
     take: LIST_MAX,
   });
   const cards = await userCards(rows.map((row) => row.userId));
@@ -132,6 +147,7 @@ export async function listSharedData(
     model_id: row.printId,
     info: (row.info as SharedInfo | null) ?? null,
     updated_at: row.updatedAt.toISOString(),
+    cursor: cursorOf(row),
   }));
 }
 
@@ -276,13 +292,16 @@ export async function modelInfoFor(user: ToolUser, printId: string): Promise<Mod
     ],
   };
   // When each person last wrote in each tool, so one who wrote a great many can't crowd the others out of the rows.
-  const newest = await prisma.toolSharedData.groupBy({
-    by: ["toolId", "userId"],
-    where,
-    _max: { updatedAt: true },
-  });
-  const rows = newest.length
-    ? await prisma.toolSharedData.findMany({
+  // Both reads see one snapshot: a write between them would move that time on, and the person's entry would be lost.
+  const rows = await prisma.$transaction(
+    async (tx) => {
+      const newest = await tx.toolSharedData.groupBy({
+        by: ["toolId", "userId"],
+        where,
+        _max: { updatedAt: true },
+      });
+      if (!newest.length) return [];
+      return tx.toolSharedData.findMany({
         where: {
           AND: [
             where,
@@ -297,8 +316,10 @@ export async function modelInfoFor(user: ToolUser, printId: string): Promise<Mod
         },
         orderBy: { updatedAt: "desc" },
         select: { toolId: true, userId: true, info: true, updatedAt: true },
-      })
-    : [];
+      });
+    },
+    { isolationLevel: "RepeatableRead" },
+  );
   // Two written in the same moment: the first is the one shown.
   const shown = new Set<string>();
   const latest = rows.filter((row) => {

@@ -702,7 +702,7 @@ export interface SdkStorage {
   /**
    * What's kept under a key.
    *
-   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`.
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @returns The value as it was kept, or `undefined` when nothing is.
    * @example
    * const last = (await thingport.storage.get("last")) ?? { width: 40 };
@@ -711,7 +711,7 @@ export interface SdkStorage {
   /**
    * Keeps a value under a key, replacing what was there. At most 1 MB a value as JSON, 20 MB and 2,000 keys a tool.
    *
-   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`.
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @param value Anything JSON can hold.
    * @example
    * await thingport.storage.set("last", { width: 60 });
@@ -764,6 +764,8 @@ export interface SdkSharedEntry {
   modelId: string | null;
   info: SdkModelInfo | null;
   updatedAt: string;
+  /** Where it is in the order a read gives: `before` in the next read, for the entries after it. */
+  cursor: string;
 }
 
 /** Whom the user's shared entries in this tool reach: everyone who can use it, or only `people`. */
@@ -779,19 +781,29 @@ export interface SdkAudience {
  */
 export interface SdkShared {
   /**
-   * The entries the user may read, newest first: their own and everyone else's that reach them, up to 5,000.
+   * The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read.
+   * When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
    *
    * @param options `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy
-   * of it in anyone's library (the same original, or imported from the same page).
+   * of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for
+   * the entries after it.
    * @example
    * const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
+   * @example
+   * // Every entry, however many there are.
+   * let page = await thingport.shared.list();
+   * const all = [...page];
+   * while (page.length === 5000) {
+   *   page = await thingport.shared.list({ before: page.at(-1).cursor });
+   *   all.push(...page);
+   * }
    */
-  list(options?: { prefix?: string; model?: string }): Promise<SdkSharedEntry[]>;
+  list(options?: { prefix?: string; model?: string; before?: string }): Promise<SdkSharedEntry[]>;
   /**
    * Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and
    * 5,000 entries a user.
    *
-   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`.
+   * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @param value Anything JSON can hold.
    * @param options `model`: the model it's about, one the user can open. `info`: what that model's page shows for it,
    * when the tool's metadata has a `modelInfo` part.

@@ -126,9 +126,9 @@ export async function run(command, thingport) {
 
 \`thingport.storage\` is the user's own; \`thingport.shared\` is what the tool's users share with each other, such as a
 household's print queue. Each entry is its writer's: \`set\` and \`remove\` touch only the user's own, \`list\` reads
-everyone's with who wrote each and whether it's \`mine\`. Whom a user's entries reach is their choice: \`share()\` opens
-Thingport's dialog for it. \`set(key, value, { model })\` ties an entry to a model, and \`list({ model })\` finds everyone's
-entries about that model or any copy of it.
+everyone's with who wrote each and whether it's \`mine\`, 5,000 a read (\`list({ before: last.cursor })\` reads on).
+Whom a user's entries reach is their choice: \`share()\` opens Thingport's dialog for it. \`set(key, value, { model })\`
+ties an entry to a model, and \`list({ model })\` finds everyone's entries about that model or any copy of it.
 
 With \`"modelInfo": { "title": "Print queue", "command": "queue" }\` in the metadata, every model's page gets a part
 showing, per person, their latest entry about the model that was set with \`info\`:

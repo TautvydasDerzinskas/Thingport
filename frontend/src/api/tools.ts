@@ -75,6 +75,8 @@ export type SharedEntry = {
   model_id: string | null;
   info: SharedInfo | null;
   updated_at: string;
+  /** Where it is in the order: `before` in a read for the entries after it. */
+  cursor: string;
 };
 
 /** Whom the user's shared entries in a tool reach. */
@@ -167,6 +169,13 @@ const json = (body: unknown) => ({
   body: JSON.stringify(body),
 });
 
+/** A key as the last part of a path. Never "." or "..": the browser resolves those, even escaped, so the request would
+ *  reach the tool itself, and a delete would remove it. */
+function keyPath(key: string): string {
+  if (key === "." || key === "..") throw new Error("A key can't be . or ..");
+  return encodeURIComponent(key);
+}
+
 export const toolsApi = {
   list: async (): Promise<{ access: ToolAccess; tools: Tool[] }> => {
     const res = await fetch(`${apiBase()}/tools`, { headers: authHeaders() });
@@ -216,14 +225,14 @@ export const toolsApi = {
 
   /** Undefined when nothing is kept under the key. */
   storageGet: async (id: string, key: string): Promise<unknown> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, { headers: authHeaders() });
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to read the tool's data");
     const answer: { found: boolean; value?: unknown } = await res.json();
     return answer.found ? answer.value : undefined;
   },
 
   storageSet: async (id: string, key: string, value: unknown): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "PUT",
       ...json({ value }),
     });
@@ -231,17 +240,21 @@ export const toolsApi = {
   },
 
   storageDelete: async (id: string, key: string): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "DELETE",
       headers: authHeaders(),
     });
     if (!res.ok) return failed(res, "Failed to delete the tool's data");
   },
 
-  sharedList: async (id: string, query: { prefix?: string; model?: string } = {}): Promise<SharedEntry[]> => {
+  sharedList: async (
+    id: string,
+    query: { prefix?: string; model?: string; before?: string } = {},
+  ): Promise<SharedEntry[]> => {
     const params = new URLSearchParams();
     if (query.prefix) params.set("prefix", query.prefix);
     if (query.model) params.set("model", query.model);
+    if (query.before) params.set("before", query.before);
     const res = await fetch(`${apiBase()}/tools/${id}/shared?${params}`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to read what the tool's users share");
     return (await res.json()).entries;
@@ -252,7 +265,7 @@ export const toolsApi = {
     key: string,
     body: { value: unknown; model?: string | null; info?: SharedInfo | null },
   ): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/shared/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
       method: "PUT",
       ...json(body),
     });
@@ -260,7 +273,7 @@ export const toolsApi = {
   },
 
   sharedDelete: async (id: string, key: string): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/shared/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
       method: "DELETE",
       headers: authHeaders(),
     });

@@ -1152,9 +1152,9 @@ thingport.storage.get(key: string): Promise<any>
 
 What's kept under a key.
 
-| Parameter | What it is                                       |
-| --------- | ------------------------------------------------ |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`. |
+| Parameter | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone. |
 
 **Returns:** The value as it was kept, or `undefined` when nothing is.
 
@@ -1170,10 +1170,10 @@ thingport.storage.set(key: string, value: unknown): Promise<void>
 
 Keeps a value under a key, replacing what was there. At most 1 MB a value as JSON, 20 MB and 2,000 keys a tool.
 
-| Parameter | What it is                                       |
-| --------- | ------------------------------------------------ |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`. |
-| `value`   | Anything JSON can hold.                          |
+| Parameter | What it is                                                                  |
+| --------- | --------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone. |
+| `value`   | Anything JSON can hold.                                                     |
 
 ```js
 await thingport.storage.set("last", { width: 60 });
@@ -1216,19 +1216,29 @@ JSON the tool's users share with each other, each entry its writer's own, and th
 #### `shared.list(options?)`
 
 ```ts
-thingport.shared.list(options?: { prefix?: string; model?: string }): Promise<SdkSharedEntry[]>
+thingport.shared.list(options?: { prefix?: string; model?: string; before?: string }): Promise<SdkSharedEntry[]>
 ```
 
-The entries the user may read, newest first: their own and everyone else's that reach them, up to 5,000.
+The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read. When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
 
-| Parameter | What it is                                                                                                                                                                       |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `options` | `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy of it in anyone's library (the same original, or imported from the same page). |
+| Parameter | What it is                                                                                                                                                                                                                                |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options` | `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for the entries after it. |
 
 See [`SdkSharedEntry`](#sdksharedentry).
 
 ```js
 const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
+```
+
+```js
+// Every entry, however many there are.
+let page = await thingport.shared.list();
+const all = [...page];
+while (page.length === 5000) {
+  page = await thingport.shared.list({ before: page.at(-1).cursor });
+  all.push(...page);
+}
 ```
 
 #### `shared.set(key, value, options?)`
@@ -1241,7 +1251,7 @@ Keeps one of the user's entries, replacing their entry under the key. At most 25
 
 | Parameter | What it is                                                                                                                                          |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`.                                                                                                    |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.                                                                         |
 | `value`   | Anything JSON can hold.                                                                                                                             |
 | `options` | `model`: the model it's about, one the user can open. `info`: what that model's page shows for it, when the tool's metadata has a `modelInfo` part. |
 
@@ -1687,6 +1697,7 @@ One of the entries the tool's users share, as the reader sees it.
 | `modelId`   | `string \| null`       | The model it's about, as its writer has it: another user's id may not be one the reader can open. |
 | `info`      | `SdkModelInfo \| null` |                                                                                                   |
 | `updatedAt` | `string`               |                                                                                                   |
+| `cursor`    | `string`               | Where it is in the order a read gives: `before` in the next read, for the entries after it.       |
 
 ### `SdkAudience`
 

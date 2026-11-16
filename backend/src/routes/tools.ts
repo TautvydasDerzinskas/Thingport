@@ -143,6 +143,7 @@ router.get(
 const sharedListSchema = z.object({
   prefix: z.string().max(200).optional(),
   model: z.string().min(1).max(100).optional(),
+  before: z.string().min(1).max(200).optional(),
 });
 router.get(
   "/tools/:id/shared",

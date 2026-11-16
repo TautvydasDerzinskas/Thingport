@@ -136,7 +136,7 @@ queue the household keeps together:
 
 - **Each entry is its writer's.** `set(key, value)` and `remove(key)` change only the user's own entries, and two
   users' entries under the same key are two entries. `list({ prefix })` reads everyone's, newest first, with who wrote
-  each one and whether it's `mine`.
+  each one and whether it's `mine`: 5,000 a read, and `before` set to the last one's `cursor` reads the next ones.
 - **Who reads them is the writer's choice.** Everyone who can use tools, unless they keep theirs to the people they
   pick: `share()` opens Thingport's own dialog for that, and `audience()` says what they chose.
 - **An entry can be about a model.** `set(key, value, { model })` ties it to a model the user can open, and

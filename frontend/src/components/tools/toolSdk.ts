@@ -128,6 +128,7 @@ export function buildToolSdk({
             modelId: entry.model_id,
             info: entry.info,
             updatedAt: entry.updated_at,
+            cursor: entry.cursor,
           }))
         : [],
     set: async (key, value, options) => {

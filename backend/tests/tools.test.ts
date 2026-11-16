@@ -9,7 +9,13 @@ import { STORAGE } from "../src/config";
 import { deletePrint } from "../src/services/printEditService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { parseToolManifest } from "../src/services/toolFormat";
-import { setToolsRepoForTest, syncToolModels, toolFetchSettled, toolsSource } from "../src/services/toolsService";
+import {
+  STORAGE_KEY,
+  setToolsRepoForTest,
+  syncToolModels,
+  toolFetchSettled,
+  toolsSource,
+} from "../src/services/toolsService";
 import { toolLocks } from "../src/routes/toolLocks";
 
 const app = createApp();
@@ -707,6 +713,9 @@ describe("users' own tools", () => {
     });
     expect((await request(app).get(base).set(as)).body.keys).toMatchObject([{ key: "plan" }]);
     expect((await request(app).put(`${base}/bad key`).set(as).send({ value: 1 })).status).toBe(400);
+    // A client resolves these in a path, even escaped, so they're never keys; dots among other characters are.
+    expect(["..", "."].filter((key) => STORAGE_KEY.test(key))).toEqual([]);
+    expect(["...", "a.b", ".x"].every((key) => STORAGE_KEY.test(key))).toBe(true);
     expect((await request(app).delete(`${base}/plan`).set(as)).status).toBe(204);
     expect((await request(app).get(base).set(as)).body.keys).toEqual([]);
     // Another user can't reach someone's own tool at all.

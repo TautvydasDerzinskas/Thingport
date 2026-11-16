@@ -195,6 +195,33 @@ describe("shared entries", () => {
     expect((await modelInfo(son, sonsCopy)).tools[0].entries).toEqual([expect.objectContaining({ mine: true })]);
   });
 
+  it("are read on page by page from a cursor, none twice and none left out, even written in the same moment", async () => {
+    writeRepo();
+    toolId = await install();
+    const at = new Date();
+    // 5,000 of the dad's and 3 of the son's, all written in the same millisecond but one older entry of the son's.
+    await prisma.toolSharedData.createMany({
+      data: [
+        ...Array.from({ length: 5000 }, (_, i) => ({ toolId, userId: dad.id, key: `job:${i}`, value: i, size: 1 })),
+        ...[0, 1, 2].map((i) => ({ toolId, userId: son.id, key: `job:${i}`, value: i, size: 1 })),
+      ].map((row) => ({ ...row, updatedAt: at })),
+    });
+    await prisma.toolSharedData.create({
+      data: { toolId, userId: son.id, key: "job:old", value: 0, size: 1, updatedAt: new Date(at.getTime() - 1000) },
+    });
+    const first = await list(son, "?prefix=job:");
+    expect(first).toHaveLength(5000);
+    const last = first.at(-1) as { cursor: string };
+    const rest = await list(son, `?prefix=job:&before=${encodeURIComponent(last.cursor)}`);
+    expect(rest).toHaveLength(4);
+    expect(rest.at(-1)).toMatchObject({ key: "job:old" });
+    const seen = [...first, ...rest].map((entry) => `${entry.user.id}:${entry.key}`);
+    expect(new Set(seen).size).toBe(5004);
+    expect((await request(app).get(`/api/tools/${toolId}/shared?before=nonsense`).set(auth(son.token))).status).toBe(
+      400,
+    );
+  });
+
   it("stay within a writer's limit when several are written at once", async () => {
     writeRepo();
     toolId = await install();

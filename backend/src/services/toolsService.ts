@@ -1058,14 +1058,15 @@ const gone = (err: unknown) =>
 
 // --- What a tool keeps ----------------------------------------------------------------------------------------------
 
-export const STORAGE_KEY = /^[A-Za-z0-9_.:-]{1,200}$/;
+// Not "." or "..", which a browser resolves in a path: a request for one would reach the tool itself.
+export const STORAGE_KEY = /^(?!\.\.?$)[A-Za-z0-9_.:-]{1,200}$/;
 const VALUE_MAX_BYTES = 1024 * 1024;
 const TOOL_DATA_MAX_BYTES = 20 * 1024 * 1024;
 const TOOL_DATA_MAX_KEYS = 2000;
 
 function assertKey(key: string): void {
   if (!STORAGE_KEY.test(key))
-    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores");
+    throw new HttpError(400, "A key is 1-200 letters, digits, dots, dashes, colons and underscores, and not . or ..");
 }
 
 export async function listToolData(user: ToolUser, toolId: string) {
