@@ -54,6 +54,8 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
     if (!root) return;
     let cancelled = false;
     let cleanup: (() => void) | null = null;
+    // This run's picks, dropped when it stops so the next run's don't wait behind them.
+    const asks = picks.session();
     const listeners = new Set<(size: { width: number; height: number }) => void>();
     const measure = () => ({ width: Math.round(root.offsetWidth), height: Math.round(root.offsetHeight) });
     let size = measure();
@@ -99,7 +101,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        pickCollection: (options) => picks.pick(options?.title),
+        pickCollection: (options) => asks.pick(options?.title),
         openModel,
         close: () => latest.current.onClose(),
       },
@@ -123,6 +125,7 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
 
     return () => {
       cancelled = true;
+      asks.end();
       observer.disconnect();
       listeners.clear();
       try {

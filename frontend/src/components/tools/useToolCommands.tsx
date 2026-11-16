@@ -50,6 +50,8 @@ export function useToolCommands(
   const runWindowless = async (tool: RunnableTool, context: ToolContext) => {
     try {
       const [{ buildToolSdk }, { loadToolModule }] = await Promise.all([import("./toolSdk"), import("./toolModule")]);
+      // Never ended: a run may leave a pick open after `run` returns, and nothing restarts it.
+      const asks = picks.session();
       const thingport = buildToolSdk({
         tool,
         context,
@@ -71,7 +73,7 @@ export function useToolCommands(
               confirmLabel: options.confirmLabel,
               destructive: options.destructive,
             })) === true,
-          pickCollection: (options) => picks.pick(options?.title),
+          pickCollection: (options) => asks.pick(options?.title),
           openModel,
           close: () => undefined,
         },
