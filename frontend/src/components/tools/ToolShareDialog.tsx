@@ -16,7 +16,8 @@ import PeoplePicker from "../PeoplePicker";
 import { useToast } from "../ToastProvider";
 
 type Props = {
-  /** The tool whose shared entries it's about; null while closed. */
+  open: boolean;
+  /** The tool whose shared entries it's about; kept while it closes. */
   tool: { id: string; name: string } | null;
   /** What was chosen and saved, or null when closed without saving. */
   onClose: (audience: SdkAudience | null) => void;
@@ -24,7 +25,7 @@ type Props = {
 };
 
 /** Whom the user's shared entries in a tool reach: everyone who can use tools, or the people they pick. */
-export default function ToolShareDialog({ tool, onClose, onUnauthorized }: Props) {
+export default function ToolShareDialog({ open, tool, onClose, onUnauthorized }: Props) {
   const { t } = useTranslation("app");
   const toast = useToast();
   const [everyone, setEveryone] = useState(true);
@@ -33,7 +34,7 @@ export default function ToolShareDialog({ tool, onClose, onUnauthorized }: Props
   const toolId = tool?.id ?? null;
 
   useEffect(() => {
-    if (!toolId) return;
+    if (!open || !toolId) return;
     let active = true;
     setPeople(null);
     toolsApi.audience(toolId).then(
@@ -51,7 +52,7 @@ export default function ToolShareDialog({ tool, onClose, onUnauthorized }: Props
     return () => {
       active = false;
     };
-  }, [toolId, onUnauthorized]);
+  }, [open, toolId, onUnauthorized]);
 
   const save = async () => {
     if (!toolId || !people) return;
@@ -74,7 +75,7 @@ export default function ToolShareDialog({ tool, onClose, onUnauthorized }: Props
   };
 
   return (
-    <Dialog open={Boolean(tool)} onClose={() => onClose(null)} maxWidth="xs" fullWidth>
+    <Dialog open={open && Boolean(tool)} onClose={() => onClose(null)} maxWidth="xs" fullWidth>
       <DialogTitle>{t("tools.share.title", { name: tool?.name ?? "" })}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 0.5 }}>

@@ -60,6 +60,7 @@
   "kind.mesh": "Malla",
   "kind.sliced": "Laminado",
   "library.close": "Cerrar la biblioteca",
+  "library.fileGone": "El archivo elegido ya no está en «{model}»",
   "library.hint": "Elige un archivo para medirlo. Un archivo laminado trae el tiempo y el peso del propio laminador.",
   "library.noMatch": "Nada que coincida con «{query}» tiene un archivo que se pueda leer.",
   "library.none": "Todavía no hay modelos con un archivo STL, OBJ, 3MF o laminado.",
