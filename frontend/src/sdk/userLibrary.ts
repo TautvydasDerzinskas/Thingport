@@ -34,6 +34,7 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
   const profile = plate.profile;
   if (profile)
     return {
+      id: plate.profile_id ?? null,
       name: profile.title,
       printer: profile.printer,
       filaments: profile.filaments.map(filament),
@@ -41,6 +42,7 @@ function profileOf(plate: Plate): SdkPrintProfile | null {
     };
   if (!own.length) return null;
   return {
+    id: null,
     name: null,
     printer: plate.format?.printer ?? null,
     filaments: own.map((o) => ({ type: o.type, color: o.color, grams: null, brand: o.brand })),

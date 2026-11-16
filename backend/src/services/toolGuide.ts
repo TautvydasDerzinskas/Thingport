@@ -142,7 +142,8 @@ the same \`thingport\` as its window: \`info\` in the info box (export \`modelIn
 a cleanup; it's drawn again when another file is picked. A part that draws nothing takes no room. In a part,
 \`ui.popover(anchor, draw)\` opens a popover to draw into, \`ui.showTab()\` shows the tool's tab, \`ui.selectFile(id)\`
 picks a file, \`ui.openWindow()\` opens the tool's window, and \`shared.onChange(fn)\` hears the tool's changes.
-Models' files carry \`profile\`: the print profile's name, printer and filaments ({ type, color, grams, brand }).
+Models' files carry \`profile\`: the print profile's id (the provider's, the same in every copy), name, printer and
+filaments ({ type, color, grams, brand }). \`thingport.user\` is the signed-in user, as \`{ id, name, avatarUrl }\`.
 
 ## What \`thingport\` has
 
