@@ -60,6 +60,7 @@
   "kind.mesh": "Maillage",
   "kind.sliced": "Tranché",
   "library.close": "Fermer la bibliothèque",
+  "library.fileGone": "Le fichier choisi n'est plus dans « {model} »",
   "library.hint": "Choisissez un fichier pour le mesurer. Un fichier tranché apporte le temps et le poids du trancheur lui-même.",
   "library.noMatch": "Rien correspondant à « {query} » n'a de fichier lisible ici.",
   "library.none": "Pas encore de modèle avec un fichier STL, OBJ, 3MF ou tranché.",
