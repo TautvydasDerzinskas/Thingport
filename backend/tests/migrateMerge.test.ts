@@ -320,4 +320,55 @@ describe("merging a working copy", () => {
       userIds: [],
     });
   });
+
+  it("keeps someone's tool entries from whoever either account kept them from", async () => {
+    const lee = await person("lee", true);
+    const both = await prisma.user.create({ data: { email: `both-${tag}@example.com`, displayName: "Both" } });
+    const hereOnly = await prisma.user.create({ data: { email: `hereonly-${tag}@example.com`, displayName: "Here" } });
+    people.push(both.id, hereOnly.id);
+    // Comes along, so the source's audience can name them.
+    await source.user.create({ data: { id: `srcboth${tag}`, email: both.email, displayName: "Both" } });
+    const slug = `queue2-${tag}`;
+    const sourceTool = `tool2${tag}`;
+    await source.tool.create({
+      data: {
+        id: sourceTool,
+        source: "own",
+        scope: lee.sourceId,
+        slug,
+        userId: lee.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, key: "job:1", value: { n: 1 }, size: 7 },
+    });
+    await source.toolAudience.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, userIds: [`srcboth${tag}`] },
+    });
+    // The same tool here, its entries kept to two people, one of whom the source kept them from.
+    const hereTool = await prisma.tool.create({
+      data: {
+        source: "own",
+        scope: lee.hereId!,
+        slug,
+        userId: lee.hereId!,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await prisma.toolAudience.create({
+      data: { toolId: hereTool.id, userId: lee.hereId!, userIds: [both.id, hereOnly.id] },
+    });
+
+    expect((await merge([lee.sourceId, `srcboth${tag}`], noFiles().files, { tools: true })).failures).toEqual([]);
+    expect(await prisma.toolSharedData.count({ where: { toolId: hereTool.id, userId: lee.hereId! } })).toBe(1);
+    const audience = await prisma.toolAudience.findUniqueOrThrow({
+      where: { toolId_userId: { toolId: hereTool.id, userId: lee.hereId! } },
+    });
+    expect(audience.userIds).toEqual([both.id]);
+  });
 });

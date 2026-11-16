@@ -45,7 +45,7 @@ import ModelFileSelect from "./ModelFileSelect";
 import PrintProfilesSection from "./PrintProfiles";
 import type { ProfileEntry } from "./PrintProfiles/entries";
 import type { PrintProfilesView } from "../../api/settings";
-import OpenInSlicerButton from "./OpenInSlicerButton";
+import OpenInSlicerButton, { ToolCommandsButton } from "./OpenInSlicerButton";
 import { useAdaptedOpen } from "./useAdaptedOpen";
 import AddToCollectionModal from "./AddToCollectionModal";
 import RollingNumber from "../../components/RollingNumber";
@@ -624,6 +624,10 @@ export default function ModelSidePanel({
             sending={sendTo.sending}
             onSend={(target) => void sendTo.send(target)}
           />
+          {/* With no file there's no main button, so the commands on the whole model get one of their own. */}
+          {!selectedFile && toolCommands.commands.length > 0 && (
+            <ToolCommandsButton commands={toolCommands.commands} onRun={toolCommands.run} />
+          )}
           {toolCommands.element}
           {slicerOption && adaptedTarget && (
             <AdaptedOpenButton

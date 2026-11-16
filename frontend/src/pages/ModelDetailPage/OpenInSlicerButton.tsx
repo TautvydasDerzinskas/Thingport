@@ -15,6 +15,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import DesignServicesOutlinedIcon from "@mui/icons-material/DesignServicesOutlined";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import TuneIcon from "@mui/icons-material/Tune";
 import type { SlicerOption } from "../../constants/settingsOptions";
 import { SlicerLogo } from "../../components/Layout/ConfigurationDialog/slicerLogos";
@@ -270,27 +271,79 @@ export default function OpenInSlicerButton({
         )}
         {offersTools && offersAbove && <Divider />}
         {offersTools && <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.toolsHeading")}</ListSubheader>}
-        {offersTools &&
-          toolCommands.map((offered) => (
-            <MenuItem
-              key={offered.key}
-              onClick={() => {
-                onToolCommand?.(offered);
-                close();
-              }}
-            >
-              <ListItemIcon sx={{ color: "primary.main" }}>
-                <ToolIcon iconUrl={offered.tool.manifest.iconUrl} size={18} />
-              </ListItemIcon>
-              <ListItemText
-                primary={offered.label}
-                secondary={offered.tool.manifest.name}
-                primaryTypographyProps={{ variant: "body2" }}
-                secondaryTypographyProps={{ variant: "caption" }}
-                sx={{ my: 0 }}
-              />
-            </MenuItem>
-          ))}
+        {offersTools && onToolCommand && toolCommandItems(toolCommands, onToolCommand, close)}
+      </Menu>
+    </>
+  );
+}
+
+/** The menu's Tools group: each command with its tool's icon and name. An array, as a Menu takes no fragment. */
+function toolCommandItems(commands: OfferedCommand[], onRun: (offered: OfferedCommand) => void, close: () => void) {
+  return commands.map((offered) => (
+    <MenuItem
+      key={offered.key}
+      onClick={() => {
+        onRun(offered);
+        close();
+      }}
+    >
+      <ListItemIcon sx={{ color: "primary.main" }}>
+        <ToolIcon iconUrl={offered.tool.manifest.iconUrl} size={18} />
+      </ListItemIcon>
+      <ListItemText
+        primary={offered.label}
+        secondary={offered.tool.manifest.name}
+        primaryTypographyProps={{ variant: "body2" }}
+        secondaryTypographyProps={{ variant: "caption" }}
+        sx={{ my: 0 }}
+      />
+    </MenuItem>
+  ));
+}
+
+/** In the main button's place on a model with no file: the tools' model commands alone, behind one button. */
+export function ToolCommandsButton({
+  commands,
+  onRun,
+}: {
+  commands: OfferedCommand[];
+  onRun: (offered: OfferedCommand) => void;
+}) {
+  const { t } = useTranslation(["models"]);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const close = () => setAnchor(null);
+  return (
+    <>
+      <Button
+        variant="outlined"
+        fullWidth
+        onClick={(e) => setAnchor(e.currentTarget)}
+        aria-haspopup="menu"
+        aria-expanded={Boolean(anchor)}
+        startIcon={<HandymanOutlinedIcon fontSize="small" />}
+        endIcon={
+          <ArrowDropDownIcon
+            sx={{
+              transition: "transform 150ms",
+              transform: anchor ? "rotate(180deg)" : "none",
+              "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+            }}
+          />
+        }
+        sx={{ "& .MuiButton-endIcon": { ml: "auto" } }}
+      >
+        {t("models:detail.toolsHeading")}
+      </Button>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={close}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { sx: { width: anchor?.offsetWidth } } }}
+      >
+        <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.toolsHeading")}</ListSubheader>
+        {toolCommandItems(commands, onRun, close)}
       </Menu>
     </>
   );

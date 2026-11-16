@@ -59,6 +59,9 @@ export function useToolCommands(
   const runWindowless = async (tool: RunnableTool, context: ToolContext) => {
     try {
       const [{ buildToolSdk }, { loadToolModule }] = await Promise.all([import("./toolSdk"), import("./toolModule")]);
+      // Never ended: a run may leave a question open after `run` returns, and nothing restarts it.
+      const asks = picks.session();
+      const shareAsks = shares.session();
       const thingport = buildToolSdk({
         tool,
         context,
@@ -80,11 +83,11 @@ export function useToolCommands(
               confirmLabel: options.confirmLabel,
               destructive: options.destructive,
             })) === true,
-          pickCollection: (options) => picks.ask({ title: options?.title }),
+          pickCollection: (options) => asks.ask({ title: options?.title }),
           openModel,
           close: () => undefined,
         },
-        pickAudience: () => shares.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
+        pickAudience: () => shareAsks.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });
       const module = await loadToolModule(tool);
       if (typeof module.run !== "function") throw new Error(t("tools.runner.noRun"));
