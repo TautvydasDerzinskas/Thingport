@@ -33,7 +33,9 @@ QIDI Studio asks each time whether to trust it.
 [Thingport Bridge](../../bridge/README.md) is a small helper app for Windows, macOS and Linux that takes the link from
 Thingport and opens the file in the slicer. Download it from Thingport's **Downloads** page. To
 [update it](../../bridge/README.md#update), install the new version over the old one; a notification tells you when
-there's a newer one.
+there's a newer one. When a model doesn't open, the Bridge says why in a dialog (on Linux, with `zenity` or
+`kdialog`; otherwise only in its log); on macOS that's usually its Local Network permission
+([what to do](../../bridge/README.md#when-a-model-doesnt-open)).
 
 OrcaSlicer, Creality Print, Elegoo Slicer, Snapmaker Orca, eufyMake Studio and Flash Studio download the link
 themselves. When one
