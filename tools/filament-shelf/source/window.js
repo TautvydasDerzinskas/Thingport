@@ -324,7 +324,7 @@ export default function mount(thingport) {
 
   // ---- changes ----
 
-  const putSpool = safely(async (key, value) => {
+  const putSpool = safely(async (key, value, onFailed = () => {}) => {
     const existing = entries.find((entry) => entry.mine && entry.key === key);
     const before = existing?.value;
     if (existing) Object.assign(existing, { value, saving: true });
@@ -347,6 +347,7 @@ export default function mount(thingport) {
         if (still) Object.assign(still, { value: before, saving: false });
       } else entries = entries.filter((entry) => !(entry.mine && entry.key === key));
       render();
+      onFailed();
       throw error;
     }
   });
@@ -654,8 +655,12 @@ export default function mount(thingport) {
       note: state.note,
     });
     const key = dialog.key ?? `${SPOOL}${newId()}`;
+    const editing = dialog.key;
     advance(value.brand);
-    void putSpool(key, value);
+    // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
+    void putSpool(key, value, () => {
+      if (!dialog && !closed) openDialog({ key: editing, value });
+    });
   }
 
   form.addEventListener("submit", (event) => {

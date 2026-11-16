@@ -3,13 +3,14 @@
 
 import { forgetReads, loadForModel } from "./shelf.js";
 import {
-  BASE_CSS,
   addStyle,
   avatar,
+  BASE_CSS,
   escapeHtml,
   filamentDetail,
   filamentLabel,
   icon,
+  onReturn,
   personName,
   shortSummary,
   swatch,
@@ -186,11 +187,17 @@ export function modelImage(thingport) {
       forgetReads();
       void load();
     }) ?? (() => {});
+  // Others' changes, from their own browsers, are read afresh too, not from what a part read a moment ago.
+  const stopReturn = onReturn(() => {
+    forgetReads();
+    void load();
+  });
   void load();
 
   return () => {
     closed = true;
     stop();
+    stopReturn();
     popover?.close();
   };
 }

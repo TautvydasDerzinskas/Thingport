@@ -2,16 +2,17 @@
 // their spool that matches, and the list edited in place for everyone who sees the model.
 
 import { PALETTE, normaliseHex } from "./colour.js";
-import { forgetReads, loadForModel, matchAll, needsFor, needsKey, newId } from "./shelf.js";
+import { MAX_FILAMENTS, forgetReads, loadForModel, matchAll, needsFor, needsKey, newId } from "./shelf.js";
 import {
-  BASE_CSS,
   addStyle,
   avatar,
+  BASE_CSS,
   escapeHtml,
   filamentDetail,
   filamentLabel,
   formatGrams,
   icon,
+  onReturn,
   personName,
   spoolLabel,
   summary,
@@ -188,7 +189,7 @@ export function modelTab(thingport) {
       .join("");
     const grams = needs.reduce((sum, need) => sum + (need.grams ?? 0), 0);
     const lead = draft
-      ? `<button type="button" class="fs-btn fs-small" data-act="add">${icon("add")}${escapeHtml(t("edit.add"))}</button>`
+      ? `<button type="button" class="fs-btn fs-small" data-act="add"${draft.length >= MAX_FILAMENTS ? " disabled" : ""}>${icon("add")}${escapeHtml(t("edit.add"))}</button>`
       : grams
         ? escapeHtml(t("grid.total", { grams: formatGrams(grams, language) }))
         : "";
@@ -258,6 +259,8 @@ export function modelTab(thingport) {
              <div class="fs-actions"><button type="button" class="fs-btn fs-quiet fs-small" data-act="cancel"${saving ? " disabled" : ""}>${escapeHtml(t("edit.cancel"))}</button><button type="button" class="fs-btn fs-primary fs-small" data-act="save"${saving ? " disabled" : ""}>${escapeHtml(t("edit.save"))}</button></div>`
           : "");
     box.innerHTML = toolbar() + body + (needs.length ? together(match) : "");
+    // While a save goes, the rows are what it sends: nothing in them changes until it's done.
+    if (saving) for (const control of box.querySelectorAll(".fs-grid input, .fs-grid button")) control.disabled = true;
   }
 
   /** While editing: the people's columns, the counts and the summary follow what's typed, the inputs left alone. */
@@ -305,7 +308,7 @@ export function modelTab(thingport) {
       color: need.color,
       grams: need.grams,
     }));
-    if (withRow || !draft.length) {
+    if ((withRow || !draft.length) && draft.length < MAX_FILAMENTS) {
       const row = blankRow();
       draft.push(row);
       fresh = row.id;
@@ -370,6 +373,8 @@ export function modelTab(thingport) {
     if (!target || target.disabled) return;
     const act = target.dataset.act;
     if (act === "open") return ui.openWindow();
+    // A save owns the rows until it's done.
+    if (saving) return;
     if (act === "edit") return startEdit();
     if (act === "start") return startEdit(true);
     if (act === "retry") return void load();
@@ -381,6 +386,7 @@ export function modelTab(thingport) {
       return void box.querySelector('[data-act="edit"]')?.focus();
     }
     if (act === "add") {
+      if (draft.length >= MAX_FILAMENTS) return;
       const row = blankRow();
       draft.push(row);
       fresh = row.id;
@@ -407,6 +413,7 @@ export function modelTab(thingport) {
   });
 
   box.addEventListener("input", (event) => {
+    if (saving) return;
     const input = event.target;
     if (input.dataset.type !== undefined) {
       draft[Number(input.dataset.type)].type = input.value;
@@ -435,7 +442,7 @@ export function modelTab(thingport) {
   });
 
   box.addEventListener("keydown", (event) => {
-    if (!draft) return;
+    if (!draft || saving) return;
     if (event.key === "Escape") {
       event.stopPropagation();
       draft = null;
@@ -452,11 +459,17 @@ export function modelTab(thingport) {
       forgetReads();
       void load();
     }) ?? (() => {});
+  // Others' changes, from their own browsers, are read afresh too, not from what a part read a moment ago.
+  const stopReturn = onReturn(() => {
+    forgetReads();
+    void load();
+  });
   render();
   void load();
 
   return () => {
     closed = true;
     stop();
+    stopReturn();
   };
 }
