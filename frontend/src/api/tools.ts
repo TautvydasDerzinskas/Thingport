@@ -40,6 +40,54 @@ export type ToolManifest = {
   collection?: { name: string; description?: string; models: ToolModelSpec[] };
   /** The languages it has labels for, as `locales/<code>.json` beside tool.json. */
   locales?: string[];
+  /** What it offers to do with a model, from the model page's main button menu. */
+  commands?: ToolCommand[];
+  /** A part of every model's page showing its users' shared entries about the model, with `command` offered there. */
+  modelInfo?: { title: string; command?: string };
+};
+
+/** Something a tool offers to do with a model, listed on the model page without the tool running. Its title
+ *  translates through the tool's labels, as `commands.<id>`. */
+export type ToolCommand = {
+  id: string;
+  title: string;
+  /** "file": the file picked on the model page, as `thingport.context.fileId`; "model": the model as a whole. */
+  on: "model" | "file";
+  /** The file types a "file" command takes, without the dot; any when left out. */
+  fileTypes?: string[];
+  /** False for one the tool's `run` export does without opening its window. */
+  window: boolean;
+};
+
+/** Another of the instance's users as a tool shows them: a name and an avatar, never an email. */
+export type ToolPerson = { id: string; display_name: string; avatar_url: string | null };
+
+/** What a model's page shows for a shared entry: a label (a key in the tool's labels, or words), its tone, and when. */
+export type SharedInfo = { label: string; tone: "waiting" | "active" | "done" | "failed" | "neutral"; date?: string };
+
+/** One of the entries a tool's users share, as the reader sees it. */
+export type SharedEntry = {
+  key: string;
+  value: unknown;
+  user: ToolPerson | null;
+  mine: boolean;
+  /** The model it's about, as its writer has it. */
+  model_id: string | null;
+  info: SharedInfo | null;
+  updated_at: string;
+  /** Where it is in the order: `before` in a read for the entries after it. */
+  cursor: string;
+};
+
+/** Whom the user's shared entries in a tool reach. */
+export type ToolAudience = { everyone: boolean; people: ToolPerson[] };
+
+/** What the tools show on a model's page: each person's latest entry about it, tool by tool. */
+export type ToolModelInfo = {
+  tools: {
+    tool_id: string;
+    entries: { user: ToolPerson | null; mine: boolean; info: SharedInfo; updated_at: string }[];
+  }[];
 };
 
 /** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */
@@ -121,6 +169,13 @@ const json = (body: unknown) => ({
   body: JSON.stringify(body),
 });
 
+/** A key as the last part of a path. Never "." or "..": the browser resolves those, even escaped, so the request would
+ *  reach the tool itself, and a delete would remove it. */
+function keyPath(key: string): string {
+  if (key === "." || key === "..") throw new Error("A key can't be . or ..");
+  return encodeURIComponent(key);
+}
+
 export const toolsApi = {
   list: async (): Promise<{ access: ToolAccess; tools: Tool[] }> => {
     const res = await fetch(`${apiBase()}/tools`, { headers: authHeaders() });
@@ -170,14 +225,14 @@ export const toolsApi = {
 
   /** Undefined when nothing is kept under the key. */
   storageGet: async (id: string, key: string): Promise<unknown> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, { headers: authHeaders() });
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, { headers: authHeaders() });
     if (!res.ok) return failed(res, "Failed to read the tool's data");
     const answer: { found: boolean; value?: unknown } = await res.json();
     return answer.found ? answer.value : undefined;
   },
 
   storageSet: async (id: string, key: string, value: unknown): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "PUT",
       ...json({ value }),
     });
@@ -185,11 +240,71 @@ export const toolsApi = {
   },
 
   storageDelete: async (id: string, key: string): Promise<void> => {
-    const res = await fetch(`${apiBase()}/tools/${id}/storage/${encodeURIComponent(key)}`, {
+    const res = await fetch(`${apiBase()}/tools/${id}/storage/${keyPath(key)}`, {
       method: "DELETE",
       headers: authHeaders(),
     });
     if (!res.ok) return failed(res, "Failed to delete the tool's data");
+  },
+
+  sharedList: async (
+    id: string,
+    query: { prefix?: string; model?: string; before?: string } = {},
+  ): Promise<SharedEntry[]> => {
+    const params = new URLSearchParams();
+    if (query.prefix) params.set("prefix", query.prefix);
+    if (query.model) params.set("model", query.model);
+    if (query.before) params.set("before", query.before);
+    const res = await fetch(`${apiBase()}/tools/${id}/shared?${params}`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read what the tool's users share");
+    return (await res.json()).entries;
+  },
+
+  sharedSet: async (
+    id: string,
+    key: string,
+    body: { value: unknown; model?: string | null; info?: SharedInfo | null },
+  ): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
+      method: "PUT",
+      ...json(body),
+    });
+    if (!res.ok) return failed(res, "Failed to share the tool's data");
+  },
+
+  sharedDelete: async (id: string, key: string): Promise<void> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to delete the tool's shared data");
+  },
+
+  audience: async (id: string): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read who sees what you share");
+    return res.json();
+  },
+
+  setAudience: async (id: string, body: { everyone: boolean; userIds: string[] }): Promise<ToolAudience> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/audience`, { method: "PUT", ...json(body) });
+    if (!res.ok) return failed(res, "Failed to save who sees what you share");
+    return res.json();
+  },
+
+  /** The others who can use tools, by name, for sharing with. */
+  people: async (id: string, q: string): Promise<ToolPerson[]> => {
+    const res = await fetch(`${apiBase()}/tools/${id}/people?${new URLSearchParams({ q })}`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return failed(res, "Failed to find people");
+    return (await res.json()).people;
+  },
+
+  modelInfo: async (printId: string): Promise<ToolModelInfo> => {
+    const res = await fetch(`${apiBase()}/tools/model-info/${encodeURIComponent(printId)}`, { headers: authHeaders() });
+    if (!res.ok) return failed(res, "Failed to read what the tools note about the model");
+    return res.json();
   },
 
   /** A tool's request to a host it declares, made by the server; as a Response, as `fetch` gives. */

@@ -3,22 +3,25 @@ import { useTranslation } from "react-i18next";
 import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import LayersOutlinedIcon from "@mui/icons-material/LayersOutlined";
+import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import type { ThemeSelection } from "../../../constants/settingsOptions";
 import PrinterIcon from "../../printers/PrinterIcon";
 import AppearancePanel from "./AppearancePanel";
 import PrintersPanel from "./PrintersPanel";
 import ProvidersPanel from "./ProvidersPanel";
+import SendToPanel from "./SendToPanel";
 import SlicerPanel from "./SlicerPanel";
 import SectionedDialog from "../../SectionedDialog";
 import { allProvidersOff, useDisabledProviders } from "../../../hooks/useProviders";
 
-export type ConfigurationTab = "appearance" | "providers" | "slicer" | "printers";
+export type ConfigurationTab = "appearance" | "providers" | "slicer" | "printers" | "sendTo";
 
 const TABS: { id: ConfigurationTab; icon: React.ReactNode }[] = [
   { id: "appearance", icon: <PaletteOutlinedIcon fontSize="small" /> },
   { id: "providers", icon: <HubOutlinedIcon fontSize="small" /> },
   { id: "slicer", icon: <LayersOutlinedIcon fontSize="small" /> },
   { id: "printers", icon: <PrinterIcon fontSize="small" /> },
+  { id: "sendTo", icon: <SendOutlinedIcon fontSize="small" /> },
 ];
 
 type Props = {
@@ -67,6 +70,7 @@ export default function ConfigurationDialog({ open, onClose, theme, onThemeChang
         <SlicerPanel onNavigate={onClose} onOpenPrinters={() => setTab("printers")} onUnauthorized={onUnauthorized} />
       )}
       {shown === "printers" && <PrintersPanel onUnauthorized={onUnauthorized} />}
+      {shown === "sendTo" && <SendToPanel onUnauthorized={onUnauthorized} />}
     </SectionedDialog>
   );
 }

@@ -41,7 +41,7 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-const NONE: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {} };
+const NONE: SlicerSettings = { slicer: null, slicers: [], bridged: [], unadapted: [], printers: {}, sendTargets: [] };
 
 /** The slicers installed on this computer, as app icons: double-click one, or right-click it, to switch it on or
  *  off. A model's "Open in" menu offers the ones on; its button opens the last one used. A slicer with a protocol of

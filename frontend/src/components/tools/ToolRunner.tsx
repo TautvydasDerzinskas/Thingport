@@ -8,27 +8,14 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import CollectionPickerDialog from "./CollectionPickerDialog";
+import ToolShareDialog from "./ToolShareDialog";
+import type { SdkAudience } from "../../sdk/types";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
+import { loadToolModule } from "./toolModule";
+import { useAskQueue } from "./useAskQueue";
 import { scriptToast } from "../../sdk/toast";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
-
-type Mount = (thingport: Record<string, unknown>) => unknown;
-
-// One module per version of a tool's script, shared by every window running it.
-const modules = new Map<string, Promise<{ default?: Mount }>>();
-
-function loadModule(tool: RunnableTool): Promise<{ default?: Mount }> {
-  let loaded = modules.get(tool.sha);
-  if (!loaded) {
-    const url = URL.createObjectURL(new Blob([tool.script], { type: "text/javascript" }));
-    loaded = import(/* @vite-ignore */ url);
-    modules.set(tool.sha, loaded);
-    // A script that fails to load is tried afresh next time.
-    loaded.catch(() => modules.delete(tool.sha)).finally(() => URL.revokeObjectURL(url));
-  }
-  return loaded;
-}
 
 type Props = {
   tool: RunnableTool;
@@ -52,9 +39,8 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
   const confirm = useConfirm();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [picker, setPicker] = useState<{ title?: string; resolve: (picked: ToolCollection | null) => void } | null>(
-    null,
-  );
+  const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
+  const shares = useAskQueue<object, SdkAudience | null>();
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
@@ -71,6 +57,9 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
     if (!root) return;
     let cancelled = false;
     let cleanup: (() => void) | null = null;
+    // This run's questions, dropped when it stops so the next run's don't wait behind them.
+    const asks = picks.session();
+    const shareAsks = shares.session();
     const listeners = new Set<(size: { width: number; height: number }) => void>();
     const measure = () => ({ width: Math.round(root.offsetWidth), height: Math.round(root.offsetHeight) });
     let size = measure();
@@ -116,18 +105,19 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+        pickCollection: (options) => asks.ask({ title: options?.title }),
         openModel,
         close: () => latest.current.onClose(),
       },
+      pickAudience: () => shareAsks.ask({}),
     });
 
     void (async () => {
       try {
-        const module = await loadModule(tool);
+        const module = await loadToolModule(tool);
         if (cancelled) return;
         if (typeof module.default !== "function") throw new Error(latest.current.t("tools.runner.noExport"));
-        const returned = await module.default(thingport as unknown as Record<string, unknown>);
+        const returned = await module.default(thingport);
         if (cancelled) {
           if (typeof returned === "function") returned();
           return;
@@ -140,6 +130,8 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
 
     return () => {
       cancelled = true;
+      asks.end();
+      shareAsks.end();
       observer.disconnect();
       listeners.clear();
       try {
@@ -183,13 +175,18 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         </Box>
       )}
       <CollectionPickerDialog
-        open={Boolean(picker)}
-        title={picker?.title}
+        key={picks.shown?.id ?? 0}
+        open={picks.open}
+        title={picks.shown?.title}
         onUnauthorized={onUnauthorized}
-        onClose={(picked) => {
-          picker?.resolve(picked);
-          setPicker(null);
-        }}
+        onClose={picks.answer}
+      />
+      <ToolShareDialog
+        key={`share-${shares.shown?.id ?? 0}`}
+        open={shares.open}
+        tool={tool.id ? { id: tool.id, name: tool.manifest.name } : null}
+        onUnauthorized={onUnauthorized}
+        onClose={shares.answer}
       />
     </Box>
   );

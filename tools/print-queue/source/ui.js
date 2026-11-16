@@ -1,0 +1,589 @@
+// The window: the household's prints on a board, Queued, Printing, Printed and Failed, each person's own to drag
+// between columns; and "Add to print queue" from a model's page, which runs without the window.
+
+import {
+  ABOUT,
+  JOB,
+  STATUSES,
+  allJobs,
+  clashes,
+  columns,
+  isJob,
+  listNames,
+  moved,
+  newId,
+  newJob,
+  people,
+  statusDate,
+  summaryOf,
+  writesInTurn,
+} from "./queue.js";
+
+const MORE_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
+
+const escapeHtml = (text) =>
+  String(text ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
+
+/** A person's colour, from their id, so they look the same on every card. */
+function personColour(id) {
+  let hash = 0;
+  for (const char of String(id)) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return `hsl(${hash % 360} 45% 45%)`;
+}
+
+function avatar(user) {
+  const name = user?.name ?? "?";
+  const style = `--pq-person: ${personColour(user?.id ?? name)}`;
+  const inner = user?.avatarUrl
+    ? `<img src="${escapeHtml(user.avatarUrl)}" alt="">`
+    : escapeHtml(name.trim().slice(0, 1).toUpperCase() || "?");
+  return `<span class="pq-av" style="${style}" aria-hidden="true">${inner}</span>`;
+}
+
+// Writes to one entry go one after another, so the last change made is the one stored.
+const inTurn = writesInTurn();
+
+/** Saved with the model it's about, so others' copies of it find it; without, once that model is gone. `job` can be a
+ *  function giving it when its turn comes. Gives back what was saved. */
+function saveJob(shared, key, job) {
+  return inTurn(key, async () => {
+    const value = typeof job === "function" ? job() : job;
+    try {
+      await shared.set(key, value, { model: value.modelId });
+    } catch (error) {
+      if (!/no such model/i.test(error?.message ?? "")) throw error;
+      await shared.set(key, value);
+    }
+    return value;
+  });
+}
+
+/**
+ * Tells the model's page, and everyone's copies of it, what the user's jobs on it come to: one chip, or none. The jobs
+ * are read as stored when it's this one's turn, so the last of several quick changes is what the page shows, and a
+ * move that's still saving, and may fail, isn't.
+ */
+function tellModelPage(shared, modelId) {
+  return inTurn(`${ABOUT}${modelId}`, async () => summarise(shared, modelId, await storedJobs(shared, modelId)));
+}
+
+/** The jobs on a model, read by the model, so a long history of others can't push the user's out of the read. */
+async function storedJobs(shared, modelId) {
+  try {
+    return await allJobs(shared, { model: modelId });
+  } catch (error) {
+    // A model deleted since: nothing left for its page to show.
+    if (/no such model/i.test(error?.message ?? "")) return [];
+    throw error;
+  }
+}
+
+async function summarise(shared, modelId, entries) {
+  // The user's jobs on it or on any copy of it, as its page and every copy's show the newest summary of them.
+  const jobs = entries.filter((entry) => entry.mine && isJob(entry.value)).map((entry) => entry.value);
+  const info = summaryOf(jobs);
+  const key = `${ABOUT}${modelId}`;
+  if (!info) return shared.remove(key);
+  try {
+    await shared.set(key, { jobs: jobs.length }, { model: modelId, info });
+  } catch (error) {
+    // A model deleted since has no page to tell.
+    if (!/no such model/i.test(error?.message ?? "")) throw error;
+    await shared.remove(key);
+  }
+}
+
+/** "Add to print queue", from a model's page: asks first when someone has the model waiting or printing already. */
+export async function run(command, thingport) {
+  if (command !== "queue") return;
+  const { models, shared, ui, t, context } = thingport;
+  const model = await models.get(context.modelId);
+  const { others, mine } = clashes(await allJobs(shared, { model: model.id }));
+  if (others.length || mine.length) {
+    const printing = others.filter((entry) => entry.value.status === "printing");
+    const title = printing.length
+      ? t("dup.printing", { names: listNames(printing, t("and")) })
+      : others.length
+        ? t("dup.queued", { names: listNames(others, t("and")) })
+        : t("dup.mine");
+    const message = t(others.length ? "dup.message" : "dup.again", { name: model.name });
+    if (!(await ui.confirm({ title, message, confirmLabel: t("dup.add") }))) return;
+  }
+  await saveJob(shared, `${JOB}${newId()}`, newJob(model));
+  ui.toast(t("toast.queued", { name: model.name }), "success");
+  // The job is in whatever happens here: a page still showing something older is told again, or with the next change
+  // to the model's jobs, which reads them all afresh.
+  await tellModelPage(shared, model.id).catch(() => tellModelPage(shared, model.id).catch(() => undefined));
+}
+
+export default function mount(thingport) {
+  const { root, shared, models, ui, t, labels, language, context } = thingport;
+  const shell = root.querySelector(".pq");
+  const board = root.querySelector("#pq-board");
+  const empty = root.querySelector("#pq-empty");
+  const peopleBar = root.querySelector(".pq-people");
+  const shareLabel = root.querySelector("#pq-share-label");
+
+  let entries = null;
+  let who = null;
+  let here = new Set();
+  let editing = null;
+  // The note being written, kept apart from the textarea so drawing the board again doesn't lose it.
+  let draft = "";
+  let menu = null;
+  let dragKey = null;
+  let scrolled = false;
+  let closed = false;
+  // Changes made here and saves of them still going: a read of the board one of them may postdate is dropped, as
+  // it would put back what was there before, and made again once they're saved.
+  let changes = 0;
+  let saving = 0;
+  let saveFailed = false;
+  let readAgain = false;
+  // Reads of the board started, so one that ends after a later one doesn't put back what that one replaced.
+  let reads = 0;
+  // What the last read found, so one that finds the same draws nothing again.
+  let lastRead = null;
+  // Cards drawn, by person, key and column: only a card new to its column comes in with an animation.
+  let drawn = new Set();
+  let drawing = new Set();
+  // Models whose page a failed write left showing something older, told again once the board is next read.
+  const untold = new Set();
+  // The user's jobs as stored, as far as the board knows: each change is saved onto this, so one still saving, which
+  // may fail, isn't saved along with it.
+  const stored = new Map();
+  // The user's jobs being removed, which take no other change meanwhile, as it would be saved after and bring them back.
+  const removing = new Set();
+  // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
+  // so it's never stored in what's shared.
+  const looks = new Map();
+  // Models whose look-up failed for a while, as when offline, asked again on the board's next read.
+  const missed = new Set();
+  const look = (modelId) => {
+    if (!looks.has(modelId))
+      looks.set(
+        modelId,
+        models.get(modelId).then(
+          (model) => ({ thumbnail: model.thumbnail, readable: true }),
+          (error) => {
+            if (!/no such model/i.test(error?.message ?? "")) missed.add(modelId);
+            return { thumbnail: null, readable: false };
+          },
+        ),
+      );
+    return looks.get(modelId);
+  };
+
+  const safely =
+    (fn) =>
+    async (...args) => {
+      try {
+        await fn(...args);
+      } catch (error) {
+        if (!closed) ui.toast(t("toast.failed", { error: error?.message || String(error) }), "error");
+      }
+    };
+
+  const dateText = (iso) => {
+    const at = new Date(iso);
+    if (Number.isNaN(at.getTime())) return "";
+    return at.toDateString() === new Date().toDateString()
+      ? at.toLocaleTimeString(language, { hour: "2-digit", minute: "2-digit" })
+      : at.toLocaleDateString(language, { day: "numeric", month: "short" });
+  };
+
+  async function load() {
+    const at = changes;
+    const read = ++reads;
+    const [all, about] = await Promise.all([
+      allJobs(shared),
+      context.modelId ? allJobs(shared, { model: context.modelId }).catch(() => []) : [],
+    ]);
+    if (closed || read !== reads) return;
+    if (saving || at !== changes) {
+      readAgain = true;
+      if (!saving) settled();
+      return;
+    }
+    entries = all;
+    const retry = missed.size > 0;
+    for (const modelId of missed) looks.delete(modelId);
+    missed.clear();
+    stored.clear();
+    for (const entry of all) if (entry.mine) stored.set(entry.key, entry.value);
+    here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
+    const found = JSON.stringify([all.map((entry) => [entry.user?.id, entry.key, entry.value]), [...here]]);
+    // Nothing new, and no thumbnail to ask for again: the board stays as it is, focus and all.
+    if (found !== lastRead || retry) render();
+    lastRead = found;
+    for (const modelId of untold) void tell(modelId).catch(() => undefined);
+  }
+  const refresh = safely(load);
+
+  function renderPeople() {
+    const everyone = people(entries ?? []);
+    const chip = (id, label, user) =>
+      `<button type="button" class="pq-chip${user ? "" : " pq-plain"}" data-who="${escapeHtml(id ?? "")}" aria-pressed="${who === id}">${user ? avatar(user) : ""}<span>${escapeHtml(label)}</span></button>`;
+    peopleBar.innerHTML = [
+      chip(null, t("board.everyone")),
+      ...everyone.map((person) => chip(person.id, person.mine ? t("board.you") : person.name, person)),
+    ].join("");
+  }
+
+  function card(entry) {
+    const job = entry.value;
+    const li = document.createElement("li");
+    const place = `${entry.user?.id}:${entry.key}:${job.status}`;
+    li.className = `pq-card${entry.mine ? " pq-mine" : ""}${here.has(`${entry.user?.id}:${entry.key}`) ? " pq-here" : ""}${drawn.has(place) ? "" : " pq-new"}`;
+    drawing.add(place);
+    // A key is the writer's own, so two people's can match: a card is known by both.
+    li.dataset.who = entry.user?.id ?? "";
+    li.dataset.key = entry.key;
+    li.dataset.status = job.status;
+    const gone = entry.mine && removing.has(entry.key);
+    if (gone) li.classList.add("pq-removing");
+    li.draggable = entry.mine && !gone;
+    const person = entry.mine ? t("board.you") : (entry.user?.name ?? "");
+    const editingThis = entry.mine && editing === entry.key;
+    li.innerHTML = `
+      <span class="pq-thumb" aria-hidden="true">${escapeHtml(job.name.trim().slice(0, 1).toUpperCase())}</span>
+      <span class="pq-body">
+        <span class="pq-name" title="${escapeHtml(job.name)}">${escapeHtml(job.name)}</span>
+        <span class="pq-meta">${avatar(entry.user)}<span>${escapeHtml(person)} · ${escapeHtml(dateText(statusDate(job)))}</span></span>
+        ${
+          editingThis
+            ? `<span class="pq-edit"><textarea aria-label="${escapeHtml(t("note.label"))}" placeholder="${escapeHtml(t("note.placeholder"))}" maxlength="2000">${escapeHtml(draft)}</textarea><div><button type="button" class="pq-cancel">${escapeHtml(t("note.cancel"))}</button><button type="button" class="pq-save">${escapeHtml(t("note.save"))}</button></div></span>`
+            : job.note
+              ? `<span class="pq-note">${escapeHtml(job.note)}</span>`
+              : ""
+        }
+      </span>
+      <button type="button" class="pq-more" aria-haspopup="menu" aria-label="${escapeHtml(t("card.more", { name: job.name }))}">${MORE_ICON}</button>`;
+    void look(job.modelId).then(({ thumbnail }) => {
+      if (!thumbnail || closed) return;
+      const box = li.querySelector(".pq-thumb");
+      const img = new Image();
+      img.alt = "";
+      img.onload = () => box.replaceChildren(img);
+      img.src = thumbnail;
+    });
+    if (editingThis) queueMicrotask(() => li.querySelector("textarea")?.focus());
+    return li;
+  }
+
+  function render() {
+    renderPeople();
+    if (entries === null) {
+      for (const list of board.querySelectorAll(".pq-list")) list.innerHTML = '<li class="pq-skeleton"></li>'.repeat(2);
+      return;
+    }
+    const cols = columns(entries, who);
+    const any = STATUSES.some((status) => cols[status].length);
+    // A card's button that had focus has it again in the card drawn for it, so a keyboard user isn't sent back.
+    const focused = board.contains(document.activeElement) ? document.activeElement : null;
+    const focusedCard = focused?.closest(".pq-card");
+    const focusedClass = focused?.classList[0];
+    drawing = new Set();
+    empty.hidden = any || who !== null;
+    board.hidden = !any && who === null;
+    for (const col of board.querySelectorAll(".pq-col")) {
+      const jobs = cols[col.dataset.status];
+      col.querySelector(".pq-count").textContent = jobs.length ? String(jobs.length) : "";
+      const list = col.querySelector(".pq-list");
+      list.replaceChildren(...jobs.map(card));
+      if (!jobs.length) list.innerHTML = `<li class="pq-none">${escapeHtml(t("board.none"))}</li>`;
+    }
+    drawn = drawing;
+    if (focusedCard && !focusedCard.isConnected && focusedClass !== undefined) {
+      const again = board.querySelector(
+        `.pq-card[data-who="${CSS.escape(focusedCard.dataset.who)}"][data-key="${CSS.escape(focusedCard.dataset.key)}"]`,
+      );
+      (focused === focusedCard ? again : again?.querySelector(`.${CSS.escape(focusedClass)}`))?.focus();
+    }
+    // Opened from a model's page: its cards are outlined, and the first is scrolled to once.
+    const first = board.querySelector(".pq-here");
+    if (first && !scrolled) {
+      scrolled = true;
+      first.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  /** One of the user's cards, by key, that can still be changed. */
+  const find = (key) => entries?.find((entry) => entry.mine && entry.key === key && !removing.has(key));
+  async function tell(modelId) {
+    try {
+      await tellModelPage(shared, modelId);
+      untold.delete(modelId);
+    } catch (error) {
+      untold.add(modelId);
+      throw error;
+    }
+  }
+
+  /** Once no save is going: the board is read again after a failed one, or a read dropped while they went. */
+  function settled() {
+    if (!saveFailed && !readAgain) return;
+    saveFailed = false;
+    readAgain = false;
+    void refresh();
+  }
+
+  /** Counts a change made here while `write` stores it. */
+  async function change(write) {
+    changes += 1;
+    saving += 1;
+    try {
+      await write();
+    } catch (error) {
+      saveFailed = true;
+      throw error;
+    } finally {
+      saving -= 1;
+      changes += 1;
+      if (!saving) settled();
+    }
+  }
+
+  /** Changes a job on the board at once, and saves `edit` made to what's stored when its turn comes; when that fails,
+   *  the board goes back to what it showed before. */
+  const keep = (entry, edit) => {
+    const before = entry.value;
+    const after = edit(before);
+    entry.value = after;
+    render();
+    return change(async () => {
+      try {
+        stored.set(entry.key, await saveJob(shared, entry.key, () => edit(stored.get(entry.key) ?? before)));
+      } catch (error) {
+        // Unless a later change has taken its place, which is saved after it.
+        if (entry.value === after) {
+          entry.value = before;
+          render();
+        }
+        throw error;
+      }
+    });
+  };
+
+  const move = safely(async (key, status) => {
+    const entry = find(key);
+    if (!entry || entry.value.status === status) return;
+    const at = new Date();
+    await keep(entry, (job) => moved(job, status, at));
+    await tell(entry.value.modelId);
+  });
+
+  const remove = safely(async (key) => {
+    const entry = find(key);
+    if (!entry) return;
+    const sure = await ui.confirm({
+      title: t("remove.title"),
+      message: t("remove.message", { name: entry.value.name }),
+      confirmLabel: t("remove.confirm"),
+      destructive: true,
+    });
+    if (!sure || removing.has(key)) return;
+    const { modelId } = entry.value;
+    removing.add(key);
+    render();
+    try {
+      await change(() => inTurn(key, () => shared.remove(key)));
+    } catch (error) {
+      removing.delete(key);
+      render();
+      throw error;
+    }
+    removing.delete(key);
+    stored.delete(key);
+    // By key: the board may have been read again while the question was open.
+    entries = entries.filter((other) => !(other.mine && other.key === key));
+    render();
+    await tell(modelId);
+  });
+
+  const saveNote = safely(async (key, note) => {
+    const entry = find(key);
+    if (!entry) return endEdit();
+    editing = null;
+    const saved = keep(entry, (job) => ({ ...job, note: note.trim() }));
+    if (due) refreshWhenIdle();
+    await saved;
+  });
+
+  function closeMenu({ restore = false } = {}) {
+    if (!menu) return;
+    const { element, opener } = menu;
+    element.remove();
+    menu = null;
+    if (restore) opener?.focus();
+  }
+
+  // Menus asked for: only the latest opens, once its model is looked up.
+  let menus = 0;
+  async function openMenu(who, key, opener) {
+    closeMenu();
+    const asked = ++menus;
+    const entry = entries?.find((other) => other.key === key && (other.user?.id ?? "") === who);
+    if (!entry) return;
+    const { readable } = await look(entry.value.modelId);
+    if (closed || asked !== menus) return;
+    const own = entry.mine && !removing.has(key);
+    const items = [];
+    if (own) {
+      for (const status of STATUSES)
+        if (status !== entry.value.status) items.push({ label: t(`move.${status}`), act: () => move(key, status) });
+      items.push({
+        label: t("note.edit"),
+        act: () => {
+          editing = key;
+          draft = entry.value.note;
+          render();
+        },
+      });
+    }
+    if (readable) items.push({ label: t("card.open"), act: () => ui.openModel(entry.value.modelId) });
+    if (own) items.push("hr", { label: t("remove.confirm"), act: () => remove(key), danger: true });
+    if (!items.length) return;
+    const element = document.createElement("div");
+    element.className = "pq-menu";
+    element.setAttribute("role", "menu");
+    for (const item of items) {
+      if (item === "hr") {
+        element.append(document.createElement("hr"));
+        continue;
+      }
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("role", "menuitem");
+      button.textContent = item.label;
+      if (item.danger) button.className = "pq-danger";
+      button.addEventListener("click", () => {
+        closeMenu();
+        item.act();
+      });
+      element.append(button);
+    }
+    shell.append(element);
+    const box = opener.getBoundingClientRect();
+    const frame = shell.getBoundingClientRect();
+    const left = Math.min(box.right - frame.left - element.offsetWidth, frame.width - element.offsetWidth - 8);
+    element.style.left = `${Math.max(8, left)}px`;
+    element.style.top = `${box.bottom - frame.top + 4}px`;
+    menu = { element, opener };
+    element.querySelector("button")?.focus();
+  }
+
+  // The bar: whose prints, and whom the user's reach.
+  peopleBar.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-who]");
+    if (!button) return;
+    who = button.dataset.who || null;
+    render();
+  });
+
+  const showAudience = (audience) => {
+    shareLabel.textContent = audience.everyone
+      ? t("share.everyone")
+      : audience.people.length
+        ? t("share.people", { count: audience.people.length })
+        : t("share.onlyYou");
+  };
+  root.querySelector("#pq-share").addEventListener(
+    "click",
+    safely(async () => {
+      const audience = await shared.share();
+      if (audience) showAudience(audience);
+    }),
+  );
+
+  // The cards: their menus, notes, and dragging the user's own between columns.
+  board.addEventListener("click", (event) => {
+    const li = event.target.closest(".pq-card");
+    if (!li) return;
+    if (event.target.closest(".pq-more"))
+      return void openMenu(li.dataset.who, li.dataset.key, event.target.closest(".pq-more"));
+    if (event.target.closest(".pq-save")) return void saveNote(li.dataset.key, li.querySelector("textarea").value);
+    if (event.target.closest(".pq-cancel")) endEdit();
+  });
+  board.addEventListener("input", (event) => {
+    if (event.target.matches(".pq-edit textarea")) draft = event.target.value;
+  });
+  board.addEventListener("dragstart", (event) => {
+    const li = event.target.closest(".pq-card.pq-mine");
+    if (!li) return;
+    dragKey = li.dataset.key;
+    li.classList.add("pq-dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", dragKey);
+  });
+  board.addEventListener("dragend", () => {
+    dragKey = null;
+    for (const node of board.querySelectorAll(".pq-dragging, .pq-over"))
+      node.classList.remove("pq-dragging", "pq-over");
+  });
+  board.addEventListener("dragover", (event) => {
+    const col = event.target.closest(".pq-col");
+    if (!col || !dragKey) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    for (const other of board.querySelectorAll(".pq-over")) if (other !== col) other.classList.remove("pq-over");
+    col.classList.add("pq-over");
+  });
+  board.addEventListener("dragleave", (event) => {
+    const col = event.target.closest(".pq-col");
+    if (col && !col.contains(event.relatedTarget)) col.classList.remove("pq-over");
+  });
+  board.addEventListener("drop", (event) => {
+    const col = event.target.closest(".pq-col");
+    if (!col || !dragKey) return;
+    event.preventDefault();
+    col.classList.remove("pq-over");
+    move(dragKey, col.dataset.status);
+  });
+
+  const onOutside = (event) => {
+    if (menu && !menu.element.contains(event.target) && !menu.opener.contains(event.target)) closeMenu();
+  };
+  const onKey = (event) => {
+    if (event.key === "Escape" && menu) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu({ restore: true });
+    }
+  };
+  document.addEventListener("pointerdown", onOutside, true);
+  shell.addEventListener("keydown", onKey);
+
+  // Others' changes show up while it's open: now and then, and on coming back to the window. Not in the middle of
+  // writing a note, using a menu or dragging; a refresh due then comes once the note is done.
+  let due = false;
+  const refreshWhenIdle = () => {
+    due = Boolean(menu || editing || dragKey);
+    if (!due) void refresh();
+  };
+  function endEdit() {
+    editing = null;
+    render();
+    if (due) refreshWhenIdle();
+  }
+  const timer = setInterval(refreshWhenIdle, 30000);
+  window.addEventListener("focus", refreshWhenIdle);
+
+  labels();
+  render();
+  void refresh();
+  void safely(async () => showAudience(await shared.audience()))();
+
+  return () => {
+    closed = true;
+    closeMenu();
+    clearInterval(timer);
+    window.removeEventListener("focus", refreshWhenIdle);
+    document.removeEventListener("pointerdown", onOutside, true);
+    shell.removeEventListener("keydown", onKey);
+  };
+}

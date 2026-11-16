@@ -52,6 +52,8 @@ in [`tools/index.json`](../tools/index.json).
 | `locales`     | The language codes it has labels for, up to 40                                                 |
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
+| `commands`    | Up to 10 things it offers on a model's page, below                                             |
+| `modelInfo`   | `{ title, command }`: a part of every model's page showing what its users shared, below        |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
 
@@ -90,6 +92,78 @@ the geometry behind them. The 3MF writer comes with it — `writeThreeMf(parts, 
 `meshBounds(mesh)` — so a tool that works out a dozen parts saves one 3MF with each of them named inside, rather
 than handing over a dozen downloads. A 3MF carries one copy of a shape however many are wanted, so a part's name is
 where its count belongs: `"8x8 Core Tile x4"`.
+
+### Commands on a model's page
+
+A tool that works on a model can offer that from the model's page: its `commands` show in the menu beside the Open
+button, under **Tools**, after a divider. Thingport reads them from the metadata, so it lists them without running the
+tool, and a tool with none changes nothing there.
+
+```json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf", "gcode"] },
+  { "id": "queue", "title": "Add to my print queue", "window": false }
+]
+```
+
+| Field       | What it does                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| `id`        | 1–40 lowercase letters, digits and dashes, different for each command                              |
+| `title`     | Up to 60 characters. A label `commands.<id>` in `locales/` translates it                           |
+| `on`        | `"model"` (default) for the model, or `"file"` for the file picked on the page                     |
+| `fileTypes` | For `"file"`: the endings it takes, without the dot (`"stl"`, `"gcode.3mf"`); any file when absent |
+| `window`    | `true` (default) opens the tool's window; `false` calls its `run` export with no window            |
+
+A command that opens the window finds what it was picked on in `thingport.context`: `{ command, modelId, fileId }`,
+`fileId` being one of the model's `files` for a command on a file (the prepared print isn't one, so a file command
+isn't offered for it). One with `"window": false` gets the same `thingport` in its `run` export, and reports back
+through `ui.toast`, asking through `ui.confirm` where it must:
+
+```js
+export async function run(command, thingport) {
+  const { modelId } = thingport.context;
+  // …do it, then say so
+  thingport.ui.toast(thingport.t("queued"), "success");
+}
+```
+
+Print cost estimator's **Estimate print cost** is the example in this repository.
+
+### Shared with the tool's other users
+
+`thingport.storage` is each user's own. `thingport.shared` is what a tool's users share with each other, such as a print
+queue the household keeps together:
+
+- **Each entry is its writer's.** `set(key, value)` and `remove(key)` change only the user's own entries, and two
+  users' entries under the same key are two entries. `list({ prefix })` reads everyone's, newest first, with who wrote
+  each one and whether it's `mine`: 5,000 a read, and `before` set to the last one's `cursor` reads the next ones.
+- **Who reads them is the writer's choice.** Everyone who can use tools, unless they keep theirs to the people they
+  pick: `share()` opens Thingport's own dialog for that, and `audience()` says what they chose.
+- **An entry can be about a model.** `set(key, value, { model })` ties it to a model the user can open, and
+  `list({ model })` finds everyone's entries about that model or any copy of it: the same original, or imported from
+  the same page. That's how a tool warns that someone else has the model queued.
+
+A tool whose metadata has `modelInfo` gets a part of every model's page, titled `title` (a label `modelInfo.title`
+translates it). An entry set with `info` shows there as a chip: the writer's avatar, a dot coloured by `tone` and a
+`label`, which is one of the tool's label keys so each reader sees their own language. Each person's latest entry about
+the model shows, and clicking it opens the tool's window on the model. `command`, one of the tool's commands, is offered
+there as a chip of its own:
+
+```js
+await thingport.shared.set(
+  `about:${modelId}`,
+  { jobs: 2 },
+  {
+    model: modelId,
+    info: { label: "status.printing", tone: "active", date: new Date().toISOString() },
+  },
+);
+```
+
+Tones are `waiting`, `active`, `done`, `failed` and `neutral`. A value is at most 256 KB as JSON, and a user shares at
+most 5 MB and 5,000 entries a tool. Nothing in a shared value should be private to its writer: a model's thumbnail
+address, for one, carries their session, so read it as the viewer instead. **Print queue** in this repository uses all
+of it.
 
 ### The words it shows
 

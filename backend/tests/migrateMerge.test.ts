@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -54,9 +54,9 @@ const options = (ids: string[]): MigrateOptions => ({
   secrets: true,
 });
 
-async function merge(ids: string[], files: SourceFiles = noFiles().files) {
+async function merge(ids: string[], files: SourceFiles = noFiles().files, more: Partial<MigrateOptions> = {}) {
   const runId = `merge${crypto.randomBytes(6).toString("hex")}`;
-  const report = await new Merge(source, files, runId, options(ids), () => undefined).run();
+  const report = await new Merge(source, files, runId, { ...options(ids), ...more }, () => undefined).run();
   return report;
 }
 
@@ -280,5 +280,228 @@ describe("merging a working copy", () => {
     expect((await merge([jo.sourceId])).models).toMatchObject({ brought: 1, earlier: 1 });
     expect((await prisma.print.findUniqueOrThrow({ where: { id: copy } })).copiedFromId).toBe(original);
     await hereIdOf(jo.email);
+  });
+
+  it("brings someone's Send to destinations with their keys, once however often it runs", async () => {
+    const lou = await person("lou", true);
+    const how = { type: "preset", preset: "octoprint", address: "http://octopi.local", start: true };
+    await source.sendTarget.create({
+      data: {
+        id: `send${tag}`,
+        userId: lou.sourceId,
+        name: "OctoPrint",
+        how,
+        secrets: { apiKey: "k3y" },
+        placement: "button",
+        fileTypes: ["gcode", "3mf"],
+      },
+    });
+    expect((await merge([lou.sourceId])).failures).toEqual([]);
+    expect((await merge([lou.sourceId])).failures).toEqual([]);
+    const here = await prisma.sendTarget.findMany({ where: { userId: lou.hereId! } });
+    expect(here).toEqual([
+      expect.objectContaining({
+        name: "OctoPrint",
+        how,
+        secrets: { apiKey: "k3y" },
+        placement: "button",
+        fileTypes: ["gcode", "3mf"],
+      }),
+    ]);
+  });
+
+  it("has whom someone's tool entries reach in place before the entries come", async () => {
+    const kit = await person("kit");
+    const toolId = `tool${tag}`;
+    await source.tool.create({
+      data: {
+        id: toolId,
+        source: "own",
+        scope: kit.sourceId,
+        slug: `queue-${tag}`,
+        userId: kit.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: { toolId, userId: kit.sourceId, key: "job:1", value: { n: 1 }, size: 7 },
+    });
+    // Kept to nobody but themselves.
+    await source.toolAudience.create({ data: { toolId, userId: kit.sourceId, userIds: [] } });
+    const createMany = prisma.toolSharedData.createMany.bind(prisma.toolSharedData);
+    let audienceThen: number | null = null;
+    const spy = vi.spyOn(prisma.toolSharedData, "createMany").mockImplementation((async (args: never) => {
+      audienceThen = await prisma.toolAudience.count({ where: { toolId } });
+      return createMany(args);
+    }) as never);
+    try {
+      expect((await merge([kit.sourceId], noFiles().files, { tools: true })).failures).toEqual([]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(audienceThen).toBe(1);
+    const here = await hereIdOf(kit.email);
+    expect(await prisma.toolSharedData.count({ where: { toolId, userId: here } })).toBe(1);
+    expect(await prisma.toolAudience.findUnique({ where: { toolId_userId: { toolId, userId: here } } })).toMatchObject({
+      userIds: [],
+    });
+  });
+
+  it("knows a copy, and what's shared about its original, by the model that original is here", async () => {
+    const mo = await person("mo", true);
+    const pat = await person("pat");
+    const page = { sourceProvider: "printables", sourceExternalId: `77${tag}` };
+    // Mo has the model here already, imported from the same page as the one they bring.
+    const here = await prisma.print.create({
+      data: { userId: mo.hereId!, name: "Hinge", nameNormalized: "hinge", ...page },
+    });
+    const original = `hinge${tag}`;
+    const copy = `hingecopy${tag}`;
+    await source.print.create({
+      data: { id: original, userId: mo.sourceId, name: "Hinge", nameNormalized: "hinge", ...page },
+    });
+    await source.print.create({
+      data: {
+        id: copy,
+        userId: pat.sourceId,
+        name: "Hinge",
+        nameNormalized: "hinge",
+        originalId: original,
+        copiedFromId: original,
+      },
+    });
+    const toolId = `tool3${tag}`;
+    await source.tool.create({
+      data: {
+        id: toolId,
+        source: "own",
+        scope: mo.sourceId,
+        slug: `queue3-${tag}`,
+        userId: mo.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: {
+        toolId,
+        userId: mo.sourceId,
+        key: "about:1",
+        value: { jobs: 1 },
+        size: 10,
+        printId: original,
+        originKey: `orig:${original}`,
+        info: { label: "Queued" },
+      },
+    });
+
+    expect((await merge([mo.sourceId, pat.sourceId], noFiles().files, { tools: true })).failures).toEqual([]);
+    await hereIdOf(pat.email);
+    const brought = await prisma.print.findUniqueOrThrow({ where: { id: copy } });
+    expect(brought).toMatchObject({ originalId: here.id, copiedFromId: here.id });
+    const entry = await prisma.toolSharedData.findFirstOrThrow({ where: { toolId, userId: mo.hereId! } });
+    // The key the copy's page reads by.
+    expect(entry).toMatchObject({ printId: here.id, originKey: `orig:${brought.originalId}` });
+  });
+
+  it("takes the copy someone has here already for theirs of an original that's another model here", async () => {
+    const kim = await person("kim", true);
+    const joe = await person("joe", true);
+    const page = { sourceProvider: "printables", sourceExternalId: `78${tag}` };
+    const here = await prisma.print.create({
+      data: { userId: kim.hereId!, name: "Clip", nameNormalized: "clip", ...page },
+    });
+    // Joe copied Kim's model here; there, his copy is of the one Kim brings, which is that model.
+    await prisma.print.create({
+      data: { userId: joe.hereId!, name: "Clip", nameNormalized: "clip", originalId: here.id, copiedFromId: here.id },
+    });
+    const original = `clip${tag}`;
+    const copy = `clipcopy${tag}`;
+    await source.print.create({
+      data: { id: original, userId: kim.sourceId, name: "Clip", nameNormalized: "clip", ...page },
+    });
+    await source.print.create({
+      data: {
+        id: copy,
+        userId: joe.sourceId,
+        name: "Clip",
+        nameNormalized: "clip",
+        originalId: original,
+        copiedFromId: original,
+      },
+    });
+
+    // Joe joined first, so people go in his order and his copy would be reached before the original if they went by
+    // person alone.
+    await source.user.update({ where: { id: joe.sourceId }, data: { createdAt: new Date(Date.now() - 60_000) } });
+    const report = await merge([joe.sourceId, kim.sourceId]);
+    expect(report.failures).toEqual([]);
+    expect(await prisma.print.findUnique({ where: { id: copy } })).toBeNull();
+    expect(await prisma.print.count({ where: { userId: joe.hereId! } })).toBe(1);
+  });
+
+  it("keeps someone's tool entries from whoever either account kept them from", async () => {
+    const lee = await person("lee", true);
+    const both = await prisma.user.create({ data: { email: `both-${tag}@example.com`, displayName: "Both" } });
+    const hereOnly = await prisma.user.create({ data: { email: `hereonly-${tag}@example.com`, displayName: "Here" } });
+    people.push(both.id, hereOnly.id);
+    // Comes along, so the source's audience can name them.
+    await source.user.create({ data: { id: `srcboth${tag}`, email: both.email, displayName: "Both" } });
+    const slug = `queue2-${tag}`;
+    const sourceTool = `tool2${tag}`;
+    await source.tool.create({
+      data: {
+        id: sourceTool,
+        source: "own",
+        scope: lee.sourceId,
+        slug,
+        userId: lee.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, key: "job:1", value: { n: 1 }, size: 7 },
+    });
+    // A value of JSON null comes along as that, beside the others in its batch.
+    await source.toolSharedData.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, key: "job:2", value: Prisma.JsonNull, size: 4 },
+    });
+    await source.toolAudience.create({
+      data: { toolId: sourceTool, userId: lee.sourceId, userIds: [`srcboth${tag}`] },
+    });
+    // The same tool here, its entries kept to two people, one of whom the source kept them from.
+    const hereTool = await prisma.tool.create({
+      data: {
+        source: "own",
+        scope: lee.hereId!,
+        slug,
+        userId: lee.hereId!,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await prisma.toolAudience.create({
+      data: { toolId: hereTool.id, userId: lee.hereId!, userIds: [both.id, hereOnly.id] },
+    });
+
+    expect((await merge([lee.sourceId, `srcboth${tag}`], noFiles().files, { tools: true })).failures).toEqual([]);
+    const kept = await prisma.toolSharedData.findMany({
+      where: { toolId: hereTool.id, userId: lee.hereId! },
+      orderBy: { key: "asc" },
+    });
+    expect(kept.map((entry) => [entry.key, entry.value])).toEqual([
+      ["job:1", { n: 1 }],
+      ["job:2", null],
+    ]);
+    const audience = await prisma.toolAudience.findUniqueOrThrow({
+      where: { toolId_userId: { toolId: hereTool.id, userId: lee.hereId! } },
+    });
+    expect(audience.userIds).toEqual([both.id]);
   });
 });

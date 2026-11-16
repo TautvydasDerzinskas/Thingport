@@ -2,7 +2,8 @@
 
 Drop a model on it and get what the print really costs: the time, the filament, and the money — material, power,
 machine wear, the prints that fail, your own time, packaging and the platform's cut — with the price to charge for the
-margin you want. Files are dropped on the window, chosen, or picked from a model in your library.
+margin you want. Files are dropped on the window, chosen, or picked from a model in your library, and a model's page
+opens it on the file picked there: **Estimate print cost**, under Tools in the menu beside its Open button.
 
 What it reads decides how exact it is, and the window says which it's doing:
 

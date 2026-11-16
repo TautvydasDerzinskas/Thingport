@@ -93,6 +93,49 @@ What the \`thingport\` argument has is listed under **What \`thingport\` has** b
 window as CSS variables as well (the \`SdkTheme\` table names them), so a stylesheet can use them without the script
 copying anything across.
 
+## Commands on a model's page
+
+A tool that works on a model can offer that on the model's own page: its \`commands\` show in the menu beside the
+model's Open button, under **Tools**, and Thingport lists them from the metadata without running the tool.
+
+\`\`\`json
+"commands": [
+  { "id": "estimate", "title": "Estimate print cost", "on": "file", "fileTypes": ["stl", "3mf"] },
+  { "id": "queue", "title": "Add to my print queue", "window": false }
+]
+\`\`\`
+
+- **id**: 1-40 lowercase letters, digits and dashes, different for each command; at most 10 commands.
+- **title**: up to 60 characters, as the menu shows it. A label \`commands.<id>\` in the tool's words translates it.
+- **on**: \`"model"\` (the default) for the model as a whole, or \`"file"\` for the file picked on its page, which only
+  offers the command for one of its **fileTypes** (endings without the dot; any file when left out).
+- **window**: picking it opens the tool's window, and \`thingport.context\` says what it was opened on:
+  \`{ command, modelId, fileId }\`, \`fileId\` being one of the model's \`files\` for a command on a file. With
+  \`"window": false\` the window stays shut and Thingport calls the script's \`run\` export instead, with the same
+  \`thingport\`: tell the user what happened with \`ui.toast\`, and ask with \`ui.confirm\` when you must.
+
+\`\`\`js
+export async function run(command, thingport) {
+  const { modelId } = thingport.context;
+  // …do it, then say so
+  thingport.ui.toast(thingport.t("queued"), "success");
+}
+\`\`\`
+
+## Shared with the tool's other users
+
+\`thingport.storage\` is the user's own; \`thingport.shared\` is what the tool's users share with each other, such as a
+household's print queue. Each entry is its writer's: \`set\` and \`remove\` touch only the user's own, \`list\` reads
+everyone's with who wrote each and whether it's \`mine\`, 5,000 a read (\`list({ before: last.cursor })\` reads on).
+Whom a user's entries reach is their choice: \`share()\` opens Thingport's dialog for it. \`set(key, value, { model })\`
+ties an entry to a model, and \`list({ model })\` finds everyone's entries about that model or any copy of it.
+
+With \`"modelInfo": { "title": "Print queue", "command": "queue" }\` in the metadata, every model's page gets a part
+showing, per person, their latest entry about the model that was set with \`info\`:
+\`{ label: "status.printing", tone: "active", date }\`. \`label\` is one of the tool's label keys, \`tone\` is
+\`waiting\`, \`active\`, \`done\`, \`failed\` or \`neutral\`, and \`command\` is offered there too. Never put anything private
+in a shared value, such as a model's thumbnail address, which carries the user's session.
+
 ## What \`thingport\` has
 
 ${TOOL_SDK_REFERENCE}
