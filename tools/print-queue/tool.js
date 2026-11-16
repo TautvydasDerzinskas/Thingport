@@ -241,10 +241,11 @@ export default function mount(thingport) {
   let scrolled = false;
   let closed = false;
   // Changes made here and saves of them still going: a read of the board one of them may postdate is dropped, as
-  // it would put back what was there before.
+  // it would put back what was there before, and made again once they're saved.
   let changes = 0;
   let saving = 0;
   let saveFailed = false;
+  let readAgain = false;
   // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
   // so it's never stored in what's shared.
   const looks = new Map();
@@ -284,7 +285,12 @@ export default function mount(thingport) {
       shared.list({ prefix: JOB }),
       context.modelId ? shared.list({ prefix: JOB, model: context.modelId }).catch(() => []) : [],
     ]);
-    if (closed || saving || at !== changes) return;
+    if (closed) return;
+    if (saving || at !== changes) {
+      readAgain = true;
+      if (!saving) settled();
+      return;
+    }
     entries = all;
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
     render();
@@ -362,9 +368,18 @@ export default function mount(thingport) {
   }
 
   const find = (key, mine = true) => entries?.find((entry) => entry.key === key && (!mine || entry.mine));
-  const tell = (modelId) => tellModelPage(shared, modelId, () => entries ?? []);
+  // From the jobs as stored when its turn comes, not the board: a move still saving there may yet fail.
+  const tell = (modelId) => tellModelPage(shared, modelId, () => shared.list({ prefix: JOB }));
 
-  /** Counts a change made here while `write` stores it; once a failed one's done, the board is read again. */
+  /** Once no save is going: the board is read again after a failed one, or a read dropped while they went. */
+  function settled() {
+    if (!saveFailed && !readAgain) return;
+    saveFailed = false;
+    readAgain = false;
+    void refresh();
+  }
+
+  /** Counts a change made here while `write` stores it. */
   async function change(write) {
     changes += 1;
     saving += 1;
@@ -376,10 +391,7 @@ export default function mount(thingport) {
     } finally {
       saving -= 1;
       changes += 1;
-      if (!saving && saveFailed) {
-        saveFailed = false;
-        void refresh();
-      }
+      if (!saving) settled();
     }
   }
 
