@@ -272,9 +272,10 @@ export function storedFormat(value: unknown): ThreeMfFormat | null {
     printer: f.printer ?? null,
     nozzle: f.nozzle ?? null,
     filaments: f.filaments ?? null,
-    filamentList: f.filamentList ?? null,
     plates: f.plates ?? null,
     dialect: f.dialect ?? null,
+    // Only the kinds that list their filaments have these, as classify3mf gives them.
+    ...(f.filamentList !== undefined ? { filamentList: f.filamentList } : {}),
     ...(f.painted !== undefined ? { painted: f.painted } : {}),
   };
 }
