@@ -102,6 +102,20 @@ export function clashes(entries) {
   return { others: active.filter((entry) => !entry.mine), mine: active.filter((entry) => entry.mine) };
 }
 
+/** A read of shared entries gives 5,000 at most, newest first. */
+const PAGE = 5000;
+
+/** Everyone's jobs, read on page by page, so an old one still queued can't fall off the board behind newer ones. */
+export async function allJobs(shared, page = PAGE) {
+  let read = await shared.list({ prefix: JOB });
+  const all = [...read];
+  while (read.length >= page) {
+    read = await shared.list({ prefix: JOB, before: read.at(-1).cursor });
+    all.push(...read);
+  }
+  return all;
+}
+
 /** Their names, each once: "Dad", "Dad and Mum", "Dad, Mum and Ann". */
 export function listNames(entries, and) {
   const names = [...new Set(entries.map((entry) => entry.user?.name).filter(Boolean))];

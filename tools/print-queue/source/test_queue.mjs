@@ -2,7 +2,19 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clashes, columns, isJob, listNames, moved, newId, newJob, people, summaryOf, writesInTurn } from "./queue.js";
+import {
+  allJobs,
+  clashes,
+  columns,
+  isJob,
+  listNames,
+  moved,
+  newId,
+  newJob,
+  people,
+  summaryOf,
+  writesInTurn,
+} from "./queue.js";
 
 const dad = { id: "dad", name: "Dad", avatarUrl: null };
 const mum = { id: "mum", name: "Mum", avatarUrl: null };
@@ -136,4 +148,21 @@ test("writes to one entry land in the order they were made, after a failed one t
   await assert.rejects(failed, /offline/);
   await last;
   assert.deepEqual(stored, ["other", "printing", "failed"]);
+});
+
+test("the board reads every page of jobs, and stops at the first that isn't full", async () => {
+  const stored = Array.from({ length: 7 }, (_, i) => ({ key: `job:${i}`, cursor: `c${i}` }));
+  const asked = [];
+  const shared = {
+    list: async (options) => {
+      asked.push(options);
+      const from = options.before ? stored.findIndex((e) => e.cursor === options.before) + 1 : 0;
+      return stored.slice(from, from + 3);
+    },
+  };
+  assert.deepEqual(
+    (await allJobs(shared, 3)).map((e) => e.key),
+    stored.map((e) => e.key),
+  );
+  assert.deepEqual(asked, [{ prefix: "job:" }, { prefix: "job:", before: "c2" }, { prefix: "job:", before: "c5" }]);
 });

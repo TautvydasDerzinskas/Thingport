@@ -106,6 +106,20 @@ export function clashes(entries) {
   return { others: active.filter((entry) => !entry.mine), mine: active.filter((entry) => entry.mine) };
 }
 
+/** A read of shared entries gives 5,000 at most, newest first. */
+const PAGE = 5000;
+
+/** Everyone's jobs, read on page by page, so an old one still queued can't fall off the board behind newer ones. */
+export async function allJobs(shared, page = PAGE) {
+  let read = await shared.list({ prefix: JOB });
+  const all = [...read];
+  while (read.length >= page) {
+    read = await shared.list({ prefix: JOB, before: read.at(-1).cursor });
+    all.push(...read);
+  }
+  return all;
+}
+
 /** Their names, each once: "Dad", "Dad and Mum", "Dad, Mum and Ann". */
 export function listNames(entries, and) {
   const names = [...new Set(entries.map((entry) => entry.user?.name).filter(Boolean))];
@@ -164,15 +178,18 @@ function avatar(user) {
 // Writes to one entry go one after another, so the last change made is the one stored.
 const inTurn = writesInTurn();
 
-/** Saved with the model it's about, so others' copies of it find it; without, once that model is gone. */
+/** Saved with the model it's about, so others' copies of it find it; without, once that model is gone. `job` can be a
+ *  function giving it when its turn comes. Gives back what was saved. */
 function saveJob(shared, key, job) {
   return inTurn(key, async () => {
+    const value = typeof job === "function" ? job() : job;
     try {
-      await shared.set(key, job, { model: job.modelId });
+      await shared.set(key, value, { model: value.modelId });
     } catch (error) {
       if (!/no such model/i.test(error?.message ?? "")) throw error;
-      await shared.set(key, job);
+      await shared.set(key, value);
     }
+    return value;
   });
 }
 
@@ -262,6 +279,11 @@ export default function mount(thingport) {
   let reads = 0;
   // Models whose page a failed write left showing something older, told again once the board is next read.
   const untold = new Set();
+  // The user's jobs as stored, as far as the board knows: each change is saved onto this, so one still saving, which
+  // may fail, isn't saved along with it.
+  const stored = new Map();
+  // The user's jobs being removed, which take no other change meanwhile, as it would be saved after and bring them back.
+  const removing = new Set();
   // Each model's thumbnail and whether the user may open it, read as the user: the address carries their session,
   // so it's never stored in what's shared.
   const looks = new Map();
@@ -299,7 +321,7 @@ export default function mount(thingport) {
     const at = changes;
     const read = ++reads;
     const [all, about] = await Promise.all([
-      shared.list({ prefix: JOB }),
+      allJobs(shared),
       context.modelId ? shared.list({ prefix: JOB, model: context.modelId }).catch(() => []) : [],
     ]);
     if (closed || read !== reads) return;
@@ -309,6 +331,8 @@ export default function mount(thingport) {
       return;
     }
     entries = all;
+    stored.clear();
+    for (const entry of all) if (entry.mine) stored.set(entry.key, entry.value);
     here = new Set(about.map((entry) => `${entry.user?.id}:${entry.key}`));
     render();
     for (const modelId of untold) void tell(modelId).catch(() => undefined);
@@ -331,7 +355,9 @@ export default function mount(thingport) {
     li.className = `pq-card${entry.mine ? " pq-mine" : ""}${here.has(`${entry.user?.id}:${entry.key}`) ? " pq-here" : ""}`;
     li.dataset.key = entry.key;
     li.dataset.status = job.status;
-    li.draggable = entry.mine;
+    const gone = entry.mine && removing.has(entry.key);
+    if (gone) li.classList.add("pq-removing");
+    li.draggable = entry.mine && !gone;
     const person = entry.mine ? t("board.you") : (entry.user?.name ?? "");
     const editingThis = editing === entry.key;
     li.innerHTML = `
@@ -385,7 +411,9 @@ export default function mount(thingport) {
     }
   }
 
-  const find = (key, mine = true) => entries?.find((entry) => entry.key === key && (!mine || entry.mine));
+  /** A card by key; by default only one of the user's that can still be changed. */
+  const find = (key, mine = true) =>
+    entries?.find((entry) => entry.key === key && (!mine || (entry.mine && !removing.has(key))));
   async function tell(modelId) {
     try {
       await tellModelPage(shared, modelId);
@@ -420,11 +448,16 @@ export default function mount(thingport) {
     }
   }
 
-  /** Saves a job already changed on the board; when that fails, the board goes back to what's stored. */
-  const keep = (entry, before, after) =>
-    change(async () => {
+  /** Changes a job on the board at once, and saves `edit` made to what's stored when its turn comes; when that fails,
+   *  the board goes back to what it showed before. */
+  const keep = (entry, edit) => {
+    const before = entry.value;
+    const after = edit(before);
+    entry.value = after;
+    render();
+    return change(async () => {
       try {
-        await saveJob(shared, entry.key, after);
+        stored.set(entry.key, await saveJob(shared, entry.key, () => edit(stored.get(entry.key) ?? before)));
       } catch (error) {
         // Unless a later change has taken its place, which is saved after it.
         if (entry.value === after) {
@@ -434,14 +467,13 @@ export default function mount(thingport) {
         throw error;
       }
     });
+  };
 
   const move = safely(async (key, status) => {
     const entry = find(key);
     if (!entry || entry.value.status === status) return;
-    const before = entry.value;
-    entry.value = moved(before, status);
-    render();
-    await keep(entry, before, entry.value);
+    const at = new Date();
+    await keep(entry, (job) => moved(job, status, at));
     await tell(entry.value.modelId);
   });
 
@@ -454,9 +486,19 @@ export default function mount(thingport) {
       confirmLabel: t("remove.confirm"),
       destructive: true,
     });
-    if (!sure) return;
+    if (!sure || removing.has(key)) return;
     const { modelId } = entry.value;
-    await change(() => inTurn(key, () => shared.remove(key)));
+    removing.add(key);
+    render();
+    try {
+      await change(() => inTurn(key, () => shared.remove(key)));
+    } catch (error) {
+      removing.delete(key);
+      render();
+      throw error;
+    }
+    removing.delete(key);
+    stored.delete(key);
     // By key: the board may have been read again while the question was open.
     entries = entries.filter((other) => !(other.mine && other.key === key));
     render();
@@ -465,12 +507,11 @@ export default function mount(thingport) {
 
   const saveNote = safely(async (key, note) => {
     const entry = find(key);
-    if (!entry) return;
-    const before = entry.value;
-    const after = { ...before, note: note.trim() };
-    entry.value = after;
-    endEdit();
-    await keep(entry, before, after);
+    if (!entry) return endEdit();
+    editing = null;
+    const saved = keep(entry, (job) => ({ ...job, note: note.trim() }));
+    if (due) refreshWhenIdle();
+    await saved;
   });
 
   function closeMenu({ restore = false } = {}) {
@@ -486,8 +527,9 @@ export default function mount(thingport) {
     const entry = find(key, false);
     if (!entry) return;
     const { readable } = await look(entry.value.modelId);
+    const own = entry.mine && !removing.has(key);
     const items = [];
-    if (entry.mine) {
+    if (own) {
       for (const status of STATUSES)
         if (status !== entry.value.status) items.push({ label: t(`move.${status}`), act: () => move(key, status) });
       items.push({
@@ -500,7 +542,7 @@ export default function mount(thingport) {
       });
     }
     if (readable) items.push({ label: t("card.open"), act: () => ui.openModel(entry.value.modelId) });
-    if (entry.mine) items.push("hr", { label: t("remove.confirm"), act: () => remove(key), danger: true });
+    if (own) items.push("hr", { label: t("remove.confirm"), act: () => remove(key), danger: true });
     if (!items.length) return;
     const element = document.createElement("div");
     element.className = "pq-menu";
