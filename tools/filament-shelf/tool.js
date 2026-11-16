@@ -475,8 +475,9 @@ export async function readAll(shared, options = {}, page = PAGE) {
   return all;
 }
 
-// What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each.
-const READ_FOR_MS = 2000;
+// What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each. Less
+// than the 1.5 s the page waits between looks at profiles filling in, so parts drawn again once they have read anew.
+const READ_FOR_MS = 1000;
 const reads = new Map();
 // A change already forgotten for: every part hears it, and the first to read again starts what the others share.
 let forgetting = false;
@@ -915,6 +916,8 @@ const TAB_CSS = `
 .fs-skel-row .fs-skel { height: 12px; }
 .fs-skel-row .fs-skel:first-child { height: 18px; border-radius: 50% !important; }
 .fs-problem { display: flex; align-items: center; gap: 10px; color: var(--tp-error); font-size: 12.5px; }
+.fs-problem.fs-stale { margin: 4px 0 8px; }
+.fs-problem > span { flex: 1; }
 `;
 
 const MATERIAL_SUGGESTIONS = [
@@ -1100,7 +1103,11 @@ export function modelTab(thingport) {
           ? `<datalist id="${materialsId}">${MATERIAL_SUGGESTIONS.map((name) => `<option value="${name}"></option>`).join("")}</datalist>
              <div class="fs-actions"><button type="button" class="fs-btn fs-quiet fs-small" data-act="cancel"${saving ? " disabled" : ""}>${escapeHtml(t("edit.cancel"))}</button><button type="button" class="fs-btn fs-primary fs-small" data-act="save"${saving ? " disabled" : ""}>${escapeHtml(t("edit.save"))}</button></div>`
           : "");
-    box.innerHTML = toolbar() + body + (needs.length ? together(match) : "");
+    // Read before, then not since: what was read stays, said to be maybe out of date, with a way to read again.
+    const stale = problem
+      ? `<div class="fs-problem fs-stale" role="alert">${icon("warn")}<span>${escapeHtml(t("tab.stale", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
+      : "";
+    box.innerHTML = toolbar() + stale + body + (needs.length ? together(match) : "");
     // While a save goes, the rows are what it sends: nothing in them changes until it's done.
     if (saving) for (const control of box.querySelectorAll(".fs-grid input, .fs-grid button")) control.disabled = true;
   }
@@ -1550,6 +1557,13 @@ export default function mount(thingport) {
   let needs = [];
   let menu = null;
   let dialog = null;
+  // Spools whose save failed while the dialog was on another, each brought back to try again once it closes.
+  const unsaved = [];
+  // The user's spools as last read or saved, which a failed save goes back to, and each key's latest save: only that
+  // one may put a card back, as an older one failing mustn't undo a newer one still saving.
+  const confirmed = new Map();
+  const latest = new Map();
+  let puts = 0;
   let closed = false;
   let reads = 0;
   // Writes going, and writes started or ended: a read either overlaps is dropped, and the one after them shows.
@@ -1571,6 +1585,8 @@ export default function mount(thingport) {
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
+    confirmed.clear();
+    for (const entry of spoolList) if (entry.mine) confirmed.set(entry.key, entry.value);
     // A failed read of the edits keeps the last that worked: as none, an edit would read as the profile's list.
     if (needList) {
       needEntries = needList;
@@ -1800,7 +1816,8 @@ export default function mount(thingport) {
 
   const putSpool = safely(async (key, value, onFailed = () => {}) => {
     const existing = entries.find((entry) => entry.mine && entry.key === key);
-    const before = existing?.value;
+    const mine = ++puts;
+    latest.set(key, mine);
     if (existing) Object.assign(existing, { value, saving: true });
     else
       entries.unshift({
@@ -1815,11 +1832,14 @@ export default function mount(thingport) {
     render();
     try {
       await write(key, () => shared.set(key, value));
+      confirmed.set(key, value);
     } catch (error) {
-      if (before) {
-        const still = entries.find((entry) => entry.mine && entry.key === key);
-        if (still) Object.assign(still, { value: before, saving: false });
-      } else entries = entries.filter((entry) => !(entry.mine && entry.key === key));
+      // A newer save of it owns the card now; its own outcome decides what shows.
+      if (latest.get(key) !== mine) throw error;
+      const back = confirmed.get(key);
+      const still = entries.find((entry) => entry.mine && entry.key === key);
+      if (back === undefined) entries = entries.filter((entry) => !(entry.mine && entry.key === key));
+      else if (still) Object.assign(still, { value: back, saving: false });
       render();
       onFailed();
       throw error;
@@ -1845,6 +1865,7 @@ export default function mount(thingport) {
     render();
     try {
       await write(key, () => shared.remove(key));
+      confirmed.delete(key);
     } catch (error) {
       if (!entries.some((other) => other.mine && other.key === key)) entries = [entry, ...entries];
       render();
@@ -2007,10 +2028,10 @@ export default function mount(thingport) {
     return [...seen.values()].map((brand) => `<option value="${escapeHtml(brand)}"></option>`).join("");
   }
 
-  function openDialog({ key = null, value = null, queue = [] } = {}) {
+  function openDialog({ key = null, value = null, queue = [], opener: given = null } = {}) {
     if (entries === null) return;
     closeMenu();
-    const opener = root.contains(document.activeElement) ? document.activeElement : null;
+    const opener = given ?? (root.contains(document.activeElement) ? document.activeElement : null);
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());
     dialog = { key, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
     fillDialog();
@@ -2023,6 +2044,8 @@ export default function mount(thingport) {
     const { opener } = dialog;
     dialog = null;
     veil.hidden = true;
+    const again = unsaved.shift();
+    if (again && !closed) return openDialog({ ...again, opener });
     (opener?.isConnected ? opener : $("add")).focus();
     if (due) refreshWhenIdle();
   }
@@ -2133,7 +2156,9 @@ export default function mount(thingport) {
     advance(value.brand);
     // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
     void putSpool(key, value, () => {
-      if (!dialog && !closed) openDialog({ key: editing, value });
+      if (closed) return;
+      if (dialog) unsaved.push({ key: editing, value });
+      else openDialog({ key: editing, value });
     });
   }
 

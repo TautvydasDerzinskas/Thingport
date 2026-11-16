@@ -325,8 +325,9 @@ export async function readAll(shared, options = {}, page = PAGE) {
   return all;
 }
 
-// What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each.
-const READ_FOR_MS = 2000;
+// What the parts of a page read, kept a moment: the tab and the badge draw at once, and share one read of each. Less
+// than the 1.5 s the page waits between looks at profiles filling in, so parts drawn again once they have read anew.
+const READ_FOR_MS = 1000;
 const reads = new Map();
 // A change already forgotten for: every part hears it, and the first to read again starts what the others share.
 let forgetting = false;

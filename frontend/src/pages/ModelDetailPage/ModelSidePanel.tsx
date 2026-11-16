@@ -126,6 +126,8 @@ type Props = {
   profileEntries?: ProfileEntry[] | null;
   /** How to show them: null while the setting loads, "off" as plain files. */
   profilesView?: PrintProfilesView | null;
+  /** Changes once the print profiles have filled in, for the tools' parts to be drawn again. */
+  partsRevision?: string;
   /** The file every action applies to, when the page keeps it (so the 3D preview opens on it too). */
   selectedKey?: string | null;
   onSelectKey?: (key: string) => void;
@@ -146,6 +148,7 @@ export default function ModelSidePanel({
   viewer,
   profileEntries,
   profilesView,
+  partsRevision,
   selectedKey: pageSelectedKey,
   onSelectKey,
   onPickedPlate,
@@ -462,6 +465,7 @@ export default function ModelSidePanel({
               place="info"
               modelId={print.id}
               fileId={selectedFile?.plate?.id ?? null}
+              revision={partsRevision}
               onUnauthorized={onUnauthorized}
             />
           ))}

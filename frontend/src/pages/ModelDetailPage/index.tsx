@@ -98,6 +98,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   );
   const [profilesView] = usePrintProfilesView();
   const { profiles, filling: profilesFilling } = usePrintProfiles(print, onUnauthorized);
+  // The tools' parts read the model's profiles, so they're drawn again once those have filled in.
+  const partsRevision = profilesFilling ? "filling" : "filled";
   const entries = useMemo(
     () => (print ? profileEntries(print.plates, profiles, profilesFilling) : []),
     [print, profiles, profilesFilling],
@@ -426,6 +428,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                       place="image"
                       modelId={print.id}
                       fileId={pickedPlateId}
+                      revision={partsRevision}
                       onUnauthorized={onUnauthorized}
                     />
                   ))}
@@ -528,6 +531,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   place="tab"
                   modelId={print.id}
                   fileId={pickedPlateId}
+                  revision={partsRevision}
                   onUnauthorized={onUnauthorized}
                 />
               ) : (
@@ -624,6 +628,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               viewer={viewer}
               profileEntries={entries}
               profilesView={profilesView}
+              partsRevision={partsRevision}
               selectedKey={selectedFileKey}
               onSelectKey={setSelectedFileKey}
               onPickedPlate={setPickedPlateId}

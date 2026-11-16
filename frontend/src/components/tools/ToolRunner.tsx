@@ -37,6 +37,9 @@ type Props = {
   /** Closes the window it runs in; the tool's `thingport.close()`. */
   onClose: () => void;
   onUnauthorized?: () => void;
+  /** What the page knows about the model, such as whether its print profiles are still filling in: run again when
+   *  it changes, so what's read from the model is current. */
+  revision?: string;
 };
 
 type ShownPopover = {
@@ -72,7 +75,7 @@ const ORIGINS = {
  * element. What it returns is called as its cleanup when the window closes or the part goes, the theme, the language,
  * the picked file or the script changes.
  */
-export default function ToolRunner({ tool, context, place, onClose, onUnauthorized }: Props) {
+export default function ToolRunner({ tool, context, place, onClose, onUnauthorized, revision }: Props) {
   const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
@@ -261,7 +264,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
     // The tool runs again when its code, the theme, the language or what it's on changes; the objects themselves are
     // rebuilt each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool.sha, tool.id, themeKey, language, rootId, contextKey, place]);
+  }, [tool.sha, tool.id, themeKey, language, rootId, contextKey, place, revision]);
 
   const [anchorOrigin, transformOrigin] = ORIGINS[popover?.placement ?? "bottom"];
   const popoverElement = popover && (

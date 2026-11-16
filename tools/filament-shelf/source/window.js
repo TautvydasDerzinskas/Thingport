@@ -78,6 +78,13 @@ export default function mount(thingport) {
   let needs = [];
   let menu = null;
   let dialog = null;
+  // Spools whose save failed while the dialog was on another, each brought back to try again once it closes.
+  const unsaved = [];
+  // The user's spools as last read or saved, which a failed save goes back to, and each key's latest save: only that
+  // one may put a card back, as an older one failing mustn't undo a newer one still saving.
+  const confirmed = new Map();
+  const latest = new Map();
+  let puts = 0;
   let closed = false;
   let reads = 0;
   // Writes going, and writes started or ended: a read either overlaps is dropped, and the one after them shows.
@@ -99,6 +106,8 @@ export default function mount(thingport) {
     ]);
     if (closed || read !== reads || pending || at !== writes) return;
     entries = spoolList;
+    confirmed.clear();
+    for (const entry of spoolList) if (entry.mine) confirmed.set(entry.key, entry.value);
     // A failed read of the edits keeps the last that worked: as none, an edit would read as the profile's list.
     if (needList) {
       needEntries = needList;
@@ -328,7 +337,8 @@ export default function mount(thingport) {
 
   const putSpool = safely(async (key, value, onFailed = () => {}) => {
     const existing = entries.find((entry) => entry.mine && entry.key === key);
-    const before = existing?.value;
+    const mine = ++puts;
+    latest.set(key, mine);
     if (existing) Object.assign(existing, { value, saving: true });
     else
       entries.unshift({
@@ -343,11 +353,14 @@ export default function mount(thingport) {
     render();
     try {
       await write(key, () => shared.set(key, value));
+      confirmed.set(key, value);
     } catch (error) {
-      if (before) {
-        const still = entries.find((entry) => entry.mine && entry.key === key);
-        if (still) Object.assign(still, { value: before, saving: false });
-      } else entries = entries.filter((entry) => !(entry.mine && entry.key === key));
+      // A newer save of it owns the card now; its own outcome decides what shows.
+      if (latest.get(key) !== mine) throw error;
+      const back = confirmed.get(key);
+      const still = entries.find((entry) => entry.mine && entry.key === key);
+      if (back === undefined) entries = entries.filter((entry) => !(entry.mine && entry.key === key));
+      else if (still) Object.assign(still, { value: back, saving: false });
       render();
       onFailed();
       throw error;
@@ -373,6 +386,7 @@ export default function mount(thingport) {
     render();
     try {
       await write(key, () => shared.remove(key));
+      confirmed.delete(key);
     } catch (error) {
       if (!entries.some((other) => other.mine && other.key === key)) entries = [entry, ...entries];
       render();
@@ -535,10 +549,10 @@ export default function mount(thingport) {
     return [...seen.values()].map((brand) => `<option value="${escapeHtml(brand)}"></option>`).join("");
   }
 
-  function openDialog({ key = null, value = null, queue = [] } = {}) {
+  function openDialog({ key = null, value = null, queue = [], opener: given = null } = {}) {
     if (entries === null) return;
     closeMenu();
-    const opener = root.contains(document.activeElement) ? document.activeElement : null;
+    const opener = given ?? (root.contains(document.activeElement) ? document.activeElement : null);
     const first = value ?? (queue.length ? prefillFor(queue[0]) : newSpool());
     dialog = { key, queue: [...queue], total: queue.length, opener, state: stateOf(first) };
     fillDialog();
@@ -551,6 +565,8 @@ export default function mount(thingport) {
     const { opener } = dialog;
     dialog = null;
     veil.hidden = true;
+    const again = unsaved.shift();
+    if (again && !closed) return openDialog({ ...again, opener });
     (opener?.isConnected ? opener : $("add")).focus();
     if (due) refreshWhenIdle();
   }
@@ -661,7 +677,9 @@ export default function mount(thingport) {
     advance(value.brand);
     // The form goes as the spool shows; should it not be saved, it comes back as it was sent, to try again.
     void putSpool(key, value, () => {
-      if (!dialog && !closed) openDialog({ key: editing, value });
+      if (closed) return;
+      if (dialog) unsaved.push({ key: editing, value });
+      else openDialog({ key: editing, value });
     });
   }
 

@@ -142,6 +142,7 @@
   "tab.profile": "Print profile",
   "tab.reset": "Reset to profile",
   "tab.retry": "Try again",
+  "tab.stale": "Couldn't read the filaments again, so this may be out of date: {error}",
   "toast.failed": "Couldn't save that: {error}",
   "usedUp.message": "It comes off your shelf.",
   "usedUp.title": "Used up {name}?"

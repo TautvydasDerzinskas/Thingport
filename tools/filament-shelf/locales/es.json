@@ -149,6 +149,7 @@
   "tab.profile": "Perfil de impresión",
   "tab.reset": "Volver al perfil",
   "tab.retry": "Reintentar",
+  "tab.stale": "No se pudieron volver a leer los filamentos, así que esto puede estar desactualizado: {error}",
   "toast.failed": "No se pudo guardar: {error}",
   "usedUp.message": "Sale de tu estantería.",
   "usedUp.title": "¿Se gastó {name}?"

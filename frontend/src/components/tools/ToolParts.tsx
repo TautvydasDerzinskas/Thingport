@@ -28,6 +28,8 @@ type PartProps = {
   modelId: string;
   /** The file picked on the page; the part is drawn again when it changes. */
   fileId: string | null;
+  /** Drawn again when it changes too: whether the model's print profiles are still filling in. */
+  revision?: string;
   onUnauthorized?: () => void;
 };
 
@@ -37,7 +39,7 @@ const noClose = () => undefined;
  * A tool's part of a model's page: an empty element its script draws into. Nothing shows until it does, and nothing at
  * all while it draws nothing, so a tool can leave a model it has nothing to say about alone.
  */
-export function ToolPart({ tool, place, modelId, fileId, onUnauthorized }: PartProps) {
+export function ToolPart({ tool, place, modelId, fileId, revision, onUnauthorized }: PartProps) {
   const context = useMemo(() => ({ modelId, ...(fileId ? { fileId } : {}) }), [modelId, fileId]);
   return (
     <Box
@@ -50,7 +52,14 @@ export function ToolPart({ tool, place, modelId, fileId, onUnauthorized }: PartP
       }}
     >
       <Suspense fallback={null}>
-        <ToolRunner tool={tool} place={place} context={context} onClose={noClose} onUnauthorized={onUnauthorized} />
+        <ToolRunner
+          tool={tool}
+          place={place}
+          context={context}
+          revision={revision}
+          onClose={noClose}
+          onUnauthorized={onUnauthorized}
+        />
       </Suspense>
     </Box>
   );

@@ -135,6 +135,7 @@
   "tab.profile": "打印配置",
   "tab.reset": "恢复为配置",
   "tab.retry": "重试",
+  "tab.stale": "无法重新读取耗材，内容可能已过时：{error}",
   "toast.failed": "无法保存：{error}",
   "usedUp.message": "它会从你的耗材架上移除。",
   "usedUp.title": "{name} 用完了？"

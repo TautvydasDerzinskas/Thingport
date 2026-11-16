@@ -73,6 +73,8 @@ const TAB_CSS = `
 .fs-skel-row .fs-skel { height: 12px; }
 .fs-skel-row .fs-skel:first-child { height: 18px; border-radius: 50% !important; }
 .fs-problem { display: flex; align-items: center; gap: 10px; color: var(--tp-error); font-size: 12.5px; }
+.fs-problem.fs-stale { margin: 4px 0 8px; }
+.fs-problem > span { flex: 1; }
 `;
 
 const MATERIAL_SUGGESTIONS = [
@@ -258,7 +260,11 @@ export function modelTab(thingport) {
           ? `<datalist id="${materialsId}">${MATERIAL_SUGGESTIONS.map((name) => `<option value="${name}"></option>`).join("")}</datalist>
              <div class="fs-actions"><button type="button" class="fs-btn fs-quiet fs-small" data-act="cancel"${saving ? " disabled" : ""}>${escapeHtml(t("edit.cancel"))}</button><button type="button" class="fs-btn fs-primary fs-small" data-act="save"${saving ? " disabled" : ""}>${escapeHtml(t("edit.save"))}</button></div>`
           : "");
-    box.innerHTML = toolbar() + body + (needs.length ? together(match) : "");
+    // Read before, then not since: what was read stays, said to be maybe out of date, with a way to read again.
+    const stale = problem
+      ? `<div class="fs-problem fs-stale" role="alert">${icon("warn")}<span>${escapeHtml(t("tab.stale", { error: problem }))}</span><button type="button" class="fs-btn fs-small" data-act="retry">${escapeHtml(t("tab.retry"))}</button></div>`
+      : "";
+    box.innerHTML = toolbar() + stale + body + (needs.length ? together(match) : "");
     // While a save goes, the rows are what it sends: nothing in them changes until it's done.
     if (saving) for (const control of box.querySelectorAll(".fs-grid input, .fs-grid button")) control.disabled = true;
   }

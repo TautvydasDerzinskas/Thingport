@@ -149,6 +149,7 @@
   "tab.profile": "Profil d’impression",
   "tab.reset": "Revenir au profil",
   "tab.retry": "Réessayer",
+  "tab.stale": "Impossible de relire les filaments, ceci n'est peut-être plus à jour : {error}",
   "toast.failed": "Enregistrement impossible : {error}",
   "usedUp.message": "Elle quitte votre étagère.",
   "usedUp.title": "{name} est terminée ?"

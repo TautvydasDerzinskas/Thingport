@@ -144,6 +144,7 @@
   "tab.profile": "Spausdinimo profilis",
   "tab.reset": "Grąžinti profilio",
   "tab.retry": "Bandyti dar kartą",
+  "tab.stale": "Nepavyko dar kartą perskaityti gijų, todėl tai gali būti pasenę: {error}",
   "toast.failed": "Nepavyko įrašyti: {error}",
   "usedUp.message": "Ji dings iš jūsų lentynos.",
   "usedUp.title": "„{name}“ sunaudota?"
