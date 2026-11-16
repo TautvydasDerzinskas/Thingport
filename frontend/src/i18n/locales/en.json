@@ -3821,7 +3821,8 @@
         "everyoneHint": "Everyone who can use tools here sees what you share in it.",
         "picked_one": "Shared with {{count}} person",
         "picked_other": "Shared with {{count}} people",
-        "onlyYou": "Nobody picked yet, so only you see it."
+        "onlyYou": "Nobody picked yet, so only you see it.",
+        "loadFailed": "Couldn't read whom this reaches, so it can't be changed yet."
       },
       "info": {
         "you": "You",

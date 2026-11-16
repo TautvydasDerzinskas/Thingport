@@ -4000,7 +4000,8 @@
         "picked_one": "Partagé avec {{count}} personne",
         "picked_many": "Partagé avec {{count}} personnes",
         "picked_other": "Partagé avec {{count}} personnes",
-        "onlyYou": "Personne n’est encore choisi : vous seul le voyez."
+        "onlyYou": "Personne n’est encore choisi : vous seul le voyez.",
+        "loadFailed": "Impossible de lire qui le voit : il ne peut pas encore être modifié."
       },
       "info": {
         "you": "Vous",

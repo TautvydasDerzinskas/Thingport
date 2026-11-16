@@ -3987,7 +3987,8 @@
         "picked_one": "Compartido con {{count}} persona",
         "picked_many": "Compartido con {{count}} personas",
         "picked_other": "Compartido con {{count}} personas",
-        "onlyYou": "Aún no has elegido a nadie, así que solo lo ves tú."
+        "onlyYou": "Aún no has elegido a nadie, así que solo lo ves tú.",
+        "loadFailed": "No se pudo leer a quién llega, así que aún no se puede cambiar."
       },
       "info": {
         "you": "Tú",
