@@ -12,13 +12,12 @@ import { useToast } from "../ToastProvider";
 import { commandsFor, type CommandFile, type OfferedCommand } from "./toolCommands";
 import type { SdkAudience } from "../../sdk/types";
 import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
+import { useAskQueue } from "./useAskQueue";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
 const CollectionPickerDialog = lazy(() => import("./CollectionPickerDialog"));
 const ToolShareDialog = lazy(() => import("./ToolShareDialog"));
-
-type Picker = { title?: string; resolve: (picked: ToolCollection | null) => void };
 
 /**
  * The tools' commands for a model and the file picked on its page, and what runs one: its tool's window opens on the
@@ -44,11 +43,8 @@ export function useToolCommands(
   const confirm = useConfirm();
   const language = matchLanguage(i18n.language);
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
-  const [picker, setPicker] = useState<Picker | null>(null);
-  const [share, setShare] = useState<{
-    tool: { id: string; name: string };
-    resolve: (audience: SdkAudience | null) => void;
-  } | null>(null);
+  const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
+  const shares = useAskQueue<{ tool: { id: string; name: string } }, SdkAudience | null>();
 
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
@@ -84,12 +80,11 @@ export function useToolCommands(
               confirmLabel: options.confirmLabel,
               destructive: options.destructive,
             })) === true,
-          pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+          pickCollection: (options) => picks.ask({ title: options?.title }),
           openModel,
           close: () => undefined,
         },
-        pickAudience: () =>
-          new Promise((resolve) => setShare({ tool: { id: tool.id ?? "", name: tool.manifest.name }, resolve })),
+        pickAudience: () => shares.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });
       const module = await loadToolModule(tool);
       if (typeof module.run !== "function") throw new Error(t("tools.runner.noRun"));
@@ -117,7 +112,7 @@ export function useToolCommands(
   };
 
   const element =
-    open || picker || share ? (
+    open || picks.shown || shares.shown ? (
       <Suspense fallback={null}>
         {open && (
           <ToolWindow
@@ -127,25 +122,22 @@ export function useToolCommands(
             onUnauthorized={onUnauthorized}
           />
         )}
-        {picker && (
+        {picks.shown && (
           <CollectionPickerDialog
-            open
-            title={picker.title}
+            key={picks.shown.id}
+            open={picks.open}
+            title={picks.shown.title}
             onUnauthorized={onUnauthorized}
-            onClose={(picked) => {
-              picker.resolve(picked);
-              setPicker(null);
-            }}
+            onClose={picks.answer}
           />
         )}
-        {share && (
+        {shares.shown && (
           <ToolShareDialog
-            tool={share.tool}
+            key={`share-${shares.shown.id}`}
+            open={shares.open}
+            tool={shares.shown.tool}
             onUnauthorized={onUnauthorized}
-            onClose={(audience) => {
-              share.resolve(audience);
-              setShare(null);
-            }}
+            onClose={shares.answer}
           />
         )}
       </Suspense>

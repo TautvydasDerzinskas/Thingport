@@ -13,6 +13,7 @@ import type { SdkAudience } from "../../sdk/types";
 import { sdkTheme, setThemeVariables } from "../../sdk/theme";
 import { buildToolSdk, type RunnableTool, type ToolCollection, type ToolContext, type ToolTheme } from "./toolSdk";
 import { loadToolModule } from "./toolModule";
+import { useAskQueue } from "./useAskQueue";
 import { scriptToast } from "../../sdk/toast";
 import { SUPPORTED_LANGUAGES, matchLanguage } from "../../constants/languages";
 
@@ -38,10 +39,8 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
   const confirm = useConfirm();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [picker, setPicker] = useState<{ title?: string; resolve: (picked: ToolCollection | null) => void } | null>(
-    null,
-  );
-  const [share, setShare] = useState<{ resolve: (audience: SdkAudience | null) => void } | null>(null);
+  const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
+  const shares = useAskQueue<object, SdkAudience | null>();
   const rootId = `tp-tool-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const theme: ToolTheme = sdkTheme(muiTheme);
   const themeKey = JSON.stringify(theme);
@@ -103,11 +102,11 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
             confirmLabel: options.confirmLabel,
             destructive: options.destructive,
           })) === true,
-        pickCollection: (options) => new Promise((resolve) => setPicker({ title: options?.title, resolve })),
+        pickCollection: (options) => picks.ask({ title: options?.title }),
         openModel,
         close: () => latest.current.onClose(),
       },
-      pickAudience: () => new Promise((resolve) => setShare({ resolve })),
+      pickAudience: () => shares.ask({}),
     });
 
     void (async () => {
@@ -171,21 +170,18 @@ export default function ToolRunner({ tool, context, onClose, onUnauthorized }: P
         </Box>
       )}
       <CollectionPickerDialog
-        open={Boolean(picker)}
-        title={picker?.title}
+        key={picks.shown?.id ?? 0}
+        open={picks.open}
+        title={picks.shown?.title}
         onUnauthorized={onUnauthorized}
-        onClose={(picked) => {
-          picker?.resolve(picked);
-          setPicker(null);
-        }}
+        onClose={picks.answer}
       />
       <ToolShareDialog
-        tool={share && tool.id ? { id: tool.id, name: tool.manifest.name } : null}
+        key={`share-${shares.shown?.id ?? 0}`}
+        open={shares.open}
+        tool={tool.id ? { id: tool.id, name: tool.manifest.name } : null}
         onUnauthorized={onUnauthorized}
-        onClose={(audience) => {
-          share?.resolve(audience);
-          setShare(null);
-        }}
+        onClose={shares.answer}
       />
     </Box>
   );

@@ -54,9 +54,9 @@ const options = (ids: string[]): MigrateOptions => ({
   secrets: true,
 });
 
-async function merge(ids: string[], files: SourceFiles = noFiles().files) {
+async function merge(ids: string[], files: SourceFiles = noFiles().files, more: Partial<MigrateOptions> = {}) {
   const runId = `merge${crypto.randomBytes(6).toString("hex")}`;
-  const report = await new Merge(source, files, runId, options(ids), () => undefined).run();
+  const report = await new Merge(source, files, runId, { ...options(ids), ...more }, () => undefined).run();
   return report;
 }
 
@@ -280,5 +280,44 @@ describe("merging a working copy", () => {
     expect((await merge([jo.sourceId])).models).toMatchObject({ brought: 1, earlier: 1 });
     expect((await prisma.print.findUniqueOrThrow({ where: { id: copy } })).copiedFromId).toBe(original);
     await hereIdOf(jo.email);
+  });
+
+  it("has whom someone's tool entries reach in place before the entries come", async () => {
+    const kit = await person("kit");
+    const toolId = `tool${tag}`;
+    await source.tool.create({
+      data: {
+        id: toolId,
+        source: "own",
+        scope: kit.sourceId,
+        slug: `queue-${tag}`,
+        userId: kit.sourceId,
+        manifest: { name: "Queue" },
+        script: "export default () => {}",
+        sha: "x",
+      },
+    });
+    await source.toolSharedData.create({
+      data: { toolId, userId: kit.sourceId, key: "job:1", value: { n: 1 }, size: 7 },
+    });
+    // Kept to nobody but themselves.
+    await source.toolAudience.create({ data: { toolId, userId: kit.sourceId, userIds: [] } });
+    const createMany = prisma.toolSharedData.createMany.bind(prisma.toolSharedData);
+    let audienceThen: number | null = null;
+    const spy = vi.spyOn(prisma.toolSharedData, "createMany").mockImplementation((async (args: never) => {
+      audienceThen = await prisma.toolAudience.count({ where: { toolId } });
+      return createMany(args);
+    }) as never);
+    try {
+      expect((await merge([kit.sourceId], noFiles().files, { tools: true })).failures).toEqual([]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(audienceThen).toBe(1);
+    const here = await hereIdOf(kit.email);
+    expect(await prisma.toolSharedData.count({ where: { toolId, userId: here } })).toBe(1);
+    expect(await prisma.toolAudience.findUnique({ where: { toolId_userId: { toolId, userId: here } } })).toMatchObject({
+      userIds: [],
+    });
   });
 });

@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clashes, columns, isJob, listNames, moved, newId, newJob, people, summaryOf } from "./queue.js";
+import { clashes, columns, isJob, listNames, moved, newId, newJob, people, summaryOf, writesInTurn } from "./queue.js";
 
 const dad = { id: "dad", name: "Dad", avatarUrl: null };
 const mum = { id: "mum", name: "Mum", avatarUrl: null };
@@ -114,4 +114,26 @@ test("ids differ without crypto.randomUUID", () => {
     newId(36, () => 0.5),
     "10i",
   );
+});
+
+test("writes to one entry land in the order they were made, after a failed one too", async () => {
+  const inTurn = writesInTurn();
+  const stored = [];
+  const later =
+    (ms, value, fail = false) =>
+    () =>
+      new Promise((resolve, reject) =>
+        setTimeout(() => (fail ? reject(new Error("offline")) : resolve(stored.push(value))), ms),
+      );
+  const first = inTurn("job:1", later(30, "printing"));
+  const failed = inTurn("job:1", later(1, "printed", true));
+  const last = inTurn("job:1", later(1, "failed"));
+  // Another entry doesn't wait for this one's.
+  const other = inTurn("job:2", later(1, "other"));
+  await other;
+  assert.deepEqual(stored, ["other"]);
+  await first;
+  await assert.rejects(failed, /offline/);
+  await last;
+  assert.deepEqual(stored, ["other", "printing", "failed"]);
 });

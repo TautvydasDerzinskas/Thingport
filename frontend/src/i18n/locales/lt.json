@@ -4209,7 +4209,8 @@
         "picked_few": "Bendrinama su {{count}} žmonėmis",
         "picked_many": "Bendrinama su {{count}} žmonių",
         "picked_other": "Bendrinama su {{count}} žmonių",
-        "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs."
+        "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs.",
+        "loadFailed": "Nepavyko perskaityti, kas tai mato, todėl kol kas negalima to pakeisti."
       },
       "info": {
         "you": "Jūs",

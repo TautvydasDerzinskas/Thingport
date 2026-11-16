@@ -1729,10 +1729,13 @@ export default async function mount(thingport) {
   if (command === "estimate" && modelId) {
     void safely(async () => {
       const model = await models.get(modelId);
-      const file =
-        model.files.find((candidate) => candidate.id === fileId) ??
-        model.files.find((candidate) => isMeshFile(candidate.name) || isSlicedName(candidate.name));
-      if (!file || closed) return;
+      // Only the file picked there: measuring another in its place would be a wrong answer.
+      const file = fileId
+        ? model.files.find((candidate) => candidate.id === fileId)
+        : model.files.find((candidate) => isMeshFile(candidate.name) || isSlicedName(candidate.name));
+      if (closed) return;
+      if (!file && fileId) throw new Error(t("library.fileGone", { model: model.name }));
+      if (!file) return;
       add([
         {
           name: file.name,

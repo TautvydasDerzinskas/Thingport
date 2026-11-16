@@ -60,6 +60,7 @@
   "kind.mesh": "Tinklelis",
   "kind.sliced": "Supjaustyta",
   "library.close": "Užverti biblioteką",
+  "library.fileGone": "Pasirinkto failo modelyje „{model}“ nebėra",
   "library.hint": "Pasirinkite failą, kad jį išmatuotumėte. Supjaustytas failas atsineša pjaustyklės laiką ir svorį.",
   "library.noMatch": "Nieko, kas atitiktų „{query}“ ir turėtų tinkamą failą.",
   "library.none": "Kol kas nėra modelių su STL, OBJ, 3MF ar supjaustytu failu.",
