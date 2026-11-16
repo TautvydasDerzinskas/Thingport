@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -117,6 +117,11 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
   const reasonText = useSendReason();
   const [draft, setDraft] = useState<Draft>(() => draftOf(target, kind, defaultName));
   const [saving, setSaving] = useState(false);
+  // Kept from changes while a save goes, so what's saved is what's shown when the editor closes on it.
+  const fieldsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    fieldsRef.current?.toggleAttribute("inert", saving);
+  }, [saving]);
   const [error, setError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   // What a test came to, shown while the settings are still the ones it tested.
@@ -191,330 +196,340 @@ export default function SendTargetEditor({ target, kind, defaultName, onSaved, o
 
   return (
     <Stack spacing={1.75} sx={{ pt: 0.5 }}>
-      <TextField
-        size="small"
-        label={k("name")}
-        value={draft.name}
-        onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-        inputProps={{ maxLength: 60 }}
-      />
+      <Stack
+        ref={fieldsRef}
+        spacing={1.75}
+        sx={{
+          opacity: saving ? 0.6 : 1,
+          transition: "opacity 150ms",
+          "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+        }}
+      >
+        <TextField
+          size="small"
+          label={k("name")}
+          value={draft.name}
+          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+          inputProps={{ maxLength: 60 }}
+        />
 
-      {how.type === "preset" && (
-        <>
-          <TextField
-            size="small"
-            label={info.group === "webhooks" ? k("webhook") : k("address")}
-            placeholder={info.example}
-            value={how.address}
-            onChange={(e) => setPreset({ address: e.target.value })}
-            InputProps={{ sx: mono }}
-          />
-          {info.apiKey && (
-            <Box>
-              <TextField
-                size="small"
-                fullWidth
-                type="password"
-                autoComplete="off"
-                label={k("apiKey")}
-                value={draft.apiKey}
-                onChange={(e) => setDraft((d) => ({ ...d, apiKey: e.target.value, clearKey: false }))}
-                placeholder={target?.secrets.api_key && !draft.clearKey ? k("stored") : undefined}
-                helperText={
-                  target?.secrets.api_key && !draft.clearKey
-                    ? k("apiKeyStored")
-                    : info.apiKey === "optional"
-                      ? k("apiKeyOptional")
-                      : undefined
-                }
-              />
-              {target?.secrets.api_key && !draft.clearKey && (
-                <Button
-                  size="small"
-                  color="inherit"
-                  onClick={() => setDraft((d) => ({ ...d, apiKey: "", clearKey: true }))}
-                  sx={{ mt: 0.25, color: "text.secondary" }}
-                >
-                  {k("apiKeyRemove")}
-                </Button>
-              )}
-            </Box>
-          )}
-          {info.group === "printers" && (
-            <Box>
-              {label(k("after"))}
-              <Segmented
-                label={k("after")}
-                value={how.start ? "print" : "upload"}
-                onChange={(value) => setPreset({ start: value === "print" })}
-                options={[
-                  { value: "upload", label: k("justUpload") },
-                  { value: "print", label: k("startPrinting") },
-                ]}
-                fullWidth
-              />
-            </Box>
-          )}
-        </>
-      )}
-
-      {how.type === "link" && (
-        <>
-          <Box>
+        {how.type === "preset" && (
+          <>
             <TextField
               size="small"
-              fullWidth
-              label={k("url")}
+              label={info.group === "webhooks" ? k("webhook") : k("address")}
               placeholder={info.example}
-              value={how.url}
-              onChange={(e) => setLink({ url: e.target.value })}
+              value={how.address}
+              onChange={(e) => setPreset({ address: e.target.value })}
               InputProps={{ sx: mono }}
             />
-            {placeholderChips((name) => setLink({ url: `${how.url}${name}` }))}
-          </Box>
-          <Box>
-            {label(k("opens"), k("opensHelp"))}
-            <Segmented
-              label={k("opens")}
-              value={how.open}
-              onChange={(open) => setLink({ open })}
-              options={[
-                { value: "new", label: k("newTab") },
-                { value: "named", label: k("namedTab") },
-                { value: "same", label: k("sameTab") },
-              ]}
-              fullWidth
-            />
-          </Box>
-          {how.open === "named" && (
-            <TextField
-              size="small"
-              label={k("tabName")}
-              placeholder="thingport"
-              value={how.tab ?? ""}
-              onChange={(e) => setLink({ tab: e.target.value })}
-            />
-          )}
-        </>
-      )}
+            {info.apiKey && (
+              <Box>
+                <TextField
+                  size="small"
+                  fullWidth
+                  type="password"
+                  autoComplete="off"
+                  label={k("apiKey")}
+                  value={draft.apiKey}
+                  onChange={(e) => setDraft((d) => ({ ...d, apiKey: e.target.value, clearKey: false }))}
+                  placeholder={target?.secrets.api_key && !draft.clearKey ? k("stored") : undefined}
+                  helperText={
+                    target?.secrets.api_key && !draft.clearKey
+                      ? k("apiKeyStored")
+                      : info.apiKey === "optional"
+                        ? k("apiKeyOptional")
+                        : undefined
+                  }
+                />
+                {target?.secrets.api_key && !draft.clearKey && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => setDraft((d) => ({ ...d, apiKey: "", clearKey: true }))}
+                    sx={{ mt: 0.25, color: "text.secondary" }}
+                  >
+                    {k("apiKeyRemove")}
+                  </Button>
+                )}
+              </Box>
+            )}
+            {info.group === "printers" && (
+              <Box>
+                {label(k("after"))}
+                <Segmented
+                  label={k("after")}
+                  value={how.start ? "print" : "upload"}
+                  onChange={(value) => setPreset({ start: value === "print" })}
+                  options={[
+                    { value: "upload", label: k("justUpload") },
+                    { value: "print", label: k("startPrinting") },
+                  ]}
+                  fullWidth
+                />
+              </Box>
+            )}
+          </>
+        )}
 
-      {how.type === "request" && (
-        <>
-          <Box>
-            <Stack direction="row" spacing={1}>
-              <TextField
-                select
-                size="small"
-                label={k("method")}
-                value={how.method}
-                onChange={(e) => setRequest({ method: e.target.value as RequestHow["method"] })}
-                sx={{ width: 104, flexShrink: 0 }}
-              >
-                <MenuItem value="POST">POST</MenuItem>
-                <MenuItem value="PUT">PUT</MenuItem>
-              </TextField>
+        {how.type === "link" && (
+          <>
+            <Box>
               <TextField
                 size="small"
                 fullWidth
                 label={k("url")}
                 placeholder={info.example}
                 value={how.url}
-                onChange={(e) => setRequest({ url: e.target.value })}
+                onChange={(e) => setLink({ url: e.target.value })}
                 InputProps={{ sx: mono }}
               />
-            </Stack>
-            {placeholderChips((name) => setRequest({ url: `${how.url}${name}` }))}
-          </Box>
-          <Box>
-            {label(k("send"), k("sendHelp"))}
-            <Segmented
-              label={k("send")}
-              value={how.body}
-              onChange={(body) => setRequest({ body })}
-              options={[
-                { value: "multipart", label: k("multipart") },
-                { value: "raw", label: k("raw") },
-                { value: "json", label: k("json") },
-              ]}
-              fullWidth
-            />
-          </Box>
-          {how.body === "multipart" && (
+              {placeholderChips((name) => setLink({ url: `${how.url}${name}` }))}
+            </Box>
             <Box>
-              {label(k("formFields"))}
-              <Stack spacing={1}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <TextField
-                    size="small"
-                    label={k("fileField")}
-                    value={how.fileField}
-                    onChange={(e) => setRequest({ fileField: e.target.value })}
-                    sx={{ width: 160 }}
-                    InputProps={{ sx: mono }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {k("fileFieldHint")}
-                  </Typography>
-                </Stack>
-                {how.fields.map((field, index) => (
-                  <Stack key={rowIds.fields[index]} direction="row" spacing={1} alignItems="center">
+              {label(k("opens"), k("opensHelp"))}
+              <Segmented
+                label={k("opens")}
+                value={how.open}
+                onChange={(open) => setLink({ open })}
+                options={[
+                  { value: "new", label: k("newTab") },
+                  { value: "named", label: k("namedTab") },
+                  { value: "same", label: k("sameTab") },
+                ]}
+                fullWidth
+              />
+            </Box>
+            {how.open === "named" && (
+              <TextField
+                size="small"
+                label={k("tabName")}
+                placeholder="thingport"
+                value={how.tab ?? ""}
+                onChange={(e) => setLink({ tab: e.target.value })}
+              />
+            )}
+          </>
+        )}
+
+        {how.type === "request" && (
+          <>
+            <Box>
+              <Stack direction="row" spacing={1}>
+                <TextField
+                  select
+                  size="small"
+                  label={k("method")}
+                  value={how.method}
+                  onChange={(e) => setRequest({ method: e.target.value as RequestHow["method"] })}
+                  sx={{ width: 104, flexShrink: 0 }}
+                >
+                  <MenuItem value="POST">POST</MenuItem>
+                  <MenuItem value="PUT">PUT</MenuItem>
+                </TextField>
+                <TextField
+                  size="small"
+                  fullWidth
+                  label={k("url")}
+                  placeholder={info.example}
+                  value={how.url}
+                  onChange={(e) => setRequest({ url: e.target.value })}
+                  InputProps={{ sx: mono }}
+                />
+              </Stack>
+              {placeholderChips((name) => setRequest({ url: `${how.url}${name}` }))}
+            </Box>
+            <Box>
+              {label(k("send"), k("sendHelp"))}
+              <Segmented
+                label={k("send")}
+                value={how.body}
+                onChange={(body) => setRequest({ body })}
+                options={[
+                  { value: "multipart", label: k("multipart") },
+                  { value: "raw", label: k("raw") },
+                  { value: "json", label: k("json") },
+                ]}
+                fullWidth
+              />
+            </Box>
+            {how.body === "multipart" && (
+              <Box>
+                {label(k("formFields"))}
+                <Stack spacing={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
                     <TextField
                       size="small"
-                      label={k("fieldName")}
-                      value={field.name}
-                      onChange={(e) =>
-                        setRequest({
-                          fields: how.fields.map((f, i) => (i === index ? { ...f, name: e.target.value } : f)),
-                        })
-                      }
+                      label={k("fileField")}
+                      value={how.fileField}
+                      onChange={(e) => setRequest({ fileField: e.target.value })}
                       sx={{ width: 160 }}
                       InputProps={{ sx: mono }}
                     />
-                    <TextField
-                      size="small"
-                      fullWidth
-                      label={k("fieldValue")}
-                      value={field.value}
-                      onChange={(e) =>
-                        setRequest({
-                          fields: how.fields.map((f, i) => (i === index ? { ...f, value: e.target.value } : f)),
-                        })
-                      }
-                      InputProps={{ sx: mono }}
-                    />
-                    <Tooltip title={k("remove")}>
-                      <IconButton
-                        size="small"
-                        aria-label={k("remove")}
-                        onClick={() => {
-                          setRequest({ fields: how.fields.filter((_, i) => i !== index) });
-                          setRowIds((ids) => ({ ...ids, fields: ids.fields.filter((_, i) => i !== index) }));
-                        }}
-                      >
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Typography variant="caption" color="text.secondary">
+                      {k("fileFieldHint")}
+                    </Typography>
                   </Stack>
-                ))}
+                  {how.fields.map((field, index) => (
+                    <Stack key={rowIds.fields[index]} direction="row" spacing={1} alignItems="center">
+                      <TextField
+                        size="small"
+                        label={k("fieldName")}
+                        value={field.name}
+                        onChange={(e) =>
+                          setRequest({
+                            fields: how.fields.map((f, i) => (i === index ? { ...f, name: e.target.value } : f)),
+                          })
+                        }
+                        sx={{ width: 160 }}
+                        InputProps={{ sx: mono }}
+                      />
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label={k("fieldValue")}
+                        value={field.value}
+                        onChange={(e) =>
+                          setRequest({
+                            fields: how.fields.map((f, i) => (i === index ? { ...f, value: e.target.value } : f)),
+                          })
+                        }
+                        InputProps={{ sx: mono }}
+                      />
+                      <Tooltip title={k("remove")}>
+                        <IconButton
+                          size="small"
+                          aria-label={k("remove")}
+                          onClick={() => {
+                            setRequest({ fields: how.fields.filter((_, i) => i !== index) });
+                            setRowIds((ids) => ({ ...ids, fields: ids.fields.filter((_, i) => i !== index) }));
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  ))}
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      setRequest({ fields: [...how.fields, { name: "", value: "" }] });
+                      setRowIds((ids) => ({ ...ids, fields: [...ids.fields, newLocalId()] }));
+                    }}
+                    sx={{ alignSelf: "flex-start" }}
+                  >
+                    {k("addField")}
+                  </Button>
+                </Stack>
+              </Box>
+            )}
+            <Box>
+              {label(k("headers"), k("headersHelp"))}
+              <Stack spacing={1}>
+                {how.headers.map((header, index) => {
+                  const stored = header.secret && Boolean(target?.secrets.headers.includes(header.name));
+                  const change = (next: Partial<typeof header>) =>
+                    setRequest({ headers: how.headers.map((h, i) => (i === index ? { ...h, ...next } : h)) });
+                  return (
+                    <Stack key={rowIds.headers[index]} direction="row" spacing={1} alignItems="center">
+                      <TextField
+                        size="small"
+                        label={k("headerName")}
+                        value={header.name}
+                        onChange={(e) => change({ name: e.target.value })}
+                        sx={{ width: 160 }}
+                        InputProps={{ sx: mono }}
+                      />
+                      <TextField
+                        size="small"
+                        fullWidth
+                        type={header.secret ? "password" : "text"}
+                        autoComplete="off"
+                        label={k("headerValue")}
+                        value={header.value ?? ""}
+                        placeholder={stored ? k("stored") : undefined}
+                        onChange={(e) => change({ value: e.target.value })}
+                        InputProps={{ sx: mono }}
+                      />
+                      <Tooltip title={k("secretHelp")}>
+                        <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
+                          <Switch
+                            size="small"
+                            checked={header.secret}
+                            onChange={(e) => change({ secret: e.target.checked })}
+                            inputProps={{ "aria-label": k("secret") }}
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {k("secret")}
+                          </Typography>
+                        </Stack>
+                      </Tooltip>
+                      <Tooltip title={k("remove")}>
+                        <IconButton
+                          size="small"
+                          aria-label={k("remove")}
+                          onClick={() => {
+                            setRequest({ headers: how.headers.filter((_, i) => i !== index) });
+                            setRowIds((ids) => ({ ...ids, headers: ids.headers.filter((_, i) => i !== index) }));
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  );
+                })}
                 <Button
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={() => {
-                    setRequest({ fields: [...how.fields, { name: "", value: "" }] });
-                    setRowIds((ids) => ({ ...ids, fields: [...ids.fields, newLocalId()] }));
+                    setRequest({ headers: [...how.headers, { name: "", secret: false, value: "" }] });
+                    setRowIds((ids) => ({ ...ids, headers: [...ids.headers, newLocalId()] }));
                   }}
                   sx={{ alignSelf: "flex-start" }}
                 >
-                  {k("addField")}
+                  {k("addHeader")}
                 </Button>
               </Stack>
             </Box>
-          )}
-          <Box>
-            {label(k("headers"), k("headersHelp"))}
-            <Stack spacing={1}>
-              {how.headers.map((header, index) => {
-                const stored = header.secret && Boolean(target?.secrets.headers.includes(header.name));
-                const change = (next: Partial<typeof header>) =>
-                  setRequest({ headers: how.headers.map((h, i) => (i === index ? { ...h, ...next } : h)) });
-                return (
-                  <Stack key={rowIds.headers[index]} direction="row" spacing={1} alignItems="center">
-                    <TextField
-                      size="small"
-                      label={k("headerName")}
-                      value={header.name}
-                      onChange={(e) => change({ name: e.target.value })}
-                      sx={{ width: 160 }}
-                      InputProps={{ sx: mono }}
-                    />
-                    <TextField
-                      size="small"
-                      fullWidth
-                      type={header.secret ? "password" : "text"}
-                      autoComplete="off"
-                      label={k("headerValue")}
-                      value={header.value ?? ""}
-                      placeholder={stored ? k("stored") : undefined}
-                      onChange={(e) => change({ value: e.target.value })}
-                      InputProps={{ sx: mono }}
-                    />
-                    <Tooltip title={k("secretHelp")}>
-                      <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
-                        <Switch
-                          size="small"
-                          checked={header.secret}
-                          onChange={(e) => change({ secret: e.target.checked })}
-                          inputProps={{ "aria-label": k("secret") }}
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          {k("secret")}
-                        </Typography>
-                      </Stack>
-                    </Tooltip>
-                    <Tooltip title={k("remove")}>
-                      <IconButton
-                        size="small"
-                        aria-label={k("remove")}
-                        onClick={() => {
-                          setRequest({ headers: how.headers.filter((_, i) => i !== index) });
-                          setRowIds((ids) => ({ ...ids, headers: ids.headers.filter((_, i) => i !== index) }));
-                        }}
-                      >
-                        <CloseIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                );
-              })}
-              <Button
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setRequest({ headers: [...how.headers, { name: "", secret: false, value: "" }] });
-                  setRowIds((ids) => ({ ...ids, headers: [...ids.headers, newLocalId()] }));
-                }}
-                sx={{ alignSelf: "flex-start" }}
-              >
-                {k("addHeader")}
-              </Button>
-            </Stack>
-          </Box>
-          <TextField
-            size="small"
-            label={k("thenOpen")}
-            placeholder="http://printer.local"
-            helperText={k("thenOpenHelp")}
-            value={how.thenOpen ?? ""}
-            onChange={(e) => setRequest({ thenOpen: e.target.value })}
-            InputProps={{ sx: mono }}
-          />
-        </>
-      )}
+            <TextField
+              size="small"
+              label={k("thenOpen")}
+              placeholder="http://printer.local"
+              helperText={k("thenOpenHelp")}
+              value={how.thenOpen ?? ""}
+              onChange={(e) => setRequest({ thenOpen: e.target.value })}
+              InputProps={{ sx: mono }}
+            />
+          </>
+        )}
 
-      <Box>
-        {label(k("fileTypes"), k("fileTypesHelp"))}
-        <TagInput
-          value={draft.fileTypes}
-          onChange={(fileTypes) => setDraft((d) => ({ ...d, fileTypes }))}
-          placeholder={k("anyFile")}
-        />
-      </Box>
-
-      {!target && (
         <Box>
-          {label(k("showAs"))}
-          <Segmented
-            label={k("showAs")}
-            value={draft.placement}
-            onChange={(placement) => setDraft((d) => ({ ...d, placement }))}
-            options={[
-              { value: "button", label: t("configuration.sendTo.placement.button") },
-              { value: "menu", label: t("configuration.sendTo.placement.menu") },
-            ]}
-            fullWidth
+          {label(k("fileTypes"), k("fileTypesHelp"))}
+          <TagInput
+            value={draft.fileTypes}
+            onChange={(fileTypes) => setDraft((d) => ({ ...d, fileTypes }))}
+            placeholder={k("anyFile")}
           />
         </Box>
-      )}
+
+        {!target && (
+          <Box>
+            {label(k("showAs"))}
+            <Segmented
+              label={k("showAs")}
+              value={draft.placement}
+              onChange={(placement) => setDraft((d) => ({ ...d, placement }))}
+              options={[
+                { value: "button", label: t("configuration.sendTo.placement.button") },
+                { value: "menu", label: t("configuration.sendTo.placement.menu") },
+              ]}
+              fullWidth
+            />
+          </Box>
+        )}
+      </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
 

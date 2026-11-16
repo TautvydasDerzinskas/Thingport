@@ -40,6 +40,18 @@ describe("switching slicer", () => {
     expect(slicers.slicerSettingsNow()?.slicer).toBe("a");
   });
 
+  it("goes back to settings another part of the page saved, when a switch after them fails", async () => {
+    const { settingsApi } = await import("../api/settings");
+    const slicers = await import("./useSlicerPreference");
+    vi.spyOn(settingsApi, "getSlicer").mockResolvedValueOnce(settings("a")).mockRejectedValue(new Error("offline"));
+    await slicers.reloadSlicerSettings();
+    // As the printers panel does with what a save of its own gave back.
+    slicers.setCachedSlicerSettings(settings("b"));
+    vi.spyOn(settingsApi, "updateSlicer").mockRejectedValueOnce(new Error("offline"));
+    await slicers.switchSlicer("c");
+    expect(slicers.slicerSettingsNow()?.slicer).toBe("b");
+  });
+
   it("keeps a later pick that was saved when an earlier one fails", async () => {
     const { settingsApi } = await import("../api/settings");
     const slicers = await import("./useSlicerPreference");

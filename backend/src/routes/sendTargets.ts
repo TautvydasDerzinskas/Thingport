@@ -65,7 +65,7 @@ router.post(
   }),
 );
 
-// Never a secret: an export is for sharing.
+// No API key or secret header: an export is for sharing.
 router.get(
   "/me/send-targets/export",
   asyncHandler(async (req, res) => {

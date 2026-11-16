@@ -167,7 +167,8 @@ export async function deleteSendTarget(userId: string, id: string): Promise<void
   await prisma.sendTarget.delete({ where: { id: current.id } });
 }
 
-/** The user's destinations as a file to share: never a secret, so an API key stays with its owner. */
+/** The user's destinations as a file to share: without API keys or secret headers, which stay with their owner. An
+ *  address is copied as written, a token in it too. */
 export async function exportSendTargets(userId: string) {
   const targets = await listSendTargets(userId);
   return {

@@ -64,8 +64,9 @@ page.
 
 ## Sharing a setup
 
-**Export**, in the panel's menu, saves your destinations as a file, without any API key or secret header. **Import**
-adds the ones in such a file to yours; fill in their keys afterwards.
+**Export**, in the panel's menu, saves your destinations as a file, without any API key or secret header. Addresses
+are saved as written, so a token in one, such as a webhook's id, goes with it. **Import** adds the ones in such a file
+to yours; fill in their keys afterwards.
 
 ## What it can reach
 
