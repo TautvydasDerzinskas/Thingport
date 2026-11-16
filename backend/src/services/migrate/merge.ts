@@ -102,6 +102,7 @@ export const MERGED_TABLES = new Set<Prisma.ModelName>([
   "Activity",
   "SystemReceipt",
   "UserPrinter",
+  "SendTarget",
   "UserIcon",
   "UserIdentity",
   "UserAchievement",
@@ -782,12 +783,21 @@ export class Merge {
     }
   }
 
-  /** Their printers, and the announcements they were already sent. */
+  /** Their printers, where they send models, and the announcements they were already sent. */
   private async mergeSmallRows(sourceIds: string[]) {
     const printers = await this.source.userPrinter.findMany({ where: { userId: { in: sourceIds } } });
     if (printers.length) {
       await prisma.userPrinter.createMany({
         data: printers.map((printer) => ({ ...printer, userId: this.users.get(printer.userId)! })),
+        skipDuplicates: true,
+      });
+    }
+    const targets = await this.source.sendTarget.findMany({ where: { userId: { in: sourceIds } } });
+    if (targets.length) {
+      await prisma.sendTarget.createMany({
+        data: targets.map((target) =>
+          rowFor<Prisma.SendTargetCreateManyInput>("SendTarget", { ...target, userId: this.users.get(target.userId)! }),
+        ),
         skipDuplicates: true,
       });
     }

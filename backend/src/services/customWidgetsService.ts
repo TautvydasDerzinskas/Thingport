@@ -514,9 +514,10 @@ export function blockingLookup(resolve: typeof dnsLookup = dnsLookup): LookupFun
     });
 }
 
-const widgetDispatcher = new Agent({ connect: { lookup: blockingLookup() } });
+/** Connections that may reach the local network but never a cloud metadata address: also Send to's requests. */
+export const widgetDispatcher = new Agent({ connect: { lookup: blockingLookup() } });
 
-const blockedByLookup = (err: unknown): boolean =>
+export const blockedByLookup = (err: unknown): boolean =>
   err instanceof Error && ((err as { code?: unknown }).code === BLOCKED || blockedByLookup(err.cause));
 
 // Headers the server sets or that would leak the browser's own session; a widget can't send them.

@@ -1,4 +1,5 @@
 import { authHeaders } from "../utils/auth";
+import type { SendTargetSummary } from "./sendTargets";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
 import type { ProviderId } from "../providers/index.generated";
@@ -49,6 +50,8 @@ export type SlicerSettings = {
   unadapted: string[];
   /** The printer (a catalogue id of one of the user's) each slicer's adapted copies are made for; one not listed asks. */
   printers: Record<string, string>;
+  /** Where they send models from a model's page (Configuration → Send to). */
+  sendTargets: SendTargetSummary[];
 };
 
 /** A backend older than the installed-slicers list answers with `slicer` alone: that one is the one installed. One
@@ -61,6 +64,7 @@ function toSlicerSettings(body: Partial<SlicerSettings>): SlicerSettings {
     bridged: body.bridged ?? [],
     unadapted: body.unadapted ?? [],
     printers: body.printers ?? {},
+    sendTargets: (body as { send_targets?: SendTargetSummary[] }).send_targets ?? [],
   };
 }
 
