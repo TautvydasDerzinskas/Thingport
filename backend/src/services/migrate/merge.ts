@@ -982,7 +982,24 @@ export class Merge {
       const userIds = row.userIds.flatMap((id) => this.users.get(id) ?? []);
       return [{ toolId, userId: this.users.get(row.userId)!, userIds, updatedAt: row.updatedAt }];
     });
-    if (audiencesKept.length) await prisma.toolAudience.createMany({ data: audiencesKept, skipDuplicates: true });
+    // An account here that keeps that tool's entries to a few already: one audience covers its entries and theirs, so
+    // it's those both kept them for, and neither's entries reach anyone the other kept them from.
+    const held = audiencesKept.length
+      ? await prisma.toolAudience.findMany({
+          where: { OR: audiencesKept.map(({ toolId, userId }) => ({ toolId, userId })) },
+        })
+      : [];
+    const heldFor = new Map(held.map((row) => [`${row.toolId}:${row.userId}`, row.userIds]));
+    for (const row of audiencesKept) {
+      const here = heldFor.get(`${row.toolId}:${row.userId}`);
+      if (!here) continue;
+      await prisma.toolAudience.update({
+        where: { toolId_userId: { toolId: row.toolId, userId: row.userId } },
+        data: { userIds: here.filter((id) => row.userIds.includes(id)) },
+      });
+    }
+    const fresh = audiencesKept.filter((row) => !heldFor.has(`${row.toolId}:${row.userId}`));
+    if (fresh.length) await prisma.toolAudience.createMany({ data: fresh, skipDuplicates: true });
     // What they share through tools, still about the same models: an original kept under another id here keeps its
     // copies' entries pointing at it.
     const model = (id: string | null) => (id ? (this.prints.get(id) ?? id) : null);
