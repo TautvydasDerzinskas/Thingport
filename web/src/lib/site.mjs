@@ -74,6 +74,15 @@ export const DOCS = [
     description: "Run Thingport on CasaOS as a customized app or over SSH.",
   },
   {
+    slug: "guides/reverse-proxy",
+    source: "docs/guides/reverse-proxy.md",
+    group: "Getting started",
+    title: "Behind a reverse proxy",
+    nav: "Reverse proxy",
+    description:
+      "What Nginx Proxy Manager, Caddy, Traefik or nginx in front of Thingport has to let through, and what its errors mean.",
+  },
+  {
     slug: "providers",
     source: "docs/PROVIDER_SETUP.md",
     group: "Providers",

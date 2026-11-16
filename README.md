@@ -193,7 +193,8 @@ docker compose up -d
 ```
 
 Thingport will be available at `http://<host>:<WEB_PORT>` (default port 80). The first
-account you register becomes the admin account.
+account you register becomes the admin account. To give it a domain name or HTTPS, put it
+[behind a reverse proxy](docs/guides/reverse-proxy.md).
 
 Then open **Administration → Overview → System Health** and click **Run full test**. Ideally everything is green:
 anything marked **Required** or **Recommended** that isn't means Thingport, or part of it, won't work properly until
