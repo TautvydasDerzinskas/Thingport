@@ -148,6 +148,7 @@ export const sendTargetsApi = {
     return res.json();
   },
 
+  /** The destinations it added, not the whole list. */
   importAll: async (file: unknown): Promise<SendTarget[]> => {
     const res = await fetch(`${apiBase()}/me/send-targets/import`, { method: "POST", ...json(file) });
     if (!res.ok) return failed(res, "Failed to import");

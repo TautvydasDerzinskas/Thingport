@@ -189,6 +189,11 @@ describe("a user's destinations", () => {
     expect(imported.body.targets).toEqual([
       expect.objectContaining({ name: "Hook", secrets: { api_key: false, headers: [] } }),
     ]);
+    // Only what it added comes back, so the panel adds it to the list it has.
+    const again = await request(app).post("/api/me/send-targets/import").set(auth(other.token)).send(exported.body);
+    expect(again.body.targets).toHaveLength(1);
+    expect(again.body.targets[0].id).not.toBe(imported.body.targets[0].id);
+    expect(await prisma.sendTarget.count({ where: { userId: other.id } })).toBe(2);
     expect(
       (await request(app).post("/api/me/send-targets/import").set(auth(other.token)).send({ targets: [] })).status,
     ).toBe(400);

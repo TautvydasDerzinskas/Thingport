@@ -160,16 +160,15 @@ export default function SendToPanel({ onUnauthorized }: Props) {
 
   const importFile = async (file: File) => {
     try {
-      const before = targets?.length ?? 0;
       let parsed: unknown;
       try {
         parsed = JSON.parse(await file.text());
       } catch {
         throw new Error(s("importFailed"));
       }
-      const list = await sendTargetsApi.importAll(parsed);
-      changed(() => list);
-      toast({ message: s("imported", { count: list.length - before }), severity: "success" });
+      const added = await sendTargetsApi.importAll(parsed);
+      changed((list) => [...list, ...added]);
+      toast({ message: s("imported", { count: added.length }), severity: "success" });
     } catch (err) {
       failed(err);
     }

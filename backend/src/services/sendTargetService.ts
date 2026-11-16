@@ -149,21 +149,23 @@ export async function exportSendTargets(userId: string) {
   };
 }
 
-/** Adds what an export holds, after the user's own; their secrets are theirs to fill in. */
+/** Adds what an export holds, after the user's own, and gives back only those it added, so a caller adds them to
+ * the list it has rather than taking a whole list that a change made meanwhile may postdate. Their secrets are theirs
+ * to fill in. */
 export async function importSendTargets(userId: string, raw: unknown): Promise<SendTargetOut[]> {
   const parsed = sendExportSchema.safeParse(raw);
   if (!parsed.success) throw new HttpError(400, "That isn't a Send to file Thingport exported");
   const count = await prisma.sendTarget.count({ where: { userId } });
   if (count + parsed.data.targets.length > MAX_TARGETS)
     throw new HttpError(413, `${MAX_TARGETS} destinations at most; remove some first`);
-  await prisma.$transaction(
+  const created = await prisma.$transaction(
     parsed.data.targets.map((target, index) =>
       prisma.sendTarget.create({
         data: { userId, position: count + index, ...rowData(sendTargetInputSchema.parse(target), null) },
       }),
     ),
   );
-  return listSendTargets(userId);
+  return created.map(out);
 }
 
 // --- The file -------------------------------------------------------------------------------------------------------
