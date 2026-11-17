@@ -370,10 +370,11 @@ export async function extractZipEntriesToFolderModels(
   const loose: string[] = [];
   const categoryCache: CategoryCache = new Map();
   try {
+    // A script holds no shape, so a folder of nothing but scripts is attached to the model above it, not one itself.
     const units = modelFolderUnits(
       entries,
       (entry) => entry.folder,
-      (entry) => isPlateName(entry.filename),
+      (entry) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()),
     );
     const total = units.filter((unit) => unit.kind === "model").length;
     let processed = 0;

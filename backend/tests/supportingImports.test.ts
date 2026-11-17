@@ -323,6 +323,15 @@ describe("a zip from a link, by how its files become models", () => {
     expect(failed).toEqual(["top.pdf"]);
   });
 
+  it("a model per folder keeps a subfolder of scripts with the model above it", async () => {
+    const files = { "Gear/gear.stl": "solid gear endsolid", "Gear/source/gear.scad": "cylinder(10);" };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.name)).toEqual(["Gear"]);
+    expect(await filesOf(prints[0].id)).toEqual([["source", "gear.scad", "SUPPORTING"]]);
+  });
+
   it("a model per file makes models of the model files, and leaves documents out", async () => {
     const zip = await zipOf(tree());
     const { prints, failed } = await extractZipEntriesToPrints(userId, zip, ["Kit/loose.stl", "Kit/readme.pdf"], {});
