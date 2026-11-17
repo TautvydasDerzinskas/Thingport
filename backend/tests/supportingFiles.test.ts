@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
@@ -141,6 +141,29 @@ describe("supporting files", () => {
       "notes (4).txt",
       "notes.txt",
     ]);
+  });
+
+  it("are renamed into the folder the model's name puts them in now, though it changed while the rename waited", async () => {
+    const model = await makePrint(dir, owner.id, "Waited");
+    const file = await upload(dir, owner.id, model.print.id, "notes.txt", "notes");
+    const name = `Edited ${nonce()}`;
+    // The model renamed once this rename has read it, as an edit made while the rename waits for the storage lock is.
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "findMany").mockImplementationOnce((async (
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      await prisma.print.update({ where: { id: model.print.id }, data: { name } });
+      return findMany(args);
+    }) as never);
+    try {
+      await renameSupportingFile(owner.id, model.print.id, file.id, "guide");
+    } finally {
+      spy.mockRestore();
+    }
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } });
+    expect(row.filename).toBe("guide.txt");
+    expect(path.basename(path.dirname(row.storagePath))).toBe(name);
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("notes");
   });
 
   it("stay where their names say, the model's files too, when moves of one model run at once", async () => {
