@@ -361,7 +361,8 @@ export function modelTab(thingport) {
     box.querySelector("[data-type]")?.focus();
   }
 
-  /** A save the tab's last drawing left going: waited on as that one did, the editor closing once it lands. One that
+  /** A save the tab's last drawing left going: waited on as that one did, the editor closing once it lands, on what's
+   *  read afresh (it may have landed before this drawing listened for changes, and been read from before it). One that
    *  doesn't leaves it open to try again, its toast already shown. */
   function waitFor(write) {
     saving = true;
@@ -369,8 +370,10 @@ export function modelTab(thingport) {
     void write.then((ok) => {
       if (closed || writing !== write) return;
       saving = false;
-      if (ok) draft = null;
-      render();
+      if (!ok) return render();
+      draft = null;
+      forgetReads();
+      void load();
     });
   }
 
