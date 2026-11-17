@@ -647,7 +647,8 @@ export const printsApi = {
     printsApi.fileUrl(inline ? `${file.url}?inline=1` : file.url),
 
   /** Keeps a file beside the model, as a supporting file (a sliced print becomes its prepared print). */
-  uploadFile: async (id: string, file: File): Promise<{ print: Print }> => {
+  /** `file_id`: the stored file's, which is the prepared print's when the file was a sliced one. */
+  uploadFile: async (id: string, file: File): Promise<{ print: Print; file_id?: string }> => {
     const body = new FormData();
     body.set("file", file, file.name);
     const res = await fetch(`${apiBase()}/print/${id}/files`, {

@@ -122,6 +122,29 @@ describe("supporting files", () => {
     expect((await request(app).patch(plateRoute).set(auth(owner.token)).send({ filename: "y.stl" })).status).toBe(404);
   });
 
+  it("say which file an upload stored, though the model has another of its name, and a sliced one too", async () => {
+    const model = await makePrint(dir, owner.id, "Identified");
+    await upload(dir, owner.id, model.print.id, "notes.txt", "earlier");
+    const route = `/api/print/${model.print.id}/files`;
+    const added = await request(app)
+      .post(route)
+      .set(auth(owner.token))
+      .attach("file", Buffer.from("later"), "notes.txt");
+    expect(added.status).toBe(200);
+    const newest = await prisma.printFile.findFirstOrThrow({
+      where: { printId: model.print.id },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(added.body.file_id).toBe(newest.id);
+
+    const sliced = await request(app)
+      .post(route)
+      .set(auth(owner.token))
+      .attach("file", Buffer.from("; sliced\nG28\n"), "sliced.gcode");
+    const { preparedFileId } = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+    expect(sliced.body.file_id).toBe(preparedFileId);
+  });
+
   it("each keep their own place in a zip, even when two share a name", async () => {
     const model = await makePrint(dir, owner.id, "Zipped");
     await upload(dir, owner.id, model.print.id, "notes.txt", "first");

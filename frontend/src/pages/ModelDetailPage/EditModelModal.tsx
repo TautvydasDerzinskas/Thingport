@@ -416,10 +416,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
-        const before = new Set((latest.supporting_files ?? []).map((file) => file.id));
         const res = await printsApi.uploadFile(print.id, item.file);
         latest = res.print ?? latest;
-        const stored = latest.supporting_files?.find((file) => !before.has(file.id));
+        // By the id the server gave it: a file another tab added meanwhile is new to this list too, and isn't this one.
+        const stored = latest.supporting_files?.find((file) => file.id === res.file_id);
         // Up now: listed as the model's own file, and not sent again.
         setSupportingItems((current) =>
           stored

@@ -46,8 +46,14 @@ router.post(
       if (!file) throw new HttpError(400, "No file uploaded");
       const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
       if (!print) throw new HttpError(404, "Print not found");
-      await saveFileFromTemp(req.userId!, print.id, file.path, file.originalname || "supporting-file", file.mimetype);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      // Which of the model's files this one is, for a client finding it among them: a name can be another's too.
+      const stored: { id?: string } = {};
+      await saveFileFromTemp(req.userId!, print.id, file.path, file.originalname || "supporting-file", file.mimetype, {
+        onStored: (_role, id) => {
+          stored.id = id;
+        },
+      });
+      res.json({ print: await printOutById(req.userId!, print.id), file_id: stored.id });
     } finally {
       if (file && fs.existsSync(file.path)) fs.rmSync(file.path, { force: true });
     }

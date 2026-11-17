@@ -171,7 +171,7 @@ const isPendingStoragePath = (storagePath: string) =>
  * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
  * role is already known; a new PREPARED file replaces the existing one. `leavePrepared` keeps one that would be
  * PREPARED as a supporting file instead, leaving the model's prepared print as it is (see batchFileSaver). `onStored`
- * is told the role it was stored with, once it's in.
+ * is told the role it was stored with, and its id, once it's in.
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -188,7 +188,7 @@ export async function saveFileFromTemp(
     role?: "SUPPORTING" | "PREPARED";
     folder?: string | null;
     leavePrepared?: boolean;
-    onStored?: (role: "SUPPORTING" | "PREPARED") => void;
+    onStored?: (role: "SUPPORTING" | "PREPARED", fileId: string) => void;
   } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
@@ -281,7 +281,7 @@ export async function saveFileFromTemp(
       await fs.rm(oldPreparedPath, { force: true }).catch(() => undefined);
       await pruneEmptyStorageDirs(path.dirname(oldPreparedPath));
     }
-    onStored?.(role);
+    onStored?.(role, record.id);
     return updatedPrint;
   } catch (err) {
     // Only once it's ours: a 409 above means the file there is another one's.
