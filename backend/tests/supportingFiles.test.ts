@@ -282,15 +282,22 @@ describe("supporting files", () => {
       include: { plates: true, category: true },
     });
     const ordered = models.map((model) => prints.find((print) => print.id === model.print.id)!);
-    const arcnames = (await buildZipEntries(ordered, { flatten: true })).map((entry) => entry.arcname);
+    const entries = await buildZipEntries(ordered, { flatten: true });
+    const arcnames = entries.map((entry) => entry.arcname);
     expect(new Set(arcnames.map((arcname) => arcname.toLowerCase())).size).toBe(arcnames.length);
     expect(arcnames.filter((arcname) => arcname.endsWith("/supporting/notes.txt")).toSorted()).toEqual([
       `${name} (2)/supporting/notes.txt`,
       `${name} (3)/supporting/notes.txt`,
       `${name}/supporting/notes.txt`,
     ]);
-    // The one already called "(2)" keeps its folder: the second "Base" steps around it.
+    // The one already called "(2)" keeps its folder: the second "Base" steps around it. Each folder holds its own
+    // model's files, told apart by the notes each was given.
     expect(arcnames).toContain(`${name} (2)/own.stl`);
     expect(arcnames).toContain(`${name} (3)/own.stl`);
+    const notesIn = (folder: string) => {
+      const entry = entries.find((each) => each.arcname === `${folder}/supporting/notes.txt`);
+      return entry && "filePath" in entry ? fs.readFileSync(entry.filePath, "utf8") : null;
+    };
+    expect([notesIn(name), notesIn(`${name} (2)`), notesIn(`${name} (3)`)]).toEqual(["Kitchen", "Shed", "Garage"]);
   });
 });
