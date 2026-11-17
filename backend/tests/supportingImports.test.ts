@@ -8,7 +8,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { createPrint, type NewPlateInput } from "../src/services/printCreation";
-import { modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
+import { downloadSupportingFile, modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
 import { setImportSupportingFiles } from "../src/services/settingsService";
@@ -217,6 +217,53 @@ describe("a site's zip", () => {
     const smaller = await supportingFilesFromZip(await zipOf(kit));
     remove(smaller);
     expect(smaller.map((each) => each.filename)).toEqual(["LICENSE.txt"]);
+  });
+});
+
+describe("a file a site gives beside a model's own", () => {
+  const site = (hostname: string) => hostname === "example.com";
+  const originalFetch = global.fetch;
+  const served = (files: Record<string, string | Buffer>) => {
+    const fetchMock = vi.fn<(target: string | URL | Request) => Promise<Response>>(async (target) => {
+      const body = files[new URL(String(target instanceof Request ? target.url : target)).pathname];
+      return body === undefined ? new Response("missing", { status: 404 }) : new Response(body, { status: 200 });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    return fetchMock;
+  };
+  const named = (inputs: NewPlateInput[]) =>
+    inputs.map((each) => [each.folder ?? null, each.filename, each.supporting]);
+  const at = (name: string) => ({ url: `https://example.com/${name}`, name });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("keeps a document, and of a zip only the files beside its model files, never more plates", async () => {
+    const zip = await new JSZip()
+      .file("Frog/frog.stl", "solid frog")
+      .file("Frog/docs/guide.pdf", "%PDF-1.4")
+      .file("Frog/side.png", "png")
+      .generateAsync({ type: "nodebuffer" });
+    const cut = await new JSZip().file("frog.dxf", "0\nSECTION").generateAsync({ type: "nodebuffer" });
+    served({ "/guide.pdf": "%PDF-1.4", "/all.zip": zip, "/dxf.zip": cut, "/frog.stl": "solid frog" });
+    expect(named(await downloadSupportingFile(at("guide.pdf"), site))).toEqual([[null, "guide.pdf", true]]);
+    expect(named(await downloadSupportingFile(at("all.zip"), site))).toEqual([["docs", "guide.pdf", true]]);
+    // A zip of a format the site offers the model in besides: its cut file, as a supporting one.
+    expect(named(await downloadSupportingFile(at("dxf.zip"), site))).toEqual([[null, "frog.dxf", true]]);
+    // A model file asked for this way stays out: the model's own files come another way.
+    expect(await downloadSupportingFile(at("frog.stl"), site)).toEqual([]);
+  });
+
+  it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {
+    const fetchMock = served({ "/guide.pdf": "%PDF-1.4 a longer guide" });
+    expect(await downloadSupportingFile({ url: "https://example.org/guide.pdf", name: "guide.pdf" }, site)).toEqual([]);
+    expect(await downloadSupportingFile(at("missing.pdf"), site)).toEqual([]);
+    limits.value = { perFile: 8, perModel: 20 };
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
+    limits.value = null;
+    fetchMock.mockClear();
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

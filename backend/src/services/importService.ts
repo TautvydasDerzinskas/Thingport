@@ -96,6 +96,7 @@ import {
   withoutTopOf,
 } from "../utils/fileFolder";
 import {
+  isDocumentFile,
   isSupportingImportFile,
   supportingLimits,
   withoutModelsSharedTop,
@@ -1264,6 +1265,36 @@ async function downloadSignedFile(
   return [];
 }
 
+/** A file a site gives beside a model's own (ImportKit.downloadSupportingFile): within the admin's limits, never the
+ *  import's failure, and a zip only for the supporting files in it. */
+export async function downloadSupportingFile(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits) return [];
+  let hostname: string;
+  try {
+    hostname = new URL(file.url).hostname;
+  } catch {
+    return [];
+  }
+  if (!isFileHost(hostname)) return [];
+  const result = await downloadPlainFileToTemp(file.url, file.name, limits.perFile);
+  if (!result || "rateLimited" in result) return [];
+  const input = result.input;
+  if (path.extname(input.filename).toLowerCase() === ".zip") {
+    try {
+      return await supportingFilesFromZip(input.tempFilePath!);
+    } finally {
+      await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
+    }
+  }
+  if (path.extname(input.filename) && isSupportingImportFile(input.filename)) return [{ ...input, supporting: true }];
+  await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
+  return [];
+}
+
 /** A site's downloaded files as an import keeps them: its model files and scripts as they are, any other file worth
  *  keeping marked as a supporting one, and what isn't removed. One with no extension is left as it came. */
 async function asImported(inputs: NewPlateInput[]): Promise<NewPlateInput[]> {
@@ -1369,6 +1400,9 @@ const IMPORT_KIT: PipelineKit = {
     MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
     PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
   isSupportingFile: (name) => Boolean(path.extname(name)) && isSupportingImportFile(name),
+  isDocumentFile: (name) => Boolean(path.extname(name)) && isDocumentFile(name),
+  supportingLimit: async () => (await supportingLimits())?.perFile ?? null,
+  downloadSupportingFile,
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {

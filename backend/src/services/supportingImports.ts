@@ -66,6 +66,29 @@ export function isSupportingImportFile(name: string): boolean {
   return !SKIPPED_EXTS.has(ext);
 }
 
+// Documents and 2D drawings: of what a site that offers a model in many formats lists, the files that aren't the model
+// again in another one (IGES, Parasolid, a CAD system's own, Blender's).
+const DOCUMENT_EXTS = new Set([
+  ".pdf",
+  ".txt",
+  ".md",
+  ".rtf",
+  ".doc",
+  ".docx",
+  ".odt",
+  ".csv",
+  ".xls",
+  ".xlsx",
+  ".ods",
+  ".dxf",
+  ".svg",
+]);
+
+/** A supporting file that's a document or a 2D drawing: instructions, a parts list, a cut file. */
+export function isDocumentFile(name: string): boolean {
+  return isSupportingImportFile(name) && DOCUMENT_EXTS.has(path.extname(name).toLowerCase());
+}
+
 /** A model may keep this many times the largest supporting file in all. */
 const PER_MODEL_FACTOR = 2.5;
 
