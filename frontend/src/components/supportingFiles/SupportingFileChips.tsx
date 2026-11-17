@@ -10,12 +10,13 @@ import { alpha, keyframes } from "@mui/material/styles";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { formatFileSize } from "../../utils/fileSize";
+import { inFolder } from "../../utils/fileExtensions";
 import { isFileDrag } from "../../utils/dragEvents";
 import TypeTile from "./TypeTile";
 import type { FileMenuAnchor } from "./SupportingFileMenu";
 import type { UploadingFile } from "./useSupportingFiles";
 
-export type ChipFile = { key: string; name: string; size?: number | null };
+export type ChipFile = { key: string; name: string; size?: number | null; folder?: string | null };
 
 // Past this many, the last chip says how many more and opens them all, rather than the row running on.
 const MAX_CHIPS = 8;
@@ -147,7 +148,7 @@ export default function SupportingFileChips({
           <ButtonBase
             data-chip-open
             onClick={() => onOpen(file.key)}
-            title={file.name}
+            title={inFolder(file.name, file.folder)}
             sx={{
               gap: 1,
               pl: 0.625,
@@ -163,7 +164,7 @@ export default function SupportingFileChips({
             <TypeTile filename={file.name} size={28} />
             <Box sx={{ minWidth: 0 }}>
               <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }} noWrap>
-                {file.name}
+                {inFolder(file.name, file.folder)}
               </Typography>
               {typeof file.size === "number" && (
                 <Typography sx={{ fontSize: 11.5, lineHeight: 1.3, color: "text.secondary" }} noWrap>
@@ -176,7 +177,7 @@ export default function SupportingFileChips({
             <IconButton
               className="chip-download"
               size="small"
-              aria-label={t("models:supporting.downloadNamed", { name: file.name })}
+              aria-label={t("models:supporting.downloadNamed", { name: inFolder(file.name, file.folder) })}
               onClick={() => onDownload(file.key)}
               sx={{ mr: 0.375, color: "text.secondary" }}
             >

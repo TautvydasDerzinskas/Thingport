@@ -24,7 +24,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { type PrintFile, printsApi } from "../../api/prints";
 import { neutralTint } from "../../theme";
-import { extOf } from "../../utils/fileExtensions";
+import { extOf, inFolder } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { previewTable } from "../../utils/delimited";
 import MarkdownDescription from "../MarkdownDescription";
@@ -318,7 +318,7 @@ export default function SupportingFileViewer({
             key={item.id}
             onClick={() => onSelect(item.id)}
             aria-current={current ? "true" : undefined}
-            title={item.filename}
+            title={inFolder(item.filename, item.folder)}
             sx={{
               flexShrink: 0,
               display: "flex",
@@ -339,7 +339,7 @@ export default function SupportingFileViewer({
             <TypeTile filename={item.filename} size={34} />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="body2" fontWeight={600} noWrap>
-                {item.filename}
+                {inFolder(item.filename, item.folder)}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap component="div">
                 {metaOf(item)}
@@ -459,8 +459,8 @@ export default function SupportingFileViewer({
               sx={{ px: 2, py: 1, borderBottom: 1, borderColor: "divider" }}
             >
               <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography variant="body2" fontWeight={700} noWrap title={file.filename}>
-                  {file.filename}
+                <Typography variant="body2" fontWeight={700} noWrap title={inFolder(file.filename, file.folder)}>
+                  {inFolder(file.filename, file.folder)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap component="div">
                   {metaOf(file)}

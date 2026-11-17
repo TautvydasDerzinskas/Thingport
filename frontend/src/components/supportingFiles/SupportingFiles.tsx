@@ -58,7 +58,7 @@ export default function SupportingFiles({ print, actions, canEdit }: Props) {
       <input ref={bindInput} type="file" multiple hidden onChange={(event) => onPicked(event.currentTarget)} />
       {(files.length > 0 || fileActions.uploading.length > 0) && (
         <SupportingFileChips
-          files={files.map((file) => ({ key: file.id, name: file.filename, size: file.size }))}
+          files={files.map((file) => ({ key: file.id, name: file.filename, size: file.size, folder: file.folder }))}
           uploading={fileActions.uploading}
           onOpen={setViewing}
           onDownload={(id) => {

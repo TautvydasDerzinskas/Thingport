@@ -48,6 +48,7 @@ import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import { sortAddedFiles } from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
+import { inFolder } from "../../utils/fileExtensions";
 import HelpTip from "../../components/HelpTip";
 import RenameDialog from "../../components/RenameDialog";
 import TypeTile from "../../components/supportingFiles/TypeTile";
@@ -826,6 +827,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {supportingItems.map((item) => {
                 const key = supportingKey(item);
                 const name = supportingName(item);
+                const folder = item.kind === "existing" ? item.file.folder : null;
                 const openMenu = (anchor: FileMenuAnchor) => setSupportingMenu({ key, anchor });
                 return (
                   <Stack
@@ -852,8 +854,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     })}
                   >
                     <TypeTile filename={name} size={28} />
-                    <Typography variant="body2" noWrap title={name} sx={{ flex: 1, minWidth: 0 }}>
-                      {name}
+                    <Typography variant="body2" noWrap title={inFolder(name, folder)} sx={{ flex: 1, minWidth: 0 }}>
+                      {inFolder(name, folder)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
                       {formatFileSize(item.file.size)}
@@ -862,7 +864,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     <IconButton
                       size="small"
                       disabled={saving}
-                      aria-label={t("models:supporting.moreActionsNamed", { name })}
+                      aria-label={t("models:supporting.moreActionsNamed", { name: inFolder(name, folder) })}
                       aria-haspopup="menu"
                       onClick={(event) => openMenu({ element: event.currentTarget })}
                     >

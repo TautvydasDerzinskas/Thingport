@@ -4,6 +4,12 @@ export function extOf(name: string): string {
   return (match?.[1] || "").toLowerCase();
 }
 
+/** A file's name with its folder before it ("docs/guide.pdf"), or the name alone at the top: two of one name in
+ *  different folders are told apart by it. */
+export function inFolder(name: string, folder?: string | null): string {
+  return folder ? `${folder}/${name}` : name;
+}
+
 /** A name with nothing before the dot is kept whole. */
 export function stemOf(name: string): string {
   const stem = (name || "").replace(/\.[^.]+$/, "");
