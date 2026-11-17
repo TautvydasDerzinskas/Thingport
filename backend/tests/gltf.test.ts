@@ -393,6 +393,37 @@ describe("uploading and consuming a .gltf", () => {
     expect(json.images).toEqual([{ bufferView: 3, mimeType: "image/png" }]);
   });
 
+  it("packs each scene of one model with the .bin in its own folder, though another folder's has its name", async () => {
+    const small = cubeGltf({ edge: 0.02 });
+    const large = cubeGltf({ edge: 0.05 });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["Small", "Small", "Large", "Large"]))
+      .attach("files", upload("scene.gltf", small.gltf))
+      .attach("files", upload("scene.bin", small.bin))
+      .attach("files", upload("scene.gltf", large.gltf))
+      .attach("files", upload("scene.bin", large.bin));
+    expect(res.status).toBe(200);
+    const plates = res.body.prints[0].plates as { filename: string; folder: string | null; url: string }[];
+    expect(plates.map((plate) => [plate.filename, plate.folder])).toEqual([
+      ["scene.glb", "Small"],
+      ["scene.glb", "Large"],
+    ]);
+    for (const [plate, bin] of [
+      [plates[0], small.bin],
+      [plates[1], large.bin],
+    ] as const) {
+      const file = await auth(request(app).get(`/api${plate.url}`))
+        .buffer(true)
+        .parse((stream, done) => {
+          const chunks: Buffer[] = [];
+          stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+          stream.on("end", () => done(null, Buffer.concat(chunks)));
+        });
+      expect(readGlb(file.body as Buffer).bin.equals(bin)).toBe(true);
+    }
+  });
+
   it("fails the upload, saying what's missing, when the .bin was left behind", async () => {
     const { gltf } = cubeGltf();
     const before = await prisma.print.count({ where: { userId } });

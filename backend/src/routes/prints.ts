@@ -88,6 +88,26 @@ async function createdWithTool(
   return tool ? { kind: "tool", ref: tool.slug } : null;
 }
 
+/** `folders`: a JSON list beside the files, each one's folder within the upload or null. */
+function uploadFolders(raw: string | undefined, files: Express.Multer.File[]): Map<Express.Multer.File, string | null> {
+  const out = new Map<Express.Multer.File, string | null>();
+  if (!raw) return out;
+  let list: unknown;
+  try {
+    list = JSON.parse(raw);
+  } catch {
+    throw new HttpError(400, "folders must be a JSON list");
+  }
+  if (!Array.isArray(list) || list.length !== files.length) {
+    throw new HttpError(400, "folders must list one folder, or null, for each file");
+  }
+  files.forEach((file, index) => {
+    const folder = list[index];
+    out.set(file, typeof folder === "string" ? normalizeFolder(folder) : null);
+  });
+  return out;
+}
+
 router.post(
   "/upload",
   modelUpload.array("files"),
@@ -122,10 +142,12 @@ router.post(
       };
 
       const printsOut = [];
-      // One model per file, or one holding them all.
+      // One model per file, or one holding them all, each of its files in the folder it came from ("docs").
+      const folders = uploadFolders(body.folders, files);
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
-        const print = await createUploadedModel(req.userId!, meta, group);
+        const withFolders = group.map((f) => ({ ...f, folder: group.length > 1 ? (folders.get(f) ?? null) : null }));
+        const print = await createUploadedModel(req.userId!, meta, withFolders);
         for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });
         printsOut.push(await printOutById(req.userId!, print.id));

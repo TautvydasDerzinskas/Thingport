@@ -383,7 +383,7 @@ export function batchFileSaver(userId: string, printId: string) {
     tempPath: string,
     originalFilename: string,
     contentType: string | null | undefined,
-    options: { folder?: string | null } = {},
+    options: { folder?: string | null; role?: "SUPPORTING" } = {},
   ): Promise<Print> =>
     saveFileFromTemp(userId, printId, tempPath, originalFilename, contentType, {
       ...options,

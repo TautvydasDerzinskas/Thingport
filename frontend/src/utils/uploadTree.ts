@@ -128,7 +128,8 @@ function extOf(name: string) {
   return name.split(".").pop()?.toLowerCase() ?? "";
 }
 
-function isModelFile(name: string) {
+/** A model file, by its name or its path. */
+export function isModelFile(name: string) {
   return MODEL_EXTS.has(extOf(name)) || isGltf(name);
 }
 
@@ -236,7 +237,8 @@ export function uploadEntriesToCategory(
 const uploadable = (entries: UploadEntry[]) => entries.filter((e) => UPLOAD_EXTS.includes(extOf(e.file.name)));
 
 /** `batched`: more than one request, each sent without a notification; the caller sends the summary.
- *  A lone request notifies by itself, so it's recorded even if the page closes mid-upload. */
+ *  A lone request notifies by itself, so it's recorded even if the page closes mid-upload. `skipped`: the files that
+ *  can't be a model on their own (a PDF, notes), for the caller to say so. */
 async function uploadEach(
   entries: UploadEntry[],
   resolveCategory: ReturnType<typeof categoryResolver>,
@@ -250,6 +252,9 @@ async function uploadEach(
   const bundles = await gltfBundles(entries);
   const bundled = new Set([...bundles.values()].flat());
   const todo = uploadable(entries).filter((entry) => !bundled.has(entry));
+  const skipped = entries
+    .filter((entry) => !bundled.has(entry) && !todo.includes(entry) && !isSystemFile(entry.file.name))
+    .map((entry) => entry.file.name);
   const batched = partOfBatch || todo.length > 1;
 
   for (const entry of todo) {
@@ -282,7 +287,91 @@ async function uploadEach(
       failed.push(failureLabel(entry.file.name, err));
     }
   }
-  return { uploaded, failed, uploadedEntries, prints, batched };
+  return { uploaded, failed, uploadedEntries, prints, batched, skipped };
+}
+
+/** The folder of each entry below the folders every one of them shares: a zip named after its model holding one
+ *  folder named after it again keeps none of that. */
+function foldersBelowShared(entries: UploadEntry[]): (string | null)[] {
+  const paths = entries.map(splitPath);
+  let shared = 0;
+  while (
+    paths.length > 0 &&
+    paths.every((segments) => segments.length > shared && segments[shared] === paths[0][shared])
+  )
+    shared += 1;
+  return paths.map((segments) => (segments.length > shared ? segments.slice(shared).join("/") : null));
+}
+
+/**
+ * All of `entries` as one model, as an uploaded zip's "one model" makes it: its model files are the plates and its
+ * other files supporting ones, each in its folder below those they all share, and its pictures are the photos. One
+ * with no model file has its pictures as plates, as an upload of only pictures has. Documents alone can't be a model:
+ * nothing is sent, and they come back in `skipped`. Named `title`, or by the server from its files.
+ * The plates keep the order of `entries`: a pick of several files is the model in the order they were picked.
+ * `folder` is where they sat in the upload, a zip's in a picked folder ("Kits/Frog"): a category, as a folder pick
+ * makes one, so the model lands where the zip was, as the zip itself would.
+ */
+export async function uploadEntriesAsOneModel(
+  entries: UploadEntry[],
+  title: string | null,
+  parentCategoryId: string | null,
+  onUnauthorized?: () => void,
+  folder = "",
+) {
+  const failed: string[] = [];
+  const uploadedEntries: UploadEntry[] = [];
+  const prints: Print[] = [];
+  const kept = entries.filter((entry) => !isSystemFile(entry.file.name));
+  if (!uploadable(kept).length) {
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: kept.map((e) => e.file.name) };
+  }
+  const label = title ?? kept[0]?.file.name ?? "";
+  // A texture is part of the scene that uses it, not a picture of the model.
+  const bundled = new Set([...(await gltfBundles(kept)).values()].flat());
+  const hasModel = kept.some((entry) => isModelFile(entry.file.name));
+  const images = hasModel ? kept.filter((entry) => isPreviewImage(entry.file) && !bundled.has(entry)) : [];
+  const files = kept.filter((entry) => !images.includes(entry));
+  const folders = foldersBelowShared(kept);
+  try {
+    const segments = folder.split("/").filter(Boolean);
+    const categoryId = segments.length ? await categoryResolver(parentCategoryId)(segments) : parentCategoryId;
+    const result = await printsApi.upload(
+      files.map((entry) => entry.file),
+      {
+        ...(title ? { title } : {}),
+        category_id: categoryId || undefined,
+        mode: "multiplate",
+        folders: files.map((entry) => folders[kept.indexOf(entry)]),
+      },
+    );
+    uploadedEntries.push(...files);
+    let print = result.prints[0];
+    if (print && images.length) {
+      try {
+        print = (
+          await printsApi.addPreviewImages(
+            print.id,
+            images.map((entry) => entry.file),
+          )
+        ).print;
+        uploadedEntries.push(...images);
+      } catch (err) {
+        if (err instanceof UnauthorizedError) throw err;
+        console.error("Preview images failed for", label, err);
+        failed.push(failureLabel(`${label} (images)`, err));
+      }
+    }
+    if (print) prints.push(print);
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      onUnauthorized?.();
+    } else {
+      console.error("Upload failed for", label, err);
+      failed.push(failureLabel(label, err));
+    }
+  }
+  return { uploaded: prints.length, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
 }
 
 /**
@@ -313,7 +402,23 @@ export async function uploadFoldersAsModels(
   const modelGroups = [...groups.values()].filter(
     (g) => g.segments.length > 0 && g.entries.some((e) => isModelFile(e.file.name)),
   );
-  const rest = [...groups.values()].filter((g) => !modelGroups.includes(g)).flatMap((g) => g.entries);
+  // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
+  // file: its documents are that model's, in their folder ("docs"), and its pictures are that model's photos.
+  const attachedTo = new Map<(typeof modelGroups)[number], { entry: UploadEntry; folder: string }[]>();
+  const rest: UploadEntry[] = [];
+  for (const group of groups.values()) {
+    if (modelGroups.includes(group)) continue;
+    const key = group.segments.join("/");
+    const owner = modelGroups
+      .filter((model) => key.startsWith(`${model.segments.join("/")}/`))
+      .toSorted((a, b) => b.segments.length - a.segments.length)[0];
+    if (!owner) {
+      rest.push(...group.entries);
+      continue;
+    }
+    const folder = group.segments.slice(owner.segments.length).join("/");
+    attachedTo.set(owner, [...(attachedTo.get(owner) ?? []), ...group.entries.map((entry) => ({ entry, folder }))]);
+  }
 
   const failed: string[] = [];
   let uploaded = 0;
@@ -325,9 +430,18 @@ export async function uploadFoldersAsModels(
   for (const group of modelGroups) {
     const folderName = group.segments[group.segments.length - 1];
     const sorted = group.entries.toSorted(byName);
+    const attached = (attachedTo.get(group) ?? []).toSorted((a, b) => byName(a.entry, b.entry));
     // A texture is part of the scene that uses it, not a picture of the model.
-    const images = sorted.filter((e) => isPreviewImage(e.file) && !bundled.has(e));
-    const files = sorted.filter((e) => !images.includes(e));
+    const images = [
+      ...sorted.filter((e) => isPreviewImage(e.file) && !bundled.has(e)),
+      ...attached.filter((a) => isPreviewImage(a.entry.file)).map((a) => a.entry),
+    ];
+    const attachedFiles = attached.filter((a) => !isPreviewImage(a.entry.file) && !isSystemFile(a.entry.file.name));
+    const files = [...sorted.filter((e) => !images.includes(e)), ...attachedFiles.map((a) => a.entry)];
+    const folders = [
+      ...sorted.filter((e) => !images.includes(e)).map(() => null),
+      ...attachedFiles.map((a) => a.folder),
+    ];
     try {
       let categoryId: string | null;
       try {
@@ -340,7 +454,7 @@ export async function uploadFoldersAsModels(
       }
       const result = await printsApi.upload(
         files.map((e) => e.file),
-        { title: folderName, category_id: categoryId || undefined, mode: "multiplate", notify: !batched },
+        { title: folderName, category_id: categoryId || undefined, mode: "multiplate", notify: !batched, folders },
       );
       uploaded += 1;
       uploadedEntries.push(...files);
@@ -364,19 +478,21 @@ export async function uploadFoldersAsModels(
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
-        return { uploaded, failed, uploadedEntries, prints, batched };
+        return { uploaded, failed, uploadedEntries, prints, batched, skipped: [] as string[] };
       }
       console.error("Upload failed for", folderName, err);
       failed.push(failureLabel(folderName, err));
     }
   }
 
+  const skipped: string[] = [];
   if (rest.length) {
     const result = await uploadEach(rest, resolveCategory, onUnauthorized, batched);
     uploaded += result.uploaded;
     failed.push(...result.failed);
     uploadedEntries.push(...result.uploadedEntries);
     prints.push(...result.prints);
+    skipped.push(...result.skipped);
   }
-  return { uploaded, failed, uploadedEntries, prints, batched };
+  return { uploaded, failed, uploadedEntries, prints, batched, skipped };
 }

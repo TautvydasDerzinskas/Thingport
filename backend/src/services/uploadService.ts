@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
-import { RENDERABLE_MODEL_EXTS } from "../config";
+import { RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import {
   addPlatesToPrint,
@@ -14,7 +14,7 @@ import {
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
-import { batchFileSaver, deletePreparedFile, deleteSupportingFile } from "./printFileService";
+import { batchFileSaver, deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
@@ -30,24 +30,51 @@ export type UploadedFile = {
   /** Untrusted; sanitized here. */
   originalname: string;
   mimetype?: string | null;
+  /** The folder it came from within the upload ("docs"), kept on the model's file; none for a flat pick. */
+  folder?: string | null;
 };
 
 function isRenderable(file: UploadedFile): boolean {
   return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
 }
 
+/** A file the model is printed from: a sliced 3MF beside them is its prepared print, not one of them. */
+const isPlateFile = (file: UploadedFile) => isRenderable(file) && !isPreparedPrintFilename(file.originalname);
+
+const isUploadable = (file: UploadedFile) => UPLOADABLE_EXTS.has(path.extname(file.originalname).toLowerCase());
+
+/** The files a model of `files` is made of: its model files; else a sliced 3MF, printed from all the same; else what
+ *  can be a model on its own, such as a picture or a design; else every file, so the model still has one. */
+function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
+  for (const isPlate of [isPlateFile, isRenderable, isUploadable]) {
+    const found = files.filter(isPlate);
+    if (found.length) return found;
+  }
+  return files;
+}
+
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
  *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
 async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
   if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
-  const named = files.map((file) => ({ name: file.originalname, path: file.path, file }));
+  // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
+  const named = files.map((file) => ({
+    name: file.folder ? `${file.folder}/${file.originalname}` : file.originalname,
+    path: file.path,
+    file,
+  }));
   const { files: left } = await packGltfFiles(
     named,
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
     (gltf, glbPath, glbName) => ({
       name: glbName,
       path: glbPath,
-      file: { ...gltf.file, path: glbPath, originalname: glbName, mimetype: "model/gltf-binary" },
+      file: {
+        ...gltf.file,
+        path: glbPath,
+        originalname: gltf.file.originalname.replace(/\.gltf$/i, ".glb"),
+        mimetype: "model/gltf-binary",
+      },
     }),
   );
   const glbs = left.filter((f) => !files.includes(f.file)).map((f) => f.path);
@@ -56,9 +83,9 @@ async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ fil
 
 const removeAll = (paths: string[]) => Promise.all(paths.map((p) => fs.rm(p, { force: true }).catch(() => undefined)));
 
-/** One model from `files`: the renderable ones become its plates and the rest supporting files. If nothing is
- *  renderable, every file becomes a plate so the model still has one. All or nothing: a file that can't be stored
- *  takes the model with it. */
+/** One model from `files`: its model files become its plates and the rest supporting files (`plateFilesOf` says
+ *  what the plates are when there are no model files). All or nothing: a file that can't be stored takes the model
+ *  with it. */
 export async function createUploadedModel(
   userId: string,
   meta: PrintMetaInput,
@@ -74,19 +101,23 @@ export async function createUploadedModel(
 }
 
 async function createModelFrom(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
-  const renderable = files.filter(isRenderable);
-  const supporting = renderable.length ? files.filter((f) => !isRenderable(f)) : [];
-  const plateFiles = renderable.length ? renderable : files;
+  const plateFiles = plateFilesOf(files);
+  const supporting = files.filter((f) => !plateFiles.includes(f));
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
     const safeName = sanitizeFilename(f.originalname);
-    return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+    return {
+      filename: safeName,
+      mime: mimeFromContentType(f.mimetype, safeName),
+      tempFilePath: f.path,
+      folder: f.folder ?? null,
+    };
   });
   const nameHint = path.parse(plateInputs[0].filename).name;
   const { print } = await createPrint(userId, meta, nameHint, plateInputs);
   try {
     const save = batchFileSaver(userId, print.id);
-    for (const f of supporting) await save(f.path, f.originalname, f.mimetype);
+    for (const f of supporting) await save(f.path, f.originalname, f.mimetype, { folder: f.folder ?? null });
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -101,7 +132,7 @@ export type FileKind = "plate" | "supporting";
 
 /** Adds files to one of the user's models: 3D files become plates, the rest supporting files (the first sliced print
  *  takes the place of the model's own, and any more are kept as supporting files), unless `kind` says otherwise. All
- *  or nothing, bar a sliced print already replaced. */
+ *  or nothing. */
 export async function addUploadedFiles(
   userId: string,
   printId: string,
@@ -123,24 +154,34 @@ async function addFilesTo(
   files: (UploadedFile & { kind?: FileKind })[],
 ): Promise<{ plates: number; files: number }> {
   const printId = print.id;
-  const isPlate = (f: (typeof files)[number]) =>
-    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
+  const isPlate = (f: (typeof files)[number]) => (f.kind ? f.kind === "plate" : isPlateFile(f));
+  // Last, since the print it replaces is gone once it's in: a file that fails before it leaves the model as it was.
+  const prepared = files.find((f) => !f.kind && isPreparedPrintFilename(sanitizeFilename(f.originalname)));
 
   const plateIds: string[] = [];
   const before = new Set(
     (await prisma.printFile.findMany({ where: { printId }, select: { id: true } })).map((f) => f.id),
   );
-  const save = batchFileSaver(userId, printId);
   try {
-    for (const f of files) {
+    for (const f of prepared ? [...files.filter((other) => other !== prepared), prepared] : files) {
       if (isPlate(f)) {
         const safeName = sanitizeFilename(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
-          { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
+          {
+            filename: safeName,
+            mime: mimeFromContentType(f.mimetype, safeName),
+            tempFilePath: f.path,
+            folder: f.folder ?? null,
+          },
         ]);
         plateIds.push(plate.id);
       } else {
-        await save(f.path, f.originalname, f.mimetype);
+        // Asked for as a supporting file, a sliced print stays one rather than taking the prepared slot.
+        await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype, {
+          folder: f.folder ?? null,
+          ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
+          leavePrepared: f !== prepared,
+        });
       }
     }
   } catch (err) {

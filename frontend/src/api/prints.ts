@@ -499,6 +499,8 @@ export const printsApi = {
       origin?: "generated" | "created";
       /** The tool that built it (origin "created"), by slug: kept on the model as what made it. */
       createdWithTool?: string;
+      /** For one model of several files: each file's folder within the upload ("docs"), or null, in `files` order. */
+      folders?: (string | null)[];
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -513,6 +515,7 @@ export const printsApi = {
     if (opts.notify === false) fd.set("notify", "false");
     if (opts.origin) fd.set("origin", opts.origin);
     if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
+    if (opts.folders?.some(Boolean) && files.length > 1) fd.set("folders", JSON.stringify(opts.folders));
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,

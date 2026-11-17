@@ -1,4 +1,4 @@
-import { isSystemFile, type UploadEntry } from "./uploadTree";
+import { isModelFile, isSystemFile, type UploadEntry } from "./uploadTree";
 
 export type ZipEntry = {
   path: string;
@@ -47,6 +47,13 @@ export function guessMimeType(name: string) {
 function isArchiveJunk(path: string) {
   const parts = path.split("/");
   return parts.includes("__MACOSX") || isSystemFile(parts[parts.length - 1]);
+}
+
+/** Some path is a model file in a folder, so a model per folder means something: a folder uploadFoldersAsModels
+ *  makes a model of, a .gltf's included. */
+export function hasModelFolderPaths(paths: Iterable<string>) {
+  for (const path of paths) if (path.includes("/") && isModelFile(path)) return true;
+  return false;
 }
 
 /** What starts ticked when picking from a zip: everything but what the OS left in it, which still shows, to tick. */
