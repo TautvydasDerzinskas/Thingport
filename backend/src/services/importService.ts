@@ -1118,14 +1118,22 @@ async function platesAndSourcesFromZip(
  * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
  * plates is worth more than a failed import over the script it could also have been generated from.
  */
-async function fetchDesignRawFiles(
+export async function fetchDesignRawFiles(
   meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
 ): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   const scripts =
     meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
   const zipUrl = scripts ?? meta.supportingZipUrl;
   if (!zipUrl) return { sources: [], supporting: [] };
-  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip");
+  // Fetched for its supporting files alone, it's held to what a model may keep of them, as supportingDownload holds a
+  // zip: the model files it carries too are thrown away.
+  let maxBytes = IMPORT_MAX_BYTES;
+  if (!scripts) {
+    const limits = await supportingLimits();
+    if (!limits) return { sources: [], supporting: [] };
+    maxBytes = Math.min(limits.perModel, IMPORT_MAX_BYTES);
+  }
+  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip", maxBytes);
   if (!result || "rateLimited" in result || !result.input.tempFilePath) return { sources: [], supporting: [] };
   try {
     let sources: NewPlateInput[] = [];

@@ -8,7 +8,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
-import { downloadSupportingFile, modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
+import {
+  downloadSupportingFile,
+  fetchDesignRawFiles,
+  modelFilesFromZip,
+  supportingFilesFromZip,
+} from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
 import { setImportSupportingFiles } from "../src/services/settingsService";
@@ -300,6 +305,31 @@ describe("a file a site gives beside a model's own", () => {
     const kept = await downloadSupportingFile(at("docs.zip"), site);
     remove(kept);
     expect(kept.map((each) => each.filename).toSorted()).toEqual(["a.txt", "b.txt"]);
+  });
+
+  it("holds a design's raw files, fetched for its supporting files alone, to what a model may keep of them", async () => {
+    const zip = await new JSZip()
+      .file("frog.stl", "solid frog ".repeat(40))
+      .file("frog.scad", "cube(1);")
+      .file("guide.pdf", "%PDF-1.4")
+      .generateAsync({ type: "nodebuffer" });
+    served({ "/raw.zip": zip });
+    const raw = "https://example.com/raw.zip";
+    limits.value = { perFile: 100, perModel: zip.length - 1 };
+    expect(await fetchDesignRawFiles({ supportingZipUrl: raw })).toEqual({ sources: [], supporting: [] });
+    limits.value = { perFile: 100, perModel: zip.length + 100 };
+    const kept = (await fetchDesignRawFiles({ supportingZipUrl: raw })).supporting;
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["guide.pdf"]);
+    // Fetched for the scripts it holds as well, it may be as large as any download.
+    limits.value = { perFile: 100, perModel: zip.length - 1 };
+    const both = await fetchDesignRawFiles({
+      parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: raw },
+      supportingZipUrl: raw,
+    });
+    remove([...both.sources, ...both.supporting]);
+    expect(both.sources.map((each) => each.filename)).toEqual(["frog.scad"]);
+    expect(both.supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
   });
 
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {

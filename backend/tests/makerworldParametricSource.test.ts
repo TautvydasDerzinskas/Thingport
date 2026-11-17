@@ -10,7 +10,7 @@ vi.mock("node:dns/promises", () => ({
   },
 }));
 
-import { makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
+import { makerworldListedFileNames, makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
 import { resolveMakerworldSourcesUrl, resolveMakerworldViaCloudApi } from "../src/providers/makerworld/api";
 import { noteCaptchaChallenge, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
 import { openImportResponse } from "../src/services/importService";
@@ -143,6 +143,25 @@ function mockCloud(design: unknown, rawFiles: () => Response): string[] {
   }) as unknown as typeof fetch;
   return fetched;
 }
+
+describe("makerworldListedFileNames", () => {
+  // A folder's name has no extension, so it would pass for a document and spend a download on a zip with none.
+  it("names the files in the design's folders, but not the folders", () => {
+    const names = makerworldListedFileNames(
+      designWith([
+        {
+          modelName: "Models",
+          modelType: "",
+          isDir: true,
+          dirName: "Models",
+          children: [{ modelName: "bracket.stl" }],
+        },
+        { modelName: "", isDir: true, dirName: "Docs", children: [{ modelName: "Guide.pdf" }] },
+      ]),
+    );
+    expect(names).toEqual(["bracket.stl", "Guide.pdf"]);
+  });
+});
 
 describe("resolveMakerworldViaCloudApi: generator scripts of a design with print profiles", () => {
   const originalFetch = global.fetch;
