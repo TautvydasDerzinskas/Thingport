@@ -52,20 +52,22 @@ const profile = (filaments: ProfileFilament[]): PrintProfile => ({
   supports: null,
 });
 
+const model = (plates: Plate[] = []): Print => ({
+  id: "m1",
+  name: "m",
+  title: "M",
+  tags: [],
+  created_at: "2026-11-17T00:00:00Z",
+  plates,
+  preview_images: [],
+  supporting_file_count: 0,
+  view_count: 0,
+  print_count: 0,
+  is_favorite: false,
+});
+
 async function files(plates: Plate[]) {
-  get.mockResolvedValue({
-    id: "m1",
-    name: "m",
-    title: "M",
-    tags: [],
-    created_at: "2026-11-17T00:00:00Z",
-    plates,
-    preview_images: [],
-    supporting_file_count: 0,
-    view_count: 0,
-    print_count: 0,
-    is_favorite: false,
-  });
+  get.mockResolvedValue(model(plates));
   return (await buildUserLibrary({ openModel: () => undefined }).models.get("m1")).files;
 }
 
@@ -100,17 +102,17 @@ describe("files a script adds to a model", () => {
     uploadFile.mockReset();
     uploadFile.mockImplementation(async (_id, file, options) => {
       // As the server does: a sliced print takes the prepared slot unless asked to keep the one taken.
-      const took = file.name.endsWith(".gcode") && !options?.keepPrepared;
-      return { print: { id: "m1" } as Print, prepared: took };
+      const took = /\.(gcode|gcode\.3mf)$/.test(file.name) && !options?.keepPrepared;
+      return { print: model(), prepared: took };
     });
-    get.mockResolvedValue({ id: "m1", plates: [], preview_images: [], tags: [] } as unknown as Print);
+    get.mockResolvedValue(model());
     await buildUserLibrary({ openModel: () => undefined }).models.addFiles("m1", [
-      { name: "A.gcode", data: "G28" },
+      { name: "A.gcode.3mf", data: "PK" },
       { name: "notes.txt", data: "n" },
       { name: "B.gcode", data: "G28" },
     ]);
     expect(uploadFile.mock.calls.map(([, file, options]) => [file.name, options?.keepPrepared])).toEqual([
-      ["A.gcode", false],
+      ["A.gcode.3mf", false],
       ["notes.txt", true],
       ["B.gcode", true],
     ]);
