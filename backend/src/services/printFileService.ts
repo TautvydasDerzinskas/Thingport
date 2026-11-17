@@ -306,15 +306,19 @@ export function batchFileSaver(userId: string, printId: string) {
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
  *  keeps the rest. Deleting a prepared print's row empties the model's prepared slot (Print.preparedFile is SetNull). */
-export async function removeMissingPrintFiles(printId: string): Promise<void> {
-  const rows = await prisma.printFile.findMany({ where: { printId } });
-  const gone = rows.filter((row) => !printFileOnDisk(row));
-  if (!gone.length) return;
-  await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
-  for (const row of gone) {
-    const where = printFilePathOrNull(row);
-    if (where) await pruneEmptyStorageDirs(path.dirname(where));
-  }
+export function removeMissingPrintFiles(printId: string): Promise<void> {
+  // Under the storage lock, rows read inside it: a move (the model renamed meanwhile) renames a file before it saves
+  // the new path, both under the lock, so a path read outside it could be one the file has just left.
+  return withStorageLock(async () => {
+    const rows = await prisma.printFile.findMany({ where: { printId } });
+    const gone = rows.filter((row) => !printFileOnDisk(row));
+    if (!gone.length) return;
+    await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
+    for (const row of gone) {
+      const where = printFilePathOrNull(row);
+      if (where) await pruneEmptyStorageDirs(path.dirname(where));
+    }
+  });
 }
 
 function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {

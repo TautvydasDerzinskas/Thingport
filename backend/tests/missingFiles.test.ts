@@ -14,6 +14,8 @@ import { addPreviewImage } from "../src/services/previewImageService";
 import { licenseData } from "../src/services/licenseService";
 import { syncLicenseFile } from "../src/services/licenseFile";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
+import { removeMissingPrintFiles } from "../src/services/printFileService";
+import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -146,6 +148,33 @@ describe("models whose files are gone", () => {
     } finally {
       await setLicenseFiles(licenseFilesBefore);
     }
+  });
+
+  it("leaves a file a move is carrying, rather than taking it for gone", async () => {
+    const model = await makePrint(dir, owner.id, "Moving");
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "on its way");
+    const movedTo = note.storagePath.replace(/notes\.txt$/, "moved notes.txt");
+    // A move as a rename of the model makes one, under the storage lock: the file goes first, its row after.
+    let reachMidway!: () => void;
+    let finishMove!: () => void;
+    const midway = new Promise<void>((resolve) => (reachMidway = resolve));
+    const move = withStorageLock(async () => {
+      fs.renameSync(path.join(STORAGE, note.storagePath), path.join(STORAGE, movedTo));
+      reachMidway();
+      await new Promise<void>((resolve) => (finishMove = resolve));
+      await prisma.printFile.update({ where: { id: note.id }, data: { storagePath: movedTo } });
+    });
+    await midway;
+
+    // The row still names where the file was: read now, it would be taken for gone.
+    const removal = removeMissingPrintFiles(model.print.id);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    finishMove();
+    await move;
+    await removal;
+
+    const row = await prisma.printFile.findUnique({ where: { id: note.id } });
+    expect(row?.storagePath).toBe(movedTo);
   });
 
   it("touches nothing when the files came back while they were being fetched", async () => {
