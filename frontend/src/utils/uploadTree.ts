@@ -128,7 +128,8 @@ function extOf(name: string) {
   return name.split(".").pop()?.toLowerCase() ?? "";
 }
 
-function isModelFile(name: string) {
+/** A model file, by its name or its path. */
+export function isModelFile(name: string) {
   return MODEL_EXTS.has(extOf(name)) || isGltf(name);
 }
 
