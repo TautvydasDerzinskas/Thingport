@@ -114,6 +114,7 @@
       "profileAdded": "已为“{{name}}”添加打印配置",
       "alreadyInLibrary": "“{{name}}”已在你的模型库中",
       "uploaded": "已上传“{{name}}”",
+      "photosOf": "{{name}}（照片）",
       "uploadedMultiple": "已上传 {{count}} 个模型",
       "makeronlineWaiting": "正在等待 Thingport Grab：用它打开 makeronline.com，模型就会导入",
       "makeronlineListWaiting_other": "{{count}} 个模型正在等待 Thingport Grab：用它打开 makeronline.com，它们就会导入"

@@ -118,6 +118,7 @@
       "profileAdded": "Un profil d’impression a été ajouté à « {{name}} »",
       "alreadyInLibrary": "« {{name}} » est déjà dans votre bibliothèque",
       "uploaded": "Téléversé : « {{name}} »",
+      "photosOf": "{{name}} (photos)",
       "uploadedMultiple": "{{count}} modèles téléversés",
       "makeronlineWaiting": "En attente de Thingport Grab : ouvrez makeronline.com avec l’extension, et le modèle sera importé",
       "makeronlineListWaiting_one": "{{count}} modèle attend Thingport Grab : ouvrez makeronline.com avec l’extension, et il sera importé",

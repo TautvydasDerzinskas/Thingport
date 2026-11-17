@@ -116,6 +116,7 @@
       "profileAdded": "Added a print profile to \"{{name}}\"",
       "alreadyInLibrary": "\"{{name}}\" is already in your library",
       "uploaded": "Uploaded \"{{name}}\"",
+      "photosOf": "{{name}} (photos)",
       "uploadedMultiple": "Uploaded {{count}} models",
       "makeronlineWaiting": "Waiting for Thingport Grab: open makeronline.com with it, and the model comes in",
       "makeronlineListWaiting_one": "{{count}} model waits for Thingport Grab: open makeronline.com with it, and it comes in",

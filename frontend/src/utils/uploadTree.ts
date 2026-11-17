@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { UnauthorizedError } from "../api/client";
 import { categoriesApi, type Category } from "../api/categories";
 import { printsApi, type Print } from "../api/prints";
@@ -359,7 +360,7 @@ export async function uploadEntriesAsOneModel(
       } catch (err) {
         if (err instanceof UnauthorizedError) throw err;
         console.error("Preview images failed for", label, err);
-        failed.push(failureLabel(`${label} (images)`, err));
+        failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: label }), err));
       }
     }
     if (print) prints.push(print);
@@ -471,7 +472,7 @@ export async function uploadFoldersAsModels(
         } catch (err) {
           if (err instanceof UnauthorizedError) throw err;
           console.error("Preview images failed for", folderName, err);
-          failed.push(failureLabel(`${folderName} (images)`, err));
+          failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: folderName }), err));
         }
       }
       if (print) prints.push(print);
