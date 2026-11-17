@@ -989,8 +989,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          // Not while the model's supporting files are being read: a save meanwhile would leave them out of the list.
-          disabled={saving || supportingLoading}
+          // Not until the model's supporting files are in the list, nor after a read of them failed until a retry
+          // brings them: a save before would leave them out of it.
+          disabled={saving || supportingLoading || supportingLoadFailed}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}
