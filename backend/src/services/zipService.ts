@@ -221,8 +221,12 @@ const isPlateName = (name: string) => {
 const isPhotoEntry = (entry: PickedEntry) =>
   PHOTO_EXTS.has(path.extname(entry.filename).toLowerCase()) && entry.size <= PHOTO_MAX_BYTES;
 
-/** The picked entries of a zip, each read to a temp file with the folder it's in. The ones that couldn't be read are
- *  named in `failed`. */
+/** What a zip's picked entries may come to in all, written out before any model is made of them: a few times what the
+ *  zip may be, as model files compress well, and never what a small archive of zeros unpacks to. */
+const PICKED_MAX_BYTES = 4 * IMPORT_MAX_BYTES;
+
+/** The picked entries of a zip, each read to a temp file with the folder it's in. The ones that couldn't be read, or
+ *  didn't fit in PICKED_MAX_BYTES beside the others, are named in `failed`. */
 async function readPickedEntries(
   zipPath: string,
   selections: string[],
@@ -235,16 +239,19 @@ async function readPickedEntries(
   const entries: PickedEntry[] = [];
   const failed: string[] = [];
   let writing: string | null = null;
+  let pickedBytes = 0;
   try {
     for (const name of new Set(selections.map((s) => normalizeZipEntryPath(s)).filter((s): s is string => !!s))) {
       const rawName = raw.get(name);
       // A zip inside never becomes part of a model, so it isn't written out only to be dropped.
       const usable = rawName && path.extname(name).toLowerCase() !== ".zip";
-      const buffer = usable ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
+      const room = Math.min(IMPORT_MAX_BYTES, PICKED_MAX_BYTES - pickedBytes);
+      const buffer = usable && room > 0 ? await readZipEntry(zipPath, rawName, room).catch(() => null) : null;
       if (!buffer) {
         failed.push(name);
         continue;
       }
+      pickedBytes += buffer.length;
       const tempPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}`);
       writing = tempPath;
       await fs.writeFile(tempPath, buffer);
