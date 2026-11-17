@@ -306,7 +306,8 @@ function foldersBelowShared(entries: UploadEntry[]): (string | null)[] {
 /**
  * All of `entries` as one model, as an uploaded zip's "one model" makes it: its model files are the plates and its
  * other files supporting ones, each in its folder below those they all share, and its pictures are the photos. One
- * with no model file is all plates, as an upload of only pictures is. Named `title`, or by the server from its files.
+ * with no model file has its pictures as plates, as an upload of only pictures has. Documents alone can't be a model:
+ * nothing is sent, and they come back in `skipped`. Named `title`, or by the server from its files.
  * The plates keep the order of `entries`: a pick of several files is the model in the order they were picked.
  * `folder` is where they sat in the upload, a zip's in a picked folder ("Kits/Frog"): a category, as a folder pick
  * makes one, so the model lands where the zip was, as the zip itself would.
@@ -322,8 +323,8 @@ export async function uploadEntriesAsOneModel(
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
   const kept = entries.filter((entry) => !isSystemFile(entry.file.name));
-  if (!kept.length) {
-    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
+  if (!uploadable(kept).length) {
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: kept.map((e) => e.file.name) };
   }
   const label = title ?? kept[0]?.file.name ?? "";
   // A texture is part of the scene that uses it, not a picture of the model.

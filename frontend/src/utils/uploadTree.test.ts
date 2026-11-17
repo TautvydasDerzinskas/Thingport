@@ -216,6 +216,16 @@ describe("a model's documents", () => {
     expect(result.skipped).toEqual(["guide.pdf"]);
   });
 
+  it("one model of only documents: nothing goes up, and they're said to need a model, as one by one they are", async () => {
+    const result = await uploadEntriesAsOneModel(
+      [entry("guide.pdf"), entry("notes.txt"), entry(".DS_Store")],
+      null,
+      null,
+    );
+    expect(upload).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ uploaded: 0, failed: [], skipped: ["guide.pdf", "notes.txt"] });
+  });
+
   it("one model of only what the OS leaves about sends nothing, and comes back", async () => {
     const result = await uploadEntriesAsOneModel([entry(".first.stl"), entry("Thumbs.db")], null, null);
     expect(upload).not.toHaveBeenCalled();
