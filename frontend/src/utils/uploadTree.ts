@@ -358,7 +358,11 @@ export async function uploadEntriesAsOneModel(
         ).print;
         uploadedEntries.push(...images);
       } catch (err) {
-        if (err instanceof UnauthorizedError) throw err;
+        if (err instanceof UnauthorizedError) {
+          // Up already, without its photos: still one of those uploaded.
+          prints.push(print);
+          throw err;
+        }
         console.error("Preview images failed for", label, err);
         failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: label }), err));
       }
@@ -470,7 +474,10 @@ export async function uploadFoldersAsModels(
           ).print;
           uploadedEntries.push(...images);
         } catch (err) {
-          if (err instanceof UnauthorizedError) throw err;
+          if (err instanceof UnauthorizedError) {
+            prints.push(print);
+            throw err;
+          }
           console.error("Preview images failed for", folderName, err);
           failed.push(failureLabel(i18next.t("uploadBar.photosOf", { ns: "app", name: folderName }), err));
         }
