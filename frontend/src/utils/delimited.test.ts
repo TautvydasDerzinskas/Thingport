@@ -41,6 +41,14 @@ describe("a CSV or TSV preview", () => {
     expect(guessDelimiter('"a ""b"", c";d;e', "csv")).toBe(";");
   });
 
+  it("guesses from the whole header, though a quoted name in it spans lines", () => {
+    const text = '"part\nname";qty\nbolt;2\n';
+    expect(guessDelimiter(text, "csv")).toBe(";");
+    expect(previewTable(text, "csv", 10)).toMatchObject({ head: ["part\nname", "qty"], body: [["bolt", "2"]] });
+    // Only the header: the rows under it don't outvote it.
+    expect(guessDelimiter("a;b\n1,2,3,4\n", "csv")).toBe(";");
+  });
+
   it("says when a table has more rows than its preview shows", () => {
     const table = (rows: number) => ["part,qty", ...Array.from({ length: rows }, (_, i) => `p${i},${i}`)].join("\n");
     expect(previewTable(table(3), "csv", 3)).toMatchObject({ head: ["part", "qty"], more: false });

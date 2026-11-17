@@ -48,16 +48,19 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
   return rows;
 }
 
-/** The delimiter a CSV file most likely uses: some locales write `;` where `,` is the decimal mark. */
-export function guessDelimiter(firstLine: string, extension: string): "," | "\t" | ";" {
+/** The delimiter a CSV file most likely uses, from its first record: some locales write `;` where `,` is the
+ *  decimal mark. */
+export function guessDelimiter(text: string, extension: string): "," | "\t" | ";" {
   if (extension === "tsv") return "\t";
-  // Outside quoted fields only: `"size;colour",qty` is two fields split by a comma. A doubled quote inside one turns
-  // quoting off and on again.
+  // Outside quoted fields only: `"size;colour",qty` is two fields split by a comma, and a line break inside quotes is
+  // part of a field, not the header's end. A doubled quote inside one turns quoting off and on again.
   const counts = { "\t": 0, ",": 0, ";": 0 };
   let quoted = false;
-  for (const char of firstLine) {
+  for (const char of text) {
     if (char === '"') quoted = !quoted;
-    else if (!quoted && (char === "\t" || char === "," || char === ";")) counts[char] += 1;
+    else if (quoted) continue;
+    else if (char === "\n" || char === "\r") break;
+    else if (char === "\t" || char === "," || char === ";") counts[char] += 1;
   }
   if (counts["\t"] > counts[","] && counts["\t"] > counts[";"]) return "\t";
   return counts[";"] > counts[","] ? ";" : ",";
@@ -66,7 +69,7 @@ export function guessDelimiter(firstLine: string, extension: string): "," | "\t"
 /** What a table preview shows of a CSV or TSV file: its header, up to `limit` rows under it, and whether it has more. */
 export function previewTable(text: string, extension: string, limit: number) {
   // The header, the rows shown and one more, which says there are more.
-  const rows = parseDelimited(text, guessDelimiter(text.split(/\r?\n/, 1)[0] ?? "", extension), limit + 2);
+  const rows = parseDelimited(text, guessDelimiter(text, extension), limit + 2);
   const [head = [], ...body] = rows;
   return { head, body: body.slice(0, limit), more: body.length > limit };
 }
