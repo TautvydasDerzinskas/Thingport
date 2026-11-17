@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   allJobs,
+  chipsOf,
   clashes,
   columns,
   isJob,
@@ -171,4 +172,21 @@ test("the board reads every page of jobs, and stops at the first that isn't full
     { model: "m1", prefix: "job:", before: "c2" },
     { model: "m1", prefix: "job:", before: "c5" },
   ]);
+});
+
+test("a model's page shows one chip a person, the user's first, saying where their prints of it are", () => {
+  const job = (status, day) => moved(newJob(model, at(day)), status, at(day + 1));
+  const chips = chipsOf([
+    entry("job:1", dad, job("printed", 1)),
+    entry("job:2", dad, job("printing", 2)),
+    entry("job:3", me, job("queued", 3), true),
+    entry("about:x", mum, { jobs: 1 }),
+  ]);
+  assert.deepEqual(
+    chips.map((chip) => [chip.user.id, chip.summary.label]),
+    [
+      ["me", "status.queued"],
+      ["dad", "status.printing"],
+    ],
+  );
 });

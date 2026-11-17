@@ -24,7 +24,6 @@ import {
   deleteSharedData,
   getAudience,
   listSharedData,
-  modelInfoFor,
   setAudience,
   setSharedData,
   shareablePeople,
@@ -128,14 +127,6 @@ router.delete(
   asyncHandler(async (req, res) => {
     await deleteToolData(userOf(req), String(req.params.id), String(req.params.key));
     res.status(204).end();
-  }),
-);
-
-// What the tools show on a model's page: each person's latest entry about it, tool by tool.
-router.get(
-  "/tools/model-info/:printId",
-  asyncHandler(async (req, res) => {
-    res.json(await modelInfoFor(userOf(req), String(req.params.printId)));
   }),
 );
 

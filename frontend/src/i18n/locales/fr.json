@@ -4105,7 +4105,10 @@
         "failed": "{{name}} s'est arrêté sur une erreur",
         "noExport": "Le script n'a pas d'export par défaut à appeler",
         "noRun": "Le script n'a pas d'export run pour une commande sans fenêtre",
-        "commandFailed": "{{name}} n'a pas pu le faire : {{error}}"
+        "commandFailed": "{{name}} n'a pas pu le faire : {{error}}",
+        "noPartExport": "Le script n'a pas d'export {{name}} pour dessiner cette partie",
+        "partFailed": "{{name}} n'a pas pu afficher ceci",
+        "noPopover": "Une commande sans fenêtre ne peut pas ouvrir de fenêtre contextuelle"
       },
       "share": {
         "title": "Qui voit votre {{name}} ?",
@@ -4117,10 +4120,6 @@
         "picked_other": "Partagé avec {{count}} personnes",
         "onlyYou": "Personne n’est encore choisi : vous seul le voyez.",
         "loadFailed": "Impossible de lire qui le voit : il ne peut pas encore être modifié."
-      },
-      "info": {
-        "you": "Vous",
-        "someone": "Quelqu’un"
       },
       "picker": {
         "title": "Choisir une collection",

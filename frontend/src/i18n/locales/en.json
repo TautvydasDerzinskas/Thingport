@@ -3926,7 +3926,10 @@
         "failed": "{{name}} stopped with an error",
         "noExport": "The script has no default export to call",
         "noRun": "The script has no run export for a command without a window",
-        "commandFailed": "{{name}} couldn't do that: {{error}}"
+        "commandFailed": "{{name}} couldn't do that: {{error}}",
+        "noPartExport": "The script has no {{name}} export to draw this part",
+        "partFailed": "{{name}} couldn't show this",
+        "noPopover": "A command without a window has no popover"
       },
       "share": {
         "title": "Who sees your {{name}}?",
@@ -3937,10 +3940,6 @@
         "picked_other": "Shared with {{count}} people",
         "onlyYou": "Nobody picked yet, so only you see it.",
         "loadFailed": "Couldn't read whom this reaches, so it can't be changed yet."
-      },
-      "info": {
-        "you": "You",
-        "someone": "Someone"
       },
       "picker": {
         "title": "Choose a collection",
