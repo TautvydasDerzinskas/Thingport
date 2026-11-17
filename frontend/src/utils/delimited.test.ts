@@ -56,4 +56,19 @@ describe("a CSV or TSV preview", () => {
     expect(longer.body).toHaveLength(3);
     expect(longer.more).toBe(true);
   });
+
+  it("cuts a table wider than its preview shows to that many columns, and says so", () => {
+    expect(previewTable("a,b,c,d\n1,2,3,4\n5,6\n", "csv", 10, 2)).toEqual({
+      head: ["a", "b"],
+      body: [
+        ["1", "2"],
+        ["5", "6"],
+      ],
+      more: false,
+      wider: true,
+    });
+    expect(previewTable("a,b\n1,2\n", "csv", 10, 2)).toMatchObject({ wider: false });
+    // A header of a million empty fields shows as many as the preview takes.
+    expect(previewTable(",".repeat(1_000_000), "csv", 10, 50).head).toHaveLength(50);
+  });
 });

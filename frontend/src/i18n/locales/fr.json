@@ -7269,6 +7269,7 @@
       "tooLargeToPreview": "Trop volumineux pour l’aperçu",
       "previewFailed": "Impossible d’afficher ce fichier",
       "firstRows": "Affichage des {{count}} premières lignes",
+      "firstColumns": "Affichage des {{count}} premières colonnes",
       "editHelp": "Instructions, notes, licences et fichiers sources conservés avec le modèle. Ils s’affichent sur sa page et accompagnent ses téléchargements, mais ne s’ouvrent jamais dans un trancheur.",
       "editEmpty": "Aucun fichier annexe pour l’instant."
     },

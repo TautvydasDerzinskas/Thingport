@@ -6630,6 +6630,7 @@
       "tooLargeToPreview": "文件过大，无法预览",
       "previewFailed": "无法显示此文件",
       "firstRows": "显示前 {{count}} 行",
+      "firstColumns": "显示前 {{count}} 列",
       "editHelp": "与模型一起保存的说明、备注、许可证和源文件。它们显示在模型页面上，并包含在下载中，但不会在切片软件中打开。",
       "editEmpty": "还没有附加文件。"
     },

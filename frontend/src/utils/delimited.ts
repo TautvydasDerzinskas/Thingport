@@ -66,10 +66,17 @@ export function guessDelimiter(text: string, extension: string): "," | "\t" | ";
   return counts[";"] > counts[","] ? ";" : ",";
 }
 
-/** What a table preview shows of a CSV or TSV file: its header, up to `limit` rows under it, and whether it has more. */
-export function previewTable(text: string, extension: string, limit: number) {
+/** What a table preview shows of a CSV or TSV file: its header and up to `limit` rows under it, each cut to `columns`
+ *  fields, and whether the file has more rows, or wider ones, than that. */
+export function previewTable(text: string, extension: string, limit: number, columns = Number.POSITIVE_INFINITY) {
   // The header, the rows shown and one more, which says there are more.
   const rows = parseDelimited(text, guessDelimiter(text, extension), limit + 2);
   const [head = [], ...body] = rows;
-  return { head, body: body.slice(0, limit), more: body.length > limit };
+  const shown = body.slice(0, limit);
+  return {
+    head: head.slice(0, columns),
+    body: shown.map((row) => row.slice(0, columns)),
+    more: body.length > limit,
+    wider: [head, ...shown].some((row) => row.length > columns),
+  };
 }

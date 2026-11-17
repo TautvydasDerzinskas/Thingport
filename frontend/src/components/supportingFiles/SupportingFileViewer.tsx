@@ -42,6 +42,8 @@ const TEXT = new Set(["txt", "scad", "log", "nfo", "ini", "cfg", "conf", "json",
 // Text is read whole into the page, so a large one is downloaded instead.
 const TEXT_PREVIEW_MAX_BYTES = 2 * 1024 * 1024;
 const TABLE_ROWS = 200;
+// A row of a million commas is well under the size a preview reads: past this many columns, the rest are left out.
+const TABLE_COLUMNS = 50;
 
 type PreviewKind = "pdf" | "picture" | "markdown" | "table" | "text";
 
@@ -141,7 +143,7 @@ function TextPreview({
     );
   }
   if (kind === "table") {
-    const { head, body, more } = previewTable(state.text, extOf(file.filename), TABLE_ROWS);
+    const { head, body, more, wider } = previewTable(state.text, extOf(file.filename), TABLE_ROWS, TABLE_COLUMNS);
     return (
       <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         <Table size="small" stickyHeader>
@@ -168,9 +170,14 @@ function TextPreview({
             ))}
           </TableBody>
         </Table>
-        {more && (
+        {(more || wider) && (
           <Typography variant="caption" color="text.secondary" component="p" sx={{ p: 1.5 }}>
-            {t("models:supporting.firstRows", { count: TABLE_ROWS })}
+            {[
+              more && t("models:supporting.firstRows", { count: TABLE_ROWS }),
+              wider && t("models:supporting.firstColumns", { count: TABLE_COLUMNS }),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </Typography>
         )}
       </Box>
