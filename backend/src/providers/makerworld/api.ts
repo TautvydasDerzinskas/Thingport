@@ -10,7 +10,13 @@ import {
   type ImportedPageMetadata,
   type ParametricSourceInfo,
 } from "../../services/importResolvers";
-import { makerworldInstanceCover, makerworldInstanceTitles, makerworldMetaFromDesign } from "./pageData";
+import {
+  makerworldInstanceCover,
+  makerworldInstanceTitles,
+  makerworldListedFileNames,
+  makerworldMetaFromDesign,
+} from "./pageData";
+import { isSupportingImportFile, supportingLimits } from "../../services/supportingImports";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {
@@ -416,6 +422,24 @@ export async function resolveMakerworldParametricSource(
   return { ...source, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) };
 }
 
+/**
+ * The zip of a design's raw files, for the files it keeps beside its own -- instructions, sources -- where its own
+ * download is a profile's 3MF, which carries none. Only where the design's file list names one and the admin keeps
+ * any, as it spends one of the account's daily downloads; best-effort, as resolveMakerworldSourcesUrl is. `design` is
+ * the design as read already, or null to read it here: Grab sends one trimmed to its scripts.
+ */
+export async function resolveMakerworldSupportingUrl(
+  designId: string,
+  design: Record<string, unknown> | null,
+  bearerToken: string,
+  paceMs?: number,
+): Promise<string | null> {
+  if ((await supportingLimits()) === null) return null;
+  const read = design ?? (await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null));
+  if (!read || !makerworldListedFileNames(read).some((name) => isSupportingImportFile(name))) return null;
+  return resolveMakerworldSourcesUrl(designId, bearerToken, paceMs);
+}
+
 /** A design with no print profiles, only the raw files the page's "Download STL/CAD files" offers: all of them, as
  *  one zip, which the import unpacks. It belongs to no profile. */
 async function resolveMakerworldRawFiles(
@@ -503,6 +527,10 @@ export async function resolveMakerworldViaCloudApi(
     bearerToken,
     paceMs,
   );
+  // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched.
+  const supportingZipUrl = parametricSource?.zipUrl
+    ? null
+    : await resolveMakerworldSupportingUrl(designId, design, bearerToken, paceMs);
 
   return {
     downloadUrl,
@@ -512,6 +540,7 @@ export async function resolveMakerworldViaCloudApi(
       filename: pickString(body, ["name"]),
       author,
       parametricSource,
+      supportingZipUrl,
       makerworldProfile: {
         instanceId,
         coverUrl: makerworldInstanceCover(design, instanceId),

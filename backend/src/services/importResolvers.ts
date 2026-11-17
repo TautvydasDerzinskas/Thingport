@@ -357,6 +357,10 @@ export type ImportedPageMetadata = {
   makerworldProfile?: MakerworldProfileRef;
   /** The scripts the model is generated from, where the site says it has them. Absent for an ordinary model. */
   parametricSource?: ParametricSourceInfo;
+  /** A zip of the model's raw files to take the files it keeps beside its own from (instructions, sources), where its
+   *  own download is one profile's 3MF, which carries none: set only where the site's file list names one
+   *  (MakerWorld). The scripts' zip, where there is one, holds them already. */
+  supportingZipUrl?: string | null;
   /** The model's licence as the site lists it: null when the site says none; absent when this read didn't look (Grab's
    *  cut-down MakerWorld design), so it's read again later (services/licenseService.ts). */
   license?: ProviderLicense | null;

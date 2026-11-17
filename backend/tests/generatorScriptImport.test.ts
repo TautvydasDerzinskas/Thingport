@@ -15,6 +15,8 @@ vi.mock("node:dns/promises", () => ({
 }));
 
 import { createApp } from "../src/app";
+import { prisma } from "../src/db";
+import { setImportSupportingFiles } from "../src/services/settingsService";
 
 // Importing a model built from a script, in the two shapes MakerWorld actually answers in: the creator shared
 // the script, or they marked it `protected` and the site hands out an empty download rather than refusing.
@@ -29,7 +31,9 @@ const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { 
 
 const SCRIPT = 'base_width = 80;\r\ntext_color = "green"; // [white, red, green]\r\n';
 
-function design(designId: string, scriptsProtected: boolean, profiles = true) {
+type ListedFile = { modelName: string; modelType: string; protected?: boolean };
+
+function design(designId: string, scriptsProtected: boolean, profiles = true, files?: ListedFile[]) {
   return {
     id: Number(designId),
     title: "Keychain Creator",
@@ -38,7 +42,7 @@ function design(designId: string, scriptsProtected: boolean, profiles = true) {
     defaultInstanceId: "1",
     designCreator: { uid: 42, name: "A Creator" },
     designExtension: {
-      model_files: [
+      model_files: files ?? [
         { modelName: "keychain.scad", modelType: "scad", modelUrl: "", scadStatus: 2, protected: scriptsProtected },
       ],
     },
@@ -53,13 +57,19 @@ async function zipOf(entries: Record<string, string>): Promise<Buffer> {
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
-function mockMakerworld(designId: string, scriptsProtected: boolean, zip: Buffer, profiles = true) {
+function mockMakerworld(
+  designId: string,
+  scriptsProtected: boolean,
+  zip: Buffer,
+  profiles = true,
+  files?: ListedFile[],
+) {
   const fetched: string[] = [];
   global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
     const url = String(input);
     fetched.push(url);
     if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) {
-      return json(design(designId, scriptsProtected, profiles));
+      return json(design(designId, scriptsProtected, profiles, files));
     }
     if (url.includes(`/design/${designId}/model?modelType=all&type=download`)) {
       return json({ name: "", url: `https://s3.example.com/${designId}-all.zip` });
@@ -147,4 +157,61 @@ describe("importing a model built from a script", () => {
     expect(print.plates.length).toBeGreaterThan(0);
     expect(fetched.some((url) => url.includes("modelType=all&type=download"))).toBe(false);
   }, 120000);
+
+  describe("the files a design keeps beside its own", () => {
+    const supportingOf = async (printId: string) =>
+      (await request(app).get(`/api/print/${printId}`).set(auth())).body.supporting_files.map(
+        (file: { filename: string }) => file.filename,
+      );
+    const rawZipAsked = (fetched: string[], designId: string) =>
+      fetched.filter((url) => url.includes(`/design/${designId}/model?modelType=all`)).length;
+
+    afterEach(async () => {
+      await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
+    });
+
+    it("come from a shared script's zip with it, which is fetched once", async () => {
+      const designId = String((stamp % 1_000_000_000) + 11);
+      const fetched = mockMakerworld(
+        designId,
+        false,
+        await zipOf({ "keychain.scad": SCRIPT, "keychain.stl": "solid k\nendsolid k\n", "Guide.pdf": "%PDF-1.4" }),
+      );
+      const printId = await importDesign(designId);
+      // The script is kept beside the model as one too.
+      expect(await supportingOf(printId)).toEqual(["Guide.pdf", "keychain.scad"]);
+      expect(rawZipAsked(fetched, designId)).toBe(1);
+    }, 120000);
+
+    it("are fetched for a design without a script only when its file list names one, and kept", async () => {
+      const listed = [
+        { modelName: "keychain.stl", modelType: "stl" },
+        { modelName: "Guide.pdf", modelType: "pdf" },
+      ];
+      const designId = String((stamp % 1_000_000_000) + 12);
+      const zip = await zipOf({ "keychain.stl": "solid k\nendsolid k\n", "Guide.pdf": "%PDF-1.4" });
+      const fetched = mockMakerworld(designId, false, zip, true, listed);
+      const printId = await importDesign(designId);
+      expect(await supportingOf(printId)).toEqual(["Guide.pdf"]);
+      expect(rawZipAsked(fetched, designId)).toBe(1);
+
+      // Only model files listed: the account's daily download isn't spent.
+      const plain = String((stamp % 1_000_000_000) + 13);
+      const notAsked = mockMakerworld(plain, false, zip, true, [listed[0]]);
+      expect(await supportingOf(await importDesign(plain))).toEqual([]);
+      expect(rawZipAsked(notAsked, plain)).toBe(0);
+    }, 120000);
+
+    it("aren't fetched when the admin keeps none", async () => {
+      await setImportSupportingFiles("off");
+      const designId = String((stamp % 1_000_000_000) + 14);
+      const listed = [
+        { modelName: "keychain.stl", modelType: "stl" },
+        { modelName: "Guide.pdf", modelType: "pdf" },
+      ];
+      const fetched = mockMakerworld(designId, false, await zipOf({ "Guide.pdf": "%PDF-1.4" }), true, listed);
+      expect(await supportingOf(await importDesign(designId))).toEqual([]);
+      expect(rawZipAsked(fetched, designId)).toBe(0);
+    }, 120000);
+  });
 });

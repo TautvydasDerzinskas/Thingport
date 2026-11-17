@@ -140,6 +140,22 @@ function scadEntries(design: MakerworldDesign): Record<string, unknown>[] {
   );
 }
 
+/** Files the import never keeps beside a model: the model files its profile's 3MF stands for, and pictures. */
+const NEVER_BESIDE = /\.(stl|3mf|obj|amf|ply|step|stp|gltf|glb|jpe?g|png|gif|webp|bmp)$/i;
+
+/** The entries that might be the files a model keeps beside its own -- instructions, notes, sources: what isn't a
+ *  script, model file or picture. The backend decides which it keeps; it fetches the design's raw files for them only
+ *  where there's one. */
+function besideEntries(design: MakerworldDesign): Record<string, unknown>[] {
+  const files = design.designExtension?.model_files;
+  if (!Array.isArray(files)) return [];
+  const scripts = new Set(scadEntries(design));
+  return modelFiles(files).filter((entry) => {
+    const name = typeof entry.modelName === "string" ? entry.modelName.trim() : "";
+    return !scripts.has(entry) && /\.[a-z0-9]+$/i.test(name) && !NEVER_BESIDE.test(name);
+  });
+}
+
 /** The files in the design's folders too: a folder is an entry of its own, with its files as `children`. */
 function modelFiles(files: unknown[]): Record<string, unknown>[] {
   const flat: Record<string, unknown>[] = [];
@@ -203,11 +219,12 @@ export function makerworldDesignForImport(design: MakerworldDesign): Record<stri
   }
   const pictures = getPath(source, "designExtension", "design_pictures");
   const hasFileList = Array.isArray(design.designExtension?.model_files);
-  // Only the .scad entries, and only the three fields the backend reads off them: it decides from these whether
-  // the model came with the script it was generated from, and whether its creator shared it. Sending the whole
-  // model_files list would spend the budget below on files the import already gets another way. Sent even when
-  // empty, as the design has no script then: without a list the backend reads the design from MakerWorld itself.
-  const scripts = scadEntries(design).map((file) => ({
+  // Only the .scad entries and the files a model may keep beside its own, and only the three fields the backend reads
+  // off them: it decides from these whether the model came with the script it was generated from, whether its
+  // creator shared it, and whether its raw files are worth fetching for the others. Sending the whole model_files
+  // list would spend the budget below on files the import already gets another way. Sent even when empty, as the
+  // design has no script then: without a list the backend reads the design from MakerWorld itself.
+  const scripts = [...scadEntries(design), ...besideEntries(design)].map((file) => ({
     modelType: file.modelType,
     modelName: file.modelName,
     protected: file.protected,

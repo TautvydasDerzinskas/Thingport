@@ -302,6 +302,20 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
     expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
   });
 
+  it("fetches the raw files for a document Grab's file list names, and asks MakerWorld for the design again never", async () => {
+    const fetched = mockGrabImport(designWithProfiles([]));
+
+    const result = await grabImport({
+      id: 831106,
+      designExtension: { model_files: [{ modelName: "Assembly guide.pdf", modelType: "pdf" }] },
+    });
+    await result.response.body?.cancel();
+
+    expect(result.meta.parametricSource).toBeUndefined();
+    expect(result.meta.supportingZipUrl).toBe(SOURCES_ZIP);
+    expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
+  });
+
   it("spends no download on a script MakerWorld's design says is withheld", async () => {
     const fetched = mockGrabImport(designWithProfiles([scadFile("panel.scad", true)]));
 

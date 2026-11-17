@@ -117,6 +117,15 @@ function makerworldModelFiles(files: unknown[]): Record<string, unknown>[] {
   return flat;
 }
 
+/** The names of every file in a design's file list, its folders' included. */
+export function makerworldListedFileNames(design: Record<string, unknown>): string[] {
+  const extension = design.designExtension;
+  if (!isRecord(extension) || !Array.isArray(extension.model_files)) return [];
+  return makerworldModelFiles(extension.model_files).flatMap((file) =>
+    typeof file.modelName === "string" && file.modelName.trim() ? [file.modelName.trim()] : [],
+  );
+}
+
 /**
  * The OpenSCAD scripts a design is generated from, as its file list gives them.
  *
