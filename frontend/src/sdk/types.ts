@@ -581,7 +581,8 @@ export interface SdkModels {
   create(input: SdkNewModel): Promise<SdkModel>;
   /**
    * Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is
-   * kept beside them as a related file (see `relatedFiles`).
+   * kept beside them as a related file (see `relatedFiles`). The first sliced print (G-code, a sliced 3MF) among them
+   * becomes its prepared print, in place of the one it had; any more are kept as related files.
    *
    * @param id The model's id.
    * @param files The files to add.

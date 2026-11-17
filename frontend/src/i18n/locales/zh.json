@@ -6635,6 +6635,7 @@
       "more": "另外 {{count}} 个",
       "moreActionsNamed": "{{name}} 的更多操作",
       "noPreview": "无法预览 {{type}} 文件",
+      "untypedFile": "文件",
       "tooLargeToPreview": "文件过大，无法预览",
       "previewFailed": "无法显示此文件",
       "firstRows": "显示前 {{count}} 行",

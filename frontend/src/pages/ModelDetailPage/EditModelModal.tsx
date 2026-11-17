@@ -156,6 +156,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
   const addSupportingInputRef = useRef<HTMLInputElement>(null);
+  // A sliced print this dialog added became the model's prepared print: the ones after it, in this save or a retry of
+  // it, are kept as supporting files rather than each replacing the one before.
+  const preparedAdded = useRef(false);
 
   useEffect(() => {
     categoriesApi
@@ -478,7 +481,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
-        const res = await printsApi.uploadFile(print.id, item.file);
+        const res = await printsApi.uploadFile(print.id, item.file, { keepPrepared: preparedAdded.current });
+        if (res.prepared) preparedAdded.current = true;
         latest = res.print ?? latest;
         // By the id the server gave it: a file another tab added meanwhile is new to this list too, and isn't this one.
         const stored = latest.supporting_files?.find((file) => file.id === res.file_id);

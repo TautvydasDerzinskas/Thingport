@@ -146,6 +146,22 @@ describe("uploading a glTF download", () => {
     expect(addPreviewImages).not.toHaveBeenCalled();
   });
 
+  it("one model per folder: a scene's files go up in their folder below the model's, so two of one name stay apart", async () => {
+    await uploadFoldersAsModels(
+      [
+        entry("Robot/robot.gltf", gltf("robot.bin", "textures/body.png")),
+        entry("Robot/robot.bin"),
+        entry("Robot/textures/body.png"),
+        entry("Robot/variant.gltf", gltf("robot.bin", "variant/body.png")),
+        entry("Robot/variant/body.png"),
+      ],
+      null,
+    );
+    expect(namesSent()).toEqual([["body.png", "body.png", "robot.bin", "robot.gltf", "variant.gltf"]]);
+    expect(foldersSent()).toEqual([["textures", "variant", null, null, null]]);
+    expect(addPreviewImages).not.toHaveBeenCalled();
+  });
+
   it("one model per file: the scene goes up with its files, and its textures don't become models", async () => {
     const result = await uploadEntriesToCategory(laptop(), null);
     expect(result.failed).toEqual([]);

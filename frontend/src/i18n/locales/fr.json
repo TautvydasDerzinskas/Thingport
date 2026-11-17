@@ -7276,6 +7276,7 @@
       "more": "+{{count}} de plus",
       "moreActionsNamed": "Plus d’actions pour {{name}}",
       "noPreview": "Pas d’aperçu pour les fichiers {{type}}",
+      "untypedFile": "Fichier",
       "tooLargeToPreview": "Trop volumineux pour l’aperçu",
       "previewFailed": "Impossible d’afficher ce fichier",
       "firstRows": "Affichage des {{count}} premières lignes",

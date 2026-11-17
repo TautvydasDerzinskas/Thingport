@@ -7636,6 +7636,7 @@
       "more": "Ще {{count}}",
       "moreActionsNamed": "Інші дії: {{name}}",
       "noPreview": "Немає попереднього перегляду для файлів {{type}}",
+      "untypedFile": "Файл",
       "tooLargeToPreview": "Завеликий для попереднього перегляду",
       "previewFailed": "Не вдалося показати цей файл",
       "firstRows": "Показано перші {{count}} рядків",
