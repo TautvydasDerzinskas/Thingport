@@ -95,9 +95,16 @@ const PER_MODEL_FACTOR = 2.5;
 export type SupportingLimits = { perFile: number; perModel: number };
 
 /** How large a supporting file an import keeps, and how much of them one model takes in all; null when an admin keeps
- *  none. Never past what an import downloads at all. */
+ *  none, or when the setting can't be read: a site's other files are never worth failing an import over. Never past
+ *  what an import downloads at all. */
 export async function supportingLimits(): Promise<SupportingLimits | null> {
-  const limit = await getImportSupportingFiles();
+  let limit: Awaited<ReturnType<typeof getImportSupportingFiles>>;
+  try {
+    limit = await getImportSupportingFiles();
+  } catch (err) {
+    console.warn("Couldn't read how large a supporting file an import keeps, so it keeps none:", err);
+    return null;
+  }
   if (limit === "off") return null;
   if (limit === "any") return { perFile: IMPORT_MAX_BYTES, perModel: Number.POSITIVE_INFINITY };
   const perFile = Math.min(limit * 1024 * 1024, IMPORT_MAX_BYTES);
