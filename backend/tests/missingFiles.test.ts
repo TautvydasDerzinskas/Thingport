@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
@@ -14,7 +14,7 @@ import { addPreviewImage } from "../src/services/previewImageService";
 import { licenseData } from "../src/services/licenseService";
 import { syncLicenseFile } from "../src/services/licenseFile";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
-import { removeMissingPrintFiles } from "../src/services/printFileService";
+import { batchFileSaver, removeMissingPrintFiles, saveFileFromTemp } from "../src/services/printFileService";
 import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
@@ -175,6 +175,79 @@ describe("models whose files are gone", () => {
 
     const row = await prisma.printFile.findUnique({ where: { id: note.id } });
     expect(row?.storagePath).toBe(movedTo);
+  });
+
+  it("leaves a file still being saved, rather than taking it for gone", async () => {
+    const model = await makePrint(dir, owner.id, "Saving");
+    // Its row has its place before the file is put there: a sweep in between, as a repair makes, comes here.
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    let swept = false;
+    const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      const updated = await update(args);
+      if (!swept && typeof args.data.storagePath === "string") {
+        swept = true;
+        await removeMissingPrintFiles(model.print.id);
+      }
+      return updated;
+    }) as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "attached mid-repair"), "late.txt", null);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(swept).toBe(true);
+    const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "late.txt" } });
+    expect(fs.existsSync(path.join(STORAGE, row.storagePath))).toBe(true);
+
+    // One only just made, its place not claimed yet, is left too.
+    const fresh = await prisma.printFile.create({
+      data: {
+        printId: model.print.id,
+        filename: "fresh.txt",
+        mime: "text/plain",
+        role: "SUPPORTING",
+        storagePath: "pending",
+      },
+    });
+    try {
+      await removeMissingPrintFiles(model.print.id);
+      expect(await prisma.printFile.findUnique({ where: { id: fresh.id } })).not.toBeNull();
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: fresh.id } });
+    }
+  });
+
+  it("gives a batch's first sliced file the prepared slot, though another upload filled it as the batch saved", async () => {
+    const model = await makePrint(dir, owner.id, "Batch");
+    const save = batchFileSaver(owner.id, model.print.id);
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    let raced = false;
+    const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      const updated = await update(args);
+      if (!raced) {
+        raced = true;
+        // Another upload's sliced file, landing while the batch saves its notes.
+        await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "elsewhere.gcode", null);
+      }
+      return updated;
+    }) as never);
+    try {
+      await save(tempFile(dir, "notes"), "notes.txt", null);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(raced).toBe(true);
+
+    const saved = await save(tempFile(dir, "G1 X1\n"), "mine.gcode", null);
+    const mine = await prisma.printFile.findFirstOrThrow({
+      where: { printId: model.print.id, filename: "mine.gcode" },
+    });
+    expect(mine.role).toBe("PREPARED");
+    expect(saved.preparedFileId).toBe(mine.id);
   });
 
   it("touches nothing when the files came back while they were being fetched", async () => {
