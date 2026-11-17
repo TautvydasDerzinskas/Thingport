@@ -80,6 +80,7 @@ function handlerFor(scenario: string, files = "model-files"): FetchHandler {
       assertThat(url.searchParams.get("project_id") === PROJECT_ID, "a project's files are asked for by its id");
       return json(loadFixture("makerables", files));
     }
+    if (path === "/api/projects/files" && scenario === "nc-down") return json({}, 500);
     if (path === "/api/projects/files" || path === "/api/projects/cam-files") {
       assertThat(url.searchParams.get("project_id") === PROJECT_ID, "a project's files are asked for by its id");
       return json(loadFixture("makerables", path.endsWith("cam-files") ? "cam-files" : "nc-files"));
@@ -187,6 +188,14 @@ describe("Makerables specifics", () => {
       ["NC", "59_1_F3.175T1F2T2F1.5T3F1T4F0.8T5V3.175T6E0.3T7M2T8.nc"],
       ["CAM", "Acrylic knife.mks"],
     ]);
+  });
+
+  it("keeps the CAM tab's files when the NC tab can't be read", async () => {
+    ctx.stub("nc-down");
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([["CAM", "Acrylic knife.mks"]]);
   });
 
   it("asks for neither machine tab when the admin keeps no supporting files", async () => {

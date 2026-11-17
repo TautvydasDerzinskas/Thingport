@@ -266,14 +266,14 @@ export async function fetchMakerablesModelFiles(projectId: string): Promise<Make
 /** Its two other tabs: the toolpaths cut from those files, NC programs for the machine and CAM projects, which no
  *  slicer or printer takes but a model keeps beside its own files. Each in a folder named after its tab. */
 export async function fetchMakerablesMachineFiles(projectId: string): Promise<(MakerablesFile & { folder: string })[]> {
-  const [programs, projects] = await Promise.all([
-    get(`/projects/files?${query({ project_id: projectId })}`),
-    get(`/projects/cam-files?${query({ project_id: projectId })}`),
-  ]);
-  return [
-    ...filesIn(programs).map((file) => ({ ...file, folder: "NC" })),
-    ...filesIn(projects).map((file) => ({ ...file, folder: "CAM" })),
-  ];
+  // Each tab on its own: one that fails leaves the other's files.
+  const tab = (route: string, folder: string) =>
+    get(`${route}?${query({ project_id: projectId })}`).then(
+      (data) => filesIn(data).map((file) => ({ ...file, folder })),
+      () => [],
+    );
+  const [programs, projects] = await Promise.all([tab("/projects/files", "NC"), tab("/projects/cam-files", "CAM")]);
+  return [...programs, ...projects];
 }
 
 /** Its files are on its own CDN, open to anyone with the link. */
