@@ -26,6 +26,7 @@ import { detailsOf } from "../details";
 import {
   VoxelshareAuthError,
   type VoxelshareModelResolution,
+  fetchVoxelshareFiles,
   fetchVoxelshareLikes,
   fetchVoxelshareTrending,
   isVoxelshareFileHost,
@@ -34,8 +35,10 @@ import {
   selectVoxelshareProfiles,
   voxelshareLikesName,
   voxelshareListOf,
+  voxelshareFilesFrom,
   voxelshareModelUrl,
   voxelshareSiteHost,
+  voxelshareSiteIdOf,
 } from "./api";
 import { readVoxelshareCollection } from "./lists";
 import {
@@ -90,6 +93,27 @@ async function downloadModelFiles(resolved: VoxelshareModelResolution, kit: Impo
   return inputs;
 }
 
+/** The model's own files a profile doesn't bring that it keeps beside it -- instructions, sources -- listed only when
+ *  the admin keeps any, in the folders the designer put them in. Never the import's failure. One kept zipped by itself,
+ *  as a copy of another site's model keeps each, is judged by the file inside and unpacked to it. */
+async function supportingFiles(externalId: string, kit: ImportKit): Promise<NewPlateInput[]> {
+  if ((await kit.supportingLimit()) === null) return [];
+  const { region, id } = voxelshareSiteIdOf(externalId);
+  let files: ReturnType<typeof voxelshareFilesFrom>;
+  try {
+    files = voxelshareFilesFrom(await fetchVoxelshareFiles(id, region));
+  } catch {
+    return [];
+  }
+  const inputs: NewPlateInput[] = [];
+  for (const file of files.filter((each) => kit.isSupportingFile(each.name.replace(/\.zip$/i, "")))) {
+    for (const input of await kit.downloadSupportingFile(file, isVoxelshareFileHost)) {
+      inputs.push({ ...input, folder: joinFolders(file.folder, input.folder) });
+    }
+  }
+  return inputs;
+}
+
 /** A model is one print, and each print profile, a Flashforge slicer's project, its 3MF on a plate of its own, tagged
  *  with the profile. An import brings the profile the link names, else the designer's first; a model without profiles
  *  brings its own files. Everything is a public signed link, so nothing needs a sign-in. */
@@ -99,10 +123,10 @@ export const voxelshareImport: SourcedImport<null, VoxelshareModelResolution> = 
   mapError: async (_userId, err) => err,
   missingMessage: "This VoxelShare model could not be found, or isn't public.",
   noFilesMessage: "This VoxelShare model has no files Thingport can import.",
-  async downloadModel(_target, resolved, _auth, requested, kit) {
+  async downloadModel({ externalId }, resolved, _auth, requested, kit) {
     const [profileId] = selectVoxelshareProfiles(resolved, "url", requested);
     const profile = profileId ? await downloadProfile(resolved, profileId, kit) : null;
-    return profile ? [profile] : downloadModelFiles(resolved, kit);
+    return profile ? [profile, ...(await supportingFiles(externalId, kit))] : downloadModelFiles(resolved, kit);
   },
   profiles: {
     download: (_target, resolved, profileId, _auth, kit) => downloadProfile(resolved!, profileId, kit),

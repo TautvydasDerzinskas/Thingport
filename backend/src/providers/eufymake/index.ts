@@ -70,8 +70,14 @@ export const eufymakeImport: SourcedImport<null, EufymakeModelResolution> = {
     try {
       const [profileId] = selectEufymakeProfiles(resolved, "url", requested);
       const profile = profileId ? await downloadProfile(resolved, profileId, kit) : null;
-      if (profile) downloaded.push(profile);
-      else {
+      if (profile) {
+        downloaded.push(profile);
+        // A print file brings none of the model's own files: those it keeps beside it come along, one by one. The zip
+        // of them all is left, as it repeats every model file the print file stands for.
+        for (const file of resolved.files.filter((each) => kit.isSupportingFile(each.name))) {
+          downloaded.push(...(await kit.downloadSupportingFile(file, isEufymakeFileHost)));
+        }
+      } else {
         for (const file of resolved.files) {
           downloaded.push(...((await kit.downloadSignedFile(file, isEufymakeFileHost, BLOCKED)) ?? []));
         }

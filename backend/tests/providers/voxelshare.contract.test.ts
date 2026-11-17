@@ -58,7 +58,24 @@ const COLLECTED = ["10602179", "9610105", "9578063", "9560984"];
 const LIKED = COLLECTED.slice(1);
 const TITLE = "Flexi mechanical dragon";
 
-type Model = "several" | "bare" | "folder" | "hidden";
+type Model = "several" | "bare" | "folder" | "hidden" | "guides";
+
+/** The recorded files with two documents among them: a guide, and notes kept zipped on their own, as a copy of another
+ *  site's model keeps each of its files. */
+function filesWithGuides() {
+  const recorded = loadFixture("voxelshare", "files");
+  const [cow] = recorded.data.items;
+  const doc = (id: string, name: string, file: string) => ({
+    ...cow,
+    id,
+    name,
+    fileInfo: { ...cow.fileInfo, url: cow.fileInfo.url.replace("0_highland.stl.zip", file) },
+  });
+  return {
+    ...recorded,
+    data: { items: [cow, doc("9001", "Assembly guide.pdf", "guide.pdf"), doc("9002", "notes.txt", "0_notes.txt.zip")] },
+  };
+}
 
 /** The model's print profiles: the recorded one, with a second of the designer's and one of someone else's after it,
  *  as the site lists several; for "hidden", the recorded one made private, as its page leaves it out. */
@@ -87,6 +104,8 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       if (scenario === "fileDown" && !/\.(png|jpe?g|webp)$/i.test(url.pathname)) return json({}, 404);
       if (url.pathname.endsWith(".3mf")) return binary(await threeMf(url.pathname.split("/").pop()!));
       if (url.pathname.endsWith(".stl.zip")) return binary(await zip("cow", { "highland.stl": stl("cow") }));
+      if (url.pathname.endsWith("notes.txt.zip")) return binary(await zip("notes", { "notes.txt": "glue last" }));
+      if (url.pathname.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
       if (url.pathname.endsWith(".stl")) return binary(stl(url.pathname));
       return undefined;
     }
@@ -99,7 +118,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
     );
     const signedIn = headers.authorization === `Bearer ${china ? CHINA_TOKEN : TOKEN}`;
     if (scenario === "outage") return json({ code: 500, msg: "system error" }, 500);
-    const bare = model !== "several";
+    const bare = model !== "several" && model !== "guides";
     switch (url.pathname.slice(API.length)) {
       case "model/detail/info":
         if (scenario === "missing") return json(loadFixture("voxelshare", "model-missing"));
@@ -107,6 +126,7 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       case "model/detail/print_configs":
         return json(profiles(model));
       case "model/detail/source_files":
+        if (model === "guides") return json(filesWithGuides());
         return json(loadFixture("voxelshare", model === "folder" ? "files-folder" : "files"));
       case "model/recommend":
         return json(loadFixture("voxelshare", "trending"));
@@ -214,6 +234,21 @@ describe("VoxelShare specifics", () => {
     ctx.install(handlerFor("ok", "several"));
     expectStatus(await ctx.importUrl(`${MODEL_URL}#profileId-${COMMUNITY}`), 200);
     expect((await plateRows()).map((plate) => plate.sourceInstanceId)).toEqual([COMMUNITY]);
+  });
+
+  it("keeps a model's documents beside the profile a link brings, one zipped on its own unpacked", async () => {
+    const stub = ctx.install(handlerFor("ok", "guides"));
+    expectStatus(await ctx.importUrl(), 200);
+    const plates = await plateRows();
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({
+      where: { printId: plates[0].printId, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf", "notes.txt"]);
+    // None of the model files the profile stands for.
+    expect(stub.calls.some((call) => call.url.pathname.endsWith(".stl.zip"))).toBe(false);
   });
 
   it("imports a model without profiles from its own files, a file kept zipped on its own unpacked", async () => {

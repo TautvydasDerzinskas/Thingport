@@ -45,7 +45,10 @@ async function thumbColour(plateId: string): Promise<number[]> {
   return channels.slice(0, 3).map((c) => Math.round(c.mean));
 }
 
-function detail(profiles = PROFILES) {
+const DOC_PDF = "https://cdn-model.snapmaker.com/snapmaker/model-doc/20261115/213183/fcca56f131d317b7.pdf";
+const DOC_JPG = "https://cdn-model.snapmaker.com/snapmaker/model-doc/20261109/161185/c20959b32c403d2b.jpg";
+
+function detail(profiles = PROFILES, documents: { name: string; url: string }[] = []) {
   return {
     id: MODEL_ID,
     title: "Test Princess",
@@ -62,6 +65,8 @@ function detail(profiles = PROFILES) {
     creatorId: "777",
     creatorName: "Test Designer",
     printProfiles: profiles,
+    // As its page lists them: a guide, and a picture.
+    documents,
   };
 }
 
@@ -73,14 +78,31 @@ function apiResponse(code: number, data: unknown = null): Response {
 }
 
 /** `sameName`: every profile's file comes named alike, as Snapmaker often does. */
-function mockSnapmaker(opts: { profiles?: Profile[]; downloadCode?: number; sameName?: boolean } = {}) {
+const GUIDE_PDF = "https://models.snapmaker.com/models/download/snapmaker/model-file/guide.pdf?sign=d";
+
+function mockSnapmaker(
+  opts: { profiles?: Profile[]; downloadCode?: number; sameName?: boolean; guide?: boolean; documents?: boolean } = {},
+) {
   return vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
     const url = String(input);
-    if (url === `${API}/model/detail/${MODEL_ID}`) return apiResponse(200, detail(opts.profiles));
+    if (url === `${API}/model/detail/${MODEL_ID}`) {
+      const documents = opts.documents
+        ? [
+            { name: "MazeEgg05_Assembly_Guide.pdf", url: DOC_PDF },
+            { name: "08.jpg", url: DOC_JPG },
+          ]
+        : [];
+      return apiResponse(200, detail(opts.profiles, documents));
+    }
+    if (url === DOC_PDF)
+      return new Response("%PDF-1.4 guide", { status: 200, headers: { "content-type": "application/pdf" } });
     if (url === `${API}/model/download/${MODEL_ID}`) {
       if (opts.downloadCode) return apiResponse(opts.downloadCode);
       return apiResponse(200, {
-        modelFiles: [{ fileName: "princess.stl", downloadUrl: MODEL_STL }],
+        modelFiles: [
+          { fileName: "princess.stl", downloadUrl: MODEL_STL },
+          ...(opts.guide ? [{ fileName: "Painting guide.pdf", downloadUrl: GUIDE_PDF }] : []),
+        ],
         printProfiles: (opts.profiles ?? PROFILES).map((profile) => ({
           profileId: profile.id,
           fileName: opts.sameName ? "princess.3mf" : `${profile.id}.3mf`,
@@ -93,6 +115,8 @@ function mockSnapmaker(opts: { profiles?: Profile[]; downloadCode?: number; same
       return new Response("designer 3mf", { status: 200, headers: { "content-type": "text/html" } });
     if (url === REMIX_3MF) return new Response("remix 3mf", { status: 200, headers: { "content-type": "text/html" } });
     if (url === MODEL_STL) return new Response("solid princess\nendsolid princess\n", { status: 200 });
+    if (url === GUIDE_PDF)
+      return new Response("%PDF-1.4 guide", { status: 200, headers: { "content-type": "text/html" } });
     if (url === RED_URL) return new Response(await solid(255, 0, 0), { headers: { "content-type": "image/png" } });
     if (url === BLUE_URL) return new Response(await solid(0, 0, 255), { headers: { "content-type": "image/png" } });
     if (url === IMAGE_URL)
@@ -227,6 +251,33 @@ describe("importPrintFromUrl -- Snapmaker Space", () => {
     const remixUrl = `${MODEL_URL}#profileId-502`;
     const added = await importPrintFromUrl(userId, remixUrl, { url: remixUrl, tags: [] });
     expect(added.plates.map((plate) => plate.filename)).toEqual(["princess.3mf", "princess (2).3mf"]);
+  });
+
+  it("keeps the model's documents beside the profile, from the one answer that signs them both", async () => {
+    await setUserSnapmakerToken(userId, token());
+    const fetchMock = mockSnapmaker({ guide: true });
+    global.fetch = fetchMock;
+    const result = await importPrintFromUrl(userId, MODEL_URL, { url: MODEL_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.sourceInstanceId)).toEqual(["501"]);
+    const files = await prisma.printFile.findMany({ where: { printId: result.print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Painting guide.pdf"]);
+    // Neither the model file the profile stands for, nor the answer twice.
+    const asked = vi.mocked(fetchMock).mock.calls.map(([input]) => String(input));
+    expect(asked).not.toContain(MODEL_STL);
+    expect(asked.filter((url) => url === `${API}/model/download/${MODEL_ID}`)).toHaveLength(1);
+  });
+
+  it("keeps the guides its page lists under Documents, not its pictures, whatever the import brings", async () => {
+    await setUserSnapmakerToken(userId, token());
+    for (const profiles of [PROFILES, []]) {
+      const fetchMock = mockSnapmaker({ profiles, documents: true });
+      global.fetch = fetchMock;
+      const result = await importPrintFromUrl(userId, MODEL_URL, { url: MODEL_URL, tags: [] });
+      const files = await prisma.printFile.findMany({ where: { printId: result.print.id, role: "SUPPORTING" } });
+      expect(files.map((file) => file.filename)).toEqual(["MazeEgg05_Assembly_Guide.pdf"]);
+      expect(vi.mocked(fetchMock).mock.calls.map(([input]) => String(input))).not.toContain(DOC_JPG);
+      await prisma.print.deleteMany({ where: { userId, sourceProvider: "snapmaker" } });
+    }
   });
 
   it("brings the model files when the model has no print profiles", async () => {

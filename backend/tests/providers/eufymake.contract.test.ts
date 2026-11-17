@@ -58,9 +58,22 @@ function withPrintFiles(): Record<string, unknown> {
   return detail;
 }
 
-/** The model the stub serves: the one with print files, or the bare one as recorded. */
-function handlerFor(scenario: string, model: "print-files" | "bare" = "print-files"): FetchHandler {
+/** The model with print files, and a guide among its own files. */
+function withGuide(): Record<string, unknown> {
+  const detail = withPrintFiles() as { data: { model: { model_file: unknown[] } } };
+  detail.data.model.model_file = [
+    ...detail.data.model.model_file,
+    { file_type: 1, file_name: "Assembly guide.pdf", download_link: `${CDN}guide.pdf?X-Amz-Signature=a` },
+  ];
+  return detail;
+}
+
+/** The model the stub serves: the one with print files, the bare one as recorded, or one with print files and a guide. */
+function handlerFor(scenario: string, model: "print-files" | "bare" | "guide" = "print-files"): FetchHandler {
   return async ({ url, json: body, headers }) => {
+    if (url.hostname.endsWith(".cloudfront.net") && url.pathname.endsWith(".pdf")) {
+      return binary(Buffer.from("%PDF-1.4 guide"));
+    }
     if (url.hostname.endsWith(".cloudfront.net") && url.pathname.endsWith(".stl")) {
       return binary(stl(url.pathname.split("/").pop()!));
     }
@@ -71,6 +84,7 @@ function handlerFor(scenario: string, model: "print-files" | "bare" = "print-fil
     switch (url.pathname.slice(API.length)) {
       case "model/get_model_detail":
         if (scenario === "missing") return json(loadFixture("eufymake", "model-missing"));
+        if (model === "guide") return json(withGuide());
         return json(model === "bare" ? loadFixture("eufymake", "model-detail") : withPrintFiles());
       case "user/get_my_like_list": {
         assertThat(
@@ -164,6 +178,19 @@ describe("eufyMake specifics", () => {
     const plates = await prisma.plate.findMany({ where: { printId: print.id } });
     expect(plates.map((plate) => plate.filename)).toEqual(["ghost.stl"]);
     expect(stub.calls.some((call) => call.url.pathname.endsWith(".zip"))).toBe(false);
+  });
+
+  it("keeps a model's own documents beside the print file a link brings, and none of its model files", async () => {
+    ctx.install(handlerFor("ok", "guide"));
+    const url = "https://makeitreal.eufymake.com/models/9255b7378ac611efa154f2247282c999/Ghost/";
+    expectStatus(await ctx.importUrl(url), 200);
+    const [print] = await prisma.print.findMany({
+      where: { userId: ctx.userId, sourceExternalId: "9255b7378ac611efa154f2247282c999" },
+    });
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.sourceInstanceId)).toEqual(["546"]);
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
   });
 
   it("imports a print file whose designer left the extension off its name, as a 3MF", async () => {

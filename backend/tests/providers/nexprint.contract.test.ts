@@ -22,16 +22,26 @@ const MODEL_URL = "https://www.nexprint.com/en/models/G1215164";
 const COLLECTION_URL =
   "https://www.nexprint.com/en/U0092359913/home?component=UserCollect&subComp=UserCollectDetail&collectionId=G10199482";
 
-/** The model the stub serves: the one with profiles, or the bare one. */
+/** The recorded model with profiles, with a document added to its files: what NexPrint gives a model's instructions. */
+const GUIDE_ID = "2109986422412035111";
+function withGuide() {
+  const detail = loadFixture("nexprint", "model-detail") as { data: { modelFileList: unknown[] } };
+  detail.data.modelFileList.push({ fileId: GUIDE_ID, fileName: "Assembly guide.pdf", fileExt: "pdf" });
+  return detail;
+}
+
+/** The model the stub serves: the one with profiles, or the bare one, or the one with profiles and a guide. */
 function handlerFor(scenario: string, model = "model-detail"): FetchHandler {
   return async ({ url, json: body, headers }) => {
     const path = url.pathname.startsWith(GATEWAY) ? url.pathname.slice(GATEWAY.length) : null;
     if (url.hostname.endsWith(".aliyuncs.com")) {
       const fileId = url.pathname.split("/").pop()!.split(".")[0];
+      if (url.pathname.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
       return binary(url.pathname.endsWith(".stl") ? stl(fileId) : await threeMf(fileId));
     }
     switch (path) {
       case "/model-library-server/model-base-info/get":
+        if (model === "with-guide") return json(withGuide());
         return json(loadFixture("nexprint", scenario === "missing" ? "model-missing" : model));
       case "/model-library-server/common/presigned-download-url": {
         // The token is the user's, and sent as a bearer one.
@@ -42,7 +52,9 @@ function handlerFor(scenario: string, model = "model-detail"): FetchHandler {
         const signed = files.map(
           (file) =>
             JSON.parse(
-              template.replaceAll("{fileId}", file.fileId).replaceAll("{ext}", file.type === "5" ? "3mf" : "stl"),
+              template
+                .replaceAll("{fileId}", file.fileId)
+                .replaceAll("{ext}", file.type === "5" ? "3mf" : file.fileId === GUIDE_ID ? "pdf" : "stl"),
             ).data.fileInfoList[0],
         );
         return json({ code: 0, msg: "", data: { fileInfoList: signed } });
@@ -120,6 +132,23 @@ describe("NexPrint specifics", () => {
       const signing = bare.calls.find((call) => call.url.pathname.endsWith("/presigned-download-url"));
       expect(signing?.json.fileInfoList.map((file: { type: string }) => file.type)).toEqual(["2", "2"]);
     }
+  });
+
+  it("keeps a model's documents beside the profile a link brings, signing only those of its own files", async () => {
+    await spec.connect(ctx.userId);
+    const guided = ctx.install(handlerFor("ok", "with-guide"));
+    const res = await ctx.importUrl("https://www.nexprint.com/en/models/G1215165");
+    expectStatus(res, 200);
+    const [print] = await prisma.print.findMany({ where: { userId: ctx.userId, sourceExternalId: "G1215165" } });
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.sourceInstanceId)).toEqual(["G6354239"]);
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
+    // The profile's 3MF as a profile (type 5), then the guide alone of the model's own files (type 2).
+    const signed = guided.calls
+      .filter((call) => call.url.pathname.endsWith("/presigned-download-url"))
+      .map((call) => call.json.fileInfoList.map((file: { fileId: string; type: string }) => [file.type, file.fileId]));
+    expect(signed.at(-1)).toEqual([["2", GUIDE_ID]]);
   });
 
   it("reads a link's ids in upper case, as NexPrint's own are", async () => {

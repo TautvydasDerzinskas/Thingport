@@ -171,6 +171,8 @@ export type SnapmakerModelResolution = {
   galleryImages: { url: string; filename: string }[];
   creatorId: string | null;
   profiles: SnapmakerProfile[];
+  /** What its page lists under Documents -- assembly guides, pictures -- each a public link on its CDN. */
+  documents: SnapmakerFile[];
 };
 
 /** The model's category, then its parents up to the top level (Snapmaker's root, "Categories", left out), so a
@@ -262,6 +264,11 @@ export function snapmakerMetaFromDetail(
     galleryImages: images.map((url, index) => ({ url, filename: imageName(url, index) })),
     creatorId: id(detail.creatorId),
     profiles,
+    documents: Array.isArray(detail.documents)
+      ? detail.documents.flatMap((doc) =>
+          isRecord(doc) && str(doc.name) && str(doc.url) ? [{ name: fileName(doc.name, ""), url: str(doc.url)! }] : [],
+        )
+      : [],
   };
 }
 
@@ -322,6 +329,11 @@ export async function fetchSnapmakerDownloads(externalId: string, token: string)
 
 /** The signed hosts Snapmaker's file links point at, and where they redirect: on the China site, its private file
  *  store too. */
+/** Where a model's documents are: its picture CDN, open to anyone. */
+export function isSnapmakerDocumentHost(hostname: string): boolean {
+  return /^cdn-model\.snapmaker\.(com|cn)$/i.test(hostname);
+}
+
 export function isSnapmakerFileHost(hostname: string): boolean {
   return (
     /^(models|space)\.snapmaker\.(com|cn)$/i.test(hostname) || /^cdn-model-private\.snapmaker\.cn$/i.test(hostname)
