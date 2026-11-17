@@ -277,6 +277,31 @@ describe("a zip from a link, by how its files become models", () => {
     expect(prints[0].plates.map((plate) => plate.filename)).toEqual(["a.stl", "b.stl", "loose.stl"]);
   });
 
+  it("leaves no temp files behind when the disk fills partway through reading the picked files", async () => {
+    const zip = await zipOf(tree());
+    const real = fs.promises.writeFile.bind(fs.promises);
+    const tried: string[] = [];
+    const write = vi.spyOn(fs.promises, "writeFile").mockImplementation(async (file, data, options) => {
+      if (typeof file === "string" && path.basename(file).startsWith("thingport-zip-")) {
+        tried.push(file);
+        if (tried.length === 2) {
+          await real(file, "partial");
+          throw Object.assign(new Error("no space left on device"), { code: "ENOSPC" });
+        }
+      }
+      return real(file, data, options);
+    });
+    try {
+      await expect(extractZipEntriesToOneModel(userId, zip, "Kit.zip", Object.keys(tree()), {})).rejects.toThrow(
+        "no space left",
+      );
+    } finally {
+      write.mockRestore();
+    }
+    expect(tried).toHaveLength(2);
+    expect(tried.filter((file) => fs.existsSync(file))).toEqual([]);
+  });
+
   it("one model of documents alone is refused: there's nothing in them to print", async () => {
     const zip = await zipOf(tree());
     await expect(extractZipEntriesToOneModel(userId, zip, "Kit.zip", ["Kit/readme.pdf"], {})).rejects.toThrow(

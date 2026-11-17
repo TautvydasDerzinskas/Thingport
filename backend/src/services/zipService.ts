@@ -233,25 +233,35 @@ async function readPickedEntries(
   }
   const entries: PickedEntry[] = [];
   const failed: string[] = [];
-  for (const name of new Set(selections.map((s) => normalizeZipEntryPath(s)).filter((s): s is string => !!s))) {
-    const rawName = raw.get(name);
-    // A zip inside never becomes part of a model, so it isn't written out only to be dropped.
-    const usable = rawName && path.extname(name).toLowerCase() !== ".zip";
-    const buffer = usable ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
-    if (!buffer) {
-      failed.push(name);
-      continue;
+  let writing: string | null = null;
+  try {
+    for (const name of new Set(selections.map((s) => normalizeZipEntryPath(s)).filter((s): s is string => !!s))) {
+      const rawName = raw.get(name);
+      // A zip inside never becomes part of a model, so it isn't written out only to be dropped.
+      const usable = rawName && path.extname(name).toLowerCase() !== ".zip";
+      const buffer = usable ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
+      if (!buffer) {
+        failed.push(name);
+        continue;
+      }
+      const tempPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}`);
+      writing = tempPath;
+      await fs.writeFile(tempPath, buffer);
+      writing = null;
+      const parts = name.split("/");
+      entries.push({
+        name,
+        folder: parts.slice(0, -1).join("/"),
+        filename: sanitizeFilename(parts.at(-1)!),
+        tempPath,
+        size: buffer.length,
+      });
     }
-    const tempPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}`);
-    await fs.writeFile(tempPath, buffer);
-    const parts = name.split("/");
-    entries.push({
-      name,
-      folder: parts.slice(0, -1).join("/"),
-      filename: sanitizeFilename(parts.at(-1)!),
-      tempPath,
-      size: buffer.length,
-    });
+  } catch (err) {
+    // The callers remove only what they're handed, and a failed write hands them nothing.
+    const written = [...entries.map((entry) => entry.tempPath), ...(writing ? [writing] : [])];
+    await Promise.all(written.map((file) => fs.rm(file, { force: true }).catch(() => undefined)));
+    throw err;
   }
   return { entries, failed };
 }
