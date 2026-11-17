@@ -4,6 +4,7 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
+import { savesUnderWay } from "./printFileSaves";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
@@ -160,8 +161,6 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
 
 // The storagePath a file's row has from when it's made until its place is claimed.
 const PENDING_STORAGE_PATH = "pending";
-// Rows whose file is still on its way in: made before the file is placed, so a sweep for missing files leaves them be.
-const savesUnderWay = new Set<string>();
 
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
@@ -342,6 +341,8 @@ export async function renameSupportingFile(
   if (!record || record.printId !== printId || record.role !== "SUPPORTING") {
     throw new HttpError(404, "Supporting file not found");
   }
+  // Its row has its place before its bytes are there: renamed now, the row would move on while the file lands behind.
+  if (savesUnderWay.has(record.id)) throw new HttpError(409, "That file is still being saved: try again once it's in");
   let wanted = sanitizeFilename(filename.trim());
   if (!wanted) throw new HttpError(400, "A file needs a name");
   if (!path.extname(wanted)) wanted += path.extname(record.filename);
