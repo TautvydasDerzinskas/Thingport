@@ -56,11 +56,17 @@ export function guessDelimiter(text: string, extension: string): "," | "\t" | ";
   // part of a field, not the header's end. A doubled quote inside one turns quoting off and on again.
   const counts = { "\t": 0, ",": 0, ";": 0 };
   let quoted = false;
+  // Blank lines before it aren't the header.
+  let started = false;
   for (const char of text) {
+    if (char === "\ufeff") continue;
     if (char === '"') quoted = !quoted;
     else if (quoted) continue;
-    else if (char === "\n" || char === "\r") break;
-    else if (char === "\t" || char === "," || char === ";") counts[char] += 1;
+    else if (char === "\n" || char === "\r") {
+      if (started) break;
+      continue;
+    } else if (char === "\t" || char === "," || char === ";") counts[char] += 1;
+    started = true;
   }
   if (counts["\t"] > counts[","] && counts["\t"] > counts[";"]) return "\t";
   return counts[";"] > counts[","] ? ";" : ",";
