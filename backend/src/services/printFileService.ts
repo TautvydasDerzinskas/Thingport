@@ -158,11 +158,17 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
   }
 }
 
+// The storagePath a file's row has from when it's made until its place is claimed.
+const PENDING_STORAGE_PATH = "pending";
+// Rows whose file is still on its way in: made before the file is placed, so a sweep for missing files leaves them be.
+const savesUnderWay = new Set<string>();
+
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
  * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
  * role is already known; a new PREPARED file replaces the existing one. `leavePrepared` keeps one that would be
- * PREPARED as a supporting file instead, leaving the model's prepared print as it is (see batchFileSaver).
+ * PREPARED as a supporting file instead, leaving the model's prepared print as it is (see batchFileSaver). `onStored`
+ * is told the role it was stored with, once it's in.
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -174,7 +180,13 @@ export async function saveFileFromTemp(
     role: givenRole,
     folder: givenFolder,
     leavePrepared = false,
-  }: { role?: "SUPPORTING" | "PREPARED"; folder?: string | null; leavePrepared?: boolean } = {},
+    onStored,
+  }: {
+    role?: "SUPPORTING" | "PREPARED";
+    folder?: string | null;
+    leavePrepared?: boolean;
+    onStored?: (role: "SUPPORTING" | "PREPARED") => void;
+  } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
@@ -192,9 +204,10 @@ export async function saveFileFromTemp(
       folder,
       mime,
       role,
-      storagePath: "pending",
+      storagePath: PENDING_STORAGE_PATH,
     },
   });
+  savesUnderWay.add(record.id);
   let destination: string | null = null;
 
   try {
@@ -265,6 +278,7 @@ export async function saveFileFromTemp(
       await fs.rm(oldPreparedPath, { force: true }).catch(() => undefined);
       await pruneEmptyStorageDirs(path.dirname(oldPreparedPath));
     }
+    onStored?.(role);
     return updatedPrint;
   } catch (err) {
     // Only once it's ours: a 409 above means the file there is another one's.
@@ -274,6 +288,8 @@ export async function saveFileFromTemp(
     }
     await prisma.printFile.delete({ where: { id: record.id } }).catch(() => undefined);
     throw err;
+  } finally {
+    savesUnderWay.delete(record.id);
   }
 }
 
@@ -356,23 +372,20 @@ export async function renameSupportingFile(
  */
 export function batchFileSaver(userId: string, printId: string) {
   let preparedTaken = false;
-  return async (
+  return (
     tempPath: string,
     originalFilename: string,
     contentType: string | null | undefined,
     options: { folder?: string | null } = {},
-  ): Promise<Print> => {
-    const before = preparedTaken
-      ? null
-      : ((await prisma.print.findUnique({ where: { id: printId }, select: { preparedFileId: true } }))
-          ?.preparedFileId ?? null);
-    const saved = await saveFileFromTemp(userId, printId, tempPath, originalFilename, contentType, {
+  ): Promise<Print> =>
+    saveFileFromTemp(userId, printId, tempPath, originalFilename, contentType, {
       ...options,
       leavePrepared: preparedTaken,
+      // What this save stored, not the model's prepared slot, which another upload may fill meanwhile.
+      onStored: (role) => {
+        if (role === "PREPARED") preparedTaken = true;
+      },
     });
-    if (saved.preparedFileId && saved.preparedFileId !== before) preparedTaken = true;
-    return saved;
-  };
 }
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
@@ -382,7 +395,10 @@ export function removeMissingPrintFiles(printId: string): Promise<void> {
   // the new path, both under the lock, so a path read outside it could be one the file has just left.
   return withStorageLock(async () => {
     const rows = await prisma.printFile.findMany({ where: { printId } });
-    const gone = rows.filter((row) => !printFileOnDisk(row));
+    // A file still being saved isn't placed yet, which isn't the same as gone.
+    const gone = rows.filter(
+      (row) => row.storagePath !== PENDING_STORAGE_PATH && !savesUnderWay.has(row.id) && !printFileOnDisk(row),
+    );
     if (!gone.length) return;
     await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
     for (const row of gone) {
