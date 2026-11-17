@@ -16,6 +16,7 @@ import { detailsOf } from "../details";
 import { MANIFESTS } from "../index.generated";
 import type { ProviderDetails, ProviderLists, ProviderTrending, SourcedImport } from "../types";
 import {
+  fetchMakerablesMachineFiles,
   fetchMakerablesModelFiles,
   fetchMakerablesPopular,
   fetchMakerablesSaved,
@@ -76,6 +77,16 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
         // on the tab, each zip's files keep its name as their folder.
         const folder = own.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
+      }
+      // The toolpaths cut from them, from the project's other tabs, where the admin keeps any: never the import's
+      // failure, and none the site says is over the limit is asked for.
+      const limit = await kit.supportingLimit();
+      if (limit !== null) {
+        const machine = await fetchMakerablesMachineFiles(resolved.projectId).catch(() => []);
+        for (const file of machine.filter((each) => kit.isSupportingFile(each.name) && (each.size ?? 0) <= limit)) {
+          const inputs = await kit.downloadSupportingFile(file, isMakerablesFileHost);
+          downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+        }
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

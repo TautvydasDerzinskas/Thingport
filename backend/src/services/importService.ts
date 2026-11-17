@@ -35,7 +35,6 @@ import {
   getPath,
   type ImportCookies,
   type ImportedPageMetadata,
-  type ParametricSourceInfo,
 } from "./importResolvers";
 import {
   makerworldHtmlHeaders,
@@ -61,6 +60,7 @@ import {
   MakerworldDownloadLimitError,
   parseMakerworldModelUrl,
   resolveMakerworldParametricSource,
+  resolveMakerworldSupportingUrl,
   resolveMakerworldViaCloudApi,
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
@@ -96,6 +96,7 @@ import {
   withoutTopOf,
 } from "../utils/fileFolder";
 import {
+  isDocumentFile,
   isSupportingImportFile,
   supportingLimits,
   withoutModelsSharedTop,
@@ -212,11 +213,19 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
         body.makerworldPaceMs,
       )
     : meta.parametricSource;
+  // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched: from the file list
+  // Grab sent, which names them beside the scripts. One from a Grab that sent scripts only names none, so none is
+  // fetched; MakerWorld isn't asked to say it again.
+  const supportingZipUrl =
+    bearerToken && sentFileList && !parametricSource?.zipUrl
+      ? await resolveMakerworldSupportingUrl(parsed.designId, design, bearerToken, body.makerworldPaceMs)
+      : null;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
     parametricSource,
+    supportingZipUrl,
     makerworldProfile: extensionProfile(url, body),
   };
 }
@@ -1103,20 +1112,40 @@ async function platesAndSourcesFromZip(
 }
 
 /**
- * The generator scripts of a model whose own download didn't carry them, from the zip its metadata points at.
+ * What a model's own download -- one profile's 3MF -- didn't carry, from the zip of its raw files its metadata points
+ * at: the scripts it's generated from, and the files it keeps beside its own.
  *
  * Best-effort throughout: this is an extra download on top of the one the user asked for, and a model with its
  * plates is worth more than a failed import over the script it could also have been generated from.
  */
-async function fetchParametricSources(source: ParametricSourceInfo | undefined): Promise<NewPlateInput[]> {
-  if (!source?.zipUrl || source.withheld) return [];
-  const result = await downloadPlainFileToTemp(source.zipUrl, "sources.zip");
-  if (!result || "rateLimited" in result || !result.input.tempFilePath) return [];
+export async function fetchDesignRawFiles(
+  meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
+): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
+  const scripts =
+    meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
+  const zipUrl = scripts ?? meta.supportingZipUrl;
+  if (!zipUrl) return { sources: [], supporting: [] };
+  // Fetched for its supporting files alone, it's held to what a model may keep of them, as supportingDownload holds a
+  // zip: the model files it carries too are thrown away.
+  let maxBytes = IMPORT_MAX_BYTES;
+  if (!scripts) {
+    const limits = await supportingLimits();
+    if (!limits) return { sources: [], supporting: [] };
+    maxBytes = Math.min(limits.perModel, IMPORT_MAX_BYTES);
+  }
+  const result = await downloadPlainFileToTemp(zipUrl, "sources.zip", maxBytes);
+  if (!result || "rateLimited" in result || !result.input.tempFilePath) return { sources: [], supporting: [] };
   try {
-    return await parametricSourcesFromZip(result.input.tempFilePath);
-  } catch (err) {
-    console.warn("Couldn't read the generator scripts the model points at:", err);
-    return [];
+    let sources: NewPlateInput[] = [];
+    if (scripts) {
+      try {
+        sources = await parametricSourcesFromZip(result.input.tempFilePath);
+      } catch (err) {
+        console.warn("Couldn't read the generator scripts the model points at:", err);
+      }
+    }
+    // The files beside them come in the same zip, and never fail the import (supportingFilesFromZip).
+    return { sources, supporting: await supportingFilesFromZip(result.input.tempFilePath) };
   } finally {
     await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
   }
@@ -1212,7 +1241,12 @@ async function filesFromZip(
   }
   // None of what was wanted here, so it is in an archive this one only wraps. The files beside that archive are kept
   // with what it holds: a site's instructions beside the zip of its model, or a zip of nothing but such files.
-  const wraps = picksSupporting(pick) ? !(await zipEntriesInFolders(zipPath)).length : !inputs.length;
+  // A script beside the archive doesn't make it the model's: only model files do.
+  const wraps = picksSupporting(pick)
+    ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) =>
+        MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()),
+      )
+    : !inputs.length;
   if (!wraps || depth >= NESTED_ZIP_DEPTH) return inputs;
   try {
     return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget))];
@@ -1261,6 +1295,52 @@ async function downloadSignedFile(
   if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
   if (extra) return [{ ...result.input, supporting: true }];
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
+  return [];
+}
+
+/** A file a site gives beside a model's own (ImportKit.downloadSupportingFile): within the admin's limits, never the
+ *  import's failure, and a zip only for the supporting files in it. */
+export async function downloadSupportingFile(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+): Promise<NewPlateInput[]> {
+  try {
+    return await supportingDownload(file, isFileHost);
+  } catch (err) {
+    console.warn(`Couldn't keep ${file.name} beside the model:`, err);
+    return [];
+  }
+}
+
+async function supportingDownload(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits) return [];
+  let hostname: string;
+  try {
+    hostname = new URL(file.url).hostname;
+  } catch {
+    return [];
+  }
+  if (!isFileHost(hostname)) return [];
+  // A zip's files are held to the limits as it's opened, so the zip may be as large as all a model keeps: two guides
+  // that each fit can make one too large for a file of its own.
+  const isZip = path.extname(file.name).toLowerCase() === ".zip";
+  const cap = isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : limits.perFile;
+  const result = await downloadPlainFileToTemp(file.url, file.name, cap);
+  if (!result || "rateLimited" in result) return [];
+  const input = result.input;
+  if (path.extname(input.filename).toLowerCase() === ".zip") {
+    try {
+      return await supportingFilesFromZip(input.tempFilePath!);
+    } finally {
+      await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
+    }
+  }
+  if (path.extname(input.filename) && isSupportingImportFile(input.filename)) return [{ ...input, supporting: true }];
+  await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
 
@@ -1369,6 +1449,9 @@ const IMPORT_KIT: PipelineKit = {
     MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
     PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
   isSupportingFile: (name) => Boolean(path.extname(name)) && isSupportingImportFile(name),
+  isDocumentFile: (name) => Boolean(path.extname(name)) && isDocumentFile(name),
+  supportingLimit: async () => (await supportingLimits())?.perFile ?? null,
+  downloadSupportingFile,
   createPrint: (userId, source, body, resolved, downloaded, details) =>
     createSourcedPrint(userId, source, body, resolved, downloaded, `${source.provider}-${source.externalId}`, details),
   async addProfiles(existing, inputs, details) {
@@ -1587,8 +1670,8 @@ async function importLinkedFile(
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
-  // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
-  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
+  // A zip of raw files already gave up its scripts and the files beside them above; a profile's 3MF fetches them.
+  if (!sources.length && !supporting.length) ({ sources, supporting } = await fetchDesignRawFiles(meta));
   const author = await upsertAuthorFromImport(meta.author);
   const categoryId =
     body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
@@ -1723,7 +1806,7 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
-  if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);
+  if (!sources.length && !supporting.length) ({ sources, supporting } = await fetchDesignRawFiles(meta));
   const profiles = makerworldProfileDetails(meta.makerworldProfile);
   return {
     inputs: nameInputsApart([...plates, ...sources, ...supporting], profiles.titles),

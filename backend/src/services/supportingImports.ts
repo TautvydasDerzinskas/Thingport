@@ -66,15 +66,45 @@ export function isSupportingImportFile(name: string): boolean {
   return !SKIPPED_EXTS.has(ext);
 }
 
+// Documents and 2D drawings: of what a site that offers a model in many formats lists, the files that aren't the model
+// again in another one (IGES, Parasolid, a CAD system's own, Blender's).
+const DOCUMENT_EXTS = new Set([
+  ".pdf",
+  ".txt",
+  ".md",
+  ".rtf",
+  ".doc",
+  ".docx",
+  ".odt",
+  ".csv",
+  ".xls",
+  ".xlsx",
+  ".ods",
+  ".dxf",
+  ".svg",
+]);
+
+/** A supporting file that's a document or a 2D drawing: instructions, a parts list, a cut file. */
+export function isDocumentFile(name: string): boolean {
+  return isSupportingImportFile(name) && DOCUMENT_EXTS.has(path.extname(name).toLowerCase());
+}
+
 /** A model may keep this many times the largest supporting file in all. */
 const PER_MODEL_FACTOR = 2.5;
 
 export type SupportingLimits = { perFile: number; perModel: number };
 
 /** How large a supporting file an import keeps, and how much of them one model takes in all; null when an admin keeps
- *  none. Never past what an import downloads at all. */
+ *  none, or when the setting can't be read: a site's other files are never worth failing an import over. Never past
+ *  what an import downloads at all. */
 export async function supportingLimits(): Promise<SupportingLimits | null> {
-  const limit = await getImportSupportingFiles();
+  let limit: Awaited<ReturnType<typeof getImportSupportingFiles>>;
+  try {
+    limit = await getImportSupportingFiles();
+  } catch (err) {
+    console.warn("Couldn't read how large a supporting file an import keeps, so it keeps none:", err);
+    return null;
+  }
   if (limit === "off") return null;
   if (limit === "any") return { perFile: IMPORT_MAX_BYTES, perModel: Number.POSITIVE_INFINITY };
   const perFile = Math.min(limit * 1024 * 1024, IMPORT_MAX_BYTES);

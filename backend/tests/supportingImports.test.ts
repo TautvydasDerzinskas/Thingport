@@ -8,7 +8,12 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
-import { modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
+import {
+  downloadSupportingFile,
+  fetchDesignRawFiles,
+  modelFilesFromZip,
+  supportingFilesFromZip,
+} from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
 import { setImportSupportingFiles } from "../src/services/settingsService";
@@ -26,12 +31,15 @@ import {
 import { STORAGE } from "../src/config";
 
 // Small limits stand in for the admin's sizes, which are megabytes: undefined leaves the setting to say.
-const limits = vi.hoisted(() => ({ value: undefined as SupportingLimits | null | undefined }));
+const limits = vi.hoisted(() => ({ value: undefined as SupportingLimits | null | undefined, fail: false }));
 vi.mock("../src/services/supportingImports", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/services/supportingImports")>();
   return {
     ...actual,
-    supportingLimits: async () => (limits.value !== undefined ? limits.value : actual.supportingLimits()),
+    supportingLimits: async () => {
+      if (limits.fail) throw new Error("the settings couldn't be read");
+      return limits.value !== undefined ? limits.value : actual.supportingLimits();
+    },
   };
 });
 
@@ -53,6 +61,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   limits.value = undefined;
+  limits.fail = false;
   await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
 });
 
@@ -219,6 +228,16 @@ describe("a site's zip", () => {
     ]);
   });
 
+  it("opens a zip beside a script for the files beside its model files, as it does for those", async () => {
+    const parts = fs.readFileSync(await zipOf({ "part.stl": "solid part endsolid", "guide.pdf": "%PDF-1.4 guide" }));
+    const zip = await zipOf({ "source.scad": "cube(10);", "parts.zip": parts });
+    const plates = await modelFilesFromZip(zip);
+    const supporting = await supportingFilesFromZip(zip);
+    remove([...plates, ...supporting]);
+    expect(plates.map((each) => [each.folder ?? null, each.filename])).toEqual([["parts", "part.stl"]]);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([["parts", "guide.pdf"]]);
+  });
+
   it("doesn't open a zip beside the model's files for them, and keeps no more than the limits allow", async () => {
     const zip = await zipOf({ "a.stl": "solid a endsolid", "docs.zip": fs.readFileSync(await zipOf(kit)) });
     expect(await supportingFilesFromZip(zip)).toEqual([]);
@@ -232,6 +251,97 @@ describe("a site's zip", () => {
     const smaller = await supportingFilesFromZip(await zipOf(kit));
     remove(smaller);
     expect(smaller.map((each) => each.filename)).toEqual(["LICENSE.txt"]);
+  });
+});
+
+describe("a file a site gives beside a model's own", () => {
+  const site = (hostname: string) => hostname === "example.com";
+  const originalFetch = global.fetch;
+  const served = (files: Record<string, string | Buffer>) => {
+    const fetchMock = vi.fn<(target: string | URL | Request) => Promise<Response>>(async (target) => {
+      const body = files[new URL(String(target instanceof Request ? target.url : target)).pathname];
+      return body === undefined ? new Response("missing", { status: 404 }) : new Response(body, { status: 200 });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    return fetchMock;
+  };
+  const named = (inputs: NewPlateInput[]) =>
+    inputs.map((each) => [each.folder ?? null, each.filename, each.supporting]);
+  const at = (name: string) => ({ url: `https://example.com/${name}`, name });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("keeps a document, and of a zip only the files beside its model files, never more plates", async () => {
+    const zip = await new JSZip()
+      .file("Frog/frog.stl", "solid frog")
+      .file("Frog/docs/guide.pdf", "%PDF-1.4")
+      .file("Frog/side.png", "png")
+      .generateAsync({ type: "nodebuffer" });
+    const cut = await new JSZip().file("frog.dxf", "0\nSECTION").generateAsync({ type: "nodebuffer" });
+    served({ "/guide.pdf": "%PDF-1.4", "/all.zip": zip, "/dxf.zip": cut, "/frog.stl": "solid frog" });
+    expect(named(await downloadSupportingFile(at("guide.pdf"), site))).toEqual([[null, "guide.pdf", true]]);
+    expect(named(await downloadSupportingFile(at("all.zip"), site))).toEqual([["docs", "guide.pdf", true]]);
+    // A zip of a format the site offers the model in besides: its cut file, as a supporting one.
+    expect(named(await downloadSupportingFile(at("dxf.zip"), site))).toEqual([[null, "frog.dxf", true]]);
+    // A model file asked for this way stays out: the model's own files come another way.
+    expect(await downloadSupportingFile(at("frog.stl"), site)).toEqual([]);
+  });
+
+  it("gives none, never failing the import, when the admin's limits can't be read", async () => {
+    served({ "/guide.pdf": "%PDF-1.4" });
+    limits.fail = true;
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
+  });
+
+  it("opens a zip larger than one file may be, for files in it that each fit", async () => {
+    const zip = await new JSZip()
+      .file("a.txt", "a".repeat(60))
+      .file("b.txt", "b".repeat(60))
+      .generateAsync({ type: "nodebuffer" });
+    expect(zip.length).toBeGreaterThan(100);
+    served({ "/docs.zip": zip });
+    limits.value = { perFile: 100, perModel: 1000 };
+    const kept = await downloadSupportingFile(at("docs.zip"), site);
+    remove(kept);
+    expect(kept.map((each) => each.filename).toSorted()).toEqual(["a.txt", "b.txt"]);
+  });
+
+  it("holds a design's raw files, fetched for its supporting files alone, to what a model may keep of them", async () => {
+    const zip = await new JSZip()
+      .file("frog.stl", "solid frog ".repeat(40))
+      .file("frog.scad", "cube(1);")
+      .file("guide.pdf", "%PDF-1.4")
+      .generateAsync({ type: "nodebuffer" });
+    served({ "/raw.zip": zip });
+    const raw = "https://example.com/raw.zip";
+    limits.value = { perFile: 100, perModel: zip.length - 1 };
+    expect(await fetchDesignRawFiles({ supportingZipUrl: raw })).toEqual({ sources: [], supporting: [] });
+    limits.value = { perFile: 100, perModel: zip.length + 100 };
+    const kept = (await fetchDesignRawFiles({ supportingZipUrl: raw })).supporting;
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["guide.pdf"]);
+    // Fetched for the scripts it holds as well, it may be as large as any download.
+    limits.value = { perFile: 100, perModel: zip.length - 1 };
+    const both = await fetchDesignRawFiles({
+      parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: raw },
+      supportingZipUrl: raw,
+    });
+    remove([...both.sources, ...both.supporting]);
+    expect(both.sources.map((each) => each.filename)).toEqual(["frog.scad"]);
+    expect(both.supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
+  });
+
+  it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {
+    const fetchMock = served({ "/guide.pdf": "%PDF-1.4 a longer guide" });
+    expect(await downloadSupportingFile({ url: "https://example.org/guide.pdf", name: "guide.pdf" }, site)).toEqual([]);
+    expect(await downloadSupportingFile(at("missing.pdf"), site)).toEqual([]);
+    limits.value = { perFile: 8, perModel: 20 };
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
+    limits.value = null;
+    fetchMock.mockClear();
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

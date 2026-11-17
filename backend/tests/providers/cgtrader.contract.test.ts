@@ -68,8 +68,8 @@ const notFound = () => redirect("https://www.cgtrader.com/not_found", 301);
 /** The model as CGTrader would sell it: its product script with a price, which the user hasn't paid. */
 const paid = (body: string) => body.replace(/"price":0\.0/g, '"price":5.0');
 
-/** The download page listing other files than the recorded one's. */
-function downloadPageWith(files: string[]): string {
+/** The download page listing other files than the recorded one's, each "1 MB" unless it says its size. */
+function downloadPageWith(files: (string | { name: string; size: string })[]): string {
   const page = loadFixtureHtml("cgtrader", "download-page");
   // Quoted either way: the site's own pages escape the JSON in double quotes, Prettier keeps it raw in single ones.
   const [attribute, , props] = page.match(/data-react-props=(["'])([\s\S]*?)\1/)!;
@@ -79,18 +79,22 @@ function downloadPageWith(files: string[]): string {
       .replace(/&#39;/g, "'")
       .replace(/&amp;/g, "&"),
   );
-  data.topSection.itemFiles = files.map((name, index) => ({
+  data.topSection.itemFiles = files.map((file, index) => ({
     itemId: 6890774,
     fileId: 100 + index,
-    name,
-    fileSize: "1 MB",
+    name: typeof file === "string" ? file : file.name,
+    fileSize: typeof file === "string" ? "1 MB" : file.size,
     url: `/items/6890774/free-downloads/${100 + index}`,
   }));
   const encoded = JSON.stringify(data).replace(/&/g, "&amp;").replace(/"/g, "&quot;");
   return page.replace(attribute, `data-react-props="${encoded}"`);
 }
 
-type Variant = { files?: string[]; product?: (body: string) => string; zips?: Record<string, Record<string, Buffer>> };
+type Variant = {
+  files?: (string | { name: string; size: string })[];
+  product?: (body: string) => string;
+  zips?: Record<string, Record<string, Buffer>>;
+};
 
 function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
   return async ({ url, headers, method, json: sent }) => {
@@ -132,7 +136,8 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       // The bot check stands before the site: a request without a token never reaches the sign-in.
       if (!token) return challenge();
       if (!signedIn) return html("<title>The change you requested was unauthorized (401)</title>", 401);
-      const name = variant.files?.[Number(file[1]) - 100] ?? "stl.stl";
+      const listed = variant.files?.[Number(file[1]) - 100];
+      const name = (typeof listed === "string" ? listed : listed?.name) ?? "stl.stl";
       return redirect(
         `https://${FILE_HOST}/uploads%2Ffiles%2F6890774%2F${encodeURIComponent(name)}?Expires=1793296908&Signature=c2ln&Key-Pair-Id=K30`,
       );
@@ -289,6 +294,21 @@ describe("CGTrader specifics", () => {
     const [objOnly] = await ctx.prints();
     const objPlates = await prisma.plate.findMany({ where: { printId: objOnly.id } });
     expect(objPlates.map((plate) => plate.filename)).toEqual(["Lotus.obj"]);
+  });
+
+  it("keeps its documents and drawings within the limit, asking for none bigger nor the model in other formats", async () => {
+    await connect(ctx.userId);
+    const stub = ctx.install(
+      handlerFor("ok", {
+        files: ["Lotus.stl", "Lotus.3dm", "Lotus.blend", "Assembly.pdf", { name: "Outline.dxf", size: "200 MB" }],
+      }),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Assembly.pdf"]);
+    const fetched = stub.callsTo(FILE_HOST).map((call) => decodeURIComponent(call.url.pathname).split("/").pop());
+    expect(fetched.toSorted()).toEqual(["Assembly.pdf", "Lotus.stl"]);
   });
 
   it("says so for a model whose files are only in archives Thingport can't open", async () => {

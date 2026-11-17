@@ -21,8 +21,10 @@ Makerables is a site over a REST API of its own, which Thingport reads the way i
 - **Which files.** A project keeps its files on three tabs: **NC Files** (the toolpaths a machine cuts), **CAM Files**
   (the CAM project they came out of) and **Model Files** (the CAD and mesh files everything else was made from).
   Thingport imports the Model Files -- the `.step`, `.stp` and `.stl` a slicer or a CAD program takes, and zips of
-  them, unpacked. The other two tabs hold machine files no slicer reads, so they're left where they are. A project
-  whose Model Files tab holds only pictures or a native CAD format has nothing to import, and says so.
+  them, unpacked. The NC programs and CAM projects come along as the model's
+  [supporting files](../features/supporting-files.md), in folders named `NC` and `CAM`: no slicer reads them, but they
+  stay with the model. A project whose Model Files tab holds only pictures or a native CAD format has nothing to
+  import, and says so.
 - **No sign-in needed.** The files sit on Makerables' own CDN, open to anyone with the link, so an import needs no
   account at all.
 - **Saved projects.** The **Saved** tab of your profile is Makerables' only list, and only you can see it, so Thingport

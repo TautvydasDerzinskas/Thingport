@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
+import { setImportSupportingFiles } from "../../src/services/settingsService";
 import { makerablesBrowse } from "../../src/providers/makerables/browse";
 import { makerablesConnection } from "../../src/providers/makerables/connection";
 import {
@@ -54,6 +55,8 @@ function handlerFor(scenario: string, files = "model-files"): FetchHandler {
         return binary(await zip(name, { [`${name.split("-mv")[0]}.step`]: step(name) }));
       }
       if (name.endsWith(".stl")) return binary(stl(name));
+      // Its NC programs and CAM projects, whatever's in them.
+      if (/\.(nc|mks)$/.test(name)) return binary(Buffer.from(`G21 ; ${name}`));
       if (/\.ste?p$/.test(name)) return binary(step(name));
       // Its pictures fall through to the stub's own PNG.
       return undefined;
@@ -76,6 +79,11 @@ function handlerFor(scenario: string, files = "model-files"): FetchHandler {
     if (path === "/api/projects/original-files") {
       assertThat(url.searchParams.get("project_id") === PROJECT_ID, "a project's files are asked for by its id");
       return json(loadFixture("makerables", files));
+    }
+    if (path === "/api/projects/files" && scenario === "nc-down") return json({}, 500);
+    if (path === "/api/projects/files" || path === "/api/projects/cam-files") {
+      assertThat(url.searchParams.get("project_id") === PROJECT_ID, "a project's files are asked for by its id");
+      return json(loadFixture("makerables", path.endsWith("cam-files") ? "cam-files" : "nc-files"));
     }
     if (path === "/api/projects/query") return json(loadFixture("makerables", "popular"));
     if (path === "/api/users/me") {
@@ -164,15 +172,42 @@ describe("Makerables specifics", () => {
     expect(stub.calls.some((call) => call.url.searchParams.get("id") === PROJECT_ID)).toBe(true);
   });
 
-  it("brings the Model Files tab, and only what a plate takes", async () => {
-    const stub = ctx.stub("ok");
+  it("brings the Model Files tab as its plates, and the NC and CAM tabs' files beside them", async () => {
+    ctx.stub("ok");
     expectStatus(await ctx.importUrl(), 200);
     const [print] = await ctx.prints();
     const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
     expect(plates.map((plate) => plate.filename)).toEqual(PLATES);
-    // The NC and CAM tabs hold machine files no slicer reads, so they're never asked for.
-    const tabs = stub.calls.map((call) => call.url.pathname).filter((path) => path.startsWith("/api/projects/"));
-    expect(tabs).toEqual(["/api/projects/original-files"]);
+    // The toolpaths cut from them, which no slicer reads: kept beside them, each in its tab's folder.
+    const files = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([
+      ["NC", "59_1_F3.175T1F1.5T3F1T4V3.175T6E0.3T7.nc"],
+      ["NC", "59_1_F3.175T1F2T2F1.5T3F1T4F0.8T5V3.175T6E0.3T7M2T8.nc"],
+      ["CAM", "Acrylic knife.mks"],
+    ]);
+  });
+
+  it("keeps the CAM tab's files when the NC tab can't be read", async () => {
+    ctx.stub("nc-down");
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([["CAM", "Acrylic knife.mks"]]);
+  });
+
+  it("asks for neither machine tab when the admin keeps no supporting files", async () => {
+    await setImportSupportingFiles("off");
+    try {
+      const stub = ctx.stub("ok");
+      expectStatus(await ctx.importUrl(), 200);
+      const tabs = stub.calls.map((call) => call.url.pathname).filter((path) => path.startsWith("/api/projects/"));
+      expect(tabs).toEqual(["/api/projects/original-files"]);
+    } finally {
+      await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
+    }
   });
 
   it("unpacks a Model Files zip into the files inside it", async () => {

@@ -70,6 +70,25 @@ async function downloadProfile(
   return { ...inputs[0], sourceInstanceId: profileId };
 }
 
+/** The model's own files a profile doesn't bring that it keeps beside it -- instructions, sources -- listed only when
+ *  the admin keeps any. Never the import's failure, bar a sign-in Creality Cloud refused, which every call would meet. */
+async function supportingFiles(
+  resolved: CrealitycloudModelResolution,
+  auth: CrealitycloudAuth,
+  kit: ImportKit,
+): Promise<NewPlateInput[]> {
+  if ((await kit.supportingLimit()) === null) return [];
+  let files: CrealitycloudFile[] | null;
+  try {
+    files = await fetchCrealitycloudModelFiles(resolved.groupId, auth);
+  } catch (err) {
+    if (err instanceof CrealitycloudAuthError) throw err;
+    return [];
+  }
+  const wanted = (files ?? []).filter((file) => kit.isSupportingFile(file.name));
+  return (await Promise.all(wanted.map((file) => kit.downloadSupportingFile(file, isCrealitycloudFileHost)))).flat();
+}
+
 /** Like Snapmaker: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the
  *  profile. An import brings the profile the link names, else the designer's first; a model without profiles brings
  *  its model files instead. Files only download as the user, so everything needs their Creality Cloud sign-in. A link
@@ -98,7 +117,10 @@ export const crealitycloudImport: SourcedImport<CrealitycloudAuth, Crealitycloud
       const [profileId] = selectCrealitycloudProfiles(resolved, "url", requested);
       if (profileId) {
         const profile = await downloadProfile(resolved, profileId, auth, kit);
-        if (profile) downloaded.push(profile);
+        if (profile) {
+          downloaded.push(profile);
+          downloaded.push(...(await supportingFiles(resolved, auth, kit)));
+        }
       }
       if (!downloaded.length) {
         const files = await fetchCrealitycloudModelFiles(resolved.groupId, auth);

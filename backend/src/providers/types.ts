@@ -55,6 +55,21 @@ export type ImportKit = {
    * the admin's limits and skips it rather than failing the import.
    */
   isSupportingFile(name: string): boolean;
+  /** A supporting file that's a document or a 2D drawing -- instructions, a parts list, a cut file -- rather than the
+   *  model again in another format: what's worth asking for of a site that offers a model in many. */
+  isDocumentFile(name: string): boolean;
+  /** The largest supporting file the admin keeps, in bytes, or null when they keep none: ask before listing or signing
+   *  files that would only be thrown away, and skip one the site says is bigger. */
+  supportingLimit(): Promise<number | null>;
+  /**
+   * A file a site gives beside a model's own, from one of its hosts, kept within the admin's limits. Never fails the
+   * import: a block, an error, or a file over the limit is skipped. A zip is unpacked into the supporting files it
+   * holds, and only those, so a format a site also offers the model in never becomes more plates.
+   */
+  downloadSupportingFile(
+    file: { url: string; name: string },
+    isFileHost: (hostname: string) => boolean,
+  ): Promise<NewPlateInput[]>;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */

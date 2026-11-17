@@ -28,12 +28,23 @@ const DESIGNER_PROFILE = "6ac6f004729f5ba4b35740a6";
 const OTHER_PROFILE = "6ad5fedd23030f2e2c08899b";
 const API = "/api/cxy";
 
-type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" };
+type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" };
+
+/** The recorded files with a guide among them, as a model's instructions come. */
+function filesWithGuide() {
+  const files = loadFixture("crealitycloud", "model-files") as { result: { downloadUrls: unknown[] } };
+  files.result.downloadUrls.push({
+    fileName: "Assembly guide",
+    url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/guide.pdf?Signature=s",
+  });
+  return files;
+}
 
 function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
   return async ({ url, json: body, headers }) => {
     if (url.hostname.endsWith(".aliyuncs.com")) {
       const name = url.pathname.split("/").pop()!;
+      if (name.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
       return binary(name.endsWith(".stl") ? stl(name) : await threeMf(name));
     }
     if (!url.pathname.startsWith(API)) return undefined;
@@ -59,6 +70,7 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       case "/v3/model/memberDownload":
         assertThat(signedIn, "the model's files are signed for the signed-in user");
         if (scenario === "rejected") return json(loadFixture("crealitycloud", "invalid-token"));
+        if (variant.files === "guide") return json(filesWithGuide());
         return json(loadFixture("crealitycloud", variant.files === "missing" ? "model-missing" : "model-files"));
       case "/v2/thematic/detail":
         return json(loadFixture("crealitycloud", scenario === "gone" ? "model-missing" : "collection-info"));
@@ -196,6 +208,19 @@ describe("Creality Cloud specifics", () => {
       [null, "fidget base.stl"],
     ]);
     expect(stub.calls.some((call) => call.url.pathname.endsWith("/3mfDownload"))).toBe(false);
+  });
+
+  it("keeps the model's documents beside the profile a link brings, and none of its model files", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "guide" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    // Named, as its model files are, by the signed link's extension.
+    expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
   });
 
   it("answers a model it can't find with 404, and files that are gone too", async () => {

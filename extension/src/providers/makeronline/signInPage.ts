@@ -2,7 +2,14 @@
 // background.ts runs signInPage there with chrome.scripting (world: "MAIN"), so it must stand on its own: no imports,
 // nothing from outside it but its arguments.
 
-export type DownloadRequest = { payload: Record<string, unknown>; name: string; profile_id: string | null };
+/** `supporting`: a file the model keeps beside its own, which the import does without: no puzzle is shown for it, and
+ *  one not handed over is passed by. */
+export type DownloadRequest = {
+  payload: Record<string, unknown>;
+  name: string;
+  profile_id: string | null;
+  supporting?: boolean;
+};
 /** `unsolved` where MakerOnline's puzzle was shown and not solved in time. */
 export type SignAnswer = { code: number | null; message: string | null; data: unknown; unsolved?: boolean };
 
@@ -10,7 +17,7 @@ export type SignAnswer = { code: number | null; message: string | null; data: un
  *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
  *  from its anti-bot script. Where the site asks for a puzzle first and `puzzleMs` allows, it shows the site's own,
  *  as its Download does, and asks again with the answer; `puzzleMs` is how long the user has to solve it. Ends at the
- *  first file it doesn't hand over, whose answer is the last one returned. */
+ *  first file it doesn't hand over, whose answer is the last one returned, bar a supporting file, which is passed by. */
 export async function signInPage(
   requests: DownloadRequest[],
   gapMs: number,
@@ -100,7 +107,7 @@ export async function signInPage(
   for (const [index, request] of requests.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, gapMs));
     let answer: SignAnswer = await ask(request, null);
-    for (let shown = 0; answer.code === PUZZLE && shown < MAX_PUZZLES; shown++) {
+    for (let shown = 0; answer.code === PUZZLE && !request.supporting && shown < MAX_PUZZLES; shown++) {
       const level = Number((answer.data as { captchaLevel?: unknown } | null)?.captchaLevel);
       if (!puzzleMs || typeof nuxt?.$initCaptcha !== "function" || !(level > 0)) break;
       const validate = await solve(level);
@@ -111,8 +118,9 @@ export async function signInPage(
       answer = await ask(request, { validate, level });
     }
     answers.push(answer);
-    // The import stops at the first file it can't get, so the rest aren't asked for, nor puzzles shown for them.
-    if (answer.code !== OK) break;
+    // The import stops at the first file it can't get, so the rest aren't asked for, nor puzzles shown for them. A file
+    // beside the model's own is done without.
+    if (answer.code !== OK && !request.supporting) break;
   }
   return answers;
 }

@@ -258,20 +258,32 @@ describe("3DExport specifics", () => {
     expect(await ctx.prints()).toHaveLength(0);
   });
 
-  it("downloads only the formats a plate takes, each from its signed link, with the sign-in only on the site", async () => {
+  it("downloads the formats a plate takes, then its drawings, each from its signed link, with the sign-in only on the site", async () => {
     await connect(ctx.userId);
     const stub = ctx.stub("ok");
     expectStatus(await ctx.importUrl(), 200);
     const downloads = callsTo(stub.calls, "/download");
-    expect(downloads.map((call) => call.url.searchParams.get("nf"))).toEqual(["2401620", "2401622"]);
+    // The STEP and STL, then the DXF and SVG; never the part again in Parasolid.
+    expect(downloads.map((call) => call.url.searchParams.get("nf"))).toEqual([
+      "2401620",
+      "2401622",
+      "2401621",
+      "2401623",
+    ]);
     // One session for the whole import: the page started it, and the downloads sent it back.
     expect(downloads.map((call) => call.headers.cookie)).toEqual(
-      Array(2).fill(`nm_language=english; nm_userid=${USER_ID}; nm_hash=${HASH}; sessionid=${SID}`),
+      Array(4).fill(`nm_language=english; nm_userid=${USER_ID}; nm_hash=${HASH}; sessionid=${SID}`),
     );
     const files = stub.calls.filter((call) => call.url.hostname === "netrinofiles.s3.amazonaws.com");
-    expect(files).toHaveLength(2);
+    expect(files).toHaveLength(4);
     expect(files.every((call) => !call.headers.cookie)).toBe(true);
     const [print] = await ctx.prints();
+    // The drawings from their formats' zips, beside the plates.
+    const kept = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(kept.map((file) => file.filename)).toEqual(["Elephant.DXF", "Elephant.SVG"]);
     expect(print.notes).toContain("## Model details");
     expect(print.notes).toContain("**Size:** 237 × 172 × 20 mm");
     // The site's own note on free models' use isn't the author's description.
@@ -287,9 +299,12 @@ describe("3DExport specifics", () => {
         .replace("Stereolithography (.stl) <b>", "GL Transmission (.glb) <b>");
     const stub = ctx.install(handlerFor("ok", { page: objOnly }));
     expectStatus(await ctx.importUrl(), 200);
+    // Then the drawings beside them, as a model file came.
     expect(callsTo(stub.calls, "/download").map((call) => call.url.searchParams.get("nf"))).toEqual([
       "2401620",
       "2401622",
+      "2401621",
+      "2401623",
     ]);
   });
 

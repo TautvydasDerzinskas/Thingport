@@ -59,6 +59,9 @@ function handlerFor(scenario: string): FetchHandler {
           ? "model-print-only"
           : "model-detail";
   return async ({ url, headers }) => {
+    if (url.hostname === "storage.googleapis.com" && url.pathname.endsWith(".pdf")) {
+      return binary(Buffer.from("%PDF-1.4 painting guide"));
+    }
     if (url.hostname === "storage.googleapis.com" && url.pathname.endsWith(".zip")) {
       return binary(
         scenario === "no-model-files"
@@ -74,6 +77,23 @@ function handlerFor(scenario: string): FetchHandler {
     if (path === `/models/v2/${MODEL_ID}`) {
       if (scenario === "missing") return text("Forbidden", 403);
       if (scenario === "blocked") return text("slow down", 429);
+      if (scenario === "references") {
+        // As Thangs lists them: the upload's path on its public bucket, a zip of the model's other versions and a guide.
+        const model = loadFixture("thangs", modelFixture) as Record<string, unknown>;
+        model.referenceFiles = [
+          {
+            id: 318079,
+            filename: "uploads/attachments/e29341a2-dd56-4590-9b93-3bd5a9f48944/Resin.zip",
+            modelId: MODEL_ID,
+          },
+          {
+            id: 318080,
+            filename: "uploads/attachments/e29341a2-dd56-4590-9b93-3bd5a9f48944/Painting guide.pdf",
+            modelId: MODEL_ID,
+          },
+        ];
+        return json(model);
+      }
       return json(loadFixture("thangs", modelFixture));
     }
     if (path === "/auth/v2/refresh-tokens") {
@@ -280,6 +300,19 @@ describe("Thangs specifics", () => {
     });
     ctx.stub("blocked");
     expect((await ctx.post(`/api/print/${print.id}/fill-gaps`, {})).status).toBe(429);
+  });
+
+  it("keeps the documents its designer put under Reference Files, and leaves the zips of its other versions", async () => {
+    await spec.connect(ctx.userId);
+    const stub = ctx.stub("references");
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["Painting guide.pdf"]);
+    const bucket = stub.calls.filter((call) => call.url.pathname.startsWith("/production-thangs-public/"));
+    expect(bucket.map((call) => decodeURIComponent(call.url.pathname.split("/").pop()!))).toEqual([
+      "Painting guide.pdf",
+    ]);
   });
 
   it("refuses a download of nothing but files it can't import", async () => {

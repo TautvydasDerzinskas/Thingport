@@ -62,8 +62,17 @@ Fab365, 3DExport, QIDI Maker and VoxelShare.
   creator kept the script back, and the model is marked **Script not shared**. On a MakerWorld page, Thingport Grab
   says before you import whether the script comes along.
 - The other files that come with it, such as instructions, notes, a parts list or source files, as its
-  [supporting files](supporting-files.md), in their folders. They come from any zip the site hands over, and from the
-  file lists of Thingiverse, Printables, Pinshape, Makerables and VoxelShare.
+  [supporting files](supporting-files.md), in their folders. They come from any zip the site hands over, from the
+  file lists of the sites that list a model's files one by one, and from what a site lists beside a print profile:
+  - A model imported as one of its print profiles (MakerWorld, NexPrint, eufyMake, Snapmaker, Creality Cloud,
+    VoxelShare, MakerOnline) brings the files beside it too. On MakerWorld that spends one of the account's daily
+    downloads, so it's only done where the design lists such a file. On MakerOnline it needs a Thingport Grab newer
+    than 1.12.0.
+  - Snapmaker's **Documents**, Thangs' **Reference Files** (not the zips of the model's other versions there),
+    Printables' sliced files and **Other files**, and Makerables' NC programs and CAM projects, each in a folder named
+    after its tab.
+  - CGTrader, GrabCAD and 3DExport offer a model in many formats, so only their documents and 2D drawings come along
+    (PDF, text, Office files, CSV, DXF and SVG), never the model again in another one.
   - Pictures are left out, since the gallery has them, and so are scenes only a CG program opens.
   - A sliced file among them stays a supporting file rather than the model's prepared print: it was sliced for the
     designer's printer.

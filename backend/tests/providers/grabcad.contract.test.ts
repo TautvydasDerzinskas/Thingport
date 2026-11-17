@@ -90,6 +90,7 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       const name = byCadid.get(file[1])!;
       const zipped = variant.zips?.[name];
       if (zipped) return binary(await zip(`grabcad:${name}`, zipped));
+      if (/\.(pdf|dxf)$/i.test(name)) return binary(Buffer.from(`${name}: a drawing`));
       return binary(/\.(step|stp)$/i.test(name) ? step(name) : stl(name));
     }
     if (p === `${API}/models/${SLUG}`) {
@@ -192,6 +193,40 @@ describe("GrabCAD specifics", () => {
     const lists = stub.calls.filter((call) => call.url.pathname.endsWith("/files"));
     expect(lists.map((call) => call.url.searchParams.get("folder_id"))).toEqual([null, String(RENDERINGS)]);
     expect(lists.every((call) => !call.headers.cookie)).toBe(true);
+  });
+
+  it("keeps the model's documents and drawings beside it, never its renderings or the part in other CAD formats", async () => {
+    await connect(ctx.userId);
+    const recorded = loadFixture<Folder>("grabcad", "files");
+    const stub = ctx.install(
+      handlerFor("ok", {
+        folders: {
+          root: {
+            ...recorded,
+            files: [
+              ...recorded.files,
+              fileRow("Board.pdf", "Other", "0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"),
+              fileRow("Outline.dxf", "AutoCAD", "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"),
+              fileRow("Board.igs", "STEP / IGES", "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c"),
+              fileRow("Render.pdf", "Rendering", "0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d"),
+            ],
+          },
+          [RENDERINGS]: loadFixture<Folder>("grabcad", "files-renderings"),
+        },
+      }),
+    );
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    expect(files.map((file) => file.filename)).toEqual(["Board.pdf", "Outline.dxf"]);
+    const asked = stub.calls
+      .filter((call) => call.url.pathname.endsWith("/files/download"))
+      .map((call) => call.url.searchParams.get("cadid"));
+    expect(asked).not.toContain("0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c");
+    expect(asked).not.toContain("0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d");
   });
 
   it("finds model files in the model's folders, and opens a CAD system's zip only when nothing else brought one", async () => {

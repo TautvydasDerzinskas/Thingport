@@ -16,6 +16,8 @@ import type { ImportKit, SourcedImport, ProviderTrending, ProviderLists, Provide
 import { MANIFESTS } from "../index.generated";
 import {
   fetchSnapmakerDownloads,
+  type SnapmakerDownloads,
+  isSnapmakerDocumentHost,
   isSnapmakerFileHost,
   parseSnapmakerModelUrl,
   resolveSnapmakerModel,
@@ -59,6 +61,15 @@ async function downloadProfile(
 ): Promise<NewPlateInput | null> {
   const downloads = await fetchSnapmakerDownloads(externalId, token);
   if (!downloads) throw new HttpError(404, MISSING);
+  return downloadProfileOf(downloads, profileId, kit);
+}
+
+/** downloadProfile, from the model's downloads already read. */
+async function downloadProfileOf(
+  downloads: SnapmakerDownloads,
+  profileId: string,
+  kit: ImportKit,
+): Promise<NewPlateInput | null> {
   const file = downloads.profiles.find((profile) => profile.profileId === profileId);
   if (!file) return null;
   const inputs = await downloadFile(file, kit);
@@ -94,15 +105,23 @@ export const snapmakerImport: SourcedImport<string, SnapmakerModelResolution> = 
   async downloadModel({ externalId }, resolved, token, requested, kit) {
     const downloaded: NewPlateInput[] = [];
     try {
+      // One answer holds the model's files and its profiles' 3MFs, each signed for the user.
+      const downloads = await fetchSnapmakerDownloads(externalId, token);
+      if (!downloads) throw new HttpError(404, MISSING);
       const [profileId] = selectSnapmakerProfiles(resolved, "url", requested);
-      if (profileId) {
-        const profile = await downloadProfile(externalId, profileId, token, kit);
-        if (profile) downloaded.push(profile);
-      }
-      if (!downloaded.length) {
-        const downloads = await fetchSnapmakerDownloads(externalId, token);
-        if (!downloads) throw new HttpError(404, MISSING);
+      const profile = profileId ? await downloadProfileOf(downloads, profileId, kit) : null;
+      if (profile) {
+        downloaded.push(profile);
+        // A profile brings none of the model's own files: those it keeps beside it come along.
+        for (const file of downloads.modelFiles.filter((each) => kit.isSupportingFile(each.name))) {
+          downloaded.push(...(await kit.downloadSupportingFile(file, isSnapmakerFileHost)));
+        }
+      } else {
         for (const file of downloads.modelFiles) downloaded.push(...((await downloadFile(file, kit)) ?? []));
+      }
+      // What its page lists under Documents, which neither brings: its guides, not its pictures.
+      for (const doc of resolved.documents.filter((each) => kit.isSupportingFile(each.name))) {
+        downloaded.push(...(await kit.downloadSupportingFile(doc, isSnapmakerDocumentHost)));
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
