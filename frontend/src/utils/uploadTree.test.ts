@@ -215,4 +215,10 @@ describe("a model's documents", () => {
     expect(namesSent()).toEqual([["part.stl"]]);
     expect(result.skipped).toEqual(["guide.pdf"]);
   });
+
+  it("one model of only what the OS leaves about sends nothing, and comes back", async () => {
+    const result = await uploadEntriesAsOneModel([entry(".first.stl"), entry("Thumbs.db")], null, null);
+    expect(upload).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ uploaded: 0, failed: [], skipped: [] });
+  });
 });

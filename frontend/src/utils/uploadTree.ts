@@ -295,7 +295,11 @@ async function uploadEach(
 function foldersBelowShared(entries: UploadEntry[]): (string | null)[] {
   const paths = entries.map(splitPath);
   let shared = 0;
-  while (paths.every((segments) => segments.length > shared && segments[shared] === paths[0][shared])) shared += 1;
+  while (
+    paths.length > 0 &&
+    paths.every((segments) => segments.length > shared && segments[shared] === paths[0][shared])
+  )
+    shared += 1;
   return paths.map((segments) => (segments.length > shared ? segments.slice(shared).join("/") : null));
 }
 
@@ -318,6 +322,9 @@ export async function uploadEntriesAsOneModel(
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
   const kept = entries.filter((entry) => !isSystemFile(entry.file.name));
+  if (!kept.length) {
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
+  }
   const label = title ?? kept[0]?.file.name ?? "";
   // A texture is part of the scene that uses it, not a picture of the model.
   const bundled = new Set([...(await gltfBundles(kept)).values()].flat());
