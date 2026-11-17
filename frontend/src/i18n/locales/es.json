@@ -7273,6 +7273,7 @@
       "more": "+{{count}} más",
       "moreActionsNamed": "Más acciones para {{name}}",
       "noPreview": "No hay vista previa para archivos {{type}}",
+      "untypedFile": "Archivo",
       "tooLargeToPreview": "Demasiado grande para la vista previa",
       "previewFailed": "No se pudo mostrar este archivo",
       "firstRows": "Se muestran las primeras {{count}} filas",

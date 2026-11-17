@@ -443,8 +443,15 @@ export async function uploadFoldersAsModels(
     ];
     const attachedFiles = attached.filter((a) => !isPreviewImage(a.entry.file) && !isSystemFile(a.entry.file.name));
     const files = [...sorted.filter((e) => !images.includes(e)), ...attachedFiles.map((a) => a.entry)];
+    // A scene's .bin and textures by their path below the model's folder, so the server packs each into the scene that
+    // names it though two share a name (textures/body.png, variant/body.png). One outside it goes by its name alone.
+    const belowModel = (entry: UploadEntry) => {
+      const segments = splitPath(entry);
+      const inside = group.segments.every((segment, index) => segments[index] === segment);
+      return (inside && segments.slice(group.segments.length).join("/")) || null;
+    };
     const folders = [
-      ...sorted.filter((e) => !images.includes(e)).map(() => null),
+      ...sorted.filter((e) => !images.includes(e)).map(belowModel),
       ...attachedFiles.map((a) => a.folder),
     ];
     try {

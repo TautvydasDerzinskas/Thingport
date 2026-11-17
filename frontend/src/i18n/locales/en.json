@@ -6957,6 +6957,7 @@
       "more": "+{{count}} more",
       "moreActionsNamed": "More actions for {{name}}",
       "noPreview": "No preview for {{type}} files",
+      "untypedFile": "File",
       "tooLargeToPreview": "Too large to preview",
       "previewFailed": "Couldn't show this file",
       "firstRows": "Showing the first {{count}} rows",

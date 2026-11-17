@@ -228,6 +228,36 @@ describe("supporting files", () => {
     expect(sliced.body.file_id).toBe(preparedFileId);
   });
 
+  it("keep a prepared print an earlier one of several added in turn took, when asked to", async () => {
+    const model = await makePrint(dir, owner.id, "Two slices");
+    const route = `/api/print/${model.print.id}/files`;
+    const add = (name: string, keepPrepared: boolean) => {
+      const req = request(app).post(route).set(auth(owner.token));
+      return (keepPrepared ? req.field("keep_prepared", "1") : req).attach(
+        "file",
+        Buffer.from("; sliced\nG28\n"),
+        name,
+      );
+    };
+    const first = await add("A.gcode", false);
+    expect(first.body.prepared).toBe(true);
+    const second = await add("B.gcode", true);
+    expect(second.body.prepared).toBe(false);
+    const files = await prisma.printFile.findMany({ where: { printId: model.print.id }, orderBy: { filename: "asc" } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([
+      ["A.gcode", "PREPARED"],
+      ["B.gcode", "SUPPORTING"],
+    ]);
+    // Alone, a sliced print still takes the model's prepared print from the one it had.
+    const third = await add("C.gcode", false);
+    expect(third.body.prepared).toBe(true);
+    const left = await prisma.printFile.findMany({ where: { printId: model.print.id }, orderBy: { filename: "asc" } });
+    expect(left.map((file) => [file.filename, file.role])).toEqual([
+      ["B.gcode", "SUPPORTING"],
+      ["C.gcode", "PREPARED"],
+    ]);
+  });
+
   it("each keep their own place in a zip, even when two share a name", async () => {
     const model = await makePrint(dir, owner.id, "Zipped");
     await upload(dir, owner.id, model.print.id, "notes.txt", "first");

@@ -7444,6 +7444,7 @@
       "more": "Dar {{count}}",
       "moreActionsNamed": "Daugiau veiksmų: {{name}}",
       "noPreview": "{{type}} failų peržiūra negalima",
+      "untypedFile": "Failas",
       "tooLargeToPreview": "Per didelis peržiūrai",
       "previewFailed": "Nepavyko parodyti šio failo",
       "firstRows": "Rodoma pirmųjų {{count}} eilučių",

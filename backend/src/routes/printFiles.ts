@@ -47,13 +47,17 @@ router.post(
       const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
       if (!print) throw new HttpError(404, "Print not found");
       // Which of the model's files this one is, for a client finding it among them: a name can be another's too.
-      const stored: { id?: string } = {};
+      const stored: { id?: string; prepared?: boolean } = {};
       await saveFileFromTemp(req.userId!, print.id, file.path, file.originalname || "supporting-file", file.mimetype, {
-        onStored: (_role, id) => {
+        // keep_prepared=1: one of several sent in turn, which keeps the prepared print an earlier one took, as an
+        // upload of them together does (batchFileSaver). `prepared` tells the client when one took it.
+        leavePrepared: req.body?.keep_prepared === "1",
+        onStored: (role, id) => {
           stored.id = id;
+          stored.prepared = role === "PREPARED";
         },
       });
-      res.json({ print: await printOutById(req.userId!, print.id), file_id: stored.id });
+      res.json({ print: await printOutById(req.userId!, print.id), file_id: stored.id, prepared: stored.prepared });
     } finally {
       if (file && fs.existsSync(file.path)) fs.rmSync(file.path, { force: true });
     }

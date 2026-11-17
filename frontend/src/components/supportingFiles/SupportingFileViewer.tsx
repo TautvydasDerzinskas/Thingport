@@ -59,7 +59,9 @@ function previewKind(filename: string): PreviewKind | null {
 
 const NONE_UPLOADING: UploadingFile[] = [];
 
-const metaOf = (file: PrintFile) => `${extOf(file.filename).toUpperCase() || "FILE"} · ${formatFileSize(file.size)}`;
+/** `untyped` names a file without an extension. */
+const metaOf = (file: PrintFile, untyped: string) =>
+  `${extOf(file.filename).toUpperCase() || untyped} · ${formatFileSize(file.size)}`;
 
 function NoPreview({ file, onDownload, reason }: { file: PrintFile; onDownload: () => void; reason: "type" | "size" }) {
   const { t } = useTranslation(["models", "common"]);
@@ -342,7 +344,7 @@ export default function SupportingFileViewer({
                 {inFolder(item.filename, item.folder)}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap component="div">
-                {metaOf(item)}
+                {metaOf(item, t("models:supporting.untypedFile"))}
               </Typography>
             </Box>
           </ButtonBase>
@@ -463,7 +465,7 @@ export default function SupportingFileViewer({
                   {inFolder(file.filename, file.folder)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap component="div">
-                  {metaOf(file)}
+                  {metaOf(file, t("models:supporting.untypedFile"))}
                 </Typography>
               </Box>
               {narrow ? (
