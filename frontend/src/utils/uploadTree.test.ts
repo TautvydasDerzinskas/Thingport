@@ -1,6 +1,7 @@
 import i18next from "i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { categoriesApi } from "../api/categories";
+import { UnauthorizedError } from "../api/client";
 import type { Print, printsApi } from "../api/prints";
 import lt from "../i18n/locales/lt.json";
 
@@ -248,5 +249,25 @@ describe("a model's photos", () => {
     expect(one.failed).toEqual(["Frog (nuotraukos)"]);
     const folders = await uploadFoldersAsModels([entry("Toad/toad.stl"), entry("Toad/side.jpg")], null);
     expect(folders.failed).toEqual(["Toad (nuotraukos)"]);
+  });
+
+  it("leave a model that went up among those uploaded, though the session ran out before its photos did", async () => {
+    addPreviewImages.mockRejectedValue(new UnauthorizedError());
+    const onUnauthorized = vi.fn<() => void>();
+    const one = await uploadEntriesAsOneModel(
+      [entry("Frog/body.stl"), entry("Frog/pics/side.png")],
+      "Frog",
+      null,
+      onUnauthorized,
+    );
+    expect(one).toMatchObject({ uploaded: 1, prints: [{ id: "print-1" }] });
+    // The models after it don't go up: the session is gone.
+    const folders = await uploadFoldersAsModels(
+      [entry("Toad/toad.stl"), entry("Toad/side.jpg"), entry("Newt/newt.stl")],
+      null,
+      onUnauthorized,
+    );
+    expect(folders).toMatchObject({ uploaded: 1, prints: [{ id: "print-2" }] });
+    expect(onUnauthorized).toHaveBeenCalledTimes(2);
   });
 });

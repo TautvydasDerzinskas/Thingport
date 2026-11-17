@@ -58,7 +58,8 @@ type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
 
 type PlateItem =
-  | { kind: "existing"; id: string; filename: string; folder: string | null }
+  // `wanted`: the name a file added in place of one of the same name was picked with, to be named back to.
+  | { kind: "existing"; id: string; filename: string; folder: string | null; wanted?: string }
   | { kind: "new"; localId: string; file: File };
 
 type SupportingItem =
@@ -118,6 +119,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   // Removals are tracked explicitly rather than diffed: a new upload's thumbnail may still be
   // generating, and a diff would delete it as soon as it appeared.
   const [removedImageIds, setRemovedImageIds] = useState<Set<string>>(new Set());
+  // The model's plates this dialog has deleted, so a retry after a later step fails doesn't ask again.
+  const removedPlateIds = useRef(new Set<string>());
   const [plateItems, setPlateItems] = useState<PlateItem[]>(() =>
     print.plates.map((p): PlateItem => ({
       kind: "existing",
@@ -382,36 +385,66 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         latest = reorderRes.print ?? latest;
       }
 
-      // Upload before delete so a model's only file can be swapped in one save.
-      const newPlateFiles = plateItems.filter((p) => p.kind === "new").map((p) => p.file);
-      let newPlateIdsInOrder: string[] = [];
-      if (newPlateFiles.length) {
-        const beforeIds = new Set(latest.plates.map((p) => p.id));
-        const uploadRes = await printsApi.addPlates(print.id, newPlateFiles);
+      // Upload before delete so a model's only file can be swapped in one save. `plates` follows each step as it's
+      // done, for the steps after it, and so does the dialog's list, for a retry after a later step fails.
+      let plates = plateItems;
+      const newPlates = plates.filter((p) => p.kind === "new");
+      if (newPlates.length) {
+        const uploadRes = await printsApi.addPlates(
+          print.id,
+          newPlates.map((p) => p.file),
+        );
         latest = uploadRes.print;
-        newPlateIdsInOrder = latest.plates
-          .filter((p) => !beforeIds.has(p.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((p) => p.id);
+        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
+        // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
+        const became = new Map<string, PlateItem>();
+        newPlates.forEach((p, index) => {
+          const stored = latest.plates.find((each) => each.id === uploadRes.plate_ids?.[index]);
+          if (!stored || p.kind !== "new") return;
+          became.set(p.localId, {
+            kind: "existing",
+            id: stored.id,
+            filename: stored.filename,
+            folder: stored.folder ?? null,
+            wanted: p.file.name,
+          });
+        });
+        const settle = (list: PlateItem[]) => list.map((p) => (p.kind === "new" && became.get(p.localId)) || p);
+        plates = settle(plates);
+        setPlateItems(settle);
       }
-      const keptPlateIds = new Set(plateItems.filter((p) => p.kind === "existing").map((p) => p.id));
+      const keptPlateIds = new Set(plates.filter((p) => p.kind === "existing").map((p) => p.id));
       for (const original of print.plates) {
-        if (keptPlateIds.has(original.id)) continue;
+        if (keptPlateIds.has(original.id) || removedPlateIds.current.has(original.id)) continue;
         const res = await printsApi.deletePlate(print.id, original.id);
         latest = res.print ?? latest;
+        removedPlateIds.current.add(original.id);
       }
-      // The replaced file got its " (2)" suffix from the old one; rename back now it's gone.
-      for (const [index, plateId] of newPlateIdsInOrder.entries()) {
-        const wanted = newPlateFiles[index].name;
-        const current = latest.plates.find((p) => p.id === plateId);
-        if (!current || current.filename === wanted) continue;
-        const res = await printsApi.renamePlate(print.id, plateId, wanted);
-        latest = res.print ?? latest;
+      // A file added in place of one of the same name got a " (2)" from it: named back now that one's gone.
+      for (const p of plates) {
+        if (p.kind !== "existing" || p.wanted === undefined) continue;
+        const current = latest.plates.find((each) => each.id === p.id);
+        if (current && current.filename !== p.wanted) {
+          const res = await printsApi.renamePlate(print.id, p.id, p.wanted);
+          latest = res.print ?? latest;
+        }
+        const filename = latest.plates.find((each) => each.id === p.id)?.filename ?? p.filename;
+        const named = (list: PlateItem[]) =>
+          list.map((each) =>
+            each.kind === "existing" && each.id === p.id ? { ...each, filename, wanted: undefined } : each,
+          );
+        plates = named(plates);
+        setPlateItems(named);
       }
       {
-        let nextNew = 0;
-        const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
-        const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
+        const known = plates.flatMap((p) => (p.kind === "existing" ? [p.id] : []));
+        // Reorder needs an exhaustive id list; plates this dialog never saw go after, in their order.
+        const knownIds = new Set(known);
+        const unknown = latest.plates
+          .filter((p) => !knownIds.has(p.id))
+          .toSorted((a, b) => a.position - b.position)
+          .map((p) => p.id);
+        const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
         latest = reorderRes.print ?? latest;
       }
 
@@ -746,7 +779,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             <Stack spacing={1}>
               {plateItems.map((p, idx) => {
                 const key = plateKey(p);
-                const filename = p.kind === "existing" ? p.filename : p.file.name;
+                const filename = p.kind === "existing" ? (p.wanted ?? p.filename) : p.file.name;
                 const folder = p.kind === "existing" ? p.folder : null;
                 return (
                   <Stack
@@ -956,8 +989,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          // Not while the model's supporting files are being read: a save meanwhile would leave them out of the list.
-          disabled={saving || supportingLoading}
+          // Not until the model's supporting files are in the list, nor after a read of them failed until a retry
+          // brings them: a save before would leave them out of it.
+          disabled={saving || supportingLoading || supportingLoadFailed}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

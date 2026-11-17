@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
@@ -143,6 +143,29 @@ describe("supporting files", () => {
     ]);
   });
 
+  it("are renamed into the folder the model's name puts them in now, though it changed while the rename waited", async () => {
+    const model = await makePrint(dir, owner.id, "Waited");
+    const file = await upload(dir, owner.id, model.print.id, "notes.txt", "notes");
+    const name = `Edited ${nonce()}`;
+    // The model renamed once this rename has read it, as an edit made while the rename waits for the storage lock is.
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "findMany").mockImplementationOnce((async (
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      await prisma.print.update({ where: { id: model.print.id }, data: { name } });
+      return findMany(args);
+    }) as never);
+    try {
+      await renameSupportingFile(owner.id, model.print.id, file.id, "guide");
+    } finally {
+      spy.mockRestore();
+    }
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } });
+    expect(row.filename).toBe("guide.txt");
+    expect(path.basename(path.dirname(row.storagePath))).toBe(name);
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("notes");
+  });
+
   it("stay where their names say, the model's files too, when moves of one model run at once", async () => {
     // A few rounds: each move picks its files' places while the others are moving them.
     for (let round = 0; round < 3; round++) {
@@ -233,5 +256,41 @@ describe("supporting files", () => {
     expect(new Set(arcnames).size).toBe(arcnames.length);
     expect(arcnames.filter((name) => name.endsWith("/supporting/own.stl"))).toHaveLength(1);
     expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
+  });
+
+  it("keep to their own model's folder in a zip, though another model has its name", async () => {
+    const name = `Base ${nonce()}`;
+    const models = [];
+    // Two categories can each hold a "Base", and a download across them leaves the categories out; a third model is
+    // already called what the second would become.
+    for (const [label, modelName] of [
+      ["Kitchen", name],
+      ["Garage", name],
+      ["Shed", `${name} (2)`],
+    ]) {
+      const model = await makePrint(dir, owner.id, label);
+      const category = await prisma.category.create({ data: { userId: owner.id, name: `${label} ${nonce()}` } });
+      await prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: modelName, nameNormalized: modelName.toLowerCase(), categoryId: category.id },
+      });
+      await upload(dir, owner.id, model.print.id, "notes.txt", label);
+      models.push(model);
+    }
+    const prints = await prisma.print.findMany({
+      where: { id: { in: models.map((model) => model.print.id) } },
+      include: { plates: true, category: true },
+    });
+    const ordered = models.map((model) => prints.find((print) => print.id === model.print.id)!);
+    const arcnames = (await buildZipEntries(ordered, { flatten: true })).map((entry) => entry.arcname);
+    expect(new Set(arcnames.map((arcname) => arcname.toLowerCase())).size).toBe(arcnames.length);
+    expect(arcnames.filter((arcname) => arcname.endsWith("/supporting/notes.txt")).toSorted()).toEqual([
+      `${name} (2)/supporting/notes.txt`,
+      `${name} (3)/supporting/notes.txt`,
+      `${name}/supporting/notes.txt`,
+    ]);
+    // The one already called "(2)" keeps its folder: the second "Base" steps around it.
+    expect(arcnames).toContain(`${name} (2)/own.stl`);
+    expect(arcnames).toContain(`${name} (3)/own.stl`);
   });
 });

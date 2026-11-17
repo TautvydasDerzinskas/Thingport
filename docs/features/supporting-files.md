@@ -15,8 +15,9 @@ A model is more than its STL. Thingport keeps everything you need to print it in
 
 A model's supporting files sit under its pictures, like attachments on an email: each shows its type, name and size,
 with a download button beside it, and a file in a folder is named with its folder in front, such as `docs/guide.pdf`.
-Click one to open it in the viewer, where a PDF opens in your browser's own PDF viewer, text and Markdown show as text,
-a CSV shows as a table and a picture as itself. Anything else, such as a Fusion 360 source, offers a download instead.
+Click one to open it in the viewer, where a PDF opens in your browser's own PDF viewer, Markdown shows formatted, with
+its headings, lists and links, plain text as it is, a CSV as a table and a picture as itself. Anything else, such as a
+Fusion 360 source, offers a download instead.
 Right-click a file, or use the **⋮** in the viewer, to open it in a new tab, download it or copy a link to it.
 
 To add them, drop files onto the attachments, use **Add supporting files** in the model's **⋮** menu, or open

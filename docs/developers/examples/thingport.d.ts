@@ -199,7 +199,7 @@ export interface SdkNewModel {
   tags?: string[];
   /** A collection to save it into. */
   collectionId?: string;
-  /** Its files, each a plate. At least one. */
+  /** Its files, at least one. Its 3D files become its plates and the rest related files, as `create` describes. */
   files: SdkFileInput[];
 }
 

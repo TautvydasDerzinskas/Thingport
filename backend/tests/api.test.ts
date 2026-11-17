@@ -274,6 +274,22 @@ describe("plate add/remove/reorder/rename", () => {
     expect(res.status).toBe(409);
   });
 
+  it("says which plates an upload made, in the order of its files", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    // The Edit dialog names and orders the plates it sent by these, so another tab's are never taken for them.
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+      .attach("files", tmpFile("lid.stl", "solid l endsolid"))
+      .attach("files", tmpFile("arm.stl", "solid a endsolid"));
+    expect(res.status).toBe(200);
+    const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
+    expect(res.body.plate_ids.map((id: string) => (byId.get(id) as { filename: string }).filename)).toEqual([
+      "lid.stl",
+      "arm.stl",
+    ]);
+  });
+
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
   it("replaces the only plate with a same-named file: upload, delete the old one, rename back", async () => {
     let res = await auth(request(app).get(`/api/print/${printId}`));
@@ -465,6 +481,38 @@ describe("uploads of one model's several files", () => {
     const files = await prisma.printFile.findMany({ where: { printId: uploaded.id } });
     expect(files.map((file) => [file.filename, file.role])).toEqual([["sign notes.txt", "SUPPORTING"]]);
     for (const file of [picture, notes]) fs.rmSync(file, { force: true });
+  });
+
+  it("keeps a lone file in its folder, as it would one of several, and one sent without a folder at the top", async () => {
+    // A zip's "parts/body.stl" beside its photo: the photo goes to the gallery, leaving the model file to go up alone.
+    const stl = tmpFile("body.stl", "solid body endsolid");
+    const inFolder = await auth(request(app).post("/api/upload"))
+      .field("folders", JSON.stringify(["parts"]))
+      .attach("files", stl);
+    expect(inFolder.status).toBe(200);
+    await trackPrint(inFolder.body.prints[0].id);
+    expect(inFolder.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual(["parts"]);
+
+    const plain = await auth(request(app).post("/api/upload")).attach("files", stl);
+    expect(plain.status).toBe(200);
+    await trackPrint(plain.body.prints[0].id);
+    expect(plain.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual([null]);
+
+    // Each a model of its own, separate files have no model to be in a folder of.
+    const other = tmpFile("lid.stl", "solid lid endsolid");
+    const separate = await auth(request(app).post("/api/upload"))
+      .field("mode", "separate")
+      .field("folders", JSON.stringify(["parts", "parts"]))
+      .attach("files", stl)
+      .attach("files", other);
+    expect(separate.status).toBe(200);
+    for (const print of separate.body.prints) await trackPrint(print.id);
+    expect(
+      separate.body.prints.flatMap((print: { plates: { folder: string | null }[] }) =>
+        print.plates.map((p) => p.folder),
+      ),
+    ).toEqual([null, null]);
+    for (const file of [stl, other]) fs.rmSync(file, { force: true });
   });
 
   it("refuses folders that don't line up with the files", async () => {
