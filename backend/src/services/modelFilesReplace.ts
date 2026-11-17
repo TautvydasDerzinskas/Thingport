@@ -10,8 +10,9 @@ import {
   refreshAutoPreparedMetadata,
   type NewPlateInput,
 } from "./printCreation";
-import { deleteAllPrintFiles } from "./printFileService";
+import { removeMissingPrintFiles } from "./printFileService";
 import { removePlatePictures } from "./printService";
+import { afterLicenseChange } from "./licenseService";
 import { Prisma, type Plate } from "@prisma/client";
 
 const log = createLogger("model-files");
@@ -28,10 +29,10 @@ export type ReplacedPlates = {
   galleryWhole: boolean;
 };
 
-/** Replaces every plate and supporting file of the model with `inputs`. Throws when the download holds nothing to
- *  print, before anything is removed, so a model is never left with less than it had -- and a replacement that
- *  fails halfway puts the plate rows back, since a model with no plates at all is one the scan passes over and
- *  could never offer a repair again. */
+/** Replaces every plate of the model with `inputs`, and drops the supporting files that went missing with them. Throws
+ *  when the download holds nothing to print, before anything is removed, so a model is never left with less than it
+ *  had -- and a replacement that fails halfway puts the plate rows back, since a model with no plates at all is one
+ *  the scan passes over and could never offer a repair again. */
 export async function replaceModelPlates(
   userId: string,
   printId: string,
@@ -63,23 +64,21 @@ export async function replaceModelPlates(
     throw error;
   }
 
-  // Everything else the model had goes once the new files are stored, not before: a model can have lost its plate
-  // files alone and still hold its supporting files and its old plates' pictures, which an attempt that threw
-  // halfway would otherwise have taken with it for nothing. A new plate whose name one of those files holds lands
-  // beside it rather than over it (printService's freePlatePath reads them too).
+  // The old plates' pictures go once the new files are stored, not before, so an attempt that threw halfway takes
+  // nothing with it.
   for (const plate of print.plates) await removePlatePictures(plate.id, print.assetsPath);
-  // The prepared file is one of the supporting files about to go, and its metadata describes plates that have gone
-  // too: emptied here rather than left for the refresh below, which would leave the old reading behind if it threw.
-  await prisma.print.update({
-    where: { id: printId },
-    data: {
-      preparedMetadata: Prisma.JsonNull,
-      ...(print.preparedFileId ? { preparedFile: { disconnect: true } } : {}),
-    },
-  });
-  await deleteAllPrintFiles(printId);
+  // The reading of plate 0 describes a plate that has gone: emptied here rather than left for the refresh below, which
+  // would leave the old reading behind if it threw.
+  await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: Prisma.JsonNull } });
+  // Of the other files, only those that went with the plates go. A supporting file or prepared print still on disk
+  // stays -- the owner's own among them, which no source can give back -- and a new plate whose name one of them holds
+  // lands beside it rather than over it (printService's freePlatePath reads them too). The source's scripts come back
+  // below where theirs went.
+  await removeMissingPrintFiles(printId);
   await keepGeneratorScripts(userId, printId, scripts);
   await refreshAutoPreparedMetadata(printId);
+  // LICENSE.txt is written again when it went too.
+  await afterLicenseChange(printId);
 
   const galleryWhole =
     print.previewImages.length > 0 &&

@@ -111,6 +111,23 @@ describe("consume folder", () => {
     expect(fs.readdirSync(dir)).toEqual([]);
   });
 
+  it("keeps every sliced file of a folder, the first as its prepared print", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Sliced/Frog/frog.stl", STL);
+    put("Sliced/Frog/a1.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    put("Sliced/Frog/p1s.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 1, files: 3, failed: [] });
+    const [frog] = await printsNamed("Frog");
+    expect(Object.fromEntries(frog.files.map((file) => [file.filename, file.role]))).toEqual({
+      "a1.gcode": "PREPARED",
+      "p1s.gcode": "SUPPORTING",
+    });
+    expect(frog.preparedFileId).toBe(frog.files.find((file) => file.filename === "a1.gcode")!.id);
+  });
+
   it("unpacks a zip as a folder named after it", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });

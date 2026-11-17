@@ -378,6 +378,24 @@ describe("prepared-print attach/detect/remove", () => {
     fs.rmSync(gcode, { force: true });
   });
 
+  it("keeps the first sliced file of an upload as its prepared print and the rest as supporting files", async () => {
+    const stl = tmpFile("frog.stl", "solid frog endsolid");
+    const first = tmpFile("first.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+    const second = tmpFile("second.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", stl)
+      .attach("files", first)
+      .attach("files", second);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.slicer_filename).toBe("first.gcode");
+    const files = await auth(request(app).get(`/api/print/${uploaded.id}/files`));
+    expect(files.body.map((file: { filename: string }) => file.filename)).toEqual(["second.gcode"]);
+    for (const file of [stl, first, second]) fs.rmSync(file, { force: true });
+  });
+
   it("removes the prepared file and falls back to null (bare .stl isn't sniffable)", async () => {
     const res = await auth(request(app).delete(`/api/print/${printId}/prepared-print`));
     expect(res.status).toBe(200);
