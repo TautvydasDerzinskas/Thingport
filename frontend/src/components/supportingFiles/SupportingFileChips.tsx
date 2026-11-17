@@ -196,6 +196,7 @@ export default function SupportingFileChips({
             fontWeight: 700,
             color: "text.secondary",
             "&:hover": { borderColor: "text.secondary", bgcolor: "action.hover" },
+            "&.Mui-focusVisible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: -2 },
           }}
         >
           {t("models:supporting.more", { count: files.length - shown.length })}
