@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintFile, printsApi } from "../../api/prints";
+import { type Print, type PrintFile, PrintApiError, printsApi } from "../../api/prints";
 import { useConfirm } from "../ConfirmProvider";
 import { useToast } from "../ToastProvider";
 import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
-import { sortAddedFiles } from "../../utils/addedFiles";
+import { mayHoldPrepared, sortAddedFiles } from "../../utils/addedFiles";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -105,6 +105,8 @@ export function useSupportingFiles(
               settle(queued);
               return;
             }
+            // In for all the answer said, it keeps its place from the ones after it.
+            if (mayHoldPrepared(item.name, err instanceof PrintApiError ? err.status : null)) preparedAdded = true;
           } finally {
             settle([item]);
           }

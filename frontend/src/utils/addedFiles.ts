@@ -15,6 +15,15 @@ export function isPreparedName(name: string): boolean {
   return PREPARED_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 }
 
+/**
+ * After the upload of `name` failed, whether it may be the model's prepared print all the same: a sliced print whose
+ * answer never came (a dropped connection) or that failed after it was saved may be in. `status` is the server's
+ * answer, null for none; one it turned away (4xx) kept nothing.
+ */
+export function mayHoldPrepared(name: string, status: number | null): boolean {
+  return isPreparedName(name) && !(status !== null && status >= 400 && status < 500);
+}
+
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */
 export function isModelFileName(name: string): boolean {
   if (isPreparedName(name)) return false;

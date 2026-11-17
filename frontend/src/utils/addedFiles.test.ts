@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isModelFileName, isPreparedName, sortAddedFiles } from "./addedFiles";
+import { isModelFileName, isPreparedName, mayHoldPrepared, sortAddedFiles } from "./addedFiles";
 
 const named = (...names: string[]) => names.map((name) => ({ name }));
 const names = (files: { name: string }[]) => files.map((file) => file.name);
@@ -36,5 +36,20 @@ describe("files added to a model", () => {
     const { model, supporting } = sortAddedFiles(named("wiring.png", "lid.stl", "source.f3d"), "supporting");
     expect(names(model)).toEqual(["lid.stl"]);
     expect(names(supporting)).toEqual(["wiring.png", "source.f3d"]);
+  });
+});
+
+describe("a sliced print whose upload failed", () => {
+  it("may be in all the same, unless the server turned it away", () => {
+    // No answer at all, or one after the save: the ones after it keep its place.
+    expect(mayHoldPrepared("A.gcode", null)).toBe(true);
+    expect(mayHoldPrepared("A.gcode.3mf", 500)).toBe(true);
+    expect(mayHoldPrepared("A.bgcode", 502)).toBe(true);
+    // Turned away: nothing was kept, so the next one may take the place.
+    expect(mayHoldPrepared("A.gcode", 413)).toBe(false);
+    expect(mayHoldPrepared("A.gcode", 400)).toBe(false);
+    // Never the prepared print, whatever happened.
+    expect(mayHoldPrepared("guide.pdf", null)).toBe(false);
+    expect(mayHoldPrepared("frog.3mf", 500)).toBe(false);
   });
 });

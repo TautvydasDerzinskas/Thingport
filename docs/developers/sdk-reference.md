@@ -430,7 +430,7 @@ const model = await thingport.models.create({
 thingport.models.addFiles(id: string, files: SdkFileInput[]): Promise<SdkModel>
 ```
 
-Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is kept beside them as a related file (see `relatedFiles`). The first sliced print (G-code, a sliced 3MF) among them becomes its prepared print, in place of the one it had; any more are kept as related files.
+Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is kept beside them as a related file (see `relatedFiles`). The first sliced print among them, by its name (`.gcode`, `.gco`, `.bgcode`, `.gcode.3mf`), becomes its prepared print in place of the one it had; any more are kept as related files. A plain `.3mf` is one of its plates, sliced or not.
 
 | Parameter | What it is        |
 | --------- | ----------------- |

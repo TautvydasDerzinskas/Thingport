@@ -669,7 +669,8 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      throw new Error(await readErrorMessage(res, "Failed to add file"));
+      // With its status: a caller sending several needs to know whether the server kept this one (mayHoldPrepared).
+      throw new PrintApiError(await readErrorMessage(res, "Failed to add file"), res.status, null);
     }
     return res.json();
   },
