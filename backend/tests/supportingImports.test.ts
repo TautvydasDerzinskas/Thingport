@@ -26,12 +26,15 @@ import {
 import { STORAGE } from "../src/config";
 
 // Small limits stand in for the admin's sizes, which are megabytes: undefined leaves the setting to say.
-const limits = vi.hoisted(() => ({ value: undefined as SupportingLimits | null | undefined }));
+const limits = vi.hoisted(() => ({ value: undefined as SupportingLimits | null | undefined, fail: false }));
 vi.mock("../src/services/supportingImports", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/services/supportingImports")>();
   return {
     ...actual,
-    supportingLimits: async () => (limits.value !== undefined ? limits.value : actual.supportingLimits()),
+    supportingLimits: async () => {
+      if (limits.fail) throw new Error("the settings couldn't be read");
+      return limits.value !== undefined ? limits.value : actual.supportingLimits();
+    },
   };
 });
 
@@ -53,6 +56,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   limits.value = undefined;
+  limits.fail = false;
   await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
 });
 
@@ -267,6 +271,12 @@ describe("a file a site gives beside a model's own", () => {
     expect(named(await downloadSupportingFile(at("dxf.zip"), site))).toEqual([[null, "frog.dxf", true]]);
     // A model file asked for this way stays out: the model's own files come another way.
     expect(await downloadSupportingFile(at("frog.stl"), site)).toEqual([]);
+  });
+
+  it("gives none, never failing the import, when the admin's limits can't be read", async () => {
+    served({ "/guide.pdf": "%PDF-1.4" });
+    limits.fail = true;
+    expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
   });
 
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {

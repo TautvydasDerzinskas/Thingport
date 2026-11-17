@@ -1291,6 +1291,18 @@ export async function downloadSupportingFile(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
 ): Promise<NewPlateInput[]> {
+  try {
+    return await supportingDownload(file, isFileHost);
+  } catch (err) {
+    console.warn(`Couldn't keep ${file.name} beside the model:`, err);
+    return [];
+  }
+}
+
+async function supportingDownload(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits) return [];
   let hostname: string;
