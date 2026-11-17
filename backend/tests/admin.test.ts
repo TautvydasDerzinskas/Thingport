@@ -270,7 +270,8 @@ describe("admin storage usage", () => {
   it("counts supporting files apart, within the models' bytes, and names a prepared print in the browser", async () => {
     const before = await request(app).get("/api/admin/storage").set(auth(adminToken));
     const mesh = "solid supporting-usage endsolid";
-    const guide = "%PDF-1.4 supporting usage guide";
+    // Not the sliced file's length, so the two can't stand in for each other.
+    const guide = "%PDF-1.4 the supporting usage guide";
     const sliced = "; sliced for storage usage\nG28\n";
     const upload = await request(app)
       .post("/api/upload")
