@@ -7,7 +7,7 @@ import request from "supertest";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { createPrint, type NewPlateInput } from "../src/services/printCreation";
+import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
 import { modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
@@ -146,6 +146,21 @@ describe("a model made with a site's other files", () => {
     const { print } = await createPrint(userId, { title: "Capped" }, "Capped", capped);
     remove(capped);
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt"]);
+  });
+
+  it("counts what a model keeps already against its limit, when a later profile brings more", async () => {
+    limits.value = { perFile: 10, perModel: 25 };
+    const made = [
+      input("a.stl", "solid a endsolid"),
+      input("one.txt", "x".repeat(10), { supporting: true }),
+      input("two.txt", "x".repeat(10), { supporting: true }),
+    ];
+    const { print } = await createPrint(userId, { title: "Later" }, "Later", made);
+    remove(made);
+    const later = [input("three.txt", "x".repeat(10), { supporting: true })];
+    expect(await keepSupportingFiles(userId, print.id, later)).toBe(0);
+    remove(later);
+    expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
   });
 
   it("brings a supporting file back on a repair, where it went with the plates", async () => {
