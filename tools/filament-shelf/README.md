@@ -5,8 +5,8 @@ filaments it needs and who has them, so a multicolour print starts with the righ
 
 - **The shelf** is the tool's window: a card per spool with its colour, brand, owner and how much is left. Filter it by
   person, material, brand and colour. Your own cards have a ⋮ menu (or right-click): **Edit**, **Used up** and
-  **Remove**; everyone else's are read only. **Everyone sees yours** picks whom your spools and your edits reach:
-  everyone who can use tools, or only the people you choose.
+  **Remove**; everyone else's are read only. The people button beside **Add spool** picks whom your spools and your
+  edits reach: everyone who can use tools, or only the people you choose; it shows a lock while only you see them.
 - **The Filaments tab** on a model's page lists what the picked print profile needs, with a column per person naming
   their spool that matches: **Has it**, **≈ Close**, or nothing. The picker switches between the model's profiles.
   **Edit** changes the picked profile's list in place, on every copy of the model, for everyone who sees what you
@@ -33,7 +33,7 @@ The filaments come from the print profile Thingport already keeps for the file, 
 
 Everything stays in Thingport, through `thingport.shared`: it reaches no outside service and lists no hosts. Each entry
 is its writer's, and every entry read is checked, so a malformed one is skipped. An entry reaches whom its writer
-picked under **Everyone sees yours**, spools and edits alike: someone who limits theirs limits their edits too, and the
+picked with the people button, spools and edits alike: someone who limits theirs limits their edits too, and the
 others see the profile's filaments, or an edit they can see.
 
 - `spool:<id>`, one per spool: `{ brand, line, material, colorName, color, left, grams, note }`, with `color` as

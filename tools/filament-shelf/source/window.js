@@ -792,12 +792,17 @@ export default function mount(thingport) {
   brandSelect.addEventListener("change", () => setFilter("brand", brandSelect.value || null));
   colourButton.addEventListener("click", () => (menu?.opener === colourButton ? closeMenu() : openColourMenu()));
 
+  // An icon only, to leave the filters room: people while anyone else sees your spools, a lock while only you do. The
+  // words are its name and tooltip.
   const showAudience = (audience) => {
-    $("share-label").textContent = audience.everyone
+    const label = audience.everyone
       ? t("share.everyone")
       : audience.people.length
         ? t("share.people", { count: audience.people.length })
         : t("share.onlyYou");
+    $("share-label").textContent = label;
+    $("share").title = label;
+    $("share").querySelector("svg").outerHTML = icon(audience.everyone || audience.people.length ? "share" : "lock");
   };
   $("share").addEventListener(
     "click",

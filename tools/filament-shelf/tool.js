@@ -736,6 +736,7 @@ const PATHS = {
     "M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
   chevron: "M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z",
   drop: "M7 10l5 5 5-5z",
+  lock: "M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z",
   share:
     "M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
   done: "M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
@@ -2338,12 +2339,17 @@ export default function mount(thingport) {
   brandSelect.addEventListener("change", () => setFilter("brand", brandSelect.value || null));
   colourButton.addEventListener("click", () => (menu?.opener === colourButton ? closeMenu() : openColourMenu()));
 
+  // An icon only, to leave the filters room: people while anyone else sees your spools, a lock while only you do. The
+  // words are its name and tooltip.
   const showAudience = (audience) => {
-    $("share-label").textContent = audience.everyone
+    const label = audience.everyone
       ? t("share.everyone")
       : audience.people.length
         ? t("share.people", { count: audience.people.length })
         : t("share.onlyYou");
+    $("share-label").textContent = label;
+    $("share").title = label;
+    $("share").querySelector("svg").outerHTML = icon(audience.everyone || audience.people.length ? "share" : "lock");
   };
   $("share").addEventListener(
     "click",
