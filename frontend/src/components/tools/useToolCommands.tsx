@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
@@ -45,6 +45,15 @@ export function useToolCommands(
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
   const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
   const shares = useAskQueue<{ tool: { id: string; name: string } }, SdkAudience | null>();
+  // The model the page is on while this is mounted: a run's page actions are for the model it started on, and do
+  // nothing once the page has left it, though the page itself stays.
+  const onModel = useRef<string | null>(modelId);
+  useEffect(() => {
+    onModel.current = modelId;
+    return () => {
+      onModel.current = null;
+    };
+  }, [modelId]);
 
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
@@ -57,6 +66,7 @@ export function useToolCommands(
   const openModel = (id: string) => navigate(`/models/${encodeURIComponent(id)}`);
 
   const runWindowless = async (tool: RunnableTool, context: ToolContext) => {
+    const here = () => onModel.current === context.modelId;
     try {
       const [{ buildToolSdk }, { loadToolModule }] = await Promise.all([import("./toolSdk"), import("./toolModule")]);
       // Never ended: a run may leave a question open after `run` returns, and nothing restarts it.
@@ -90,10 +100,14 @@ export function useToolCommands(
             throw new Error(t("tools.runner.noPopover"));
           },
           showTab: () => {
-            if (tool.id && tool.manifest.modelPage?.tab) page?.showTab(tool.id);
+            if (here() && tool.id && tool.manifest.modelPage?.tab) page?.showTab(tool.id);
           },
-          selectFile: (fileId) => page?.selectFile(fileId),
-          openWindow: () => setOpen({ tool, context: { modelId } }),
+          selectFile: (fileId) => {
+            if (here()) page?.selectFile(fileId);
+          },
+          openWindow: () => {
+            if (here()) setOpen({ tool, context: { modelId: context.modelId } });
+          },
         },
         pickAudience: () => shareAsks.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });

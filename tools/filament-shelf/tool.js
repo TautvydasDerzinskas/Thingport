@@ -227,7 +227,10 @@ export function family(type) {
 }
 
 const isText = (value, max = 200) => typeof value === "string" && value.length <= max;
-const isGrams = (value) => value === null || (Number.isFinite(value) && value >= 0 && value <= 100000);
+/** The most grams a spool or a filament can say: more isn't read as a weight. */
+export const MAX_GRAMS = 100000;
+const inGrams = (value) => Number.isFinite(value) && value >= 0 && value <= MAX_GRAMS;
+const isGrams = (value) => value === null || inGrams(value);
 
 /** Whether a shared value is a spool this tool wrote, whole: anyone can write anything under its key. */
 export function isSpool(value) {
@@ -368,7 +371,8 @@ export function pickFile(model, fileId) {
 }
 
 const cleanType = (type) => (typeof type === "string" && type.trim() ? type.trim() : null);
-const cleanGrams = (value) => (Number.isFinite(value) && value >= 0 ? value : null);
+// As a saved edit takes them, so an edit of a profile with an unlikely weight isn't refused for it.
+const cleanGrams = (value) => (inGrams(value) ? value : null);
 const sameFilament = (a, b) => family(a.type) === family(b.type) && normaliseHex(a.color) === normaliseHex(b.color);
 
 /** The filaments a model needs: the edit in force, else the picked profile's. Each says which plates use it, where
@@ -1925,13 +1929,20 @@ export default function mount(thingport) {
           },
     );
     if (!sure || closed) return;
+    const mine = ++puts;
+    latest.set(key, mine);
     entries = entries.filter((other) => !(other.mine && other.key === key));
     render();
     try {
       await write(key, () => shared.remove(key));
       confirmed.delete(key);
     } catch (error) {
-      if (!entries.some((other) => other.mine && other.key === key)) entries = [entry, ...entries];
+      // As for a save: a newer change of it owns the card. Otherwise it's back as last saved, not as a save of it
+      // still going (or failed) showed it.
+      if (latest.get(key) !== mine) throw error;
+      const back = confirmed.get(key);
+      if (back !== undefined && !entries.some((other) => other.mine && other.key === key))
+        entries = [{ ...entry, value: back, saving: false }, ...entries];
       render();
       throw error;
     }
@@ -2202,7 +2213,7 @@ export default function mount(thingport) {
     let grams = null;
     if (state.amount === "grams" && state.grams.trim() !== "") {
       grams = Number(state.grams);
-      if (!Number.isFinite(grams) || grams < 0 || grams > 100000) {
+      if (!Number.isFinite(grams) || grams < 0 || grams > MAX_GRAMS) {
         input("grams").setAttribute("aria-invalid", "true");
         return input("grams").focus();
       }

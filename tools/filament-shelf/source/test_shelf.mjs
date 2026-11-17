@@ -249,6 +249,22 @@ test("a model needs its profile's filaments, with the plates each is on", () => 
   const edited = needsFor(profileModel, "f1", { filaments: [{ type: "PLA Matte", color: "#1B1B1D", grams: null }] });
   assert.deepEqual(edited[0].plates, [1, 2]);
   assert.equal(edited[0].brand, null);
+  // A weight no edit could keep isn't one: the profile's filaments, edited as they are, still make an edit.
+  const heavy = {
+    id: "m2",
+    files: [
+      {
+        id: "h1",
+        name: "heavy.3mf",
+        folder: null,
+        profile: { id: null, filaments: [{ type: "PLA", color: "#FFFFFF", grams: 250000, brand: null }], plates: [] },
+      },
+    ],
+  };
+  const read = needsFor(heavy, "h1", null);
+  assert.equal(read[0].grams, null);
+  const filaments = read.map(({ type, color, grams }) => ({ type, color, grams }));
+  assert.ok(isNeedsValue({ profile: "file:heavy.3mf", filaments }));
 });
 
 test("the newest edit of the picked profile wins, and a newer reset puts the profile back", () => {

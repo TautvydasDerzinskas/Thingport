@@ -77,7 +77,10 @@ export function family(type) {
 }
 
 const isText = (value, max = 200) => typeof value === "string" && value.length <= max;
-const isGrams = (value) => value === null || (Number.isFinite(value) && value >= 0 && value <= 100000);
+/** The most grams a spool or a filament can say: more isn't read as a weight. */
+export const MAX_GRAMS = 100000;
+const inGrams = (value) => Number.isFinite(value) && value >= 0 && value <= MAX_GRAMS;
+const isGrams = (value) => value === null || inGrams(value);
 
 /** Whether a shared value is a spool this tool wrote, whole: anyone can write anything under its key. */
 export function isSpool(value) {
@@ -218,7 +221,8 @@ export function pickFile(model, fileId) {
 }
 
 const cleanType = (type) => (typeof type === "string" && type.trim() ? type.trim() : null);
-const cleanGrams = (value) => (Number.isFinite(value) && value >= 0 ? value : null);
+// As a saved edit takes them, so an edit of a profile with an unlikely weight isn't refused for it.
+const cleanGrams = (value) => (inGrams(value) ? value : null);
 const sameFilament = (a, b) => family(a.type) === family(b.type) && normaliseHex(a.color) === normaliseHex(b.color);
 
 /** The filaments a model needs: the edit in force, else the picked profile's. Each says which plates use it, where

@@ -6,6 +6,7 @@ import {
   AMOUNTS,
   BRANDS,
   MATERIALS,
+  MAX_GRAMS,
   NEEDS,
   SPOOL,
   amountPercent,
@@ -382,13 +383,20 @@ export default function mount(thingport) {
           },
     );
     if (!sure || closed) return;
+    const mine = ++puts;
+    latest.set(key, mine);
     entries = entries.filter((other) => !(other.mine && other.key === key));
     render();
     try {
       await write(key, () => shared.remove(key));
       confirmed.delete(key);
     } catch (error) {
-      if (!entries.some((other) => other.mine && other.key === key)) entries = [entry, ...entries];
+      // As for a save: a newer change of it owns the card. Otherwise it's back as last saved, not as a save of it
+      // still going (or failed) showed it.
+      if (latest.get(key) !== mine) throw error;
+      const back = confirmed.get(key);
+      if (back !== undefined && !entries.some((other) => other.mine && other.key === key))
+        entries = [{ ...entry, value: back, saving: false }, ...entries];
       render();
       throw error;
     }
@@ -659,7 +667,7 @@ export default function mount(thingport) {
     let grams = null;
     if (state.amount === "grams" && state.grams.trim() !== "") {
       grams = Number(state.grams);
-      if (!Number.isFinite(grams) || grams < 0 || grams > 100000) {
+      if (!Number.isFinite(grams) || grams < 0 || grams > MAX_GRAMS) {
         input("grams").setAttribute("aria-invalid", "true");
         return input("grams").focus();
       }
