@@ -9,7 +9,7 @@ import { HttpError, guessMimeFromPath, sanitizeFilename } from "../utils/fileUti
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { normalizeZipEntryPath, resolveZipCategoryId } from "./zipService";
 import { createPrint, type NewPlateInput } from "./printCreation";
-import { saveFileFromTemp } from "./printFileService";
+import { batchFileSaver } from "./printFileService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
 import { gltfReferencedFiles, isGltfName, packGltfFiles } from "./gltfPacker";
@@ -353,6 +353,7 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
     summary.printIds.push(printId);
 
     let preferred = false;
+    const save = batchFileSaver(userId, printId);
     for (const item of rest) {
       try {
         if (PREVIEW_IMAGE_EXTS.has(extOf(item.rel)) && item.size <= PREVIEW_IMAGE_MAX_BYTES) {
@@ -367,12 +368,12 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
             continue;
           }
         }
-        // saveFileFromTemp moves what it's given, so hand it a copy.
+        // Saving moves what it's given, so hand it a copy.
         const filename = path.basename(item.rel);
         const copy = tempPath();
         await fs.copyFile(item.path, copy);
         try {
-          await saveFileFromTemp(userId, printId, copy, filename, guessMimeFromPath(filename));
+          await save(copy, filename, guessMimeFromPath(filename));
         } finally {
           await fs.rm(copy, { force: true });
         }

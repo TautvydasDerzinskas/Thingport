@@ -161,7 +161,8 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
  * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
- * role is already known; a new PREPARED file replaces the existing one.
+ * role is already known; a new PREPARED file replaces the existing one. `leavePrepared` keeps one that would be
+ * PREPARED as a supporting file instead, leaving the model's prepared print as it is (see batchFileSaver).
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -169,13 +170,18 @@ export async function saveFileFromTemp(
   tempPath: string,
   originalFilename: string,
   contentType: string | null | undefined,
-  { role: givenRole, folder: givenFolder }: { role?: "SUPPORTING" | "PREPARED"; folder?: string | null } = {},
+  {
+    role: givenRole,
+    folder: givenFolder,
+    leavePrepared = false,
+  }: { role?: "SUPPORTING" | "PREPARED"; folder?: string | null; leavePrepared?: boolean } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new HttpError(404, "Print not found");
 
   const safeName = sanitizeFilename(originalFilename || "supporting-file");
-  let role: "SUPPORTING" | "PREPARED" = givenRole ?? (isPreparedPrintFilename(safeName) ? "PREPARED" : "SUPPORTING");
+  let role: "SUPPORTING" | "PREPARED" =
+    givenRole ?? (isPreparedPrintFilename(safeName) && !leavePrepared ? "PREPARED" : "SUPPORTING");
   const mime = mimeFromContentType(contentType, safeName);
   const folder = normalizeFolder(givenFolder);
 
@@ -222,7 +228,7 @@ export async function saveFileFromTemp(
     if (role === "PREPARED" || safeName.toLowerCase().endsWith(".3mf")) {
       metadata = (await inspectPreparedPrint(destination, safeName)) as Record<string, unknown> | null;
     }
-    if (metadata && !givenRole) role = "PREPARED";
+    if (metadata && !givenRole && !leavePrepared) role = "PREPARED";
 
     let oldPreparedPath: string | null = null;
     let oldPreparedId: string | null = null;
@@ -340,6 +346,64 @@ export async function renameSupportingFile(
   await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
   // The file follows its name, as a plate's does.
   await relocatePrint(print, []);
+}
+
+/**
+ * Saves files that arrive onto one model together -- an upload, a consume-folder model -- as saveFileFromTemp does,
+ * except that only the first prepared print among them takes the model's prepared slot. The ones after it are kept as
+ * supporting files: each replacing the one before, as a lone upload replaces the model's prepared print, would leave
+ * only the last.
+ */
+export function batchFileSaver(userId: string, printId: string) {
+  let preparedTaken = false;
+  return async (
+    tempPath: string,
+    originalFilename: string,
+    contentType: string | null | undefined,
+    options: { folder?: string | null } = {},
+  ): Promise<Print> => {
+    const before = preparedTaken
+      ? null
+      : ((await prisma.print.findUnique({ where: { id: printId }, select: { preparedFileId: true } }))
+          ?.preparedFileId ?? null);
+    const saved = await saveFileFromTemp(userId, printId, tempPath, originalFilename, contentType, {
+      ...options,
+      leavePrepared: preparedTaken,
+    });
+    if (saved.preparedFileId && saved.preparedFileId !== before) preparedTaken = true;
+    return saved;
+  };
+}
+
+/** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
+ *  keeps the rest. Deleting a prepared print's row empties the model's prepared slot (Print.preparedFile is SetNull). */
+export function removeMissingPrintFiles(printId: string): Promise<void> {
+  // Under the storage lock, rows read inside it: a move (the model renamed meanwhile) renames a file before it saves
+  // the new path, both under the lock, so a path read outside it could be one the file has just left.
+  return withStorageLock(async () => {
+    const rows = await prisma.printFile.findMany({ where: { printId } });
+    const gone = rows.filter((row) => !printFileOnDisk(row));
+    if (!gone.length) return;
+    await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
+    for (const row of gone) {
+      const where = printFilePathOrNull(row);
+      if (where) await pruneEmptyStorageDirs(path.dirname(where));
+    }
+  });
+}
+
+function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null {
+  try {
+    return managedPrintFilePath(row);
+  } catch {
+    // A path that leads out of storage is nothing to keep, and nothing to look for.
+    return null;
+  }
+}
+
+function printFileOnDisk(row: Pick<PrintFile, "storagePath">): boolean {
+  const where = printFilePathOrNull(row);
+  return where !== null && fsSync.existsSync(where);
 }
 
 export async function deleteSupportingFile(userId: string, printId: string, fileId: string): Promise<Print> {

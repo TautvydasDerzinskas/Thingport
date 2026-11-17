@@ -11,6 +11,11 @@ import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFile
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { replaceModelFiles } from "../src/services/importService";
 import { addPreviewImage } from "../src/services/previewImageService";
+import { licenseData } from "../src/services/licenseService";
+import { syncLicenseFile } from "../src/services/licenseFile";
+import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
+import { removeMissingPrintFiles } from "../src/services/printFileService";
+import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
 // talks to the providers, which the import suites stand up their own servers for.
@@ -105,6 +110,71 @@ describe("models whose files are gone", () => {
     // beyond repair.
     const scan = await scanMissingFiles(owner.id);
     expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
+  it("keeps the files still on disk, drops those that went with the plates, and writes LICENSE.txt again", async () => {
+    const licenseFilesBefore = await getLicenseFiles();
+    await setLicenseFiles(true);
+    try {
+      const model = await makePrint(dir, owner.id, "Keeps its files");
+      await prisma.print.update({
+        where: { id: model.print.id },
+        data: licenseData({ id: "CC-BY-4.0", raw: "BY" }, "user", null),
+      });
+      await syncLicenseFile(model.print.id);
+      // The owner's notes and sliced print, which no source can give back, beside a guide whose file went too.
+      const note = await upload(dir, owner.id, model.print.id, "notes.txt", "keep me");
+      const sliced = await upload(dir, owner.id, model.print.id, "ready.gcode", "; sliced\nG28\n");
+      const guide = await upload(dir, owner.id, model.print.id, "guide.pdf", "%PDF-1.4\n");
+      const license = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, role: "LICENSE" } });
+      for (const gone of [model.plate.storagePath, guide.storagePath, license.storagePath]) {
+        fs.rmSync(path.join(STORAGE, gone), { force: true });
+      }
+
+      const { plates } = await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+      ]);
+
+      expect(plates.map((plate) => plate.filename)).toEqual(["fetched.stl"]);
+      const files = await prisma.printFile.findMany({ where: { printId: model.print.id } });
+      expect(files.map((file) => file.id)).toEqual(expect.arrayContaining([note.id, sliced.id]));
+      expect(files.some((file) => file.id === guide.id)).toBe(false);
+      for (const kept of [note, sliced]) expect(fs.existsSync(path.join(STORAGE, kept.storagePath))).toBe(true);
+      const print = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+      expect(print.preparedFileId).toBe(sliced.id);
+      const rewritten = files.filter((file) => file.role === "LICENSE");
+      expect(rewritten).toHaveLength(1);
+      expect(fs.existsSync(path.join(STORAGE, rewritten[0].storagePath))).toBe(true);
+    } finally {
+      await setLicenseFiles(licenseFilesBefore);
+    }
+  });
+
+  it("leaves a file a move is carrying, rather than taking it for gone", async () => {
+    const model = await makePrint(dir, owner.id, "Moving");
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "on its way");
+    const movedTo = note.storagePath.replace(/notes\.txt$/, "moved notes.txt");
+    // A move as a rename of the model makes one, under the storage lock: the file goes first, its row after.
+    let reachMidway!: () => void;
+    let finishMove!: () => void;
+    const midway = new Promise<void>((resolve) => (reachMidway = resolve));
+    const move = withStorageLock(async () => {
+      fs.renameSync(path.join(STORAGE, note.storagePath), path.join(STORAGE, movedTo));
+      reachMidway();
+      await new Promise<void>((resolve) => (finishMove = resolve));
+      await prisma.printFile.update({ where: { id: note.id }, data: { storagePath: movedTo } });
+    });
+    await midway;
+
+    // The row still names where the file was: read now, it would be taken for gone.
+    const removal = removeMissingPrintFiles(model.print.id);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    finishMove();
+    await move;
+    await removal;
+
+    const row = await prisma.printFile.findUnique({ where: { id: note.id } });
+    expect(row?.storagePath).toBe(movedTo);
   });
 
   it("touches nothing when the files came back while they were being fetched", async () => {

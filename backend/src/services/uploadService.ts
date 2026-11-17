@@ -14,7 +14,7 @@ import {
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
-import { deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
+import { batchFileSaver, deletePreparedFile, deleteSupportingFile } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
@@ -85,7 +85,8 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
   const nameHint = path.parse(plateInputs[0].filename).name;
   const { print } = await createPrint(userId, meta, nameHint, plateInputs);
   try {
-    for (const f of supporting) await saveFileFromTemp(userId, print.id, f.path, f.originalname, f.mimetype);
+    const save = batchFileSaver(userId, print.id);
+    for (const f of supporting) await save(f.path, f.originalname, f.mimetype);
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -98,8 +99,9 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
 
 export type FileKind = "plate" | "supporting";
 
-/** Adds files to one of the user's models: 3D files become plates, the rest supporting files (a sliced print takes
- *  the place of the model's own), unless `kind` says otherwise. All or nothing, bar a sliced print already replaced. */
+/** Adds files to one of the user's models: 3D files become plates, the rest supporting files (the first sliced print
+ *  takes the place of the model's own, and any more are kept as supporting files), unless `kind` says otherwise. All
+ *  or nothing, bar a sliced print already replaced. */
 export async function addUploadedFiles(
   userId: string,
   printId: string,
@@ -128,6 +130,7 @@ async function addFilesTo(
   const before = new Set(
     (await prisma.printFile.findMany({ where: { printId }, select: { id: true } })).map((f) => f.id),
   );
+  const save = batchFileSaver(userId, printId);
   try {
     for (const f of files) {
       if (isPlate(f)) {
@@ -137,7 +140,7 @@ async function addFilesTo(
         ]);
         plateIds.push(plate.id);
       } else {
-        await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype);
+        await save(f.path, f.originalname, f.mimetype);
       }
     }
   } catch (err) {

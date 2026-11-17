@@ -168,7 +168,8 @@ files, it offers a repair:
 
 - **Fetch the missing files.** The files of each model are downloaded again from the site it came from. The models
   themselves stay as they are: names, tags, collections, favourites, view counts and collection order are untouched,
-  and a model whose site can't be reached is left exactly as it was rather than lost. Models from MakerOnline and
+  and so is any file still on disk, such as instructions or a prepared print you added. A model whose site can't be
+  reached is left exactly as it was rather than lost. Models from MakerOnline and
   OwlCAD wait until [Thingport Grab](../../extension/README.md) next visits that site -- MakerOnline's files and
   OwlCAD's CAD projects come only through it -- and the files it brings then replace theirs.
 - **Delete these models.** The models with no files are removed for good, with their details, tags and collection
