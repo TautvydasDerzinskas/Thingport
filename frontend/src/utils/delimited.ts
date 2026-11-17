@@ -1,10 +1,18 @@
 /**
  * Rows of a CSV or TSV file, as a spreadsheet would read them: quoted fields may hold the delimiter, line breaks and
- * doubled quotes. Stops after `maxRows`, so a preview of a large file costs no more than what it shows.
+ * doubled quotes. Reads no further than the `maxRows` rows it returns, each of them to its end.
  */
 export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRows = 200): string[][] {
+  return parseRows(text, delimiter, maxRows).rows;
+}
+
+/** parseDelimited, holding no more than `maxColumns` fields of a row: the rest are still read, to find where the row
+ *  ends, but not kept. `cut` says which rows had more. */
+function parseRows(text: string, delimiter: "," | "\t" | ";", maxRows: number, maxColumns = Number.POSITIVE_INFINITY) {
   const rows: string[][] = [];
+  const cut: boolean[] = [];
   let row: string[] = [];
+  let over = false;
   let field = "";
   let quoted = false;
   // The line holds a field even if it's empty: a quoted "" is one, where a blank line holds none.
@@ -12,12 +20,20 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
   let index = 0;
   // A byte-order mark isn't part of the first field.
   if (text.charCodeAt(0) === 0xfeff) index = 1;
-  const endRow = () => {
-    row.push(field);
+  const keep = () => {
+    if (row.length < maxColumns) row.push(field);
+    else over = true;
     field = "";
-    // A blank line between rows isn't a row of one empty field.
-    if (present || row.length > 1 || row[0] !== "") rows.push(row);
+  };
+  const endRow = () => {
+    keep();
+    // A blank line between rows isn't a row of one empty field. One with fields past the cap isn't blank.
+    if (present || over || row.length > 1 || row[0] !== "") {
+      rows.push(row);
+      cut.push(over);
+    }
     row = [];
+    over = false;
     present = false;
   };
   for (; index < text.length && rows.length < maxRows; index++) {
@@ -35,8 +51,7 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
       quoted = true;
       present = true;
     } else if (char === delimiter) {
-      row.push(field);
-      field = "";
+      keep();
     } else if (char === "\n" || char === "\r") {
       if (char === "\r" && text[index + 1] === "\n") index++;
       endRow();
@@ -45,7 +60,7 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
     }
   }
   if (rows.length < maxRows && (present || field !== "" || row.length)) endRow();
-  return rows;
+  return { rows, cut };
 }
 
 /** The delimiter a CSV file most likely uses, from its first record: some locales write `;` where `,` is the
@@ -76,13 +91,13 @@ export function guessDelimiter(text: string, extension: string): "," | "\t" | ";
  *  fields, and whether the file has more rows, or wider ones, than that. */
 export function previewTable(text: string, extension: string, limit: number, columns = Number.POSITIVE_INFINITY) {
   // The header, the rows shown and one more, which says there are more.
-  const rows = parseDelimited(text, guessDelimiter(text, extension), limit + 2);
+  const { rows, cut } = parseRows(text, guessDelimiter(text, extension), limit + 2, columns);
   const [head = [], ...body] = rows;
-  const shown = body.slice(0, limit);
   return {
-    head: head.slice(0, columns),
-    body: shown.map((row) => row.slice(0, columns)),
+    head,
+    body: body.slice(0, limit),
     more: body.length > limit,
-    wider: [head, ...shown].some((row) => row.length > columns),
+    // Only the header and the rows shown: the one more read says nothing of what's on screen.
+    wider: cut.slice(0, limit + 1).some(Boolean),
   };
 }
