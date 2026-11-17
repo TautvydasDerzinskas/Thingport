@@ -16,6 +16,7 @@ import { plateThumbPath, relocatePrintsForToken } from "../services/printService
 import { assignCategory, setPrintCategory } from "../services/printCategoryService";
 import { mergeModels } from "../services/modelMergeService";
 import { galleryCardPicture, previewImagePath } from "../services/previewImageService";
+import { galleryCover } from "../dto";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
 import { printOutById, printOutsByIds } from "../services/printLoader";
@@ -612,11 +613,11 @@ router.get(
       select: {
         assetsPath: true,
         plates: { take: 1, orderBy: { position: "asc" }, select: { id: true } },
-        previewImages: { take: 1, orderBy: { position: "asc" }, select: { id: true, generated: true } },
+        previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
       },
     });
     if (!print) throw new HttpError(404, "Not found");
-    const cover = print.previewImages[0];
+    const cover = galleryCover(print.previewImages, print.assetsPath);
     const fromCover = cover && !cover.generated ? (await galleryCardPicture(cover.id, print.assetsPath))?.path : null;
     const plate = print.plates[0];
     const thumbPath = fromCover ?? (plate ? plateThumbPath(plate.id, print.assetsPath) : null);

@@ -23,7 +23,7 @@ import type {
 import type { AssetHome } from "./services/modelAssets";
 import type { PrintProfileOut } from "./services/printProfileService";
 import { plateThumbPath } from "./services/printService";
-import { previewImagePath } from "./services/previewImageService";
+import { previewImageExists, previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
 import {
   canRenderModelImage,
@@ -365,6 +365,12 @@ export function galleryThumbUrl(id: string, home: AssetHome): string | null {
  */
 export function coverThumbUrl(cover: { id: string; generated: boolean } | undefined, home: AssetHome): string | null {
   return cover && !cover.generated ? galleryThumbUrl(cover.id, home) : null;
+}
+
+/** The gallery's first image that's there, of `images` in their order: the one a card goes by, as toPrintOut leaves
+ *  out an image whose file is gone. */
+export function galleryCover<T extends { id: string }>(images: T[], home: AssetHome): T | undefined {
+  return images.find((image) => previewImageExists(image.id, home));
 }
 
 export function toPreviewImageOut(image: PreviewImage, home: AssetHome): PreviewImageOut | null {

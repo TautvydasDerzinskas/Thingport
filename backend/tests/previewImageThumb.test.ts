@@ -320,6 +320,20 @@ describe("the model's thumbnail", () => {
     expect(row.thumbUrl).toMatch(cardOf(b));
     expect(row.photoUrl).toMatch(cardOf(b));
   });
+
+  it("goes by the first picture that's there, wherever it's read, when the first one's file is gone", async () => {
+    const print = await withPictures(await png(10), await png(200));
+    const [a, b] = print.preview_images.map((image) => image.id);
+    await fs.rm(previewImagePath(a, await printAssetHome(print.id)));
+    const card = (await request(app).get(`/api/print/${print.id}`).set(auth())).body as PrintBody;
+    expect(card.thumb_url).toMatch(cardOf(b));
+    expect(await redOfBytes((await fetchPicture(`/print/${print.id}/thumb.jpg`)).body)).toBeGreaterThan(180);
+    const row = toModelSummary(
+      await prisma.print.findUniqueOrThrow({ where: { id: print.id }, select: MODEL_SUMMARY_SELECT }),
+    );
+    expect(row.thumbUrl).toMatch(cardOf(b));
+    expect(row.photoUrl).toMatch(cardOf(b));
+  });
 });
 
 describe("our own thumb and cover", () => {
