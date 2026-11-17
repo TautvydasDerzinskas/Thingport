@@ -406,7 +406,7 @@ const source = await thingport.models.relatedText(id, scad.id);
 thingport.models.create(input: SdkNewModel): Promise<SdkModel>
 ```
 
-Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything else (instructions, notes, sources) is kept beside them as a related file; with no 3D file, every file is a plate.
+Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything else (instructions, notes, sources) is kept beside them as a related file. With no 3D file, a sliced 3MF is the plate, or else the files that can be a model on their own, such as a picture; only when none can is every file a plate.
 
 | Parameter | What it is                                         |
 | --------- | -------------------------------------------------- |
