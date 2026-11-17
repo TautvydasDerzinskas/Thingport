@@ -67,6 +67,8 @@ export function useSupportingFiles(
       await inTurn(async () => {
         let added = 0;
         let modelFilesAdded = false;
+        // The first sliced print among them becomes the prepared print; the rest are kept as supporting files.
+        let preparedAdded = false;
         // A toast after a failure's would close it at once: what went wrong is the one left showing.
         let anyFailed = false;
         if (model.length) {
@@ -90,7 +92,10 @@ export function useSupportingFiles(
         }
         for (const item of supporting) {
           try {
-            const { print: updated } = await printsApi.uploadFile(printId, item.file);
+            const { print: updated, prepared } = await printsApi.uploadFile(printId, item.file, {
+              keepPrepared: preparedAdded,
+            });
+            if (prepared) preparedAdded = true;
             onUpdated?.(updated);
             added += 1;
           } catch (err) {

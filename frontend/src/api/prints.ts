@@ -652,8 +652,15 @@ export const printsApi = {
 
   /** Keeps a file beside the model, as a supporting file (a sliced print becomes its prepared print). */
   /** `file_id`: the stored file's, which is the prepared print's when the file was a sliced one. */
-  uploadFile: async (id: string, file: File): Promise<{ print: Print; file_id?: string }> => {
+  /** `keepPrepared` for each file after one that became the prepared print (`prepared`), among several added at once:
+   *  each would otherwise replace the one before it. */
+  uploadFile: async (
+    id: string,
+    file: File,
+    { keepPrepared = false }: { keepPrepared?: boolean } = {},
+  ): Promise<{ print: Print; file_id?: string; prepared?: boolean }> => {
     const body = new FormData();
+    if (keepPrepared) body.set("keep_prepared", "1");
     body.set("file", file, file.name);
     const res = await fetch(`${apiBase()}/print/${id}/files`, {
       method: "POST",

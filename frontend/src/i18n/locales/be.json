@@ -7645,6 +7645,7 @@
       "more": "Яшчэ {{count}}",
       "moreActionsNamed": "Іншыя дзеянні: {{name}}",
       "noPreview": "Няма папярэдняга прагляду для файлаў {{type}}",
+      "untypedFile": "Файл",
       "tooLargeToPreview": "Занадта вялікі для папярэдняга прагляду",
       "previewFailed": "Не ўдалося паказаць гэты файл",
       "firstRows": "Паказаны першыя {{count}} радкоў",

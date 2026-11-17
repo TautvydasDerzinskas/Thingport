@@ -186,7 +186,13 @@ export function buildUserLibrary({
       // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
       const { model, supporting } = sortAddedFiles(files.map(toFile), "model");
       let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
-      for (const file of supporting) print = (await printsApi.uploadFile(id, file)).print;
+      // The first sliced print among them becomes the prepared print; the rest are kept as related files.
+      let preparedAdded = false;
+      for (const file of supporting) {
+        const res = await printsApi.uploadFile(id, file, { keepPrepared: preparedAdded });
+        if (res.prepared) preparedAdded = true;
+        print = res.print;
+      }
       return toModel(print ?? (await printsApi.get(id)));
     },
     addImages: async (id: string, images: SdkFileInput[]) =>

@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreeMfFormat } from "../adapter/format.generated";
-import type { Plate, Print, PrintProfile, ProfileFilament } from "../api/prints";
+import type { Plate, Print, PrintProfile, ProfileFilament, printsApi } from "../api/prints";
 
 const get = vi.fn<(id: string) => Promise<Print>>();
-vi.mock("../api/prints", () => ({ printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url } }));
+const uploadFile = vi.fn<typeof printsApi.uploadFile>();
+vi.mock("../api/prints", () => ({
+  printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url, uploadFile },
+}));
 vi.mock("../api/collections", () => ({ collectionsApi: {} }));
 vi.mock("../api/search", () => ({ searchApi: {} }));
 
@@ -89,5 +92,27 @@ describe("a model's files as a script reads them", () => {
       plate({ profile_id: "42", profile: profile([{ type: "PLA", color: "#FF0000", grams: 3 }]), format: project }),
     ]);
     expect(file.profile?.filaments).toEqual([{ type: "PLA", color: "#FF0000", grams: 3, brand: null }]);
+  });
+});
+
+describe("files a script adds to a model", () => {
+  it("keeps the prepared print the first sliced one took, rather than each replacing the one before", async () => {
+    uploadFile.mockReset();
+    uploadFile.mockImplementation(async (_id, file, options) => {
+      // As the server does: a sliced print takes the prepared slot unless asked to keep the one taken.
+      const took = file.name.endsWith(".gcode") && !options?.keepPrepared;
+      return { print: { id: "m1" } as Print, prepared: took };
+    });
+    get.mockResolvedValue({ id: "m1", plates: [], preview_images: [], tags: [] } as unknown as Print);
+    await buildUserLibrary({ openModel: () => undefined }).models.addFiles("m1", [
+      { name: "A.gcode", data: "G28" },
+      { name: "notes.txt", data: "n" },
+      { name: "B.gcode", data: "G28" },
+    ]);
+    expect(uploadFile.mock.calls.map(([, file, options]) => [file.name, options?.keepPrepared])).toEqual([
+      ["A.gcode", false],
+      ["notes.txt", true],
+      ["B.gcode", true],
+    ]);
   });
 });
