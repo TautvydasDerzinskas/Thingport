@@ -104,7 +104,8 @@ function handlerFor(scenario: string, model: Model = "several"): FetchHandler {
       if (scenario === "fileDown" && !/\.(png|jpe?g|webp)$/i.test(url.pathname)) return json({}, 404);
       if (url.pathname.endsWith(".3mf")) return binary(await threeMf(url.pathname.split("/").pop()!));
       if (url.pathname.endsWith(".stl.zip")) return binary(await zip("cow", { "highland.stl": stl("cow") }));
-      if (url.pathname.endsWith("notes.txt.zip")) return binary(await zip("notes", { "notes.txt": "glue last" }));
+      if (url.pathname.endsWith("notes.txt.zip"))
+        return binary(await zip("notes", { "notes.txt": Buffer.from("glue last") }));
       if (url.pathname.endsWith(".pdf")) return binary(Buffer.from("%PDF-1.4 guide"));
       if (url.pathname.endsWith(".stl")) return binary(stl(url.pathname));
       return undefined;
