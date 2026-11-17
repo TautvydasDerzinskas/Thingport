@@ -14,7 +14,7 @@ import {
   type NewPlateInput,
   type PrintMetaInput,
 } from "./printCreation";
-import { batchFileSaver, deletePreparedFile, deleteSupportingFile } from "./printFileService";
+import { batchFileSaver, deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { recordActivity } from "./activityService";
@@ -132,7 +132,7 @@ export type FileKind = "plate" | "supporting";
 
 /** Adds files to one of the user's models: 3D files become plates, the rest supporting files (the first sliced print
  *  takes the place of the model's own, and any more are kept as supporting files), unless `kind` says otherwise. All
- *  or nothing, bar a sliced print already replaced. */
+ *  or nothing. */
 export async function addUploadedFiles(
   userId: string,
   printId: string,
@@ -155,14 +155,15 @@ async function addFilesTo(
 ): Promise<{ plates: number; files: number }> {
   const printId = print.id;
   const isPlate = (f: (typeof files)[number]) => (f.kind ? f.kind === "plate" : isPlateFile(f));
+  // Last, since the print it replaces is gone once it's in: a file that fails before it leaves the model as it was.
+  const prepared = files.find((f) => !f.kind && isPreparedPrintFilename(sanitizeFilename(f.originalname)));
 
   const plateIds: string[] = [];
   const before = new Set(
     (await prisma.printFile.findMany({ where: { printId }, select: { id: true } })).map((f) => f.id),
   );
-  const save = batchFileSaver(userId, printId);
   try {
-    for (const f of files) {
+    for (const f of prepared ? [...files.filter((other) => other !== prepared), prepared] : files) {
       if (isPlate(f)) {
         const safeName = sanitizeFilename(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
@@ -176,9 +177,10 @@ async function addFilesTo(
         plateIds.push(plate.id);
       } else {
         // Asked for as a supporting file, a sliced print stays one rather than taking the prepared slot.
-        await save(f.path, f.originalname, f.mimetype, {
+        await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype, {
           folder: f.folder ?? null,
           ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
+          leavePrepared: f !== prepared,
         });
       }
     }

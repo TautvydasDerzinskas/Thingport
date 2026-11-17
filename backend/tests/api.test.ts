@@ -7,6 +7,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { addUploadedFiles } from "../src/services/uploadService";
+import { STORAGE } from "../src/config";
 
 const app = createApp();
 
@@ -476,6 +477,36 @@ describe("uploads of one model's several files", () => {
       .attach("files", b);
     expect(res.status).toBe(400);
     for (const file of [a, b]) fs.rmSync(file, { force: true });
+  });
+
+  it("keeps a model's prepared print when files added with a sliced one fail", async () => {
+    const stl = tmpFile("held.stl", "solid held endsolid");
+    const made = await auth(request(app).post("/api/upload")).attach("files", stl);
+    const printId = made.body.prints[0].id;
+    await trackPrint(printId);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_EMAIL } });
+    const old = tmpFile("old.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+    await addUploadedFiles(user.id, printId, [{ path: old, originalname: "old.gcode" }]);
+    const { preparedFile: kept } = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      include: { preparedFile: true },
+    });
+    expect(kept?.filename).toBe("old.gcode");
+
+    // The sliced file first, then one that can't be stored: its temp file is gone.
+    const replacement = tmpFile("new.gcode", "; printer_model = Bambu Lab A1\nG28\n");
+    const gone = path.join(path.dirname(replacement), "gone.txt");
+    await expect(
+      addUploadedFiles(user.id, printId, [
+        { path: replacement, originalname: "new.gcode" },
+        { path: gone, originalname: "gone.txt" },
+      ]),
+    ).rejects.toThrow(/ENOENT/);
+    const after = await prisma.print.findUniqueOrThrow({ where: { id: printId }, include: { preparedFile: true } });
+    expect(after.preparedFile?.id).toBe(kept?.id);
+    expect(after.preparedFile && fs.existsSync(path.join(STORAGE, after.preparedFile.storagePath))).toBe(true);
+    expect(await prisma.printFile.count({ where: { printId } })).toBe(1);
+    for (const file of [stl, replacement]) fs.rmSync(file, { force: true });
   });
 
   it("keeps a sliced file asked for as a supporting one as that, rather than the prepared print", async () => {
