@@ -42,7 +42,8 @@ Open **Administration → Storage → Consume Folder**. If the volume is mounted
   - **Each file is a model** (the default): every STL, 3MF, STEP, OBJ or glTF becomes a model, and images
     become models too, except the textures a `.gltf` uses, which go into its model ([glTF files](upload-files.md#upload-a-gltf-model)).
   - **Each folder is a model**: a folder of model files becomes one model named after the folder, with its images as
-    photos and its other files attached.
+    photos and its other files attached. Its subfolders without model files of their own, such as `docs` or `photos`,
+    belong to it too: their documents are attached in that subfolder, and their pictures become photos.
 
 Click **Save consume settings**. You only need to do this again when you want to change something.
 
@@ -74,7 +75,7 @@ Anything Thingport can't import is moved into a **Not imported** folder inside t
 and the notification says how many files ended up there. That covers:
 
 - files that can't be a model on their own, like a loose `notes.txt` (in "each folder is one model" mode, such files
-  inside a model's folder are attached instead)
+  inside a model's folder, or in a subfolder of it, are attached instead)
 - ZIPs that are damaged or not really ZIPs
 - files over the size limit, 512 MB per file by default (`IMPORT_MAX_MB`)
 

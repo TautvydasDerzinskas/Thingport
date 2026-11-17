@@ -82,11 +82,12 @@ test("several files can become one model, model files as plates in the order pic
   await pickFiles(page, [
     file("Multi Lid.stl", stl()),
     file("Multi Base.3mf", threeMf()),
-    file("Multi Notes.png", png(), "image/png"),
+    file("Multi Photo.png", png(), "image/png"),
+    file("Multi Guide.pdf", text("%PDF-1.4 not really"), "application/pdf"),
   ]);
 
   await page
-    .getByRole("dialog", { name: /Import 3 files/ })
+    .getByRole("dialog", { name: /Import 4 files/ })
     .getByRole("button", { name: /Import as one model with several files/ })
     .click();
   // One model, so it opens for editing like a single upload.
@@ -96,8 +97,9 @@ test("several files can become one model, model files as plates in the order pic
   const print = await api.print(id);
   expect(print.name).toBe("Multi Lid");
   expect(print.plates.map((p) => p.filename)).toEqual(["Multi Lid.stl", "Multi Base.3mf"]);
-  // Not a model file, so it rides along as an attachment.
-  expect((await api.files(id)).map((f) => f.filename)).toEqual(["Multi Notes.png"]);
+  // A picture is the model's photo, as a folder's are; a document rides along as an attachment.
+  expect(print.preview_images.filter((p) => !p.generated)).toHaveLength(1);
+  expect((await api.files(id)).map((f) => f.filename)).toEqual(["Multi Guide.pdf"]);
   expect((await api.summary()).model_count).toBe(before.model_count + 1);
 });
 

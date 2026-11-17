@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { file, png, stl, text, threeMf, zip } from "./fixtures";
 import { expect, expectUploaded, pickFiles, test } from "./helpers";
 
@@ -20,6 +20,13 @@ async function unzip(page: Page, entries: string[]) {
   return dialog;
 }
 
+/** Under the list: how the ticked files become models. */
+function importAs(dialog: Locator, label: string) {
+  return dialog.getByRole("group", { name: "Import as" }).getByRole("button", { name: label, exact: true });
+}
+
+const pdf = () => text("%PDF-1.4 not really");
+
 test("import as zip keeps the archive whole, as one model", async ({ page, api }) => {
   const before = await api.summary();
   await page.goto("/models");
@@ -39,7 +46,96 @@ test("import as zip keeps the archive whole, as one model", async ({ page, api }
   expect(after.category_count).toBe(before.category_count);
 });
 
-test("import and unzip makes a model per file and a folder per directory, however deep", async ({ page, api }) => {
+test("import and unzip makes one model by default: its files in their folders, pictures as photos", async ({
+  page,
+  api,
+}) => {
+  const before = await api.summary();
+  await page.goto("/models");
+  await pickFiles(
+    page,
+    zipFile("Zip Frog Kit.zip", {
+      "Frog/frog body.stl": stl(),
+      "Frog/Parts/frog legs.3mf": threeMf(),
+      "Frog/photo.png": png(),
+      "Frog/docs/Assembly guide.pdf": pdf(),
+      "Frog/Print settings.txt": text("0.2 mm layers"),
+    }),
+  );
+
+  const dialog = await unzip(page, [
+    "Frog/docs/Assembly guide.pdf",
+    "Frog/frog body.stl",
+    "Frog/Parts/frog legs.3mf",
+    "Frog/photo.png",
+    "Frog/Print settings.txt",
+  ]);
+  await expect(importAs(dialog, "One model")).toHaveAttribute("aria-pressed", "true");
+  await dialog.getByRole("button", { name: "Import selected" }).click();
+  // One model, so it opens for editing like a single upload.
+  await page.waitForURL(/\/models\/[^/?]+\?edit=/);
+
+  const print = await api.print(page.url().match(/\/models\/([^/?]+)/)![1]);
+  // Named after the zip; the one folder everything shares isn't kept.
+  expect(print).toMatchObject({ title: "Zip Frog Kit", category_id: null });
+  expect(print.plates.map((p) => [p.folder, p.filename])).toEqual([
+    [null, "frog body.stl"],
+    ["Parts", "frog legs.3mf"],
+  ]);
+  expect(print.preview_images.filter((p) => !p.generated)).toHaveLength(1);
+  const files = (await api.files(print.id)).toSorted((a, b) => a.filename.localeCompare(b.filename));
+  expect(files.map((f) => [f.folder, f.filename])).toEqual([
+    ["docs", "Assembly guide.pdf"],
+    [null, "Print settings.txt"],
+  ]);
+
+  const after = await api.summary();
+  expect(after.model_count).toBe(before.model_count + 1);
+  expect(after.category_count).toBe(before.category_count);
+});
+
+test("import and unzip, a model per folder: each folder with model files is a model, with its documents and pictures", async ({
+  page,
+  api,
+}) => {
+  const before = await api.summary();
+  await page.goto("/models");
+  await pickFiles(
+    page,
+    zipFile("Zip Shelf.zip", {
+      "Zip Owl/owl.stl": stl(),
+      "Zip Owl/docs/owl guide.pdf": pdf(),
+      "Zip Owl/pics/owl.png": png(),
+      "Zip Cat/cat.3mf": threeMf(),
+      "Zip Cat/cat notes.txt": text("print upright"),
+    }),
+  );
+
+  const dialog = await unzip(page, [
+    "Zip Cat/cat notes.txt",
+    "Zip Cat/cat.3mf",
+    "Zip Owl/docs/owl guide.pdf",
+    "Zip Owl/owl.stl",
+    "Zip Owl/pics/owl.png",
+  ]);
+  await importAs(dialog, "A model per folder").click();
+  await dialog.getByRole("button", { name: "Import selected" }).click();
+  await expectUploaded(page, 2);
+
+  const [owl, cat] = await api.printsNamed("Zip Owl", "Zip Cat");
+  expect(owl.plates.map((p) => p.filename)).toEqual(["owl.stl"]);
+  expect(owl.preview_images.filter((p) => !p.generated)).toHaveLength(1);
+  expect((await api.files(owl.id)).map((f) => [f.folder, f.filename])).toEqual([["docs", "owl guide.pdf"]]);
+  expect(cat.plates.map((p) => p.filename)).toEqual(["cat.3mf"]);
+  expect((await api.files(cat.id)).map((f) => [f.folder, f.filename])).toEqual([[null, "cat notes.txt"]]);
+  expect([owl.category_id, cat.category_id]).toEqual([null, null]);
+
+  const after = await api.summary();
+  expect(after.model_count).toBe(before.model_count + 2);
+  expect(after.category_count).toBe(before.category_count);
+});
+
+test("import and unzip, a model per file: a folder per directory, however deep", async ({ page, api }) => {
   const before = await api.summary();
   await page.goto("/models");
   await pickFiles(
@@ -60,9 +156,11 @@ test("import and unzip makes a model per file and a folder per directory, howeve
     "Zip Pack/Zip Gear.3mf",
     "Zip Pack/Zip Render.png",
   ]);
+  await importAs(dialog, "A model per file").click();
   await dialog.getByRole("button", { name: "Import selected" }).click();
-  // The text file is listed but isn't something that can become a model, so four, not five.
+  // The text file is listed but can't be a model on its own, so four, not five, and it's said which.
   await expectUploaded(page, 4);
+  await expect(page.getByText(/readme\.txt wasn't added/)).toBeVisible();
   await expect(dialog).toBeHidden();
 
   const pack = await api.folderAt("Zip Pack");
@@ -97,10 +195,13 @@ test("only the ticked entries are unzipped", async ({ page, api }) => {
   await expect(dialog).toContainText("3 of 3 selected");
   await dialog.getByRole("checkbox", { name: /^Skip Me\.stl/ }).uncheck();
   await expect(dialog).toContainText("2 of 3 selected");
+  // No folders in this zip, so no model per folder to offer.
+  await expect(importAs(dialog, "A model per folder")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Import selected" }).click();
-  await expectUploaded(page, 2);
+  await page.waitForURL(/\/models\/[^/?]+\?edit=/);
 
-  await api.printsNamed("Pick One", "Pick Two");
+  const [partial] = await api.printsNamed("Zip Partial");
+  expect(partial.plates.map((p) => p.filename)).toEqual(["Pick One.stl", "Pick Two.3mf"]);
   expect((await api.prints()).some((p) => p.name === "Skip Me")).toBe(false);
 });
 
@@ -113,10 +214,11 @@ test("a zip picked together with other files: the files upload, then the zip ask
   ]);
   const dialog = await unzip(page, ["Mixed Inner A.stl", "Mixed Inner B.3mf"]);
   await dialog.getByRole("button", { name: "Import selected" }).click();
-  await expectUploaded(page, 3);
+  await expectUploaded(page, 2);
 
-  await api.printsNamed("Mixed Plain", "Mixed Inner A", "Mixed Inner B");
-  expect((await api.summary()).model_count).toBe(before.model_count + 3);
+  const [, bundle] = await api.printsNamed("Mixed Plain", "Mixed Bundle");
+  expect(bundle.plates.map((p) => p.filename)).toEqual(["Mixed Inner A.stl", "Mixed Inner B.3mf"]);
+  expect((await api.summary()).model_count).toBe(before.model_count + 2);
 });
 
 test("several zips are asked about one after another", async ({ page, api }) => {
@@ -133,7 +235,8 @@ test("several zips are asked about one after another", async ({ page, api }) => 
   await (await unzip(page, ["Queue Two.stl"])).getByRole("button", { name: "Import selected" }).click();
   await expectUploaded(page, 2);
 
-  await api.printsNamed("Queue First", "Queue Two");
+  // Unzipped as one model, named after its zip.
+  await api.printsNamed("Queue First", "Queue Second");
 });
 
 test("cancelling the zip choice uploads nothing", async ({ page, api }) => {
@@ -176,7 +279,8 @@ test("macOS archive junk is neither listed nor imported", async ({ page, api }) 
   // Just the one model, which opens for editing.
   await page.waitForURL(/\/models\/[^/?]+\?edit=/);
 
-  await api.printsNamed("Mac Part");
+  const [mac] = await api.printsNamed("Zip Mac");
+  expect(mac.plates.map((p) => [p.folder, p.filename])).toEqual([[null, "Mac Part.stl"]]);
   expect((await api.summary()).model_count).toBe(before.model_count + 1);
   expect(await api.folderAt("__MACOSX")).toBeUndefined();
 });

@@ -60,7 +60,14 @@ export async function pickFolder(page: Page, dir: string) {
   await (await chooser).setFiles(dir);
 }
 
-export type Plate = { id: string; filename: string; position: number; size: number; thumb_url: string | null };
+export type Plate = {
+  id: string;
+  filename: string;
+  folder: string | null;
+  position: number;
+  size: number;
+  thumb_url: string | null;
+};
 export type Print = {
   id: string;
   name: string;
@@ -109,7 +116,7 @@ export class Api {
   summary = () => this.get<Summary>("/api/dashboard/summary");
   prints = () => this.get<Print[]>("/api/prints");
   print = (id: string) => this.get<Print>(`/api/print/${id}`);
-  files = (id: string) => this.get<{ filename: string }[]>(`/api/print/${id}/files`);
+  files = (id: string) => this.get<{ filename: string; folder: string | null }[]>(`/api/print/${id}/files`);
   categories = () => this.get<Category[]>("/api/categories");
 
   /** Display name the UI shows: the title, else the name. */

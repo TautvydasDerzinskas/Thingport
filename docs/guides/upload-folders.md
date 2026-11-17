@@ -22,7 +22,8 @@ Hidden files and system clutter (anything starting with a dot, `.DS_Store`, `Thu
 ## Each model file is a separate model
 
 Every model file becomes its own model, named after the file, and every directory becomes a folder. Images become
-models of their own too. Text files, PDFs and other files that can't be a model on their own are skipped.
+models of their own too. Text files, PDFs and other files that can't be a model on their own aren't uploaded, and
+Thingport says which ones.
 
 ```text
 Miniatures/                         Folders: Miniatures › Dragons, Miniatures › Knights
@@ -41,6 +42,8 @@ Each folder that directly contains model files becomes **one** model, named afte
 - its images (PNG, JPG, WebP or BMP, up to 8 MB) become the model's photos, and the first one becomes the thumbnail
   if the model files don't carry one
 - everything else, like a PDF manual, a readme or slicer settings, is attached to the model
+- a subfolder with no model files of its own, like `docs` or `photos`, belongs to the model too: its documents are
+  attached in that subfolder, and its pictures become photos
 
 The folders above it become folders in Thingport.
 
@@ -56,7 +59,8 @@ Printer Upgrades/                    Folder: Printer Upgrades
 A few details worth knowing:
 
 - If model files sit directly in the folder you picked, that folder itself becomes the model.
-- Files in a folder without any model files are uploaded one per file, as in the other mode.
+- Files in a folder without any model files, and not inside a model's folder, are uploaded one per file, as in the
+  other mode.
 - This is the right choice for downloads from model sites that you unpacked into a folder each. Every download ends up
   as one tidy model.
 

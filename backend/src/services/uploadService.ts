@@ -30,11 +30,16 @@ export type UploadedFile = {
   /** Untrusted; sanitized here. */
   originalname: string;
   mimetype?: string | null;
+  /** The folder it came from within the upload ("docs"), kept on the model's file; none for a flat pick. */
+  folder?: string | null;
 };
 
 function isRenderable(file: UploadedFile): boolean {
   return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
 }
+
+/** A file the model is printed from: a sliced 3MF beside them is its prepared print, not one of them. */
+const isPlateFile = (file: UploadedFile) => isRenderable(file) && !isPreparedPrintFilename(file.originalname);
 
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
  *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
@@ -74,19 +79,24 @@ export async function createUploadedModel(
 }
 
 async function createModelFrom(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
-  const renderable = files.filter(isRenderable);
-  const supporting = renderable.length ? files.filter((f) => !isRenderable(f)) : [];
+  const renderable = files.filter(isPlateFile);
+  const supporting = renderable.length ? files.filter((f) => !isPlateFile(f)) : [];
   const plateFiles = renderable.length ? renderable : files;
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
     const safeName = sanitizeFilename(f.originalname);
-    return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
+    return {
+      filename: safeName,
+      mime: mimeFromContentType(f.mimetype, safeName),
+      tempFilePath: f.path,
+      folder: f.folder ?? null,
+    };
   });
   const nameHint = path.parse(plateInputs[0].filename).name;
   const { print } = await createPrint(userId, meta, nameHint, plateInputs);
   try {
     const save = batchFileSaver(userId, print.id);
-    for (const f of supporting) await save(f.path, f.originalname, f.mimetype);
+    for (const f of supporting) await save(f.path, f.originalname, f.mimetype, { folder: f.folder ?? null });
   } catch (err) {
     await discardPrint(print.id);
     throw err;
@@ -123,8 +133,7 @@ async function addFilesTo(
   files: (UploadedFile & { kind?: FileKind })[],
 ): Promise<{ plates: number; files: number }> {
   const printId = print.id;
-  const isPlate = (f: (typeof files)[number]) =>
-    f.kind ? f.kind === "plate" : isRenderable(f) && !isPreparedPrintFilename(f.originalname);
+  const isPlate = (f: (typeof files)[number]) => (f.kind ? f.kind === "plate" : isPlateFile(f));
 
   const plateIds: string[] = [];
   const before = new Set(
@@ -136,11 +145,20 @@ async function addFilesTo(
       if (isPlate(f)) {
         const safeName = sanitizeFilename(f.originalname);
         const [plate] = await addPlatesToPrint(userId, printId, [
-          { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path },
+          {
+            filename: safeName,
+            mime: mimeFromContentType(f.mimetype, safeName),
+            tempFilePath: f.path,
+            folder: f.folder ?? null,
+          },
         ]);
         plateIds.push(plate.id);
       } else {
-        await save(f.path, f.originalname, f.mimetype);
+        // Asked for as a supporting file, a sliced print stays one rather than taking the prepared slot.
+        await save(f.path, f.originalname, f.mimetype, {
+          folder: f.folder ?? null,
+          ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
+        });
       }
     }
   } catch (err) {
