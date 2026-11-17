@@ -7,7 +7,10 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { buildZipEntries } from "../src/services/downloadZip";
-import { makePrint, register, upload } from "./helpers/fileReuse";
+import { renameSupportingFile } from "../src/services/printFileService";
+import { createPrint } from "../src/services/printCreation";
+import { relocatePrint } from "../src/services/printService";
+import { makePrint, nonce, register, tempFile, upload } from "./helpers/fileReuse";
 
 // A model's supporting files on its page: listed with it, shown in the browser where that's safe, renamed, and zipped.
 
@@ -123,6 +126,60 @@ describe("supporting files", () => {
     // A plate is not a supporting file.
     const plateRoute = `/api/print/${model.print.id}/files/${model.plate.id}`;
     expect((await request(app).patch(plateRoute).set(auth(owner.token)).send({ filename: "y.stl" })).status).toBe(404);
+  });
+
+  it("give renames at once to one name a name each", async () => {
+    const model = await makePrint(dir, owner.id, "Raced");
+    const files = [];
+    for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"])
+      files.push(await upload(dir, owner.id, model.print.id, name, name));
+    await Promise.all(files.map((file) => renameSupportingFile(owner.id, model.print.id, file.id, "notes")));
+    const after = await prisma.printFile.findMany({ where: { id: { in: files.map((file) => file.id) } } });
+    expect(after.map((file) => file.filename).toSorted()).toEqual([
+      "notes (2).txt",
+      "notes (3).txt",
+      "notes (4).txt",
+      "notes.txt",
+    ]);
+  });
+
+  it("stay where their names say, the model's files too, when moves of one model run at once", async () => {
+    // A few rounds: each move picks its files' places while the others are moving them.
+    for (let round = 0; round < 3; round++) {
+      const { print } = await createPrint(
+        owner.id,
+        { title: `Shuffled ${nonce()}` },
+        `Shuffled ${nonce()}`,
+        ["a", "b", "c", "d"].map((name) => ({
+          filename: `${name}.stl`,
+          tempFilePath: tempFile(dir, `solid ${nonce()}\nendsolid\n`),
+        })),
+      );
+      const files = [];
+      for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"])
+        files.push(await upload(dir, owner.id, print.id, name, name));
+      // Each rename moves every file of the model, all at once.
+      await Promise.all(files.map((file, n) => renameSupportingFile(owner.id, print.id, file.id, `part ${n + 1}`)));
+      // And four times at once to a new folder, as changes to the model's name would.
+      const moved = await prisma.print.update({
+        where: { id: print.id },
+        data: { name: `Moved ${nonce()}` },
+        include: { plates: true },
+      });
+      await Promise.all([1, 2, 3, 4].map(() => relocatePrint(moved, moved.plates)));
+
+      const rows = [
+        ...(await prisma.plate.findMany({ where: { printId: print.id } })),
+        ...(await prisma.printFile.findMany({ where: { printId: print.id } })),
+      ];
+      expect(rows).toHaveLength(8);
+      for (const row of rows) {
+        // Neither numbered nor set aside in a folder named after the model, as a file in another's place is.
+        expect(path.basename(row.storagePath)).toBe(row.filename);
+        expect(path.basename(path.dirname(row.storagePath))).toBe(moved.name);
+        expect(fs.existsSync(path.join(STORAGE, row.storagePath))).toBe(true);
+      }
+    }
   });
 
   it("say which file an upload stored, though the model has another of its name, and a sliced one too", async () => {

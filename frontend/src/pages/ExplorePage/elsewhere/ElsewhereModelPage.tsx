@@ -276,7 +276,12 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
         )}
         {supporting.length > 0 && (
           <SupportingFileChips
-            files={supporting.map((file) => ({ key: file.key, name: file.filename, size: file.size }))}
+            files={supporting.map((file) => ({
+              key: file.key,
+              name: file.filename,
+              size: file.size,
+              folder: file.folder,
+            }))}
             onOpen={downloadSupporting}
             onDownload={downloadSupporting}
             withoutViewer

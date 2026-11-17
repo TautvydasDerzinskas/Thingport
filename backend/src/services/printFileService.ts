@@ -354,19 +354,22 @@ export async function renameSupportingFile(
   if (!path.extname(wanted)) wanted += path.extname(record.filename);
   if (wanted === record.filename) return;
 
-  const taken = new Set(
-    (
-      await prisma.printFile.findMany({
-        where: { printId, role: "SUPPORTING", folder: record.folder, id: { not: record.id } },
-        select: { filename: true },
-      })
-    ).map((file) => file.filename.toLowerCase()),
-  );
-  const { name, ext } = path.parse(wanted);
-  let next = wanted;
-  for (let n = 2; taken.has(next.toLowerCase()); n++) next = `${name} (${n})${ext}`;
-
-  await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
+  // The names in use read and the new one taken under the lock, so two renames at once can't both take one name: the
+  // table doesn't stop two of a folder's files sharing it.
+  await withStorageLock(async () => {
+    const taken = new Set(
+      (
+        await prisma.printFile.findMany({
+          where: { printId, role: "SUPPORTING", folder: record.folder, id: { not: record.id } },
+          select: { filename: true },
+        })
+      ).map((file) => file.filename.toLowerCase()),
+    );
+    const { name, ext } = path.parse(wanted);
+    let next = wanted;
+    for (let n = 2; taken.has(next.toLowerCase()); n++) next = `${name} (${n})${ext}`;
+    await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
+  });
   // The file follows its name, as a plate's does.
   await relocatePrint(print, []);
 }

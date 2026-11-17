@@ -814,6 +814,7 @@
       "profileAdded": "Профіль друку додано до «{{name}}»",
       "alreadyInLibrary": "«{{name}}» уже є у вашій бібліотеці",
       "uploaded": "Завантажено «{{name}}»",
+      "photosOf": "{{name}} (фото)",
       "uploadedMultiple": "Завантажено моделей: {{count}}",
       "makeronlineWaiting": "Очікування Thingport Grab: відкрийте makeronline.com з ним, і модель буде імпортовано",
       "makeronlineListWaiting_one": "{{count}} модель очікує Thingport Grab: відкрийте makeronline.com з ним, і її буде імпортовано",

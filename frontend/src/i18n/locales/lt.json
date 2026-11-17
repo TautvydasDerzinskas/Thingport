@@ -120,6 +120,7 @@
       "profileAdded": "Pridėtas spausdinimo profilis prie „{{name}}“",
       "alreadyInLibrary": "„{{name}}“ jau yra jūsų bibliotekoje",
       "uploaded": "Įkelta „{{name}}“",
+      "photosOf": "{{name}} (nuotraukos)",
       "uploadedMultiple": "Įkelta {{count}} modelių",
       "makeronlineWaiting": "Laukia Thingport Grab: atverkite su juo makeronline.com, ir modelis bus importuotas",
       "makeronlineListWaiting_one": "{{count}} modelis laukia Thingport Grab: atverkite su juo makeronline.com, ir jis bus importuotas",

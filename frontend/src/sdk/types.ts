@@ -565,7 +565,9 @@ export interface SdkModels {
   relatedText(id: string, fileId: string): Promise<string>;
   /**
    * Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything
-   * else (instructions, notes, sources) is kept beside them as a related file; with no 3D file, every file is a plate.
+   * else (instructions, notes, sources) is kept beside them as a related file. With no 3D file, a sliced 3MF is the
+   * plate, or else the files that can be a model on their own, such as a picture; only when none can is every file a
+   * plate.
    *
    * @param input Its name, description, tags, collection and files.
    * @returns The new model.

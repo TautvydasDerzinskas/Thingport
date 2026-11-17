@@ -49,6 +49,14 @@ describe("a CSV or TSV preview", () => {
     expect(guessDelimiter("a;b\n1,2,3,4\n", "csv")).toBe(";");
   });
 
+  it("takes the header from the first line that isn't blank", () => {
+    expect(previewTable("\npart;qty\nbolt;2\n", "csv", 10)).toMatchObject({
+      head: ["part", "qty"],
+      body: [["bolt", "2"]],
+    });
+    expect(guessDelimiter("\ufeff\r\n\r\npart;qty\n", "csv")).toBe(";");
+  });
+
   it("says when a table has more rows than its preview shows", () => {
     const table = (rows: number) => ["part,qty", ...Array.from({ length: rows }, (_, i) => `p${i},${i}`)].join("\n");
     expect(previewTable(table(3), "csv", 3)).toMatchObject({ head: ["part", "qty"], more: false });
@@ -68,6 +76,10 @@ describe("a CSV or TSV preview", () => {
       wider: true,
     });
     expect(previewTable("a,b\n1,2\n", "csv", 10, 2)).toMatchObject({ wider: false });
+    // Only what's shown: the row read to say there are more doesn't make it wider.
+    expect(previewTable("a,b\n1,2\n3,4,5\n", "csv", 1, 2)).toMatchObject({ more: true, wider: false });
+    // A row of empty fields past the cap is still a row.
+    expect(previewTable("a,b\n,,\n", "csv", 10, 1)).toMatchObject({ head: ["a"], body: [[""]], wider: true });
     // A header of a million empty fields shows as many as the preview takes.
     expect(previewTable(",".repeat(1_000_000), "csv", 10, 50).head).toHaveLength(50);
   });

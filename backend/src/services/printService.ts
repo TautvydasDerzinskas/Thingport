@@ -475,14 +475,19 @@ export async function pruneEmptyStorageDirs(start: string): Promise<void> {
 }
 
 /** Moves one file of a model; `save` records the new place, and the file goes back if that fails. `stored` is where its
- *  record finds it now, read under the lock. */
+ *  record finds it now, read under the lock, or null to leave it: gone, or already where its record says it belongs.
+ *  Another move of the model can have put it there since this one picked `newPath`, and while that move had the file
+ *  in place but its record not yet saved, the place looked taken, by the file itself. */
 async function moveStored(
-  stored: () => Promise<string>,
+  stored: () => Promise<string | null>,
   newPath: string,
   save: () => Promise<unknown>,
 ): Promise<boolean> {
+  let moving = false;
   const listMove = async (): Promise<[string, string][]> => {
     const oldPath = await stored();
+    if (oldPath === null) return [];
+    moving = true;
     // The place was free when it was picked, so only another move can have filled it since: renaming now would destroy
     // that file. Asked again, this one sees the place is taken and goes elsewhere.
     if (oldPath !== newPath && fsSync.existsSync(newPath)) {
@@ -490,7 +495,10 @@ async function moveStored(
     }
     return [[oldPath, newPath]];
   };
-  return (await moveAllStored(listMove, save)) > 0;
+  const saveIfMoved = async () => {
+    if (moving) await save();
+  };
+  return (await moveAllStored(listMove, saveIfMoved)) > 0;
 }
 
 /** Moves files that one record finds, as moveStored; returns how many were there to move. They're listed under the
@@ -544,8 +552,10 @@ async function relocatePrintFiles(
     if (samePath(file.storagePath, newRelative)) continue;
     const didMove = await moveStored(
       async () => {
-        const { storagePath } = (await prisma.printFile.findUnique({ where: { id: file.id } })) ?? file;
-        return path.join(STORAGE, storagePath);
+        const now = await prisma.printFile.findUnique({ where: { id: file.id } });
+        if (!now) return null;
+        const place = renderFilePath(print, template, printValues, now.filename, null, now.folder);
+        return samePath(now.storagePath, place) ? null : path.join(STORAGE, now.storagePath);
       },
       path.join(STORAGE, newRelative),
       () => prisma.printFile.update({ where: { id: file.id }, data: { storagePath: newRelative } }),
@@ -650,7 +660,12 @@ export async function relocatePrint(
       continue;
     }
     const didMove = await moveStored(
-      async () => managedPlatePath((await prisma.plate.findUnique({ where: { id: plate.id } })) ?? plate),
+      async () => {
+        const now = await prisma.plate.findUnique({ where: { id: plate.id } });
+        if (!now) return null;
+        const place = renderFilePath(print, safeTemplate, printValues, now.filename, now.position, now.folder);
+        return samePath(now.storagePath, place) ? null : managedPlatePath(now);
+      },
       newPath,
       () => prisma.plate.update({ where: { id: plate.id }, data: { storagePath: newRelative } }),
     );

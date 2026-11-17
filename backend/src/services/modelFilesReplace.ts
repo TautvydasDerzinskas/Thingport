@@ -30,7 +30,7 @@ export type ReplacedPlates = {
   galleryWhole: boolean;
 };
 
-/** Replaces every plate of the model with `inputs`, and drops the supporting files that went missing with them. Throws
+/** Replaces every plate of the model with `inputs`, and drops the rows of its other files whose files are gone. Throws
  *  when the download holds nothing to print, before anything is removed, so a model is never left with less than it
  *  had -- and a replacement that fails halfway puts the plate rows back, since a model with no plates at all is one
  *  the scan passes over and could never offer a repair again. */
@@ -73,10 +73,10 @@ export async function replaceModelPlates(
   // The reading of plate 0 describes a plate that has gone: emptied here rather than left for the refresh below, which
   // would leave the old reading behind if it threw.
   await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: Prisma.JsonNull } });
-  // Of the other files, only those that went with the plates go. A supporting file or prepared print still on disk
-  // stays -- the owner's own among them, which no source can give back -- and a new plate whose name one of them holds
-  // lands beside it rather than over it (printService's freePlatePath reads them too). The source's scripts come back
-  // below where theirs went.
+  // Of the other files, the rows whose files are gone go, whatever took them. A supporting file or prepared print
+  // still on disk stays -- the owner's own among them, which no source can give back -- and a new plate whose name one
+  // of them holds lands beside it rather than over it (printService's freePlatePath reads them too). The source's
+  // scripts come back below where theirs went.
   await removeMissingPrintFiles(printId);
   await keepGeneratorScripts(userId, printId, scripts);
   // Only those the model hasn't still got: a supporting file that went with the plates comes back from the site.

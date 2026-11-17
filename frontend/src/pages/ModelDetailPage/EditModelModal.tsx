@@ -48,6 +48,7 @@ import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import { sortAddedFiles } from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
+import { inFolder } from "../../utils/fileExtensions";
 import HelpTip from "../../components/HelpTip";
 import RenameDialog from "../../components/RenameDialog";
 import TypeTile from "../../components/supportingFiles/TypeTile";
@@ -334,6 +335,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       for (const id of removedImageIds) {
         const res = await printsApi.deletePreviewImage(print.id, id);
         latest = res.print ?? latest;
+        // Gone now: a retry after a later step fails doesn't ask again, which the server would answer with a 404.
+        setRemovedImageIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
       const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
       let newImageIdsInOrder: string[] = [];
@@ -345,6 +352,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .filter((img) => !beforeIds.has(img.id))
           .toSorted((a, b) => a.position - b.position)
           .map((img) => img.id);
+        // Up now: each new picture is the stored one it became, so a retry doesn't upload it again.
+        const stored = new Map<string, { id: string; url: string }>();
+        let next = 0;
+        for (const img of images) {
+          if (img.kind !== "new") continue;
+          const id = newImageIdsInOrder[next++];
+          const url = latest.preview_images.find((each) => each.id === id)?.url;
+          if (id && url) stored.set(img.localId, { id, url });
+        }
+        setImages((current) =>
+          current.map((img): ImageItem => {
+            const became = img.kind === "new" ? stored.get(img.localId) : undefined;
+            return became ? { kind: "existing", ...became } : img;
+          }),
+        );
       }
       if (images.length) {
         let nextNew = 0;
@@ -826,6 +848,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
               {supportingItems.map((item) => {
                 const key = supportingKey(item);
                 const name = supportingName(item);
+                const folder = item.kind === "existing" ? item.file.folder : null;
                 const openMenu = (anchor: FileMenuAnchor) => setSupportingMenu({ key, anchor });
                 return (
                   <Stack
@@ -852,8 +875,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     })}
                   >
                     <TypeTile filename={name} size={28} />
-                    <Typography variant="body2" noWrap title={name} sx={{ flex: 1, minWidth: 0 }}>
-                      {name}
+                    <Typography variant="body2" noWrap title={inFolder(name, folder)} sx={{ flex: 1, minWidth: 0 }}>
+                      {inFolder(name, folder)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
                       {formatFileSize(item.file.size)}
@@ -862,7 +885,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     <IconButton
                       size="small"
                       disabled={saving}
-                      aria-label={t("models:supporting.moreActionsNamed", { name })}
+                      aria-label={t("models:supporting.moreActionsNamed", { name: inFolder(name, folder) })}
                       aria-haspopup="menu"
                       onClick={(event) => openMenu({ element: event.currentTarget })}
                     >
@@ -933,7 +956,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         <Button
           variant="contained"
           onClick={handleUpdate}
-          disabled={saving}
+          // Not while the model's supporting files are being read: a save meanwhile would leave them out of the list.
+          disabled={saving || supportingLoading}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

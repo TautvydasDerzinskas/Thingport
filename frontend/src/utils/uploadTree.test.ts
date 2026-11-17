@@ -1,6 +1,8 @@
+import i18next from "i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { categoriesApi } from "../api/categories";
 import type { Print, printsApi } from "../api/prints";
+import lt from "../i18n/locales/lt.json";
 
 const upload = vi.fn<typeof printsApi.upload>();
 const addPreviewImages = vi.fn<typeof printsApi.addPreviewImages>();
@@ -230,5 +232,21 @@ describe("a model's documents", () => {
     const result = await uploadEntriesAsOneModel([entry(".first.stl"), entry("Thumbs.db")], null, null);
     expect(upload).not.toHaveBeenCalled();
     expect(result).toMatchObject({ uploaded: 0, failed: [], skipped: [] });
+  });
+});
+
+describe("a model's photos", () => {
+  it("names photos that failed to go up in the reader's language", async () => {
+    await i18next.init({
+      lng: "lt",
+      ns: ["app"],
+      resources: { lt: { app: lt.app } },
+      interpolation: { escapeValue: false },
+    });
+    addPreviewImages.mockRejectedValue(new Error("Upload failed"));
+    const one = await uploadEntriesAsOneModel([entry("Frog/body.stl"), entry("Frog/pics/side.png")], "Frog", null);
+    expect(one.failed).toEqual(["Frog (nuotraukos)"]);
+    const folders = await uploadFoldersAsModels([entry("Toad/toad.stl"), entry("Toad/side.jpg")], null);
+    expect(folders.failed).toEqual(["Toad (nuotraukos)"]);
   });
 });

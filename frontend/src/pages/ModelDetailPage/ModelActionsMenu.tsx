@@ -29,7 +29,7 @@ import LibraryAddCheckOutlinedIcon from "@mui/icons-material/LibraryAddCheckOutl
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import type { SxProps, Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, PrintApiError, printsApi } from "../../api/prints";
+import { type Print, type PrintFile, PrintApiError, printsApi } from "../../api/prints";
 import { aiCategorizationApi } from "../../api/aiCategorization";
 import { aiDescriptionsApi } from "../../api/aiDescriptions";
 import { useToast } from "../../components/ToastProvider";
@@ -163,6 +163,22 @@ export default function ModelActionsMenu({
     setAnchorEl(null);
     onContextMenuClose?.();
   };
+
+  // A card's model has only how many supporting files it holds: the picker reads them when it opens.
+  const [readSupporting, setReadSupporting] = useState<PrintFile[] | null>(null);
+  useEffect(() => {
+    if (!pickerOpen || print.supporting_files || !print.supporting_file_count) return;
+    let active = true;
+    printsApi.listFiles(print.id).then(
+      (files) => {
+        if (active) setReadSupporting(files);
+      },
+      () => undefined,
+    );
+    return () => {
+      active = false;
+    };
+  }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count]);
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -606,7 +622,7 @@ export default function ModelActionsMenu({
         downloading={downloading}
         sortedPlates={sortedPlates}
         supportingCount={print.supporting_file_count}
-        supportingFiles={print.supporting_files}
+        supportingFiles={print.supporting_files ?? readSupporting ?? undefined}
         downloadSupporting={(file) => void downloadSupportingFile(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
