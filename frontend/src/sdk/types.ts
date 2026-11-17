@@ -564,7 +564,8 @@ export interface SdkModels {
    */
   relatedText(id: string, fileId: string): Promise<string>;
   /**
-   * Makes a model of the files given, each one a plate, in a collection when one is given.
+   * Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything
+   * else (instructions, notes, sources) is kept beside them as a related file; with no 3D file, every file is a plate.
    *
    * @param input Its name, description, tags, collection and files.
    * @returns The new model.
@@ -577,7 +578,8 @@ export interface SdkModels {
    */
   create(input: SdkNewModel): Promise<SdkModel>;
   /**
-   * Adds files to a model, each a plate.
+   * Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is
+   * kept beside them as a related file (see `relatedFiles`).
    *
    * @param id The model's id.
    * @param files The files to add.

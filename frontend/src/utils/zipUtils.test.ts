@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { startingSelection } from "./zipUtils";
+import { hasModelFolderPaths, startingSelection } from "./zipUtils";
 
 const entries = (...paths: string[]) => paths.map((path) => ({ path }));
 
@@ -32,5 +32,16 @@ describe("startingSelection", () => {
       "my__MACOSX/a.stl",
       "a._b.stl",
     ]);
+  });
+});
+
+describe("hasModelFolderPaths", () => {
+  it("finds a model file in a folder, a .gltf scene's included", () => {
+    expect(hasModelFolderPaths(["A/scene.gltf", "A/scene.bin", "B/scene.gltf", "B/scene.bin"])).toBe(true);
+    expect(hasModelFolderPaths(["readme.txt", "parts/mast.3mf"])).toBe(true);
+  });
+
+  it("finds none when the model files are loose, or the folders hold none", () => {
+    expect(hasModelFolderPaths(["hull.stl", "scene.gltf", "docs/guide.pdf", "docs/scene.bin"])).toBe(false);
   });
 });

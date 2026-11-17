@@ -20,8 +20,10 @@ import {
   batchFileSaver,
   removeAbandonedPrintFileSaves,
   removeMissingPrintFiles,
+  renameSupportingFile,
   saveFileFromTemp,
 } from "../src/services/printFileService";
+import { relocatePrint } from "../src/services/printService";
 import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
@@ -292,6 +294,38 @@ describe("models whose files are gone", () => {
       // Left behind, the old placeholder would fail every later save that makes one.
       await prisma.printFile.deleteMany({ where: { id: { in: left.map((row) => row.id) } } });
     }
+  });
+
+  it("keeps a file still being saved where its save is putting it: renaming it waits, and a move passes it by", async () => {
+    const model = await makePrint(dir, owner.id, "Moving");
+    // Its place is claimed and its bytes aren't there yet: the file is renamed then, and the model moved.
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    let renamed: unknown = null;
+    let claimed = false;
+    const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      const updated = await update(args);
+      if (!claimed && typeof args.data.storagePath === "string") {
+        claimed = true;
+        renamed = await renameSupportingFile(owner.id, model.print.id, String(args.where.id), "renamed.txt").catch(
+          (err: unknown) => err,
+        );
+        const moved = await prisma.print.update({ where: { id: model.print.id }, data: { name: "Moving away" } });
+        await relocatePrint(moved, []);
+      }
+      return updated;
+    }) as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "on its way"), "moving.txt", null);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(claimed).toBe(true);
+    expect(renamed).toMatchObject({ status: 409 });
+    const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id } });
+    expect(row.filename).toBe("moving.txt");
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("on its way");
   });
 
   it("gives a batch's first sliced file the prepared slot, though another upload filled it as the batch saved", async () => {

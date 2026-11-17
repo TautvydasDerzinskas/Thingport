@@ -128,6 +128,33 @@ describe("consume folder", () => {
     expect(frog.preparedFileId).toBe(frog.files.find((file) => file.filename === "a1.gcode")!.id);
   });
 
+  it("keeps a model folder's subfolders with it: documents in their folder, pictures as photos", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Kits/Toad/toad.stl", STL);
+    put("Kits/Toad/docs/assembly.pdf", "%PDF-1.4 assembly");
+    put("Kits/Toad/docs/extra/notes.txt", "glue the base first");
+    put(
+      "Kits/Toad/photos/side.jpg",
+      await sharp({ create: { width: 40, height: 30, channels: 3, background: "#00aa00" } })
+        .jpeg()
+        .toBuffer(),
+    );
+    // Beside the model folder rather than in it: not the toad's, so set aside as before.
+    put("Kits/manual.pdf", "%PDF-1.4 kit manual");
+
+    const summary = await consumeFolder(dir);
+    expect(summary?.models).toBe(1);
+    const [toad] = await printsNamed("Toad");
+    expect(toad.plates.map((plate) => plate.filename)).toEqual(["toad.stl"]);
+    expect(toad.previewImages).toHaveLength(1);
+    expect(toad.files.map((file) => [file.filename, file.folder]).toSorted()).toEqual([
+      ["assembly.pdf", "docs"],
+      ["notes.txt", "docs/extra"],
+    ]);
+    expect(summary?.failed).toEqual(["Kits/manual.pdf"]);
+  });
+
   it("unpacks a zip as a folder named after it", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });

@@ -11,6 +11,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import FolderZipOutlinedIcon from "@mui/icons-material/FolderZipOutlined";
@@ -18,8 +19,9 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useMemo } from "react";
-import type { Plate } from "../../api/prints";
+import type { Plate, PrintFile } from "../../api/prints";
 import PlateThumbnail from "../../components/media/PlateThumbnail";
+import TypeTile from "../../components/supportingFiles/TypeTile";
 import { fileRowText } from "./fileRowText";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
@@ -30,6 +32,11 @@ type Props = {
   onClose: () => void;
   downloading: boolean;
   sortedPlates: Plate[];
+  /** The supporting files the zip holds beside the plates. */
+  supportingCount?: number;
+  /** Those files, each to download on its own where the model's page has them (a card's model has only the count). */
+  supportingFiles?: PrintFile[];
+  downloadSupporting?: (file: PrintFile) => void;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
   downloadFolderZip: (folder: string) => void;
@@ -38,11 +45,16 @@ type Props = {
 
 const folderOf = (plate: Plate) => plate.folder;
 
+const NO_FILES: PrintFile[] = [];
+
 export default function DownloadPickerDialog({
   open,
   onClose,
   downloading,
   sortedPlates,
+  supportingCount = 0,
+  supportingFiles = NO_FILES,
+  downloadSupporting,
   downloadAllZip,
   downloadFolderZip,
   downloadPlate,
@@ -95,7 +107,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length })}
+            {t("models:detail.downloadAllZip", { count: sortedPlates.length + supportingCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>
@@ -131,6 +143,44 @@ export default function DownloadPickerDialog({
                   </li>
                 ))
               : sortedPlates.map(row)}
+            {downloadSupporting && supportingFiles.length > 0 && (
+              <li>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.75}
+                  sx={{ pl: 1, pr: 0.5, pt: 1, color: "text.secondary" }}
+                >
+                  <AttachFileIcon aria-hidden sx={{ fontSize: 16 }} />
+                  <Typography variant="caption" fontWeight={700} noWrap sx={{ flex: 1, minWidth: 0 }}>
+                    {t("models:supporting.title")} · {supportingFiles.length}
+                  </Typography>
+                </Stack>
+                <List disablePadding>
+                  {supportingFiles.map((file) => (
+                    <ListItemButton
+                      key={file.id}
+                      onClick={() => downloadSupporting(file)}
+                      disabled={downloading}
+                      title={file.filename}
+                      sx={{ borderRadius: 1 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 60 }}>
+                        <TypeTile filename={file.filename} size={48} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={file.filename}
+                        secondary={[file.folder, extOf(file.filename).toUpperCase() || null, formatFileSize(file.size)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        primaryTypographyProps={{ noWrap: true }}
+                        secondaryTypographyProps={{ noWrap: true }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </li>
+            )}
           </List>
         </Stack>
       </DialogContent>

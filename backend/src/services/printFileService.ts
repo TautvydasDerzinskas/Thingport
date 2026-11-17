@@ -5,10 +5,11 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
+import { savesUnderWay } from "./printFileSaves";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
-import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
+import { pruneEmptyStorageDirs, relocatePrint, renderPrintFileStoragePath } from "./printService";
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
@@ -164,15 +165,13 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
 const PENDING_STORAGE_PREFIX = "pending:";
 const isPendingStoragePath = (storagePath: string) =>
   storagePath === "pending" || storagePath.startsWith(PENDING_STORAGE_PREFIX);
-// Rows whose file is still on its way in: made before the file is placed, so a sweep for missing files leaves them be.
-const savesUnderWay = new Set<string>();
 
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
  * from the filename (a .3mf containing gcode becomes PREPARED) unless `role` is given, as for a copy of a file whose
  * role is already known; a new PREPARED file replaces the existing one. `leavePrepared` keeps one that would be
  * PREPARED as a supporting file instead, leaving the model's prepared print as it is (see batchFileSaver). `onStored`
- * is told the role it was stored with, once it's in.
+ * is told the role it was stored with, and its id, once it's in.
  */
 export async function saveFileFromTemp(
   userId: string,
@@ -189,7 +188,7 @@ export async function saveFileFromTemp(
     role?: "SUPPORTING" | "PREPARED";
     folder?: string | null;
     leavePrepared?: boolean;
-    onStored?: (role: "SUPPORTING" | "PREPARED") => void;
+    onStored?: (role: "SUPPORTING" | "PREPARED", fileId: string) => void;
   } = {},
 ): Promise<Print> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
@@ -282,7 +281,7 @@ export async function saveFileFromTemp(
       await fs.rm(oldPreparedPath, { force: true }).catch(() => undefined);
       await pruneEmptyStorageDirs(path.dirname(oldPreparedPath));
     }
-    onStored?.(role);
+    onStored?.(role, record.id);
     return updatedPrint;
   } catch (err) {
     // Only once it's ours: a 409 above means the file there is another one's.
@@ -297,6 +296,81 @@ export async function saveFileFromTemp(
   }
 }
 
+// What a supporting file may be shown as in the browser rather than downloaded. Never HTML or SVG: the instance's own
+// origin would run their scripts. Text-like files are all sent as plain text, so nothing in them is interpreted.
+const INLINE_TYPES: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".bmp": "image/bmp",
+};
+const TEXT_EXTS = new Set([
+  ".txt",
+  ".md",
+  ".markdown",
+  ".csv",
+  ".tsv",
+  ".scad",
+  ".log",
+  ".nfo",
+  ".ini",
+  ".cfg",
+  ".conf",
+  ".json",
+  ".yaml",
+  ".yml",
+]);
+
+/** The Content-Type a supporting file is shown inline with, or null for one that's only ever downloaded. */
+export function inlineContentType(filename: string): string | null {
+  const ext = path.extname(filename).toLowerCase();
+  if (TEXT_EXTS.has(ext)) return "text/plain; charset=utf-8";
+  return INLINE_TYPES[ext] ?? null;
+}
+
+/** Renames one of a model's supporting files, and moves it to match. A name another supporting file in the same folder
+ *  has gets a number, as a second upload of it would; a name with no extension keeps the one it had. */
+export async function renameSupportingFile(
+  userId: string,
+  printId: string,
+  fileId: string,
+  filename: string,
+): Promise<void> {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+  if (!print) throw new HttpError(404, "Print not found");
+  const record = await prisma.printFile.findUnique({ where: { id: fileId } });
+  if (!record || record.printId !== printId || record.role !== "SUPPORTING") {
+    throw new HttpError(404, "Supporting file not found");
+  }
+  // Its row has its place before its bytes are there: renamed now, the row would move on while the file lands behind.
+  if (savesUnderWay.has(record.id)) throw new HttpError(409, "That file is still being saved: try again once it's in");
+  // Before sanitising, which turns nothing into "imported-file": that would quietly become the file's name.
+  const trimmed = filename.trim();
+  if (!trimmed) throw new HttpError(400, "A file needs a name");
+  let wanted = sanitizeFilename(trimmed);
+  if (!path.extname(wanted)) wanted += path.extname(record.filename);
+  if (wanted === record.filename) return;
+
+  const taken = new Set(
+    (
+      await prisma.printFile.findMany({
+        where: { printId, role: "SUPPORTING", folder: record.folder, id: { not: record.id } },
+        select: { filename: true },
+      })
+    ).map((file) => file.filename.toLowerCase()),
+  );
+  const { name, ext } = path.parse(wanted);
+  let next = wanted;
+  for (let n = 2; taken.has(next.toLowerCase()); n++) next = `${name} (${n})${ext}`;
+
+  await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
+  // The file follows its name, as a plate's does.
+  await relocatePrint(print, []);
+}
+
 /**
  * Saves files that arrive onto one model together -- an upload, a consume-folder model -- as saveFileFromTemp does,
  * except that only the first prepared print among them takes the model's prepared slot. The ones after it are kept as
@@ -309,7 +383,7 @@ export function batchFileSaver(userId: string, printId: string) {
     tempPath: string,
     originalFilename: string,
     contentType: string | null | undefined,
-    options: { folder?: string | null } = {},
+    options: { folder?: string | null; role?: "SUPPORTING" } = {},
   ): Promise<Print> =>
     saveFileFromTemp(userId, printId, tempPath, originalFilename, contentType, {
       ...options,

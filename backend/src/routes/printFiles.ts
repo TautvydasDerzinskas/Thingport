@@ -1,16 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Router } from "express";
+import { create as contentDisposition } from "content-disposition";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
 import { HttpError } from "../utils/fileUtils";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
+import { z } from "zod";
+import { parseBody } from "../utils/validate";
 import {
   deletePreparedFile,
   deleteSupportingFile,
+  inlineContentType,
   listSupportingFiles,
   managedPrintFilePath,
+  renameSupportingFile,
   saveFileFromTemp,
 } from "../services/printFileService";
 import { toPrintFileOut } from "../dto";
@@ -41,8 +46,14 @@ router.post(
       if (!file) throw new HttpError(400, "No file uploaded");
       const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
       if (!print) throw new HttpError(404, "Print not found");
-      await saveFileFromTemp(req.userId!, print.id, file.path, file.originalname || "supporting-file", file.mimetype);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      // Which of the model's files this one is, for a client finding it among them: a name can be another's too.
+      const stored: { id?: string } = {};
+      await saveFileFromTemp(req.userId!, print.id, file.path, file.originalname || "supporting-file", file.mimetype, {
+        onStored: (_role, id) => {
+          stored.id = id;
+        },
+      });
+      res.json({ print: await printOutById(req.userId!, print.id), file_id: stored.id });
     } finally {
       if (file && fs.existsSync(file.path)) fs.rmSync(file.path, { force: true });
     }
@@ -62,9 +73,32 @@ router.get(
     }
     const filePath = managedPrintFilePath(record);
     if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
-    res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(record.filename)}"`);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    // ?inline=1 shows it in the browser (the model page's viewer, a new tab) where its type is safe to; the rest still
+    // download.
+    const inlineType = req.query.inline === "1" ? inlineContentType(record.filename) : null;
+    if (inlineType) {
+      res.setHeader("Content-Type", inlineType);
+      res.setHeader("Content-Disposition", contentDisposition(record.filename, { type: "inline" }));
+      // A PDF needs the browser's own viewer, which a sandbox would turn away; text and pictures need nothing at all.
+      if (inlineType !== "application/pdf") res.setHeader("Content-Security-Policy", "sandbox");
+    } else {
+      res.setHeader("Content-Type", record.mime || "application/octet-stream");
+      // The name as it is (a name beyond ASCII also as filename*): percent-escaped, it was saved as "Parts%20list.csv".
+      res.setHeader("Content-Disposition", contentDisposition(record.filename));
+    }
     res.sendFile(path.resolve(filePath));
+  }),
+);
+
+const renameSchema = z.object({ filename: z.string().min(1).max(255) });
+
+router.patch(
+  "/print/:id/files/:fileId",
+  asyncHandler(async (req, res) => {
+    const body = parseBody(renameSchema, req.body);
+    await renameSupportingFile(req.userId!, req.params.id, req.params.fileId, body.filename);
+    res.json({ print: await printOutById(req.userId!, req.params.id) });
   }),
 );
 
@@ -88,7 +122,7 @@ router.get(
     const filePath = managedPrintFilePath(record);
     if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", record.mime || "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(record.filename)}"`);
+    res.setHeader("Content-Disposition", contentDisposition(record.filename));
     res.sendFile(path.resolve(filePath));
   }),
 );

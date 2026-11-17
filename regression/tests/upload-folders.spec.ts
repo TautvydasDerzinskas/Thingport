@@ -42,6 +42,8 @@ test("each folder becomes one model: model files as plates, images as previews, 
   await expect(mode).toContainText("Fold Library");
   await mode.getByRole("button", { name: EACH_FOLDER }).click();
   await expectUploaded(page, 3);
+  // Sub/readme.txt is in no model's folder, so it's left out, and said to be.
+  await expect(page.getByText(/readme\.txt wasn't added/)).toBeVisible();
 
   // The picked folder and the folders above each model become folders; model folders don't.
   const library = await api.folderAt("Fold Library");
@@ -162,7 +164,7 @@ test("uploading the same tree again reuses its folders", async ({ page, api }, t
   expect(copies.map((p) => p.name).toSorted()).toEqual(["Again Thing", "Again Thing (2)"]);
 });
 
-test("a zip inside a folder unzips into that folder", async ({ page, api }, testInfo) => {
+test("a zip inside a folder unzips into that folder, as one model", async ({ page, api }, testInfo) => {
   const dir = writeTree(path.join(testInfo.outputPath(), "Fold Zipped"), {
     "Kit/kit base.stl": stl(),
     "Kit/parts.zip": zip({ "Zipped Gear.stl": stl(), "Pins/Zipped Pin.3mf": threeMf() }),
@@ -179,16 +181,61 @@ test("a zip inside a folder unzips into that folder", async ({ page, api }, test
   await expect(zipDialog).toContainText("parts.zip");
   await zipDialog.getByRole("button", { name: "Import and unzip" }).click();
   await zipDialog.getByRole("button", { name: "Import selected" }).click();
-  await expectUploaded(page, 3);
+  await expectUploaded(page, 2);
 
+  // The zip's model lands in the folder the zip was in, as the zip itself would; its own folders stay inside it.
   const zipped = await api.folderAt("Fold Zipped");
   const kit = await api.folderAt("Fold Zipped", "Kit");
-  const pins = await api.folderAt("Fold Zipped", "Kit", "Pins");
-  const [model, gear, pin] = await api.printsNamed("Kit", "Zipped Gear", "Zipped Pin");
+  expect(await api.folderAt("Fold Zipped", "Kit", "Pins")).toBeUndefined();
+  const [model, parts] = await api.printsNamed("Kit", "parts");
   expect(model.category_id).toBe(zipped!.id);
   expect(model.plates.map((p) => p.filename)).toEqual(["kit base.stl"]);
-  expect(gear.category_id).toBe(kit!.id);
-  expect(pin.category_id).toBe(pins!.id);
+  expect(parts.category_id).toBe(kit!.id);
+  // In the order the zip's list shows them, by path.
+  expect(parts.plates.map((p) => [p.folder, p.filename])).toEqual([
+    ["Pins", "Zipped Pin.3mf"],
+    [null, "Zipped Gear.stl"],
+  ]);
+});
+
+test("a model folder's subfolders come with it: documents in their folders, pictures as photos", async ({
+  page,
+  api,
+}, testInfo) => {
+  const dir = writeTree(path.join(testInfo.outputPath(), "Fold Kits"), {
+    "Fold Toad/toad.stl": stl(),
+    "Fold Toad/docs/toad guide.pdf": text("%PDF-1.4 not really"),
+    "Fold Toad/docs/extra/notes.txt": text("sand the seams"),
+    "Fold Toad/photos/side.png": png(),
+    "loose.pdf": text("%PDF-1.4 not really"),
+  });
+  const before = await api.summary();
+
+  await page.goto("/models");
+  await pickFolder(page, dir);
+  await page
+    .getByRole("dialog", { name: /Import folders \(5 files\)/ })
+    .getByRole("button", { name: EACH_FOLDER })
+    .click();
+  await page.waitForURL(/\/models\/[^/?]+\?edit=/);
+  // In no model's folder, the stray document can't come in: said, not dropped in silence.
+  await expect(page.getByText(/loose\.pdf wasn't added/)).toBeVisible();
+
+  const kits = await api.folderAt("Fold Kits");
+  expect(await api.folderAt("Fold Kits", "Fold Toad")).toBeUndefined();
+  const toad = await api.print(page.url().match(/\/models\/([^/?]+)/)![1]);
+  expect(toad).toMatchObject({ title: "Fold Toad", category_id: kits!.id });
+  expect(toad.plates.map((p) => p.filename)).toEqual(["toad.stl"]);
+  expect(toad.preview_images.filter((p) => !p.generated)).toHaveLength(1);
+  const files = (await api.files(toad.id)).toSorted((a, b) => a.filename.localeCompare(b.filename));
+  expect(files.map((f) => [f.folder, f.filename])).toEqual([
+    ["docs/extra", "notes.txt"],
+    ["docs", "toad guide.pdf"],
+  ]);
+
+  const after = await api.summary();
+  expect(after.model_count).toBe(before.model_count + 1);
+  expect(after.category_count).toBe(before.category_count + 1);
 });
 
 test("a folder of only images uploads each image, without asking", async ({ page, api }, testInfo) => {
