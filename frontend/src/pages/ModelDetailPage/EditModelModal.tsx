@@ -407,6 +407,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         if (item.kind !== "existing" || !item.renamedTo) continue;
         const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo);
         latest = res.print ?? latest;
+        // Named as the server named it now, so a later rename is measured from that, not from the name it had.
+        const renamed = latest.supporting_files?.find((file) => file.id === item.file.id) ?? {
+          ...item.file,
+          filename: item.renamedTo,
+        };
+        setSupportingItems((current) => current.map((entry) => (entry === item ? existingItem(renamed) : entry)));
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
