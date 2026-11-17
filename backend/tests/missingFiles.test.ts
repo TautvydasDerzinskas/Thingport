@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -175,6 +176,27 @@ describe("models whose files are gone", () => {
 
     const row = await prisma.printFile.findUnique({ where: { id: note.id } });
     expect(row?.storagePath).toBe(movedTo);
+  });
+
+  it("keeps a file's row, and stops, when checking it fails for another reason than its being gone", async () => {
+    const model = await makePrint(dir, owner.id, "Unreadable");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "still here"), "kept.txt", null);
+    const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "kept.txt" } });
+    const where = path.resolve(STORAGE, row.storagePath);
+    // A network volume gone flaky: the file is there, but checking it answers EIO.
+    const access = fsPromises.access.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "access").mockImplementation(async (file, mode) => {
+      if (path.resolve(String(file)) === where) {
+        throw Object.assign(new Error(`EIO: i/o error, access '${where}'`), { code: "EIO" });
+      }
+      return access(file, mode);
+    });
+    try {
+      await expect(removeMissingPrintFiles(model.print.id)).rejects.toMatchObject({ code: "EIO" });
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await prisma.printFile.findUnique({ where: { id: row.id } })).not.toBeNull();
   });
 
   it("leaves a file still being saved, rather than taking it for gone", async () => {
