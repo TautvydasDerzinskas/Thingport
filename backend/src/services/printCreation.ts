@@ -240,13 +240,6 @@ async function createPlateAtPosition(
 }
 
 /**
- * Generator scripts kept beside a model as supporting files, which is the only way one ever reaches a model: it
- * describes a shape but holds none, so it is never a plate.
- *
- * Best-effort -- a script that won't store leaves the model itself there, since its plates are what the user asked
- * for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
- */
-/**
  * The files a site gave beside a model's own -- instructions, notes, sources -- kept as its SUPPORTING files, each once
  * by folder and name, as far as the admin's limits allow: none past the largest kept, and no more in all than a model
  * takes. A sliced file among them stays one, rather than taking the owner's prepared slot: it was sliced for the
@@ -258,13 +251,14 @@ export async function keepSupportingFiles(userId: string, printId: string, input
   if (!limits) return 0;
   const keyOf = (filename: string, folder: string | null | undefined) =>
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
-  const stored = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
-      keyOf(file.filename, file.folder),
-    ),
-  );
+  const files = await prisma.printFile.findMany({
+    where: { printId },
+    select: { filename: true, folder: true, role: true, size: true },
+  });
+  const stored = new Set(files.map((file) => keyOf(file.filename, file.folder)));
   let kept = 0;
-  let bytes = 0;
+  // What the model keeps already counts: a later profile's files share the model's allowance.
+  let bytes = files.reduce((sum, file) => sum + (file.role === "SUPPORTING" ? file.size : 0), 0);
   for (const input of inputs) {
     if (!input.tempFilePath) continue;
     const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
@@ -287,6 +281,13 @@ export async function keepSupportingFiles(userId: string, printId: string, input
   return kept;
 }
 
+/**
+ * Generator scripts kept beside a model as supporting files, which is the only way one ever reaches a model: it
+ * describes a shape but holds none, so it is never a plate.
+ *
+ * Best-effort -- a script that won't store leaves the model itself there, since its plates are what the user asked
+ * for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
+ */
 export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   if (!inputs.length) return;
   // A model's own script comes down again with every profile imported after the first (see importService's

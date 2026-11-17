@@ -52,11 +52,13 @@ test("a link to a zip makes one model of what's picked, its document beside the 
   await expect(zip).toBeHidden();
 
   const [kit] = await modelsNamed(api, "kit");
-  const print = await api.print(kit.id);
-  expect(print.plates.map((p) => [p.folder ?? null, p.filename])).toEqual([
-    ["A", "a.stl"],
-    ["B", "b.stl"],
-  ]);
+  // Listed as soon as it's made, a moment before its plates are.
+  await expect
+    .poll(async () => (await api.print(kit.id)).plates.map((p) => [p.folder ?? null, p.filename]), { timeout: 30_000 })
+    .toEqual([
+      ["A", "a.stl"],
+      ["B", "b.stl"],
+    ]);
   expect(await filesOf(api, kit.id)).toEqual([["A/docs", "guide.pdf"]]);
 });
 

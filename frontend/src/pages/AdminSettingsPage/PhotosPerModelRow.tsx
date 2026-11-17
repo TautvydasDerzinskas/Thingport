@@ -10,6 +10,7 @@ import { settingsApi } from "../../api/settings";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { useToast } from "../../components/ToastProvider";
+import { saveLastPick } from "../../utils/saveLastPick";
 
 type Props = {
   /** undefined while it loads, or where it couldn't be read. */
@@ -29,6 +30,14 @@ export default function PhotosPerModelRow({ keep, failed = false, onChange, onUn
   // The last pick; one made while another is saving is saved once that's done, so the last pick is what's kept.
   const wanted = React.useRef<PhotoKeep | null>(null);
   const saving = React.useRef(false);
+  // Off once the row has gone: a pick still waiting then isn't saved over one made since.
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const select = async (value: string) => {
     if (keep === undefined) return;
@@ -40,11 +49,11 @@ export default function PhotosPerModelRow({ keep, failed = false, onChange, onUn
     saving.current = true;
     let saved = keep;
     try {
-      let asked: PhotoKeep | null;
-      do {
-        asked = wanted.current;
-        saved = await settingsApi.updatePhotosPerModel(asked);
-      } while (asked !== wanted.current);
+      saved = await saveLastPick(
+        () => wanted.current,
+        async (asked) => (saved = await settingsApi.updatePhotosPerModel(asked)),
+        () => !mounted.current,
+      );
       onChange(saved);
     } catch (err) {
       onChange(saved);

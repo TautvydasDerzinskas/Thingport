@@ -14,7 +14,9 @@ export function modelFolderUnits<T>(
   const groups = new Map<string, T[]>();
   for (const item of items) {
     const key = folderOf(item);
-    groups.set(key, [...(groups.get(key) ?? []), item]);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
   }
   const modelKeys = [...groups].filter(([key, group]) => key && group.some(isModelFile)).map(([key]) => key);
   // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
@@ -25,7 +27,9 @@ export function modelFolderUnits<T>(
     const owner = modelKeys.filter((m) => key.startsWith(`${m}/`)).toSorted((a, b) => b.length - a.length)[0];
     if (!owner) continue;
     const folder = key.slice(owner.length + 1);
-    attached.set(owner, [...(attached.get(owner) ?? []), ...group.map((item) => ({ item, folder }))]);
+    const list = attached.get(owner) ?? [];
+    if (!attached.has(owner)) attached.set(owner, list);
+    for (const item of group) list.push({ item, folder });
   }
   const taken = new Set([...attached.values()].flat().map((entry) => entry.item));
   return [...groups].flatMap(([key, group]): ModelFolderUnit<T>[] =>

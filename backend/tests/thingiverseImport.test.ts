@@ -259,6 +259,21 @@ describe("importPrintFromUrl -- Thingiverse", () => {
     expect(kept.map((file) => [file.folder, file.filename, file.role])).toEqual([["docs", "manual.pdf", "SUPPORTING"]]);
   });
 
+  it("imports a Thing's model files past a zip Thing File that won't open", async () => {
+    await setThingiverseAccessToken(ACCESS_TOKEN);
+    const files = [
+      { name: "body.stl", url: "https://cdn.thingiverse.com/assets/test/body.stl" },
+      { name: "extras.zip", url: "https://cdn.thingiverse.com/assets/test/extras.zip" },
+    ];
+    global.fetch = mockThingiverseFetch({
+      detailBody: { ...THING_DETAIL, id: 7700003, zip_data: { ...THING_DETAIL.zip_data, files } },
+      extrasZip: Buffer.from("not a zip at all"),
+    });
+    const url = "https://www.thingiverse.com/thing:7700003";
+    const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+    expect(result.plates.map((plate) => plate.filename)).toEqual(["body.stl"]);
+  });
+
   it("says there's nothing to import for a Thing of documents alone", async () => {
     await setThingiverseAccessToken(ACCESS_TOKEN);
     const files = [{ name: "instructions.pdf", url: "https://cdn.thingiverse.com/assets/test/instructions.pdf" }];

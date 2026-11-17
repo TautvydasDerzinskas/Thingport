@@ -105,8 +105,9 @@ export const thingiverseImport: SourcedImport<string, Thing> = {
         try {
           downloaded.push(...((await kit.downloadSignedFile(file, isThingiverseFileHost, BLOCKED)) ?? []));
         } catch (err) {
-          if (!(err instanceof HttpError && err.status === 429)) throw err;
-          blocked = true;
+          if (err instanceof HttpError && err.status === 429) blocked = true;
+          // A zip that won't open is skipped, as a file that didn't download is.
+          else console.warn(`Thingiverse import: skipped ${file.name}:`, err);
         }
       }
       if (blocked && !downloaded.some((input) => !input.supporting)) throw new HttpError(429, BLOCKED);

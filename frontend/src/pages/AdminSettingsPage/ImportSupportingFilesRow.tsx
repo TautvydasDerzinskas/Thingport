@@ -10,6 +10,7 @@ import { settingsApi } from "../../api/settings";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
 import { useToast } from "../../components/ToastProvider";
+import { saveLastPick } from "../../utils/saveLastPick";
 
 const asLimit = (value: string): SupportingFileLimit =>
   value === "off" || value === "any" ? value : (Number(value) as SupportingFileLimit);
@@ -25,6 +26,14 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
   // The last pick; one made while another is saving is saved once that's done, so the last pick is what's kept.
   const wanted = React.useRef<SupportingFileLimit | null>(null);
   const saving = React.useRef(false);
+  // Off once the row has gone: a pick still waiting then isn't saved over one made since.
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     let active = true;
@@ -52,11 +61,11 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
     saving.current = true;
     let saved = limit;
     try {
-      let asked: SupportingFileLimit;
-      do {
-        asked = wanted.current ?? next;
-        saved = await settingsApi.updateImportSupportingFiles(asked);
-      } while (asked !== wanted.current);
+      saved = await saveLastPick(
+        () => wanted.current ?? next,
+        async (asked) => (saved = await settingsApi.updateImportSupportingFiles(asked)),
+        () => !mounted.current,
+      );
       setLimit(saved);
     } catch (err) {
       setLimit(saved);

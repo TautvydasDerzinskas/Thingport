@@ -7,7 +7,7 @@ import request from "supertest";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { createPrint, type NewPlateInput } from "../src/services/printCreation";
+import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
 import { downloadSupportingFile, modelFilesFromZip, supportingFilesFromZip } from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
@@ -146,6 +146,21 @@ describe("a model made with a site's other files", () => {
     const { print } = await createPrint(userId, { title: "Capped" }, "Capped", capped);
     remove(capped);
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt"]);
+  });
+
+  it("counts what a model keeps already against its limit, when a later profile brings more", async () => {
+    limits.value = { perFile: 10, perModel: 25 };
+    const made = [
+      input("a.stl", "solid a endsolid"),
+      input("one.txt", "x".repeat(10), { supporting: true }),
+      input("two.txt", "x".repeat(10), { supporting: true }),
+    ];
+    const { print } = await createPrint(userId, { title: "Later" }, "Later", made);
+    remove(made);
+    const later = [input("three.txt", "x".repeat(10), { supporting: true })];
+    expect(await keepSupportingFiles(userId, print.id, later)).toBe(0);
+    remove(later);
+    expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
   });
 
   it("brings a supporting file back on a repair, where it went with the plates", async () => {
@@ -301,6 +316,39 @@ describe("a zip from a link, by how its files become models", () => {
     expect(model.previewImages.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("one model leaves a picked zip inside the zip unopened, and says so", async () => {
+    const files = { ...tree(), "Kit/parts.zip": fs.readFileSync(await zipOf({ "p.stl": "solid p endsolid" })) };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToOneModel(userId, zip, "Kit.zip", Object.keys(files), {});
+    expect(failed).toEqual(["Kit/parts.zip"]);
+    expect(prints[0].plates.map((plate) => plate.filename)).toEqual(["a.stl", "b.stl", "loose.stl"]);
+  });
+
+  it("leaves no temp files behind when the disk fills partway through reading the picked files", async () => {
+    const zip = await zipOf(tree());
+    const real = fs.promises.writeFile.bind(fs.promises);
+    const tried: string[] = [];
+    const write = vi.spyOn(fs.promises, "writeFile").mockImplementation(async (file, data, options) => {
+      if (typeof file === "string" && path.basename(file).startsWith("thingport-zip-")) {
+        tried.push(file);
+        if (tried.length === 2) {
+          await real(file, "partial");
+          throw Object.assign(new Error("no space left on device"), { code: "ENOSPC" });
+        }
+      }
+      return real(file, data, options);
+    });
+    try {
+      await expect(extractZipEntriesToOneModel(userId, zip, "Kit.zip", Object.keys(tree()), {})).rejects.toThrow(
+        "no space left",
+      );
+    } finally {
+      write.mockRestore();
+    }
+    expect(tried).toHaveLength(2);
+    expect(tried.filter((file) => fs.existsSync(file))).toEqual([]);
+  });
+
   it("one model of documents alone is refused: there's nothing in them to print", async () => {
     const zip = await zipOf(tree());
     await expect(extractZipEntriesToOneModel(userId, zip, "Kit.zip", ["Kit/readme.pdf"], {})).rejects.toThrow(
@@ -313,13 +361,51 @@ describe("a zip from a link, by how its files become models", () => {
     const files = { ...tree(), "top.stl": "solid top endsolid", "top.pdf": "%PDF-1.4 top" };
     const zip = await zipOf(files);
     const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
-    // Kit holds a model file itself (loose.stl), so it's a model too, with its readme.
-    expect(prints.map((print) => print.name).toSorted()).toEqual(["A", "B", "Kit", "top"]);
-    const byName = (name: string) => prints.find((print) => print.name === name)!.id;
+    // Kit holds a model file itself (loose.stl), so it's a model too, with its readme. By title: Kit is at the top,
+    // beside the models other tests here named Kit, so its name is made unique.
+    expect(prints.map((print) => print.title ?? print.name).toSorted()).toEqual(["A", "B", "Kit", "top"]);
+    const byName = (name: string) => prints.find((print) => (print.title ?? print.name) === name)!.id;
     expect(await filesOf(byName("A"))).toEqual([["docs", "guide.pdf", "SUPPORTING"]]);
     expect(await filesOf(byName("Kit"))).toEqual([[null, "readme.pdf", "SUPPORTING"]]);
     // A document on its own can't be a model.
     expect(failed).toEqual(["top.pdf"]);
+  });
+
+  it("a model per folder counts its progress in models, the files on their own among them", async () => {
+    const files = { ...tree(), "top.stl": "solid top endsolid", "top.pdf": "%PDF-1.4 top" };
+    const zip = await zipOf(files);
+    const calls: number[][] = [];
+    await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {}, (...counts) => calls.push(counts));
+    // Kit/A, Kit/B and Kit are models; top.stl and top.pdf each stand alone, and the PDF can't be a model.
+    expect(calls.map(([processed, total]) => [processed, total])).toEqual([
+      [1, 5],
+      [2, 5],
+      [3, 5],
+      [4, 5],
+      [5, 5],
+    ]);
+    expect(calls.at(-1)).toEqual([5, 5, 4, 1]);
+  });
+
+  it("a model per folder keeps a subfolder of scripts with the model above it", async () => {
+    const files = { "Gear/gear.stl": "solid gear endsolid", "Gear/source/gear.scad": "cylinder(10);" };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.name)).toEqual(["Gear"]);
+    expect(await filesOf(prints[0].id)).toEqual([["source", "gear.scad", "SUPPORTING"]]);
+  });
+
+  it("a model per folder files each model in the folders above its own", async () => {
+    const files = { "Shelf/Fan Duct/duct.stl": "solid duct endsolid", "Clip/clip.stl": "solid clip endsolid" };
+    const zip = await zipOf(files);
+    const { prints } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    const categoryOf = async (name: string) => {
+      const { categoryId } = prints.find((print) => print.name === name)!;
+      return categoryId && (await prisma.category.findUniqueOrThrow({ where: { id: categoryId } })).name;
+    };
+    expect(await categoryOf("Fan Duct")).toBe("Shelf");
+    expect(await categoryOf("Clip")).toBeNull();
   });
 
   it("a model per file makes models of the model files, and leaves documents out", async () => {
