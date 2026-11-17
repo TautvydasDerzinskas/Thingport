@@ -335,6 +335,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       for (const id of removedImageIds) {
         const res = await printsApi.deletePreviewImage(print.id, id);
         latest = res.print ?? latest;
+        // Gone now: a retry after a later step fails doesn't ask again, which the server would answer with a 404.
+        setRemovedImageIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
       const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
       let newImageIdsInOrder: string[] = [];
@@ -346,6 +352,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .filter((img) => !beforeIds.has(img.id))
           .toSorted((a, b) => a.position - b.position)
           .map((img) => img.id);
+        // Up now: each new picture is the stored one it became, so a retry doesn't upload it again.
+        const stored = new Map<string, { id: string; url: string }>();
+        let next = 0;
+        for (const img of images) {
+          if (img.kind !== "new") continue;
+          const id = newImageIdsInOrder[next++];
+          const url = latest.preview_images.find((each) => each.id === id)?.url;
+          if (id && url) stored.set(img.localId, { id, url });
+        }
+        setImages((current) =>
+          current.map((img): ImageItem => {
+            const became = img.kind === "new" ? stored.get(img.localId) : undefined;
+            return became ? { kind: "existing", ...became } : img;
+          }),
+        );
       }
       if (images.length) {
         let nextNew = 0;
