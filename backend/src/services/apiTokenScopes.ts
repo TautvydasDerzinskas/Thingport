@@ -127,6 +127,7 @@ export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = [
       "/plate/:id/profile-plate/:index.png",
       "/print/:id/thumb.jpg",
       "/preview-image/:id/file.jpg",
+      "/preview-image/:id/thumb.jpg",
       "/description-image/:id",
       "/tags/:tag/mosaic.webp",
       "/tags/:tag/render-mosaic.webp",

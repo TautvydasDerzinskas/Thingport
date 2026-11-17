@@ -17,6 +17,7 @@ import {
   assetTarget,
   descriptionImageFile,
   galleryImageFile,
+  galleryThumbFile,
   ownedAssetFiles,
   plateAssetHome,
   plateGlbFile,
@@ -552,15 +553,16 @@ async function relocatePrintFiles(
   return moved;
 }
 
-/** Every picture the model has: its gallery and description images, and each plate's thumbnail, render and 3D
- *  preview. Slicer copies aren't brought over from the old shared folder: they're made again when next needed. */
+/** Every picture the model has: its gallery images and their card-sized copies, its description images, and each
+ *  plate's thumbnail, render and 3D preview. Slicer copies aren't brought over from the old shared folder: they're
+ *  made again when next needed. */
 async function modelAssetFiles(printId: string, plateIds: string[]): Promise<AssetFile[]> {
   const [images, descriptions] = await Promise.all([
     prisma.previewImage.findMany({ where: { printId }, select: { id: true } }),
     prisma.descriptionImage.findMany({ where: { printId }, select: { id: true, mime: true } }),
   ]);
   return [
-    ...images.map((image) => galleryImageFile(image.id)),
+    ...images.flatMap((image) => [galleryImageFile(image.id), galleryThumbFile(image.id)]),
     ...descriptions.map(descriptionImageFile),
     ...plateIds.flatMap((plateId) => [
       plateThumbFile(plateId),

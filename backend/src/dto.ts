@@ -23,7 +23,7 @@ import type {
 import type { AssetHome } from "./services/modelAssets";
 import type { PrintProfileOut } from "./services/printProfileService";
 import { plateThumbPath } from "./services/printService";
-import { previewImagePath } from "./services/previewImageService";
+import { previewImageExists, previewImagePath } from "./services/previewImageService";
 import { preparedFilename } from "./services/preparedPrint";
 import {
   canRenderModelImage,
@@ -195,7 +195,9 @@ export type PrintOut = {
   storage_path: string | null;
   plates: PlateOut[];
   preview_images: PreviewImageOut[];
+  /** What its card shows: its first gallery image, at card size, else its first plate's thumbnail (coverThumbUrl). */
   thumb_url: string | null;
+  /** It's the plate's thumbnail, and that is our own render rather than a picture. */
   thumb_generated: boolean;
   render_url: string | null;
   /** Any plate carries colours of its own; see PlateOut.own_colors. */
@@ -351,6 +353,26 @@ export function previewImageUrl(id: string, home: AssetHome): string | null {
   return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/file.jpg`);
 }
 
+/** The image at card size, which asking for makes. Versioned by the image it's made from: an id's image never changes. */
+export function galleryThumbUrl(id: string, home: AssetHome): string | null {
+  return versionedUrl(previewImagePath(id, home), `/preview-image/${id}/thumb.jpg`);
+}
+
+/**
+ * The model's thumbnail where it's a picture of the gallery: its first image, the one Edit model marks as the thumbnail,
+ * so putting another first changes what its card shows. Null where the gallery is empty or holds only our own render;
+ * the first plate's thumbnail is the model's then. `cover` is the gallery's first image.
+ */
+export function coverThumbUrl(cover: { id: string; generated: boolean } | undefined, home: AssetHome): string | null {
+  return cover && !cover.generated ? galleryThumbUrl(cover.id, home) : null;
+}
+
+/** The gallery's first image that's there, of `images` in their order: the one a card goes by, as toPrintOut leaves
+ *  out an image whose file is gone. */
+export function galleryCover<T extends { id: string }>(images: T[], home: AssetHome): T | undefined {
+  return images.find((image) => previewImageExists(image.id, home));
+}
+
 export function toPreviewImageOut(image: PreviewImage, home: AssetHome): PreviewImageOut | null {
   const url = previewImageUrl(image.id, home);
   if (!url) return null;
@@ -403,6 +425,8 @@ export function toPrintOut(
     .toSorted((a, b) => a.position - b.position)
     .map((image) => toPreviewImageOut(image, print.assetsPath))
     .filter((img): img is PreviewImageOut => img !== null);
+
+  const coverThumb = coverThumbUrl(previewImageOuts[0], print.assetsPath);
 
   let prepared: PreparedPrintOut | null = null;
   let slicerUrl: string | null = null;
@@ -462,8 +486,8 @@ export function toPrintOut(
     storage_path: storageParentDir(sortedPlates),
     plates: plateOuts,
     preview_images: previewImageOuts,
-    thumb_url: plateOuts[0]?.thumb_url ?? null,
-    thumb_generated: plateOuts[0]?.thumb_generated ?? false,
+    thumb_url: coverThumb ?? plateOuts[0]?.thumb_url ?? null,
+    thumb_generated: coverThumb ? false : (plateOuts[0]?.thumb_generated ?? false),
     // The first file the server can draw: a STEP first plate mustn't leave the card without one.
     render_url: plateOuts.find((plate) => plate.render_url)?.render_url ?? null,
     own_colors: plateOuts.some((plate) => plate.own_colors),

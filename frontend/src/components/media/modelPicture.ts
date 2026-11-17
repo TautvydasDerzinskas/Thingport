@@ -11,9 +11,10 @@ type Pictured = {
  * The picture that is the model's own, for the view that shows pictures rather than renders; null for a model we
  * have only our own grey render of, which that view then falls back to.
  *
- * Usually the plate's thumbnail, unless it is one we drew. A model that brought colours of its own -- a painted
- * project, a script's `color()` calls -- is drawn in them too, and that picture, its cover, is the model as it
- * would come off the plate: the thing someone looking at pictures wants. The grey render beside it is what the
+ * Usually the model's thumbnail -- its first gallery picture at card size, else its first plate's thumbnail -- unless
+ * it is one we drew. A model that brought colours of its own -- a painted project, a script's `color()` calls -- is
+ * drawn in them too, and that picture, its cover, is the model as it would come off the plate: the thing someone
+ * looking at pictures wants. The grey render beside it is what the
  * renders view tints, so a list of renders still reads as one set (see backend previewImageService.ts).
  *
  * The first plate's colours, not any plate's: the cover is made from whichever plate renders first, and only the
