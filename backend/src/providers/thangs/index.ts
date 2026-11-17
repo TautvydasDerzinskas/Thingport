@@ -107,6 +107,11 @@ export const thangsImport: SourcedImport<null, ThangsModelResolution> = {
       const file = await withThangsToken(userId, token, (fresh) => fetchThangsDownload(modelId, fresh));
       if (!file) throw thangsUnavailable(resolved);
       downloaded.push(...((await kit.downloadSignedFile(file, isThangsFileHost, BLOCKED)) ?? []));
+      // The files its designer put beside it under Reference Files, which its download doesn't hold. A zip there is
+      // left: those hold the model's other versions, of which none would be kept.
+      for (const reference of resolved.referenceFiles.filter((each) => kit.isSupportingFile(each.name))) {
+        downloaded.push(...(await kit.downloadSupportingFile(reference, isThangsFileHost)));
+      }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;

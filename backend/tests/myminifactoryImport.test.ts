@@ -261,6 +261,7 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
                 { id: 901, path: "Skull/skull.stl", size: "100" },
                 { id: 902, path: "Skull/skull.chitubox", size: "100" },
                 { id: 903, path: "Skull/moustache.stl", size: "100" },
+                { id: 904, path: "Skull/Assembly.pdf", size: "100" },
               ],
             },
           ],
@@ -294,6 +295,24 @@ describe("importPrintFromUrl -- MyMiniFactory, from the user's library", () => {
     const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
     expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
     expect(result.print).toMatchObject({ sourceProvider: "myminifactory", sourceExternalId: OBJECT_ID });
+  });
+
+  it("keeps the files beside the model's own in the archive MyMiniFactory unpacked", async () => {
+    await setMyminifactoryApiKey(API_KEY);
+    await setUserMyminifactoryCookie(userId, SESSION);
+    global.fetch = mockLibrary({ paid: true }) as unknown as typeof fetch;
+
+    const result = await importPrintFromUrl(userId, OBJECT_URL, { url: OBJECT_URL, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["moustache.stl", "skull.stl"]);
+    const files = await prisma.printFile.findMany({
+      where: { printId: result.print.id, role: "SUPPORTING" },
+      orderBy: { filename: "asc" },
+    });
+    // Beside the plates, as the shared folder comes off theirs: the guide, and the sliced file for a resin printer.
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([
+      [null, "Assembly.pdf"],
+      [null, "skull.chitubox"],
+    ]);
   });
 
   it("says so when a paid model isn't in the user's library", async () => {

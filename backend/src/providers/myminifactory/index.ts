@@ -122,9 +122,11 @@ async function downloadFromLibrary(
   }
   // Scripts come too, so a model published with the .scad it was generated from arrives generative.
   const isWanted = (name: string) => kit.isImportableFile(name) || path.extname(name).toLowerCase() === ".zip";
+  // And the files beside its own, where the admin keeps any.
+  const isBeside = (await kit.supportingLimit()) === null ? undefined : kit.isSupportingFile;
   const downloaded: NewPlateInput[] = [];
   try {
-    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isWanted);
+    const files = await listMyminifactoryLibraryFiles(objectId, cookie, isWanted, isBeside);
     if (!files) {
       throw new HttpError(
         403,
@@ -135,13 +137,23 @@ async function downloadFromLibrary(
     }
     for (const file of files) {
       await maybeSleep(FILE_DELAY_MS);
+      if (file.supporting) {
+        // Never the import's failure.
+        const link = await resolveMyminifactoryLibraryDownload(file.path, cookie).catch(() => null);
+        const inputs = link
+          ? await kit.downloadSupportingFile({ url: link, name: file.name }, isMyminifactoryFileHost)
+          : [];
+        downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+        continue;
+      }
       const url = await resolveMyminifactoryLibraryDownload(file.path, cookie);
       if (url) {
         const inputs = await downloadFile(url, kit, file.name);
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
       }
     }
-    if (!downloaded.length && files.length) {
+    // Only the model's own files count: the files beside them are no model.
+    if (!downloaded.some((input) => !input.supporting) && files.length) {
       throw new HttpError(
         400,
         files.every((file) => !isWanted(file.name))

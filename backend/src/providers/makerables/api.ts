@@ -258,10 +258,22 @@ export async function resolveMakerablesProject(projectId: string): Promise<Maker
   };
 }
 
-/** The Model Files tab: the CAD and mesh files a project is made from, which is what Thingport imports. Its two other
- *  tabs hold the toolpaths cut from them -- NC programs and CAM projects -- which no slicer or printer takes. */
+/** The Model Files tab: the CAD and mesh files a project is made from, which is what Thingport imports. */
 export async function fetchMakerablesModelFiles(projectId: string): Promise<MakerablesFile[]> {
   return filesIn(await get(`/projects/original-files?${query({ project_id: projectId })}`));
+}
+
+/** Its two other tabs: the toolpaths cut from those files, NC programs for the machine and CAM projects, which no
+ *  slicer or printer takes but a model keeps beside its own files. Each in a folder named after its tab. */
+export async function fetchMakerablesMachineFiles(projectId: string): Promise<(MakerablesFile & { folder: string })[]> {
+  const [programs, projects] = await Promise.all([
+    get(`/projects/files?${query({ project_id: projectId })}`),
+    get(`/projects/cam-files?${query({ project_id: projectId })}`),
+  ]);
+  return [
+    ...filesIn(programs).map((file) => ({ ...file, folder: "NC" })),
+    ...filesIn(projects).map((file) => ({ ...file, folder: "CAM" })),
+  ];
 }
 
 /** Its files are on its own CDN, open to anyone with the link. */
