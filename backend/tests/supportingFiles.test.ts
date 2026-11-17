@@ -104,6 +104,9 @@ describe("supporting files", () => {
     // Only the owner, and only with a name.
     expect((await request(app).patch(route).set(auth(other.token)).send({ filename: "x.pdf" })).status).toBe(404);
     expect((await request(app).patch(route).set(auth(owner.token)).send({ filename: "" })).status).toBe(400);
+    // Blank is no name either, rather than the one sanitising makes up for none.
+    expect((await request(app).patch(route).set(auth(owner.token)).send({ filename: "   " })).status).toBe(400);
+    expect((await prisma.printFile.findUniqueOrThrow({ where: { id: guide.id } })).filename).toBe("20231105_7f3a.pdf");
 
     const renamed = await request(app).patch(route).set(auth(owner.token)).send({ filename: "Assembly guide" });
     expect(renamed.status).toBe(200);

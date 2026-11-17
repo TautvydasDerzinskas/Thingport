@@ -347,8 +347,10 @@ export async function renameSupportingFile(
   }
   // Its row has its place before its bytes are there: renamed now, the row would move on while the file lands behind.
   if (savesUnderWay.has(record.id)) throw new HttpError(409, "That file is still being saved: try again once it's in");
-  let wanted = sanitizeFilename(filename.trim());
-  if (!wanted) throw new HttpError(400, "A file needs a name");
+  // Before sanitising, which turns nothing into "imported-file": that would quietly become the file's name.
+  const trimmed = filename.trim();
+  if (!trimmed) throw new HttpError(400, "A file needs a name");
+  let wanted = sanitizeFilename(trimmed);
   if (!path.extname(wanted)) wanted += path.extname(record.filename);
   if (wanted === record.filename) return;
 
