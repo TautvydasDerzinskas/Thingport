@@ -314,9 +314,10 @@ describe("a zip from a link, by how its files become models", () => {
     const files = { ...tree(), "top.stl": "solid top endsolid", "top.pdf": "%PDF-1.4 top" };
     const zip = await zipOf(files);
     const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
-    // Kit holds a model file itself (loose.stl), so it's a model too, with its readme.
-    expect(prints.map((print) => print.name).toSorted()).toEqual(["A", "B", "Kit", "top"]);
-    const byName = (name: string) => prints.find((print) => print.name === name)!.id;
+    // Kit holds a model file itself (loose.stl), so it's a model too, with its readme. By title: Kit is at the top,
+    // beside the models other tests here named Kit, so its name is made unique.
+    expect(prints.map((print) => print.title ?? print.name).toSorted()).toEqual(["A", "B", "Kit", "top"]);
+    const byName = (name: string) => prints.find((print) => (print.title ?? print.name) === name)!.id;
     expect(await filesOf(byName("A"))).toEqual([["docs", "guide.pdf", "SUPPORTING"]]);
     expect(await filesOf(byName("Kit"))).toEqual([[null, "readme.pdf", "SUPPORTING"]]);
     // A document on its own can't be a model.
@@ -330,6 +331,18 @@ describe("a zip from a link, by how its files become models", () => {
     expect(failed).toEqual([]);
     expect(prints.map((print) => print.name)).toEqual(["Gear"]);
     expect(await filesOf(prints[0].id)).toEqual([["source", "gear.scad", "SUPPORTING"]]);
+  });
+
+  it("a model per folder files each model in the folders above its own", async () => {
+    const files = { "Shelf/Fan Duct/duct.stl": "solid duct endsolid", "Clip/clip.stl": "solid clip endsolid" };
+    const zip = await zipOf(files);
+    const { prints } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    const categoryOf = async (name: string) => {
+      const { categoryId } = prints.find((print) => print.name === name)!;
+      return categoryId && (await prisma.category.findUniqueOrThrow({ where: { id: categoryId } })).name;
+    };
+    expect(await categoryOf("Fan Duct")).toBe("Shelf");
+    expect(await categoryOf("Clip")).toBeNull();
   });
 
   it("a model per file makes models of the model files, and leaves documents out", async () => {

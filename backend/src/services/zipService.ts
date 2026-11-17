@@ -383,15 +383,10 @@ export async function extractZipEntriesToFolderModels(
         loose.push(unit.item.name);
         continue;
       }
-      const levels = unit.folder.split("/");
       try {
-        const categoryId = await resolveZipCategoryId(
-          userId,
-          options.categoryId ?? null,
-          [...levels, "_"].join("/"),
-          categoryCache,
-        );
-        const name = levels.at(-1)!;
+        // The folders above the model's own, which is the model: Kit/A makes model A in category Kit.
+        const categoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, unit.folder, categoryCache);
+        const name = unit.folder.split("/").at(-1)!;
         prints.push(
           await createModelOf(
             userId,
