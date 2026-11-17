@@ -1210,10 +1210,16 @@ async function filesFromZip(
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
-  // None of what was wanted here, so it is in an archive this one only wraps.
+  // None of what was wanted here, so it is in an archive this one only wraps. The files beside that archive are kept
+  // with what it holds: a site's instructions beside the zip of its model, or a zip of nothing but such files.
   const wraps = picksSupporting(pick) ? !(await zipEntriesInFolders(zipPath)).length : !inputs.length;
-  if (wraps && depth < NESTED_ZIP_DEPTH) return filesFromNestedZips(zipPath, pick, depth, budget);
-  return inputs;
+  if (!wraps || depth >= NESTED_ZIP_DEPTH) return inputs;
+  try {
+    return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget))];
+  } catch (err) {
+    await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+    throw err;
+  }
 }
 
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it

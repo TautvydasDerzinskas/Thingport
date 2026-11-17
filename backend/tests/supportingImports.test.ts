@@ -193,6 +193,15 @@ describe("a site's zip", () => {
     const supporting = await supportingFilesFromZip(zip);
     remove(supporting);
     expect(supporting.map((each) => each.filename).toSorted()).toEqual(["LICENSE.txt", "guide.pdf", "notes.txt"]);
+    // And the files beside the archive it wraps, kept with them.
+    const beside = await supportingFilesFromZip(await zipOf({ "Frog.zip": inner, "Read me first.pdf": "%PDF-1.4" }));
+    remove(beside);
+    expect(beside.map((each) => each.filename).toSorted()).toEqual([
+      "LICENSE.txt",
+      "Read me first.pdf",
+      "guide.pdf",
+      "notes.txt",
+    ]);
   });
 
   it("doesn't open a zip beside the model's files for them, and keeps no more than the limits allow", async () => {
