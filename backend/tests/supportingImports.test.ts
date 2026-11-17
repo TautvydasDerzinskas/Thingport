@@ -408,16 +408,18 @@ describe("a zip from a link, by how its files become models", () => {
     const files = { ...tree(), "top.stl": "solid top endsolid", "top.pdf": "%PDF-1.4 top" };
     const zip = await zipOf(files);
     const calls: number[][] = [];
-    await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {}, (...counts) => calls.push(counts));
-    // Kit/A, Kit/B and Kit are models; top.stl and top.pdf each stand alone, and the PDF can't be a model.
-    expect(calls.map(([processed, total]) => [processed, total])).toEqual([
-      [1, 5],
-      [2, 5],
-      [3, 5],
-      [4, 5],
-      [5, 5],
+    const picked = [...Object.keys(files), "Kit/missing.stl"];
+    await extractZipEntriesToFolderModels(userId, zip, picked, {}, (...counts) => calls.push(counts));
+    // missing.stl isn't in the zip; Kit/A, Kit/B and Kit are models; top.stl and top.pdf each stand alone, and the
+    // PDF can't be a model.
+    expect(calls).toEqual([
+      [1, 6, 0, 1],
+      [2, 6, 1, 1],
+      [3, 6, 2, 1],
+      [4, 6, 3, 1],
+      [5, 6, 4, 1],
+      [6, 6, 4, 2],
     ]);
-    expect(calls.at(-1)).toEqual([5, 5, 4, 1]);
   });
 
   it("a model per folder keeps a subfolder of scripts with the model above it", async () => {
