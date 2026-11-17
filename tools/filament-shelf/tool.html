@@ -1,0 +1,625 @@
+<style>
+  .fs {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px 16px;
+    overflow: hidden;
+    background: var(--tp-paper);
+  }
+  .fs-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fs-spacer {
+    flex: 1;
+  }
+  /* The shelf's two actions go together: on the right, and onto a row of their own as one when the filters fill it. */
+  .fs-actions-bar {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .fs-actions-bar .fs-btn.fs-share {
+    width: 26px;
+    padding: 0;
+    justify-content: center;
+  }
+  .fs-people {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .fs-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px 0 4px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 14px;
+    font-size: 12.5px;
+    white-space: nowrap;
+    transition:
+      border-color 150ms,
+      background-color 150ms;
+  }
+  .fs-chip.fs-plain {
+    padding: 0 8px 0 10px;
+  }
+  .fs-chip svg {
+    width: 16px;
+    height: 16px;
+    color: var(--tp-text-muted);
+  }
+  .fs-chip[aria-pressed="true"],
+  .fs-chip.fs-on {
+    border-color: var(--tp-accent);
+    background: color-mix(in srgb, var(--tp-accent) 12%, var(--tp-paper));
+  }
+  .fs-needs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: var(--fs-tint);
+    animation: fs-in 180ms ease-out;
+  }
+  .fs-needs-title {
+    margin-right: 4px;
+    font-weight: 600;
+  }
+  .fs-need {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 8px 0 5px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 13px;
+    background: var(--tp-paper);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .fs-need svg {
+    width: 15px;
+    height: 15px;
+    color: var(--fs-same);
+  }
+  .fs-need.fs-missing {
+    border-style: dashed;
+    color: var(--tp-text);
+    transition: border-color 150ms;
+  }
+  .fs-need.fs-missing svg {
+    color: var(--tp-accent);
+  }
+  .fs-need.fs-missing:hover {
+    border-color: var(--tp-accent);
+  }
+  .fs-all-set {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fs-same);
+  }
+  .fs-cards {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 2px;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    align-content: start;
+    gap: 10px;
+    overflow-y: auto;
+  }
+  .fs-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 10px;
+    background: var(--tp-paper);
+    transition:
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+  .fs-card:hover {
+    border-color: color-mix(in srgb, var(--tp-text) 22%, var(--tp-divider));
+  }
+  .fs-card.fs-enter {
+    animation: fs-in 180ms ease-out both;
+  }
+  .fs-card.fs-saving {
+    opacity: 0.6;
+  }
+  .fs-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding-right: 20px;
+  }
+  .fs-card-text {
+    min-width: 0;
+  }
+  .fs-card-text b,
+  .fs-card-text small,
+  .fs-card-note {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fs-card-text b {
+    font-weight: 600;
+  }
+  .fs-more {
+    position: absolute;
+    top: 6px;
+    right: 4px;
+  }
+  .fs-amount {
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: var(--fs-tint);
+  }
+  .fs-amount i {
+    display: block;
+    height: 100%;
+    background: var(--tp-accent);
+    transition: width 200ms ease-out;
+  }
+  .fs-amount.fs-low i {
+    background: var(--tp-warning);
+  }
+  .fs-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .fs-owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .fs-owner span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fs-skel-card {
+    height: 112px;
+    border-style: dashed;
+  }
+  .fs-skel-card .fs-skel {
+    width: 46px;
+    height: 46px;
+    border-radius: 50% !important;
+  }
+  .fs-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--tp-text-muted);
+    animation: fs-fade 200ms ease-out;
+  }
+  .fs-empty b {
+    color: var(--tp-text);
+    font-size: 14px;
+  }
+  .fs-empty .fs-spool {
+    --fs-c: var(--fs-tint);
+    margin-bottom: 4px;
+  }
+  .fs-empty .fs-btn {
+    margin-top: 6px;
+  }
+  .fs-menu {
+    position: absolute;
+    z-index: 10;
+    min-width: 190px;
+    max-height: 60%;
+    overflow-y: auto;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: var(--tp-paper);
+    box-shadow: var(--fs-shadow);
+    animation: fs-pop 150ms ease-out;
+  }
+  .fs-menu [role^="menuitem"]:not(.fs-swatch) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 7px 16px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .fs-menu [role^="menuitem"] svg {
+    width: 18px;
+    height: 18px;
+    color: var(--tp-text-muted);
+  }
+  .fs-menu [role^="menuitem"]:hover,
+  .fs-menu [role^="menuitem"]:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--tp-text) 7%, transparent);
+  }
+  .fs-menu [aria-checked="true"]:not(.fs-swatch) {
+    font-weight: 600;
+  }
+  .fs-menu .fs-danger,
+  .fs-menu .fs-danger svg {
+    color: var(--tp-error);
+  }
+  .fs-menu hr {
+    margin: 6px 0;
+    border: 0;
+    border-top: 1px solid var(--tp-divider);
+  }
+  .fs-menu .fs-palette {
+    padding: 6px 16px 8px;
+    max-width: 230px;
+  }
+  .fs-menu .fs-swatch:focus-visible {
+    outline: 2px solid var(--tp-accent);
+    outline-offset: 2px;
+  }
+  .fs-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: color-mix(in srgb, var(--tp-background) 60%, transparent);
+    backdrop-filter: blur(1.5px);
+    animation: fs-fade 150ms ease-out;
+  }
+  .fs-modal {
+    width: 440px;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--tp-paper);
+    box-shadow: var(--fs-shadow);
+    animation: fs-pop 180ms ease-out;
+  }
+  .fs-modal-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 10px 20px;
+    border-bottom: 1px solid var(--tp-divider);
+  }
+  .fs-modal-head h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .fs-step {
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .fs-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+    overflow-y: auto;
+  }
+  .fs-modal-body.fs-next {
+    animation: fs-in 180ms ease-out;
+  }
+  .fs-modal-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--tp-divider);
+  }
+  .fs-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .fs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fs-grow {
+    flex: 1;
+  }
+  .fs-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .fs-label label {
+    cursor: pointer;
+  }
+  .fs-help {
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--tp-text-muted);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: help;
+  }
+  .fs-grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .fs-colour-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .fs-colour-row .fs-palette {
+    flex: 1;
+    min-width: 200px;
+  }
+  .fs-colour-row .fs-hex {
+    width: 96px;
+  }
+  .fs-native {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--fs-line);
+    border-radius: 8px;
+    color: var(--tp-text-muted);
+    cursor: pointer;
+  }
+  .fs-native:hover {
+    color: var(--tp-text);
+  }
+  .fs-native:focus-within {
+    outline: 2px solid var(--tp-accent);
+    outline-offset: 2px;
+  }
+  .fs-native input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .fs-grams {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    animation: fs-in 150ms ease-out;
+  }
+  .fs-grams .fs-input {
+    width: 110px;
+  }
+  .fs-bad {
+    font-size: 11.5px;
+    color: var(--tp-error);
+  }
+  @media (max-width: 520px) {
+    .fs-grid2 {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+<div class="fs fs-ui">
+  <div class="fs-filters">
+    <div class="fs-people" id="fs-people" role="group" aria-label="Whose spools" data-t-aria="people.whose"></div>
+    <div class="fs-seg" id="fs-materials" role="group" aria-label="Material" data-t-aria="filter.material" hidden></div>
+    <select class="fs-select fs-small" id="fs-brand" aria-label="Brand" data-t-aria="filter.brand" hidden></select>
+    <button
+      type="button"
+      class="fs-chip fs-plain"
+      id="fs-colour"
+      aria-haspopup="menu"
+      aria-expanded="false"
+      hidden
+    ></button>
+    <div class="fs-actions-bar">
+      <button
+        type="button"
+        class="fs-btn fs-outline fs-small fs-share"
+        id="fs-share"
+        title="Everyone sees yours"
+        data-t-title="share.everyone"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path
+            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+          />
+        </svg>
+        <span class="fs-sr" id="fs-share-label" data-t="share.everyone">Everyone sees yours</span>
+      </button>
+      <button type="button" class="fs-btn fs-primary fs-small" id="fs-add" data-act="add">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        <span data-t="shelf.add">Add spool</span>
+      </button>
+    </div>
+  </div>
+  <div class="fs-needs" id="fs-needs" hidden></div>
+  <ul class="fs-cards" id="fs-cards" aria-label="Spools" data-t-aria="shelf.spools"></ul>
+  <div class="fs-empty" id="fs-empty" hidden>
+    <span class="fs-spool fs-l" aria-hidden="true"></span>
+    <b id="fs-empty-title"></b>
+    <span id="fs-empty-hint"></span>
+    <button type="button" class="fs-btn fs-primary fs-small" id="fs-empty-act"></button>
+  </div>
+  <div class="fs-veil" id="fs-veil" hidden>
+    <form class="fs-modal" id="fs-dialog" role="dialog" aria-modal="true" aria-labelledby="fs-dialog-title" novalidate>
+      <div class="fs-modal-head">
+        <h2 id="fs-dialog-title" data-t="dialog.addTitle">Add a spool</h2>
+        <span class="fs-step" id="fs-step"></span>
+        <span class="fs-spacer"></span>
+        <button
+          type="button"
+          class="fs-icon-btn"
+          data-act="cancel"
+          aria-label="Close"
+          title="Close"
+          data-t-aria="dialog.close"
+          data-t-title="dialog.close"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="fs-modal-body" id="fs-dialog-body">
+        <div class="fs-row">
+          <span class="fs-spool fs-l" id="fs-art" aria-hidden="true"></span>
+          <label class="fs-field fs-grow">
+            <span class="fs-label" data-t="dialog.brand">Brand</span>
+            <input class="fs-input" id="fs-f-brand" list="fs-brands" autocomplete="off" maxlength="80" />
+          </label>
+        </div>
+        <datalist id="fs-brands"></datalist>
+        <div class="fs-field">
+          <span class="fs-label" id="fs-l-material" data-t="dialog.material">Material</span>
+          <div class="fs-seg fs-full" id="fs-f-material" role="group" aria-labelledby="fs-l-material"></div>
+          <input
+            class="fs-input"
+            id="fs-f-other"
+            maxlength="60"
+            aria-label="Which material"
+            data-t-aria="dialog.otherLabel"
+            placeholder="PA-CF, PCTG…"
+            data-t-placeholder="dialog.otherPlaceholder"
+            hidden
+          />
+        </div>
+        <div class="fs-grid2">
+          <div class="fs-field">
+            <span class="fs-label">
+              <label for="fs-f-line" data-t="dialog.line">Line</label>
+              <span
+                class="fs-help"
+                tabindex="0"
+                role="img"
+                aria-label="The brand's name for the kind, such as PLA Matte"
+                title="The brand's name for the kind, such as PLA Matte"
+                data-t-aria="dialog.lineHelp"
+                data-t-title="dialog.lineHelp"
+                >?</span
+              >
+            </span>
+            <input class="fs-input" id="fs-f-line" autocomplete="off" maxlength="80" />
+          </div>
+          <label class="fs-field">
+            <span class="fs-label" data-t="dialog.colourName">Colour name</span>
+            <input class="fs-input" id="fs-f-name" autocomplete="off" maxlength="80" />
+          </label>
+        </div>
+        <div class="fs-field">
+          <span class="fs-label" id="fs-l-colour" data-t="dialog.colour">Colour</span>
+          <div class="fs-colour-row">
+            <div class="fs-palette" id="fs-f-palette" role="radiogroup" aria-labelledby="fs-l-colour"></div>
+            <input
+              class="fs-input fs-mono fs-hex"
+              id="fs-f-hex"
+              maxlength="9"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="#RRGGBB"
+              aria-label="Hex colour"
+              data-t-aria="dialog.hex"
+              aria-describedby="fs-hex-bad"
+            />
+            <label class="fs-native" title="Pick any colour" data-t-title="dialog.pick">
+              <input type="color" id="fs-f-native" aria-label="Pick any colour" data-t-aria="dialog.pick" />
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M20.71 5.63l-2.34-2.34a1 1 0 0 0-1.41 0l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12a1 1 0 0 0 .01-1.42zM6.92 19 5 17.08l8.06-8.06 1.92 1.92L6.92 19z"
+                />
+              </svg>
+            </label>
+          </div>
+          <span class="fs-bad" id="fs-hex-bad" data-t="dialog.badHex" hidden>Type the colour as #RRGGBB</span>
+        </div>
+        <div class="fs-field">
+          <span class="fs-label" id="fs-l-left" data-t="dialog.left">Left on it (optional)</span>
+          <div class="fs-seg fs-full" id="fs-f-left" role="group" aria-labelledby="fs-l-left"></div>
+          <div class="fs-grams" id="fs-grams" hidden>
+            <input
+              class="fs-input"
+              id="fs-f-grams"
+              type="number"
+              min="0"
+              max="100000"
+              step="1"
+              inputmode="numeric"
+              aria-label="Grams left"
+              data-t-aria="dialog.gramsLeft"
+            />
+            <span data-t="dialog.unit">g</span>
+          </div>
+        </div>
+        <label class="fs-field">
+          <span class="fs-label" data-t="dialog.note">Note</span>
+          <input
+            class="fs-input"
+            id="fs-f-note"
+            maxlength="300"
+            autocomplete="off"
+            placeholder="Where it is, how it prints…"
+            data-t-placeholder="dialog.notePlaceholder"
+          />
+        </label>
+      </div>
+      <div class="fs-modal-foot">
+        <button type="button" class="fs-btn fs-quiet" id="fs-skip" data-act="skip" data-t="dialog.skip" hidden>
+          Skip
+        </button>
+        <span class="fs-spacer"></span>
+        <button type="button" class="fs-btn fs-quiet" data-act="cancel" data-t="dialog.cancel">Cancel</button>
+        <button type="submit" class="fs-btn fs-primary" id="fs-submit" data-t="dialog.add">Add</button>
+      </div>
+    </form>
+  </div>
+</div>

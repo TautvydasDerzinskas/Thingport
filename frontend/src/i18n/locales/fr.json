@@ -1538,11 +1538,12 @@
         "modelCount_one": "{{count}} modèle",
         "modelCount_other": "{{count}} modèles",
         "modelCount_many": "{{count}} modèles",
-        "breakdownHint": "Mesuré au plus toutes les quelques minutes. Les anciens aperçus 3D sont des versions antérieures que plus rien n’affiche, et des aperçus de modèles supprimés. Autres, c’est le reste du stockage : projets Studio, images des étiquettes, icônes et photos de profil.",
+        "breakdownHint": "Mesuré au plus toutes les quelques minutes. Les fichiers annexes sont les instructions, notes et fichiers sources conservés avec les modèles. Les anciens aperçus 3D sont des versions antérieures que plus rien n’affiche, et des aperçus de modèles supprimés. Autres, c’est le reste du stockage : projets Studio, images des étiquettes, icônes et photos de profil.",
         "chartLabel": "Utilisation du stockage par type",
         "failed": "Impossible de mesurer le stockage.",
         "kinds": {
           "models": "Fichiers des modèles",
+          "supporting": "Fichiers annexes",
           "previews": "Aperçus 3D",
           "old": "Anciens aperçus 3D",
           "photos": "Photos",
@@ -2485,6 +2486,7 @@
         "kind": {
           "plate": "Fichier du modèle",
           "file": "Fichier annexe",
+          "prepared": "Impression préparée",
           "license": "Licence",
           "image": "Image",
           "description": "Image de la description",
@@ -4112,7 +4114,10 @@
         "failed": "{{name}} s'est arrêté sur une erreur",
         "noExport": "Le script n'a pas d'export par défaut à appeler",
         "noRun": "Le script n'a pas d'export run pour une commande sans fenêtre",
-        "commandFailed": "{{name}} n'a pas pu le faire : {{error}}"
+        "commandFailed": "{{name}} n'a pas pu le faire : {{error}}",
+        "noPartExport": "Le script n'a pas d'export {{name}} pour dessiner cette partie",
+        "partFailed": "{{name}} n'a pas pu afficher ceci",
+        "noPopover": "Une commande sans fenêtre ne peut pas ouvrir de fenêtre contextuelle"
       },
       "share": {
         "title": "Qui voit votre {{name}} ?",
@@ -4124,10 +4129,6 @@
         "picked_other": "Partagé avec {{count}} personnes",
         "onlyYou": "Personne n’est encore choisi : vous seul le voyez.",
         "loadFailed": "Impossible de lire qui le voit : il ne peut pas encore être modifié."
-      },
-      "info": {
-        "you": "Vous",
-        "someone": "Quelqu’un"
       },
       "picker": {
         "title": "Choisir une collection",
@@ -7246,6 +7247,39 @@
         "open": "Open source",
         "reserved": "Autre"
       }
+    },
+    "supporting": {
+      "title": "Fichiers annexes",
+      "add": "Ajouter des fichiers annexes",
+      "addMenu": "Ajouter des fichiers annexes…",
+      "addShort": "Ajouter des fichiers",
+      "added_one": "{{count}} fichier annexe ajouté",
+      "added_many": "{{count}} fichiers annexes ajoutés",
+      "added_other": "{{count}} fichiers annexes ajoutés",
+      "addedToModel": "Ajouté aux fichiers du modèle : {{files}}",
+      "addFailed": "Impossible d’ajouter le fichier",
+      "removeTitle": "Retirer ce fichier ?",
+      "removeMessage": "{{name}} sera supprimé de ce modèle.",
+      "removeFailed": "Impossible de retirer le fichier",
+      "renameFailed": "Impossible de renommer le fichier",
+      "linkCopied": "Lien copié",
+      "linkCopyFailed": "Impossible de copier le lien",
+      "open": "Ouvrir",
+      "openInTab": "Ouvrir dans un nouvel onglet",
+      "newTab": "Nouvel onglet",
+      "copyLink": "Copier le lien",
+      "rename": "Renommer…",
+      "renameTitle": "Renommer le fichier",
+      "downloadNamed": "Télécharger {{name}}",
+      "uploading": "Téléversement de {{name}}",
+      "more": "+{{count}} de plus",
+      "moreActionsNamed": "Plus d’actions pour {{name}}",
+      "noPreview": "Pas d’aperçu pour les fichiers {{type}}",
+      "tooLargeToPreview": "Trop volumineux pour l’aperçu",
+      "previewFailed": "Impossible d’afficher ce fichier",
+      "firstRows": "Affichage des {{count}} premières lignes",
+      "editHelp": "Instructions, notes, licences et fichiers sources conservés avec le modèle. Ils s’affichent sur sa page et accompagnent ses téléchargements, mais ne s’ouvrent jamais dans un trancheur.",
+      "editEmpty": "Aucun fichier annexe pour l’instant."
     },
     "shared": {
       "sharedBy": "Partagé par {{name}}",

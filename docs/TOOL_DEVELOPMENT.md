@@ -53,7 +53,7 @@ in [`tools/index.json`](../tools/index.json).
 | `screenshots` | Up to 8 `{ "file", "caption" }`, captions up to 200 characters                                 |
 | `collection`  | The models it brings, below                                                                    |
 | `commands`    | Up to 10 things it offers on a model's page, below                                             |
-| `modelInfo`   | `{ title, command }`: a part of every model's page showing what its users shared, below        |
+| `modelPage`   | `{ info, tab: { title }, image }`: parts of every model's page the tool draws, below           |
 
 An SVG `iconUrl` keeps the icon inside the metadata, which is why the tools here use one.
 
@@ -143,27 +143,38 @@ queue the household keeps together:
   `list({ model })` finds everyone's entries about that model or any copy of it: the same original, or imported from
   the same page. That's how a tool warns that someone else has the model queued.
 
-A tool whose metadata has `modelInfo` gets a part of every model's page, titled `title` (a label `modelInfo.title`
-translates it). An entry set with `info` shows there as a chip: the writer's avatar, a dot coloured by `tone` and a
-`label`, which is one of the tool's label keys so each reader sees their own language. Each person's latest entry about
-the model shows, and clicking it opens the tool's window on the model. `command`, one of the tool's commands, is offered
-there as a chip of its own:
+A value is at most 256 KB as JSON, and a user shares at most 5 MB and 5,000 entries a tool. Nothing in a shared value
+should be private to its writer: a model's thumbnail address, for one, carries their session, so read it as the viewer
+instead. `onChange(listener)` hears the tool's own changes on the page, so a part of it showing them can draw again.
+
+### Parts of a model's page
+
+A tool can put parts of its own on every model's page. Thingport gives each an empty element and the same `thingport`
+its window gets; the tool draws everything in it, its own `<style>` included (the theme is on the element as the
+`--tp-*` variables). `modelPage` in the metadata says which, and each is drawn by the script's export of that name:
+
+| `modelPage`          | Export       | Where                                                                       |
+| -------------------- | ------------ | --------------------------------------------------------------------------- |
+| `"info": true`       | `modelInfo`  | The info box beside the picture, under the model's category                 |
+| `"tab": { "title" }` | `modelTab`   | A tab of the description box, titled `title` (or its label `modelPage.tab`) |
+| `"image": true`      | `modelImage` | The top right corner of the model's picture: keep it small                  |
 
 ```js
-await thingport.shared.set(
-  `about:${modelId}`,
-  { jobs: 2 },
-  {
-    model: modelId,
-    info: { label: "status.printing", tone: "active", date: new Date().toISOString() },
-  },
-);
+export function modelInfo(thingport) {
+  const { root, context, shared } = thingport; // context: { modelId, fileId, place: "info" }
+  const draw = async () => (root.textContent = `${(await shared.list({ model: context.modelId })).length} notes`);
+  const stop = shared.onChange(draw);
+  void draw();
+  return stop; // called when the part goes
+}
 ```
 
-Tones are `waiting`, `active`, `done`, `failed` and `neutral`. A value is at most 256 KB as JSON, and a user shares at
-most 5 MB and 5,000 entries a tool. Nothing in a shared value should be private to its writer: a model's thumbnail
-address, for one, carries their session, so read it as the viewer instead. **Print queue** in this repository uses all
-of it.
+`context.fileId` is the file picked on the page, and a part is drawn afresh when another is picked, the theme or the
+language changes. A part that draws nothing takes no room. Inside one, `thingport.ui` has more:
+`popover(anchor, draw)` opens Thingport's popover beside one of the part's elements for the tool to draw into,
+`showTab()` switches the description box to the tool's tab, `selectFile(fileId)` picks another of the model's files,
+and `openWindow()` opens the tool's window on the model. A tab's script loads only once the tab is opened.
+**Print queue** draws its chips in the info box; **Filament shelf** draws a tab and a mark on the picture.
 
 ### The words it shows
 

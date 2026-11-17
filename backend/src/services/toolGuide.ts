@@ -130,11 +130,20 @@ everyone's with who wrote each and whether it's \`mine\`, 5,000 a read (\`list({
 Whom a user's entries reach is their choice: \`share()\` opens Thingport's dialog for it. \`set(key, value, { model })\`
 ties an entry to a model, and \`list({ model })\` finds everyone's entries about that model or any copy of it.
 
-With \`"modelInfo": { "title": "Print queue", "command": "queue" }\` in the metadata, every model's page gets a part
-showing, per person, their latest entry about the model that was set with \`info\`:
-\`{ label: "status.printing", tone: "active", date }\`. \`label\` is one of the tool's label keys, \`tone\` is
-\`waiting\`, \`active\`, \`done\`, \`failed\` or \`neutral\`, and \`command\` is offered there too. Never put anything private
-in a shared value, such as a model's thumbnail address, which carries the user's session.
+Never put anything private in a shared value, such as a model's thumbnail address, which carries the user's session.
+
+## Parts of a model's page
+
+\`"modelPage": { "info": true, "tab": { "title": "Filaments" }, "image": true }\` gives the tool parts of every model's
+page, each an empty element it draws into with its own \`<style>\`, the theme on it as the \`--tp-*\` variables, through
+the same \`thingport\` as its window: \`info\` in the info box (export \`modelInfo\`), \`tab\` a tab of the description box
+(export \`modelTab\`, title translated by the label \`modelPage.tab\`), \`image\` the picture's top right corner (export
+\`modelImage\`, keep it small). Each export gets \`thingport\` with \`context = { modelId, fileId, place }\` and may return
+a cleanup; it's drawn again when another file is picked. A part that draws nothing takes no room. In a part,
+\`ui.popover(anchor, draw)\` opens a popover to draw into, \`ui.showTab()\` shows the tool's tab, \`ui.selectFile(id)\`
+picks a file, \`ui.openWindow()\` opens the tool's window, and \`shared.onChange(fn)\` hears the tool's changes.
+Models' files carry \`profile\`: the print profile's id (the provider's, the same in every copy), name, printer and
+filaments ({ type, color, grams, brand }). \`thingport.user\` is the signed-in user, as \`{ id, name, avatarUrl }\`.
 
 ## What \`thingport\` has
 

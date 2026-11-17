@@ -134,6 +134,8 @@ export type LogEntry = {
 
 export type StorageUsage = {
   model_bytes: number; // every plate + supporting/prepared file, across all users
+  /** Of model_bytes, the supporting files kept beside the models; absent from an older backend. */
+  supporting_bytes?: number;
   model_count: number;
   /** All of storage on disk; measured every few minutes at most. */
   total_bytes: number;
@@ -197,9 +199,9 @@ export type StorageFolder = {
   pictures: boolean;
 };
 
-/** "plate" is a model file, "file" a supporting or prepared one; the rest are the model's pictures. */
+/** "plate" is a model file, "file" a supporting one, "prepared" its sliced print; the rest are the model's pictures. */
 export type StorageFileKind =
-  "plate" | "file" | "license" | "image" | "description" | "thumb" | "render" | "preview" | "slicer";
+  "plate" | "file" | "prepared" | "license" | "image" | "description" | "thumb" | "render" | "preview" | "slicer";
 
 export type StorageFile = {
   name: string;

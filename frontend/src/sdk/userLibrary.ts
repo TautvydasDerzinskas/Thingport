@@ -1,13 +1,59 @@
 import { collectionsApi, type Collection } from "../api/collections";
-import { printsApi, type Print } from "../api/prints";
+import { printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
 import { searchApi } from "../api/search";
-import type { SdkCollection, SdkCollections, SdkFileInput, SdkModel, SdkModels, SdkRelatedFile } from "./types";
+import type {
+  SdkCollection,
+  SdkCollections,
+  SdkFileInput,
+  SdkFilament,
+  SdkModel,
+  SdkModels,
+  SdkPrintProfile,
+  SdkRelatedFile,
+} from "./types";
+import { sortAddedFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
 // script may do with the library is one list, in one place, however the script is run.
 
 export type { SdkCollection, SdkFileInput, SdkModel, SdkRelatedFile } from "./types";
+
+/**
+ * A file's print profile as a script sees it: the one its provider and 3MF describe, or, for a 3MF that isn't one, the
+ * filaments its project sets up. The project names their makers, which no site does, so a profile takes them from it.
+ */
+function profileOf(plate: Plate): SdkPrintProfile | null {
+  const own = plate.format?.filamentList ?? [];
+  const same = (a: string | null, b: string | null) => !a || !b || a.toLowerCase() === b.toLowerCase();
+  const filament = (f: ProfileFilament): SdkFilament => ({
+    type: f.type,
+    color: f.color,
+    grams: f.grams,
+    // By colour only: a filament the profile gives no colour could be any of the project's.
+    brand: (f.color && own.find((o) => o.color && same(o.color, f.color) && same(o.type, f.type))?.brand) || null,
+  });
+  const fromProject = (): SdkFilament[] =>
+    own.map((o) => ({ type: o.type, color: o.color, grams: null, brand: o.brand }));
+  const profile = plate.profile;
+  if (profile)
+    return {
+      id: plate.profile_id ?? null,
+      name: profile.title,
+      printer: profile.printer,
+      // A provider that gives none, for a project that isn't sliced: the project's own still say what it prints with.
+      filaments: profile.filaments.length ? profile.filaments.map(filament) : fromProject(),
+      plates: profile.plates.map((p) => ({ index: p.index, name: p.name, filaments: p.filaments.map(filament) })),
+    };
+  if (!own.length) return null;
+  return {
+    id: null,
+    name: null,
+    printer: plate.format?.printer ?? null,
+    filaments: fromProject(),
+    plates: [],
+  };
+}
 
 const toModel = (print: Print): SdkModel => ({
   id: print.id,
@@ -18,8 +64,10 @@ const toModel = (print: Print): SdkModel => ({
   files: (print.plates ?? []).map((plate) => ({
     id: plate.id,
     name: plate.filename,
+    folder: plate.folder || null,
     size: plate.size,
     url: printsApi.fileUrl(plate.url),
+    profile: profileOf(plate),
   })),
   relatedCount: print.supporting_file_count ?? 0,
   toolOwned: Boolean(print.tool_id),
@@ -134,8 +182,13 @@ export function buildUserLibrary({
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
       return toModel(print);
     },
-    addFiles: async (id: string, files: SdkFileInput[]) =>
-      toModel((await printsApi.addPlates(id, files.map(toFile))).print),
+    addFiles: async (id: string, files: SdkFileInput[]) => {
+      // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
+      const { model, supporting } = sortAddedFiles(files.map(toFile), "model");
+      let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
+      for (const file of supporting) print = (await printsApi.uploadFile(id, file)).print;
+      return toModel(print ?? (await printsApi.get(id)));
+    },
     addImages: async (id: string, images: SdkFileInput[]) =>
       toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
     replaceFile: async (id: string, fileId: string, file: SdkFileInput) => {

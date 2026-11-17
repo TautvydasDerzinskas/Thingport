@@ -1554,11 +1554,12 @@
         "modelCount_one": "{{count}} modelis",
         "modelCount_few": "{{count}} modeliai",
         "modelCount_other": "{{count}} modelių",
-        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
+        "breakdownHint": "Matuojama ne dažniau kaip kas kelias minutes. Papildomi failai – instrukcijos, pastabos ir šaltinio failai, laikomi kartu su modeliais. Senos 3D peržiūros – ankstesnės versijos, kurios niekur nebėra rodomos, ir ištrintų modelių peržiūros. Kita – likusi saugykla: Studio projektai, žymų paveikslėliai, piktogramos ir profilių nuotraukos.",
         "chartLabel": "Saugyklos užimtumas pagal rūšį",
         "failed": "Nepavyko išmatuoti saugyklos.",
         "kinds": {
           "models": "Modelių failai",
+          "supporting": "Papildomi failai",
           "previews": "3D peržiūros",
           "old": "Senos 3D peržiūros",
           "photos": "Nuotraukos",
@@ -2517,6 +2518,7 @@
         "kind": {
           "plate": "Modelio failas",
           "file": "Papildomas failas",
+          "prepared": "Paruoštas spaudinys",
           "license": "Licencija",
           "image": "Paveikslėlis",
           "description": "Aprašymo paveikslėlis",
@@ -4208,7 +4210,10 @@
         "failed": "{{name}} sustojo dėl klaidos",
         "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti",
         "noRun": "Scenarijus neturi run eksporto komandai be lango",
-        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}"
+        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}",
+        "noPartExport": "Scenarijus neturi {{name}} eksporto, kuris nupieštų šią dalį",
+        "partFailed": "{{name}} nepavyko to parodyti",
+        "noPopover": "Komanda be lango negali atidaryti iškylančiojo lango"
       },
       "share": {
         "title": "Kas mato jūsų „{{name}}“?",
@@ -4221,10 +4226,6 @@
         "picked_other": "Bendrinama su {{count}} žmonių",
         "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs.",
         "loadFailed": "Nepavyko perskaityti, kas tai mato, todėl kol kas negalima to pakeisti."
-      },
-      "info": {
-        "you": "Jūs",
-        "someone": "Kažkas"
       },
       "picker": {
         "title": "Pasirinkite kolekciją",
@@ -7403,6 +7404,40 @@
         "open": "Atviro kodo",
         "reserved": "Kita"
       }
+    },
+    "supporting": {
+      "title": "Papildomi failai",
+      "add": "Pridėti papildomų failų",
+      "addMenu": "Pridėti papildomų failų…",
+      "addShort": "Pridėti failų",
+      "added_one": "Pridėtas {{count}} papildomas failas",
+      "added_few": "Pridėti {{count}} papildomi failai",
+      "added_many": "Pridėta {{count}} papildomo failo",
+      "added_other": "Pridėta {{count}} papildomų failų",
+      "addedToModel": "Pridėta prie modelio failų: {{files}}",
+      "addFailed": "Nepavyko pridėti failo",
+      "removeTitle": "Pašalinti šį failą?",
+      "removeMessage": "{{name}} bus ištrintas iš šio modelio.",
+      "removeFailed": "Nepavyko pašalinti failo",
+      "renameFailed": "Nepavyko pervadinti failo",
+      "linkCopied": "Nuoroda nukopijuota",
+      "linkCopyFailed": "Nepavyko nukopijuoti nuorodos",
+      "open": "Atverti",
+      "openInTab": "Atverti naujame skirtuke",
+      "newTab": "Naujas skirtukas",
+      "copyLink": "Kopijuoti nuorodą",
+      "rename": "Pervadinti…",
+      "renameTitle": "Pervadinti failą",
+      "downloadNamed": "Atsisiųsti {{name}}",
+      "uploading": "Įkeliamas {{name}}",
+      "more": "Dar {{count}}",
+      "moreActionsNamed": "Daugiau veiksmų: {{name}}",
+      "noPreview": "{{type}} failų peržiūra negalima",
+      "tooLargeToPreview": "Per didelis peržiūrai",
+      "previewFailed": "Nepavyko parodyti šio failo",
+      "firstRows": "Rodoma pirmųjų {{count}} eilučių",
+      "editHelp": "Instrukcijos, pastabos, licencijos ir šaltinio failai, laikomi kartu su modeliu. Jie rodomi modelio puslapyje ir įtraukiami į atsisiuntimus, bet niekada neatveriami pjaustyklėje.",
+      "editEmpty": "Papildomų failų dar nėra."
     },
     "shared": {
       "sharedBy": "Dalijasi {{name}}",

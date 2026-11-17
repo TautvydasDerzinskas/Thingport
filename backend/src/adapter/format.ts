@@ -5,7 +5,7 @@ import { asArray, firstValue, settingsDialectOf, type Settings, type SettingsDia
 import { decodeXml } from "./xml";
 
 /** Bumped when classification changes, so stored formats are read again. */
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 
 /**
  * - bambu: Bambu Studio's layout (project_settings.config, model_settings.config, parts in 3D/Objects), which Orca
@@ -29,12 +29,24 @@ export type ThreeMfFormat = {
   printer: string | null;
   nozzle: number | null;
   filaments: number | null;
+  /** Each filament a project sets up, in its slicer's order, where its settings say: for a Bambu or Prusa layout. */
+  filamentList?: ThreeMfFilament[] | null;
   /** Its build plates, for a Bambu layout project. */
   plates: number | null;
   /** Whose names its settings use, where it matters. */
   dialect: SettingsDialect | null;
   /** A plain 3MF's: whether every one of its triangles is painted already, the way PrusaSlicer reads. */
   painted?: boolean | null;
+};
+
+/** A filament a project sets up. Unknown facts are null. */
+export type ThreeMfFilament = {
+  /** "PLA", "PETG-CF". */
+  type: string | null;
+  /** "#RRGGBB". */
+  color: string | null;
+  /** Who makes it, as its preset says ("Bambu Lab"); none for a generic one. */
+  brand: string | null;
 };
 
 /** What a plain 3MF's whole model says about its colours (services/threeMfFormat.ts reads it through). */
@@ -127,6 +139,61 @@ function nonEmpty(value: unknown): string | null {
   return s || null;
 }
 
+const MAX_FILAMENTS = 32;
+
+/** "#RRGGBB" from "#RRGGBB", "#RRGGBBAA" or "#RGB"; null for anything else. */
+function hexColour(value: unknown): string | null {
+  const s = String(value ?? "").trim();
+  const long = /^#?([0-9a-f]{6})(?:[0-9a-f]{2})?$/i.exec(s);
+  if (long) return `#${long[1].toUpperCase()}`;
+  const short = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(s);
+  return short
+    ? `#${short
+        .slice(1)
+        .map((c) => c + c)
+        .join("")
+        .toUpperCase()}`
+    : null;
+}
+
+/** The maker a filament preset names: its vendor where the project keeps one, else Bambu Lab's own presets by name. */
+function brandOf(vendor: string | null, preset: string | null): string | null {
+  if (vendor) return /^generic$/i.test(vendor) ? null : vendor;
+  return preset && /^bambu\s/i.test(preset) ? "Bambu Lab" : null;
+}
+
+/** Slot by slot, from lists that may be different lengths. */
+function filamentsOf(colours: unknown[], types: unknown[], vendors: unknown[], presets: unknown[]) {
+  const count = Math.min(Math.max(colours.length, types.length, presets.length), MAX_FILAMENTS);
+  if (!count) return null;
+  return Array.from({ length: count }, (_, i): ThreeMfFilament => ({
+    type: nonEmpty(types[i]),
+    color: hexColour(colours[i]),
+    brand: brandOf(nonEmpty(vendors[i]), nonEmpty(presets[i])),
+  }));
+}
+
+/** A list setting's items: split at each `;` outside quotes, as PrusaSlicer quotes a name with a space in it
+ *  (`"Prusament PLA";Generic`), then unquoted and unescaped. */
+function prusaList(config: string | null, key: string): string[] {
+  const value = prusaValue(config, key);
+  if (!value) return [];
+  const items: string[] = [];
+  let item = "";
+  let quoted = false;
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i];
+    if (quoted && char === "\\" && i + 1 < value.length) item += value[++i];
+    else if (char === '"') quoted = !quoted;
+    else if (char === ";" && !quoted) {
+      items.push(item.trim());
+      item = "";
+    } else item += char;
+  }
+  items.push(item.trim());
+  return items;
+}
+
 export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
   const names = files.entries.map((entry) => entry.replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase());
   const has = (name: string) => names.includes(name);
@@ -151,6 +218,12 @@ export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
       printer: nonEmpty(settings.printer_settings_id) ?? nonEmpty(settings.printer_model),
       nozzle: numberOrNull(firstValue(settings.nozzle_diameter)),
       filaments: filaments || null,
+      filamentList: filamentsOf(
+        asArray(settings.filament_colour),
+        asArray(settings.filament_type),
+        asArray(settings.filament_vendor),
+        asArray(settings.filament_settings_id),
+      ),
       plates: plates || null,
       dialect: settingsDialectOf(settings),
     };
@@ -165,6 +238,12 @@ export function classify3mf(files: ThreeMfFiles): ThreeMfFormat {
       printer: prusaValue(files.prusaConfig, "printer_settings_id") ?? prusaValue(files.prusaConfig, "printer_model"),
       nozzle: numberOrNull(prusaValue(files.prusaConfig, "nozzle_diameter")?.split(/[,;]/)[0]),
       filaments: colours ? colours.split(";").length : null,
+      filamentList: filamentsOf(
+        prusaList(files.prusaConfig, "filament_colour"),
+        prusaList(files.prusaConfig, "filament_type"),
+        prusaList(files.prusaConfig, "filament_vendor"),
+        prusaList(files.prusaConfig, "filament_settings_id"),
+      ),
     };
   }
 
@@ -195,6 +274,8 @@ export function storedFormat(value: unknown): ThreeMfFormat | null {
     filaments: f.filaments ?? null,
     plates: f.plates ?? null,
     dialect: f.dialect ?? null,
+    // Only the kinds that list their filaments have these, as classify3mf gives them.
+    ...(f.filamentList !== undefined ? { filamentList: f.filamentList } : {}),
     ...(f.painted !== undefined ? { painted: f.painted } : {}),
   };
 }

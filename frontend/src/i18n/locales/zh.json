@@ -1416,11 +1416,12 @@
         "totalHint": "Thingport 存储文件夹中的全部内容：模型文件（{{models}}）、图片和预览（缩略图、图库和描述图片、3D 预览、标签图片：{{pictures}}），以及其他生成的文件（供切片软件使用的副本和下载包：{{other}}）。最多每几分钟测量一次。",
         "onDisk": "磁盘占用 {{total}}",
         "modelCount_other": "{{count}} 个模型",
-        "breakdownHint": "最多每几分钟测量一次。旧 3D 预览是已不再显示的早期版本，以及已删除模型的预览。“其他”是存储中的其余内容：Studio 设计、标签图片、图标和头像。",
+        "breakdownHint": "最多每几分钟测量一次。附加文件是与模型一起保存的说明、备注和源文件。旧 3D 预览是已不再显示的早期版本，以及已删除模型的预览。“其他”是存储中的其余内容：Studio 设计、标签图片、图标和头像。",
         "chartLabel": "按类型划分的存储占用",
         "failed": "无法测量存储占用。",
         "kinds": {
           "models": "模型文件",
+          "supporting": "附加文件",
           "previews": "3D 预览",
           "old": "旧 3D 预览",
           "photos": "图片",
@@ -2311,7 +2312,8 @@
         "ofModel": "模型“{{name}}”",
         "kind": {
           "plate": "模型文件",
-          "file": "附属文件",
+          "file": "附加文件",
+          "prepared": "切片文件",
           "license": "许可协议",
           "image": "图片",
           "description": "描述图片",
@@ -3768,7 +3770,10 @@
         "failed": "{{name}} 因出错而停止",
         "noExport": "脚本没有可调用的默认导出",
         "noRun": "脚本没有供无窗口命令调用的 run 导出",
-        "commandFailed": "{{name}} 未能完成：{{error}}"
+        "commandFailed": "{{name}} 未能完成：{{error}}",
+        "noPartExport": "脚本没有用于绘制此部分的 {{name}} 导出",
+        "partFailed": "{{name}} 无法显示此内容",
+        "noPopover": "没有窗口的命令无法打开弹出框"
       },
       "share": {
         "title": "谁能看到你的{{name}}？",
@@ -3778,10 +3783,6 @@
         "picked_other": "已与 {{count}} 人分享",
         "onlyYou": "尚未选择任何人，所以只有你能看到。",
         "loadFailed": "无法读取谁能看到，所以暂时无法更改。"
-      },
-      "info": {
-        "you": "你",
-        "someone": "某人"
       },
       "picker": {
         "title": "选择合集",
@@ -6607,6 +6608,37 @@
         "open": "开源",
         "reserved": "其他"
       }
+    },
+    "supporting": {
+      "title": "附加文件",
+      "add": "添加附加文件",
+      "addMenu": "添加附加文件…",
+      "addShort": "添加文件",
+      "added_other": "已添加 {{count}} 个附加文件",
+      "addedToModel": "已添加到模型文件：{{files}}",
+      "addFailed": "无法添加文件",
+      "removeTitle": "移除此文件？",
+      "removeMessage": "{{name}} 将从此模型中删除。",
+      "removeFailed": "无法移除文件",
+      "renameFailed": "无法重命名文件",
+      "linkCopied": "链接已复制",
+      "linkCopyFailed": "无法复制链接",
+      "open": "打开",
+      "openInTab": "在新标签页中打开",
+      "newTab": "新标签页",
+      "copyLink": "复制链接",
+      "rename": "重命名…",
+      "renameTitle": "重命名文件",
+      "downloadNamed": "下载 {{name}}",
+      "uploading": "正在上传 {{name}}",
+      "more": "另外 {{count}} 个",
+      "moreActionsNamed": "{{name}} 的更多操作",
+      "noPreview": "无法预览 {{type}} 文件",
+      "tooLargeToPreview": "文件过大，无法预览",
+      "previewFailed": "无法显示此文件",
+      "firstRows": "显示前 {{count}} 行",
+      "editHelp": "与模型一起保存的说明、备注、许可证和源文件。它们显示在模型页面上，并包含在下载中，但不会在切片软件中打开。",
+      "editEmpty": "还没有附加文件。"
     },
     "shared": {
       "sharedBy": "由 {{name}} 分享",

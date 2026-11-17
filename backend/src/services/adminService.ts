@@ -146,6 +146,8 @@ export async function deleteAllPrintsForUser(userId: string): Promise<number> {
 
 export type StorageUsage = {
   modelBytes: number;
+  /** Of modelBytes, what the supporting files kept beside the models take: instructions, notes, sources. */
+  supportingBytes: number;
   modelCount: number;
   /** All of storage on disk: model files plus everything made from them. */
   totalBytes: number;
@@ -214,13 +216,14 @@ export function forgetStorageUsage(): void {
  * if each had a copy.
  */
 export async function getStorageUsage(): Promise<StorageUsage> {
-  const [owned, shared, files, modelCount, disk] = await Promise.all([
+  const [owned, shared, files, supporting, modelCount, disk] = await Promise.all([
     prisma.plate.aggregate({ _sum: { size: true }, where: { sourcePath: null } }),
     prisma.$queryRaw<{ bytes: bigint | null }[]>`
       SELECT COALESCE(SUM(size), 0) AS bytes
       FROM (SELECT DISTINCT ON ("sourcePath") size FROM "Plate" WHERE "sourcePath" IS NOT NULL ORDER BY "sourcePath") s
     `,
     prisma.printFile.aggregate({ _sum: { size: true } }),
+    prisma.printFile.aggregate({ _sum: { size: true }, where: { role: "SUPPORTING" } }),
     prisma.print.count(),
     measureDisk(),
   ]);
@@ -232,6 +235,7 @@ export async function getStorageUsage(): Promise<StorageUsage> {
   const otherGeneratedBytes = bytes.slicer + bytes.bundles;
   return {
     modelBytes,
+    supportingBytes: supporting._sum.size ?? 0,
     modelCount,
     totalBytes: disk.totalBytes,
     pictureBytes,

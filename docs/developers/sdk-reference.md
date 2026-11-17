@@ -52,6 +52,7 @@ For a tool, the type is `ToolSdk`.
 | [`library`](#libraryname)                 |   ✓    |  ✓   | A library Thingport carries, for a job a script can't fit inside itself.                                                                                      |
 | [`libraries`](#libraries)                 |   ✓    |  ✓   | The names `library()` takes.                                                                                                                                  |
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
+| [`user`](#user)                           |        |  ✓   | Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything.     |
 | [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
 | [`shared`](#shared)                       |        |  ✓   | JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it.                        |
@@ -405,7 +406,7 @@ const source = await thingport.models.relatedText(id, scad.id);
 thingport.models.create(input: SdkNewModel): Promise<SdkModel>
 ```
 
-Makes a model of the files given, each one a plate, in a collection when one is given.
+Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything else (instructions, notes, sources) is kept beside them as a related file; with no 3D file, every file is a plate.
 
 | Parameter | What it is                                         |
 | --------- | -------------------------------------------------- |
@@ -429,7 +430,7 @@ const model = await thingport.models.create({
 thingport.models.addFiles(id: string, files: SdkFileInput[]): Promise<SdkModel>
 ```
 
-Adds files to a model, each a plate.
+Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is kept beside them as a related file (see `relatedFiles`).
 
 | Parameter | What it is        |
 | --------- | ----------------- |
@@ -807,7 +808,66 @@ _Tools only_
 thingport.ui.close(): void
 ```
 
-Closes the tool's window, as `close()` does.
+Closes the tool's window, as `close()` does. In a part of a model's page it does nothing.
+
+#### `ui.popover(anchor, draw, options?)`
+
+_Tools only_
+
+```ts
+thingport.ui.popover(anchor: Element, draw: (root: HTMLElement) => void | (() => void), options?: { placement?: "bottom" | "top" | "left" | "right"; width?: number }): { close(): void }
+```
+
+Opens Thingport's popover beside an element of the tool's, with an empty element for the tool to draw into, the theme on it as CSS variables. It closes on a click outside it, on Escape, or with `close()`, and `draw`'s returned function runs then.
+
+| Parameter | What it is                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| `anchor`  | The element it opens beside, such as the button that opened it.                                       |
+| `draw`    | Draws the popover's content into `root`; may return a cleanup.                                        |
+| `options` | `placement`: which side of `anchor`, `"bottom"` when left out. `width`: in pixels, 320 when left out. |
+
+**Returns:** Closes it.
+
+```js
+button.onclick = () =>
+  thingport.ui.popover(button, (root) => {
+    root.textContent = "Hi";
+  });
+```
+
+#### `ui.showTab()`
+
+_Tools only_
+
+```ts
+thingport.ui.showTab(): void
+```
+
+On a model's page, shows the tool's tab in the description box and scrolls to it. Does nothing where the tool has no tab, or off a model's page.
+
+#### `ui.selectFile(fileId)`
+
+_Tools only_
+
+```ts
+thingport.ui.selectFile(fileId: string): void
+```
+
+On a model's page, picks one of the model's files, as picking it in the side panel does, so every part follows it.
+
+| Parameter | What it is                  |
+| --------- | --------------------------- |
+| `fileId`  | One of the model's `files`. |
+
+#### `ui.openWindow()`
+
+_Tools only_
+
+```ts
+thingport.ui.openWindow(): void
+```
+
+Opens the tool's own window, on the model when there is one.
 
 ### `achievements`
 
@@ -1119,15 +1179,27 @@ thingport.tool: { id: string | null; slug: string; name: string; version: string
 
 The tool itself. `id` is null in the editor's preview of a tool not saved yet; `source` is `"repo"` for one installed from the repository and `"own"` for the user's own.
 
+### `user`
+
+_Tools only_
+
+```ts
+thingport.user: SdkPerson | null
+```
+
+Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything. Null only where nobody is signed in.
+
+See [`SdkPerson`](#sdkperson).
+
 ### `context`
 
 _Tools only_
 
 ```ts
-thingport.context: { modelId?: string; fileId?: string; command?: string }
+thingport.context: { modelId?: string; fileId?: string; command?: string; place?: "info" | "tab" | "image" }
 ```
 
-What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`.
+What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`, the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`. A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
 
 ```js
 const { command, modelId, fileId } = thingport.context;
@@ -1244,21 +1316,19 @@ while (page.length === 5000) {
 #### `shared.set(key, value, options?)`
 
 ```ts
-thingport.shared.set(key: string, value: unknown, options?: { model?: string; info?: SdkModelInfo }): Promise<void>
+thingport.shared.set(key: string, value: unknown, options?: { model?: string }): Promise<void>
 ```
 
 Keeps one of the user's entries, replacing their entry under the key. At most 256 KB a value as JSON, 5 MB and 5,000 entries a user.
 
-| Parameter | What it is                                                                                                                                          |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.                                                                         |
-| `value`   | Anything JSON can hold.                                                                                                                             |
-| `options` | `model`: the model it's about, one the user can open. `info`: what that model's page shows for it, when the tool's metadata has a `modelInfo` part. |
-
-See [`SdkModelInfo`](#sdkmodelinfo).
+| Parameter | What it is                                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `key`     | 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.                                            |
+| `value`   | Anything JSON can hold.                                                                                                |
+| `options` | `model`: the model it's about, one the user can open, so `list({ model })` finds it from that model or any copy of it. |
 
 ```js
-await thingport.shared.set(`job:${id}`, job, { model: modelId, info: { label: "status.queued", tone: "waiting" } });
+await thingport.shared.set(`job:${id}`, job, { model: modelId });
 ```
 
 #### `shared.remove(key)`
@@ -1294,6 +1364,20 @@ Opens Thingport's own dialog asking whom the user's entries reach: everyone who 
 **Returns:** What they chose, or `null` when they closed it.
 
 See [`SdkAudience`](#sdkaudience).
+
+#### `shared.onChange(listener)`
+
+```ts
+thingport.shared.onChange(listener: () => void): () => void
+```
+
+Calls `listener` when this tool's shared entries are changed on this page: by its window, a command, or one of its parts of a model's page. A part uses it to show the change at once.
+
+**Returns:** A function that stops it.
+
+```js
+const stop = thingport.shared.onChange(() => void draw());
+```
 
 ### `toolModels()`
 
@@ -1406,12 +1490,37 @@ A model in the user's library.
 
 One of a model's 3D files.
 
-| Field  | Type     | What it is                                                   |
-| ------ | -------- | ------------------------------------------------------------ |
-| `id`   | `string` |                                                              |
-| `name` | `string` | Its file name, with the extension.                           |
-| `size` | `number` | In bytes.                                                    |
-| `url`  | `string` | An address it can be read from as the user, e.g. by `fetch`. |
+| Field     | Type                      | What it is                                                                                                                                                                                                    |
+| --------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | `string`                  |                                                                                                                                                                                                               |
+| `name`    | `string`                  | Its file name, with the extension: unique within its folder, not the whole model.                                                                                                                             |
+| `folder`  | `string \| null`          | The folder of the model it's in, levels joined by "/" ("USB C version/Handles"); null at the top. A copy of the model keeps it, as it does the name.                                                          |
+| `size`    | `number`                  | In bytes.                                                                                                                                                                                                     |
+| `url`     | `string`                  | An address it can be read from as the user, e.g. by `fetch`.                                                                                                                                                  |
+| `profile` | `SdkPrintProfile \| null` | The print profile this file is, where it's one: as Thingport read it from the provider's page and the 3MF, so it costs no request to the provider. Null for a file that isn't a profile, or one not read yet. |
+
+### `SdkPrintProfile`
+
+A print profile, as a model's page shows it.
+
+| Field       | Type                                                                  | What it is                                                                                                        |
+| ----------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`        | `string \| null`                                                      | The provider's id for it, the same in every copy of the model; null for a file whose own 3MF names the filaments. |
+| `name`      | `string \| null`                                                      | Its title, as the provider or the 3MF names it.                                                                   |
+| `printer`   | `string \| null`                                                      | The printer it's set up for ("Bambu Lab P1S").                                                                    |
+| `filaments` | `SdkFilament[]`                                                       | Each filament it prints with, once, in the order the slicer has them.                                             |
+| `plates`    | `{ index: number; name: string \| null; filaments: SdkFilament[] }[]` | Its build plates, numbered from 1, with the filaments each uses.                                                  |
+
+### `SdkFilament`
+
+A filament a print profile uses. Unknown facts are null.
+
+| Field   | Type             | What it is                                               |
+| ------- | ---------------- | -------------------------------------------------------- |
+| `type`  | `string \| null` | The material, as the profile names it: "PLA", "PETG-CF". |
+| `color` | `string \| null` | "#RRGGBB".                                               |
+| `grams` | `number \| null` | How much the profile, or the plate, uses.                |
+| `brand` | `string \| null` | Who makes it, where the profile says ("Bambu Lab").      |
 
 ### `SdkRelatedFile`
 
@@ -1674,30 +1783,19 @@ Another of the instance's users, as a tool sees them: never their email.
 | `name`      | `string`         |            |
 | `avatarUrl` | `string \| null` |            |
 
-### `SdkModelInfo`
-
-What a model's page shows for a shared entry, in the part the tool's `modelInfo` metadata asks for: one chip per person, from their latest entry about the model or any copy of it.
-
-| Field   | Type                                                       | What it is                                                                                                   |
-| ------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `label` | `string`                                                   | One of the tool's label keys, so each reader sees it in their language, or plain words. Up to 60 characters. |
-| `tone?` | `"waiting" \| "active" \| "done" \| "failed" \| "neutral"` | Colours the chip's dot: "waiting", "active", "done", "failed", or "neutral" when left out.                   |
-| `date?` | `string`                                                   | When, as an ISO date, shown beside the label.                                                                |
-
 ### `SdkSharedEntry`
 
 One of the entries the tool's users share, as the reader sees it.
 
-| Field       | Type                   | What it is                                                                                        |
-| ----------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `key`       | `string`               |                                                                                                   |
-| `value`     | `any`                  |                                                                                                   |
-| `user`      | `SdkPerson \| null`    | Who wrote it.                                                                                     |
-| `mine`      | `boolean`              | Whether the reader wrote it, and so may change it.                                                |
-| `modelId`   | `string \| null`       | The model it's about, as its writer has it: another user's id may not be one the reader can open. |
-| `info`      | `SdkModelInfo \| null` |                                                                                                   |
-| `updatedAt` | `string`               |                                                                                                   |
-| `cursor`    | `string`               | Where it is in the order a read gives: `before` in the next read, for the entries after it.       |
+| Field       | Type                | What it is                                                                                        |
+| ----------- | ------------------- | ------------------------------------------------------------------------------------------------- |
+| `key`       | `string`            |                                                                                                   |
+| `value`     | `any`               |                                                                                                   |
+| `user`      | `SdkPerson \| null` | Who wrote it.                                                                                     |
+| `mine`      | `boolean`           | Whether the reader wrote it, and so may change it.                                                |
+| `modelId`   | `string \| null`    | The model it's about, as its writer has it: another user's id may not be one the reader can open. |
+| `updatedAt` | `string`            |                                                                                                   |
+| `cursor`    | `string`            | Where it is in the order a read gives: `before` in the next read, for the entries after it.       |
 
 ### `SdkAudience`
 

@@ -11,6 +11,7 @@ import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DownloadIcon from "@mui/icons-material/Download";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -52,6 +53,7 @@ import FillGapsDialog from "./FillGapsDialog";
 import { useAiOutcomeWatch } from "./useAiOutcomeWatch";
 import { useCustomize } from "./useCustomize";
 import { useCopyToLibrary } from "./useCopyToLibrary";
+import { useSupportingFiles } from "../../components/supportingFiles/useSupportingFiles";
 import { reopenContextMenuBelow } from "../../components/Layout/ConfigurationDialog/AppTiles";
 
 type Props = {
@@ -72,6 +74,8 @@ type Props = {
   onContextMenuClose?: () => void;
   /** Offers linking a model with no source to its page on a provider. */
   offerLink?: boolean;
+  /** "Add supporting files" through the page's own, so its uploads show there; a card's menu adds them itself. */
+  onAddSupportingFiles?: () => void;
 };
 
 /** The "..." menu for a model, shared by the detail header and grid cards. */
@@ -89,6 +93,7 @@ export default function ModelActionsMenu({
   contextMenuAt,
   onContextMenuClose,
   offerLink = false,
+  onAddSupportingFiles,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const toolOwned = Boolean(print.tool_id);
@@ -279,6 +284,14 @@ export default function ModelActionsMenu({
   const { slicerOption, targets: slicerTargets, adaptedTargets } = useOpenInSlicer(print);
   const openInSlicerHref = slicerTargets.length === 1 ? slicerTargets[0].href : undefined;
   const adapted = useAdaptedOpen(print.id, slicerOption?.id ?? null, recordUse, onUnauthorized);
+  // Only where the page has none of its own to hand the picking to.
+  const {
+    pick: pickOwnSupporting,
+    bindInput: bindOwnSupportingInput,
+    onPicked: onOwnSupportingPicked,
+    download: downloadSupportingFile,
+  } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
+  const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
   const adaptedMenuLabel = (slicer: string) => {
     const state = adaptedTargets.length === 1 ? adapted.stateOf(adaptedTargets[0]) : "idle";
     if (state === "preparing") return t("models:detail.adaptPreparing");
@@ -288,6 +301,15 @@ export default function ModelActionsMenu({
 
   return (
     <>
+      {!onAddSupportingFiles && (
+        <input
+          ref={bindOwnSupportingInput}
+          type="file"
+          multiple
+          hidden
+          onChange={(event) => onOwnSupportingPicked(event.currentTarget)}
+        />
+      )}
       <Tooltip title={t("common:moreActions")}>
         <span>
           <IconButton
@@ -381,6 +403,18 @@ export default function ModelActionsMenu({
                 <EditIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>{t("common:edit")}</ListItemText>
+            </MenuItem>,
+            <MenuItem
+              key="supporting"
+              onClick={() => {
+                closeMenu();
+                addSupportingFiles();
+              }}
+            >
+              <ListItemIcon>
+                <AttachFileIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t("models:supporting.addMenu")}</ListItemText>
             </MenuItem>,
             <MenuItem key="delete" onClick={handleDelete}>
               <ListItemIcon>
@@ -571,6 +605,9 @@ export default function ModelActionsMenu({
         onClose={() => setPickerOpen(false)}
         downloading={downloading}
         sortedPlates={sortedPlates}
+        supportingCount={print.supporting_file_count}
+        supportingFiles={print.supporting_files}
+        downloadSupporting={(file) => void downloadSupportingFile(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}

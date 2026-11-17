@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
@@ -13,6 +13,7 @@ import { commandsFor, type CommandFile, type OfferedCommand } from "./toolComman
 import type { SdkAudience } from "../../sdk/types";
 import type { RunnableTool, ToolCollection, ToolContext } from "./toolSdk";
 import { useAskQueue } from "./useAskQueue";
+import { useModelPageTools } from "./modelPageTools";
 
 // Loaded once a command is picked, so a page whose tools offer none carries none of the running.
 const ToolWindow = lazy(() => import("./ToolWindow"));
@@ -31,8 +32,6 @@ export function useToolCommands(
 ): {
   commands: OfferedCommand[];
   run: (offered: OfferedCommand) => void;
-  /** Opens a tool's window on the model, with no command: from a person's chip in its part of the page. */
-  openTool: (tool: RunnableTool) => void;
   element: ReactNode;
 } {
   const { t, i18n } = useTranslation("app");
@@ -41,10 +40,20 @@ export function useToolCommands(
   const navigate = useNavigate();
   const toast = useToast();
   const confirm = useConfirm();
+  const page = useModelPageTools();
   const language = matchLanguage(i18n.language);
   const [open, setOpen] = useState<{ tool: RunnableTool; context: ToolContext } | null>(null);
   const picks = useAskQueue<{ title?: string }, ToolCollection | null>();
   const shares = useAskQueue<{ tool: { id: string; name: string } }, SdkAudience | null>();
+  // The model the page is on while this is mounted: a run's page actions are for the model it started on, and do
+  // nothing once the page has left it, though the page itself stays.
+  const onModel = useRef<string | null>(modelId);
+  useEffect(() => {
+    onModel.current = modelId;
+    return () => {
+      onModel.current = null;
+    };
+  }, [modelId]);
 
   const filename = file?.filename ?? null;
   const plateId = file?.plateId ?? null;
@@ -57,6 +66,7 @@ export function useToolCommands(
   const openModel = (id: string) => navigate(`/models/${encodeURIComponent(id)}`);
 
   const runWindowless = async (tool: RunnableTool, context: ToolContext) => {
+    const here = () => onModel.current === context.modelId;
     try {
       const [{ buildToolSdk }, { loadToolModule }] = await Promise.all([import("./toolSdk"), import("./toolModule")]);
       // Never ended: a run may leave a question open after `run` returns, and nothing restarts it.
@@ -86,6 +96,18 @@ export function useToolCommands(
           pickCollection: (options) => asks.ask({ title: options?.title }),
           openModel,
           close: () => undefined,
+          popover: () => {
+            throw new Error(t("tools.runner.noPopover"));
+          },
+          showTab: () => {
+            if (here() && tool.id && tool.manifest.modelPage?.tab) page?.showTab(tool.id);
+          },
+          selectFile: (fileId) => {
+            if (here()) page?.selectFile(fileId);
+          },
+          openWindow: () => {
+            if (here()) setOpen({ tool, context: { modelId: context.modelId } });
+          },
         },
         pickAudience: () => shareAsks.ask({ tool: { id: tool.id ?? "", name: tool.manifest.name } }),
       });
@@ -146,7 +168,5 @@ export function useToolCommands(
       </Suspense>
     ) : null;
 
-  const openTool = (tool: RunnableTool) => setOpen({ tool, context: { modelId } });
-
-  return { commands, run, openTool, element };
+  return { commands, run, element };
 }

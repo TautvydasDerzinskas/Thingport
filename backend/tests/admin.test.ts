@@ -266,4 +266,38 @@ describe("admin storage usage", () => {
     expect(after.body.model_count).toBe(before.body.model_count + 1);
     expect(after.body.model_bytes).toBe(before.body.model_bytes + Buffer.byteLength(content));
   });
+
+  it("counts supporting files apart, within the models' bytes, and names a prepared print in the browser", async () => {
+    const before = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    const mesh = "solid supporting-usage endsolid";
+    const guide = "%PDF-1.4 supporting usage guide";
+    const sliced = "; sliced for storage usage\nG28\n";
+    const upload = await request(app)
+      .post("/api/upload")
+      .set(auth(memberToken))
+      .field("mode", "multiplate")
+      .attach("files", tmpFile("usage-split.stl", mesh))
+      .attach("files", tmpFile("usage-guide.pdf", guide))
+      .attach("files", tmpFile("usage-sliced.gcode", sliced));
+    expect(upload.status).toBe(200);
+
+    const after = await request(app).get("/api/admin/storage").set(auth(adminToken));
+    // The prepared print stays with the model files; only the guide is a supporting file.
+    expect(after.body.supporting_bytes).toBe(before.body.supporting_bytes + Buffer.byteLength(guide));
+    expect(after.body.model_bytes).toBe(
+      before.body.model_bytes + Buffer.byteLength(mesh) + Buffer.byteLength(guide) + Buffer.byteLength(sliced),
+    );
+
+    const files = await prisma.printFile.findMany({ where: { printId: upload.body.prints[0].id } });
+    const folder = path.dirname(files[0].storagePath).split(path.sep).join("/");
+    const browse = await request(app).get("/api/admin/storage/browse").query({ path: folder }).set(auth(adminToken));
+    const kinds = Object.fromEntries(
+      (browse.body.files as { name: string; kind: string }[]).map((file) => [file.name, file.kind]),
+    );
+    expect(kinds).toMatchObject({
+      "usage-split.stl": "plate",
+      "usage-guide.pdf": "file",
+      "usage-sliced.gcode": "prepared",
+    });
+  });
 });

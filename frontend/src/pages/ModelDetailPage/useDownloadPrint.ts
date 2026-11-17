@@ -4,8 +4,8 @@ import { UnauthorizedError } from "../../api/client";
 import { type Plate, type Print, printsApi } from "../../api/prints";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 
-/** A single-plate model downloads directly; multi-plate opens a picker. `recordUse` records an
- *  Open in {Slicer}. */
+/** A model with one file downloads it directly; one with more (plates or supporting files) opens a picker.
+ *  `recordUse` records an Open in {Slicer}. */
 export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
   const { t } = useTranslation(["models"]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -69,7 +69,8 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
 
   const handleDownload = () => {
-    if (print.plates.length <= 1) {
+    // A lone plate downloads as it is, unless there are supporting files to choose among too.
+    if (print.plates.length <= 1 && !print.supporting_file_count) {
       const plate = print.plates[0];
       if (plate) void downloadFile(plate);
       return;

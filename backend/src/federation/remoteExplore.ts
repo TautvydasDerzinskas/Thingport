@@ -401,6 +401,9 @@ export async function remoteModel(id: string, viewerId: string): Promise<RemoteM
       size: file.size,
       media_type: file.mediaType,
       url: file.url ? remoteFileRoute(row.id, file.url, file.name) : null,
+      // A supporting file is shown apart from the model's files; a partner too old to say leaves them all as files.
+      kind: file.kind ?? null,
+      role: file.role ?? null,
     })),
     updated_at: row.updatedAt?.toISOString() ?? null,
     owner_handle: row.person.username ? `${row.person.username}@${new URL(row.peer.origin).host}` : null,

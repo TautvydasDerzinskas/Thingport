@@ -1,0 +1,36 @@
+{
+  "name": "Filament shelf",
+  "description": "The household's filament spools on one shelf: everyone adds what they have, and each model's page shows which filaments it needs and who has them.",
+  "version": "1.0.0",
+  "author": "Thingport contributors",
+  "authorUrl": "https://github.com/TautvydasDerzinskas/Thingport",
+  "window": {
+    "width": 1100,
+    "height": 720
+  },
+  "hosts": [],
+  "category": "planners",
+  "locales": ["en", "lt", "es", "fr", "ru", "uk", "be", "zh"],
+  "modelPage": {
+    "tab": { "title": "Filaments" },
+    "image": true
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/shelf.webp",
+      "caption": "Opened on a model: the household's spools, whose each is and how much is left, and the model's three filaments, two already on the shelf and one still to get."
+    },
+    {
+      "file": "screenshots/material-dark.webp",
+      "caption": "In the dark theme, filtered to one material: every PLA spool in the house, with its brand, line and how much is left on it."
+    },
+    {
+      "file": "screenshots/card-menu.webp",
+      "caption": "Your own spools are yours to edit, mark used up or take off the shelf; everyone else's are theirs."
+    },
+    {
+      "file": "screenshots/add-needed-dark.webp",
+      "caption": "Adding what the model needs, in the dark theme: the form starts from the missing filament's material and colour."
+    }
+  ]
+}
