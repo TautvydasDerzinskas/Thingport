@@ -154,6 +154,7 @@ export async function extractZipEntriesToPrints(
     // A document can't be a model on its own: one per file makes models of what can be.
     if (!info || info.isDirectory || !UPLOADABLE_EXTS.has(path.extname(entryName).toLowerCase())) {
       failed.push(entryName);
+      onProgress?.(++processedCount, ordered.length, prints.length, failed.length);
       continue;
     }
     let tempPath: string | null = null;
@@ -369,6 +370,8 @@ export async function extractZipEntriesToFolderModels(
   const prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[] = [];
   const loose: string[] = [];
   const categoryCache: CategoryCache = new Map();
+  let total = 0;
+  let processed = 0;
   try {
     // A script holds no shape, so a folder of nothing but scripts is attached to the model above it, not one itself.
     const units = modelFolderUnits(
@@ -376,8 +379,8 @@ export async function extractZipEntriesToFolderModels(
       (entry) => entry.folder,
       (entry) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()),
     );
-    const total = units.filter((unit) => unit.kind === "model").length;
-    let processed = 0;
+    // Each model folder and each file on its own counts once, as the job reports them.
+    total = units.length;
     for (const unit of units) {
       if (unit.kind === "file") {
         loose.push(unit.item.name);
@@ -409,7 +412,10 @@ export async function extractZipEntriesToFolderModels(
     await Promise.all(entries.map((entry) => fs.rm(entry.tempPath, { force: true }).catch(() => undefined)));
   }
   if (loose.length) {
-    const rest = await extractZipEntriesToPrints(userId, zipPath, loose, options);
+    const [before, failedBefore] = [prints.length, failed.length];
+    const rest = await extractZipEntriesToPrints(userId, zipPath, loose, options, (done, _all, imported, failing) =>
+      onProgress?.(processed + done, total, before + imported, failedBefore + failing),
+    );
     prints.push(...rest.prints);
     failed.push(...rest.failed);
   }

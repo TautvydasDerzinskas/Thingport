@@ -455,7 +455,10 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
       previewImageUrl: meta.previewImageUrl,
       galleryImages: meta.galleryImages,
     };
+    // What the extractor counts in: models per folder, or files per file. It ends on that count too.
+    let units = body.entries.length;
     const onProgress = (processed: number, total: number, imported: number, failedSoFar: number) => {
+      units = total;
       progress.write({ processed, total, imported, failedCount: failedSoFar });
     };
     const { prints, failed } =
@@ -470,7 +473,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
     await updateJob(jobId, {
       status: "DONE",
       errorMessage: null,
-      processed: mode === "one" ? 1 : body.entries.length,
+      processed: mode === "one" ? 1 : units,
       imported: prints.length,
       failedCount: failed.length,
       resultPrintId: prints.length === 1 ? prints[0].id : null,
@@ -489,7 +492,7 @@ export async function runZipImportJob(jobId: string, userId: string, body: ZipIm
       title:
         mode === "one"
           ? `Imported ${prints[0]?.title || prints[0]?.name || filename} from ${filename}`
-          : `Imported ${prints.length} of ${body.entries.length} models from ${filename}`,
+          : `Imported ${prints.length} of ${units} models from ${filename}`,
       body: bodyParts.length ? `${bodyParts.join(", ")}.` : null,
       externalUrl: body.url,
       internalPath: null,
