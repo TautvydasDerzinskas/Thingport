@@ -112,6 +112,20 @@ export const grabcadImport: SourcedImport<GrabcadSession, GrabcadModelResolution
       await download(first, session, kit, downloaded);
       if (!downloaded.some((input) => kit.isModelFile(input.filename)))
         await download(fallback, session, kit, downloaded);
+      // Its documents and drawings, where the admin keeps any: never its renderings, which its gallery has, nor the
+      // part again in another CAD format. Each link counts a download on GrabCAD, and none fails the import.
+      const keeps = (await kit.supportingLimit()) !== null;
+      if (keeps && downloaded.some((input) => kit.isModelFile(input.filename))) {
+        const documents = files.filter(
+          (file) => file.system?.toLowerCase() !== "rendering" && kit.isDocumentFile(file.name),
+        );
+        for (const file of documents) {
+          const url = await resolveGrabcadFileUrl(file, session).catch(() => null);
+          if (!url) continue;
+          const inputs = await kit.downloadSupportingFile({ url, name: file.name }, isGrabcadFileHost);
+          downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+        }
+      }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw err;

@@ -1,3 +1,4 @@
+import { bytesFromSizeText } from "../../utils/sizeText";
 import * as cheerio from "cheerio";
 import { IMPORT_TIMEOUT_SECONDS } from "../../config";
 import { htmlToMarkdown } from "../../services/descriptionMarkdown";
@@ -263,6 +264,8 @@ export type ThreedexportFile = {
   label: string;
   /** The format's extension, without its dot, where the label names one. */
   ext: string | null;
+  /** Its zip's size in bytes, as the link says it beside the label. */
+  size?: number | null;
 };
 
 export type ThreedexportModelResolution = {
@@ -391,7 +394,7 @@ export function threedexportFilesFrom($: cheerio.CheerioAPI): ThreedexportFile[]
       const copy = $(el).clone();
       copy.find("b").remove();
       const label = clean(copy.text()) ?? "";
-      return [{ href, label, ext: extensionOf(label) }];
+      return [{ href, label, ext: extensionOf(label), size: bytesFromSizeText(clean($(el).find("b").text())) }];
     })
     .filter((file, index, all) => all.findIndex((other) => other.href === file.href) === index);
   const formats = formatNames($);
