@@ -119,8 +119,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   // Removals are tracked explicitly rather than diffed: a new upload's thumbnail may still be
   // generating, and a diff would delete it as soon as it appeared.
   const [removedImageIds, setRemovedImageIds] = useState<Set<string>>(new Set());
-  // The model's plates this dialog has deleted, so a retry after a later step fails doesn't ask again.
-  const removedPlateIds = useRef(new Set<string>());
+  // The model's plates removed here, until each is deleted: tracked rather than diffed against the model, which can
+  // gain a plate from another tab while the dialog is open, and that one isn't this dialog's to delete.
+  const [removedPlateIds, setRemovedPlateIds] = useState<Set<string>>(new Set());
   const [plateItems, setPlateItems] = useState<PlateItem[]>(() =>
     print.plates.map((p): PlateItem => ({
       kind: "existing",
@@ -283,7 +284,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
   const removePlateItem = (key: string) => {
-    setPlateItems((prev) => (prev.length <= 1 ? prev : prev.filter((p) => plateKey(p) !== key)));
+    if (plateItems.length <= 1) return;
+    const target = plateItems.find((p) => plateKey(p) === key);
+    if (target?.kind === "existing") setRemovedPlateIds((ids) => new Set(ids).add(target.id));
+    setPlateItems((prev) => prev.filter((p) => plateKey(p) !== key));
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
@@ -413,12 +417,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         plates = settle(plates);
         setPlateItems(settle);
       }
-      const keptPlateIds = new Set(plates.filter((p) => p.kind === "existing").map((p) => p.id));
-      for (const original of print.plates) {
-        if (keptPlateIds.has(original.id) || removedPlateIds.current.has(original.id)) continue;
-        const res = await printsApi.deletePlate(print.id, original.id);
+      for (const id of removedPlateIds) {
+        const res = await printsApi.deletePlate(print.id, id);
         latest = res.print ?? latest;
-        removedPlateIds.current.add(original.id);
+        setRemovedPlateIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
       // A file added in place of one of the same name got a " (2)" from it: named back now that one's gone.
       for (const p of plates) {
