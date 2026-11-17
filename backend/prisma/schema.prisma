@@ -935,8 +935,6 @@ model ToolSharedData {
   /// imported from ("src:<provider>:<id>"), the two ways a copy of it is recognised.
   originKey String?
   sourceKey String?
-  /// What the model's page shows for it: { label, tone, date }. Null for an entry the page doesn't show.
-  info      Json?
   updatedAt DateTime @updatedAt
 
   @@unique([toolId, userId, key])

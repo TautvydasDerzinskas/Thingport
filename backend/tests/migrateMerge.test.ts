@@ -394,7 +394,6 @@ describe("merging a working copy", () => {
         size: 10,
         printId: original,
         originKey: `orig:${original}`,
-        info: { label: "Queued" },
       },
     });
 

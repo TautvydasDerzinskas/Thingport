@@ -34,8 +34,8 @@ async function upload(person: Person, name: string): Promise<string> {
   return res.body.prints[0].id as string;
 }
 
-/** A queue tool as the repository would hold it: a command, and a part of the model page that offers it. */
-function writeRepo(modelInfo = true) {
+/** A queue tool as the repository would hold it: a command, and a part of the model page it draws. */
+function writeRepo() {
   fs.rmSync(repo, { recursive: true, force: true });
   fs.mkdirSync(path.join(repo, "queue"), { recursive: true });
   fs.writeFileSync(path.join(repo, "index.json"), JSON.stringify({ tools: ["queue"] }));
@@ -45,7 +45,7 @@ function writeRepo(modelInfo = true) {
       name: "Queue",
       author: "Tests",
       commands: [{ id: "queue", title: "Add to queue", window: false }],
-      ...(modelInfo ? { modelInfo: { title: "Print queue", command: "queue" } } : {}),
+      modelPage: { info: true },
     }),
   );
   fs.writeFileSync(path.join(repo, "queue", "tool.js"), SCRIPT);
@@ -67,8 +67,6 @@ const list = async (person: Person, query = "") =>
     mine: boolean;
     user: { id: string; display_name: string };
   }[];
-const modelInfo = async (person: Person, printId: string) =>
-  (await request(app).get(`/api/tools/model-info/${printId}`).set(auth(person.token))).body;
 
 beforeAll(async () => {
   admin = await register("admin");
@@ -175,7 +173,7 @@ describe("shared entries", () => {
     const dadsModel = await upload(dad, "crowd.stl");
     const sonsCopy = await upload(son, "crowd.stl");
     await prisma.print.update({ where: { id: sonsCopy }, data: { originalId: dadsModel, copiedFromId: dadsModel } });
-    expect((await share(son, "job:mine", { value: 1, model: sonsCopy, info: { label: "Queued" } })).status).toBe(204);
+    expect((await share(son, "job:mine", { value: 1, model: sonsCopy })).status).toBe(204);
     // More of the dad's, newer and kept from the son, than a read takes.
     await prisma.toolSharedData.createMany({
       data: Array.from({ length: 5000 }, (_, i) => ({
@@ -186,13 +184,12 @@ describe("shared entries", () => {
         size: 1,
         printId: dadsModel,
         originKey: `orig:${dadsModel}`,
-        info: { label: "Queued", tone: "waiting" },
         updatedAt: new Date(Date.now() + 60_000),
       })),
     });
     await request(app).put(`/api/tools/${toolId}/audience`).set(auth(dad.token)).send({ everyone: false });
     expect((await list(son)).map((entry) => entry.key)).toEqual(["job:mine"]);
-    expect((await modelInfo(son, sonsCopy)).tools[0].entries).toEqual([expect.objectContaining({ mine: true })]);
+    expect((await list(son, `?model=${sonsCopy}`)).map((entry) => entry.key)).toEqual(["job:mine"]);
   });
 
   it("are read on page by page from a cursor, none twice and none left out, even written in the same moment", async () => {
@@ -236,25 +233,17 @@ describe("shared entries", () => {
     expect(await prisma.toolSharedData.count({ where: { toolId, userId: dad.id } })).toBe(5000);
   });
 
-  it("are about a model the writer can read, and what a model's page shows needs one", async () => {
+  it("are about a model the writer can read", async () => {
     writeRepo();
     toolId = await install();
     const dadsModel = await upload(dad, "bracket.stl");
     expect((await share(son, "job:1", { value: {}, model: dadsModel })).status).toBe(404);
-    expect((await share(dad, "job:1", { value: {}, info: { label: "Queued" } })).status).toBe(400);
-    expect(
-      (await share(dad, "job:1", { value: {}, model: dadsModel, info: { label: "Queued", tone: "loud" } })).status,
-    ).toBe(400);
-    // A date the format allows, but with no end to its fraction of a second.
-    const longDate = `2026-11-16T00:00:00.${"0".repeat(100)}Z`;
-    expect(
-      (await share(dad, "job:1", { value: {}, model: dadsModel, info: { label: "Queued", date: longDate } })).status,
-    ).toBe(400);
+    expect((await share(dad, "job:1", { value: {}, model: dadsModel })).status).toBe(204);
   });
 });
 
-describe("a model's page", () => {
-  it("shows each person's latest entry about the model, and about any copy of it", async () => {
+describe("entries about a model", () => {
+  it("are found from the model and from any copy of it, as long as they reach the reader", async () => {
     writeRepo();
     toolId = await install();
     const dadsModel = await upload(dad, "bracket.stl");
@@ -269,80 +258,26 @@ describe("a model's page", () => {
         data: { sourceProvider: "printables", sourceExternalId: `9${stamp}` },
       });
 
-    await share(dad, "job:1", { value: { n: 1 }, model: dadsModel, info: { label: "status.queued", tone: "waiting" } });
-    await share(dad, "job:2", {
-      value: { n: 2 },
-      model: dadsModel,
-      info: { label: "status.printing", tone: "active", date: "2026-11-16T14:20:00Z" },
-    });
-    await share(dad, "job:3", { value: { n: 3 }, model: dadsImport, info: { label: "status.done", tone: "done" } });
-    // An entry with no info isn't shown, whatever model it's about.
+    await share(dad, "job:1", { value: { n: 1 }, model: dadsModel });
+    await share(dad, "job:2", { value: { n: 2 }, model: dadsModel });
+    await share(dad, "job:3", { value: { n: 3 }, model: dadsImport });
     await share(son, "note", { value: "x", model: sonsCopy });
 
-    const onCopy = await modelInfo(son, sonsCopy);
-    expect(onCopy.tools).toEqual([
-      {
-        tool_id: toolId,
-        entries: [
-          expect.objectContaining({
-            mine: false,
-            user: expect.objectContaining({ id: dad.id }),
-            info: { label: "status.printing", tone: "active", date: "2026-11-16T14:20:00Z" },
-          }),
-        ],
-      },
-    ]);
-    expect((await modelInfo(son, sonsImport)).tools[0].entries).toEqual([
-      expect.objectContaining({ info: { label: "status.done", tone: "done" } }),
-    ]);
-    // The son lists the dad's entries about his own copy, as a duplicate warning would.
     expect((await list(son, `?model=${sonsCopy}`)).map((entry) => entry.key).toSorted()).toEqual([
       "job:1",
       "job:2",
       "note",
     ]);
+    expect((await list(son, `?model=${sonsImport}`)).map((entry) => entry.key)).toEqual(["job:3"]);
 
-    // Kept from the son, the dad's entries leave his copy's page.
+    // Kept from the son, the dad's entries leave his copy's reads.
     await request(app).put(`/api/tools/${toolId}/audience`).set(auth(dad.token)).send({ everyone: false });
-    expect((await modelInfo(son, sonsCopy)).tools[0].entries).toEqual([]);
-    expect((await modelInfo(dad, dadsModel)).tools[0].entries).toHaveLength(1);
-  });
-
-  it("shows everyone's latest, however many more someone else wrote since", async () => {
-    writeRepo();
-    toolId = await install();
-    const dadsModel = await upload(dad, "many.stl");
-    const sonsCopy = await upload(son, "many.stl");
-    await prisma.print.update({ where: { id: sonsCopy }, data: { originalId: dadsModel, copiedFromId: dadsModel } });
-    expect((await share(son, "job:mine", { value: 1, model: sonsCopy, info: { label: "Queued" } })).status).toBe(204);
-    // More of the dad's, all newer, than a read takes.
-    await prisma.toolSharedData.createMany({
-      data: Array.from({ length: 5000 }, (_, i) => ({
-        toolId,
-        userId: dad.id,
-        key: `job:${i}`,
-        value: i,
-        size: 1,
-        printId: dadsModel,
-        originKey: `orig:${dadsModel}`,
-        info: { label: "Printing", tone: "active" },
-        updatedAt: new Date(Date.now() + 60_000 + i),
-      })),
-    });
-    const entries = (await modelInfo(son, sonsCopy)).tools[0].entries;
-    expect(entries.map((entry: { mine: boolean }) => entry.mine).toSorted()).toEqual([false, true]);
-  });
-
-  it("asks nothing of a library whose tools show nothing there", async () => {
-    const someModel = await upload(dad, "plain.stl");
-    expect(await modelInfo(dad, someModel)).toEqual({ tools: [] });
-    writeRepo(false);
-    toolId = await install();
-    expect(await modelInfo(dad, someModel)).toEqual({ tools: [] });
-    await setToolsAccess({ audience: "selected", userIds: [] });
-    writeRepo();
-    await request(app).delete("/api/admin/tools/queue").set(auth(admin.token));
-    toolId = await install();
-    expect(await modelInfo(son, await upload(son, "x.stl"))).toEqual({ tools: [] });
+    expect((await list(son, `?model=${sonsCopy}`)).map((entry) => entry.key)).toEqual(["note"]);
+    // The dad still reads his own, and the son's about his copy.
+    expect((await list(dad, `?model=${dadsModel}`)).map((entry) => entry.key).toSorted()).toEqual([
+      "job:1",
+      "job:2",
+      "note",
+    ]);
   });
 });

@@ -53,7 +53,7 @@ import { formatFileSize } from "../../utils/fileSize";
 import AuthorHoverCard from "../../components/AuthorHoverCard";
 import UserAvatar from "../../components/UserAvatar";
 import { useToolCommands } from "../../components/tools/useToolCommands";
-import ToolInfoParts from "../../components/tools/ToolInfoParts";
+import { ToolPart, useToolsWithPart } from "../../components/tools/ToolParts";
 import { useCopyToLibrary } from "./useCopyToLibrary";
 import { useSendTo } from "./useSendTo";
 import SendToButtons from "./SendToButtons";
@@ -126,9 +126,13 @@ type Props = {
   profileEntries?: ProfileEntry[] | null;
   /** How to show them: null while the setting loads, "off" as plain files. */
   profilesView?: PrintProfilesView | null;
+  /** Changes once the print profiles have filled in, for the tools' parts to be drawn again. */
+  partsRevision?: string;
   /** The file every action applies to, when the page keeps it (so the 3D preview opens on it too). */
   selectedKey?: string | null;
   onSelectKey?: (key: string) => void;
+  /** Told the plate picked here, the first profile's or file's until one is, for the page's tool parts. */
+  onPickedPlate?: (plateId: string | null) => void;
   /** Opens the 3D preview on one of a profile's build plates. */
   onPreviewPlate?: (key: string, plateIndex: number) => void;
 };
@@ -144,8 +148,10 @@ export default function ModelSidePanel({
   viewer,
   profileEntries,
   profilesView,
+  partsRevision,
   selectedKey: pageSelectedKey,
   onSelectKey,
+  onPickedPlate,
   onPreviewPlate,
 }: Props) {
   const { t, i18n } = useTranslation(["models", "common"]);
@@ -208,6 +214,13 @@ export default function ModelSidePanel({
     selectedFile ? { filename: selectedFile.filename, plateId: selectedFile.plate?.id ?? null } : null,
     onUnauthorized,
   );
+
+  const infoTools = useToolsWithPart("info");
+  // The page's other tool parts draw for the file picked here.
+  const pickedPlateId = selectedFile?.plate?.id ?? null;
+  useEffect(() => {
+    onPickedPlate?.(pickedPlateId);
+  }, [onPickedPlate, pickedPlateId]);
 
   // A 3D file of the model's own, while the instance has Studio on, opens there as a new design.
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -443,15 +456,19 @@ export default function ModelSidePanel({
             </Box>
           )}
 
-          {/* What the installed tools note about the model, such as who has it in their print queue; nothing without
-            such a tool. */}
-          <ToolInfoParts
-            printId={print.id}
-            commands={toolCommands.commands}
-            onCommand={toolCommands.run}
-            onOpenTool={toolCommands.openTool}
-            onUnauthorized={onUnauthorized}
-          />
+          {/* What the installed tools draw here about the model, such as who has it in their print queue; nothing
+            without such a tool. */}
+          {infoTools.map((tool) => (
+            <ToolPart
+              key={tool.id}
+              tool={tool}
+              place="info"
+              modelId={print.id}
+              fileId={selectedFile?.plate?.id ?? null}
+              revision={partsRevision}
+              onUnauthorized={onUnauthorized}
+            />
+          ))}
 
           {/* Why there is nothing to customise here, which otherwise looks like a model that never had a script.
             A model that does have one needs no chip: it leads with Customize. */}

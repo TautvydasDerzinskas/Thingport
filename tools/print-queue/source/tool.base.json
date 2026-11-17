@@ -19,8 +19,7 @@
       "window": false
     }
   ],
-  "modelInfo": {
-    "title": "Print queue",
-    "command": "queue"
+  "modelPage": {
+    "info": true
   }
 }

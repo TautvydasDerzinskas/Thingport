@@ -4090,7 +4090,10 @@
         "failed": "{{name}} se detuvo con un error",
         "noExport": "El script no tiene una exportación por defecto a la que llamar",
         "noRun": "El script no tiene una exportación run para un comando sin ventana",
-        "commandFailed": "{{name}} no pudo hacerlo: {{error}}"
+        "commandFailed": "{{name}} no pudo hacerlo: {{error}}",
+        "noPartExport": "El script no tiene un export {{name}} que dibuje esta parte",
+        "partFailed": "{{name}} no pudo mostrar esto",
+        "noPopover": "Un comando sin ventana no puede abrir una ventana emergente"
       },
       "share": {
         "title": "¿Quién ve tu {{name}}?",
@@ -4102,10 +4105,6 @@
         "picked_other": "Compartido con {{count}} personas",
         "onlyYou": "Aún no has elegido a nadie, así que solo lo ves tú.",
         "loadFailed": "No se pudo leer a quién llega, así que aún no se puede cambiar."
-      },
-      "info": {
-        "you": "Tú",
-        "someone": "Alguien"
       },
       "picker": {
         "title": "Elige una colección",

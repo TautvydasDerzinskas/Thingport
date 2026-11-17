@@ -4198,7 +4198,10 @@
         "failed": "{{name}} sustojo dėl klaidos",
         "noExport": "Scenarijus neturi numatytojo eksporto, kurį būtų galima iškviesti",
         "noRun": "Scenarijus neturi run eksporto komandai be lango",
-        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}"
+        "commandFailed": "{{name}} nepavyko to atlikti: {{error}}",
+        "noPartExport": "Scenarijus neturi {{name}} eksporto, kuris nupieštų šią dalį",
+        "partFailed": "{{name}} nepavyko to parodyti",
+        "noPopover": "Komanda be lango negali atidaryti iškylančiojo lango"
       },
       "share": {
         "title": "Kas mato jūsų „{{name}}“?",
@@ -4211,10 +4214,6 @@
         "picked_other": "Bendrinama su {{count}} žmonių",
         "onlyYou": "Dar nieko nepasirinkote, todėl matote tik jūs.",
         "loadFailed": "Nepavyko perskaityti, kas tai mato, todėl kol kas negalima to pakeisti."
-      },
-      "info": {
-        "you": "Jūs",
-        "someone": "Kažkas"
       },
       "picker": {
         "title": "Pasirinkite kolekciją",

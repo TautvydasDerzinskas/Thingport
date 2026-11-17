@@ -82,12 +82,44 @@ export interface SdkModel {
 /** One of a model's 3D files. */
 export interface SdkModelFile {
   id: string;
-  /** Its file name, with the extension. */
+  /** Its file name, with the extension: unique within its folder, not the whole model. */
   name: string;
+  /** The folder of the model it's in, levels joined by "/" ("USB C version/Handles"); null at the top. A copy of the
+   *  model keeps it, as it does the name. */
+  folder: string | null;
   /** In bytes. */
   size: number;
   /** An address it can be read from as the user, e.g. by `fetch`. */
   url: string;
+  /** The print profile this file is, where it's one: as Thingport read it from the provider's page and the 3MF, so it
+   *  costs no request to the provider. Null for a file that isn't a profile, or one not read yet. */
+  profile: SdkPrintProfile | null;
+}
+
+/** A print profile, as a model's page shows it. */
+export interface SdkPrintProfile {
+  /** The provider's id for it, the same in every copy of the model; null for a file whose own 3MF names the filaments. */
+  id: string | null;
+  /** Its title, as the provider or the 3MF names it. */
+  name: string | null;
+  /** The printer it's set up for ("Bambu Lab P1S"). */
+  printer: string | null;
+  /** Each filament it prints with, once, in the order the slicer has them. */
+  filaments: SdkFilament[];
+  /** Its build plates, numbered from 1, with the filaments each uses. */
+  plates: { index: number; name: string | null; filaments: SdkFilament[] }[];
+}
+
+/** A filament a print profile uses. Unknown facts are null. */
+export interface SdkFilament {
+  /** The material, as the profile names it: "PLA", "PETG-CF". */
+  type: string | null;
+  /** "#RRGGBB". */
+  color: string | null;
+  /** How much the profile, or the plate, uses. */
+  grams: number | null;
+  /** Who makes it, where the profile says ("Bambu Lab"). */
+  brand: string | null;
 }
 
 /** A file kept beside a model rather than being one of its plates: a generator script, a readme, a diagram. */
@@ -679,7 +711,7 @@ export interface SdkUi {
   openModel(id: string): void;
 }
 
-/** A tool's `ui`, which can also pick a collection and close the window. */
+/** A tool's `ui`, which can also pick a collection, close the window, and work with a model's page. */
 export interface ToolUi extends SdkUi {
   /**
    * The same dialog as `collections.pick`.
@@ -688,8 +720,39 @@ export interface ToolUi extends SdkUi {
    * @returns The collection, or `null` when the user cancels.
    */
   pickCollection(options?: { title?: string }): Promise<SdkCollection | null>;
-  /** Closes the tool's window, as `close()` does. */
+  /** Closes the tool's window, as `close()` does. In a part of a model's page it does nothing. */
   close(): void;
+  /**
+   * Opens Thingport's popover beside an element of the tool's, with an empty element for the tool to draw into, the
+   * theme on it as CSS variables. It closes on a click outside it, on Escape, or with `close()`, and `draw`'s
+   * returned function runs then.
+   *
+   * @param anchor The element it opens beside, such as the button that opened it.
+   * @param draw Draws the popover's content into `root`; may return a cleanup.
+   * @param options `placement`: which side of `anchor`, `"bottom"` when left out. `width`: in pixels, 320 when left
+   * out.
+   * @returns Closes it.
+   * @example
+   * button.onclick = () => thingport.ui.popover(button, (root) => { root.textContent = "Hi"; });
+   */
+  popover(
+    anchor: Element,
+    draw: (root: HTMLElement) => void | (() => void),
+    options?: { placement?: "bottom" | "top" | "left" | "right"; width?: number },
+  ): { close(): void };
+  /**
+   * On a model's page, shows the tool's tab in the description box and scrolls to it. Does nothing where the tool has
+   * no tab, or off a model's page.
+   */
+  showTab(): void;
+  /**
+   * On a model's page, picks one of the model's files, as picking it in the side panel does, so every part follows it.
+   *
+   * @param fileId One of the model's `files`.
+   */
+  selectFile(fileId: string): void;
+  /** Opens the tool's own window, on the model when there is one. */
+  openWindow(): void;
 }
 
 /** JSON kept for this user and this tool. */
@@ -734,19 +797,6 @@ export interface SdkPerson {
   avatarUrl: string | null;
 }
 
-/**
- * What a model's page shows for a shared entry, in the part the tool's `modelInfo` metadata asks for: one chip per
- * person, from their latest entry about the model or any copy of it.
- */
-export interface SdkModelInfo {
-  /** One of the tool's label keys, so each reader sees it in their language, or plain words. Up to 60 characters. */
-  label: string;
-  /** Colours the chip's dot: "waiting", "active", "done", "failed", or "neutral" when left out. */
-  tone?: "waiting" | "active" | "done" | "failed" | "neutral";
-  /** When, as an ISO date, shown beside the label. */
-  date?: string;
-}
-
 /** One of the entries the tool's users share, as the reader sees it. */
 export interface SdkSharedEntry {
   key: string;
@@ -757,7 +807,6 @@ export interface SdkSharedEntry {
   mine: boolean;
   /** The model it's about, as its writer has it: another user's id may not be one the reader can open. */
   modelId: string | null;
-  info: SdkModelInfo | null;
   updatedAt: string;
   /** Where it is in the order a read gives: `before` in the next read, for the entries after it. */
   cursor: string;
@@ -800,12 +849,12 @@ export interface SdkShared {
    *
    * @param key 1 to 200 letters, digits, `.`, `-`, `:` and `_`, but not `.` or `..` alone.
    * @param value Anything JSON can hold.
-   * @param options `model`: the model it's about, one the user can open. `info`: what that model's page shows for it,
-   * when the tool's metadata has a `modelInfo` part.
+   * @param options `model`: the model it's about, one the user can open, so `list({ model })` finds it from that model
+   * or any copy of it.
    * @example
-   * await thingport.shared.set(`job:${id}`, job, { model: modelId, info: { label: "status.queued", tone: "waiting" } });
+   * await thingport.shared.set(`job:${id}`, job, { model: modelId });
    */
-  set(key: string, value: unknown, options?: { model?: string; info?: SdkModelInfo }): Promise<void>;
+  set(key: string, value: unknown, options?: { model?: string }): Promise<void>;
   /**
    * Removes one of the user's entries.
    *
@@ -823,6 +872,15 @@ export interface SdkShared {
    * @returns What they chose, or `null` when they closed it.
    */
   share(): Promise<SdkAudience | null>;
+  /**
+   * Calls `listener` when this tool's shared entries are changed on this page: by its window, a command, or one of its
+   * parts of a model's page. A part uses it to show the change at once.
+   *
+   * @returns A function that stops it.
+   * @example
+   * const stop = thingport.shared.onChange(() => void draw());
+   */
+  onChange(listener: () => void): () => void;
 }
 
 // --- The object itself -----------------------------------------------------------------------------------------------
@@ -1086,16 +1144,25 @@ export interface ToolSdk extends SdkBase {
    */
   tool: { id: string | null; slug: string; name: string; version: string; source: "repo" | "own" };
   /**
+   * Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and
+   * picture before they've shared anything. Null only where nobody is signed in.
+   *
+   * @group Tool only
+   */
+  user: SdkPerson | null;
+  /**
    * What the tool was opened on, empty when it's opened from the Tools page. When one of its `commands` was picked on a
    * model's page, `command` is that command's id and `modelId` the model; a command `on: "file"` also gets `fileId`,
    * the file picked there, one of the model's `files`. A command with `window: false` gets the same, in its `run`.
+   * A part of a model's page (`modelPage` in the metadata) gets `modelId`, `fileId`, the file picked on the page, and
+   * `place`: `"info"`, `"tab"` or `"image"`. The part is drawn again when another file is picked.
    *
    * @group Tool only
    * @example
    * const { command, modelId, fileId } = thingport.context;
    * if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
    */
-  context: { modelId?: string; fileId?: string; command?: string };
+  context: { modelId?: string; fileId?: string; command?: string; place?: "info" | "tab" | "image" };
   /**
    * JSON kept for this user and this tool, so the window opens where they left it. In the editor's preview of a tool
    * not saved yet, it lasts only as long as the preview.

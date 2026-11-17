@@ -170,14 +170,16 @@ export const toolManifestSchema = z.object({
       message: "Two commands share an id",
     }),
   /**
-   * A part of every model's page, titled `title`, showing what the tool's users noted about the model: one chip per
-   * person, from the shared entries they tied to it (`thingport.shared.set` with `info`). `command`, one of its
-   * commands, is offered there as a chip of its own.
+   * Parts of every model's page the tool draws itself, each into an element of its own with the `thingport` its window
+   * gets: `info`, in the info box beside the picture; `tab`, a tab of the description box titled `tab.title`;
+   * `image`, the top right corner of the model's picture. Each is drawn by the script's export of that name:
+   * `modelInfo`, `modelTab`, `modelImage`.
    */
-  modelInfo: z
+  modelPage: z
     .object({
-      title: z.string().trim().min(1).max(40),
-      command: z.string().trim().regex(COMMAND_ID, "Not a command id").optional(),
+      info: z.boolean().default(false),
+      tab: z.object({ title: z.string().trim().min(1).max(40) }).optional(),
+      image: z.boolean().default(false),
     })
     .optional(),
 });
@@ -197,9 +199,6 @@ export function parseToolManifest(text: string): ToolManifest {
 export function validateToolManifest(raw: unknown): ToolManifest {
   const parsed = toolManifestSchema.safeParse(raw);
   if (!parsed.success) throw new HttpError(400, `The metadata isn't right: ${describeIssues(parsed.error)}`);
-  const offered = parsed.data.modelInfo?.command;
-  if (offered && !parsed.data.commands.some((command) => command.id === offered))
-    throw new HttpError(400, `The metadata isn't right: modelInfo.command "${offered}" isn't one of its commands`);
   return parsed.data;
 }
 
