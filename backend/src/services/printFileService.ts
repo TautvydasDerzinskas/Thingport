@@ -389,16 +389,19 @@ export function batchFileSaver(userId: string, printId: string) {
 }
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
- *  keeps the rest. Deleting a prepared print's row empties the model's prepared slot (Print.preparedFile is SetNull). */
+ *  keeps the rest. Deleting a prepared print's row empties the model's prepared slot (Print.preparedFile is SetNull).
+ *  A file that can't be checked stops it with the error before any row goes (printFileOnDisk). */
 export function removeMissingPrintFiles(printId: string): Promise<void> {
   // Under the storage lock, rows read inside it: a move (the model renamed meanwhile) renames a file before it saves
   // the new path, both under the lock, so a path read outside it could be one the file has just left.
   return withStorageLock(async () => {
     const rows = await prisma.printFile.findMany({ where: { printId } });
-    // A file still being saved isn't placed yet, which isn't the same as gone.
-    const gone = rows.filter(
-      (row) => row.storagePath !== PENDING_STORAGE_PATH && !savesUnderWay.has(row.id) && !printFileOnDisk(row),
-    );
+    const gone: PrintFile[] = [];
+    for (const row of rows) {
+      // A file still being saved isn't placed yet, which isn't the same as gone.
+      if (row.storagePath === PENDING_STORAGE_PATH || savesUnderWay.has(row.id)) continue;
+      if (!(await printFileOnDisk(row))) gone.push(row);
+    }
     if (!gone.length) return;
     await prisma.printFile.deleteMany({ where: { id: { in: gone.map((row) => row.id) } } });
     for (const row of gone) {
@@ -417,9 +420,18 @@ function printFilePathOrNull(row: Pick<PrintFile, "storagePath">): string | null
   }
 }
 
-function printFileOnDisk(row: Pick<PrintFile, "storagePath">): boolean {
+/** Absent, rather than unreadable: a flaky or unmounted volume answers EIO or EACCES for a file that is there, and
+ *  taking that for gone would drop its row. Those throw instead, as missingFilesService's check does. */
+async function printFileOnDisk(row: Pick<PrintFile, "storagePath">): Promise<boolean> {
   const where = printFilePathOrNull(row);
-  return where !== null && fsSync.existsSync(where);
+  if (where === null) return false;
+  return fs.access(where).then(
+    () => true,
+    (err: NodeJS.ErrnoException) => {
+      if (err?.code === "ENOENT" || err?.code === "ENOTDIR") return false;
+      throw err;
+    },
+  );
 }
 
 export async function deleteSupportingFile(userId: string, printId: string, fileId: string): Promise<Print> {
