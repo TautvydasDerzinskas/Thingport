@@ -379,8 +379,11 @@ export async function extractZipEntriesToFolderModels(
       (entry) => entry.folder,
       (entry) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()),
     );
-    // Each model folder and each file on its own counts once, as the job reports them.
-    total = units.length;
+    // Each model folder and each file on its own counts once, as the job reports them, and so does each picked file
+    // that couldn't be read, which is done with already.
+    total = units.length + failed.length;
+    processed = failed.length;
+    if (processed) onProgress?.(processed, total, 0, failed.length);
     for (const unit of units) {
       if (unit.kind === "file") {
         loose.push(unit.item.name);
