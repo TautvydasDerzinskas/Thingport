@@ -2,6 +2,7 @@ import { collectionsApi, type Collection } from "../api/collections";
 import { printsApi, type Print } from "../api/prints";
 import { searchApi } from "../api/search";
 import type { SdkCollection, SdkCollections, SdkFileInput, SdkModel, SdkModels, SdkRelatedFile } from "./types";
+import { sortAddedFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
@@ -134,8 +135,13 @@ export function buildUserLibrary({
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
       return toModel(print);
     },
-    addFiles: async (id: string, files: SdkFileInput[]) =>
-      toModel((await printsApi.addPlates(id, files.map(toFile))).print),
+    addFiles: async (id: string, files: SdkFileInput[]) => {
+      // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
+      const { model, supporting } = sortAddedFiles(files.map(toFile), "model");
+      let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
+      for (const file of supporting) print = (await printsApi.uploadFile(id, file)).print;
+      return toModel(print ?? (await printsApi.get(id)));
+    },
     addImages: async (id: string, images: SdkFileInput[]) =>
       toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),
     replaceFile: async (id: string, fileId: string, file: SdkFileInput) => {

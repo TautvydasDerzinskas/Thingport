@@ -123,8 +123,17 @@ export type RemoteModel = RemoteModelCard & {
   description: string | null;
   images: string[];
   /** `url` is API-relative, through this instance; null when the partner gave no address for the file. */
-  /** `folder` as Plate.folder, from a partner new enough to say. */
-  files: { name: string; folder?: string | null; size: number | null; media_type: string | null; url: string | null }[];
+  /** `folder` as Plate.folder, from a partner new enough to say. `kind` "file" with a `role` of "SUPPORTING" is a
+   *  supporting file, shown apart from the model's files; null from a partner too old to say. */
+  files: {
+    name: string;
+    folder?: string | null;
+    size: number | null;
+    media_type: string | null;
+    url: string | null;
+    kind?: "plate" | "file" | null;
+    role?: "SUPPORTING" | "PREPARED" | null;
+  }[];
   updated_at: string | null;
   owner_handle: string | null;
   collections: { id: string; name: string }[];

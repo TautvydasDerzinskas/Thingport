@@ -38,6 +38,8 @@ import Skeleton from "@mui/material/Skeleton";
 import { useQualityCheck } from "./QualityCheck/useQualityCheck";
 import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
 import QualityBadge from "./QualityCheck/QualityBadge";
+import SupportingFiles from "../../components/supportingFiles/SupportingFiles";
+import { useSupportingFiles } from "../../components/supportingFiles/useSupportingFiles";
 import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
 import { profileEntries } from "./PrintProfiles/entries";
@@ -82,6 +84,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     (updated: Print) => setPrint((prev) => (prev && prev.id !== updated.id ? prev : updated)),
     [],
   );
+  // Here rather than in the attachments, so the header's "Add supporting files" shows its uploads among them.
+  const supporting = useSupportingFiles(printId, updatePrint, onUnauthorized);
 
   // An older import's licence is read the first time its owner opens it, and lands here once it's there.
   const licenseFill = useLicenseFill(
@@ -116,6 +120,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onCollectionCountChange={setCollectionCount}
           viewer={viewer}
           offerLink
+          onAddSupportingFiles={supporting.pick}
         />
       </Stack>
     ) : undefined,
@@ -409,6 +414,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               ))}
             </Stack>
           )}
+
+          <SupportingFiles print={print} actions={supporting} canEdit={!print.owner && !print.tool_id} />
 
           {needsGeneratedPreview && firstPlate && (
             <Box

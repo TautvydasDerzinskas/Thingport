@@ -158,6 +158,9 @@ export type Print = {
   render_url?: string | null; // the first plate's render_url that isn't null
   own_colors?: boolean; // any plate carries colours of its own
   supporting_file_count: number;
+  /** From the detail fetch: the files kept beside it that aren't plates (instructions, notes, sources), by name.
+   *  Absent from list endpoints, which give only the count. */
+  supporting_files?: PrintFile[];
   /** The scripts it can be generated again from, out of the files kept beside it; empty for an ordinary model. */
   generator_scripts?: { id: string; filename: string; folder?: string | null }[];
   /** The source had a script for it but its creator chose not to share it: there is none to open, and that is
@@ -638,7 +641,13 @@ export const printsApi = {
     return res.text();
   },
 
-  uploadFile: async (id: string, file: File): Promise<Print> => {
+  /** A supporting file's address for the browser. `inline` shows a PDF, text or picture in it rather than downloading;
+   *  any other type still downloads. */
+  supportingFileUrl: (file: Pick<PrintFile, "url">, inline = false): string =>
+    printsApi.fileUrl(inline ? `${file.url}?inline=1` : file.url),
+
+  /** Keeps a file beside the model, as a supporting file (a sliced print becomes its prepared print). */
+  uploadFile: async (id: string, file: File): Promise<{ print: Print }> => {
     const body = new FormData();
     body.set("file", file, file.name);
     const res = await fetch(`${apiBase()}/print/${id}/files`, {
@@ -653,7 +662,18 @@ export const printsApi = {
     return res.json();
   },
 
-  deleteFile: async (printId: string, fileId: string): Promise<Print> => {
+  renameFile: async (printId: string, fileId: string, filename: string): Promise<{ print: Print }> => {
+    const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, {
+      method: "PATCH",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ filename }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to rename the file"));
+    return res.json();
+  },
+
+  deleteFile: async (printId: string, fileId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/files/${fileId}`, {
       method: "DELETE",
       headers: authHeaders(),
@@ -662,7 +682,7 @@ export const printsApi = {
     return res.json();
   },
 
-  deletePreparedPrint: async (printId: string): Promise<Print> => {
+  deletePreparedPrint: async (printId: string): Promise<{ print: Print }> => {
     const res = await fetch(`${apiBase()}/print/${printId}/prepared-print`, {
       method: "DELETE",
       headers: authHeaders(),

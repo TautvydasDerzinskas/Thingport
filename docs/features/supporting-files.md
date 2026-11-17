@@ -11,9 +11,22 @@ A model is more than its STL. Thingport keeps everything you need to print it in
 - **The script it was generated from:** where a model was published with its OpenSCAD source, that comes in too,
   so the model can be generated again rather than only printed as its creator set it up.
 
-Add supporting files or a prepared print from the model page. When you
-[upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and its manuals
-and notes are attached automatically.
+## Supporting files
+
+A model's supporting files sit under its pictures, like attachments on an email: each shows its type, name and size,
+with a download button beside it. Click one to open it in the viewer, where a PDF opens in your browser's own PDF
+viewer, text and Markdown show as text, a CSV shows as a table and a picture as itself. Anything else, such as a
+Fusion 360 source, offers a download instead. Right-click a file, or use the **⋮** in the viewer, to open it in a new
+tab, download it or copy a link to it.
+
+To add them, drop files onto the attachments, use **Add supporting files** in the model's **⋮** menu, or open
+**Edit**. Edit model lists them under the model files, where you can add, rename and remove them. A document added
+among the model files goes to the supporting files, and a 3D file added among the supporting files goes to the model
+files. A sliced file added this way becomes the prepared print.
+
+Supporting files come with the model's downloads, in a `supporting` folder inside the zip, and with copies others make
+of it. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
+its manuals and notes are attached automatically.
 
 ## Models you can generate again
 

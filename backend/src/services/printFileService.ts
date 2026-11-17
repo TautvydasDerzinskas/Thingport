@@ -7,7 +7,7 @@ import { withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
-import { pruneEmptyStorageDirs, renderPrintFileStoragePath } from "./printService";
+import { pruneEmptyStorageDirs, relocatePrint, renderPrintFileStoragePath } from "./printService";
 import { reuseMarker, shareStoredCopy } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
 import type { Prisma, Print, PrintFile } from "@prisma/client";
@@ -269,6 +269,77 @@ export async function saveFileFromTemp(
     await prisma.printFile.delete({ where: { id: record.id } }).catch(() => undefined);
     throw err;
   }
+}
+
+// What a supporting file may be shown as in the browser rather than downloaded. Never HTML or SVG: the instance's own
+// origin would run their scripts. Text-like files are all sent as plain text, so nothing in them is interpreted.
+const INLINE_TYPES: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".bmp": "image/bmp",
+};
+const TEXT_EXTS = new Set([
+  ".txt",
+  ".md",
+  ".markdown",
+  ".csv",
+  ".tsv",
+  ".scad",
+  ".log",
+  ".nfo",
+  ".ini",
+  ".cfg",
+  ".conf",
+  ".json",
+  ".yaml",
+  ".yml",
+]);
+
+/** The Content-Type a supporting file is shown inline with, or null for one that's only ever downloaded. */
+export function inlineContentType(filename: string): string | null {
+  const ext = path.extname(filename).toLowerCase();
+  if (TEXT_EXTS.has(ext)) return "text/plain; charset=utf-8";
+  return INLINE_TYPES[ext] ?? null;
+}
+
+/** Renames one of a model's supporting files, and moves it to match. A name another supporting file in the same folder
+ *  has gets a number, as a second upload of it would; a name with no extension keeps the one it had. */
+export async function renameSupportingFile(
+  userId: string,
+  printId: string,
+  fileId: string,
+  filename: string,
+): Promise<void> {
+  const print = await prisma.print.findFirst({ where: { id: printId, userId } });
+  if (!print) throw new HttpError(404, "Print not found");
+  const record = await prisma.printFile.findUnique({ where: { id: fileId } });
+  if (!record || record.printId !== printId || record.role !== "SUPPORTING") {
+    throw new HttpError(404, "Supporting file not found");
+  }
+  let wanted = sanitizeFilename(filename.trim());
+  if (!wanted) throw new HttpError(400, "A file needs a name");
+  if (!path.extname(wanted)) wanted += path.extname(record.filename);
+  if (wanted === record.filename) return;
+
+  const taken = new Set(
+    (
+      await prisma.printFile.findMany({
+        where: { printId, role: "SUPPORTING", folder: record.folder, id: { not: record.id } },
+        select: { filename: true },
+      })
+    ).map((file) => file.filename.toLowerCase()),
+  );
+  const { name, ext } = path.parse(wanted);
+  let next = wanted;
+  for (let n = 2; taken.has(next.toLowerCase()); n++) next = `${name} (${n})${ext}`;
+
+  await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
+  // The file follows its name, as a plate's does.
+  await relocatePrint(print, []);
 }
 
 export async function deleteSupportingFile(userId: string, printId: string, fileId: string): Promise<Print> {

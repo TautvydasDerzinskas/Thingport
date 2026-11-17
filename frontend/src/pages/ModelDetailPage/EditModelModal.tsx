@@ -18,6 +18,8 @@ import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
+import Skeleton from "@mui/material/Skeleton";
+import { alpha, keyframes } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -29,7 +31,8 @@ import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { type LicenseFamily, type LicenseOption, type Print, printsApi } from "../../api/prints";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { type LicenseFamily, type LicenseOption, type Print, type PrintFile, printsApi } from "../../api/prints";
 import { printProviderInfo } from "../../constants/importProviders";
 import LicenseMarks from "../../components/license/LicenseMarks";
 import { categoriesApi, type Category } from "../../api/categories";
@@ -43,6 +46,12 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
+import { sortAddedFiles } from "../../utils/addedFiles";
+import { formatFileSize } from "../../utils/fileSize";
+import HelpTip from "../../components/HelpTip";
+import RenameDialog from "../../components/RenameDialog";
+import TypeTile from "../../components/supportingFiles/TypeTile";
+import SupportingFileMenu, { type FileMenuAnchor } from "../../components/supportingFiles/SupportingFileMenu";
 
 type ImageItem =
   { kind: "existing"; id: string; url: string } | { kind: "new"; localId: string; file: File; previewUrl: string };
@@ -50,6 +59,17 @@ type ImageItem =
 type PlateItem =
   | { kind: "existing"; id: string; filename: string; folder: string | null }
   | { kind: "new"; localId: string; file: File };
+
+type SupportingItem =
+  { kind: "existing"; file: PrintFile; renamedTo: string | null } | { kind: "new"; localId: string; file: File };
+
+const supportingKey = (item: SupportingItem) => (item.kind === "existing" ? item.file.id : item.localId);
+const supportingName = (item: SupportingItem) =>
+  item.kind === "existing" ? (item.renamedTo ?? item.file.filename) : item.file.name;
+const existingItem = (file: PrintFile): SupportingItem => ({ kind: "existing", file, renamedTo: null });
+
+// A file that just landed in the list, from either Add files, is lit up for a moment so it's seen where it went.
+const landed = keyframes`from { background-color: var(--landed); } to { background-color: transparent; }`;
 
 function imageKey(img: ImageItem): string {
   return img.kind === "existing" ? img.id : img.localId;
@@ -115,9 +135,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // A model opened from a card has only their count, so its supporting files are read here.
+  const [supportingItems, setSupportingItems] = useState<SupportingItem[]>(() =>
+    (print.supporting_files ?? []).map(existingItem),
+  );
+  const [supportingLoading, setSupportingLoading] = useState(
+    !print.supporting_files && print.supporting_file_count > 0,
+  );
+  const [removedSupportingIds, setRemovedSupportingIds] = useState<Set<string>>(new Set());
+  const [supportingMenu, setSupportingMenu] = useState<{ key: string; anchor: FileMenuAnchor } | null>(null);
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
+
   const createdUrlsRef = useRef<string[]>([]);
   const addImageInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
+  const addSupportingInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     categoriesApi
@@ -129,6 +161,24 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       .then(setLicenses)
       .catch(() => setLicenses([]));
   }, []);
+
+  useEffect(() => {
+    if (print.supporting_files || !print.supporting_file_count) return;
+    let active = true;
+    printsApi
+      .listFiles(print.id)
+      .then((files) => {
+        // Before any added while they were read.
+        if (active) setSupportingItems((current) => [...files.map(existingItem), ...current]);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setSupportingLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [print.id, print.supporting_files, print.supporting_file_count]);
 
   const markDirty = () => setDirty(true);
 
@@ -182,14 +232,38 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
 
-  const onAddFiles = (fileList: FileList | null) => {
+  const onAddFiles = (fileList: FileList | null, addedTo: "model" | "supporting") => {
     if (!fileList?.length) return;
-    const newItems: PlateItem[] = Array.from(fileList).map((file) => ({
-      kind: "new",
-      localId: newLocalId(),
-      file,
-    }));
-    setPlateItems((prev) => [...prev, ...newItems]);
+    const { model, supporting } = sortAddedFiles(Array.from(fileList), addedTo);
+    if (model.length) {
+      setPlateItems((prev) => [
+        ...prev,
+        ...model.map((file): PlateItem => ({ kind: "new", localId: newLocalId(), file })),
+      ]);
+    }
+    if (supporting.length) {
+      setSupportingItems((prev) => [
+        ...prev,
+        ...supporting.map((file): SupportingItem => ({ kind: "new", localId: newLocalId(), file })),
+      ]);
+    }
+    markDirty();
+  };
+  const removeSupportingItem = (key: string) => {
+    const target = supportingItems.find((item) => supportingKey(item) === key);
+    if (target?.kind === "existing") setRemovedSupportingIds((ids) => new Set(ids).add(target.file.id));
+    setSupportingItems((prev) => prev.filter((item) => supportingKey(item) !== key));
+    markDirty();
+  };
+  const renameSupportingItem = (key: string, name: string) => {
+    setSupportingItems((prev) =>
+      prev.map((item) => {
+        if (supportingKey(item) !== key) return item;
+        if (item.kind === "existing") return { ...item, renamedTo: name === item.file.filename ? null : name };
+        // A file still to upload is uploaded under its new name.
+        return { ...item, file: new File([item.file], name, { type: item.file.type }) };
+      }),
+    );
     markDirty();
   };
   const removePlateItem = (key: string) => {
@@ -303,6 +377,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
         const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
         latest = reorderRes.print ?? latest;
+      }
+
+      for (const id of removedSupportingIds) {
+        const res = await printsApi.deleteFile(print.id, id);
+        latest = res.print ?? latest;
+      }
+      for (const item of supportingItems) {
+        if (item.kind !== "existing" || !item.renamedTo) continue;
+        const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo);
+        latest = res.print ?? latest;
+      }
+      for (const item of supportingItems) {
+        if (item.kind !== "new") continue;
+        const res = await printsApi.uploadFile(print.id, item.file);
+        latest = res.print ?? latest;
       }
 
       onUpdated(latest);
@@ -669,11 +758,125 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 multiple
                 hidden
                 onChange={(e) => {
-                  onAddFiles(e.target.files);
+                  onAddFiles(e.target.files, "model");
                   e.target.value = "";
                 }}
               />
             </Stack>
+          </Box>
+
+          <Box>
+            <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="subtitle2">{t("models:supporting.title")}</Typography>
+              <HelpTip text={t("models:supporting.editHelp")} />
+            </Stack>
+            <Stack spacing={1}>
+              {supportingLoading && <Skeleton variant="rounded" height={38} />}
+              {!supportingLoading && !supportingItems.length && (
+                <Typography variant="body2" color="text.secondary">
+                  {t("models:supporting.editEmpty")}
+                </Typography>
+              )}
+              {supportingItems.map((item) => {
+                const key = supportingKey(item);
+                const name = supportingName(item);
+                const openMenu = (anchor: FileMenuAnchor) => setSupportingMenu({ key, anchor });
+                return (
+                  <Stack
+                    key={key}
+                    direction="row"
+                    alignItems="center"
+                    spacing={1.25}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      openMenu({ top: event.clientY, left: event.clientX });
+                    }}
+                    sx={(theme) => ({
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      pl: 0.75,
+                      pr: 0.5,
+                      py: 0.5,
+                      "--landed": alpha(theme.palette.primary.main, 0.16),
+                      ...(item.kind === "new" && {
+                        animation: `${landed} 1.2s ease-out`,
+                        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+                      }),
+                    })}
+                  >
+                    <TypeTile filename={name} size={28} />
+                    <Typography variant="body2" noWrap title={name} sx={{ flex: 1, minWidth: 0 }}>
+                      {name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                      {formatFileSize(item.file.size)}
+                    </Typography>
+                    {item.kind === "new" && <Chip label={t("models:edit.newBadge")} size="small" />}
+                    <IconButton
+                      size="small"
+                      disabled={saving}
+                      aria-label={t("models:supporting.moreActionsNamed", { name })}
+                      aria-haspopup="menu"
+                      onClick={(event) => openMenu({ element: event.currentTarget })}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                );
+              })}
+              <Button
+                size="small"
+                disabled={saving}
+                startIcon={<UploadFileIcon fontSize="small" />}
+                onClick={() => addSupportingInputRef.current?.click()}
+                sx={{ alignSelf: "flex-start" }}
+              >
+                {t("models:edit.addFiles")}
+              </Button>
+              <input
+                ref={addSupportingInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  onAddFiles(e.target.files, "supporting");
+                  e.target.value = "";
+                }}
+              />
+            </Stack>
+            {(() => {
+              const target = supportingMenu
+                ? supportingItems.find((item) => supportingKey(item) === supportingMenu.key)
+                : undefined;
+              return (
+                <SupportingFileMenu
+                  anchor={target ? (supportingMenu?.anchor ?? null) : null}
+                  onClose={() => setSupportingMenu(null)}
+                  // A file still to upload has no address yet.
+                  onOpenInTab={
+                    target?.kind === "existing"
+                      ? () =>
+                          window.open(printsApi.supportingFileUrl(target.file, true), "_blank", "noopener,noreferrer")
+                      : undefined
+                  }
+                  onRename={target ? () => setRenamingKey(supportingKey(target)) : undefined}
+                  onRemove={target ? () => removeSupportingItem(supportingKey(target)) : undefined}
+                />
+              );
+            })()}
+            <RenameDialog
+              value={(() => {
+                const target = supportingItems.find((item) => supportingKey(item) === renamingKey);
+                return target ? supportingName(target) : null;
+              })()}
+              title={t("models:supporting.renameTitle")}
+              maxLength={255}
+              onClose={() => setRenamingKey(null)}
+              onSave={(name) => {
+                if (renamingKey) renameSupportingItem(renamingKey, name);
+              }}
+            />
           </Box>
         </Stack>
       </DialogContent>

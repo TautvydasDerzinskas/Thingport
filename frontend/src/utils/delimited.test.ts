@@ -1,0 +1,34 @@
+import { describe, expect, it } from "vitest";
+import { guessDelimiter, parseDelimited } from "./delimited";
+
+describe("a CSV or TSV preview", () => {
+  it("reads quoted fields holding the delimiter, quotes and line breaks", () => {
+    const text = 'part,qty,note\r\n"M3, 8 mm",4,"say ""hi""\nand bye"\nbelly,1,\n';
+    expect(parseDelimited(text, ",")).toEqual([
+      ["part", "qty", "note"],
+      ["M3, 8 mm", "4", 'say "hi"\nand bye'],
+      ["belly", "1", ""],
+    ]);
+  });
+
+  it("skips a byte-order mark and blank lines, and stops at the rows it shows", () => {
+    const text = "﻿a\tb\n\n1\t2\n3\t4\n5\t6";
+    expect(parseDelimited(text, "\t")).toEqual([
+      ["a", "b"],
+      ["1", "2"],
+      ["3", "4"],
+      ["5", "6"],
+    ]);
+    expect(parseDelimited(text, "\t", 2)).toEqual([
+      ["a", "b"],
+      ["1", "2"],
+    ]);
+  });
+
+  it("guesses the delimiter from the first line", () => {
+    expect(guessDelimiter("a,b,c", "csv")).toBe(",");
+    expect(guessDelimiter("a;b;c", "csv")).toBe(";");
+    expect(guessDelimiter("a\tb\tc", "csv")).toBe("\t");
+    expect(guessDelimiter("a,b", "tsv")).toBe("\t");
+  });
+});

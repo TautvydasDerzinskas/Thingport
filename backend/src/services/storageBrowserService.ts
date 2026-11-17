@@ -23,7 +23,7 @@ export type StorageFolder = {
 export type StorageFileLocation = "managed" | "source" | "missing";
 /** "plate" is a model file; "file" a supporting or prepared one; "license" the LICENSE.txt Thingport writes; the rest are
  *  pictures. */
-export type StorageFileKind = "plate" | "file" | "license" | AssetKind;
+export type StorageFileKind = "plate" | "file" | "prepared" | "license" | AssetKind;
 export type StorageFile = {
   name: string;
   path: string;
@@ -119,7 +119,12 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
     ...files.map((file) => ({
       path: toSlash(file.storagePath),
       size: Number(file.size),
-      kind: file.role === "LICENSE" ? ("license" as const) : ("file" as const),
+      kind:
+        file.role === "LICENSE"
+          ? ("license" as const)
+          : file.role === "PREPARED"
+            ? ("prepared" as const)
+            : ("file" as const),
       plateId: null,
       print: file.print,
       location: (): StorageFileLocation => (exists(file.storagePath) ? "managed" : "missing"),

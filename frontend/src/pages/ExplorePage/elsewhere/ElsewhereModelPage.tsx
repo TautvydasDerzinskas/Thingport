@@ -25,6 +25,7 @@ import { switchSlicer } from "../../../hooks/useSlicerPreference";
 import { saveResponseToDisk } from "../../../utils/downloadResponse";
 import { extOf } from "../../../utils/fileExtensions";
 import ModelFileSelect from "../../ModelDetailPage/ModelFileSelect";
+import SupportingFileChips from "../../../components/supportingFiles/SupportingFileChips";
 import OpenInSlicerButton from "../../ModelDetailPage/OpenInSlicerButton";
 import { useSlicerChoice, type ModelFile } from "../../ModelDetailPage/useOpenInSlicer";
 import ElsewhereGone from "./ElsewhereGone";
@@ -34,6 +35,10 @@ import RemoteCopyPanel from "./RemoteCopyPanel";
 const SLICES = new Set(["stl", "3mf", "step", "stp", "obj"]);
 
 const monoSx = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" } as const;
+
+/** A partner's file that's kept beside the model rather than one of its files: shown as an attachment. */
+const isSupporting = (file: { kind?: string | null; role?: string | null }) =>
+  file.kind === "file" && file.role === "SUPPORTING";
 
 /** A partner's model, as it said: its pictures, description and files, whose it is and which of their collections
  *  it's in. Laid out like another user's model here: copied to the viewer's library, opened in a slicer or
@@ -90,7 +95,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   const files = useMemo<ModelFile[]>(
     () =>
       (model?.files ?? []).flatMap((file, position) =>
-        file.url
+        file.url && !isSupporting(file)
           ? [
               {
                 key: `${position}:${file.name}`,
@@ -107,6 +112,31 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       ),
     [model],
   );
+  // Instructions, notes and sources: attachments under the pictures, downloaded through this instance.
+  const supporting = useMemo<ModelFile[]>(
+    () =>
+      (model?.files ?? []).flatMap((file, position) =>
+        file.url && isSupporting(file)
+          ? [
+              {
+                key: `${position}:${file.name}`,
+                url: file.url,
+                filename: file.name,
+                launchFilename: file.name,
+                index: position,
+                plate: null,
+                size: file.size,
+                folder: file.folder ?? null,
+              },
+            ]
+          : [],
+      ),
+    [model],
+  );
+  const downloadSupporting = (key: string) => {
+    const file = supporting.find((item) => item.key === key);
+    if (file) void download(file);
+  };
   // The first a slicer opens, until one is picked.
   const selected =
     files.find((file) => file.key === selectedKey) ??
@@ -244,6 +274,13 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
             ))}
           </Stack>
         )}
+        {supporting.length > 0 && (
+          <SupportingFileChips
+            files={supporting.map((file) => ({ key: file.key, name: file.filename, size: file.size }))}
+            onOpen={downloadSupporting}
+            onDownload={downloadSupporting}
+          />
+        )}
       </Paper>
 
       <Paper variant="outlined" sx={{ p: 2.5, borderRadius: "12px", minWidth: 0 }}>
@@ -294,7 +331,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
                   onOpened={(slicerId) => void switchSlicer(slicerId)}
                   downloading={downloading}
                   onDownload={() => void download(selected)}
-                  zipCount={files.length}
+                  zipCount={files.length + supporting.length}
                   onDownloadZip={() => void downloadZip()}
                 />
               )}

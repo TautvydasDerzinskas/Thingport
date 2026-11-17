@@ -160,8 +160,14 @@ beforeAll(async () => {
         images: [],
         sharedAt: new Date(Date.now() - 60_000),
         files: [
-          { name: "bin.3mf", size: 1800, mediaType: "model/3mf", url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf` },
-          { name: "notes.pdf", size: 20, mediaType: "application/pdf" },
+          {
+            name: "bin.3mf",
+            size: 1800,
+            mediaType: "model/3mf",
+            url: `${PARTNER}/api/ap/files/plate/p1/bin.3mf`,
+            kind: "plate",
+          },
+          { name: "notes.pdf", size: 20, mediaType: "application/pdf", kind: "file", role: "SUPPORTING" },
           { name: "elsewhere.stl", size: 30, url: "http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl" },
         ],
       },
@@ -464,10 +470,21 @@ describe("Explore with partners", () => {
         media_type: "model/3mf",
         // By a key from its address at the partner, so a reordered list never serves another file.
         url: `/explore/elsewhere/model/${filesModelId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p1/bin.3mf`)}/bin.3mf`,
+        kind: "plate",
+        role: null,
       },
-      { name: "notes.pdf", folder: null, size: 20, media_type: "application/pdf", url: null },
-      // Somewhere other than the partner's own origin: never fetched.
-      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null },
+      // A supporting file says so, for the page to show it apart.
+      {
+        name: "notes.pdf",
+        folder: null,
+        size: 20,
+        media_type: "application/pdf",
+        url: null,
+        kind: "file",
+        role: "SUPPORTING",
+      },
+      // Somewhere other than the partner's own origin: never fetched. A partner too old to say gives no kind.
+      { name: "elsewhere.stl", folder: null, size: 30, media_type: null, url: null, kind: null, role: null },
     ]);
     // A key for no file it shares, or for one that isn't on its origin, is never fetched.
     for (const key of ["0", "x", fileKey("http://198.51.100.9/api/ap/files/plate/p2/elsewhere.stl")]) {

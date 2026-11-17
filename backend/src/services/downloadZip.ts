@@ -126,11 +126,18 @@ export async function buildZipEntries(
         mtime: print.licenseReadAt ?? undefined,
       });
     }
+    // Two supporting files may share a name (a merge brings each model's along), which a zip can't hold twice.
+    const taken = new Set<string>();
     for (const file of supportingByPrint.get(print.id) ?? []) {
       const filePath = managedPrintFilePath(file);
-      if (fs.existsSync(filePath)) {
-        entries.push({ arcname: `${prefix}/supporting/${folderPath(file.folder, file.filename)}`, filePath });
+      if (!fs.existsSync(filePath)) continue;
+      const { name, ext } = path.parse(file.filename);
+      let arcname = `${prefix}/supporting/${folderPath(file.folder, file.filename)}`;
+      for (let n = 2; taken.has(arcname.toLowerCase()); n++) {
+        arcname = `${prefix}/supporting/${folderPath(file.folder, `${name} (${n})${ext}`)}`;
       }
+      taken.add(arcname.toLowerCase());
+      entries.push({ arcname, filePath });
     }
   }
   return entries;
