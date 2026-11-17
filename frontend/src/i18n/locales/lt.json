@@ -7428,7 +7428,8 @@
       "firstRows": "Rodoma pirmųjų {{count}} eilučių",
       "firstColumns": "Rodoma pirmųjų {{count}} stulpelių",
       "editHelp": "Instrukcijos, pastabos, licencijos ir šaltinio failai, laikomi kartu su modeliu. Jie rodomi modelio puslapyje ir įtraukiami į atsisiuntimus, bet niekada neatveriami pjaustyklėje.",
-      "editEmpty": "Papildomų failų dar nėra."
+      "editEmpty": "Papildomų failų dar nėra.",
+      "loadFailed": "Nepavyko įkelti papildomų failų."
     },
     "shared": {
       "sharedBy": "Dalijasi {{name}}",
