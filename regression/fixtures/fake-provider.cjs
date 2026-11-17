@@ -17,6 +17,8 @@ const GATES = process.env.FAKE_PROVIDER_GATES;
 // A test that died before letting go. The import has given up on a silent download by then.
 const HOLD_LIMIT_MS = 120_000;
 const CUBE = fs.readFileSync(path.join(__dirname, "cube.stl"));
+// A link straight to a zip: two model folders, one with a document beside its model file.
+const KIT = fs.readFileSync(path.join(__dirname, "kit.zip"));
 const DESIGNER = { uid: 1000001, name: "Regression Designer" };
 
 // Imports refuse a host that doesn't resolve, or resolves to a private address.
@@ -74,6 +76,11 @@ function answer({ hostname, pathname }) {
   }
   const content = pathname.match(/^\/(\d+)\/cube\.stl$/);
   if (hostname === "files.regression.test" && content) return file(content[1]);
+  if (hostname === "files.regression.test" && pathname === "/kit.zip") {
+    return new Response(KIT, {
+      headers: { "content-type": "application/zip", "content-disposition": 'attachment; filename="kit.zip"' },
+    });
+  }
   return new Response("not found", { status: 404 });
 }
 

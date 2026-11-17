@@ -294,6 +294,30 @@ export async function setPhotosPerModel(keep: PhotoKeep | null): Promise<void> {
   });
 }
 
+// The other files an import keeps beside a model -- instructions, notes, sources -- by the largest kept, in MB: "off"
+// keeps none, "any" any an import takes. A model keeps 2.5 times that in all (services/supportingImports.ts).
+const IMPORT_SUPPORTING_FILES_KEY = "import_supporting_files";
+export const SUPPORTING_FILE_MB_OPTIONS = [25, 100, 500] as const;
+export type SupportingFileLimit = (typeof SUPPORTING_FILE_MB_OPTIONS)[number] | "off" | "any";
+const DEFAULT_SUPPORTING_FILE_LIMIT: SupportingFileLimit = 100;
+
+export function isSupportingFileLimit(value: unknown): value is SupportingFileLimit {
+  return value === "off" || value === "any" || (SUPPORTING_FILE_MB_OPTIONS as readonly unknown[]).includes(value);
+}
+
+export async function getImportSupportingFiles(): Promise<SupportingFileLimit> {
+  const row = await prisma.setting.findUnique({ where: { key: IMPORT_SUPPORTING_FILES_KEY } });
+  return isSupportingFileLimit(row?.value) ? row.value : DEFAULT_SUPPORTING_FILE_LIMIT;
+}
+
+export async function setImportSupportingFiles(limit: SupportingFileLimit): Promise<void> {
+  await prisma.setting.upsert({
+    where: { key: IMPORT_SUPPORTING_FILES_KEY },
+    create: { key: IMPORT_SUPPORTING_FILES_KEY, value: limit },
+    update: { value: limit },
+  });
+}
+
 // What API tokens may do at /api/mcp, instance-wide. "read" also keeps a write tool off for a token
 // whose user ticked it, without forgetting the choice.
 export type McpAccess = "off" | "read" | "write";

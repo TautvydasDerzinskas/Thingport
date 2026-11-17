@@ -14,6 +14,7 @@ import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { createNotification } from "./notificationService";
 import { gltfReferencedFiles, isGltfName, packGltfFiles } from "./gltfPacker";
+import { modelFolderUnits } from "./modelFolders";
 
 export const CONSUME_MODES = ["separate", "folder"] as const;
 export type ConsumeMode = (typeof CONSUME_MODES)[number];
@@ -395,31 +396,14 @@ export async function consumeFolder(dir = CONSUME_DIR): Promise<ConsumeSummary |
   };
 
   if (mode === "folder") {
-    const groups = new Map<string, Item[]>();
-    for (const item of importable) {
-      const key = foldersOf(item.rel).join("/");
-      groups.set(key, [...(groups.get(key) ?? []), item]);
-    }
-    const modelKeys = [...groups]
-      .filter(([key, group]) => key && group.some((i) => RENDERABLE_MODEL_EXTS.has(extOf(i.rel))))
-      .map(([key]) => key);
-    // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
-    // file: its documents are that model's, in their folder, and its pictures are that model's photos.
-    const attached = new Map<string, { item: Item; folder: string }[]>();
-    for (const [key, group] of groups) {
-      if (!key || modelKeys.includes(key)) continue;
-      const owner = modelKeys.filter((m) => key.startsWith(`${m}/`)).toSorted((a, b) => b.length - a.length)[0];
-      if (!owner) continue;
-      const folder = key.slice(owner.length + 1);
-      attached.set(owner, [...(attached.get(owner) ?? []), ...group.map((item) => ({ item, folder }))]);
-    }
-    const taken = new Set([...attached.values()].flat().map((entry) => entry.item));
-    for (const [key, group] of groups) {
-      if (modelKeys.includes(key)) {
-        await importFolder(key.split("/"), group, attached.get(key) ?? []);
-      } else {
-        for (const item of group) if (!taken.has(item)) await importEach(item);
-      }
+    const units = modelFolderUnits(
+      importable,
+      (item) => foldersOf(item.rel).join("/"),
+      (item) => RENDERABLE_MODEL_EXTS.has(extOf(item.rel)),
+    );
+    for (const unit of units) {
+      if (unit.kind === "model") await importFolder(unit.folder.split("/"), unit.files, unit.attached);
+      else await importEach(unit.item);
     }
   } else {
     for (const item of importable) await importEach(item);

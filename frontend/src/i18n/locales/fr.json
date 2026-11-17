@@ -1560,6 +1560,15 @@
         "saveFailed": "Impossible d’enregistrer le nombre de photos à garder",
         "loadFailed": "Impossible de charger le nombre de photos à garder."
       },
+      "importSupportingFiles": {
+        "label": "Fichiers annexes des importations",
+        "help": "Les fichiers que le site d’un modèle fournit à côté de ses fichiers de modèle — instructions, notes, liste de pièces, fichiers sources — sont gardés comme ses fichiers annexes, chacun jusqu’à cette taille. Au total, un modèle en garde deux fois et demie plus. Les images sont ignorées, car les photos du modèle viennent de sa page. Désactivé n’en garde aucun ; les modèles déjà importés gardent les leurs.",
+        "off": "Désactivé",
+        "any": "Toute taille",
+        "size": "{{count}} Mo",
+        "saveFailed": "Impossible d’enregistrer quels fichiers annexes les importations gardent",
+        "loadFailed": "Impossible de charger quels fichiers annexes les importations gardent."
+      },
       "freeSpace": {
         "open": "Libérer de l’espace",
         "freeing": "Libération de l’espace…",
@@ -2359,7 +2368,8 @@
           "migration_export_read": "Copiée par une autre instance",
           "achievement_settings_changed": "Succès modifiés",
           "storage_cleanup_started": "Libération d’espace lancée",
-          "photos_per_model_changed": "Nombre de photos par modèle modifié"
+          "photos_per_model_changed": "Nombre de photos par modèle modifié",
+          "import_supporting_files_changed": "Modification des fichiers annexes que gardent les importations"
         },
         "authorsLinked": "{{count}} modèle(s) relié(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} description(s) sur {{total}} modifiée(s)",

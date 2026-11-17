@@ -64,15 +64,17 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
   noFilesMessage: "This Makerables project has no model files Thingport can import.",
   async downloadModel(_target, resolved, _auth, _requested, kit) {
     const files = await fetchMakerablesModelFiles(resolved.projectId);
-    // Only what a plate takes, or a zip to unpack: its tab also holds pictures and the odd native CAD file.
-    const wanted = files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    // What a plate takes, a zip to unpack, and the other files a model keeps beside it, its native CAD files among
+    // them: no point asking for its pictures.
+    const own = files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    const wanted = files.filter((file) => own.includes(file) || kit.isSupportingFile(file.name));
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of wanted) {
         const inputs = (await kit.downloadSignedFile(file, isMakerablesFileHost, BLOCKED)) ?? [];
         // A designer's uploads are often zips named for what's in them ("Replacement Jaws"): with more than one file
         // on the tab, each zip's files keep its name as their folder.
-        const folder = wanted.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
+        const folder = own.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
       }
     } catch (err) {

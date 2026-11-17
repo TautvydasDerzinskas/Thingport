@@ -25,7 +25,8 @@ among the model files goes to the supporting files, and a 3D file added among th
 files. A sliced file added this way becomes the prepared print.
 
 Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
-and the zip holds them in a `supporting` folder. They come with copies others make of the model too. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
+and the zip holds them in a `supporting` folder. They come with copies others make of the model too. An
+[import](importing.md) brings the ones a site gives with a model, within the size an admin set. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
 its manuals and notes are attached automatically.
 
 ## Models you can generate again

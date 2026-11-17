@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import os from "node:os";
+import JSZip from "jszip";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app";
@@ -74,14 +75,30 @@ function challengeResponse(): Response {
   });
 }
 
-function mockThingiverseFetch(overrides?: { detailStatus?: number; detailBody?: unknown; cdnChallenge?: boolean }) {
+function mockThingiverseFetch(overrides?: {
+  detailStatus?: number;
+  detailBody?: unknown;
+  cdnChallenge?: boolean;
+  /** Only the PDF is challenged. */
+  pdfChallenge?: boolean;
+  /** Served as extras.zip. */
+  extrasZip?: Buffer;
+}) {
   return vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
     const url = String(input);
     if (overrides?.cdnChallenge && url.startsWith("https://cdn.thingiverse.com/assets/")) return challengeResponse();
-    if (url.startsWith(`https://api.thingiverse.com/things/${THING_ID}/categories`)) {
+    if (overrides?.pdfChallenge && url.endsWith("/instructions.pdf")) return challengeResponse();
+    if (overrides?.extrasZip && url === "https://cdn.thingiverse.com/assets/test/extras.zip") {
+      return new Response(new Uint8Array(overrides.extrasZip), {
+        status: 200,
+        headers: { "content-type": "application/zip" },
+      });
+    }
+    // Any Thing's: a test of another Thing passes its own details.
+    if (/^https:\/\/api\.thingiverse\.com\/things\/\d+\/categories/.test(url)) {
       return jsonResponse(200, THING_CATEGORIES);
     }
-    if (url.startsWith(`https://api.thingiverse.com/things/${THING_ID}`)) {
+    if (/^https:\/\/api\.thingiverse\.com\/things\/\d+/.test(url)) {
       return jsonResponse(overrides?.detailStatus ?? 200, overrides?.detailBody ?? THING_DETAIL);
     }
     if (url === "https://cdn.thingiverse.com/assets/test/body.stl") return stlResponse("body");
@@ -206,8 +223,10 @@ describe("importPrintFromUrl -- Thingiverse", () => {
     expect(result.print.tags.toSorted()).toEqual(["Test fixture", "Widget"]);
     expect(result.print.categoryId).toBe(category.id);
 
-    // The PDF isn't a plate format.
+    // The PDF isn't a plate format: it's kept beside the model.
     expect(result.plates.map((p) => p.filename).toSorted()).toEqual(["body.stl", "wheels.stl"]);
+    const files = await prisma.printFile.findMany({ where: { printId: result.print.id } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["instructions.pdf", "SUPPORTING"]]);
 
     expect(result.author).toBeTruthy();
     expect(result.author?.name).toBe("TestCreator");
@@ -215,6 +234,41 @@ describe("importPrintFromUrl -- Thingiverse", () => {
     expect(result.author?.externalId).toBe("424242");
 
     expect(result.previewImages.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("opens a zip Thing File for what it holds, and imports without a document it couldn't download", async () => {
+    await setThingiverseAccessToken(ACCESS_TOKEN);
+    const zip = new JSZip();
+    zip.file("spare.stl", "solid spare endsolid");
+    zip.file("docs/manual.pdf", "%PDF-1.4 manual");
+    const extrasZip = await zip.generateAsync({ type: "nodebuffer" });
+    const files = [
+      { name: "body.stl", url: "https://cdn.thingiverse.com/assets/test/body.stl" },
+      { name: "extras.zip", url: "https://cdn.thingiverse.com/assets/test/extras.zip" },
+      { name: "instructions.pdf", url: "https://cdn.thingiverse.com/assets/test/instructions.pdf" },
+    ];
+    global.fetch = mockThingiverseFetch({
+      detailBody: { ...THING_DETAIL, id: 7700001, zip_data: { ...THING_DETAIL.zip_data, files } },
+      pdfChallenge: true,
+      extrasZip,
+    });
+    const url = "https://www.thingiverse.com/thing:7700001";
+    const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+    expect(result.plates.map((plate) => plate.filename).toSorted()).toEqual(["body.stl", "spare.stl"]);
+    const kept = await prisma.printFile.findMany({ where: { printId: result.print.id } });
+    expect(kept.map((file) => [file.folder, file.filename, file.role])).toEqual([["docs", "manual.pdf", "SUPPORTING"]]);
+  });
+
+  it("says there's nothing to import for a Thing of documents alone", async () => {
+    await setThingiverseAccessToken(ACCESS_TOKEN);
+    const files = [{ name: "instructions.pdf", url: "https://cdn.thingiverse.com/assets/test/instructions.pdf" }];
+    global.fetch = mockThingiverseFetch({
+      detailBody: { ...THING_DETAIL, id: 7700002, zip_data: { ...THING_DETAIL.zip_data, files } },
+    });
+    const url = "https://www.thingiverse.com/thing:7700002";
+    await expect(importPrintFromUrl(userId, url, { url, tags: [] })).rejects.toThrow(
+      "None of this Thing's files could be downloaded.",
+    );
   });
 
   it("dedupes a re-import of the same Thing instead of hitting the API again", async () => {

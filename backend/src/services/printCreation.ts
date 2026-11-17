@@ -38,6 +38,7 @@ import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
+import { supportingImportName, supportingLimits } from "./supportingImports";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -55,6 +56,9 @@ export type NewPlateInput = {
   profile?: Prisma.JsonValue | null;
   /** The folder its source kept it in (Plate.folder); untrusted, normalized here. */
   folder?: string | null;
+  /** A file a site gave beside the model's own (an import's instructions, notes, sources): kept as a SUPPORTING file
+   *  within the admin's limits (keepSupportingFiles), never a plate. */
+  supporting?: boolean;
 };
 
 /** A file that is a script a model can be generated from, rather than geometry to print. */
@@ -242,6 +246,47 @@ async function createPlateAtPosition(
  * Best-effort -- a script that won't store leaves the model itself there, since its plates are what the user asked
  * for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
  */
+/**
+ * The files a site gave beside a model's own -- instructions, notes, sources -- kept as its SUPPORTING files, each once
+ * by folder and name, as far as the admin's limits allow: none past the largest kept, and no more in all than a model
+ * takes. A sliced file among them stays one, rather than taking the owner's prepared slot: it was sliced for the
+ * designer's printer. Best-effort throughout: a file that can't be kept is skipped, never failing the import.
+ */
+export async function keepSupportingFiles(userId: string, printId: string, inputs: NewPlateInput[]): Promise<number> {
+  if (!inputs.length) return 0;
+  const limits = await supportingLimits();
+  if (!limits) return 0;
+  const keyOf = (filename: string, folder: string | null | undefined) =>
+    `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
+  const stored = new Set(
+    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
+      keyOf(file.filename, file.folder),
+    ),
+  );
+  let kept = 0;
+  let bytes = 0;
+  for (const input of inputs) {
+    if (!input.tempFilePath) continue;
+    const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
+    const key = keyOf(filename, input.folder);
+    if (stored.has(key)) continue;
+    const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size;
+    if (size === undefined || size > limits.perFile || bytes + size > limits.perModel) continue;
+    try {
+      await saveFileFromTemp(userId, printId, input.tempFilePath, filename, input.mime ?? null, {
+        role: "SUPPORTING",
+        folder: input.folder,
+      });
+      stored.add(key);
+      bytes += size;
+      kept++;
+    } catch (err) {
+      console.warn(`Couldn't keep ${filename} beside the model:`, err);
+    }
+  }
+  return kept;
+}
+
 export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   if (!inputs.length) return;
   // A model's own script comes down again with every profile imported after the first (see importService's
@@ -288,8 +333,9 @@ export async function createPrint(
   // A generator script holds no geometry until something runs it, so it is never a plate: it comes along as a
   // SUPPORTING file instead. Split here rather than in each caller, so a script reaches a model the same way
   // whether it was imported, uploaded beside it, or unpacked from a provider's zip.
-  const sourceInputs = plateInputs.filter((input) => isGeneratorScript(input.filename));
-  const plateInputs2 = plateInputs.filter((input) => !isGeneratorScript(input.filename));
+  const supportingInputs = plateInputs.filter((input) => input.supporting);
+  const sourceInputs = plateInputs.filter((input) => !input.supporting && isGeneratorScript(input.filename));
+  const plateInputs2 = plateInputs.filter((input) => !input.supporting && !isGeneratorScript(input.filename));
   if (!plateInputs2.length) {
     // A script on its own is answerable, not a bug: it describes a model but holds none, so there is nothing to
     // show, print or render until something runs it. Attach it to a model instead.
@@ -361,6 +407,7 @@ export async function createPrint(
     }
 
     await keepGeneratorScripts(userId, print.id, sourceInputs);
+    await keepSupportingFiles(userId, print.id, supportingInputs);
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);

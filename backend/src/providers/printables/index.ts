@@ -10,6 +10,7 @@
 //   the others.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 
+import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import type { NewPlateInput } from "../../services/printCreation";
 import type { ProviderLists, ResolvedModel, SourcedImport, ProviderTrending, ProviderDetails } from "../types";
@@ -52,12 +53,16 @@ export const printablesImport: SourcedImport<null, Model> = {
         "This Printables model has no downloadable model files (only sliced/print-ready files, if any).",
       );
     }
+    // The other files listed with them come along as supporting files.
+    const wanted = model.plateFiles.filter(
+      (file) => kit.isImportableFile(file.name) || kit.isSupportingFile(file.name),
+    );
     const links = await resolvePrintablesDownloadLinks(
       externalId,
-      modelFiles.map((file) => file.id),
+      wanted.map((file) => file.id),
     );
     const results = await Promise.all(
-      modelFiles.flatMap((file) => {
+      wanted.flatMap((file) => {
         const link = links.get(file.id);
         return link ? [kit.downloadFile(link, file.name).then((result) => ({ result, folder: file.folder }))] : [];
       }),
@@ -65,7 +70,9 @@ export const printablesImport: SourcedImport<null, Model> = {
     const downloaded = results.flatMap(({ result, folder }): NewPlateInput[] =>
       result !== null && "input" in result ? [{ ...result.input, folder }] : [],
     );
-    if (!downloaded.length && results.some(({ result }) => result !== null && "rateLimited" in result)) {
+    const blocked = results.some(({ result }) => result !== null && "rateLimited" in result);
+    if (blocked && !downloaded.some((input) => kit.isImportableFile(input.filename))) {
+      await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
       throw new HttpError(
         429,
         "Printables blocked a file download (rate limit or Cloudflare challenge). This usually clears after a while -- wait, then retry the same import.",

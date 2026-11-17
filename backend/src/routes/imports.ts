@@ -364,7 +364,11 @@ async function assertNoActiveJob(userId: string): Promise<void> {
   if (active) throw new HttpError(409, "An import is already in progress");
 }
 
-const zipExtractRequestSchema = importRequestSchema.extend({ entries: z.array(z.string()) });
+// How the picked files become models; a client that doesn't say gets one model of them all.
+const zipExtractRequestSchema = importRequestSchema.extend({
+  entries: z.array(z.string()),
+  mode: z.enum(["one", "folders", "separate"]).optional(),
+});
 
 router.post(
   "/import/zip",

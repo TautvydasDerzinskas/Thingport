@@ -67,8 +67,10 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
     if (!resolved.files.length && !resolved.zipPath && resolved.price) {
       throw new HttpError(403, `This is a paid Pinshape model (${resolved.price}): Thingport can't download it.`);
     }
-    // Only what a plate takes, or a zip to unpack: no point asking for the rest.
-    const wanted = resolved.files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
+    // What a plate takes, a zip to unpack, and the other files a model keeps beside it: no point asking for pictures.
+    const wanted = resolved.files.filter(
+      (file) => kit.isImportableFile(file.name) || kit.isSupportingFile(file.name) || /\.zip$/i.test(file.name),
+    );
     const files =
       resolved.files.length || !resolved.zipPath
         ? wanted
@@ -76,10 +78,15 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of files) {
-        const url = await resolvePinshapeDownload(file.path, cookie);
-        downloaded.push(
-          ...((await kit.downloadSignedFile({ url, name: file.name }, isPinshapeFileHost, BLOCKED)) ?? []),
-        );
+        try {
+          const url = await resolvePinshapeDownload(file.path, cookie);
+          downloaded.push(
+            ...((await kit.downloadSignedFile({ url, name: file.name }, isPinshapeFileHost, BLOCKED)) ?? []),
+          );
+        } catch (err) {
+          // A file beside the model's own never fails the import.
+          if (!kit.isSupportingFile(file.name)) throw err;
+        }
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

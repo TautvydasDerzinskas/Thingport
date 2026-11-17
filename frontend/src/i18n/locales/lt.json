@@ -1576,6 +1576,15 @@
         "saveFailed": "Nepavyko išsaugoti, kiek nuotraukų palikti",
         "loadFailed": "Nepavyko įkelti, kiek nuotraukų palikti."
       },
+      "importSupportingFiles": {
+        "label": "Papildomi failai iš importų",
+        "help": "Failai, kuriuos modelio svetainė pateikia šalia modelio failų – instrukcijos, pastabos, dalių sąrašas, šaltinio failai, – išsaugomi kaip jo papildomi failai, kiekvienas iki šio dydžio. Iš viso modelis išsaugo du su puse karto tiek. Nuotraukos praleidžiamos, nes modelio nuotraukos imamos iš jo puslapio. „Išjungta“ neišsaugo jokių; jau importuoti modeliai savuosius pasilieka.",
+        "off": "Išjungta",
+        "any": "Bet koks dydis",
+        "size": "{{count}} MB",
+        "saveFailed": "Nepavyko išsaugoti, kuriuos papildomus failus išsaugo importai",
+        "loadFailed": "Nepavyko įkelti, kuriuos papildomus failus išsaugo importai."
+      },
       "freeSpace": {
         "open": "Atlaisvinti vietos",
         "freeing": "Atlaisvinama vieta…",
@@ -2385,7 +2394,8 @@
           "migration_export_read": "Nukopijuotas kito egzemplioriaus",
           "achievement_settings_changed": "Pakeisti pasiekimai",
           "storage_cleanup_started": "Pradėta atlaisvinti vietą",
-          "photos_per_model_changed": "Pakeista, kiek nuotraukų paliekama vienam modeliui"
+          "photos_per_model_changed": "Pakeista, kiek nuotraukų paliekama vienam modeliui",
+          "import_supporting_files_changed": "Pakeista, kuriuos papildomus failus išsaugo importai"
         },
         "authorsLinked": "Susieta modelių: {{count}}",
         "descriptionsRefetched": "{{email}} — pakeista aprašymų: {{updated}} iš {{total}}",

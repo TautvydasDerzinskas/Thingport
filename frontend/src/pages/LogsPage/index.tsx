@@ -45,6 +45,7 @@ const ACTION_COLORS: Record<LogAction, ActionColor> = {
   // Can delete photos for good.
   storage_cleanup_started: "warning",
   photos_per_model_changed: "info",
+  import_supporting_files_changed: "info",
   custom_widgets_changed: "warning",
   tool_installed: "info",
   // Takes the data it kept for everyone with it.
@@ -214,6 +215,12 @@ export default function LogsPage({ onUnauthorized }: Props) {
         return typeof d.keep === "number"
           ? t("adminSettings.logs.photosKept", { count: d.keep })
           : t("adminSettings.logs.photosKeptAll");
+      case "import_supporting_files_changed":
+        return d.limit === "off" || d.limit === "any"
+          ? t(`adminSettings.importSupportingFiles.${d.limit}`)
+          : typeof d.limit === "number"
+            ? t("adminSettings.importSupportingFiles.size", { count: d.limit })
+            : "";
       case "license_files_changed":
         return typeof d.enabled === "boolean"
           ? t(d.enabled ? "adminSettings.logs.licenseFilesOn" : "adminSettings.logs.licenseFilesOff")

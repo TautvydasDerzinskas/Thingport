@@ -62,6 +62,10 @@ import {
   getPhotosPerModel,
   setPhotosPerModel,
   PHOTO_KEEP_OPTIONS,
+  getImportSupportingFiles,
+  setImportSupportingFiles,
+  isSupportingFileLimit,
+  type SupportingFileLimit,
   type PhotoKeep,
   setFileReuse,
   FILE_REUSE_MODES,
@@ -466,6 +470,30 @@ router.post(
     await setPhotosPerModel(keep);
     res.json({ keep });
     void createLog({ userId: req.userId!, action: "photos_per_model_changed", details: { keep } });
+  }),
+);
+
+// The other files an import keeps beside a model -- instructions, notes, sources -- by the largest kept: "off", a size
+// in MB, or "any". A model keeps 2.5 times that in all.
+router.get(
+  "/settings/import-supporting-files",
+  requireAdmin,
+  asyncHandler(async (_req, res) => {
+    res.json({ limit: await getImportSupportingFiles() });
+  }),
+);
+
+const importSupportingFilesSchema = z.object({
+  limit: z.union([z.string(), z.number()]).refine(isSupportingFileLimit, "Not one of the sizes offered"),
+});
+router.post(
+  "/settings/import-supporting-files",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    const { limit } = parseBody(importSupportingFilesSchema, req.body) as { limit: SupportingFileLimit };
+    await setImportSupportingFiles(limit);
+    res.json({ limit });
+    void createLog({ userId: req.userId!, action: "import_supporting_files_changed", details: { limit } });
   }),
 );
 

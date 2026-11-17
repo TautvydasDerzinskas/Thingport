@@ -5,12 +5,15 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
 import { HttpError, sanitizeFilename, guessMimeFromPath } from "../utils/fileUtils";
-import { IMPORT_MAX_BYTES } from "../config";
+import { IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS, UPLOADABLE_EXTS } from "../config";
 import { listZipEntries as listRawZipEntries, readZipEntry } from "../utils/zipReader";
 import { validateParentCategory } from "./categoryService";
-import { attachImportedPreviewImages } from "./importService";
+import { attachImportedPreviewImages, MULTI_FILE_PLATE_EXTS } from "./importService";
+import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
+import { isSupportingImportFile, withoutModelsSharedTop } from "./supportingImports";
+import { modelFolderUnits } from "./modelFolders";
 import { localizeDescriptionImages } from "./descriptionImageService";
-import { createPrint, type PrintMetaInput } from "./printCreation";
+import { createPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import type { Print, Plate, PreviewImage } from "@prisma/client";
 
 export type ZipEntrySummary = { path: string; size: number };
@@ -148,7 +151,8 @@ export async function extractZipEntriesToPrints(
 
   for (const entryName of ordered) {
     const info = entryMap.get(entryName);
-    if (!info || info.isDirectory) {
+    // A document can't be a model on its own: one per file makes models of what can be.
+    if (!info || info.isDirectory || !UPLOADABLE_EXTS.has(path.extname(entryName).toLowerCase())) {
       failed.push(entryName);
       continue;
     }
@@ -196,5 +200,210 @@ export async function extractZipEntriesToPrints(
     onProgress?.(++processedCount, ordered.length, prints.length, failed.length);
   }
 
+  return { prints, failed };
+}
+
+/** How a zip from a link becomes models, as the app's dialog asks: all its picked files one model (the default, and
+ *  what a client that doesn't ask gets), a model per folder that holds model files, or a model per file. */
+export type ZipImportMode = "one" | "folders" | "separate";
+
+// Pictures among a zip's files are a model's photos, as the consume folder takes them.
+const PHOTO_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
+const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
+
+type PickedEntry = { name: string; folder: string; filename: string; tempPath: string; size: number };
+
+const isPlateName = (name: string) => {
+  const ext = path.extname(name).toLowerCase();
+  return MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext);
+};
+const isPhotoEntry = (entry: PickedEntry) =>
+  PHOTO_EXTS.has(path.extname(entry.filename).toLowerCase()) && entry.size <= PHOTO_MAX_BYTES;
+
+/** The picked entries of a zip, each read to a temp file with the folder it's in. The ones that couldn't be read are
+ *  named in `failed`. */
+async function readPickedEntries(
+  zipPath: string,
+  selections: string[],
+): Promise<{ entries: PickedEntry[]; failed: string[] }> {
+  const raw = new Map<string, string>();
+  for (const entry of await listRawZipEntries(zipPath)) {
+    const name = normalizeZipEntryPath(entry.name);
+    if (name && !entry.isDirectory && (!raw.has(name) || entry.name === name)) raw.set(name, entry.name);
+  }
+  const entries: PickedEntry[] = [];
+  const failed: string[] = [];
+  for (const name of new Set(selections.map((s) => normalizeZipEntryPath(s)).filter((s): s is string => !!s))) {
+    const rawName = raw.get(name);
+    const buffer = rawName ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
+    if (!buffer) {
+      failed.push(name);
+      continue;
+    }
+    const tempPath = path.join(os.tmpdir(), `thingport-zip-${crypto.randomBytes(8).toString("hex")}`);
+    await fs.writeFile(tempPath, buffer);
+    const parts = name.split("/");
+    entries.push({
+      name,
+      folder: parts.slice(0, -1).join("/"),
+      filename: sanitizeFilename(parts.at(-1)!),
+      tempPath,
+      size: buffer.length,
+    });
+  }
+  return { entries, failed };
+}
+
+/** One model of `entries`: its model files and scripts the plates, its pictures the photos and the rest supporting
+ *  files, each in its folder below the folders the model's own files share (`folderOf` says where each sits). With no
+ *  model file among them, its pictures are the plates; with neither, there's no model to make. */
+async function createModelOf(
+  userId: string,
+  entries: { entry: PickedEntry; folder: string | null }[],
+  meta: PrintMetaInput,
+  nameHint: string,
+  options: ZipExtractOptions,
+): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
+  const hasModel = entries.some(({ entry }) => isPlateName(entry.filename));
+  const photos = hasModel ? entries.filter(({ entry }) => isPhotoEntry(entry)) : [];
+  const inputs: NewPlateInput[] = entries.flatMap(({ entry, folder }): NewPlateInput[] => {
+    if (photos.some((photo) => photo.entry === entry)) return [];
+    const mime = guessMimeFromPath(entry.filename);
+    const input = { filename: entry.filename, mime, tempFilePath: entry.tempPath, folder };
+    if (isPlateName(entry.filename) || (!hasModel && PHOTO_EXTS.has(path.extname(entry.filename).toLowerCase()))) {
+      return [input];
+    }
+    return isSupportingImportFile(entry.filename) ? [{ ...input, supporting: true }] : [];
+  });
+  if (!inputs.some((input) => !input.supporting)) {
+    throw new HttpError(400, "None of the picked files can be a model: pick a model file (STL, 3MF, STEP…) too.");
+  }
+  const { print, plates } = await createPrint(userId, meta, nameHint, withoutModelsSharedTop(inputs));
+  const fromPage = await attachImportedPreviewImages(
+    print.id,
+    plates[0]?.id,
+    options.previewImageUrl,
+    options.galleryImages ?? [],
+  );
+  let preferred = fromPage > 0;
+  for (const { entry } of photos) {
+    const buffer = await fs.readFile(entry.tempPath).catch(() => null);
+    if (!buffer || !(await addPreviewImage(print.id, buffer, { keepExif: true }))) continue;
+    // The page's own pictures come first; a zip's stand in for none.
+    if (!preferred) {
+      preferred = true;
+      await preferImageOverRenders(print.id, plates[0]?.id, buffer, true);
+    }
+  }
+  await localizeDescriptionImages(print.id);
+  const previewImages = await prisma.previewImage.findMany({
+    where: { printId: print.id },
+    orderBy: { position: "asc" },
+  });
+  return { ...print, plates, previewImages };
+}
+
+function metaFor(options: ZipExtractOptions, title: string | null, categoryId: string | null): PrintMetaInput {
+  return {
+    title,
+    notes: options.notes ?? null,
+    tags: options.tags ?? [],
+    categoryId,
+    categorySource: categoryId ? "MANUAL" : null,
+    creator: options.creator ?? null,
+    authorId: options.authorId ?? null,
+  };
+}
+
+/** All of a zip's picked entries as one model, named as the page names it, or after the zip (`zipName`). Its folders
+ *  stay inside the model, below the ones its model files all share. */
+export async function extractZipEntriesToOneModel(
+  userId: string,
+  zipPath: string,
+  zipName: string,
+  selections: string[],
+  options: ZipExtractOptions,
+): Promise<{ prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[]; failed: string[] }> {
+  if (options.categoryId) await validateParentCategory(userId, options.categoryId);
+  const { entries, failed } = await readPickedEntries(zipPath, selections);
+  try {
+    if (!entries.length) throw new HttpError(400, "No zip entries selected");
+    const stem = path.parse(zipName).name;
+    const print = await createModelOf(
+      userId,
+      entries.map((entry) => ({ entry, folder: entry.folder || null })),
+      metaFor(options, options.title ?? stem, options.categoryId ?? null),
+      stem,
+      options,
+    );
+    return { prints: [print], failed };
+  } finally {
+    await Promise.all(entries.map((entry) => fs.rm(entry.tempPath, { force: true }).catch(() => undefined)));
+  }
+}
+
+/** A zip's picked entries as "Each folder is a model" takes a folder tree (modelFolders.ts), the rules the consume
+ *  folder goes by: each folder holding model files one model, named after it, in the categories of the folders above
+ *  it, with the subfolders holding none attached; the other files a model each, as a model per file makes them. */
+export async function extractZipEntriesToFolderModels(
+  userId: string,
+  zipPath: string,
+  selections: string[],
+  options: ZipExtractOptions,
+  onProgress?: (processed: number, total: number, imported: number, failed: number) => void,
+): Promise<{ prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[]; failed: string[] }> {
+  if (options.categoryId) await validateParentCategory(userId, options.categoryId);
+  const { entries, failed } = await readPickedEntries(zipPath, selections);
+  const prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[] = [];
+  const loose: string[] = [];
+  const categoryCache: CategoryCache = new Map();
+  try {
+    const units = modelFolderUnits(
+      entries,
+      (entry) => entry.folder,
+      (entry) => isPlateName(entry.filename),
+    );
+    const total = units.filter((unit) => unit.kind === "model").length;
+    let processed = 0;
+    for (const unit of units) {
+      if (unit.kind === "file") {
+        loose.push(unit.item.name);
+        continue;
+      }
+      const levels = unit.folder.split("/");
+      try {
+        const categoryId = await resolveZipCategoryId(
+          userId,
+          options.categoryId ?? null,
+          [...levels, "_"].join("/"),
+          categoryCache,
+        );
+        const name = levels.at(-1)!;
+        prints.push(
+          await createModelOf(
+            userId,
+            [
+              ...unit.files.map((entry) => ({ entry, folder: null })),
+              ...unit.attached.map(({ item, folder }) => ({ entry: item, folder })),
+            ],
+            metaFor(options, name, categoryId),
+            name,
+            options,
+          ),
+        );
+      } catch (err) {
+        console.warn("Zip import: couldn't make a model of", unit.folder, err);
+        failed.push(unit.folder);
+      }
+      onProgress?.(++processed, total, prints.length, failed.length);
+    }
+  } finally {
+    await Promise.all(entries.map((entry) => fs.rm(entry.tempPath, { force: true }).catch(() => undefined)));
+  }
+  if (loose.length) {
+    const rest = await extractZipEntriesToPrints(userId, zipPath, loose, options);
+    prints.push(...rest.prints);
+    failed.push(...rest.failed);
+  }
   return { prints, failed };
 }

@@ -49,6 +49,12 @@ export type ImportKit = {
    * holds no geometry, so it must never be one.
    */
   isImportableFile(name: string): boolean;
+  /**
+   * Whether a file is one the model keeps beside it as a supporting file: instructions, notes, a parts list, a source.
+   * Not a model file, script, zip or picture. Worth downloading too, through `downloadSignedFile`, which keeps it within
+   * the admin's limits and skips it rather than failing the import.
+   */
+  isSupportingFile(name: string): boolean;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */

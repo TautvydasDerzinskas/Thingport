@@ -73,7 +73,8 @@ async function downloadModelFiles(resolved: VoxelshareModelResolution, kit: Impo
   const inputs: NewPlateInput[] = [];
   try {
     for (const file of resolved.files) {
-      if (!kit.isImportableFile(file.name) && !/\.zip$/i.test(file.name)) continue;
+      // The other files a model keeps beside it too, which never fail the import (downloadSignedFile skips them).
+      if (!kit.isImportableFile(file.name) && !kit.isSupportingFile(file.name) && !/\.zip$/i.test(file.name)) continue;
       // Null when it didn't download at all, as against a zip with nothing in it worth importing.
       const downloaded = await kit.downloadSignedFile(file, isVoxelshareFileHost, BLOCKED);
       if (downloaded === null) throw new HttpError(502, FILE_FAILED);

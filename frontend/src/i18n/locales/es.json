@@ -1560,6 +1560,15 @@
         "saveFailed": "No se pudo guardar cuántas fotos conservar",
         "loadFailed": "No se pudo cargar cuántas fotos conservar."
       },
+      "importSupportingFiles": {
+        "label": "Archivos adjuntos de las importaciones",
+        "help": "Los archivos que el sitio de un modelo ofrece junto a sus archivos del modelo (instrucciones, notas, una lista de piezas, archivos fuente) se guardan como sus archivos adjuntos, cada uno hasta este tamaño. En total, un modelo guarda dos veces y media eso. Las imágenes se omiten, porque las fotos del modelo vienen de su página. Desactivado no guarda ninguno; los modelos ya importados conservan los suyos.",
+        "off": "Desactivado",
+        "any": "Cualquier tamaño",
+        "size": "{{count}} MB",
+        "saveFailed": "No se pudo guardar qué archivos adjuntos guardan las importaciones",
+        "loadFailed": "No se pudo cargar qué archivos adjuntos guardan las importaciones."
+      },
       "freeSpace": {
         "open": "Liberar espacio",
         "freeing": "Liberando espacio…",
@@ -2359,7 +2368,8 @@
           "migration_export_read": "Copiada por otra instancia",
           "achievement_settings_changed": "Logros cambiados",
           "storage_cleanup_started": "Se empezó a liberar espacio",
-          "photos_per_model_changed": "Cambió cuántas fotos se conservan por modelo"
+          "photos_per_model_changed": "Cambió cuántas fotos se conservan por modelo",
+          "import_supporting_files_changed": "Se cambió qué archivos adjuntos guardan las importaciones"
         },
         "authorsLinked": "{{count}} modelo(s) vinculado(s)",
         "descriptionsRefetched": "{{email}} — {{updated}} de {{total}} descripción(es) modificada(s)",

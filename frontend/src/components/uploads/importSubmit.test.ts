@@ -258,6 +258,15 @@ describe("a link that may be a zip", () => {
     expect(deps.queue.submitZip.mock.calls[0][0]).not.toHaveProperty("makerworld_cookie");
   });
 
+  it("offers the choice an uploaded zip does, and sends the one made", async () => {
+    const { deps, config } = await shownZip();
+    expect(config.chooseMode).toBe(true);
+    await config.onImportSelected(["Kit/a.stl", "Kit/b.stl"], "folders");
+    expect(deps.queue.submitZip).toHaveBeenCalledWith(
+      expect.objectContaining({ entries: ["Kit/a.stl", "Kit/b.stl"], mode: "folders" }),
+    );
+  });
+
   it("leaves a failed import to the prompt, and a sign-out to whoever handles it", async () => {
     const { deps, config } = await shownZip();
     deps.queue.submitLink.mockRejectedValueOnce(new Error("Nope"));

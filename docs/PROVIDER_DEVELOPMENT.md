@@ -198,6 +198,17 @@ Rules of thumb:
   a model's creator kept its script back, report it in `meta.parametricSource` with `withheld: true`, as MakerWorld
   does for a design whose `.scad` files are all `protected`: the model then shows "Script not shared" rather than
   looking as if Thingport lost the script.
+- **Supporting files** are the other files a site gives with a model: instructions, notes, sources. They're kept beside
+  the model as SUPPORTING files.
+  - **From a zip:** a zip that `kit.downloadSignedFile` unpacks gives them up with its model files, placed beside
+    them.
+  - **From a file list:** a site that lists files one by one asks for them with `kit.isSupportingFile`, and downloads
+    them through `kit.downloadSignedFile`. That keeps them within the admin's limits (Administration → Storage), and
+    skips one that's blocked or fails rather than failing the import.
+  - **Never kept:** pictures, render-only scenes and programs.
+  - **A sliced file** stays a supporting file, not the prepared print.
+  - **Other files:** the pipeline marks any other file a provider hands back the same way (`asImported`).
+  - **Counting:** only model files and scripts count as something to import.
 - **Folders**: where the site keeps a model's files in folders, set each file's `folder` on the `NewPlateInput` it
   gives back (levels joined by "/"), as Printables (`stls { folder }`), GrabCAD (`folder_path`), MyMiniFactory (an
   archive's paths) and PIXUP (its variants and file groups) do; a zip's own folders are kept by `kit.downloadSignedFile`

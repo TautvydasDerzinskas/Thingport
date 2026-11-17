@@ -16,6 +16,7 @@ import FileReuseSection from "./FileReuseSection";
 import FreeUpSpaceDialog from "./FreeUpSpaceDialog";
 import LicenseFilesSection from "./LicenseFilesSection";
 import PhotosPerModelRow from "./PhotosPerModelRow";
+import ImportSupportingFilesRow from "./ImportSupportingFilesRow";
 import StorageBrowserDialog from "./StorageBrowserDialog";
 import StorageSection from "./StorageSection";
 import StorageUsageCard from "./StorageUsageCard";
@@ -89,6 +90,7 @@ export default function StoragePage({ onUnauthorized }: Props) {
               </Button>
             </Stack>
             <PhotosPerModelRow keep={keep} failed={keepFailed} onChange={changeKeep} onUnauthorized={onUnauthorized} />
+            <ImportSupportingFilesRow onUnauthorized={onUnauthorized} />
           </Stack>
         </Stack>
       </Paper>

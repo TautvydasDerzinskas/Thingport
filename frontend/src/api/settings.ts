@@ -5,7 +5,7 @@ import type { AccentColor, RenderColor, ThemeSelection } from "../constants/sett
 import type { ProviderId } from "../providers/index.generated";
 import { invalidateAiCategorizationStatus } from "./aiCategorization";
 import type { QualityIssueCode, QualitySeverity } from "./prints";
-import type { PhotoKeep } from "./admin";
+import type { PhotoKeep, SupportingFileLimit } from "./admin";
 
 /** What API tokens may do at /api/mcp, instance-wide. */
 export type McpAccess = "off" | "read" | "write";
@@ -507,6 +507,24 @@ export const settingsApi = {
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to update file reuse settings"));
     return res.json();
+  },
+
+  /** The largest supporting file an import keeps beside a model (instructions, notes, sources). */
+  getImportSupportingFiles: async (): Promise<SupportingFileLimit> => {
+    const res = await fetch(`${apiBase()}/settings/import-supporting-files`, { headers: authHeaders() });
+    assertOk(res, "Failed to load the supporting files setting");
+    return (await res.json()).limit;
+  },
+
+  updateImportSupportingFiles: async (limit: SupportingFileLimit): Promise<SupportingFileLimit> => {
+    const res = await fetch(`${apiBase()}/settings/import-supporting-files`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ limit }),
+    });
+    if (res.status === 401) throw new UnauthorizedError();
+    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to save the supporting files setting"));
+    return (await res.json()).limit;
   },
 
   /** How many photos an import or a re-sync keeps from a model's page; null keeps them all. */

@@ -10,6 +10,7 @@
 //   its own, run before the page paints.
 // - The app's text for it, under its id in frontend/src/i18n/locales/*.json, where all of the app's text is kept.
 
+import fs from "node:fs/promises";
 import { HttpError } from "../../utils/fileUtils";
 import { mapWithConcurrency } from "../../utils/concurrency";
 import type { NewPlateInput } from "../../services/printCreation";
@@ -57,6 +58,13 @@ async function requireToken(): Promise<string> {
 
 /** Every model file bundled with the Thing becomes its own plate on one print. Read and downloaded with the
  *  instance's App Token, which an admin sets. */
+const BLOCKED =
+  "Thingiverse blocked a file download with a rate-limit challenge (Cloudflare). This usually clears after a while -- wait, then retry the same import.";
+
+/** Where Thing Files are: Thingiverse's own CDN. */
+const isThingiverseFileHost = (hostname: string) =>
+  hostname === "thingiverse.com" || hostname.endsWith(".thingiverse.com");
+
 export const thingiverseImport: SourcedImport<string, Thing> = {
   requireAuth: () => requireToken(),
   async resolveModel(thingId, accessToken) {
@@ -88,11 +96,23 @@ export const thingiverseImport: SourcedImport<string, Thing> = {
     const downloaded = results
       .filter((result): result is { input: NewPlateInput } => result !== null && "input" in result)
       .map((result) => result.input);
-    if (!downloaded.length && results.some((result) => result !== null && "rateLimited" in result)) {
-      throw new HttpError(
-        429,
-        "Thingiverse blocked a file download with a rate-limit challenge (Cloudflare). This usually clears after a while -- wait, then retry the same import.",
-      );
+    let blocked = results.some((result) => result !== null && "rateLimited" in result);
+    // Then, one at a time, a zip Thing File opened for what it holds, and the other files -- instructions, notes --
+    // as supporting files, which never fail the import.
+    const otherFiles = thing.plateFiles.filter((file) => /\.zip$/i.test(file.name) || kit.isSupportingFile(file.name));
+    try {
+      for (const file of otherFiles) {
+        try {
+          downloaded.push(...((await kit.downloadSignedFile(file, isThingiverseFileHost, BLOCKED)) ?? []));
+        } catch (err) {
+          if (!(err instanceof HttpError && err.status === 429)) throw err;
+          blocked = true;
+        }
+      }
+      if (blocked && !downloaded.some((input) => !input.supporting)) throw new HttpError(429, BLOCKED);
+    } catch (err) {
+      await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
+      throw err;
     }
     return downloaded;
   },

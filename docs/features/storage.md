@@ -83,6 +83,16 @@ while files are being moved or identical files are being checked, and neither of
 them (the default), 10, 5, 3 or 1. A photo that couldn't be downloaded doesn't count, so the next one is taken. Models
 already stored keep theirs until **Free up space** trims them, and photos users upload aren't limited.
 
+### Supporting files from imports
+
+**Supporting files from imports** sets how large a file an import keeps beside a model as a
+[supporting file](supporting-files.md): the instructions, notes and sources a site gives with it.
+
+- **The choices:** Off, 25 MB, 100 MB (the default), 500 MB or any size.
+- **Per model:** a model keeps two and a half times that in all, so 250 MB at the default.
+- **Over the size:** a file is skipped.
+- **Not affected:** models already imported keep theirs, and files users add themselves aren't limited.
+
 ## The same model for several users
 
 When several users import the same model, each gets a copy of its files in their own folder. Admins can have

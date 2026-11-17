@@ -266,7 +266,10 @@ describe("the import worker", () => {
       const listUrl = "https://www.printables.com/@someone/collections/123";
       const single = await enqueueSingleImport(alice, modelUrl(base + 10), { title: "Called this", tags: ["mine"] });
       const links = await enqueueLinksImport(bob, [modelUrl(base + 11), modelUrl(base + 12)], { notes: "Note" });
-      const zip = await enqueueZipImport(alice, "https://example.com/pack.zip", { entries: ["hull.stl", "mast.stl"] });
+      const zip = await enqueueZipImport(alice, "https://example.com/pack.zip", {
+        entries: ["hull.stl", "mast.stl"],
+        mode: "separate",
+      });
       const collection = await enqueueListImport(bob, "makerworld", "https://makerworld.com/en/collections/987-flock", {
         model_ids: [String(base + 13)],
         tags: ["flock"],
