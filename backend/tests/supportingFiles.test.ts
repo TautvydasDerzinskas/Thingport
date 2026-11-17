@@ -7,6 +7,7 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { buildZipEntries } from "../src/services/downloadZip";
+import { renameSupportingFile } from "../src/services/printFileService";
 import { makePrint, register, upload } from "./helpers/fileReuse";
 
 // A model's supporting files on its page: listed with it, shown in the browser where that's safe, renamed, and zipped.
@@ -123,6 +124,21 @@ describe("supporting files", () => {
     // A plate is not a supporting file.
     const plateRoute = `/api/print/${model.print.id}/files/${model.plate.id}`;
     expect((await request(app).patch(plateRoute).set(auth(owner.token)).send({ filename: "y.stl" })).status).toBe(404);
+  });
+
+  it("give renames at once to one name a name each", async () => {
+    const model = await makePrint(dir, owner.id, "Raced");
+    const files = [];
+    for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"])
+      files.push(await upload(dir, owner.id, model.print.id, name, name));
+    await Promise.all(files.map((file) => renameSupportingFile(owner.id, model.print.id, file.id, "notes")));
+    const after = await prisma.printFile.findMany({ where: { id: { in: files.map((file) => file.id) } } });
+    expect(after.map((file) => file.filename).toSorted()).toEqual([
+      "notes (2).txt",
+      "notes (3).txt",
+      "notes (4).txt",
+      "notes.txt",
+    ]);
   });
 
   it("say which file an upload stored, though the model has another of its name, and a sliced one too", async () => {
