@@ -211,6 +211,34 @@ describe("the model's thumbnail", () => {
     expect(await redOfBytes((await fetchPicture(after.thumb_url!)).body)).toBeLessThan(30);
   });
 
+  // A full disk, say: the card was handed that address, so it shows the picture itself rather than nothing.
+  it("is the picture itself while its card-sized copy can't be written", async () => {
+    const print = await withPictures(await png(10), await png(200));
+    const [a, b] = print.preview_images.map((image) => image.id);
+    const reordered = await reorder(print.id, [b, a]);
+    const copy = await copyOf(print.id, b);
+    const writeFile = fs.writeFile;
+    const full = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).startsWith(`${copy}.`)) {
+        throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+      }
+      return writeFile(file, data, options);
+    });
+    try {
+      const res = await fetchPicture(reordered.thumb_url!);
+      // Not kept, so its copy is what's served once there's room.
+      expect(res.headers["cache-control"]).toBe("private, no-cache");
+      expect(await redOfBytes(res.body)).toBeGreaterThan(180);
+      // The model's own address too, rather than the file's thumbnail, which is the picture that was first before.
+      expect(await redOfBytes((await fetchPicture(`/print/${print.id}/thumb.jpg`)).body)).toBeGreaterThan(180);
+      expect(fsSync.existsSync(copy)).toBe(false);
+    } finally {
+      full.mockRestore();
+    }
+    expect((await fetchPicture(reordered.thumb_url!)).headers["cache-control"]).toContain("immutable");
+    expect(fsSync.existsSync(copy)).toBe(true);
+  });
+
   it("leaves the files' own thumbnails as they are", async () => {
     const print = await uploadStl();
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });

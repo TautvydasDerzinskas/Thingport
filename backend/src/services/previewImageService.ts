@@ -60,6 +60,17 @@ export async function galleryThumbPath(id: string, home: AssetHome): Promise<str
   return made;
 }
 
+/**
+ * What a card shows of the image: its card-sized copy, else the image itself where no copy can be written (a full
+ * disk), as the card was handed this image's address either way. `copy` says which. Null when the image is gone.
+ */
+export async function galleryCardPicture(id: string, home: AssetHome): Promise<{ path: string; copy: boolean } | null> {
+  const copy = await galleryThumbPath(id, home);
+  if (copy) return { path: copy, copy: true };
+  const image = previewImagePath(id, home);
+  return fsSync.existsSync(image) ? { path: image, copy: false } : null;
+}
+
 async function makeGalleryThumb(source: string, dest: string): Promise<string | null> {
   const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
   try {

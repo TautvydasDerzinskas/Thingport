@@ -15,7 +15,7 @@ import { createUploadedModel } from "../services/uploadService";
 import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { assignCategory, setPrintCategory } from "../services/printCategoryService";
 import { mergeModels } from "../services/modelMergeService";
-import { galleryThumbPath, previewImagePath } from "../services/previewImageService";
+import { galleryCardPicture, previewImagePath } from "../services/previewImageService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
 import { printOutById, printOutsByIds } from "../services/printLoader";
@@ -617,7 +617,7 @@ router.get(
     });
     if (!print) throw new HttpError(404, "Not found");
     const cover = print.previewImages[0];
-    const fromCover = cover && !cover.generated ? await galleryThumbPath(cover.id, print.assetsPath) : null;
+    const fromCover = cover && !cover.generated ? (await galleryCardPicture(cover.id, print.assetsPath))?.path : null;
     const plate = print.plates[0];
     const thumbPath = fromCover ?? (plate ? plateThumbPath(plate.id, print.assetsPath) : null);
     if (!thumbPath || !fs.existsSync(thumbPath)) throw new HttpError(404, "Not found");
@@ -661,7 +661,7 @@ router.get(
   }),
 );
 
-// The image at card size, made on first request (previewImageService galleryThumbPath).
+// The image at card size, made on first request (previewImageService galleryCardPicture).
 router.get(
   "/preview-image/:id/thumb.jpg",
   asyncHandler(async (req, res) => {
@@ -670,11 +670,15 @@ router.get(
       include: { print: { select: { assetsPath: true } } },
     });
     if (!image) throw new HttpError(404, "Not found");
-    const filePath = await galleryThumbPath(image.id, image.print.assetsPath);
-    if (!filePath) throw new HttpError(404, "Not found");
+    const picture = await galleryCardPicture(image.id, image.print.assetsPath);
+    if (!picture) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", "image/jpeg");
-    res.setHeader("Cache-Control", req.query.v ? "private, max-age=31536000, immutable" : "private, no-cache");
-    res.sendFile(path.resolve(filePath));
+    // The full image standing in isn't kept, so the copy is served once it can be written.
+    res.setHeader(
+      "Cache-Control",
+      picture.copy && req.query.v ? "private, max-age=31536000, immutable" : "private, no-cache",
+    );
+    res.sendFile(path.resolve(picture.path));
   }),
 );
 
