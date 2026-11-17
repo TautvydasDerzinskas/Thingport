@@ -252,14 +252,25 @@ export async function removePreviewImage(printId: string, imageId: string): Prom
   await removePreviewImageFile(printId, imageId);
 }
 
-/** Puts the model's gallery in this order; `ids` must be exactly its images. The first is the cover. */
+/** Puts the model's gallery in this order; `ids` must be exactly its images, bar those whose file is gone, which no one
+ *  is shown (toPrintOut leaves them out) and so no one can list: they keep their order after the rest. The first is
+ *  the cover. */
 export async function reorderPreviewImages(printId: string, ids: string[]): Promise<void> {
-  const images = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
+  const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+  const images = await prisma.previewImage.findMany({
+    where: { printId },
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
   const known = new Set(images.map((img) => img.id));
-  if (ids.length !== images.length || new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) {
+  const listed = new Set(ids);
+  const unseen = images
+    .filter((img) => !listed.has(img.id) && !previewImageExists(img.id, print?.assetsPath))
+    .map((img) => img.id);
+  if (ids.length + unseen.length !== images.length || listed.size !== ids.length || ids.some((id) => !known.has(id))) {
     throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
   }
-  await renumberPreviewImages(ids);
+  await renumberPreviewImages([...ids, ...unseen]);
 }
 
 // The card render is white shading for the cards to tint, too pale on a light background as it is; as a thumb it's

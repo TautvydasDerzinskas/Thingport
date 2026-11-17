@@ -334,6 +334,22 @@ describe("the model's thumbnail", () => {
     expect(row.thumbUrl).toMatch(cardOf(b));
     expect(row.photoUrl).toMatch(cardOf(b));
   });
+
+  it("is reordered by the pictures that are there, one whose file is gone kept after them", async () => {
+    const print = await withPictures(await png(10), await png(200), await png(120));
+    const [a, b, c] = print.preview_images.map((image) => image.id);
+    await fs.rm(previewImagePath(a, await printAssetHome(print.id)));
+    // What Edit model shows, and so can send: b and c.
+    expect((await reorder(print.id, [c, b])).thumb_url).toMatch(cardOf(c));
+    const order = await prisma.previewImage.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    expect(order.map((image) => image.id)).toEqual([c, b, a]);
+    // A picture that's there still has to be listed.
+    const short = await request(app)
+      .post(`/api/print/${print.id}/preview-images/reorder`)
+      .set(auth())
+      .send({ image_ids: [c] });
+    expect(short.status).toBe(400);
+  });
 });
 
 describe("our own thumb and cover", () => {
