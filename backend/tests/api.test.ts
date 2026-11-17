@@ -467,6 +467,38 @@ describe("uploads of one model's several files", () => {
     for (const file of [picture, notes]) fs.rmSync(file, { force: true });
   });
 
+  it("keeps a lone file in its folder, as it would one of several, and one sent without a folder at the top", async () => {
+    // A zip's "parts/body.stl" beside its photo: the photo goes to the gallery, leaving the model file to go up alone.
+    const stl = tmpFile("body.stl", "solid body endsolid");
+    const inFolder = await auth(request(app).post("/api/upload"))
+      .field("folders", JSON.stringify(["parts"]))
+      .attach("files", stl);
+    expect(inFolder.status).toBe(200);
+    await trackPrint(inFolder.body.prints[0].id);
+    expect(inFolder.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual(["parts"]);
+
+    const plain = await auth(request(app).post("/api/upload")).attach("files", stl);
+    expect(plain.status).toBe(200);
+    await trackPrint(plain.body.prints[0].id);
+    expect(plain.body.prints[0].plates.map((plate: { folder: string | null }) => plate.folder)).toEqual([null]);
+
+    // Each a model of its own, separate files have no model to be in a folder of.
+    const other = tmpFile("lid.stl", "solid lid endsolid");
+    const separate = await auth(request(app).post("/api/upload"))
+      .field("mode", "separate")
+      .field("folders", JSON.stringify(["parts", "parts"]))
+      .attach("files", stl)
+      .attach("files", other);
+    expect(separate.status).toBe(200);
+    for (const print of separate.body.prints) await trackPrint(print.id);
+    expect(
+      separate.body.prints.flatMap((print: { plates: { folder: string | null }[] }) =>
+        print.plates.map((p) => p.folder),
+      ),
+    ).toEqual([null, null]);
+    for (const file of [stl, other]) fs.rmSync(file, { force: true });
+  });
+
   it("refuses folders that don't line up with the files", async () => {
     const a = tmpFile("a.stl", "solid a endsolid");
     const b = tmpFile("b.stl", "solid b endsolid");

@@ -58,3 +58,33 @@ describe("printsApi.bulkAssignCategory", () => {
     await expect(printsApi.bulkAssignCategory(ids, "category")).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });
+
+describe("printsApi.upload", () => {
+  beforeEach(() => {
+    vi.stubGlobal("window", { localStorage: { getItem: () => null } });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const foldersSent = async (files: File[], folders?: (string | null)[]) => {
+    const answer = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
+      Response.json({ prints: [] }),
+    );
+    vi.stubGlobal("fetch", answer);
+    await printsApi.upload(files, { mode: "multiplate", folders });
+    return (answer.mock.calls[0][1].body as FormData).get("folders");
+  };
+  const file = (name: string) => new File(["solid x endsolid"], name);
+
+  it("sends where a lone file sat, as it does each of several, and nothing when none sat in a folder", async () => {
+    // A zip's "parts/body.stl" with its photo, which goes to the gallery: the model file goes up alone.
+    expect(await foldersSent([file("body.stl")], ["parts"])).toBe(JSON.stringify(["parts"]));
+    expect(await foldersSent([file("body.stl"), file("guide.pdf")], ["parts", "docs"])).toBe(
+      JSON.stringify(["parts", "docs"]),
+    );
+    expect(await foldersSent([file("body.stl")], [null])).toBeNull();
+    expect(await foldersSent([file("body.stl")])).toBeNull();
+  });
+});
