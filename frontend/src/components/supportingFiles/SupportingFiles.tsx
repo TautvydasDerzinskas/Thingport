@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type { Print, PrintFile } from "../../api/prints";
@@ -29,9 +29,17 @@ export default function SupportingFiles({ print, actions, canEdit }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
   const linked = searchParams.get("file");
 
-  // A copied link opens the model with that file in the viewer.
+  // A copied link opens the model with that file in the viewer, once: a rename or an upload hands over a new list, and
+  // what was picked since stays. Closing the viewer drops the link, so the same one opens it again.
+  const opened = useRef<string | null>(null);
   useEffect(() => {
-    if (linked && files.some((file) => file.id === linked)) setViewing(linked);
+    if (!linked) {
+      opened.current = null;
+      return;
+    }
+    if (opened.current === linked || !files.some((file) => file.id === linked)) return;
+    opened.current = linked;
+    setViewing(linked);
   }, [linked, files]);
 
   const closeViewer = useCallback(() => {
