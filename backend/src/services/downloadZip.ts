@@ -65,6 +65,29 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
   return plateBytes + (supporting._sum.size ?? 0);
 }
 
+/** The folder each model's files go in: its name, or, where another model has that folder (a "Base" in each of two
+ *  categories, with the categories left out), its name with a number no other model's folder has. */
+function modelFolders(prints: PrintWithPlatesAndCategory[], flatten: boolean): Map<PrintWithPlatesAndCategory, string> {
+  const own = (print: PrintWithPlatesAndCategory) =>
+    flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
+  const folders = new Map<PrintWithPlatesAndCategory, string>();
+  const taken = new Set<string>();
+  for (const print of prints) {
+    const folder = own(print);
+    if (taken.has(folder.toLowerCase())) continue;
+    taken.add(folder.toLowerCase());
+    folders.set(print, folder);
+  }
+  for (const print of prints) {
+    if (folders.has(print)) continue;
+    let folder = own(print);
+    for (let n = 2; taken.has(folder.toLowerCase()); n++) folder = `${own(print)} (${n})`;
+    taken.add(folder.toLowerCase());
+    folders.set(print, folder);
+  }
+  return folders;
+}
+
 type ZipOptions = {
   /** Drops the category folder, for downloads that span categories. */
   flatten?: boolean;
@@ -107,9 +130,10 @@ export async function buildZipEntries(
       : [],
   );
 
+  const folders = modelFolders(prints, Boolean(opts.flatten));
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
-    const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
+    const prefix = folders.get(print)!;
     // Every name the model takes in the zip, which can't hold one twice: a supporting file steps around these.
     const taken = new Set<string>();
     const sortedPlates = print.plates

@@ -234,4 +234,40 @@ describe("supporting files", () => {
     expect(arcnames.filter((name) => name.endsWith("/supporting/own.stl"))).toHaveLength(1);
     expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
   });
+
+  it("keep to their own model's folder in a zip, though another model has its name", async () => {
+    const name = `Base ${nonce()}`;
+    const models = [];
+    // Two categories can each hold a "Base", and a download across them leaves the categories out; a third model is
+    // already called what the second would become.
+    for (const [label, modelName] of [
+      ["Kitchen", name],
+      ["Garage", name],
+      ["Shed", `${name} (2)`],
+    ]) {
+      const model = await makePrint(dir, owner.id, label);
+      const category = await prisma.category.create({ data: { userId: owner.id, name: `${label} ${nonce()}` } });
+      await prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: modelName, nameNormalized: modelName.toLowerCase(), categoryId: category.id },
+      });
+      await upload(dir, owner.id, model.print.id, "notes.txt", label);
+      models.push(model);
+    }
+    const prints = await prisma.print.findMany({
+      where: { id: { in: models.map((model) => model.print.id) } },
+      include: { plates: true, category: true },
+    });
+    const ordered = models.map((model) => prints.find((print) => print.id === model.print.id)!);
+    const arcnames = (await buildZipEntries(ordered, { flatten: true })).map((entry) => entry.arcname);
+    expect(new Set(arcnames.map((arcname) => arcname.toLowerCase())).size).toBe(arcnames.length);
+    expect(arcnames.filter((arcname) => arcname.endsWith("/supporting/notes.txt")).toSorted()).toEqual([
+      `${name} (2)/supporting/notes.txt`,
+      `${name} (3)/supporting/notes.txt`,
+      `${name}/supporting/notes.txt`,
+    ]);
+    // The one already called "(2)" keeps its folder: the second "Base" steps around it.
+    expect(arcnames).toContain(`${name} (2)/own.stl`);
+    expect(arcnames).toContain(`${name} (3)/own.stl`);
+  });
 });
