@@ -42,8 +42,9 @@ export type ToolManifest = {
   locales?: string[];
   /** What it offers to do with a model, from the model page's main button menu. */
   commands?: ToolCommand[];
-  /** A part of every model's page showing its users' shared entries about the model, with `command` offered there. */
-  modelInfo?: { title: string; command?: string };
+  /** Parts of every model's page it draws itself: in the info box, a tab of the description box, and the picture's
+   *  top right corner. */
+  modelPage?: { info?: boolean; tab?: { title: string }; image?: boolean };
 };
 
 /** Something a tool offers to do with a model, listed on the model page without the tool running. Its title
@@ -62,9 +63,6 @@ export type ToolCommand = {
 /** Another of the instance's users as a tool shows them: a name and an avatar, never an email. */
 export type ToolPerson = { id: string; display_name: string; avatar_url: string | null };
 
-/** What a model's page shows for a shared entry: a label (a key in the tool's labels, or words), its tone, and when. */
-export type SharedInfo = { label: string; tone: "waiting" | "active" | "done" | "failed" | "neutral"; date?: string };
-
 /** One of the entries a tool's users share, as the reader sees it. */
 export type SharedEntry = {
   key: string;
@@ -73,7 +71,6 @@ export type SharedEntry = {
   mine: boolean;
   /** The model it's about, as its writer has it. */
   model_id: string | null;
-  info: SharedInfo | null;
   updated_at: string;
   /** Where it is in the order: `before` in a read for the entries after it. */
   cursor: string;
@@ -81,14 +78,6 @@ export type SharedEntry = {
 
 /** Whom the user's shared entries in a tool reach. */
 export type ToolAudience = { everyone: boolean; people: ToolPerson[] };
-
-/** What the tools show on a model's page: each person's latest entry about it, tool by tool. */
-export type ToolModelInfo = {
-  tools: {
-    tool_id: string;
-    entries: { user: ToolPerson | null; mine: boolean; info: SharedInfo; updated_at: string }[];
-  }[];
-};
 
 /** One language's labels: a flat map of key to sentence, as `locales/<code>.json` holds it. */
 export type ToolLocale = Record<string, string>;
@@ -260,11 +249,7 @@ export const toolsApi = {
     return (await res.json()).entries;
   },
 
-  sharedSet: async (
-    id: string,
-    key: string,
-    body: { value: unknown; model?: string | null; info?: SharedInfo | null },
-  ): Promise<void> => {
+  sharedSet: async (id: string, key: string, body: { value: unknown; model?: string | null }): Promise<void> => {
     const res = await fetch(`${apiBase()}/tools/${id}/shared/${keyPath(key)}`, {
       method: "PUT",
       ...json(body),
@@ -299,12 +284,6 @@ export const toolsApi = {
     });
     if (!res.ok) return failed(res, "Failed to find people");
     return (await res.json()).people;
-  },
-
-  modelInfo: async (printId: string): Promise<ToolModelInfo> => {
-    const res = await fetch(`${apiBase()}/tools/model-info/${encodeURIComponent(printId)}`, { headers: authHeaders() });
-    if (!res.ok) return failed(res, "Failed to read what the tools note about the model");
-    return res.json();
   },
 
   /** A tool's request to a host it declares, made by the server; as a Response, as `fetch` gives. */

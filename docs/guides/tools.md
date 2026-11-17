@@ -35,7 +35,7 @@ every device:
 
 ## The tools in the repository
 
-Ten come with Thingport, for an admin to install:
+Eleven come with Thingport, for an admin to install:
 
 | Tool                      | Shelf       | What it does                                                                                                                                                       |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -48,6 +48,7 @@ Ten come with Thingport, for an admin to install:
 | Script customizer         | Generators  | Generates a model again from an OpenSCAD script: the one a model in your library came with, or a `.scad` file.                                                     |
 | Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
 | Print queue               | Planners    | A print queue the household shares: who has a model queued, printing or printed, on its page, and a board to move each print along.                                |
+| Filament shelf            | Planners    | Everyone's filament spools on one shelf, and on each model's page the filaments it needs and who has them, matched by material and colour.                         |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its

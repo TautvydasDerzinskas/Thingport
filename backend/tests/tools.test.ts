@@ -173,15 +173,14 @@ describe("metadata", () => {
     expect(() => parseToolManifest(manifest([{ id: "a", title: "A", fileTypes: ["stl"] }]))).toThrow(/on: "file"/);
   });
 
-  it("takes a part of the model page, offering one of its own commands there", () => {
-    const commands = [{ id: "queue", title: "Add to queue", window: false }];
+  it("takes the parts of a model's page it draws", () => {
     expect(
-      parseToolManifest(JSON.stringify({ name: "x", commands, modelInfo: { title: "Print queue", command: "queue" } }))
-        .modelInfo,
-    ).toEqual({ title: "Print queue", command: "queue" });
-    expect(() =>
-      parseToolManifest(JSON.stringify({ name: "x", commands, modelInfo: { title: "Print queue", command: "other" } })),
-    ).toThrow(/isn't one of its commands/);
+      parseToolManifest(JSON.stringify({ name: "x", modelPage: { tab: { title: "Filaments" }, image: true } }))
+        .modelPage,
+    ).toEqual({ info: false, tab: { title: "Filaments" }, image: true });
+    expect(() => parseToolManifest(JSON.stringify({ name: "x", modelPage: { tab: { title: "" } } }))).toThrow(
+      /modelPage/,
+    );
   });
 });
 

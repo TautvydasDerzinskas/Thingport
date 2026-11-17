@@ -9,8 +9,6 @@ export const ACTIVE = new Set(["queued", "printing"]);
 
 /** A job's key among the user's shared entries. */
 export const JOB = "job:";
-/** The entry that tells a model's page about the user's jobs on it, one per model. */
-export const ABOUT = "about:";
 
 const TONES = { queued: "waiting", printing: "active", printed: "done", failed: "failed" };
 
@@ -74,6 +72,22 @@ export function summaryOf(jobs) {
     (a, b) => RANK[a.status] - RANK[b.status] || statusDate(b).localeCompare(statusDate(a)),
   );
   return { label: `status.${shown.status}`, tone: TONES[shown.status], date: statusDate(shown) };
+}
+
+/** A model page's chips: each person with jobs on the model, or on a copy of it, once with what their jobs come to; the
+ *  user first, then by name. */
+export function chipsOf(entries) {
+  const byPerson = new Map();
+  for (const entry of entries) {
+    if (!entry.key.startsWith(JOB) || !isJob(entry.value)) continue;
+    const id = entry.user?.id ?? (entry.mine ? "me" : "someone");
+    const person = byPerson.get(id) ?? { user: entry.user, mine: entry.mine, jobs: [] };
+    person.jobs.push(entry.value);
+    byPerson.set(id, person);
+  }
+  return [...byPerson.values()]
+    .map(({ user, mine, jobs }) => ({ user, mine, summary: summaryOf(jobs) }))
+    .toSorted((a, b) => Number(b.mine) - Number(a.mine) || (a.user?.name ?? "").localeCompare(b.user?.name ?? ""));
 }
 
 /** Shared entries that are jobs, with each one's user, in the board's columns: the queue oldest first, as it's worked

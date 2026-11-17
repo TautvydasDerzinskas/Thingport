@@ -472,7 +472,57 @@ describe("classify3mf", () => {
       modelSettings: MODEL_SETTINGS,
       prusaConfig: null,
     });
-    expect(result).toEqual(format({ plates: 1 }));
+    expect(result).toEqual(format({ plates: 1, filamentList: expect.any(Array) }));
+    expect(result.filamentList).toHaveLength(2);
+  });
+
+  it("lists each filament a project sets up, with its material and maker", () => {
+    const base = { modelHead: null, modelSettings: null, prusaConfig: null };
+    const bambu = classify3mf({
+      ...base,
+      entries: ["3D/3dmodel.model", "Metadata/project_settings.config"],
+      projectSettings: JSON.stringify({
+        filament_colour: ["#ffffffff", "#000", "#C62828"],
+        filament_type: ["PLA", "PETG", "PLA"],
+        filament_vendor: ["Bambu Lab", "Generic", ""],
+        filament_settings_id: ["Bambu PLA Basic @BBL X1C", "Generic PETG", "Bambu PLA Matte @BBL A1"],
+      }),
+    });
+    expect(bambu.filamentList).toEqual([
+      { type: "PLA", color: "#FFFFFF", brand: "Bambu Lab" },
+      { type: "PETG", color: "#000000", brand: null },
+      { type: "PLA", color: "#C62828", brand: "Bambu Lab" },
+    ]);
+    const prusa = classify3mf({
+      ...base,
+      projectSettings: null,
+      entries: ["3D/3dmodel.model", "Metadata/Slic3r_PE.config"],
+      modelHead: '<model><metadata name="Application">PrusaSlicer-2.9.2</metadata>',
+      prusaConfig:
+        "; filament_colour = #FF8000;#3C3C3C\n; filament_type = PETG;PLA\n; filament_vendor = Prusa Polymers;Generic",
+    });
+    expect(prusa.filamentList).toEqual([
+      { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
+      { type: "PLA", color: "#3C3C3C", brand: null },
+    ]);
+    // Names with spaces in them come quoted, and a quoted one may hold a ";" of its own.
+    const quoted = classify3mf({
+      ...base,
+      projectSettings: null,
+      entries: ["3D/3dmodel.model", "Metadata/Slic3r_PE.config"],
+      modelHead: '<model><metadata name="Application">PrusaSlicer-2.9.2</metadata>',
+      prusaConfig: [
+        "; filament_colour = #FF8000;#3C3C3C;#FFFFFF",
+        "; filament_type = PETG;PLA;PLA",
+        '; filament_vendor = "Prusa Polymers";Generic;""',
+        '; filament_settings_id = "Prusament PETG";"Generic; PLA";"Bambu PLA Basic @BBL X1C"',
+      ].join("\n"),
+    });
+    expect(quoted.filamentList).toEqual([
+      { type: "PETG", color: "#FF8000", brand: "Prusa Polymers" },
+      { type: "PLA", color: "#3C3C3C", brand: null },
+      { type: "PLA", color: "#FFFFFF", brand: "Bambu Lab" },
+    ]);
   });
 
   it("tells PrusaSlicer projects, sliced files, Cura projects and plain 3MFs apart", () => {
@@ -485,6 +535,10 @@ describe("classify3mf", () => {
         "; printer_settings_id = Original Prusa MK4S\n; nozzle_diameter = 0.4\n; filament_colour = #FF0000;#00FF00",
     });
     expect(prusa).toMatchObject({ kind: "prusa", app: "PrusaSlicer", printer: "Original Prusa MK4S", filaments: 2 });
+    expect(prusa.filamentList).toEqual([
+      { type: null, color: "#FF0000", brand: null },
+      { type: null, color: "#00FF00", brand: null },
+    ]);
     expect(classify3mf({ ...base, entries: ["Metadata/plate_1.gcode", "Metadata/project_settings.config"] }).kind).toBe(
       "sliced",
     );
