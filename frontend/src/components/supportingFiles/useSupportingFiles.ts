@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintFile, printsApi } from "../../api/prints";
@@ -7,6 +7,7 @@ import { useToast } from "../ToastProvider";
 import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
+import { sortAddedFiles } from "../../utils/addedFiles";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -31,6 +32,15 @@ export function useSupportingFiles(
   // The hidden file input the picker is, bound by the component that renders it.
   const [input, setInput] = useState<HTMLInputElement | null>(null);
 
+  // Each change answers with the whole model, so they go one at a time: an answer that set out first lands first, never
+  // over a newer one.
+  const turn = useRef<Promise<unknown>>(Promise.resolve());
+  const inTurn = useCallback(<T>(task: () => Promise<T>): Promise<T> => {
+    const next = turn.current.then(task);
+    turn.current = next.catch(() => undefined);
+    return next;
+  }, []);
+
   const failed = useCallback(
     (err: unknown, fallback: string) => {
       if (err instanceof UnauthorizedError) {
@@ -42,31 +52,71 @@ export function useSupportingFiles(
     [onUnauthorized, showToast, t],
   );
 
-  /** One at a time, each shown as it goes; one that fails is said and the rest still go up. */
+  /** One at a time, each shown as it goes; one that fails is said and the rest still go up. A 3D file goes among the
+   *  model's files, as Edit model puts it. */
   const upload = useCallback(
     async (files: File[]) => {
       if (!files.length || !printId) return;
-      const queued = files.map((file) => ({ key: newLocalId(), name: file.name }));
-      setUploading((current) => [...current, ...queued]);
-      let added = 0;
-      for (const [index, file] of files.entries()) {
-        try {
-          const { print: updated } = await printsApi.uploadFile(printId, file);
-          onUpdated?.(updated);
-          added += 1;
-        } catch (err) {
-          failed(err, "models:supporting.addFailed");
-          if (err instanceof UnauthorizedError) {
-            setUploading((current) => current.filter((item) => !queued.includes(item)));
-            return;
+      const queued = files.map((file) => ({ key: newLocalId(), name: file.name, file }));
+      setUploading((current) => [...current, ...queued.map(({ key, name }) => ({ key, name }))]);
+      const settle = (done: { key: string }[]) => {
+        const keys = new Set(done.map((item) => item.key));
+        setUploading((current) => current.filter((item) => !keys.has(item.key)));
+      };
+      const { model, supporting } = sortAddedFiles(queued, "supporting");
+      await inTurn(async () => {
+        let added = 0;
+        let modelFilesAdded = false;
+        // A toast after a failure's would close it at once: what went wrong is the one left showing.
+        let anyFailed = false;
+        if (model.length) {
+          try {
+            const { print: updated } = await printsApi.addPlates(
+              printId,
+              model.map((item) => item.file),
+            );
+            onUpdated?.(updated);
+            modelFilesAdded = true;
+          } catch (err) {
+            failed(err, "models:supporting.addFailed");
+            anyFailed = true;
+            if (err instanceof UnauthorizedError) {
+              settle(queued);
+              return;
+            }
+          } finally {
+            settle(model);
           }
-        } finally {
-          setUploading((current) => current.filter((item) => item.key !== queued[index].key));
         }
-      }
-      if (added) showToast({ message: t("models:supporting.added", { count: added }), severity: "success" });
+        for (const item of supporting) {
+          try {
+            const { print: updated } = await printsApi.uploadFile(printId, item.file);
+            onUpdated?.(updated);
+            added += 1;
+          } catch (err) {
+            failed(err, "models:supporting.addFailed");
+            anyFailed = true;
+            if (err instanceof UnauthorizedError) {
+              settle(queued);
+              return;
+            }
+          } finally {
+            settle([item]);
+          }
+        }
+        if (anyFailed) return;
+        // Where they went, as a 3D file isn't among the attachments it was added to.
+        if (modelFilesAdded) {
+          showToast({
+            message: t("models:supporting.addedToModel", { files: model.map((item) => item.name).join(", ") }),
+            severity: "success",
+          });
+        } else if (added) {
+          showToast({ message: t("models:supporting.added", { count: added }), severity: "success" });
+        }
+      });
     },
-    [failed, onUpdated, printId, showToast, t],
+    [failed, inTurn, onUpdated, printId, showToast, t],
   );
 
   const remove = useCallback(
@@ -79,27 +129,31 @@ export function useSupportingFiles(
         destructive: true,
       });
       if (!confirmed) return;
-      try {
-        const { print: updated } = await printsApi.deleteFile(printId, file.id);
-        onUpdated?.(updated);
-      } catch (err) {
-        failed(err, "models:supporting.removeFailed");
-      }
+      await inTurn(async () => {
+        try {
+          const { print: updated } = await printsApi.deleteFile(printId, file.id);
+          onUpdated?.(updated);
+        } catch (err) {
+          failed(err, "models:supporting.removeFailed");
+        }
+      });
     },
-    [confirmDialog, failed, onUpdated, printId, t],
+    [confirmDialog, failed, inTurn, onUpdated, printId, t],
   );
 
   const rename = useCallback(
     async (file: PrintFile, filename: string) => {
       if (!printId) return;
-      try {
-        const { print: updated } = await printsApi.renameFile(printId, file.id, filename);
-        onUpdated?.(updated);
-      } catch (err) {
-        failed(err, "models:supporting.renameFailed");
-      }
+      await inTurn(async () => {
+        try {
+          const { print: updated } = await printsApi.renameFile(printId, file.id, filename);
+          onUpdated?.(updated);
+        } catch (err) {
+          failed(err, "models:supporting.renameFailed");
+        }
+      });
     },
-    [failed, onUpdated, printId],
+    [failed, inTurn, onUpdated, printId],
   );
 
   const download = useCallback(

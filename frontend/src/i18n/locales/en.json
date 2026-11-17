@@ -6919,6 +6919,7 @@
       "addShort": "Add files",
       "added_one": "Added {{count}} supporting file",
       "added_other": "Added {{count}} supporting files",
+      "addedToModel": "Added to the model files: {{files}}",
       "addFailed": "Couldn't add the file",
       "removeTitle": "Remove this file?",
       "removeMessage": "{{name}} will be deleted from this model.",

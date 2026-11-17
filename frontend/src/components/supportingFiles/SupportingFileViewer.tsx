@@ -26,7 +26,7 @@ import { type PrintFile, printsApi } from "../../api/prints";
 import { neutralTint } from "../../theme";
 import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
-import { guessDelimiter, parseDelimited } from "../../utils/delimited";
+import { previewTable } from "../../utils/delimited";
 import MarkdownDescription from "../MarkdownDescription";
 import { useToastHost } from "../ToastProvider";
 import TypeTile from "./TypeTile";
@@ -141,17 +141,11 @@ function TextPreview({
     );
   }
   if (kind === "table") {
-    const text = state.text;
-    const rows = parseDelimited(
-      text,
-      guessDelimiter(text.split(/\r?\n/, 1)[0] ?? "", extOf(file.filename)),
-      TABLE_ROWS + 1,
-    );
-    const [head, ...body] = rows;
+    const { head, body, more } = previewTable(state.text, extOf(file.filename), TABLE_ROWS);
     return (
       <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         <Table size="small" stickyHeader>
-          {head && (
+          {head.length > 0 && (
             <TableHead>
               <TableRow>
                 {head.map((cell, index) => (
@@ -163,7 +157,7 @@ function TextPreview({
             </TableHead>
           )}
           <TableBody>
-            {body.slice(0, TABLE_ROWS).map((row, rowIndex) => (
+            {body.map((row, rowIndex) => (
               <TableRow key={rowIndex} hover>
                 {row.map((cell, index) => (
                   <TableCell key={index} sx={{ whiteSpace: "nowrap" }}>
@@ -174,7 +168,7 @@ function TextPreview({
             ))}
           </TableBody>
         </Table>
-        {body.length > TABLE_ROWS && (
+        {more && (
           <Typography variant="caption" color="text.secondary" component="p" sx={{ p: 1.5 }}>
             {t("models:supporting.firstRows", { count: TABLE_ROWS })}
           </Typography>

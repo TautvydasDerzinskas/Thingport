@@ -136,4 +136,19 @@ describe("supporting files", () => {
     const supporting = (await buildZipEntries([print])).filter((entry) => entry.arcname.includes("/supporting/"));
     expect(supporting.map((entry) => path.basename(entry.arcname)).toSorted()).toEqual(["notes (2).txt", "notes.txt"]);
   });
+
+  it("never take a model file's place in a zip", async () => {
+    const model = await makePrint(dir, owner.id, "Beside");
+    await upload(dir, owner.id, model.print.id, "own.stl", "kept beside");
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    // A model file in a folder named "supporting" sits where a supporting file of its name would.
+    const plates = print.plates.map((plate) => ({ ...plate, folder: "supporting" }));
+    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+    expect(new Set(arcnames).size).toBe(arcnames.length);
+    expect(arcnames.filter((name) => name.endsWith("/supporting/own.stl"))).toHaveLength(1);
+    expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
+  });
 });

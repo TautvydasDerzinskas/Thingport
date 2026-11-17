@@ -279,6 +279,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
             files={supporting.map((file) => ({ key: file.key, name: file.filename, size: file.size }))}
             onOpen={downloadSupporting}
             onDownload={downloadSupporting}
+            withoutViewer
           />
         )}
       </Paper>

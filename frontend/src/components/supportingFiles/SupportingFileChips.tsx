@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
@@ -49,6 +49,8 @@ type Props = {
   /** The owner's: a dashed chip that picks files to add, and the row takes files dropped on it. */
   onAdd?: () => void;
   onDropFiles?: (files: File[]) => void;
+  /** No viewer to open the rest in: past the limit, the last chip shows every file in the row instead. */
+  withoutViewer?: boolean;
 };
 
 /** A model's supporting files as attachments, under its pictures: type, name and size at a glance. */
@@ -60,11 +62,25 @@ export default function SupportingFileChips({
   onMenu,
   onAdd,
   onDropFiles,
+  withoutViewer = false,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
   const [dragging, setDragging] = useState(false);
-  const overflow = files.length > MAX_CHIPS;
+  const [expanded, setExpanded] = useState(false);
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const overflow = !expanded && files.length > MAX_CHIPS;
   const shown = overflow ? files.slice(0, MAX_CHIPS - 1) : files;
+  const showRest = () => {
+    if (!withoutViewer) {
+      onOpen(files[MAX_CHIPS - 1].key);
+      return;
+    }
+    setExpanded(true);
+    // The button that had focus goes with it: focus moves on to the first file it showed.
+    requestAnimationFrame(() =>
+      rowRef.current?.querySelectorAll<HTMLElement>("[data-chip-open]")[MAX_CHIPS - 1]?.focus(),
+    );
+  };
 
   const dropProps = onDropFiles
     ? {
@@ -92,6 +108,7 @@ export default function SupportingFileChips({
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="group"
       aria-label={t("models:supporting.title")}
+      ref={rowRef}
       {...dropProps}
       sx={(theme) => ({
         mt: 1,
@@ -128,6 +145,7 @@ export default function SupportingFileChips({
           }}
         >
           <ButtonBase
+            data-chip-open
             onClick={() => onOpen(file.key)}
             title={file.name}
             sx={{
@@ -169,7 +187,7 @@ export default function SupportingFileChips({
       ))}
       {overflow && (
         <ButtonBase
-          onClick={() => onOpen(files[MAX_CHIPS - 1].key)}
+          onClick={showRest}
           sx={{
             ...chipSx,
             px: 1.5,

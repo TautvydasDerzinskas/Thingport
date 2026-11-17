@@ -6608,6 +6608,7 @@
       "addMenu": "添加附加文件…",
       "addShort": "添加文件",
       "added_other": "已添加 {{count}} 个附加文件",
+      "addedToModel": "已添加到模型文件：{{files}}",
       "addFailed": "无法添加文件",
       "removeTitle": "移除此文件？",
       "removeMessage": "{{name}} 将从此模型中删除。",

@@ -297,6 +297,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const handleUpdate = async () => {
     setSaving(true);
     setError(null);
+    // A file's menu left open would change what this save has already read.
+    setSupportingMenu(null);
     let latest: Print = print;
     try {
       const metaRes = await printsApi.updateMeta(print.id, {
@@ -379,9 +381,15 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         latest = reorderRes.print ?? latest;
       }
 
+      // Each change that's done leaves what's staged, so a retry after a later step fails sends only what's left.
       for (const id of removedSupportingIds) {
         const res = await printsApi.deleteFile(print.id, id);
         latest = res.print ?? latest;
+        setRemovedSupportingIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
       }
       for (const item of supportingItems) {
         if (item.kind !== "existing" || !item.renamedTo) continue;
@@ -390,8 +398,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
+        const before = new Set((latest.supporting_files ?? []).map((file) => file.id));
         const res = await printsApi.uploadFile(print.id, item.file);
         latest = res.print ?? latest;
+        const stored = latest.supporting_files?.find((file) => !before.has(file.id));
+        // Up now: listed as the model's own file, and not sent again.
+        setSupportingItems((current) =>
+          stored
+            ? current.map((entry) => (entry === item ? existingItem(stored) : entry))
+            : current.filter((entry) => entry !== item),
+        );
       }
 
       onUpdated(latest);
@@ -789,7 +805,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     spacing={1.25}
                     onContextMenu={(event) => {
                       event.preventDefault();
-                      openMenu({ top: event.clientY, left: event.clientX });
+                      if (!saving) openMenu({ top: event.clientY, left: event.clientX });
                     }}
                     sx={(theme) => ({
                       border: "1px solid",

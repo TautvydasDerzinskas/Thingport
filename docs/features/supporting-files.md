@@ -24,8 +24,8 @@ To add them, drop files onto the attachments, use **Add supporting files** in th
 among the model files goes to the supporting files, and a 3D file added among the supporting files goes to the model
 files. A sliced file added this way becomes the prepared print.
 
-Supporting files come with the model's downloads, in a `supporting` folder inside the zip, and with copies others make
-of it. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
+Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
+and the zip holds them in a `supporting` folder. They come with copies others make of the model too. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
 its manuals and notes are attached automatically.
 
 ## Models you can generate again

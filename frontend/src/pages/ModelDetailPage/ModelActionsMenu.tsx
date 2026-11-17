@@ -289,6 +289,7 @@ export default function ModelActionsMenu({
     pick: pickOwnSupporting,
     bindInput: bindOwnSupportingInput,
     onPicked: onOwnSupportingPicked,
+    download: downloadSupportingFile,
   } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
   const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
   const adaptedMenuLabel = (slicer: string) => {
@@ -605,6 +606,8 @@ export default function ModelActionsMenu({
         downloading={downloading}
         sortedPlates={sortedPlates}
         supportingCount={print.supporting_file_count}
+        supportingFiles={print.supporting_files}
+        downloadSupporting={(file) => void downloadSupportingFile(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}

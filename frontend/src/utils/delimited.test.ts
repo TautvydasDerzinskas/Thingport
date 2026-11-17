@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guessDelimiter, parseDelimited } from "./delimited";
+import { guessDelimiter, parseDelimited, previewTable } from "./delimited";
 
 describe("a CSV or TSV preview", () => {
   it("reads quoted fields holding the delimiter, quotes and line breaks", () => {
@@ -30,5 +30,22 @@ describe("a CSV or TSV preview", () => {
     expect(guessDelimiter("a;b;c", "csv")).toBe(";");
     expect(guessDelimiter("a\tb\tc", "csv")).toBe("\t");
     expect(guessDelimiter("a,b", "tsv")).toBe("\t");
+  });
+
+  it("keeps a quoted empty field, which a blank line isn't", () => {
+    expect(parseDelimited('name\n""\nbolt\n\n""', ",")).toEqual([["name"], [""], ["bolt"], [""]]);
+  });
+
+  it("counts a delimiter only outside quotes when guessing it", () => {
+    expect(guessDelimiter('"size;colour;material",qty', "csv")).toBe(",");
+    expect(guessDelimiter('"a ""b"", c";d;e', "csv")).toBe(";");
+  });
+
+  it("says when a table has more rows than its preview shows", () => {
+    const table = (rows: number) => ["part,qty", ...Array.from({ length: rows }, (_, i) => `p${i},${i}`)].join("\n");
+    expect(previewTable(table(3), "csv", 3)).toMatchObject({ head: ["part", "qty"], more: false });
+    const longer = previewTable(table(4), "csv", 3);
+    expect(longer.body).toHaveLength(3);
+    expect(longer.more).toBe(true);
   });
 });

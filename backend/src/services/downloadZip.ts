@@ -110,24 +110,27 @@ export async function buildZipEntries(
   const entries: ZipEntryDescriptor[] = [];
   for (const print of prints) {
     const prefix = opts.flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
+    // Every name the model takes in the zip, which can't hold one twice: a supporting file steps around these.
+    const taken = new Set<string>();
     const sortedPlates = print.plates
       .filter((plate) => isInFolder(plate.folder, opts.folder))
       .toSorted((a, b) => a.position - b.position);
     for (const plate of sortedPlates) {
       const filePath = resolvePlateFilePath(plate);
-      if (filePath) entries.push({ arcname: `${prefix}/${folderPath(plate.folder, plate.filename)}`, filePath });
+      if (!filePath) continue;
+      const arcname = `${prefix}/${folderPath(plate.folder, plate.filename)}`;
+      taken.add(arcname.toLowerCase());
+      entries.push({ arcname, filePath });
     }
     // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
     const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
     if (license) {
-      entries.push({
-        arcname: `${prefix}/${LICENSE_FILENAME}`,
-        content: Buffer.from(license, "utf8"),
-        mtime: print.licenseReadAt ?? undefined,
-      });
+      const arcname = `${prefix}/${LICENSE_FILENAME}`;
+      taken.add(arcname.toLowerCase());
+      entries.push({ arcname, content: Buffer.from(license, "utf8"), mtime: print.licenseReadAt ?? undefined });
     }
-    // Two supporting files may share a name (a merge brings each model's along), which a zip can't hold twice.
-    const taken = new Set<string>();
+    // A model file in a folder named "supporting" can hold a supporting file's name, and two supporting files may share
+    // one (a merge brings each model's along).
     for (const file of supportingByPrint.get(print.id) ?? []) {
       const filePath = managedPrintFilePath(file);
       if (!fs.existsSync(filePath)) continue;

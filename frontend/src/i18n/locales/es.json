@@ -7234,6 +7234,7 @@
       "added_one": "Se añadió {{count}} archivo adjunto",
       "added_many": "Se añadieron {{count}} archivos adjuntos",
       "added_other": "Se añadieron {{count}} archivos adjuntos",
+      "addedToModel": "Añadido a los archivos del modelo: {{files}}",
       "addFailed": "No se pudo añadir el archivo",
       "removeTitle": "¿Quitar este archivo?",
       "removeMessage": "{{name}} se eliminará de este modelo.",

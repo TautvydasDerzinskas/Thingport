@@ -7247,6 +7247,7 @@
       "added_one": "{{count}} fichier annexe ajouté",
       "added_many": "{{count}} fichiers annexes ajoutés",
       "added_other": "{{count}} fichiers annexes ajoutés",
+      "addedToModel": "Ajouté aux fichiers du modèle : {{files}}",
       "addFailed": "Impossible d’ajouter le fichier",
       "removeTitle": "Retirer ce fichier ?",
       "removeMessage": "{{name}} sera supprimé de ce modèle.",

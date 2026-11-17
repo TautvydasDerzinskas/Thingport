@@ -7,6 +7,8 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
   let row: string[] = [];
   let field = "";
   let quoted = false;
+  // The line holds a field even if it's empty: a quoted "" is one, where a blank line holds none.
+  let present = false;
   let index = 0;
   // A byte-order mark isn't part of the first field.
   if (text.charCodeAt(0) === 0xfeff) index = 1;
@@ -14,8 +16,9 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
     row.push(field);
     field = "";
     // A blank line between rows isn't a row of one empty field.
-    if (row.length > 1 || row[0] !== "") rows.push(row);
+    if (present || row.length > 1 || row[0] !== "") rows.push(row);
     row = [];
+    present = false;
   };
   for (; index < text.length && rows.length < maxRows; index++) {
     const char = text[index];
@@ -30,6 +33,7 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
       }
     } else if (char === '"' && field === "") {
       quoted = true;
+      present = true;
     } else if (char === delimiter) {
       row.push(field);
       field = "";
@@ -40,14 +44,29 @@ export function parseDelimited(text: string, delimiter: "," | "\t" | ";", maxRow
       field += char;
     }
   }
-  if (rows.length < maxRows && (field !== "" || row.length)) endRow();
+  if (rows.length < maxRows && (present || field !== "" || row.length)) endRow();
   return rows;
 }
 
 /** The delimiter a CSV file most likely uses: some locales write `;` where `,` is the decimal mark. */
 export function guessDelimiter(firstLine: string, extension: string): "," | "\t" | ";" {
   if (extension === "tsv") return "\t";
-  const count = (char: string) => firstLine.split(char).length - 1;
-  if (count("\t") > count(",") && count("\t") > count(";")) return "\t";
-  return count(";") > count(",") ? ";" : ",";
+  // Outside quoted fields only: `"size;colour",qty` is two fields split by a comma. A doubled quote inside one turns
+  // quoting off and on again.
+  const counts = { "\t": 0, ",": 0, ";": 0 };
+  let quoted = false;
+  for (const char of firstLine) {
+    if (char === '"') quoted = !quoted;
+    else if (!quoted && (char === "\t" || char === "," || char === ";")) counts[char] += 1;
+  }
+  if (counts["\t"] > counts[","] && counts["\t"] > counts[";"]) return "\t";
+  return counts[";"] > counts[","] ? ";" : ",";
+}
+
+/** What a table preview shows of a CSV or TSV file: its header, up to `limit` rows under it, and whether it has more. */
+export function previewTable(text: string, extension: string, limit: number) {
+  // The header, the rows shown and one more, which says there are more.
+  const rows = parseDelimited(text, guessDelimiter(text.split(/\r?\n/, 1)[0] ?? "", extension), limit + 2);
+  const [head = [], ...body] = rows;
+  return { head, body: body.slice(0, limit), more: body.length > limit };
 }
