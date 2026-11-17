@@ -88,6 +88,9 @@ zip** keeps it whole. **Import and unzip** lists its files to pick from, then **
 - **A model per folder**: each folder that holds model files becomes a model, with its documents and pictures.
 - **A model per file**: each model file becomes a model of its own.
 
+For one model or a model per folder, the files you pick can add up to four times the import size limit, 2 GB by
+default (`IMPORT_MAX_MB`). Any past that are listed among the files that weren't imported.
+
 Thingport Grab's **Choose files** on MakerWorld makes one model of the files you chose.
 
 ## Link a model you already have
