@@ -269,15 +269,20 @@ export type MakeronlineDownloadRequest = {
   payload: { key: string; file_type: 1 | 2; is_batch_down: 0; mold_id?: number; print_profile_id?: number };
   name: string;
   profile_id: string | null;
+  /** A file the model keeps beside its own, which the import does without: Grab asks for it last, shows no puzzle for
+   *  it, and leaves it when it isn't signed. Only for a Grab that asked for them. */
+  supporting?: boolean;
 };
 
 /** The files an import of `scope` needs: each picked profile's 3MF, or, for a model without profiles, its model
- *  files. */
+ *  files. With `beside`, a profile's import also takes the model's own files it tells apart as ones to keep beside it,
+ *  last and marked. */
 export function makeronlineDownloadPlan(
   modelId: string,
   resolution: MakeronlineModelResolution,
   scope: MakeronlineProfileScope,
   requestedProfileId: string | null,
+  beside?: (name: string) => boolean,
 ): MakeronlineDownloadRequest[] {
   const modelFile = (file: { key: string; name: string }): MakeronlineDownloadRequest => ({
     payload: { key: file.key, file_type: 1, is_batch_down: 0, mold_id: Number(modelId) },
@@ -296,7 +301,13 @@ export function makeronlineDownloadPlan(
     });
     // A profile is one printer's 3MF; the script the model was generated from belongs to the model, so it
     // comes alongside and untagged. Without this a model with profiles never asks for its scripts at all.
-    return [...profiles, ...resolution.modelFiles.filter((file) => isGeneratorScript(file.name)).map(modelFile)];
+    const scripts = resolution.modelFiles.filter((file) => isGeneratorScript(file.name)).map(modelFile);
+    const extras = beside
+      ? resolution.modelFiles
+          .filter((file) => !isGeneratorScript(file.name) && beside(file.name))
+          .map((file) => ({ ...modelFile(file), supporting: true }))
+      : [];
+    return [...profiles, ...scripts, ...extras];
   }
   return resolution.modelFiles.map(modelFile);
 }

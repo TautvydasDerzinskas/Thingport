@@ -190,6 +190,26 @@ describe("MakerOnline model details", () => {
     ]);
   });
 
+  it("adds the files a model keeps beside its own last and marked, for a Grab that asked for them", () => {
+    const withGuide = makeronlineMetaFromDetail({
+      ...DETAIL,
+      files: [...DETAIL.files, { key: "aa11bb", file_name: "scraper.scad" }, { key: "cc22dd", file_name: "Guide.pdf" }],
+    });
+    const isDocument = (name: string) => name.endsWith(".pdf");
+    expect(
+      makeronlineDownloadPlan("281521", withGuide, "url", null, isDocument).map((r) => [r.name, r.supporting]),
+    ).toEqual([
+      ["scraper.3mf", undefined],
+      ["scraper.scad", undefined],
+      ["Guide.pdf", true],
+    ]);
+    // An older Grab, which would stop at a file it can't get signed, is asked for none of them.
+    expect(makeronlineDownloadPlan("281521", withGuide, "url", null).map((r) => r.name)).toEqual([
+      "scraper.3mf",
+      "scraper.scad",
+    ]);
+  });
+
   it("leaves a model's meshes out of a profile plan: only the scripts come alongside", () => {
     const resolution = makeronlineMetaFromDetail(DETAIL);
     // DETAIL's own files are two STLs and no script, so a profile plan is the profile alone.

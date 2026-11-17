@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { GrabImport } from "@prisma/client";
 import { prisma } from "../../db";
 import { createNotification } from "../../services/notificationService";
@@ -12,6 +13,7 @@ import {
   type MakeronlineProfileScope,
 } from "./api";
 import { HttpError } from "../../utils/fileUtils";
+import { isSupportingImportFile, supportingLimits } from "../../services/supportingImports";
 import { MANIFESTS } from "../index.generated";
 import { siteHost } from "../names";
 
@@ -154,16 +156,23 @@ export async function recordGrabImportFailure(row: GrabImport, error: string): P
   });
 }
 
-/** What Grab has to get signed for a model link: each picked print profile's 3MF, or the model's own files. */
+/** What Grab has to get signed for a model link: each picked print profile's 3MF, or the model's own files. With
+ *  `supporting`, a Grab that does without a file it can't get signed is also handed the files the model keeps beside
+ *  its own, where the admin keeps any. */
 export async function planMakeronlineDownloads(
   url: string,
   scope: MakeronlineProfileScope,
+  { supporting = false }: { supporting?: boolean } = {},
 ): Promise<{ title: string | null; requests: MakeronlineDownloadRequest[] }> {
   const parsed = parseMakeronlineModelUrl(url);
   if (!parsed) throw new HttpError(400, `Not a ${NAME} model link`);
   const resolved = await resolveMakeronlineModel(parsed.modelId);
   if (!resolved) throw new HttpError(404, `This ${NAME} model could not be found, or isn't public.`);
-  const requests = makeronlineDownloadPlan(parsed.modelId, resolved, scope, parsed.requestedProfileId);
+  const beside =
+    supporting && (await supportingLimits()) !== null
+      ? (name: string) => Boolean(path.extname(name)) && isSupportingImportFile(name)
+      : undefined;
+  const requests = makeronlineDownloadPlan(parsed.modelId, resolved, scope, parsed.requestedProfileId, beside);
   if (!requests.length) throw new HttpError(400, `This ${NAME} model has no files Thingport can import.`);
   return { title: resolved.meta.title ?? null, requests };
 }
