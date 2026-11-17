@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
-import { RENDERABLE_MODEL_EXTS } from "../config";
+import { RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import {
   addPlatesToPrint,
@@ -41,6 +41,18 @@ function isRenderable(file: UploadedFile): boolean {
 /** A file the model is printed from: a sliced 3MF beside them is its prepared print, not one of them. */
 const isPlateFile = (file: UploadedFile) => isRenderable(file) && !isPreparedPrintFilename(file.originalname);
 
+const isUploadable = (file: UploadedFile) => UPLOADABLE_EXTS.has(path.extname(file.originalname).toLowerCase());
+
+/** The files a model of `files` is made of: its model files; else a sliced 3MF, printed from all the same; else what
+ *  can be a model on its own, such as a picture or a design; else every file, so the model still has one. */
+function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
+  for (const isPlate of [isPlateFile, isRenderable, isUploadable]) {
+    const found = files.filter(isPlate);
+    if (found.length) return found;
+  }
+  return files;
+}
+
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
  *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
 async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
@@ -61,9 +73,9 @@ async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ fil
 
 const removeAll = (paths: string[]) => Promise.all(paths.map((p) => fs.rm(p, { force: true }).catch(() => undefined)));
 
-/** One model from `files`: the renderable ones become its plates and the rest supporting files. If nothing is
- *  renderable, every file becomes a plate so the model still has one. All or nothing: a file that can't be stored
- *  takes the model with it. */
+/** One model from `files`: its model files become its plates and the rest supporting files (`plateFilesOf` says
+ *  what the plates are when there are no model files). All or nothing: a file that can't be stored takes the model
+ *  with it. */
 export async function createUploadedModel(
   userId: string,
   meta: PrintMetaInput,
@@ -79,9 +91,8 @@ export async function createUploadedModel(
 }
 
 async function createModelFrom(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
-  const renderable = files.filter(isPlateFile);
-  const supporting = renderable.length ? files.filter((f) => !isPlateFile(f)) : [];
-  const plateFiles = renderable.length ? renderable : files;
+  const plateFiles = plateFilesOf(files);
+  const supporting = files.filter((f) => !plateFiles.includes(f));
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
     const safeName = sanitizeFilename(f.originalname);

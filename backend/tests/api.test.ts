@@ -429,6 +429,43 @@ describe("uploads of one model's several files", () => {
     for (const file of [stl, guide, sliced]) fs.rmSync(file, { force: true });
   });
 
+  it("makes a sliced 3MF the plate when there's no other model file, the rest beside it as with a model file", async () => {
+    const sliced = tmpFile("frog.gcode.3mf", "not really a 3mf");
+    const guide = tmpFile("frog guide.pdf", "%PDF-1.4 guide");
+    const picture = tmpFile("frog.png", "not really a png");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", sliced)
+      .attach("files", guide)
+      .attach("files", picture);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["frog.gcode.3mf"]);
+    const files = await prisma.printFile.findMany({ where: { printId: uploaded.id }, orderBy: { filename: "asc" } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([
+      ["frog guide.pdf", "SUPPORTING"],
+      ["frog.png", "SUPPORTING"],
+    ]);
+    for (const file of [sliced, guide, picture]) fs.rmSync(file, { force: true });
+  });
+
+  it("makes a picture the plate when there's no model file, and keeps a document beside it", async () => {
+    const picture = tmpFile("sign.png", "not really a png");
+    const notes = tmpFile("sign notes.txt", "cut at 80% power");
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", picture)
+      .attach("files", notes);
+    expect(res.status).toBe(200);
+    const uploaded = res.body.prints[0];
+    await trackPrint(uploaded.id);
+    expect(uploaded.plates.map((plate: { filename: string }) => plate.filename)).toEqual(["sign.png"]);
+    const files = await prisma.printFile.findMany({ where: { printId: uploaded.id } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["sign notes.txt", "SUPPORTING"]]);
+    for (const file of [picture, notes]) fs.rmSync(file, { force: true });
+  });
+
   it("refuses folders that don't line up with the files", async () => {
     const a = tmpFile("a.stl", "solid a endsolid");
     const b = tmpFile("b.stl", "solid b endsolid");
