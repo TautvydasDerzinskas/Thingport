@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
 import os from "node:os";
@@ -17,6 +18,7 @@ import { syncLicenseFile } from "../src/services/licenseFile";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
 import {
   batchFileSaver,
+  removeAbandonedPrintFileSaves,
   removeMissingPrintFiles,
   renameSupportingFile,
   saveFileFromTemp,
@@ -229,21 +231,68 @@ describe("models whose files are gone", () => {
     const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "late.txt" } });
     expect(fs.existsSync(path.join(STORAGE, row.storagePath))).toBe(true);
 
-    // One only just made, its place not claimed yet, is left too.
-    const fresh = await prisma.printFile.create({
-      data: {
-        printId: model.print.id,
-        filename: "fresh.txt",
-        mime: "text/plain",
-        role: "SUPPORTING",
-        storagePath: "pending",
-      },
-    });
+    // One only just made, its place not claimed yet, is left too, as is one an older version made.
+    const fresh = await Promise.all(
+      [`pending:${randomUUID()}`, "pending"].map((storagePath) =>
+        prisma.printFile.create({
+          data: { printId: model.print.id, filename: "fresh.txt", mime: "text/plain", role: "SUPPORTING", storagePath },
+        }),
+      ),
+    );
     try {
       await removeMissingPrintFiles(model.print.id);
-      expect(await prisma.printFile.findUnique({ where: { id: fresh.id } })).not.toBeNull();
+      const left = await prisma.printFile.findMany({ where: { id: { in: fresh.map((made) => made.id) } } });
+      expect(left).toHaveLength(2);
     } finally {
-      await prisma.printFile.deleteMany({ where: { id: fresh.id } });
+      await prisma.printFile.deleteMany({ where: { id: { in: fresh.map((made) => made.id) } } });
+    }
+  });
+
+  it("gives two saves at once a row each, though the first hasn't claimed its place yet", async () => {
+    const model = await makePrint(dir, owner.id, "Together");
+    // The second save starts while the first one's row still holds its placeholder.
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    let second: unknown = null;
+    const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      if (second === null && typeof args.data.storagePath === "string") {
+        second = "started";
+        second = await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "two"), "two.txt", null).then(
+          () => "saved",
+          (err: unknown) => err,
+        );
+      }
+      return update(args);
+    }) as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "one"), "one.txt", null);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(second).toBe("saved");
+    const rows = await prisma.printFile.findMany({ where: { printId: model.print.id }, orderBy: { filename: "asc" } });
+    expect(rows.map((row) => row.filename)).toEqual(["one.txt", "two.txt"]);
+    for (const row of rows) expect(fs.existsSync(path.join(STORAGE, row.storagePath))).toBe(true);
+  });
+
+  it("removes at startup the rows saves left at their placeholder, and only those", async () => {
+    const model = await makePrint(dir, owner.id, "Cut off");
+    const kept = await upload(dir, owner.id, model.print.id, "kept.txt", "stays");
+    const left = await Promise.all(
+      [`pending:${randomUUID()}`, "pending"].map((storagePath) =>
+        prisma.printFile.create({
+          data: { printId: model.print.id, filename: "cut.txt", mime: "text/plain", role: "SUPPORTING", storagePath },
+        }),
+      ),
+    );
+    try {
+      expect(await removeAbandonedPrintFileSaves()).toBeGreaterThanOrEqual(2);
+      expect(await prisma.printFile.count({ where: { id: { in: left.map((row) => row.id) } } })).toBe(0);
+      expect(await prisma.printFile.findUnique({ where: { id: kept.id } })).not.toBeNull();
+    } finally {
+      // Left behind, the old placeholder would fail every later save that makes one.
+      await prisma.printFile.deleteMany({ where: { id: { in: left.map((row) => row.id) } } });
     }
   });
 

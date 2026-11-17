@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
@@ -159,8 +160,11 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
   }
 }
 
-// The storagePath a file's row has from when it's made until its place is claimed.
-const PENDING_STORAGE_PATH = "pending";
+// The storagePath a file's row has from when it's made until its place is claimed: one of its own, as the column is
+// unique, and one no rendered path can be, since a path's segments never hold ":". Rows made before were all "pending".
+const PENDING_STORAGE_PREFIX = "pending:";
+const isPendingStoragePath = (storagePath: string) =>
+  storagePath === "pending" || storagePath.startsWith(PENDING_STORAGE_PREFIX);
 
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes
@@ -203,7 +207,7 @@ export async function saveFileFromTemp(
       folder,
       mime,
       role,
-      storagePath: PENDING_STORAGE_PATH,
+      storagePath: `${PENDING_STORAGE_PREFIX}${randomUUID()}`,
     },
   });
   savesUnderWay.add(record.id);
@@ -389,6 +393,15 @@ export function batchFileSaver(userId: string, printId: string) {
     });
 }
 
+/** Deletes the rows that saves left at their placeholder when the last process ended before placing their files: there
+ *  is no file to keep, and each would show as one that isn't there. At startup, before this process saves anything. */
+export async function removeAbandonedPrintFileSaves(): Promise<number> {
+  const { count } = await prisma.printFile.deleteMany({
+    where: { OR: [{ storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }] },
+  });
+  return count;
+}
+
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
  *  keeps the rest. Deleting a prepared print's row empties the model's prepared slot (Print.preparedFile is SetNull).
  *  A file that can't be checked stops it with the error before any row goes (printFileOnDisk). */
@@ -400,7 +413,7 @@ export function removeMissingPrintFiles(printId: string): Promise<void> {
     const gone: PrintFile[] = [];
     for (const row of rows) {
       // A file still being saved isn't placed yet, which isn't the same as gone.
-      if (row.storagePath === PENDING_STORAGE_PATH || savesUnderWay.has(row.id)) continue;
+      if (isPendingStoragePath(row.storagePath) || savesUnderWay.has(row.id)) continue;
       if (!(await printFileOnDisk(row))) gone.push(row);
     }
     if (!gone.length) return;
