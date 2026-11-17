@@ -57,14 +57,24 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
  *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
 async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
   if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
-  const named = files.map((file) => ({ name: file.originalname, path: file.path, file }));
+  // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
+  const named = files.map((file) => ({
+    name: file.folder ? `${file.folder}/${file.originalname}` : file.originalname,
+    path: file.path,
+    file,
+  }));
   const { files: left } = await packGltfFiles(
     named,
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
     (gltf, glbPath, glbName) => ({
       name: glbName,
       path: glbPath,
-      file: { ...gltf.file, path: glbPath, originalname: glbName, mimetype: "model/gltf-binary" },
+      file: {
+        ...gltf.file,
+        path: glbPath,
+        originalname: gltf.file.originalname.replace(/\.gltf$/i, ".glb"),
+        mimetype: "model/gltf-binary",
+      },
     }),
   );
   const glbs = left.filter((f) => !files.includes(f.file)).map((f) => f.path);
