@@ -7,7 +7,7 @@ import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { thumbnailUpload } from "../uploadMiddleware";
 import { removePreviewImage, reorderPreviewImages } from "../services/previewImageService";
-import { addUploadedPreviewImages } from "../services/uploadService";
+import { addUploadedPreviewImagesEach } from "../services/uploadService";
 import { printOutById } from "../services/printLoader";
 
 const router = Router();
@@ -22,11 +22,13 @@ router.post(
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
     // As with an import's gallery, the first image becomes the cover and card thumbnail in place of our render.
-    await addUploadedPreviewImages(
+    const added = await addUploadedPreviewImagesEach(
       print.id,
       files.map((f) => f.buffer),
     );
-    res.json({ print: await printOutById(req.userId!, print.id) });
+    // Which images are these files', in their order, null for one that wasn't a picture: the model can gain others
+    // meanwhile, from another tab.
+    res.json({ print: await printOutById(req.userId!, print.id), image_ids: added });
   }),
 );
 
