@@ -274,6 +274,22 @@ describe("plate add/remove/reorder/rename", () => {
     expect(res.status).toBe(409);
   });
 
+  it("says which plates an upload made, in the order of its files", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    // The Edit dialog names and orders the plates it sent by these, so another tab's are never taken for them.
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+      .attach("files", tmpFile("lid.stl", "solid l endsolid"))
+      .attach("files", tmpFile("arm.stl", "solid a endsolid"));
+    expect(res.status).toBe(200);
+    const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
+    expect(res.body.plate_ids.map((id: string) => (byId.get(id) as { filename: string }).filename)).toEqual([
+      "lid.stl",
+      "arm.stl",
+    ]);
+  });
+
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
   it("replaces the only plate with a same-named file: upload, delete the old one, rename back", async () => {
     let res = await auth(request(app).get(`/api/print/${printId}`));

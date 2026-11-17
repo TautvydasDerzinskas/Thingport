@@ -390,17 +390,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       let plates = plateItems;
       const newPlates = plates.filter((p) => p.kind === "new");
       if (newPlates.length) {
-        const beforeIds = new Set(latest.plates.map((p) => p.id));
         const uploadRes = await printsApi.addPlates(
           print.id,
           newPlates.map((p) => p.file),
         );
         latest = uploadRes.print;
-        const added = latest.plates.filter((p) => !beforeIds.has(p.id)).toSorted((a, b) => a.position - b.position);
-        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again.
+        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
+        // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
         const became = new Map<string, PlateItem>();
         newPlates.forEach((p, index) => {
-          const stored = added[index];
+          const stored = latest.plates.find((each) => each.id === uploadRes.plate_ids?.[index]);
           if (!stored || p.kind !== "new") return;
           became.set(p.localId, {
             kind: "existing",
@@ -438,8 +437,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         setPlateItems(named);
       }
       {
-        const finalOrder = plates.flatMap((p) => (p.kind === "existing" ? [p.id] : []));
-        const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);
+        const known = plates.flatMap((p) => (p.kind === "existing" ? [p.id] : []));
+        // Reorder needs an exhaustive id list; plates this dialog never saw go after, in their order.
+        const knownIds = new Set(known);
+        const unknown = latest.plates
+          .filter((p) => !knownIds.has(p.id))
+          .toSorted((a, b) => a.position - b.position)
+          .map((p) => p.id);
+        const reorderRes = await printsApi.reorderPlates(print.id, [...known, ...unknown]);
         latest = reorderRes.print ?? latest;
       }
 
