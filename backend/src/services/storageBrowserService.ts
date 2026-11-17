@@ -21,8 +21,8 @@ export type StorageFolder = {
   pictures: boolean;
 };
 export type StorageFileLocation = "managed" | "source" | "missing";
-/** "plate" is a model file; "file" a supporting or prepared one; "license" the LICENSE.txt Thingport writes; the rest are
- *  pictures. */
+/** "plate" is a model file; "file" a supporting one; "prepared" the prepared print; "license" the LICENSE.txt Thingport
+ *  writes; the rest are pictures. */
 export type StorageFileKind = "plate" | "file" | "prepared" | "license" | AssetKind;
 export type StorageFile = {
   name: string;
