@@ -349,35 +349,33 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           return next;
         });
       }
-      const newImageFiles = images.filter((img) => img.kind === "new").map((img) => img.file);
-      let newImageIdsInOrder: string[] = [];
-      if (newImageFiles.length) {
-        const beforeIds = new Set(latest.preview_images.map((img) => img.id));
-        const uploadRes = await printsApi.addPreviewImages(print.id, newImageFiles);
+      const newImages = images.flatMap((img) => (img.kind === "new" ? [img] : []));
+      // Up now: each new picture is the stored one it became, so a retry doesn't upload it again. By the ids the upload
+      // gave back: a picture another tab added meanwhile is new to this dialog too, and isn't one of these.
+      const storedImages = new Map<string, { id: string; url: string }>();
+      if (newImages.length) {
+        const uploadRes = await printsApi.addPreviewImages(
+          print.id,
+          newImages.map((img) => img.file),
+        );
         latest = uploadRes.print;
-        newImageIdsInOrder = latest.preview_images
-          .filter((img) => !beforeIds.has(img.id))
-          .toSorted((a, b) => a.position - b.position)
-          .map((img) => img.id);
-        // Up now: each new picture is the stored one it became, so a retry doesn't upload it again.
-        const stored = new Map<string, { id: string; url: string }>();
-        let next = 0;
-        for (const img of images) {
-          if (img.kind !== "new") continue;
-          const id = newImageIdsInOrder[next++];
-          const url = latest.preview_images.find((each) => each.id === id)?.url;
-          if (id && url) stored.set(img.localId, { id, url });
-        }
+        newImages.forEach((img, index) => {
+          const id = uploadRes.image_ids?.[index];
+          const url = id ? latest.preview_images.find((each) => each.id === id)?.url : undefined;
+          if (id && url) storedImages.set(img.localId, { id, url });
+        });
         setImages((current) =>
           current.map((img): ImageItem => {
-            const became = img.kind === "new" ? stored.get(img.localId) : undefined;
+            const became = img.kind === "new" ? storedImages.get(img.localId) : undefined;
             return became ? { kind: "existing", ...became } : img;
           }),
         );
       }
       if (images.length) {
-        let nextNew = 0;
-        const known = images.map((img) => (img.kind === "existing" ? img.id : newImageIdsInOrder[nextNew++]));
+        const known = images.flatMap((img) => {
+          const id = img.kind === "existing" ? img.id : storedImages.get(img.localId)?.id;
+          return id ? [id] : [];
+        });
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);
         const unknown = latest.preview_images
@@ -385,8 +383,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           .toSorted((a, b) => a.position - b.position)
           .map((img) => img.id);
         const finalOrder = [...known, ...unknown];
-        const reorderRes = await printsApi.reorderPreviewImages(print.id, finalOrder);
-        latest = reorderRes.print ?? latest;
+        // None when every picture added was one the server couldn't read, and the model had none.
+        if (finalOrder.length) {
+          const reorderRes = await printsApi.reorderPreviewImages(print.id, finalOrder);
+          latest = reorderRes.print ?? latest;
+        }
       }
 
       // Upload before delete so a model's only file can be swapped in one save. `plates` follows each step as it's

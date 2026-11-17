@@ -68,6 +68,20 @@ describe("preview images", () => {
     expect(res.body.print.thumb_url).not.toBeNull();
   });
 
+  it("says which images an upload's files became, in their order, and none for one that isn't a picture", async () => {
+    const print = await uploadStl();
+    const res = await request(app)
+      .post(`/api/print/${print.id}/preview-images`)
+      .set(auth())
+      .attach("files", await png(10), "a.png")
+      .attach("files", Buffer.from("not a picture"), "b.png")
+      .attach("files", await png(200), "c.png");
+    expect(res.status).toBe(200);
+    const [first, skipped, third] = res.body.image_ids;
+    expect(skipped).toBeNull();
+    expect(res.body.print.preview_images.map((image: { id: string }) => image.id)).toEqual([first, third]);
+  });
+
   // Two pictures can reach one model at once: an import adds its gallery while our own card render of the first
   // plate finishes and takes the cover. Both read the gallery's next position, and the import used to fail
   // outright on the (printId, position) index rather than just look again.
