@@ -203,13 +203,24 @@ export async function addUploadedPreviewImages(
   printId: string,
   buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
 ): Promise<string[]> {
+  return (await addUploadedPreviewImagesEach(printId, buffers)).filter((id): id is string => id !== null);
+}
+
+/** As addUploadedPreviewImages, with each picture's id in its place, null for one that was skipped: which images are
+ *  whose, where the model can gain others at the same time. */
+export async function addUploadedPreviewImagesEach(
+  printId: string,
+  buffers: Iterable<Buffer> | AsyncIterable<Buffer>,
+): Promise<(string | null)[]> {
   const firstPlate = await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } });
-  const added: string[] = [];
+  const each: (string | null)[] = [];
+  let added = false;
   for await (const buffer of buffers) {
     const image = await addPreviewImage(printId, buffer, { keepExif: true });
+    each.push(image?.id ?? null);
     if (!image) continue;
-    if (!added.length) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
-    added.push(image.id);
+    if (!added) await preferImageOverRenders(printId, firstPlate?.id, buffer, true);
+    added = true;
   }
-  return added;
+  return each;
 }
