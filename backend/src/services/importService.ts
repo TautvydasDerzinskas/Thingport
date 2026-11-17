@@ -1233,7 +1233,12 @@ async function filesFromZip(
   }
   // None of what was wanted here, so it is in an archive this one only wraps. The files beside that archive are kept
   // with what it holds: a site's instructions beside the zip of its model, or a zip of nothing but such files.
-  const wraps = picksSupporting(pick) ? !(await zipEntriesInFolders(zipPath)).length : !inputs.length;
+  // A script beside the archive doesn't make it the model's: only model files do.
+  const wraps = picksSupporting(pick)
+    ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) =>
+        MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()),
+      )
+    : !inputs.length;
   if (!wraps || depth >= NESTED_ZIP_DEPTH) return inputs;
   try {
     return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget))];

@@ -223,6 +223,16 @@ describe("a site's zip", () => {
     ]);
   });
 
+  it("opens a zip beside a script for the files beside its model files, as it does for those", async () => {
+    const parts = fs.readFileSync(await zipOf({ "part.stl": "solid part endsolid", "guide.pdf": "%PDF-1.4 guide" }));
+    const zip = await zipOf({ "source.scad": "cube(10);", "parts.zip": parts });
+    const plates = await modelFilesFromZip(zip);
+    const supporting = await supportingFilesFromZip(zip);
+    remove([...plates, ...supporting]);
+    expect(plates.map((each) => [each.folder ?? null, each.filename])).toEqual([["parts", "part.stl"]]);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([["parts", "guide.pdf"]]);
+  });
+
   it("doesn't open a zip beside the model's files for them, and keeps no more than the limits allow", async () => {
     const zip = await zipOf({ "a.stl": "solid a endsolid", "docs.zip": fs.readFileSync(await zipOf(kit)) });
     expect(await supportingFilesFromZip(zip)).toEqual([]);
