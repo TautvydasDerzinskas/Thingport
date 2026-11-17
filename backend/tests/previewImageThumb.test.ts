@@ -9,7 +9,12 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { addPreviewImage, generateCardRender, previewImagePath } from "../src/services/previewImageService";
+import {
+  addPreviewImage,
+  galleryThumbPath,
+  generateCardRender,
+  previewImagePath,
+} from "../src/services/previewImageService";
 import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { getPreviewMode, setPreviewMode } from "../src/services/settingsService";
@@ -237,6 +242,36 @@ describe("the model's thumbnail", () => {
     }
     expect((await fetchPicture(reordered.thumb_url!)).headers["cache-control"]).toContain("immutable");
     expect(fsSync.existsSync(copy)).toBe(true);
+  });
+
+  // Removing a picture takes the picture, then its copy; one being made from it as that ran is written after both.
+  it("doesn't outlive its picture when that's removed while the copy is being made", async () => {
+    const print = await withPictures(await png(200), await png(10));
+    const [first] = print.preview_images.map((image) => image.id);
+    const copy = await copyOf(print.id, first);
+    let reached!: () => void;
+    const encoded = new Promise<void>((resolve) => (reached = resolve));
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const writeFile = fs.writeFile;
+    const spy = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).startsWith(`${copy}.`)) {
+        reached();
+        await held;
+      }
+      return writeFile(file, data, options);
+    });
+    try {
+      const making = galleryThumbPath(first, await printAssetHome(print.id));
+      // The picture is read and encoded; the copy is held before it's written.
+      await encoded;
+      await remove(print.id, first);
+      release();
+      expect(await making).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await fs.readdir(path.dirname(copy))).filter((name) => name.startsWith(first))).toEqual([]);
   });
 
   it("leaves the files' own thumbnails as they are", async () => {

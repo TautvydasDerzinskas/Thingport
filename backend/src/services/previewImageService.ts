@@ -79,6 +79,12 @@ async function makeGalleryThumb(source: string, dest: string): Promise<string | 
     // Without its metadata: a card has no use for a photo's camera details.
     await fs.writeFile(tmp, await photoJpeg(input, GALLERY_THUMB_SIZE, GALLERY_THUMB_QUALITY));
     await fs.rename(tmp, dest);
+    // Removing an image takes it, then its copy (removeGalleryFiles, storageCleanup trimPhotos): a copy that lands
+    // after that, made from it as it went, goes here instead of outliving it.
+    if (!fsSync.existsSync(source)) {
+      await fs.rm(dest, { force: true });
+      return null;
+    }
     return dest;
   } catch {
     await fs.rm(tmp, { force: true }).catch(() => undefined);
@@ -86,7 +92,7 @@ async function makeGalleryThumb(source: string, dest: string): Promise<string | 
   }
 }
 
-/** The image and its card-sized copy, wherever they are. */
+/** The image and its card-sized copy, wherever they are: the image first, which a copy being made looks for. */
 async function removeGalleryFiles(home: AssetHome, id: string): Promise<void> {
   await removeAsset(home, galleryImageFile(id));
   await removeAsset(home, galleryThumbFile(id));
