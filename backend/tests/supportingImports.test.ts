@@ -269,6 +269,14 @@ describe("a zip from a link, by how its files become models", () => {
     expect(model.previewImages.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("one model leaves a picked zip inside the zip unopened, and says so", async () => {
+    const files = { ...tree(), "Kit/parts.zip": fs.readFileSync(await zipOf({ "p.stl": "solid p endsolid" })) };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToOneModel(userId, zip, "Kit.zip", Object.keys(files), {});
+    expect(failed).toEqual(["Kit/parts.zip"]);
+    expect(prints[0].plates.map((plate) => plate.filename)).toEqual(["a.stl", "b.stl", "loose.stl"]);
+  });
+
   it("one model of documents alone is refused: there's nothing in them to print", async () => {
     const zip = await zipOf(tree());
     await expect(extractZipEntriesToOneModel(userId, zip, "Kit.zip", ["Kit/readme.pdf"], {})).rejects.toThrow(

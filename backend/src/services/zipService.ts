@@ -235,7 +235,9 @@ async function readPickedEntries(
   const failed: string[] = [];
   for (const name of new Set(selections.map((s) => normalizeZipEntryPath(s)).filter((s): s is string => !!s))) {
     const rawName = raw.get(name);
-    const buffer = rawName ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
+    // A zip inside never becomes part of a model, so it isn't written out only to be dropped.
+    const usable = rawName && path.extname(name).toLowerCase() !== ".zip";
+    const buffer = usable ? await readZipEntry(zipPath, rawName, IMPORT_MAX_BYTES).catch(() => null) : null;
     if (!buffer) {
       failed.push(name);
       continue;
