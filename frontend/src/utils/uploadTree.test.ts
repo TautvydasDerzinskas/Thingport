@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { categoriesApi } from "../api/categories";
-import type { printsApi } from "../api/prints";
+import type { Print, printsApi } from "../api/prints";
 
 const upload = vi.fn<typeof printsApi.upload>();
 const addPreviewImages = vi.fn<typeof printsApi.addPreviewImages>();
@@ -36,13 +36,27 @@ const laptop = () => [
   entry("Laptop/license.txt"),
 ];
 
+/** A model as the server answers with one. */
+const printOf = (id: string): Print => ({
+  id,
+  name: id,
+  tags: [],
+  created_at: "2026-11-17T00:00:00Z",
+  plates: [],
+  preview_images: [],
+  supporting_file_count: 0,
+  view_count: 0,
+  print_count: 0,
+  is_favorite: false,
+});
+
 const namesSent = () => upload.mock.calls.map(([files]) => (files as File[]).map((file) => file.name));
 
 beforeEach(() => {
   upload.mockReset();
-  upload.mockImplementation(async () => ({ prints: [{ id: `print-${upload.mock.calls.length}` }] }) as never);
+  upload.mockImplementation(async () => ({ prints: [printOf(`print-${upload.mock.calls.length}`)] }));
   addPreviewImages.mockReset();
-  addPreviewImages.mockImplementation(async (id) => ({ print: { id } }) as never);
+  addPreviewImages.mockImplementation(async (id) => ({ print: printOf(id) }));
 });
 
 const foldersSent = () => upload.mock.calls.map(([, opts]) => opts?.folders);
