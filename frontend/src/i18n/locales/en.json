@@ -6949,8 +6949,10 @@
       "tooLargeToPreview": "Too large to preview",
       "previewFailed": "Couldn't show this file",
       "firstRows": "Showing the first {{count}} rows",
+      "firstColumns": "Showing the first {{count}} columns",
       "editHelp": "Instructions, notes, licences and source files kept with the model. They show on its page and come with its downloads, but never open in a slicer.",
-      "editEmpty": "No supporting files yet."
+      "editEmpty": "No supporting files yet.",
+      "loadFailed": "Couldn't load the supporting files."
     },
     "shared": {
       "sharedBy": "Shared by {{name}}",

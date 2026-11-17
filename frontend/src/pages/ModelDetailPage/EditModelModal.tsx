@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -142,6 +142,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   const [supportingLoading, setSupportingLoading] = useState(
     !print.supporting_files && print.supporting_file_count > 0,
   );
+  const [supportingLoadFailed, setSupportingLoadFailed] = useState(false);
   const [removedSupportingIds, setRemovedSupportingIds] = useState<Set<string>>(new Set());
   const [supportingMenu, setSupportingMenu] = useState<{ key: string; anchor: FileMenuAnchor } | null>(null);
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
@@ -162,23 +163,34 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       .catch(() => setLicenses([]));
   }, []);
 
-  useEffect(() => {
-    if (print.supporting_files || !print.supporting_file_count) return;
-    let active = true;
+  // Numbers each read of the files, so only the latest one's answer lands, and none once the dialog has gone.
+  const supportingRead = useRef(0);
+  const readSupportingFiles = useCallback(() => {
+    const read = ++supportingRead.current;
+    setSupportingLoadFailed(false);
+    setSupportingLoading(true);
     printsApi
       .listFiles(print.id)
       .then((files) => {
         // Before any added while they were read.
-        if (active) setSupportingItems((current) => [...files.map(existingItem), ...current]);
+        if (read === supportingRead.current) setSupportingItems((current) => [...files.map(existingItem), ...current]);
       })
-      .catch(() => undefined)
+      .catch(() => {
+        // Said, with a retry: the empty list would claim the model has none, and leave them out of reach here.
+        if (read === supportingRead.current) setSupportingLoadFailed(true);
+      })
       .finally(() => {
-        if (active) setSupportingLoading(false);
+        if (read === supportingRead.current) setSupportingLoading(false);
       });
+  }, [print.id]);
+
+  useEffect(() => {
+    if (print.supporting_files || !print.supporting_file_count) return;
+    readSupportingFiles();
     return () => {
-      active = false;
+      supportingRead.current += 1;
     };
-  }, [print.id, print.supporting_files, print.supporting_file_count]);
+  }, [print.supporting_files, print.supporting_file_count, readSupportingFiles]);
 
   const markDirty = () => setDirty(true);
 
@@ -395,6 +407,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         if (item.kind !== "existing" || !item.renamedTo) continue;
         const res = await printsApi.renameFile(print.id, item.file.id, item.renamedTo);
         latest = res.print ?? latest;
+        // Named as the server named it now, so a later rename is measured from that, not from the name it had.
+        const renamed = latest.supporting_files?.find((file) => file.id === item.file.id) ?? {
+          ...item.file,
+          filename: item.renamedTo,
+        };
+        setSupportingItems((current) => current.map((entry) => (entry === item ? existingItem(renamed) : entry)));
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
@@ -788,7 +806,19 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             </Stack>
             <Stack spacing={1}>
               {supportingLoading && <Skeleton variant="rounded" height={38} />}
-              {!supportingLoading && !supportingItems.length && (
+              {supportingLoadFailed && (
+                <Alert
+                  severity="error"
+                  action={
+                    <Button color="inherit" size="small" onClick={readSupportingFiles}>
+                      {t("common:retry")}
+                    </Button>
+                  }
+                >
+                  {t("models:supporting.loadFailed")}
+                </Alert>
+              )}
+              {!supportingLoading && !supportingLoadFailed && !supportingItems.length && (
                 <Typography variant="body2" color="text.secondary">
                   {t("models:supporting.editEmpty")}
                 </Typography>

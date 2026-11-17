@@ -29,6 +29,7 @@ import {
   type AssetHome,
 } from "./modelAssets";
 import type { Category, Plate, Prisma, Print } from "@prisma/client";
+import { savesUnderWay } from "./printFileSaves";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -536,6 +537,8 @@ async function relocatePrintFiles(
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
+    // Still on its way in: its save puts the file at the place its row holds, which a move would change under it.
+    if (savesUnderWay.has(file.id)) continue;
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;

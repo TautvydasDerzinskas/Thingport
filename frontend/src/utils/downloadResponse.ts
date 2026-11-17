@@ -9,8 +9,11 @@ export function filenameFromDisposition(res: Response, fallback: string): string
       // Malformed: the plain one below.
     }
   }
-  const match = dispo.match(/filename="?([^";]+)"?/i);
-  return (match && match[1]) || fallback;
+  // Quoted, a name holds what a bare one can't ("Parts; small.csv"), with \" and \\ for a quote and a backslash.
+  const quoted = dispo.match(/filename="((?:[^"\\]|\\.)*)"/i);
+  if (quoted) return quoted[1].replace(/\\(.)/g, "$1") || fallback;
+  const bare = dispo.match(/filename=([^";\s]+)/i);
+  return (bare && bare[1]) || fallback;
 }
 
 export async function saveResponseToDisk(res: Response, fallback: string): Promise<void> {

@@ -7265,8 +7265,10 @@
       "tooLargeToPreview": "Demasiado grande para la vista previa",
       "previewFailed": "No se pudo mostrar este archivo",
       "firstRows": "Se muestran las primeras {{count}} filas",
+      "firstColumns": "Se muestran las primeras {{count}} columnas",
       "editHelp": "Instrucciones, notas, licencias y archivos fuente que se guardan con el modelo. Se muestran en su página y se incluyen en sus descargas, pero nunca se abren en un laminador.",
-      "editEmpty": "Todavía no hay archivos adjuntos."
+      "editEmpty": "Todavía no hay archivos adjuntos.",
+      "loadFailed": "No se pudieron cargar los archivos adjuntos."
     },
     "shared": {
       "sharedBy": "Compartido por {{name}}",
