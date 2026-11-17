@@ -164,14 +164,16 @@ export default function ModelActionsMenu({
     onContextMenuClose?.();
   };
 
-  // A card's model has only how many supporting files it holds: the picker reads them when it opens.
-  const [readSupporting, setReadSupporting] = useState<PrintFile[] | null>(null);
+  // A card's model has only how many supporting files it holds: the picker reads them when it opens. They're kept with
+  // the model they're of, as the page header keeps this menu across models, and shown only while it has some.
+  const [readSupporting, setReadSupporting] = useState<{ printId: string; files: PrintFile[] } | null>(null);
   useEffect(() => {
     if (!pickerOpen || print.supporting_files || !print.supporting_file_count) return;
     let active = true;
-    printsApi.listFiles(print.id).then(
+    const printId = print.id;
+    printsApi.listFiles(printId).then(
       (files) => {
-        if (active) setReadSupporting(files);
+        if (active) setReadSupporting({ printId, files });
       },
       () => undefined,
     );
@@ -179,6 +181,9 @@ export default function ModelActionsMenu({
       active = false;
     };
   }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count]);
+  const supportingFiles =
+    print.supporting_files ??
+    (print.supporting_file_count && readSupporting?.printId === print.id ? readSupporting.files : undefined);
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -622,7 +627,7 @@ export default function ModelActionsMenu({
         downloading={downloading}
         sortedPlates={sortedPlates}
         supportingCount={print.supporting_file_count}
-        supportingFiles={print.supporting_files ?? readSupporting ?? undefined}
+        supportingFiles={supportingFiles}
         downloadSupporting={(file) => void downloadSupportingFile(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}

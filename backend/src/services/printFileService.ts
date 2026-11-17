@@ -370,8 +370,10 @@ export async function renameSupportingFile(
     for (let n = 2; taken.has(next.toLowerCase()); n++) next = `${name} (${n})${ext}`;
     await prisma.printFile.update({ where: { id: record.id }, data: { filename: next } });
   });
-  // The file follows its name, as a plate's does.
-  await relocatePrint(print, []);
+  // The file follows its name, as a plate's does, to where the model is now: an edit while this waited for the lock
+  // moves the model's other files where its new name puts them.
+  const current = await prisma.print.findUnique({ where: { id: printId } });
+  if (current) await relocatePrint(current, []);
 }
 
 /**

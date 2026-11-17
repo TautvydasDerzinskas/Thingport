@@ -50,8 +50,9 @@ router.post(
         const safeName = sanitizeFilename(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
-      await addPlatesToPrint(req.userId!, print.id, plateInputs);
-      res.json({ print: await printOutById(req.userId!, print.id) });
+      const added = await addPlatesToPrint(req.userId!, print.id, plateInputs);
+      // Which plates are these files', in their order: the model can gain others meanwhile, from another tab.
+      res.json({ print: await printOutById(req.userId!, print.id), plate_ids: added.map((plate) => plate.id) });
     } finally {
       for (const f of files) {
         if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });

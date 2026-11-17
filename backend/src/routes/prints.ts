@@ -142,11 +142,12 @@ router.post(
       };
 
       const printsOut = [];
-      // One model per file, or one holding them all, each of its files in the folder it came from ("docs").
+      // One model per file, or one holding them all, each of its files in the folder it came from ("docs"), a lone file
+      // too: a zip's "parts/body.stl" goes up alone when its photo goes to the gallery. A model per file has no folders.
       const folders = uploadFolders(body.folders, files);
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
-        const withFolders = group.map((f) => ({ ...f, folder: group.length > 1 ? (folders.get(f) ?? null) : null }));
+        const withFolders = group.map((f) => ({ ...f, folder: groups.length === 1 ? (folders.get(f) ?? null) : null }));
         const print = await createUploadedModel(req.userId!, meta, withFolders);
         for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });

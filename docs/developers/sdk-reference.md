@@ -1602,13 +1602,13 @@ A page of a collection's models.
 
 A model to make.
 
-| Field           | Type             | What it is                             |
-| --------------- | ---------------- | -------------------------------------- |
-| `name`          | `string`         |                                        |
-| `description?`  | `string`         |                                        |
-| `tags?`         | `string[]`       |                                        |
-| `collectionId?` | `string`         | A collection to save it into.          |
-| `files`         | `SdkFileInput[]` | Its files, each a plate. At least one. |
+| Field           | Type             | What it is                                                                                                 |
+| --------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `name`          | `string`         |                                                                                                            |
+| `description?`  | `string`         |                                                                                                            |
+| `tags?`         | `string[]`       |                                                                                                            |
+| `collectionId?` | `string`         | A collection to save it into.                                                                              |
+| `files`         | `SdkFileInput[]` | Its files, at least one. Its 3D files become its plates and the rest related files, as `create` describes. |
 
 ### `SdkNewCollection`
 
