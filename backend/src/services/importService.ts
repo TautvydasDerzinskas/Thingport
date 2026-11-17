@@ -1312,7 +1312,11 @@ async function supportingDownload(
     return [];
   }
   if (!isFileHost(hostname)) return [];
-  const result = await downloadPlainFileToTemp(file.url, file.name, limits.perFile);
+  // A zip's files are held to the limits as it's opened, so the zip may be as large as all a model keeps: two guides
+  // that each fit can make one too large for a file of its own.
+  const isZip = path.extname(file.name).toLowerCase() === ".zip";
+  const cap = isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : limits.perFile;
+  const result = await downloadPlainFileToTemp(file.url, file.name, cap);
   if (!result || "rateLimited" in result) return [];
   const input = result.input;
   if (path.extname(input.filename).toLowerCase() === ".zip") {

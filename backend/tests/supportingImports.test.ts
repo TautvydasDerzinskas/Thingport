@@ -279,6 +279,19 @@ describe("a file a site gives beside a model's own", () => {
     expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
   });
 
+  it("opens a zip larger than one file may be, for files in it that each fit", async () => {
+    const zip = await new JSZip()
+      .file("a.txt", "a".repeat(60))
+      .file("b.txt", "b".repeat(60))
+      .generateAsync({ type: "nodebuffer" });
+    expect(zip.length).toBeGreaterThan(100);
+    served({ "/docs.zip": zip });
+    limits.value = { perFile: 100, perModel: 1000 };
+    const kept = await downloadSupportingFile(at("docs.zip"), site);
+    remove(kept);
+    expect(kept.map((each) => each.filename).toSorted()).toEqual(["a.txt", "b.txt"]);
+  });
+
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {
     const fetchMock = served({ "/guide.pdf": "%PDF-1.4 a longer guide" });
     expect(await downloadSupportingFile({ url: "https://example.org/guide.pdf", name: "guide.pdf" }, site)).toEqual([]);
