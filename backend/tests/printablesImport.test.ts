@@ -186,7 +186,7 @@ describe("importPrintFromUrl -- Printables", () => {
       otherFiles: [{ id: "24", name: "SOURCES.txt", folder: null }],
     };
     const asked: { fileType: string; ids: string[] }[][] = [];
-    const serve = (modelId: string) =>
+    const serve = (modelId: string, listed: Partial<typeof files> = {}) =>
       vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (input, init) => {
         const target = String(input);
         if (target === "https://api.printables.com/graphql/") {
@@ -199,7 +199,9 @@ describe("importPrintFromUrl -- Printables", () => {
               data: { getDownloadLink: { ok: true, errors: null, output: { files: links } } },
             });
           }
-          return jsonResponse(200, { data: { print: { ...MODEL_RESPONSE.data.print, id: modelId, ...files } } });
+          return jsonResponse(200, {
+            data: { print: { ...MODEL_RESPONSE.data.print, id: modelId, ...files, ...listed } },
+          });
         }
         if (target === "https://files.printables.com/media/21") return new Response("solid x endsolid");
         if (target.startsWith("https://files.printables.com/media/")) return new Response("a document");
@@ -232,6 +234,18 @@ describe("importPrintFromUrl -- Printables", () => {
           { fileType: "gcode", ids: ["23"] },
           { fileType: "other", ids: ["24"] },
         ],
+      ]);
+    });
+
+    it("keeps a script listed among the other files, as one among the model files is", async () => {
+      const url = "https://www.printables.com/model/2000003-holder";
+      const otherFiles = [{ id: "25", name: "holder.scad", folder: "source" }];
+      global.fetch = serve("2000003", { gcodes: [], otherFiles });
+      const result = await importPrintFromUrl(userId, url, { url, tags: [] });
+      expect(result.plates.map((plate) => plate.filename)).toEqual(["Holder.stl"]);
+      expect(await supportingOf(result.print.id)).toEqual([
+        ["docs", "Assembly.pdf"],
+        ["source", "holder.scad"],
       ]);
     });
 

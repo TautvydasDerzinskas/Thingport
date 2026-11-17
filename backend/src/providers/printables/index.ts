@@ -66,9 +66,11 @@ export const printablesImport: SourcedImport<null, Model> = {
         : [...model.plateFiles, ...model.otherFiles].filter(
             (file) => !kit.isImportableFile(file.name) && kit.isSupportingFile(file.name),
           );
-    const links = await resolvePrintablesDownloadLinks(externalId, [...modelFiles, ...extras]);
+    // A script listed among the other files is the model's source all the same, kept as model files' scripts are.
+    const scripts = model.otherFiles.filter((file) => kit.isImportableFile(file.name) && !kit.isModelFile(file.name));
+    const links = await resolvePrintablesDownloadLinks(externalId, [...modelFiles, ...scripts, ...extras]);
     const results = await Promise.all(
-      modelFiles.flatMap((file) => {
+      [...modelFiles, ...scripts].flatMap((file) => {
         const link = links.get(file.id);
         return link ? [kit.downloadFile(link, file.name).then((result) => ({ result, folder: file.folder }))] : [];
       }),
