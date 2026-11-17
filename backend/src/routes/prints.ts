@@ -15,7 +15,7 @@ import { createUploadedModel } from "../services/uploadService";
 import { plateThumbPath, relocatePrintsForToken } from "../services/printService";
 import { assignCategory, setPrintCategory } from "../services/printCategoryService";
 import { mergeModels } from "../services/modelMergeService";
-import { previewImagePath } from "../services/previewImageService";
+import { galleryThumbPath, previewImagePath } from "../services/previewImageService";
 import { descriptionImagePath } from "../services/descriptionImageService";
 import { deleteAuthorIfOrphaned } from "../services/authorService";
 import { printOutById, printOutsByIds } from "../services/printLoader";
@@ -603,19 +603,27 @@ router.post(
   }),
 );
 
+// The model's thumbnail, by the rule its card follows (dto.ts coverThumbUrl), at an address that stays the same.
 router.get(
   "/print/:id/thumb.jpg",
   asyncHandler(async (req, res) => {
-    const plate0 = await prisma.plate.findFirst({
-      where: { printId: req.params.id, print: await readablePrintWhere(req.userId!) },
-      orderBy: { position: "asc" },
-      include: { print: { select: { assetsPath: true } } },
+    const print = await prisma.print.findFirst({
+      where: { id: req.params.id, AND: [await readablePrintWhere(req.userId!)] },
+      select: {
+        assetsPath: true,
+        plates: { take: 1, orderBy: { position: "asc" }, select: { id: true } },
+        previewImages: { take: 1, orderBy: { position: "asc" }, select: { id: true, generated: true } },
+      },
     });
-    if (!plate0) throw new HttpError(404, "Not found");
-    const thumbPath = plateThumbPath(plate0.id, plate0.print.assetsPath);
-    if (!fs.existsSync(thumbPath)) throw new HttpError(404, "Not found");
+    if (!print) throw new HttpError(404, "Not found");
+    const cover = print.previewImages[0];
+    const fromCover = cover && !cover.generated ? await galleryThumbPath(cover.id, print.assetsPath) : null;
+    const plate = print.plates[0];
+    const thumbPath = fromCover ?? (plate ? plateThumbPath(plate.id, print.assetsPath) : null);
+    if (!thumbPath || !fs.existsSync(thumbPath)) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", "image/jpeg");
-    res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    // Asked again each time: putting another picture first changes it.
+    res.setHeader("Cache-Control", "private, no-cache");
     res.sendFile(path.resolve(thumbPath));
   }),
 );
@@ -649,6 +657,23 @@ router.get(
     if (!fs.existsSync(filePath)) throw new HttpError(404, "Not found");
     res.setHeader("Content-Type", "image/jpeg");
     res.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    res.sendFile(path.resolve(filePath));
+  }),
+);
+
+// The image at card size, made on first request (previewImageService galleryThumbPath).
+router.get(
+  "/preview-image/:id/thumb.jpg",
+  asyncHandler(async (req, res) => {
+    const image = await prisma.previewImage.findFirst({
+      where: { id: req.params.id, print: await readablePrintWhere(req.userId!) },
+      include: { print: { select: { assetsPath: true } } },
+    });
+    if (!image) throw new HttpError(404, "Not found");
+    const filePath = await galleryThumbPath(image.id, image.print.assetsPath);
+    if (!filePath) throw new HttpError(404, "Not found");
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Cache-Control", req.query.v ? "private, max-age=31536000, immutable" : "private, no-cache");
     res.sendFile(path.resolve(filePath));
   }),
 );

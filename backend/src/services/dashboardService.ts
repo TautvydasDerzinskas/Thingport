@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS } from "../config";
-import { plateThumbUrl, previewImageUrl, renderUrl } from "../dto";
+import { coverThumbUrl, plateThumbUrl, previewImageUrl, renderUrl } from "../dto";
 import { modelColorImagePath } from "./modelPreviewCache";
 
 const TOP_MODELS_PREVIEW = 3;
@@ -61,10 +61,12 @@ type PrintForModelSummary = {
   previewImages: { id: string; generated: boolean }[];
 };
 
-/** By the same rule the model cards follow (frontend components/media/modelPicture.ts): the plate's thumbnail
- *  unless that thumbnail is one we drew, and then the cover, which is the model in its own colours wherever the
- *  render found any. */
+/** By the same rule the model cards follow (frontend components/media/modelPicture.ts): the model's thumbnail unless
+ *  that thumbnail is one we drew, and then the cover, which is the model in its own colours wherever the render found
+ *  any. */
 function ownPictureUrl(print: PrintForModelSummary): string | null {
+  const coverThumb = coverThumbUrl(print.previewImages[0], print.assetsPath);
+  if (coverThumb) return coverThumb;
   const plate = print.plates[0];
   if (!plate) return null;
   const thumb = plateThumbUrl(plate.id, print.assetsPath);
@@ -80,7 +82,9 @@ export function toModelSummary(print: PrintForModelSummary): DashboardModel {
   return {
     id: print.id,
     name: print.name,
-    thumbUrl: plateId ? plateThumbUrl(plateId, print.assetsPath) : null,
+    thumbUrl:
+      coverThumbUrl(print.previewImages[0], print.assetsPath) ??
+      (plateId ? plateThumbUrl(plateId, print.assetsPath) : null),
     photoUrl: ownPictureUrl(print),
     renderUrl: first ? renderUrl(first, print.assetsPath) : null,
     viewCount: print.viewCount,

@@ -54,6 +54,11 @@ export function galleryImageFile(id: string): AssetFile {
   return { kind: "image", name: `${id}.jpg` };
 }
 
+/** A gallery image at card size, for when it's the model's first: made from it on first request. */
+export function galleryThumbFile(id: string): AssetFile {
+  return { kind: "thumb", name: `${id}.jpg` };
+}
+
 /** Named with its extension now, so it opens from the folder; the shared folder had none. */
 export function descriptionImageFile(image: { id: string; mime: string }): AssetFile {
   return { kind: "description", name: `${image.id}${DESCRIPTION_EXTS[image.mime] ?? ""}`, legacyName: image.id };
