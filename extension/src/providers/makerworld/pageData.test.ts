@@ -75,11 +75,13 @@ describe("makerworldDesignForImport", () => {
         { modelName: "connector.STL", modelType: "stl" },
         { modelName: "photo.jpg", modelType: "" },
         { modelName: "Assembly guide.pdf", modelType: "pdf" },
-        { modelName: "", modelType: "", isDir: true, dirName: "Sources", children: [{ modelName: "body.f3d" }] },
+        { modelName: "README", modelType: "" },
+        { modelName: "Sources", modelType: "", isDir: true, dirName: "Sources", children: [{ modelName: "body.f3d" }] },
       ]),
     );
     expect(getModelFiles(sent)).toEqual([
       { modelType: "pdf", modelName: "Assembly guide.pdf", protected: undefined },
+      { modelType: "", modelName: "README", protected: undefined },
       { modelType: undefined, modelName: "body.f3d", protected: undefined },
     ]);
     // They're no scripts.

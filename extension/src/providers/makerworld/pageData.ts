@@ -152,7 +152,9 @@ function besideEntries(design: MakerworldDesign): Record<string, unknown>[] {
   const scripts = new Set(scadEntries(design));
   return modelFiles(files).filter((entry) => {
     const name = typeof entry.modelName === "string" ? entry.modelName.trim() : "";
-    return !scripts.has(entry) && /\.[a-z0-9]+$/i.test(name) && !NEVER_BESIDE.test(name);
+    // A folder is no file, whatever it's named: its files are entries of their own.
+    const folder = entry.isDir === true || Array.isArray(entry.children);
+    return !scripts.has(entry) && !folder && name !== "" && !NEVER_BESIDE.test(name);
   });
 }
 
