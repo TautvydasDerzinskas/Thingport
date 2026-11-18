@@ -333,6 +333,16 @@ export default function ModelActionsMenu({
     download: downloadSupportingFile,
   } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
   const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
+  // Busy like the picker's other downloads, so a second click doesn't start another.
+  const [downloadingSupporting, setDownloadingSupporting] = useState(false);
+  const downloadSupporting = async (file: PrintFile) => {
+    setDownloadingSupporting(true);
+    try {
+      await downloadSupportingFile(file);
+    } finally {
+      setDownloadingSupporting(false);
+    }
+  };
   const adaptedMenuLabel = (slicer: string) => {
     const state = adaptedTargets.length === 1 ? adapted.stateOf(adaptedTargets[0]) : "idle";
     if (state === "preparing") return t("models:detail.adaptPreparing");
@@ -644,13 +654,13 @@ export default function ModelActionsMenu({
       <DownloadPickerDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        downloading={downloading}
+        downloading={downloading || downloadingSupporting}
         sortedPlates={sortedPlates}
         supportingCount={print.supporting_file_count}
         supportingFiles={supportingFiles}
         supportingState={supportingState}
         onRetrySupporting={retrySupporting}
-        downloadSupporting={(file) => void downloadSupportingFile(file)}
+        downloadSupporting={(file) => void downloadSupporting(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
