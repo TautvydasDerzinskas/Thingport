@@ -279,8 +279,15 @@ describe("a file a site gives beside a model's own", () => {
       .file("Frog/side.png", "png")
       .generateAsync({ type: "nodebuffer" });
     const cut = await new JSZip().file("frog.dxf", "0\nSECTION").generateAsync({ type: "nodebuffer" });
-    served({ "/guide.pdf": "%PDF-1.4", "/all.zip": zip, "/dxf.zip": cut, "/frog.stl": "solid frog" });
+    served({
+      "/guide.pdf": "%PDF-1.4",
+      "/README": "print the lid first",
+      "/all.zip": zip,
+      "/dxf.zip": cut,
+      "/frog.stl": "solid frog",
+    });
     expect(named(await downloadSupportingFile(at("guide.pdf"), site))).toEqual([[null, "guide.pdf", true]]);
+    expect(named(await downloadSupportingFile(at("README"), site))).toEqual([[null, "README", true]]);
     expect(named(await downloadSupportingFile(at("all.zip"), site))).toEqual([["docs", "guide.pdf", true]]);
     // A zip of a format the site offers the model in besides: its cut file, as a supporting one.
     expect(named(await downloadSupportingFile(at("dxf.zip"), site))).toEqual([[null, "frog.dxf", true]]);

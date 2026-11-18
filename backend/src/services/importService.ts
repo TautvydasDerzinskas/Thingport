@@ -1272,7 +1272,7 @@ async function downloadSignedFile(
   if (!isFileHost(hostname)) return null;
   // A file beside the model's own is worth what the admin's limits allow, and never the import: a block or a failure
   // skips it.
-  const extra = path.extname(file.name) && isSupportingImportFile(file.name) ? await supportingLimits() : undefined;
+  const extra = isSupportingImportFile(file.name) ? await supportingLimits() : undefined;
   if (extra === null) return [];
   const result = await downloadPlainFileToTemp(file.url, file.name, extra?.perFile);
   if (result && "rateLimited" in result) {
@@ -1339,7 +1339,7 @@ async function supportingDownload(
       await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
-  if (path.extname(input.filename) && isSupportingImportFile(input.filename)) return [{ ...input, supporting: true }];
+  if (isSupportingImportFile(input.filename)) return [{ ...input, supporting: true }];
   await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
@@ -1448,7 +1448,7 @@ const IMPORT_KIT: PipelineKit = {
   isImportableFile: (name) =>
     MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
     PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
-  isSupportingFile: (name) => Boolean(path.extname(name)) && isSupportingImportFile(name),
+  isSupportingFile: isSupportingImportFile,
   isDocumentFile: (name) => Boolean(path.extname(name)) && isDocumentFile(name),
   supportingLimit: async () => (await supportingLimits())?.perFile ?? null,
   downloadSupportingFile,

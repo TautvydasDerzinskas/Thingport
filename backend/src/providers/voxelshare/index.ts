@@ -9,6 +9,7 @@
 // - Its look for Download adapted's button, in extension/src/content/styles/adapted.scss with every site's.
 
 import fs from "node:fs/promises";
+import path from "node:path";
 import { z } from "zod";
 import { HttpError } from "../../utils/fileUtils";
 import { joinFolders } from "../../utils/fileFolder";
@@ -105,8 +106,13 @@ async function supportingFiles(externalId: string, kit: ImportKit): Promise<NewP
   } catch {
     return [];
   }
+  // A zip named for no file (`Sources.zip`) may hold anything, so it isn't asked for.
+  const beside = (name: string) => {
+    const inner = name.replace(/\.zip$/i, "");
+    return (inner === name || path.extname(inner) !== "") && kit.isSupportingFile(inner);
+  };
   const inputs: NewPlateInput[] = [];
-  for (const file of files.filter((each) => kit.isSupportingFile(each.name.replace(/\.zip$/i, "")))) {
+  for (const file of files.filter((each) => beside(each.name))) {
     for (const input of await kit.downloadSupportingFile(file, isVoxelshareFileHost)) {
       inputs.push({ ...input, folder: joinFolders(file.folder, input.folder) });
     }

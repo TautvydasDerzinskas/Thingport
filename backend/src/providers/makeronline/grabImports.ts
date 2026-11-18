@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { GrabImport } from "@prisma/client";
 import { prisma } from "../../db";
 import { createNotification } from "../../services/notificationService";
@@ -168,10 +167,7 @@ export async function planMakeronlineDownloads(
   if (!parsed) throw new HttpError(400, `Not a ${NAME} model link`);
   const resolved = await resolveMakeronlineModel(parsed.modelId);
   if (!resolved) throw new HttpError(404, `This ${NAME} model could not be found, or isn't public.`);
-  const beside =
-    supporting && (await supportingLimits()) !== null
-      ? (name: string) => Boolean(path.extname(name)) && isSupportingImportFile(name)
-      : undefined;
+  const beside = supporting && (await supportingLimits()) !== null ? isSupportingImportFile : undefined;
   const requests = makeronlineDownloadPlan(parsed.modelId, resolved, scope, parsed.requestedProfileId, beside);
   if (!requests.length) throw new HttpError(400, `This ${NAME} model has no files Thingport can import.`);
   return { title: resolved.meta.title ?? null, requests };
