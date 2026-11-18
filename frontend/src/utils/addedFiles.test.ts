@@ -109,6 +109,14 @@ describe("a .gltf added with the files it points at", () => {
     expect(await withGltfFiles(plain, (each) => each)).toMatchObject(plain);
   });
 
+  it("packs a .gltf named with a space after it, as the server keeps and packs it, and stores it as a .glb", async () => {
+    const files = [scene("scene.gltf ", "scene.bin"), file("scene.bin")];
+    const { model, supporting } = await withGltfFiles(sortAddedFiles(files, "model"), (each) => each);
+    expect(names(model)).toEqual(["scene.gltf ", "scene.bin"]);
+    expect(names(supporting)).toEqual([]);
+    expect(storedModelFileName("scene.gltf ")).toBe("scene.glb");
+  });
+
   it("names a file two of the addition could be, though the scene names it in a folder, and takes neither", async () => {
     const files = [
       scene("scene.gltf", "scene.bin", "textures/base.png"),

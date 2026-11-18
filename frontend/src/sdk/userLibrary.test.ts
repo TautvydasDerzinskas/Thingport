@@ -221,17 +221,25 @@ describe("files a script adds to a model", () => {
   });
 
   it("tells which of two files of one name went in by its place in the files given", async () => {
+    addPlates.mockReset();
     uploadFile.mockReset();
-    uploadFile
-      .mockResolvedValueOnce({ print: model(), prepared: false })
-      .mockRejectedValueOnce(Object.assign(new Error("Related file exceeds size limit"), { status: 413 }));
+    // The plate, given last, goes in first, so where each went in isn't where it was given; each notes.txt is answered
+    // by what's in it, whenever it's sent.
+    addPlates.mockResolvedValue({ print: model(), plate_ids: ["p2"] });
+    uploadFile.mockImplementation(async (_id, file) => {
+      if ((await file.text()) === "too big") {
+        throw Object.assign(new Error("Related file exceeds size limit"), { status: 413 });
+      }
+      return { print: model(), prepared: false };
+    });
     const failure = await buildUserLibrary({ openModel: () => undefined })
       .models.addFiles("m1", [
         { name: "notes.txt", data: "small" },
         { name: "notes.txt", data: "too big" },
+        { name: "lid.stl", data: "solid lid endsolid" },
       ])
       .catch((err: unknown) => err);
-    expect(failure).toMatchObject({ added: ["notes.txt"], addedIndexes: [0] });
+    expect(failure).toMatchObject({ added: ["lid.stl", "notes.txt"], addedIndexes: [2, 0] });
   });
 
   it("says nothing went in when the model files' request fails", async () => {

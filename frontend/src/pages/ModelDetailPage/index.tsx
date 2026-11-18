@@ -46,7 +46,7 @@ import Skeleton from "@mui/material/Skeleton";
 import { useQualityCheck } from "./QualityCheck/useQualityCheck";
 import QualityScanOverlay from "./QualityCheck/QualityScanOverlay";
 import QualityBadge from "./QualityCheck/QualityBadge";
-import SupportingFiles from "../../components/supportingFiles/SupportingFiles";
+import SupportingFiles, { SupportingFilesInput } from "../../components/supportingFiles/SupportingFiles";
 import { useSupportingFiles } from "../../components/supportingFiles/useSupportingFiles";
 import { usePrintProfilesView } from "../../hooks/usePrintProfilesView";
 import { usePrintProfiles } from "./PrintProfiles/usePrintProfiles";
@@ -155,6 +155,9 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     subtitle: print ? t("models:detail.subtitle") : undefined,
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
+        {/* The supporting files' picker, which the attachments open too: here, it stays while another model loads and the
+            page below is a skeleton, with the menu that opens it still the last model's. */}
+        <SupportingFilesInput actions={supporting} />
         {/* Another user's model is theirs to favourite; the viewer copies it instead (the side panel). */}
         {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
         <ModelActionsMenu

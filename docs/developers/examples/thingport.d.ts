@@ -589,12 +589,14 @@ export interface SdkModels {
    * The plates go in first, in one request, then the other files one at a time. When one fails, the call rejects with
    * its error, which carries `added` (the names of the files in before it, none if it was the first), `addedIndexes`
    * (their places in `files`, which tell two of one name apart), `keepPrepared` (what to pass when sending the rest:
-   * true when the call was given it, or a sliced print of the call went in) and, once a request of the call was
-   * answered, `model` (the model as the last answer had it). The rest are the files not in `addedIndexes`, the one that
-   * failed first. One whose answer was lost may be in all the same, and a plate request that failed may have kept files
-   * it couldn't take back: read the model before sending those again. A sliced print sent again with `keepPrepared`
-   * false takes the prepared slot again, whatever holds it by then; with it true, it lands beside any copy of itself
-   * that got in.
+   * true when the call was given it, or an answer said a sliced print of the call went in) and, once a request of the
+   * call was answered, `model` (the model as the last answer had it). The rest are the files not in `addedIndexes`,
+   * the one that failed first. One whose answer was lost may be in all the same, and a plate request that failed may
+   * have kept files it couldn't take back: look for those among the model's `files` and `relatedFiles` before sending
+   * them again. The prepared print is in neither, so a sliced print whose answer was lost goes again first, as it went:
+   * with `keepPrepared` false, it takes the prepared slot again, whatever holds it by then, itself included. The rest
+   * then go with `keepPrepared: true`: the error's counts only the answers that came, and false would have the next
+   * sliced print take the slot from it.
    *
    * @param id The model's id.
    * @param files The files to add.

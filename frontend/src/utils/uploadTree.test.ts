@@ -233,6 +233,37 @@ describe("uploading a glTF download", () => {
     expect(namesSent().flat()).not.toContain("scene.gltf");
   });
 
+  it("one model per folder: leaves out a scene beside the folders whose texture is in two of them, and sends those", async () => {
+    await i18next.init({
+      lng: "en",
+      ns: ["app"],
+      resources: { en: { app: en.app } },
+      interpolation: { escapeValue: false },
+    });
+    const result = await uploadFoldersAsModels(
+      [
+        entry("scene.gltf", gltf("scene.bin", "textures/base.png")),
+        entry("scene.bin"),
+        entry("A/a.stl"),
+        entry("A/base.png"),
+        entry("B/b.stl"),
+        entry("B/base.png"),
+      ],
+      null,
+    );
+    // Each folder's model has taken its base.png by the time the scene goes: still, it couldn't tell which was its own.
+    expect(result.failed).toContainEqual(expect.stringMatching(/^scene\.gltf \(base\.png .+\)$/));
+    expect(namesSent()).toEqual([["a.stl"], ["b.stl"]]);
+  });
+
+  it("one model per file: a scene named with a space after it goes up with its files, as the server packs it", async () => {
+    await uploadEntriesToCategory(
+      [entry("scene.gltf ", gltf("scene.bin", "base.png")), entry("scene.bin"), entry("base.png")],
+      null,
+    );
+    expect(namesSent()).toEqual([["scene.gltf ", "scene.bin", "base.png"]]);
+  });
+
   it("one model per file: says where each of a scene's files was in the pick", async () => {
     await uploadEntriesToCategory(
       [

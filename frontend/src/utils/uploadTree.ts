@@ -3,6 +3,7 @@ import { UnauthorizedError } from "../api/client";
 import { categoriesApi, type Category } from "../api/categories";
 import { printsApi, type Print } from "../api/prints";
 import { MODEL_EXTS, UPLOAD_EXTS } from "../constants/fileTypes";
+import { keptName } from "./fileExtensions";
 
 export type UploadEntry = {
   file: File;
@@ -125,8 +126,9 @@ function splitPath(entry: UploadEntry) {
   return segments;
 }
 
+/** By the name it's kept by, as the server tells what a file is: "part.stl " is a model file. */
 function extOf(name: string) {
-  return name.split(".").pop()?.toLowerCase() ?? "";
+  return keptName(name).split(".").pop()?.toLowerCase() ?? "";
 }
 
 /** A model file, by its name or its path. */
@@ -174,9 +176,10 @@ export async function gltfBundles(
   ambiguous?: Map<UploadEntry, string[]>,
 ): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
+  // By the names they're kept by, as the server packs them.
   const pathOf = (entry: UploadEntry) =>
-    normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
-  const nameOf = (entry: UploadEntry) => entry.file.name.toLowerCase();
+    normalizeSegments(normalizeRelativePath(keptName(entry.relativePath || entry.file.name)));
+  const nameOf = (entry: UploadEntry) => keptName(entry.file.name).toLowerCase();
   const others = entries.filter((entry) => !isGltf(entry.file.name));
   for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
     const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
@@ -264,18 +267,20 @@ const uploadable = (entries: UploadEntry[]) => entries.filter((e) => UPLOAD_EXTS
 
 /** `batched`: more than one request, each sent without a notification; the caller sends the summary.
  *  A lone request notifies by itself, so it's recorded even if the page closes mid-upload. `skipped`: the files that
- *  can't be a model on their own (a PDF, notes), for the caller to say so. */
+ *  can't be a model on their own (a PDF, notes), for the caller to say so. `unclearBefore`: the scenes a look at the
+ *  whole pick found more than one file for, which a look at only these can't see once another model took those. */
 async function uploadEach(
   entries: UploadEntry[],
   resolveCategory: ReturnType<typeof categoryResolver>,
   onUnauthorized?: () => void,
   partOfBatch = false,
+  unclearBefore?: Map<UploadEntry, string[]>,
 ) {
   const failed: string[] = [];
   let uploaded = 0;
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
-  const unclear = new Map<UploadEntry, string[]>();
+  const unclear = new Map<UploadEntry, string[]>(unclearBefore);
   const bundles = await gltfBundles(entries, unclear);
   const bundled = new Set([...bundles.values()].flat());
   const todo = uploadable(entries).filter((entry) => !bundled.has(entry));
@@ -560,7 +565,9 @@ export async function uploadFoldersAsModels(
 
   const skipped: string[] = [];
   if (rest.length) {
-    const result = await uploadEach(rest, resolveCategory, onUnauthorized, batched);
+    // With what the whole pick showed: a scene beside the folders whose texture is in two of them is still unclear,
+    // though those folders' models have taken both by now.
+    const result = await uploadEach(rest, resolveCategory, onUnauthorized, batched, unclear);
     uploaded += result.uploaded;
     failed.push(...result.failed);
     uploadedEntries.push(...result.uploadedEntries);

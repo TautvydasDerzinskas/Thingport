@@ -115,6 +115,9 @@ export function useSupportingFiles(
         // The sliced prints after one whose answer was lost, which wait: each would replace it if it's in, or be kept
         // beside the old one if it isn't. Added again, it goes first, and they're kept beside it.
         const heldBack = new Set<(typeof supporting)[number]>();
+        // Said once the rest have gone up, after any failure of theirs: what to add again, and in what order, is then the
+        // message left showing, rather than one a later toast closes.
+        let heldBackNotice: string | null = null;
         for (const [index, item] of supporting.entries()) {
           if (heldBack.has(item)) {
             settle([item]);
@@ -136,14 +139,10 @@ export function useSupportingFiles(
               !(err instanceof UnauthorizedError) &&
               holdsBackSliced(item.name, status, preparedAdded)
             ) {
-              // Said as it happens, as every failure is, so one after it isn't hidden under it.
               for (const next of after) heldBack.add(next);
-              showToast({
-                message: t("models:supporting.preparedHeldBack", {
-                  name: item.name,
-                  names: after.map((next) => next.name).join(", "),
-                }),
-                severity: "error",
+              heldBackNotice = t("models:supporting.preparedHeldBack", {
+                name: item.name,
+                names: after.map((next) => next.name).join(", "),
               });
               continue;
             }
@@ -156,6 +155,7 @@ export function useSupportingFiles(
             settle([item]);
           }
         }
+        if (heldBackNotice) showToast({ message: heldBackNotice, severity: "error" });
         if (anyFailed) return;
         // Where they went, as a 3D file isn't among the attachments it was added to.
         if (modelFilesAdded) {

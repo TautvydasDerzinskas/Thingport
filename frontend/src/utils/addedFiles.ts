@@ -1,5 +1,5 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
-import { extOf } from "./fileExtensions";
+import { extOf, keptName } from "./fileExtensions";
 import { gltfBundles } from "./uploadTree";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
@@ -11,15 +11,6 @@ const PICTURE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "bmp", "gif", "svg"]
 
 /** A sliced print: kept beside the model as its prepared print, never one of its files to slice. */
 const PREPARED_SUFFIXES = [".gcode.3mf", ".gcode", ".gco", ".bgcode"];
-
-// oxlint-disable-next-line no-control-regex -- the server drops these from a name (sanitizeFilename), as this does.
-const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
-
-/** A file's name as the server keeps it (sanitizeFilename): without control characters, or spaces at either end. What
- *  a file is is told from that, so "A.3mf " goes where the server would take "A.3mf". */
-export function keptName(name: string): string {
-  return name.replace(CONTROL_CHARS, "").trim();
-}
 
 export function isPreparedName(name: string): boolean {
   const lower = keptName(name).toLowerCase();
@@ -80,7 +71,9 @@ export async function withGltfFiles<T>(
 ): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]>; ambiguous: string[] }> {
   const all = [...sorted.model, ...sorted.supporting];
   const packedWith = new Map<T, T[]>();
-  if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
+  // By the name it's kept by, as the server packs it: "scene.gltf " is a scene too.
+  if (!all.some((item) => extOf(keptName(fileOf(item).name)) === "gltf"))
+    return { ...sorted, packedWith, ambiguous: [] };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
   const unclear = new Map<(typeof entries)[number], string[]>();
   for (const [gltf, found] of await gltfBundles(entries, unclear)) {
@@ -108,7 +101,7 @@ export async function withGltfFiles<T>(
 
 /** The name a file added as a model file is stored by: a .gltf is packed into a .glb. */
 export function storedModelFileName(name: string): string {
-  return name.replace(/\.gltf$/i, ".glb");
+  return keptName(name).replace(/\.gltf$/i, ".glb");
 }
 
 /**
@@ -123,7 +116,7 @@ export function batchesByName<T>(items: T[], filesOf: (item: T) => File[]): T[][
     let batch = batches.at(-1);
     const clashes = (open: { byName: Map<string, File> }) =>
       files.some((file) => {
-        const other = open.byName.get(file.name.toLowerCase());
+        const other = open.byName.get(keptName(file.name).toLowerCase());
         return other !== undefined && other !== file;
       });
     if (!batch || clashes(batch)) {
@@ -131,7 +124,7 @@ export function batchesByName<T>(items: T[], filesOf: (item: T) => File[]): T[][
       batches.push(batch);
     }
     batch.items.push(item);
-    for (const file of files) batch.byName.set(file.name.toLowerCase(), file);
+    for (const file of files) batch.byName.set(keptName(file.name).toLowerCase(), file);
   }
   return batches.map((batch) => batch.items);
 }
