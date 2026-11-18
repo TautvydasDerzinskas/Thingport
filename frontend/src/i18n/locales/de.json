@@ -674,7 +674,7 @@
       "untitled": "Import ohne Titel",
       "sections": {
         "run": "Wird importiert",
-        "att": "Braucht Aufmerksamkeit",
+        "att": "Benötigt Aufmerksamkeit",
         "wait": "Wartet",
         "done": "Fertig"
       },
@@ -871,8 +871,8 @@
         "importing": "Wird importiert, {{pct}} %",
         "importingNoPercent": "Wird importiert",
         "inLine": "{{count}} in der Reihe",
-        "needsAttention_one": "{{count}} braucht Aufmerksamkeit",
-        "needsAttention_other": "{{count}} brauchen Aufmerksamkeit",
+        "needsAttention_one": "{{count}} benötigt Aufmerksamkeit",
+        "needsAttention_other": "{{count}} benötigen Aufmerksamkeit",
         "nextUp": "Dein nächster Import ist als Nächstes dran",
         "nextPlace": "Dein nächster Import ist Nr. {{n}} in der Reihe",
         "finished": "Alle Importe fertig",
@@ -1585,7 +1585,7 @@
         "exportHint": "Als Datei zum Teilen, ohne Schlüssel",
         "emptyTitle": "Noch kein Ziel eingerichtet",
         "emptyHint": "Füge OctoPrint, Klipper oder PrusaLink, einen Webhook oder eine eigene Adresse hinzu.",
-        "needsKey": "Braucht seinen API-Schlüssel",
+        "needsKey": "Benötigt seinen API-Schlüssel",
         "edit": "Bearbeiten",
         "delete": "Löschen",
         "deleteTitle": "{{name}} löschen?",
@@ -1739,6 +1739,104 @@
       ],
       "starting": "Verschieben der Modelldateien wird vorbereitet …"
     },
+    "grab": {
+      "connect": {
+        "title": "Thingport Grab verbinden",
+        "approvedTitle": "Thingport Grab ist verbunden",
+        "unknownBrowser": "diesem Browser",
+        "body": "Thingport Grab in {{browser}} möchte sich mit deinem Thingport-Konto ({{email}}) verbinden.",
+        "details": "Es importiert Modelle in deine Bibliothek und fügt sie für dich zu Sammlungen hinzu, ohne dass dein Passwort in der Erweiterung gespeichert wird. Du kannst es jederzeit in deinem Profil entfernen.",
+        "approve": "Verbinden",
+        "cancel": "Abbrechen",
+        "approvedBody": "Du kannst diesen Tab schließen und zum Modell zurückkehren, bei dem du warst.",
+        "cancelledBody": "Es wurde nichts verbunden. Du kannst diesen Tab schließen.",
+        "invalid": "Dieser Link stammt nicht von Thingport Grab oder ist unvollständig. Starte erneut über das Popup von Thingport Grab."
+      },
+      "profile": {
+        "heading": "Thingport Grab in {{name}}",
+        "lastUsed": "Verbunden · zuletzt verwendet {{when}}",
+        "connectedWhen": "Verbunden {{when}}",
+        "remove": "Entfernen",
+        "removeTitle": "Thingport Grab in {{name}} entfernen?",
+        "removeMessage": "Thingport Grab in {{name}} wird abgemeldet und kann erst wieder importieren, wenn es erneut verbunden ist."
+      }
+    },
+    "bookmarklet": {
+      "linkLabel": "An Thingport senden",
+      "dragHint": "Zieh den Knopf in deine Lesezeichenleiste",
+      "copy": "Bookmarklet-Code kopieren",
+      "copied": "Bookmarklet-Code kopiert",
+      "copyFailed": "Hier kann nicht kopiert werden. Zieh den Knopf in deine Lesezeichenleiste oder klicke mit der rechten Maustaste darauf und kopiere den Link.",
+      "guide": {
+        "open": "Mehr über Bookmarklets",
+        "title": "Mit einem Bookmarklet importieren",
+        "steps": [
+          "Zieh den Knopf unten in die Lesezeichenleiste deines Browsers (einblenden mit Strg+Umschalt+B, auf dem Mac ⌘⇧B).",
+          "Öffne die Seite eines Modells auf MakerWorld, Printables oder einer anderen unterstützten Plattform.",
+          "Klicke auf das Lesezeichen. Thingport öffnet sich und zeigt den Link bereits im Importdialog: Klicke auf „Importieren“."
+        ],
+        "cantDrag": "Ziehen geht nicht, etwa auf dem Handy? Kopiere den Code, setze ein Lesezeichen auf eine beliebige Seite, bearbeite es dann und füge den Code als Adresse ein.",
+        "readMore": "Anleitung lesen",
+        "extensionRecommended": "Thingport Grab, die Browser-Erweiterung, ist der empfohlene Weg zum Importieren: Damit kannst du direkt auf der Modellseite importieren und ganze Sammlungen abrufen. Manche Plattformen funktionieren sogar nur damit. Das Bookmarklet ist eine leichtere Alternative für ein Modell nach dem anderen.",
+        "getExtension": "Grab holen"
+      }
+    },
+    "providerAbout": {
+      "about": "Info",
+      "aboutName": "Über {{name}}",
+      "tabsLabel": "Ansicht",
+      "tabs": {
+        "about": "Info",
+        "compare": "Vergleich"
+      },
+      "sections": {
+        "needs": "Benötigt",
+        "imports": "Importiert",
+        "setup": "Einrichtung"
+      },
+      "rows": {
+        "signIn": "Anmeldung",
+        "grab": "Thingport Grab",
+        "flaresolverr": "FlareSolverr"
+      },
+      "rowHelp": {
+        "grab": "Die Browser-Erweiterung von Thingport. Sie importiert von der Seite eines Modells und gibt die Anmeldung deines Browsers an Thingport weiter.",
+        "flaresolverr": "Teil des Docker-Stacks. Er nutzt einen echten Browser, um Cloudflare-Prüfungen zu bestehen; einzurichten unter Administration → Verbindungen."
+      },
+      "need": {
+        "required": "Erforderlich",
+        "recommended": "Empfohlen",
+        "optional": "Optional",
+        "none": "Nicht verwendet"
+      },
+      "signIn": {
+        "none": "Keine",
+        "admin": "Schlüssel des Admins",
+        "user": "Deine Anmeldung",
+        "adminUser": "Admin-Schlüssel + deine Anmeldung",
+        "userOptional": "Optional"
+      },
+      "features": {
+        "models": "Modelle",
+        "profiles": "Druckprofile",
+        "collections": "Sammlungen",
+        "likes": "„Gefällt mir“",
+        "sync": "Synchronisierung",
+        "paid": "Kostenpflichtige Modelle"
+      },
+      "flareNote": {
+        "recommended": "Umgeht Cloudflare-Prüfungen, wenn Cloudflare den Server überprüft. Ohne FlareSolverr schlagen diese Importe fehl.",
+        "optional": "Nur eine Rückfallebene, falls Cloudflare einmal eingreift.",
+        "none": "Nicht nötig."
+      },
+      "guide": "Vollständige Anleitung",
+      "getGrab": "Thingport Grab holen",
+      "visit": "{{host}} öffnen",
+      "compareLabel": "Was jede Plattform benötigt und importiert",
+      "off": "Ausgeschaltet",
+      "yes": "Ja",
+      "no": "Nein"
+    },
     "support": {
       "link": "Gefällt dir Thingport?",
       "linkLong": "Gefällt dir Thingport? Zeig deine Unterstützung",
@@ -1774,6 +1872,76 @@
       "topFeature": "Top-Funktion",
       "thanks": "Danke an alle, die bei {{version}} geholfen haben",
       "contributor": "{{login}} auf GitHub (öffnet in neuem Tab)"
+    },
+    "codeBlock": {
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "copyFailed": "Hier kann nicht kopiert werden. Der Text ist markiert: Drücke Strg+C oder ⌘C."
+    },
+    "mcpConnect": {
+      "open": "So verbindest du",
+      "title": "KI-Assistenten verbinden",
+      "intro": "Jede Person verbindet sich mit ihrem eigenen API-Token, erstellt unter <strong>Profil → API-Token</strong>. Setze es anstelle von <code>{{token}}</code> ein.",
+      "clientLabel": "KI-Assistent",
+      "clients": {
+        "claudeCode": "Claude Code",
+        "claude": "Claude",
+        "chatgpt": "ChatGPT",
+        "codex": "Codex CLI",
+        "editors": "Cursor & VS Code"
+      },
+      "claudeCode": {
+        "step": "Führe das in einem Terminal aus:"
+      },
+      "claude": {
+        "step": "Öffne in Claude <strong>Einstellungen → Konnektoren</strong>, wähle <strong>Benutzerdefinierten Konnektor hinzufügen</strong> und gib diese Adresse ein. Füge unter den Request-Headern diesen Authorization-Header hinzu:",
+        "note": "Claude verbindet sich von den Servern von Anthropic aus, deshalb muss Thingport aus dem Internet über HTTPS erreichbar sein. Request-Header sind in der Beta und hängen eventuell von deinem Tarif ab."
+      },
+      "chatgpt": {
+        "step": "Schalte in ChatGPT unter <strong>Einstellungen → Apps & Konnektoren</strong> den <strong>Entwicklermodus</strong> ein, erstelle einen Konnektor mit dieser Adresse und wähle <strong>Token</strong> als Authentifizierung:",
+        "note": "ChatGPT verbindet sich von den Servern von OpenAI aus, deshalb muss Thingport aus dem Internet über HTTPS erreichbar sein. Die Option „Token“ hängt von deinem Tarif ab; ohne sie nutze Codex CLI."
+      },
+      "codex": {
+        "step": "Führe das in einem Terminal aus:",
+        "note": "THINGPORT_TOKEN muss in der Shell gesetzt sein, die Codex startet."
+      },
+      "editors": {
+        "cursor": "Cursor: Füge das zu <code>~/.cursor/mcp.json</code> hinzu.",
+        "vscode": "VS Code: Füge das zu <code>.vscode/mcp.json</code> in deinem Workspace hinzu.",
+        "note": "Andere Clients funktionieren genauso, wenn sie Streamable HTTP unterstützen und einen Header setzen lassen."
+      },
+      "guide": "MCP-Anleitung",
+      "close": "Schließen"
+    },
+    "iconPicker": {
+      "title": "Icon wählen",
+      "close": "Schließen",
+      "search": "Icons durchsuchen",
+      "upload": "Hochladen",
+      "uploadHelp": "PNG, JPEG, WebP, GIF oder SVG, bis 1 MB. Bilder werden auf 256 px verkleinert. Zieh Dateien hierher, um sie hochzuladen.",
+      "uploadFailed": "Das Icon konnte nicht hochgeladen werden",
+      "deleteTitle": "„{{name}}“ löschen?",
+      "deleteMessage": "Launcher-Links und Widgets, die es verwenden, bekommen wieder ihr übliches Icon.",
+      "delete": "Löschen",
+      "noUploads": "Noch nichts hochgeladen. Lade ein Bild hoch oder leg eines hier ab.",
+      "noMatches": "Keine passenden Icons für „{{query}}“",
+      "address": "Oder eine Bildadresse",
+      "useAddress": "Verwenden",
+      "actionsFor": "Aktionen für {{name}}",
+      "uploadedIcon": "Hochgeladenes Icon",
+      "clear": "Icon entfernen",
+      "choose": "Wählen",
+      "groups": {
+        "uploaded": "Deine Icons",
+        "thingport": "Thingport",
+        "providers": "Modellplattformen",
+        "printing": "3D-Druck",
+        "selfhosted": "Selbst gehostet",
+        "media": "Medien",
+        "popular": "Beliebte Seiten",
+        "ai": "KI",
+        "browsers": "Browser"
+      }
     },
     "tools": {
       "page": {
@@ -1977,6 +2145,90 @@
         "categoryHelp": "In welchem Regal die Tools-Seite es zeigt. Wer es nutzt, kann es selbst verschieben."
       }
     },
+    "screenshots": {
+      "title": "Screenshots von {{name}}",
+      "open": "Screenshot {{index}} von {{count}} von {{name}}",
+      "position": "{{index}} von {{count}}",
+      "previous": "Vorheriger Screenshot",
+      "next": "Nächster Screenshot",
+      "close": "Schließen"
+    },
+    "labelsPanel": {
+      "tab": "Beschriftungen",
+      "start": "Mit Englisch beginnen",
+      "add": "Sprache hinzufügen",
+      "file": "Die Beschriftungen für {{code}}, als JSON",
+      "fallbackNote": "Englisch ist die Rückfallsprache: Was in einer anderen Sprache fehlt, wird von hier angezeigt.",
+      "untranslated_one": "{{count}} Beschriftung hat in dieser Sprache noch keinen Text.",
+      "untranslated_other": "{{count}} Beschriftungen haben in dieser Sprache noch keinen Text.",
+      "badJson": "Das ist noch kein gültiges JSON und wird deshalb nicht gespeichert.",
+      "badShape": "Beschriftungen müssen als flaches Objekt mit Schlüssel-Wert-Paaren vorliegen, etwa { \"save\": \"Save\" }.",
+      "removeTitle": "Die Beschriftungen für {{name}} entfernen?",
+      "removeBody": "Die Datei und ihre Texte werden gelöscht. Die anderen Sprachen bleiben."
+    },
+    "missingFiles": {
+      "title": "Einigen Modellen fehlen ihre Dateien",
+      "lead_one": "1 Modell in deiner Bibliothek hat keine Dateien mehr im Speicherordner – weder Modelldateien noch Bilder. Es kann nicht geöffnet, gedruckt oder heruntergeladen werden, bis sie wieder da sind.",
+      "lead_other": "{{count}} Modelle in deiner Bibliothek haben keine Dateien mehr im Speicherordner – weder Modelldateien noch Bilder. Sie können nicht geöffnet, gedruckt oder heruntergeladen werden, bis die Dateien wieder da sind.",
+      "leadHelp": "Die Dateien eines Modells speichert Thingport in seinem Speicherordner, die zugehörigen Details dagegen in der Datenbank. Wird eine Thingport-Instanz ohne diesen Ordner verschoben oder der Ordner versehentlich gelöscht, bleiben die Modelldetails ohne die Dateien zurück. Wenn du die Dateien erneut von der jeweiligen Plattform abrufst, sind sie wieder da. Alle übrigen Angaben wie Namen, Tags, Sammlungen und Favoriten bleiben erhalten.",
+      "notNow": "Nicht jetzt",
+      "checking": "Deine Modelle werden überprüft …",
+      "checkFailed": "Deine Modelle konnten nicht überprüft werden. Versuche es erneut – und wenn es weiterhin fehlschlägt, prüfe, ob der Speicherordner vorhanden ist.",
+      "checkFailedStale": "Die neueste Prüfung war nicht möglich, deshalb siehst du, was die letzte gefunden hat.",
+      "allWell": "Alle Modelle haben ihre Dateien",
+      "allWellDetail_one": "1 Modell geprüft.",
+      "allWellDetail_other": "{{count}} Modelle geprüft.",
+      "checkAgain": "Erneut prüfen",
+      "stats": {
+        "broken": "Ohne Dateien",
+        "server": "Thingport kann holen",
+        "grab": "Brauchen Grab",
+        "noSource": "Uploads"
+      },
+      "fromSites": "Woher sie stammen",
+      "whatNow": "Was tun",
+      "manyWarning_one": "Nur ein Modell – das ist schnell erledigt.",
+      "manyWarning_other": "{{count}} Modelle sind viel auf einmal: Die Plattformen bitten Thingport vielleicht, langsamer zu machen oder zu warten, deshalb kann es eine Weile dauern. Es läuft im Hintergrund, und du kannst es jederzeit stoppen.",
+      "alreadyRunning": "Es läuft bereits eine Reparatur.",
+      "startFailed": "Die Reparatur konnte nicht gestartet werden.",
+      "actions": {
+        "reimport": {
+          "title": "Fehlende Dateien holen",
+          "detail_one": "Lädt die fehlenden Dateien für ein Modell erneut von seiner Plattform herunter. Name, Tags, Sammlungen und Favoriten bleiben erhalten.",
+          "detail_other": "Lädt die fehlenden Dateien für {{count}} Modelle erneut von ihren jeweiligen Plattformen herunter. Namen, Tags, Sammlungen und Favoriten bleiben erhalten.",
+          "grabOnly_one": "Nur Thingport Grab kann die Dateien dieses Modells holen. Es wartet auf den nächsten Besuch von Grab auf der Plattform.",
+          "grabOnly_other": "Nur Thingport Grab kann diese Dateien holen. {{count}} Modelle warten auf seinen nächsten Besuch auf den Plattformen, von denen sie stammen.",
+          "none": "Für keines dieser Modelle ist eine Plattform hinterlegt, von der Thingport die Dateien abrufen könnte."
+        },
+        "delete": {
+          "title": "Diese Modelle löschen",
+          "detail_one": "Entfernt 1 Modell endgültig aus der Bibliothek, mit Details, Tags und Sammlungseinträgen.",
+          "detail_other": "Entfernt {{count}} Modelle endgültig aus der Bibliothek, mit Details, Tags und Sammlungseinträgen."
+        }
+      },
+      "confirm": {
+        "reimport": {
+          "title_one": "Die Dateien von 1 Modell holen?",
+          "title_other": "Die Dateien von {{count}} Modellen holen?",
+          "message_one": "Thingport lädt die Dateien des Modells von der Plattform herunter, von der es stammt. Abgesehen von den Dateien bleibt alles unverändert. Ist die Plattform nicht erreichbar, bleibt auch das Modell unverändert.",
+          "message_other": "Die Dateien der Modelle werden nacheinander von der Plattform heruntergeladen, von der sie jeweils stammen. Abgesehen von den Dateien bleibt alles unverändert. Ist eine Plattform nicht erreichbar, bleiben die betroffenen Modelle unverändert.",
+          "queued_one": "1 weiteres Modell wartet darauf, dass Thingport Grab die Plattform besucht, von der seine Dateien stammen.",
+          "queued_other": "{{count}} weitere Modelle warten darauf, dass Thingport Grab die Plattformen besucht, von denen ihre Dateien stammen.",
+          "confirm": "Dateien holen",
+          "grabTitle": "Auf Thingport Grab warten?",
+          "grabMessage_one": "Thingport kann die Dateien dieses Modells nicht selbst abrufen – das kann nur Thingport Grab direkt auf der Plattform. Das Modell wartet darauf, dass Grab die Plattform erneut besucht. Die dabei abgerufenen Dateien ersetzen die fehlenden.",
+          "grabMessage_other": "Thingport kann diese Dateien nicht selbst abrufen – das kann nur Thingport Grab direkt auf den jeweiligen Plattformen. Die {{count}} Modelle warten darauf, dass Grab die Plattformen erneut besucht. Die dabei abgerufenen Dateien ersetzen die fehlenden.",
+          "grabConfirm": "Auf Grab warten"
+        },
+        "delete": {
+          "title_one": "1 Modell löschen?",
+          "title_other": "{{count}} Modelle löschen?",
+          "message_one": "Das kann nicht rückgängig gemacht werden. Das Modell, seine Details, Tags und Sammlungseinträge werden endgültig entfernt. Nur das Modell ohne Dateien ist betroffen.",
+          "message_other": "Das kann nicht rückgängig gemacht werden. Alle {{count}} Modelle, ihre Details, Tags und Sammlungseinträge werden endgültig entfernt. Nur Modelle ohne Dateien sind betroffen.",
+          "confirm": "Modelle löschen"
+        }
+      }
+    },
     "modelRepairProgress": {
       "stop": "Reparatur stoppen",
       "stopping": "Wird nach dem aktuellen Modell gestoppt …",
@@ -2131,6 +2383,14 @@
       "instances_other": "{{count}} Instanzen",
       "hostedOn": "Gehostet auf {{name}}",
       "sentModel": "📎 {{name}}"
+    },
+    "modelPicker": {
+      "search": "Deine Bibliothek durchsuchen",
+      "limit_one": "Wähle bis zu {{count}}",
+      "limit_other": "Wähle bis zu {{count}}",
+      "noMatch": "Keine passenden Modelle gefunden.",
+      "emptyLibrary": "Deine Bibliothek hat noch keine Modelle.",
+      "loadFailed": "Deine Modelle konnten nicht geladen werden."
     },
     "printers": {
       "subtitle": "Doppelklick auf einen Drucker fügt ihn hinzu oder entfernt ihn; Rechtsklick für Düse und Slicer.",
