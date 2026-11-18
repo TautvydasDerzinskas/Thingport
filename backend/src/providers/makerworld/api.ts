@@ -352,11 +352,15 @@ export async function fetchMakerworldPublicDesign(designId: string): Promise<Rec
   return result.data.id == null ? null : result.data;
 }
 
-/** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. */
-function downloadReplyBody(result: { status: number; data: unknown } | null): Record<string, unknown> | null {
+/** A download request's JSON body, or null; a CAPTCHA, the daily limit and a rejected login are thrown. A CAPTCHA
+ *  starts the cooloff unless `startsCooloff` is false, for a request the import can do without. */
+function downloadReplyBody(
+  result: { status: number; data: unknown } | null,
+  startsCooloff = true,
+): Record<string, unknown> | null {
   if (!result) return null;
   if (isCaptchaChallenge(result.data)) {
-    noteCaptchaChallenge();
+    if (startsCooloff) noteCaptchaChallenge();
     throw new MakerworldCaptchaError();
   }
   if (isDownloadLimitReply(result.data)) throw new MakerworldDownloadLimitError();
@@ -364,15 +368,18 @@ function downloadReplyBody(result: { status: number; data: unknown } | null): Re
   return result.status === 200 && isRecord(result.data) ? result.data : null;
 }
 
-/** The signed URL for everything the page's "Download STL/CAD files" offers, as one zip, and the name it gives it. */
+/** The signed URL for everything the page's "Download STL/CAD files" offers, as one zip, and the name it gives it.
+ *  `startsCooloff` as downloadReplyBody's. */
 async function fetchMakerworldRawFiles(
   designId: string,
   bearerToken: string,
   paceMs?: number,
+  startsCooloff = true,
 ): Promise<{ url: string; filename: string | null } | null> {
   await maybeSleep(paceMs);
   const body = downloadReplyBody(
     await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
+    startsCooloff,
   );
   const url = body && pickString(body, ["url"]);
   return body && url ? { url, filename: pickString(body, ["name"]) } : null;
@@ -384,7 +391,9 @@ async function fetchMakerworldRawFiles(
  *
  * Best-effort on purpose. It spends one of the account's daily downloads and may meet the CAPTCHA or the daily
  * limit, and none of that is worth failing an import that already has the model's plates. Skipped during the
- * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import.
+ * CAPTCHA cooloff, as a request into the block would only extend it for every other MakerWorld import; and a CAPTCHA
+ * it meets starts none, as this download may be held where the profiles' own aren't, and the next profile's download
+ * (the import's own, or another's) meets the CAPTCHA itself and starts it, if the block is the account's.
  */
 export async function resolveMakerworldSourcesUrl(
   designId: string,
@@ -393,7 +402,7 @@ export async function resolveMakerworldSourcesUrl(
 ): Promise<string | null> {
   if (makerworldCaptchaCooloffActive()) return null;
   try {
-    return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs))?.url ?? null;
+    return (await fetchMakerworldRawFiles(designId, bearerToken, paceMs, false))?.url ?? null;
   } catch {
     return null;
   }

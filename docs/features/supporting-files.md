@@ -27,7 +27,9 @@ files. A sliced file added this way becomes the prepared print.
 
 Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
 and the zip holds them in a `supporting` folder. They come with copies others make of the model too. An
-[import](importing.md) brings the ones a site gives with a model, within the size an admin set. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
+[import](importing.md) brings the ones a site gives with a model, each within the size an admin set, and a zip of
+them only when the whole zip fits what a model keeps in all, 250 MB by default (see
+[Supporting files from imports](storage.md#supporting-files-from-imports)). When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and
 its manuals and notes are attached automatically.
 
 ## Models you can generate again

@@ -138,6 +138,36 @@ describe("a model made with a site's other files", () => {
     expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedFileId).toBeNull();
   });
 
+  it("keeps the model when what it keeps can't be read, and none of the site's other files", async () => {
+    const inputs = [
+      input("body.stl", "solid body endsolid"),
+      input("guide.pdf", "%PDF-1.4 guide", { supporting: true }),
+    ];
+    // The read of what the model keeps already, which its allowance starts from, fails once.
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    let failed = false;
+    const spy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      const select = args?.select as { size?: boolean } | undefined;
+      if (!failed && select?.size) {
+        failed = true;
+        return Promise.reject(new Error("the database went away for a moment"));
+      }
+      return findMany(args);
+    }) as never);
+    let made: Awaited<ReturnType<typeof createPrint>>;
+    try {
+      made = await createPrint(userId, { title: "Unread" }, "Unread", inputs);
+    } finally {
+      spy.mockRestore();
+      remove(inputs);
+    }
+    expect(failed).toBe(true);
+    expect(made.plates.map((plate) => plate.filename)).toEqual(["body.stl"]);
+    expect(await filesOf(made.print.id)).toEqual([]);
+  });
+
   it("keeps none when an admin turned them off, and only what the limits allow otherwise", async () => {
     await setImportSupportingFiles("off");
     const off = [input("a.stl", "solid a endsolid"), input("guide.pdf", "%PDF", { supporting: true })];
@@ -201,6 +231,47 @@ describe("a model made with a site's other files", () => {
     const back = await prisma.printFile.findFirstOrThrow({ where: { printId: print.id, filename: "guide.pdf" } });
     expect(fs.existsSync(path.join(STORAGE, back.storagePath))).toBe(true);
     expect(await prisma.printFile.count({ where: { printId: print.id } })).toBe(1);
+  });
+});
+
+describe("one model of a zip from a link", () => {
+  /** A 3MF a slicer wrote: its plate's G-code inside. */
+  const sliced3mf = async () => {
+    const zip = new JSZip();
+    zip.file(
+      "3D/3dmodel.model",
+      '<?xml version="1.0"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources><object id="1" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>',
+    );
+    zip.file("Metadata/plate_1.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+    return zip.generateAsync({ type: "nodebuffer" });
+  };
+  const plateNames = (print: { plates: { filename: string }[] }) => print.plates.map((plate) => plate.filename);
+
+  it("keeps a sliced 3MF beside the model's files as a supporting file, and prints from one that's alone", async () => {
+    const zip = await zipOf({ "body.stl": "solid body endsolid", "body.gcode.3mf": await sliced3mf() });
+    const [beside] = (await extractZipEntriesToOneModel(userId, zip, "kit.zip", ["body.stl", "body.gcode.3mf"], {}))
+      .prints;
+    expect(plateNames(beside)).toEqual(["body.stl"]);
+    expect(await filesOf(beside.id)).toEqual([[null, "body.gcode.3mf", "SUPPORTING"]]);
+    const alone = await zipOf({ "job.gcode.3mf": await sliced3mf() });
+    const [only] = (await extractZipEntriesToOneModel(userId, alone, "job.zip", ["job.gcode.3mf"], {})).prints;
+    expect(plateNames(only)).toEqual(["job.gcode.3mf"]);
+  });
+
+  it("makes a model of a design or a picture with no model file, but none of documents alone", async () => {
+    for (const [name, contents] of [
+      ["cut.svg", "<svg xmlns='http://www.w3.org/2000/svg'/>"],
+      ["spin.gif", "GIF89a"],
+    ]) {
+      const zip = await zipOf({ [name]: contents, "notes.txt": "cut at 3 mm" });
+      const [made] = (await extractZipEntriesToOneModel(userId, zip, "kit.zip", [name, "notes.txt"], {})).prints;
+      expect(plateNames(made)).toEqual([name]);
+      expect(await filesOf(made.id)).toEqual([[null, "notes.txt", "SUPPORTING"]]);
+    }
+    const documents = await zipOf({ "notes.txt": "nothing to print" });
+    await expect(extractZipEntriesToOneModel(userId, documents, "notes.zip", ["notes.txt"], {})).rejects.toThrow(
+      "None of the picked files can be a model",
+    );
   });
 });
 

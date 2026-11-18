@@ -12,8 +12,9 @@ import Segmented from "../../components/controls/Segmented";
 import { useToast } from "../../components/ToastProvider";
 import { saveLastPick } from "../../utils/saveLastPick";
 
-const asLimit = (value: string): SupportingFileLimit =>
-  value === "off" || value === "any" ? value : (Number(value) as SupportingFileLimit);
+/** The toggle's choice as the setting it stands for; null for one the options don't hold. */
+const asLimit = (value: string): SupportingFileLimit | null =>
+  value === "off" || value === "any" ? value : (SUPPORTING_FILE_MB_OPTIONS.find((mb) => String(mb) === value) ?? null);
 
 /** How large a file an import keeps beside a model as a supporting file -- instructions, notes, sources: none, up to a
  *  size, or any. */
@@ -39,7 +40,10 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
     let active = true;
     settingsApi.getImportSupportingFiles().then(
       (saved) => {
-        if (active && wanted.current === null) setLimit(saved);
+        if (!active) return;
+        // Read again after it couldn't be, as a sign-in starts it over: the choice shows rather than the error.
+        setFailed(false);
+        if (wanted.current === null) setLimit(saved);
       },
       (err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -54,7 +58,7 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
   const select = async (value: string) => {
     if (limit === undefined) return;
     const next = asLimit(value);
-    if (next === limit) return;
+    if (next === null || next === limit) return;
     wanted.current = next;
     setLimit(next);
     if (saving.current) return;

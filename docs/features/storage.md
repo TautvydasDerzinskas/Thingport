@@ -95,6 +95,8 @@ already stored keep theirs until **Free up space** trims them, and photos users 
 - **Never past an import's own limit:** whatever the choice, a file is kept only up to the size an import takes, 512 MB
   by default (`IMPORT_MAX_MB`). A larger choice counts as that, for the total too.
 - **Over the size:** a file is skipped.
+- **A site's zip of them:** downloaded only when the whole zip fits a model's total, 250 MB at the default. A larger
+  one is skipped, with the files in it that would each have fit.
 - **Not affected:** models already imported keep theirs, and files users add themselves aren't limited.
 
 ## The same model for several users

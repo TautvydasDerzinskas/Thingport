@@ -12,7 +12,11 @@ vi.mock("node:dns/promises", () => ({
 
 import { makerworldListedFileNames, makerworldMetaFromDesign } from "../src/providers/makerworld/pageData";
 import { resolveMakerworldSourcesUrl, resolveMakerworldViaCloudApi } from "../src/providers/makerworld/api";
-import { noteCaptchaChallenge, resetCaptchaCooloffForTest } from "../src/providers/makerworld/captcha";
+import {
+  makerworldCaptchaCooloffActive,
+  noteCaptchaChallenge,
+  resetCaptchaCooloffForTest,
+} from "../src/providers/makerworld/captcha";
 import { openImportResponse } from "../src/services/importService";
 
 // The shapes here are MakerWorld's own, taken from design-service answers: 831106 (a Parametric Model Maker
@@ -237,6 +241,15 @@ describe("resolveMakerworldSourcesUrl", () => {
 
     expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
     expect(fetched).toHaveLength(0);
+  });
+
+  // It can be held where the profiles' own downloads aren't: a CAPTCHA here mustn't shut out the downloads the user
+  // asked for, which start the cooloff themselves if the account is blocked.
+  it("meets a CAPTCHA without starting the cooloff", async () => {
+    mockCloud(designWithProfiles([]), () => jsonResponse(200, { code: 1, message: "Please complete the captcha" }));
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
+    expect(makerworldCaptchaCooloffActive()).toBe(false);
   });
 });
 

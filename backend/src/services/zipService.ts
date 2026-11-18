@@ -15,6 +15,7 @@ import { modelFolderUnits } from "./modelFolders";
 import { localizeDescriptionImages } from "./descriptionImageService";
 import { getPhotosPerModel } from "./settingsService";
 import { createPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
+import { isPreparedPrintFilename } from "./preparedPrint";
 import type { Print, Plate, PreviewImage } from "@prisma/client";
 
 export type ZipEntrySummary = { path: string; size: number };
@@ -215,10 +216,6 @@ const PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 
 type PickedEntry = { name: string; folder: string; filename: string; tempPath: string; size: number };
 
-const isPlateName = (name: string) => {
-  const ext = path.extname(name).toLowerCase();
-  return MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext);
-};
 const isPhotoEntry = (entry: PickedEntry) =>
   PHOTO_EXTS.has(path.extname(entry.filename).toLowerCase()) && entry.size <= PHOTO_MAX_BYTES;
 
@@ -275,9 +272,11 @@ async function readPickedEntries(
   return { entries, failed };
 }
 
-/** One model of `entries`: its model files and scripts the plates, its pictures the photos and the rest supporting
- *  files, each in its folder below the folders the model's own files share (`folderOf` says where each sits). With no
- *  model file among them, its pictures are the plates; with neither, there's no model to make. */
+/** One model of `entries`, its plates found as an upload finds them (uploadService's plateFilesOf): its model files
+ *  that aren't sliced, a sliced 3MF beside them kept as a supporting file; else its sliced 3MFs, printed from all the
+ *  same; else what can be a model on its own, such as a picture, an SVG or a GIF. A script goes along with any of
+ *  them, pictures beside model files are its photos, and the rest are supporting files, each in its folder below the
+ *  folders the model's own files share. With none of those, there's no model to make. */
 async function createModelOf(
   userId: string,
   entries: { entry: PickedEntry; folder: string | null }[],
@@ -285,17 +284,25 @@ async function createModelOf(
   nameHint: string,
   options: ZipExtractOptions,
 ): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
+  const extOf = (entry: PickedEntry) => path.extname(entry.filename).toLowerCase();
+  const modelFile = (entry: PickedEntry) => MULTI_FILE_PLATE_EXTS.has(extOf(entry));
+  const tiers: ((entry: PickedEntry) => boolean)[] = [
+    (entry) => modelFile(entry) && !isPreparedPrintFilename(entry.filename),
+    modelFile,
+    (entry) => UPLOADABLE_EXTS.has(extOf(entry)),
+  ];
+  const isPlate = tiers.find((tier) => entries.some(({ entry }) => tier(entry))) ?? (() => false);
   // A model file, not a script: one with only a script and pictures is a model of its pictures, the script beside them.
-  const hasModel = entries.some(({ entry }) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()));
+  const hasModel = entries.some(({ entry }) => modelFile(entry));
   const photos = hasModel ? entries.filter(({ entry }) => isPhotoEntry(entry)) : [];
   const inputs: NewPlateInput[] = entries.flatMap(({ entry, folder }): NewPlateInput[] => {
     if (photos.some((photo) => photo.entry === entry)) return [];
     const mime = guessMimeFromPath(entry.filename);
     const input = { filename: entry.filename, mime, tempFilePath: entry.tempPath, folder };
-    if (isPlateName(entry.filename) || (!hasModel && PHOTO_EXTS.has(path.extname(entry.filename).toLowerCase()))) {
-      return [input];
-    }
-    return isSupportingImportFile(entry.filename) ? [{ ...input, supporting: true }] : [];
+    if (isPlate(entry) || PARAMETRIC_SOURCE_EXTS.has(extOf(entry))) return [input];
+    // A sliced 3MF beside the model files is kept beside them, sliced for the designer's printer (keepSupportingFiles):
+    // a model file, so the site's-files rule turns it down.
+    return modelFile(entry) || isSupportingImportFile(entry.filename) ? [{ ...input, supporting: true }] : [];
   });
   if (!inputs.some((input) => !input.supporting)) {
     throw new HttpError(400, "None of the picked files can be a model: pick a model file (STL, 3MF, STEP…) too.");
