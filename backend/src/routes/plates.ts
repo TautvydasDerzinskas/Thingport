@@ -55,9 +55,10 @@ router.post(
         const safeName = sanitizeFilename(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
-      // All or none, the model read back for the answer included: a retry sends every file again, so those already
-      // in would come back twice. The plate order is held until the answer is read, so nothing removes or reorders the
-      // model's plates in between: the answer lists every plate made, and a failure takes all of them back.
+      // Taken back together when any step fails, the model read back for the answer included: a retry sends every file
+      // again, so those already in would come back twice. The plate order is held until the answer is read, so nothing
+      // removes or reorders the model's plates in between: the answer lists every plate made. Taking them back is as
+      // far as it goes: one that can't be is logged, and stays.
       const { added, out } = await withPlateBatch(req.userId!, print.id, async (add) => {
         const made = await add(plateInputs);
         return { added: made, out: await printOutById(req.userId!, print.id) };

@@ -173,16 +173,28 @@ export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourceP
 }
 
 /** What a model's first plate reads as when it's a sliced print, which stands for a prepared print where the model has
- *  none of its own; null when it isn't one. `first`, the plate that is or will be first; the first plate by default. */
+ *  none of its own; null when it isn't one. `first`, the plate that is or will be first; the first plate by default.
+ *  Its file is found under the storage lock, as a move renames a file before it saves where it went, and read once more
+ *  where a move took it elsewhere while it was being read. */
 async function firstPlateReading(
   printId: string,
   first?: Plate | null,
 ): Promise<Prisma.InputJsonValue | Prisma.NullTypes.JsonNull> {
   const plate0 =
     first === undefined ? await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } }) : first;
-  const filePath = plate0 ? resolvePlateFilePath(plate0) : null;
-  const sniffed = plate0 && filePath ? await inspectPreparedPrint(filePath, plate0.filename) : null;
-  return sniffed ? (sniffed as unknown as Prisma.InputJsonValue) : Prisma.JsonNull;
+  if (!plate0) return Prisma.JsonNull;
+  for (let tries = 0; tries < 2; tries++) {
+    const found = await withStorageLock(async () => {
+      const now = await prisma.plate.findUnique({ where: { id: plate0.id } });
+      return now && { plate: now, filePath: resolvePlateFilePath(now) };
+    });
+    if (!found?.filePath) break;
+    const sniffed = await inspectPreparedPrint(found.filePath, found.plate.filename);
+    if (sniffed) return sniffed as unknown as Prisma.InputJsonValue;
+    const after = await prisma.plate.findUnique({ where: { id: plate0.id }, select: { storagePath: true } });
+    if (after?.storagePath === found.plate.storagePath) break;
+  }
+  return Prisma.JsonNull;
 }
 
 /** Reads the model's first plate again for its prepared metadata, with the plate order held: a reorder between the
@@ -287,6 +299,14 @@ async function createPlateAtPosition(
  */
 export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   if (!inputs.length) return;
+  // One model's at a time, from the look for a copy to the save: two imports of its profiles at once would each find
+  // none and both keep one.
+  return withScriptsKept(printId, () => keepScripts(userId, printId, inputs));
+}
+
+const withScriptsKept = createKeyedLock();
+
+async function keepScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
   const keyOf = (filename: string, folder: string | null | undefined) =>
@@ -532,7 +552,12 @@ export async function withPlateBatch<T>(
     if (!print) throw new HttpError(404, "Print not found");
     const added: Plate[] = [];
     try {
-      return await run((inputs) => addPlatesAfter(print, inputs, added));
+      // The model read again for each: a step in between (a supporting file saved) can outlast a rename of it.
+      return await run(async (inputs) => {
+        const now = await prisma.print.findFirst({ where: { id: printId, userId } });
+        if (!now) throw new HttpError(404, "Print not found");
+        return addPlatesAfter(now, inputs, added);
+      });
     } catch (err) {
       await takeBackPlates(printId, added).catch((failure: unknown) =>
         console.error(`Couldn't take back the plates a failed request added to model ${printId}:`, failure),
@@ -577,13 +602,15 @@ async function removePlateRows(printId: string, gone: Plate[], plates: Plate[]):
         ]
       : [];
   return withStorageLock(async () => {
+    // Before anything goes: a read that fails then leaves the plates there to remove again.
+    const home = await printAssetHome(printId);
     const now = await prisma.plate.findMany({ where: { id: { in: ids } } });
     await renumberPlates(
       rest.map((plate) => plate.id),
       [prisma.plate.deleteMany({ where: { id: { in: ids } } }), ...reading],
     );
     for (const plate of now) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
-    return { plates: now, home: await printAssetHome(printId) };
+    return { plates: now, home };
   });
 }
 

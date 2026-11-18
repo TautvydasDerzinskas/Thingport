@@ -289,6 +289,28 @@ describe("supporting files", () => {
     expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
   });
 
+  it("keep to their own model's folder in a zip, though their categories' names differ only by which slash they hold", async () => {
+    const stamp = nonce();
+    const models = [];
+    for (const categoryName of [`A/B ${stamp}`, `A\\B ${stamp}`]) {
+      const model = await makePrint(dir, owner.id, "Base");
+      const category = await prisma.category.create({ data: { userId: owner.id, name: categoryName } });
+      await prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: `Base ${stamp}`, nameNormalized: `base ${stamp}`, categoryId: category.id },
+      });
+      models.push(model);
+    }
+    const prints = await prisma.print.findMany({
+      where: { id: { in: models.map((model) => model.print.id) } },
+      include: { plates: true, category: true },
+    });
+    // As the zip stores them: a backslash is a slash there.
+    const arcnames = (await buildZipEntries(prints)).map((entry) => entry.arcname.replace(/\\/g, "/"));
+    expect(new Set(arcnames.map((arcname) => arcname.toLowerCase())).size).toBe(arcnames.length);
+    expect(arcnames.filter((arcname) => arcname.endsWith("/own.stl"))).toHaveLength(2);
+  });
+
   it("keep to their own model's folder in a zip, though another model has its name", async () => {
     const name = `Base ${nonce()}`;
     const models = [];

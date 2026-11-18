@@ -66,10 +66,13 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
 }
 
 /** The folder each model's files go in: its name, or, where another model has that folder (a "Base" in each of two
- *  categories, with the categories left out), its name with a number no other model's folder has. */
+ *  categories, with the categories left out), its name with a number no other model's folder has. A category's or a
+ *  model's name is one folder however it's written: a slash in it ("A/B", or "A\B", which the zip stores alike)
+ *  doesn't make it two. */
 function modelFolders(prints: PrintWithPlatesAndCategory[], flatten: boolean): Map<PrintWithPlatesAndCategory, string> {
+  const segment = (name: string) => name.replace(/[\\/]/g, "_");
   const own = (print: PrintWithPlatesAndCategory) =>
-    flatten ? print.name : `${print.category?.name || "unassigned"}/${print.name}`;
+    flatten ? segment(print.name) : `${segment(print.category?.name || "unassigned")}/${segment(print.name)}`;
   const folders = new Map<PrintWithPlatesAndCategory, string>();
   const taken = new Set<string>();
   for (const print of prints) {

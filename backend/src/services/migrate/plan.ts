@@ -163,6 +163,16 @@ export async function readPlan(
   };
 }
 
+/** The model files the copy lists, as a merge brings them: models' plates, and their files whose saves were done. */
+export async function countModelFiles(source: PrismaClient): Promise<number> {
+  const ownModel = { print: { toolId: null } };
+  const [plates, printFiles] = await Promise.all([
+    source.plate.count({ where: ownModel }),
+    source.printFile.count({ where: { ...ownModel, ready: true } }),
+  ]);
+  return plates + printFiles;
+}
+
 /** How many of the model files the copy lists the folder doesn't have: all of them when it's the wrong folder. */
 export async function countMissingFiles(
   source: PrismaClient,

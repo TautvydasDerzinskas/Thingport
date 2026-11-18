@@ -5,7 +5,7 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { isPendingStoragePath, isUnsettled, PENDING_STORAGE_PREFIX } from "./printFileSaves";
+import { isUnsettled, PENDING_STORAGE_PREFIX } from "./printFileSaves";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
@@ -357,8 +357,7 @@ export async function renameSupportingFile(
   // Before sanitising, which turns nothing into "imported-file": that would quietly become the file's name.
   const trimmed = filename.trim();
   if (!trimmed) throw new HttpError(400, "A file needs a name");
-  let wanted = sanitizeFilename(trimmed);
-  if (!path.extname(wanted)) wanted += path.extname(record.filename);
+  const asked = sanitizeFilename(trimmed);
 
   // The names in use read and the new one taken under the lock, so two renames at once can't both take one name: the
   // table doesn't stop two of a folder's files sharing it. Read again there, as its save may not have been done at the
@@ -368,6 +367,8 @@ export async function renameSupportingFile(
     const now = await prisma.printFile.findUnique({ where: { id: record.id } });
     if (!now) throw new HttpError(404, "Supporting file not found");
     if (isUnsettled(now)) throw new HttpError(409, "That file is still being saved: try again once it's in");
+    // A name given without an extension keeps the one the file has now, which a rename just before may have changed.
+    const wanted = path.extname(asked) ? asked : `${asked}${path.extname(now.filename)}`;
     if (wanted === now.filename) return;
     const taken = new Set(
       (
@@ -412,25 +413,16 @@ export function batchFileSaver(userId: string, printId: string) {
     });
 }
 
-/** Deletes the rows of the saves the last process ended before finishing, each a file that isn't there or isn't whole,
- *  and their files where they got that far. At startup, before this process saves anything. */
+/** Deletes the rows of the saves the last process ended before finishing, each a file that isn't there or isn't whole.
+ *  At startup, before this process saves anything. A file found at a place such a row claimed stays: nothing says for
+ *  sure it's the save's own and not a moved file's, so it's left for the storage browser rather than deleted. */
 export async function removeAbandonedPrintFileSaves(): Promise<number> {
-  const unfinished = {
-    OR: [{ ready: false }, { storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }],
-  };
-  const rows = await prisma.printFile.findMany({ where: unfinished, select: { id: true, storagePath: true } });
-  let removed = 0;
-  for (const row of rows) {
-    // Only while it's still unfinished, its file with it: one done since it was read is a file to keep.
-    if (!(await prisma.printFile.deleteMany({ where: { id: row.id, ...unfinished } })).count) continue;
-    removed += 1;
-    const where = isPendingStoragePath(row.storagePath) ? null : printFilePathOrNull(row);
-    // The save's own file, unless a plate's row has the place: only a race with that plate's save could give it one.
-    if (!where || (await prisma.plate.count({ where: { storagePath: row.storagePath } }))) continue;
-    await fs.rm(where, { force: true }).catch(() => undefined);
-    await pruneEmptyStorageDirs(path.dirname(where)).catch(() => undefined);
-  }
-  return removed;
+  const { count } = await prisma.printFile.deleteMany({
+    where: {
+      OR: [{ ready: false }, { storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }],
+    },
+  });
+  return count;
 }
 
 /** Drops the rows of a print's files -- supporting, prepared or LICENSE.txt -- whose files are no longer on disk, and
