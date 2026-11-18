@@ -176,6 +176,311 @@
     "tagInput": {
       "removeTag": "{{tag}} entfernen"
     },
+    "profile": {
+      "title": "Profil",
+      "changeEmailLink": "E-Mail-Adresse ändern",
+      "changePasswordLink": "Passwort ändern",
+      "pendingEmail": "Bestätigung für {{email}} ausstehend",
+      "pendingEmailNotice": "Ein Bestätigungslink wurde an {{email}} geschickt. Klicke darauf, um die Änderung deiner E-Mail-Adresse abzuschließen – sende dieses Formular erneut ab, um ihn noch einmal zu schicken.",
+      "changeEmailTitle": "E-Mail-Adresse ändern",
+      "changeEmailSubtitle": "Ändere die E-Mail-Adresse, mit der du dich anmeldest.",
+      "newEmailLabel": "Neue E-Mail-Adresse",
+      "currentPasswordLabel": "Aktuelles Passwort",
+      "saveEmail": "E-Mail-Adresse speichern",
+      "emailUpdated": "E-Mail-Adresse aktualisiert.",
+      "changePasswordTitle": "Passwort ändern",
+      "changePasswordSubtitle": "Ändere das Passwort deines Kontos.",
+      "newPasswordLabel": "Neues Passwort",
+      "confirmNewPasswordLabel": "Neues Passwort bestätigen",
+      "savePassword": "Passwort speichern",
+      "passwordUpdated": "Passwort aktualisiert.",
+      "saving": "Wird gespeichert …",
+      "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+      "backToProfile": "Zurück zum Profil",
+      "apiToken": {
+        "heading": "API-Token",
+        "description": "Damit können sich andere Apps, Dienste und KI-Assistenten mit deiner Thingport-Bibliothek verbinden. Über die API kann es nur lesen.",
+        "created": "erstellt am {{date}}",
+        "lastUsed": "zuletzt verwendet {{when}}",
+        "neverUsed": "noch nicht verwendet",
+        "generate": "Erzeugen",
+        "regenerate": "Neu erzeugen",
+        "revoke": "Widerrufen",
+        "regenerateTitle": "API-Token neu erzeugen?",
+        "regenerateMessage": "Das aktuelle Token funktioniert sofort nicht mehr. Alles, was es nutzt, braucht dann das neue, und seine MCP-Tools werden wieder auf die nur lesenden zurückgesetzt.",
+        "revokeTitle": "API-Token widerrufen?",
+        "revokeMessage": "Das Token funktioniert sofort nicht mehr, und alles, was es nutzt, verliert den Zugriff auf deine Bibliothek.",
+        "copyNow": "Kopiere dein Token jetzt. Es wird nicht noch einmal angezeigt.",
+        "copy": "Kopieren",
+        "copied": "Kopiert",
+        "failed": "Mit deinem API-Token ist etwas schiefgelaufen. Bitte versuche es erneut.",
+        "mcp": {
+          "heading": "MCP",
+          "subtitle": "Tools, die ein KI-Assistent nutzen darf",
+          "connect": "So verbindest du einen KI-Assistenten, zum Beispiel Claude Code:",
+          "writes": "Ändert deine Bibliothek",
+          "failed": "Die MCP-Tools des Tokens konnten nicht gespeichert werden. Bitte versuche es erneut.",
+          "tools": {
+            "search_models": {
+              "title": "Modelle suchen",
+              "description": "Modelle anhand von Wörtern in Titel, Tags, Ersteller oder Beschreibung finden."
+            },
+            "list_models": {
+              "title": "Modelle auflisten",
+              "description": "Modelle nach Tag, Kategorie, Sammlung oder Autor auflisten."
+            },
+            "get_model": {
+              "title": "Modell abrufen",
+              "description": "Beschreibung, Dateien, Tags, Autor und Sammlungen eines Modells lesen."
+            },
+            "list_collections": {
+              "title": "Sammlungen auflisten",
+              "description": "Deine Sammlungen sehen und wie viele Modelle jede enthält."
+            },
+            "get_collection": {
+              "title": "Sammlung abrufen",
+              "description": "Die Modelle einer Sammlung auflisten."
+            },
+            "list_tags": {
+              "title": "Tags auflisten",
+              "description": "Deine Tags sehen, die meistgenutzten zuerst."
+            },
+            "list_categories": {
+              "title": "Kategorien auflisten",
+              "description": "Deine Kategorien und Ordner sehen."
+            },
+            "get_author": {
+              "title": "Autor abrufen",
+              "description": "Über einen Designer lesen und seine Modelle in deiner Bibliothek sehen."
+            },
+            "library_stats": {
+              "title": "Bibliotheksstatistik",
+              "description": "Deine Summen sowie die meistangesehenen, meistgedruckten und neuesten Modelle."
+            },
+            "list_model_files": {
+              "title": "Dateien eines Modells auflisten",
+              "description": "Die Dateien eines Modells sehen, damit eine davon abgerufen werden kann."
+            },
+            "get_model_file": {
+              "title": "Modelldatei abrufen",
+              "description": "Eine Datei eines Modells lesen, etwa um sie zu slicen oder umzuwandeln."
+            },
+            "list_model_images": {
+              "title": "Bilder eines Modells auflisten",
+              "description": "Die Bilder eines Modells sehen und welches das Titelbild ist."
+            },
+            "get_import_status": {
+              "title": "Import prüfen",
+              "description": "Einen Import verfolgen, der noch läuft."
+            },
+            "import_model": {
+              "title": "Modell importieren",
+              "description": "Ein Modell über einen Link importieren, wie „+ Hinzufügen > Importieren“."
+            },
+            "upload_model": {
+              "title": "Modell hochladen",
+              "description": "Ein Modell aus deinen eigenen Dateien hinzufügen, wie „+ Hinzufügen > Dateien hochladen“."
+            },
+            "edit_model": {
+              "title": "Modell bearbeiten",
+              "description": "Titel, Beschreibung, Tags, Kategorie und Favorit eines Modells ändern."
+            },
+            "edit_model_images": {
+              "title": "Bilder eines Modells bearbeiten",
+              "description": "Bilder eines Modells hinzufügen, entfernen und umsortieren und das Titelbild wählen."
+            },
+            "add_model_files": {
+              "title": "Dateien zu einem Modell hinzufügen",
+              "description": "Platten oder Zusatzdateien zu einem deiner Modelle hinzufügen."
+            },
+            "remove_model_file": {
+              "title": "Modelldatei entfernen",
+              "description": "Eine Datei eines Modells endgültig löschen."
+            },
+            "rename_model_file": {
+              "title": "Modelldatei umbenennen",
+              "description": "Eine Platte eines Modells umbenennen."
+            },
+            "delete_model": {
+              "title": "Modell löschen",
+              "description": "Ein Modell mit seinen Dateien und Bildern endgültig löschen."
+            },
+            "create_category": {
+              "title": "Kategorie erstellen",
+              "description": "Eine neue Kategorie oder einen neuen Ordner anlegen."
+            },
+            "create_collection": {
+              "title": "Sammlung erstellen",
+              "description": "Eine neue, leere Sammlung anlegen."
+            },
+            "add_to_collection": {
+              "title": "Zu Sammlung hinzufügen",
+              "description": "Modelle aus deiner Bibliothek in eine deiner Sammlungen legen."
+            },
+            "remove_from_collection": {
+              "title": "Aus Sammlung entfernen",
+              "description": "Modelle aus einer deiner Sammlungen herausnehmen."
+            },
+            "widget_guide": {
+              "title": "Widget-Anleitung",
+              "description": "Lesen, wie man ein eigenes Dashboard-Widget schreibt."
+            },
+            "list_widgets": {
+              "title": "Widgets auflisten",
+              "description": "Deine eigenen Dashboard-Widgets sehen."
+            },
+            "save_widget": {
+              "title": "Dashboard-Widget speichern",
+              "description": "Eigene Dashboard-Widgets erstellen oder ändern. Ihre Skripte laufen in deinem Dashboard."
+            },
+            "tool_guide": {
+              "title": "Tool-Anleitung",
+              "description": "Lesen, wie man ein Tool für deine Tools-Seite schreibt."
+            },
+            "list_tools": {
+              "title": "Tools auflisten",
+              "description": "Die Tools sehen, die du öffnen kannst, und den Code deiner eigenen."
+            },
+            "save_tool": {
+              "title": "Tool speichern",
+              "description": "Eigene Tools erstellen oder ändern. Ihre Skripte laufen in deinem Browser mit deinen Zugriffsrechten."
+            },
+            "list_icons": {
+              "title": "Icon finden",
+              "description": "Die Icons von Thingport und deine hochgeladenen durchsuchen, etwa für ein Widget."
+            },
+            "upload_icon": {
+              "title": "Icon hochladen",
+              "description": "Ein Bild zu deinen Icons hinzufügen, wie „Hochladen“ in der Icon-Auswahl."
+            }
+          },
+          "writeConfirmTitle": "Den Assistenten „{{tool}}“ nutzen lassen?",
+          "writeConfirmMessage": "Dieses Tool ändert deine Bibliothek. Ein mit diesem Token verbundener Assistent kann es nutzen, ohne dich jedes Mal zu fragen. Nichts davon löscht Modelle.",
+          "writeConfirm": "Einschalten",
+          "adminOff": "Ein Admin hat MCP auf dieser Thingport-Instanz ausgeschaltet.",
+          "adminReadOnly": "Ein Admin erlaubt nur die lesenden Tools.",
+          "copyCommand": "Befehl kopieren",
+          "reads": "Liest deine Bibliothek",
+          "studio": {
+            "heading": "Studio",
+            "title": "Studio-Designs",
+            "description": "Deine Studio-Designs lesen, erstellen und Schritt für Schritt ändern, so wie du es auf der Seite kannst.",
+            "confirm": "Ein mit diesem Token verbundener Assistent kann deine Studio-Designs erstellen, ändern und löschen, ohne dich jedes Mal zu fragen. Deine Modelle kann er nicht ändern."
+          }
+        },
+        "rest": {
+          "heading": "Berechtigungen",
+          "subtitle": "Was Apps mit diesem Token lesen dürfen",
+          "description": "Was andere Apps mit diesem Token, etwa Dashboards und Launcher, über die REST-API lesen dürfen. Änderungen gelten sofort, ohne neues Token. Wenn du etwas verbietest, das eine App liest, funktioniert dieser Teil der App nicht mehr.",
+          "failed": "Die Berechtigungen des Tokens konnten nicht gespeichert werden. Bitte versuche es erneut.",
+          "groups": {
+            "library": "Deine Bibliothek",
+            "media": "Bilder und Dateien",
+            "other": "Sonstiges"
+          },
+          "scopes": {
+            "search": {
+              "title": "Suche",
+              "description": "Modelle, Sammlungen und Tags durchsuchen."
+            },
+            "models": {
+              "title": "Modelle",
+              "description": "Modelle auflisten und ihre Details lesen."
+            },
+            "dashboard": {
+              "title": "Dashboard",
+              "description": "Bibliothekssummen, meistangesehene und meistgedruckte Modelle, das hervorgehobene Modell und Widgets."
+            },
+            "activity": {
+              "title": "Aktivität",
+              "description": "Deine Aktivitäts-Heatmap, dein Verlauf und deine Erfolge."
+            },
+            "collections": {
+              "title": "Sammlungen",
+              "description": "Deine Sammlungen und was darin ist sowie die Sammlungen und Modelle, die andere teilen."
+            },
+            "tags": {
+              "title": "Tags",
+              "description": "Deine Tags und wie viele Modelle jeder hat."
+            },
+            "categories": {
+              "title": "Kategorien",
+              "description": "Dein Kategoriebaum."
+            },
+            "authors": {
+              "title": "Autoren",
+              "description": "Profile von Autoren."
+            },
+            "images": {
+              "title": "Bilder",
+              "description": "Vorschaubilder, Renderings und Bilder."
+            },
+            "files": {
+              "title": "Modelldateien",
+              "description": "Modelldateien und 3D-Vorschauen herunterladen."
+            },
+            "imports": {
+              "title": "Importe",
+              "description": "Deine Importwarteschlange und der Fortschritt deiner Importe."
+            },
+            "other": {
+              "title": "Alles andere",
+              "description": "Deine Einstellungen, Benachrichtigungen, KI-Vorschläge und alles, was oben nicht aufgeführt ist."
+            },
+            "chats": {
+              "title": "Chats",
+              "description": "Deine Chats und die Nachrichten darin. Bei einem neuen Token nicht angehakt."
+            }
+          }
+        },
+        "permissions": {
+          "title": "Berechtigungen des Tokens",
+          "rest": "Berechtigungen",
+          "mcp": "MCP-Berechtigungen",
+          "allow": "Erlauben",
+          "deny": "Verbieten"
+        }
+      },
+      "language": {
+        "heading": "Sprache",
+        "subtitle": "Wähle die Sprache für ganz Thingport.",
+        "search": "Sprachen durchsuchen",
+        "noMatch": "Keine Sprache passt",
+        "translated": "{{percent}} % übersetzt"
+      },
+      "slicer": {
+        "failed": "Speichern fehlgeschlagen – versuche es erneut.",
+        "bridgeRequiredPrefix": "Damit der Knopf „In {{slicer}} öffnen“ eines Modells funktioniert, installiere Thingport Bridge, eine kleine Hilfs-App für deinen Computer.",
+        "bridgeRequiredLink": "Herunterladen"
+      },
+      "authorPreview": {
+        "heading": "Autorenvorschau",
+        "help": "Fährst du mit der Maus über den Namen eines Autors, erscheint eine Karte mit Titelbild, Namen und einigen seiner Modelle in deiner Bibliothek.",
+        "failed": "Speichern fehlgeschlagen – versuche es erneut."
+      },
+      "signIn": {
+        "noPassword": "Kein Passwort",
+        "noPasswordHint": "Du meldest dich über Single Sign-on an.",
+        "setPasswordLink": "Passwort festlegen",
+        "setPasswordTitle": "Passwort festlegen",
+        "setPasswordSubtitle": "Dann kannst du dich auch mit E-Mail-Adresse und Passwort anmelden und Thingport Grab nutzen.",
+        "setPassword": "Passwort festlegen",
+        "passwordSet": "Passwort festgelegt. Du kannst dich jetzt auch mit E-Mail-Adresse und Passwort anmelden.",
+        "confirmBody": "Bestätige zu deiner Sicherheit, dass du es bist, indem du dich erneut anmeldest. Du kommst direkt hierher zurück.",
+        "confirmNoProvider": "Melde dich zu deiner Sicherheit ab und wieder an und komm dann hierher zurück.",
+        "confirmWith": "Mit {{name}} bestätigen",
+        "connect": "Verbinden",
+        "disconnect": "Trennen",
+        "connected": "{{name}} verbunden. Du kannst dich jetzt damit anmelden.",
+        "connectedAs": "Verbunden als {{email}}",
+        "connectedShort": "Verbunden",
+        "notConnected": "Nicht verbunden. Verbinde es, um dich mit einem Klick anzumelden.",
+        "lastUsed": "zuletzt verwendet {{when}}",
+        "turnedOff": "von deinem Admin ausgeschaltet",
+        "disconnectTitle": "{{name}} trennen?",
+        "disconnectMessage": "Du kannst dich erst wieder mit {{name}} anmelden, wenn du es erneut verbindest."
+      }
+    },
     "retiredMakerworldCookie": {
       "title": "Diese MakerWorld-Anmeldung behalten?",
       "message": "Eine ältere Thingport-Version hat in diesem Browser eine MakerWorld-Anmeldung gespeichert. Speichere sie nur dann im Konto von {{name}}, wenn es deine ist: In einem gemeinsam genutzten Browser kann sie jemand anderem gehören.",
@@ -669,6 +974,67 @@
       "label": "Zeichen im Bild",
       "loadFailed": "Das Bild konnte nicht geladen werden. Versuche ein neues."
     },
+    "activity": {
+      "totalLastYear_one": "{{count}} Aktivität im letzten Jahr",
+      "totalLastYear_other": "{{count}} Aktivitäten im letzten Jahr",
+      "totalInYear_one": "{{count}} Aktivität in {{year}}",
+      "totalInYear_other": "{{count}} Aktivitäten in {{year}}",
+      "dayTotal_one": "{{count}} Aktivität am {{date}}",
+      "dayTotal_other": "{{count}} Aktivitäten am {{date}}",
+      "dayEmpty": "Keine Aktivität am {{date}}",
+      "dayLabel_one": "{{count}} Aktivität am {{date}}",
+      "dayLabel_other": "{{count}} Aktivitäten am {{date}}",
+      "kinds": {
+        "import": "Importiert",
+        "upload": "Hochgeladen",
+        "download": "Heruntergeladen",
+        "slicer": "Im Slicer geöffnet",
+        "delete": "Gelöscht"
+      },
+      "less": "Weniger",
+      "more": "Mehr",
+      "years": "Jahre",
+      "loadError": "Deine Aktivität konnte nicht geladen werden.",
+      "monthsShort": [
+        "Jan",
+        "Feb",
+        "Mär",
+        "Apr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Dez"
+      ],
+      "timeline": {
+        "title": "Aktivitätsverlauf",
+        "emptyMonth": "Diesen Monat noch keine Aktivität.",
+        "end": "Das ist deine gesamte Aktivität.",
+        "import_one": "{{count}} Modell importiert",
+        "import_other": "{{count}} Modelle importiert",
+        "upload_one": "{{count}} Modell hochgeladen",
+        "upload_other": "{{count}} Modelle hochgeladen",
+        "download_one": "{{count}} Modell heruntergeladen",
+        "download_other": "{{count}} Modelle heruntergeladen",
+        "slicer_one": "{{count}} Modell in einem Slicer geöffnet",
+        "slicer_other": "{{count}} Modelle in einem Slicer geöffnet",
+        "delete_one": "{{count}} Modell gelöscht",
+        "delete_other": "{{count}} Modelle gelöscht",
+        "times_one": "{{count}}-mal",
+        "times_other": "{{count}}-mal",
+        "count_one": "{{count}}×",
+        "count_other": "{{count}}×",
+        "showMore_one": "{{count}} weitere anzeigen",
+        "showMore_other": "{{count}} weitere anzeigen",
+        "showLess": "Weniger anzeigen",
+        "unknownModel": "Modelle aus einem Importauftrag",
+        "fromDay": "Ab {{date}}",
+        "emptyUntil": "Bis zu diesem Tag keine Aktivität in diesem Monat."
+      }
+    },
     "appearance": {
       "title": "Darstellung",
       "subtitle": "Lege fest, wie Thingport aussieht und sich verhält.",
@@ -898,6 +1264,42 @@
       ],
       "starting": "Verschieben der Modelldateien wird vorbereitet …"
     },
+    "support": {
+      "link": "Gefällt dir Thingport?",
+      "linkLong": "Gefällt dir Thingport? Zeig deine Unterstützung",
+      "title": "Gefällt dir Thingport? Zeig deine Unterstützung",
+      "text": "Thingport zu entwickeln und am Laufen zu halten, während sich die Plattformen ändern, von denen es importiert, kostet viel Zeit und Mühe. Jede Unterstützung zählt. Danke!",
+      "coffee": "Ein einmaliges Dankeschön, in beliebiger Höhe.",
+      "sponsors": "Unterstütze Thingport monatlich oder einmalig.",
+      "later": "Vielleicht später",
+      "newTab": "(öffnet in neuem Tab)"
+    },
+    "whatsNew": {
+      "label": "Neuigkeiten",
+      "versionLabel": "Thingport {{version}}",
+      "kinds": {
+        "breaking": "Inkompatible Änderungen",
+        "feature": "Neue Funktionen",
+        "improvement": "Verbesserungen",
+        "fix": "Fehlerbehebungen"
+      },
+      "showAll": "Alle {{total}} anzeigen",
+      "showFewer": "Weniger anzeigen",
+      "learnMore": "Mehr erfahren",
+      "allReleases": "Alle Versionen",
+      "gotIt": "Verstanden",
+      "unavailable": "Die Versionshinweise konnten nicht geladen werden.",
+      "empty": "Für diese Version gibt es noch keine Versionshinweise.",
+      "openGithub": "Auf GitHub öffnen",
+      "zoom": "Screenshot vergrößern",
+      "highlight": "Highlight",
+      "earlier": "Frühere Versionen",
+      "backToLatest": "Zurück zur neuesten",
+      "latest": "Neueste",
+      "topFeature": "Top-Funktion",
+      "thanks": "Danke an alle, die bei {{version}} geholfen haben",
+      "contributor": "{{login}} auf GitHub (öffnet in neuem Tab)"
+    },
     "modelRepairProgress": {
       "stop": "Reparatur stoppen",
       "stopping": "Wird nach dem aktuellen Modell gestoppt …",
@@ -976,6 +1378,133 @@
         "none": "Kein Drucker passt zu „{{query}}“.",
         "added": "hinzugefügt",
         "done": "Fertig"
+      }
+    },
+    "achievements": {
+      "title": "Erfolge",
+      "help": "Abzeichen für das, was diese Person in Thingport gemacht hat. Es werden nur die erreichten angezeigt.",
+      "helpOwn": "Abzeichen für das, was du in Thingport machst. Es werden nur die angezeigt, die du erreicht hast, und alle, die dein Profil sehen können, sehen sie auch.",
+      "all": "Alle {{value}}",
+      "more_one": "{{count}} weiterer Erfolg",
+      "more_other": "{{count}} weitere Erfolge",
+      "empty": "Noch keine. Lade ein Modell herunter, importiere oder erstelle eines, um deinen ersten zu erreichen.",
+      "unlocked": "Erfolg freigeschaltet",
+      "unlockedToast": "Erfolg freigeschaltet: {{name}} · {{tier}}",
+      "unlockedMany_one": "{{count}} Erfolg freigeschaltet",
+      "unlockedMany_other": "{{count}} Erfolge freigeschaltet",
+      "view": "Ansehen",
+      "great": "Super!",
+      "earnedOn": "Erreicht am {{date}}",
+      "next": "Nächste Stufe: {{value}}",
+      "top": "Höchste Stufe erreicht",
+      "tiersEarned": "Erreichte Stufen",
+      "lapsed": "Verfallen",
+      "lapsedHint": "Nutze Thingport an mehr als 20 der letzten 30 Tage, um ihn zurückzuholen.",
+      "tiers": {
+        "bronze": "Bronze",
+        "silver": "Silber",
+        "gold": "Gold",
+        "platinum": "Platin",
+        "diamond": "Diamant",
+        "holo": "Holografisch",
+        "secret": "Geheim"
+      },
+      "groups": {
+        "milestones": "Meilensteine",
+        "sites": "Plattformen",
+        "tools": "Tools",
+        "making": "Studio & Synchronisierung",
+        "secrets": "Geheimnisse"
+      },
+      "badges": {
+        "downloads": {
+          "name": "Downloader",
+          "rule_one": "Lade ein Modell herunter",
+          "rule_other": "Lade {{count}}-mal Modelle herunter",
+          "stat_one": "{{count}} Download",
+          "stat_other": "{{count}} Downloads"
+        },
+        "imports": {
+          "name": "Modelljäger",
+          "rule_one": "Importiere ein Modell",
+          "rule_other": "Importiere {{count}} Modelle",
+          "stat_one": "{{count}} Modell importiert",
+          "stat_other": "{{count}} Modelle importiert"
+        },
+        "regular": {
+          "name": "Stammgast",
+          "rule": "Nutze Thingport an mehr als 20 der letzten 30 Tage",
+          "stat": "Aktiv an {{count}} der letzten 30 Tage"
+        },
+        "site": {
+          "name": "{{site}}-Entdecker",
+          "rule_one": "Importiere ein Modell von {{site}}",
+          "rule_other": "Importiere {{count}} Modelle von {{site}}",
+          "stat": "{{count}} von {{site}}"
+        },
+        "tool": {
+          "rule_one": "Speichere ein Modell aus {{tool}}",
+          "rule_other": "Speichere {{count}} Modelle aus {{tool}}",
+          "stat": "{{count}} aus {{tool}} gespeichert"
+        },
+        "studio": {
+          "name": "Kreativkopf",
+          "rule_one": "Speichere ein Studio-Design in deiner Bibliothek",
+          "rule_other": "Speichere {{count}} Studio-Designs in deiner Bibliothek",
+          "stat_one": "{{count}} Design aus Studio gespeichert",
+          "stat_other": "{{count}} Designs aus Studio gespeichert"
+        },
+        "synced": {
+          "name": "Sync-Zauber",
+          "rule_one": "Halte eine Sammlung synchron",
+          "rule_other": "Halte {{count}} Sammlungen synchron",
+          "stat_one": "{{count}} Sammlung synchron gehalten",
+          "stat_other": "{{count}} Sammlungen synchron gehalten"
+        },
+        "syncSources": {
+          "name": "Quellenjäger",
+          "rule": "Halte Sammlungen von {{count}} verschiedenen Plattformen synchron",
+          "stat": "Synchronisiert von {{count}} Plattformen"
+        },
+        "weatherGuest": {
+          "name": "Wetterspürnase",
+          "rule": "Ein Geheimnis. Du hast es gefunden.",
+          "stat": "In der Wetterszene entdeckt"
+        }
+      },
+      "tools": {
+        "keyring-generator": {
+          "badge": "Anhängerzauber",
+          "tool": "Schlüsselanhänger-Generator"
+        },
+        "qr-code-generator": {
+          "badge": "QR-Zauber",
+          "tool": "QR-Code-Generator"
+        },
+        "gridfinity-drawer": {
+          "badge": "Gridfinity-Genie",
+          "tool": "Gridfinity-Schubladenbauer"
+        },
+        "enclosure-generator": {
+          "badge": "Gehäusegenie",
+          "tool": "Gehäuse-Generator"
+        },
+        "multiboard-planner": {
+          "badge": "Multiboard-Planer",
+          "tool": "Multiboard-Planer"
+        },
+        "skadis-planner": {
+          "badge": "Skadis-Planer",
+          "tool": "Skadis-Planer"
+        },
+        "openscad-customizer": {
+          "badge": "Skriptzauber",
+          "tool": "Skript-Customizer"
+        },
+        "makerworld-3mf-normalizer": {
+          "badge": "3MF-Aufräumer",
+          "tool": "MakerWorld-3MF-Normalisierer"
+        }
       }
     }
   },
