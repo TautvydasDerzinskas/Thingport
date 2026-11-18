@@ -7,6 +7,12 @@ export function keptName(name: string): string {
   return (name || "").replace(CONTROL_CHARS, "").trim();
 }
 
+/** The extension a file is told by, as the server tells it: Node's path.extname of the name it keeps, lowercased and
+ *  without its dot. None for a name that is all extension (".gltf") or has no dot ("stl "), as there. */
+export function keptExt(name: string): string {
+  return extnameOf(keptName(name)).slice(1).toLowerCase();
+}
+
 /** Lowercased file extension without the leading dot, e.g. "stl" for "model.STL". */
 export function extOf(name: string): string {
   const match = /\.([^.]+)$/.exec(name || "");

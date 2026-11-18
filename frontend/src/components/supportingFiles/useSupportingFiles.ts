@@ -46,15 +46,19 @@ export function useSupportingFiles(
     return next;
   }, []);
 
+  const reasonOf = useCallback(
+    (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : t(fallback)),
+    [t],
+  );
   const failed = useCallback(
     (err: unknown, fallback: string) => {
       if (err instanceof UnauthorizedError) {
         onUnauthorized?.();
         return;
       }
-      showToast({ message: err instanceof Error && err.message ? err.message : t(fallback), severity: "error" });
+      showToast({ message: reasonOf(err, fallback), severity: "error" });
     },
-    [onUnauthorized, showToast, t],
+    [onUnauthorized, reasonOf, showToast],
   );
 
   /** One at a time, each shown as it goes; one that fails is said and the rest still go up, except the sliced prints
@@ -93,6 +97,16 @@ export function useSupportingFiles(
         let preparedAdded = false;
         // A toast after a failure's would close it at once: what went wrong is the one left showing.
         let anyFailed = false;
+        // Each that wasn't added, and why: said once more with the sliced prints held back, if any are, as that message
+        // is the last and would close the others' at once.
+        const notAdded: string[] = [];
+        const noteFailure = (name: string, err: unknown) =>
+          notAdded.push(
+            t("models:supporting.notAdded", {
+              name,
+              reason: reasonOf(err, "models:supporting.addFailed").replace(/[.。]\s*$/, ""),
+            }),
+          );
         if (model.length) {
           try {
             const { print: updated } = await printsApi.addPlates(
@@ -103,6 +117,7 @@ export function useSupportingFiles(
             modelFilesAdded = true;
           } catch (err) {
             failed(err, "models:supporting.addFailed");
+            noteFailure(model.map((item) => item.name).join(", "), err);
             anyFailed = true;
             if (err instanceof UnauthorizedError) {
               settle(queued);
@@ -147,6 +162,7 @@ export function useSupportingFiles(
               continue;
             }
             failed(err, "models:supporting.addFailed");
+            noteFailure(item.name, err);
             if (err instanceof UnauthorizedError) {
               settle(queued);
               return;
@@ -155,7 +171,7 @@ export function useSupportingFiles(
             settle([item]);
           }
         }
-        if (heldBackNotice) showToast({ message: heldBackNotice, severity: "error" });
+        if (heldBackNotice) showToast({ message: [...notAdded, heldBackNotice].join(" "), severity: "error" });
         if (anyFailed) return;
         // Where they went, as a 3D file isn't among the attachments it was added to.
         if (modelFilesAdded) {
@@ -173,7 +189,7 @@ export function useSupportingFiles(
         }
       });
     },
-    [failed, inTurn, onUpdated, printId, showToast, t],
+    [failed, inTurn, onUpdated, printId, reasonOf, showToast, t],
   );
 
   const remove = useCallback(

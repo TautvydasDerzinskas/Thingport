@@ -66,14 +66,12 @@ export function isZipFile(name: string) {
   return (name || "").toLowerCase().endsWith(".zip");
 }
 
-export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[]; data: Record<string, Uint8Array> }> {
-  const { unzipSync } = await import("fflate");
+export async function readZipEntries(
+  file: File,
+): Promise<{ entries: ZipEntry[]; data: Record<string, Uint8Array>; numbered: Record<string, string> }> {
+  const fflate = await import("fflate");
   const raw = new Uint8Array(await file.arrayBuffer());
-  const found: [string, Uint8Array][] = [];
-  for (const [rawPath, content] of everyEntry(unzipSync, raw)) {
-    const normalized = normalizeZipPath(rawPath);
-    if (normalized && !isArchiveJunk(normalized)) found.push([normalized, content]);
-  }
+  const found = everyEntry(fflate, raw);
   // Each path to the first entry that has it. Without a prototype, so an entry named "__proto__" is one like any other.
   const data: Record<string, Uint8Array> = Object.create(null);
   const later: [string, Uint8Array][] = [];
@@ -83,52 +81,88 @@ export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[];
   }
   // Two entries can come to one path ("./A/guide.pdf" and "A/guide.pdf", or two of one name): the same bytes are one
   // file, and others are another, listed under a number rather than lost behind the first or uploaded under its name.
-  // Numbered once every entry has its own path, so the number is one no entry of the zip is called by.
+  // Numbered once every entry has its own path, so the number is one no entry of the zip is called by. Each numbered
+  // one is listed with the path it had too, which a scene naming that path could mean (uploadTree's gltfBundles).
   const copies = new Map<string, Uint8Array[]>();
+  const numbered: Record<string, string> = Object.create(null);
   for (const [path, content] of later) {
     const held = [data[path], ...(copies.get(path) ?? [])];
     if (held.some((each) => sameBytes(each, content))) continue;
-    data[numberedPath(path, data)] = content;
+    const next = numberedPath(path, data);
+    data[next] = content;
+    numbered[next] = path;
     copies.set(path, [...(copies.get(path) ?? []), content]);
   }
   const entries = Object.keys(data)
     .toSorted((a, b) => a.localeCompare(b))
     .map((path) => ({ path, size: data[path].length }));
-  return { entries, data };
+  return { entries, data, numbered };
 }
 
-/** Every entry the zip lists, in its order, two of one name among them: unzipSync answers with one entry a name, so the
- *  first of each is read first, then each pass after takes the next of every name that has more. */
-function everyEntry(unzipSync: typeof import("fflate").unzipSync, raw: Uint8Array): [string, Uint8Array][] {
-  const order: { name: string; nth: number }[] = [];
-  const counts = new Map<string, number>();
-  const passes = [
-    unzipSync(raw, {
-      filter: (entry) => {
-        const nth = counts.get(entry.name) ?? 0;
-        counts.set(entry.name, nth + 1);
-        order.push({ name: entry.name, nth });
-        return nth === 0;
-      },
-    }),
-  ];
-  let most = 0;
-  for (const count of counts.values()) most = Math.max(most, count);
-  for (let pass = 1; pass < most; pass++) {
-    const seen = new Map<string, number>();
-    passes.push(
-      unzipSync(raw, {
-        filter: (entry) => {
-          const nth = seen.get(entry.name) ?? 0;
-          seen.set(entry.name, nth + 1);
-          return nth === pass;
-        },
-      }),
-    );
-  }
-  return order.flatMap(({ name, nth }): [string, Uint8Array][] =>
-    Object.hasOwn(passes[nth], name) ? [[name, passes[nth][name]]] : [],
+/** Every entry the zip lists that's kept (not a folder, nor what the OS left in it), in its order, at its path made
+ *  one. The central directory is read as most zips are read, one entry a name; where it names a path twice, or one an
+ *  object can't hold ("__proto__"), the zip is read once more, entry by entry, and that's kept if it found as many. */
+function everyEntry(fflate: typeof import("fflate"), raw: Uint8Array): [string, Uint8Array][] {
+  const kept = (name: string) => {
+    const path = normalizeZipPath(name);
+    return path && !isArchiveJunk(path) ? path : null;
+  };
+  let listed = 0;
+  const seen = new Set<string>();
+  let oneByOne = false;
+  const firsts = fflate.unzipSync(raw, {
+    // Folders and what the OS left aren't read at all.
+    filter: (entry) => {
+      if (!kept(entry.name)) return false;
+      listed += 1;
+      if (seen.has(entry.name) || entry.name === "__proto__") oneByOne = true;
+      if (seen.has(entry.name)) return false;
+      seen.add(entry.name);
+      return true;
+    },
+  });
+  const byName = [...seen].flatMap((name): [string, Uint8Array][] =>
+    Object.hasOwn(firsts, name) ? [[kept(name)!, firsts[name]]] : [],
   );
+  if (!oneByOne) return byName;
+  const each = entryByEntry(fflate, raw, kept);
+  return each && each.length === listed ? each : byName;
+}
+
+/** The kept entries of the zip read in one pass, each apart, by fflate's streaming reader; null where that fails. */
+function entryByEntry(
+  fflate: typeof import("fflate"),
+  raw: Uint8Array,
+  kept: (name: string) => string | null,
+): [string, Uint8Array][] | null {
+  const out: [string, Uint8Array][] = [];
+  try {
+    const unzip = new fflate.Unzip((entry) => {
+      const path = kept(entry.name);
+      const chunks: Uint8Array[] = [];
+      entry.ondata = (err, chunk, final) => {
+        if (err) throw err;
+        chunks.push(chunk);
+        if (final && path) out.push([path, joined(chunks)]);
+      };
+      entry.start();
+    });
+    unzip.register(fflate.UnzipInflate);
+    unzip.push(raw, true);
+  } catch {
+    return null;
+  }
+  return out;
+}
+
+function joined(chunks: Uint8Array[]): Uint8Array {
+  const all = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
+  let at = 0;
+  for (const chunk of chunks) {
+    all.set(chunk, at);
+    at += chunk.length;
+  }
+  return all;
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
@@ -151,10 +185,12 @@ function numberedPath(path: string, taken: Record<string, unknown>): string {
   }
 }
 
+/** `numbered`: each numbered copy's path to the one the zip gave it (readZipEntries), which its entry carries. */
 export function buildUploadEntriesFromZip(
   data: Record<string, Uint8Array>,
   selected: string[],
   basePath = "",
+  numbered: Record<string, string> = {},
 ): UploadEntry[] {
   const entries: UploadEntry[] = [];
   const normalizedBase = normalizePath(basePath);
@@ -169,8 +205,9 @@ export function buildUploadEntriesFromZip(
     const filename = parts[parts.length - 1];
     const type = guessMimeType(filename);
     const file = new File([content as Uint8Array<ArrayBuffer>], filename, type ? { type } : undefined);
-    const relativePath = normalizedBase ? `${normalizedBase}/${path}` : path;
-    entries.push({ file, relativePath });
+    const inBase = (each: string) => (normalizedBase ? `${normalizedBase}/${each}` : each);
+    const zipPath = Object.hasOwn(numbered, path) ? numbered[path] : null;
+    entries.push({ file, relativePath: inBase(path), ...(zipPath ? { zipPath: inBase(zipPath) } : {}) });
   }
   return entries;
 }

@@ -117,6 +117,12 @@ describe("a .gltf added with the files it points at", () => {
     expect(storedModelFileName("scene.gltf ")).toBe("scene.glb");
   });
 
+  it('takes a file named only ".gltf " for no scene, as the server does', async () => {
+    const sorted = sortAddedFiles([scene(".gltf ", "mesh.bin"), file("mesh.bin")], "model");
+    expect(names(sorted.model)).toEqual([]);
+    expect(names((await withGltfFiles(sorted, (each) => each)).model)).toEqual([]);
+  });
+
   it("names a file two of the addition could be, though the scene names it in a folder, and takes neither", async () => {
     const files = [
       scene("scene.gltf", "scene.bin", "textures/base.png"),

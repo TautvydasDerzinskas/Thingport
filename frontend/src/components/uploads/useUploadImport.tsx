@@ -139,6 +139,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
     }
     for (const entry of zipEntries) {
       let zipData: Record<string, Uint8Array> | null = null;
+      let zipNumbered: Record<string, string> = {};
       const baseParts = entry.relativePath.split("/").filter(Boolean);
       baseParts.pop();
       const basePath = baseParts.join("/");
@@ -152,6 +153,7 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
           loadEntries: async () => {
             const result = await readZipEntries(entry.file);
             zipData = result.data;
+            zipNumbered = result.numbered;
             return result.entries;
           },
           // An uploaded zip offers the choice an import doesn't: one model, a model per folder, or one per file.
@@ -160,10 +162,11 @@ export function useUploadImport({ onUploaded, categoryId, onUnauthorized, onTryA
             if (!zipData) {
               const result = await readZipEntries(entry.file);
               zipData = result.data;
+              zipNumbered = result.numbered;
             }
             // In the order the dialog lists them, whatever order they were ticked in.
             const listed = selectedPaths.toSorted((a, b) => a.localeCompare(b));
-            const unzipEntries = buildUploadEntriesFromZip(zipData || {}, listed, basePath);
+            const unzipEntries = buildUploadEntriesFromZip(zipData || {}, listed, basePath, zipNumbered);
             const target = categoryId || null;
             const result =
               mode === "folders"

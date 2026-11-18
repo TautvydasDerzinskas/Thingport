@@ -150,27 +150,34 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   // Returns wherever the user came from; useSmartBack skips same-route history entries.
   const goBack = useSmartBack();
 
+  // A model that couldn't be opened leaves the last one in `print`: the header doesn't offer that one as this page's.
+  const shown = notFound ? null : print;
   usePageHeader({
-    title: print ? print.title || print.name : undefined,
-    subtitle: print ? t("models:detail.subtitle") : undefined,
+    title: shown ? shown.title || shown.name : undefined,
+    subtitle: shown ? t("models:detail.subtitle") : undefined,
     actions: print ? (
       <Stack direction="row" alignItems="center" spacing={0.5}>
         {/* The supporting files' picker, which the attachments open too: here, it stays while another model loads and the
-            page below is a skeleton, with the menu that opens it still the last model's. */}
+            page below is a skeleton, with the menu that opens it still the last model's, and after, for a picker that
+            menu opened. */}
         <SupportingFilesInput actions={supporting} />
         {/* Another user's model is theirs to favourite; the viewer copies it instead (the side panel). */}
-        {!print.owner && <FavoriteButton print={print} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />}
-        <ModelActionsMenu
-          print={print}
-          onUnauthorized={onUnauthorized}
-          onDeleted={goBack}
-          onUpdated={updatePrint}
-          onCounted={countPrint}
-          onCollectionCountChange={setCollectionCount}
-          viewer={viewer}
-          offerLink
-          onAddSupportingFiles={supporting.pick}
-        />
+        {shown && !shown.owner && (
+          <FavoriteButton print={shown} onUpdated={updatePrint} onUnauthorized={onUnauthorized} />
+        )}
+        {shown && (
+          <ModelActionsMenu
+            print={shown}
+            onUnauthorized={onUnauthorized}
+            onDeleted={goBack}
+            onUpdated={updatePrint}
+            onCounted={countPrint}
+            onCollectionCountChange={setCollectionCount}
+            viewer={viewer}
+            offerLink
+            onAddSupportingFiles={supporting.pick}
+          />
+        )}
       </Stack>
     ) : undefined,
   });
