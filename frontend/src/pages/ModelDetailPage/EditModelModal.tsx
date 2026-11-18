@@ -236,7 +236,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   }, [print.supporting_files, supportingLoading, supportingLoadFailed]);
 
   const markDirty = () => setDirty(true);
-  // Files picked whose .gltf is still being read for the files it points at: not in the lists yet.
+  // Picks not in the lists yet, their .gltf or an earlier pick's still being read for the files it points at: Update
+  // waits for them.
   const [adding, setAdding] = useState(0);
 
   // Each kind is ordered on its own, as in its box on the models page; categories come first.
@@ -297,39 +298,55 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
 
-  const onAddFiles = async (fileList: FileList | null, addedTo: "model" | "supporting") => {
-    if (!fileList?.length) return;
+  // Each pick goes into the lists after the one before, though that one's .gltf may take longer to read: the first
+  // plate and the first sliced print, which becomes the prepared print, are those picked first.
+  const picks = useRef<Promise<unknown>>(Promise.resolve());
+  const onAddFiles = (fileList: FileList | null, addedTo: "model" | "supporting") => {
+    if (!fileList?.length) return Promise.resolve();
     const sorted = sortAddedFiles(Array.from(fileList), addedTo);
     markDirty();
     setAdding((count) => count + 1);
-    const { model, supporting, packedWith, ambiguous } = await withGltfFiles(sorted, (file) => file).finally(() =>
-      setAdding((count) => count - 1),
-    );
-    // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either.
-    if (ambiguous.length) {
-      setError(t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }));
-      return;
-    }
-    const packed = new Set([...packedWith.values()].flat());
-    if (model.length) {
-      setPlateItems((prev) => [
-        ...prev,
-        ...model
-          .filter((file) => !packed.has(file))
-          .map((file): PlateItem => ({
-            kind: "new",
-            localId: newLocalId(),
-            file,
-            packedWith: packedWith.get(file) ?? [],
-          })),
-      ]);
-    }
-    if (supporting.length) {
-      setSupportingItems((prev) => [
-        ...prev,
-        ...supporting.map((file): SupportingItem => ({ kind: "new", localId: newLocalId(), file, picked: file.name })),
-      ]);
-    }
+    // Read at once, beside the picks before it; caught here too, so one that fails while it waits its turn isn't
+    // reported as unhandled.
+    const reading = withGltfFiles(sorted, (file) => file);
+    reading.catch(() => undefined);
+    const inLists = picks.current
+      .then(() => reading)
+      .then(({ model, supporting, packedWith, ambiguous }) => {
+        // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either.
+        if (ambiguous.length) {
+          setError(t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }));
+          return;
+        }
+        const packed = new Set([...packedWith.values()].flat());
+        if (model.length) {
+          setPlateItems((prev) => [
+            ...prev,
+            ...model
+              .filter((file) => !packed.has(file))
+              .map((file): PlateItem => ({
+                kind: "new",
+                localId: newLocalId(),
+                file,
+                packedWith: packedWith.get(file) ?? [],
+              })),
+          ]);
+        }
+        if (supporting.length) {
+          setSupportingItems((prev) => [
+            ...prev,
+            ...supporting.map((file): SupportingItem => ({
+              kind: "new",
+              localId: newLocalId(),
+              file,
+              picked: file.name,
+            })),
+          ]);
+        }
+      })
+      .finally(() => setAdding((count) => count - 1));
+    picks.current = inLists.catch(() => undefined);
+    return inLists;
   };
   const removeSupportingItem = (key: string) => {
     const target = supportingItems.find((item) => supportingKey(item) === key);

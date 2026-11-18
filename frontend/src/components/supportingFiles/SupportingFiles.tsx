@@ -38,19 +38,30 @@ export default function SupportingFiles({ print, actions: fileActions, canEdit }
   const linked = searchParams.get("file");
 
   // A copied link opens the model with that file in the viewer, once: a rename or an upload hands over a new list, and
-  // what was picked since stays. Closing the viewer drops the link, so the same one opens it again.
+  // what was picked since stays. Closing the viewer drops the link, so the same one opens it again; going Back past the
+  // link closes the viewer it opened, but not one opened from the list.
   const opened = useRef<string | null>(null);
+  const openedByLink = useRef(false);
   useEffect(() => {
     if (!linked) {
       opened.current = null;
+      if (openedByLink.current) setViewing(null);
+      openedByLink.current = false;
       return;
     }
     if (opened.current === linked || !files.some((file) => file.id === linked)) return;
     opened.current = linked;
+    openedByLink.current = true;
     setViewing(linked);
   }, [linked, files]);
 
+  const openViewer = useCallback((id: string) => {
+    openedByLink.current = false;
+    setViewing(id);
+  }, []);
+
   const closeViewer = useCallback(() => {
+    openedByLink.current = false;
     setViewing(null);
     if (!searchParams.has("file")) return;
     const next = new URLSearchParams(searchParams);
@@ -67,7 +78,7 @@ export default function SupportingFiles({ print, actions: fileActions, canEdit }
         <SupportingFileChips
           files={files.map((file) => ({ key: file.id, name: file.filename, size: file.size, folder: file.folder }))}
           uploading={fileActions.uploading}
-          onOpen={setViewing}
+          onOpen={openViewer}
           onDownload={(id) => {
             const file = byId(id);
             if (file) void fileActions.download(file);
@@ -80,7 +91,7 @@ export default function SupportingFiles({ print, actions: fileActions, canEdit }
       <SupportingFileMenu
         anchor={menuFile ? (menu?.anchor ?? null) : null}
         onClose={() => setMenu(null)}
-        onOpen={menuFile ? () => setViewing(menuFile.id) : undefined}
+        onOpen={menuFile ? () => openViewer(menuFile.id) : undefined}
         onOpenInTab={menuFile ? () => fileActions.openInTab(menuFile) : undefined}
         onDownload={menuFile ? () => void fileActions.download(menuFile) : undefined}
         onCopyLink={menuFile ? () => void fileActions.copyLink(menuFile) : undefined}
