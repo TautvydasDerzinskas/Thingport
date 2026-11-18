@@ -178,18 +178,6 @@ async function startPreviews(plateId: string, filename: string, filePath: string
   if (canRenderModelImage(filename)) void generateCardRender(plateId, filePath, filename);
 }
 
-/** Which file is at `filePath`: by its device and inode, size and last change, so another put there differs. Null when
- *  there's none. */
-async function fileIdentity(filePath: string): Promise<string | null> {
-  const stat = await fs.stat(filePath).catch(() => null);
-  return stat && `${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeMs}`;
-}
-
-/** The plate's thumbnail removed from where its model's pictures are, which a move of them holds the lock for. */
-function removePlateThumb(plateId: string): Promise<void> {
-  return withStorageLock(async () => removeAsset(await plateAssetHome(plateId), plateThumbFile(plateId)));
-}
-
 export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourcePath">): string | null {
   const managed = managedPlatePath(plate);
   if (fsSync.existsSync(managed)) return managed;
@@ -295,54 +283,39 @@ async function createPlateAtPosition(
     console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
   });
   // Its file read where it is now, whoever moved it: the row read under the storage lock, which a move holds from
-  // renaming the file to saving where it went, and which file is there then. A move after that, before the reading is
-  // done, leaves the file read from nowhere, or half, or another file read that took its place: it's then read once
-  // more where it went, as firstPlateReading does, and no thumbnail made of another file is kept.
-  let identity: string | null = null;
+  // renaming the file to saving where it went. What the reading made is kept only when nothing else had the lock while
+  // it was made (storageLockTurn), as firstPlateReading's is: a move then could have taken the file away, or put another
+  // where it was read, even one gone again by now. Otherwise the thumbnail made goes, being perhaps another file's, and
+  // the file is read again with the lock held throughout.
   const findIt = async () => {
-    const now = await withStorageLock(async () => {
-      const row = await prisma.plate.findUnique({ where: { id: record.id } });
-      const at = row && resolvePlateFilePath(row);
-      return row && { row, at, identity: at && (await fileIdentity(at)) };
-    });
+    const now = await prisma.plate.findUnique({ where: { id: record.id } });
     if (now) {
-      record = now.row;
-      effectivePath = now.at ?? effectivePath;
-      identity = now.identity;
+      record = now;
+      effectivePath = resolvePlateFilePath(now) ?? effectivePath;
     }
   };
-  // Whether the row still puts the plate's file at `at`, and the file there is still the one found there.
-  const stillAt = (at: string, was: string | null) =>
-    withStorageLock(async () => {
-      const row = await prisma.plate.findUnique({ where: { id: record.id } });
-      return !!row && was !== null && resolvePlateFilePath(row) === at && (await fileIdentity(at)) === was;
-    });
+  const readIt = () =>
+    thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath).then(
+      () => null,
+      (err: unknown) => ({ err }),
+    );
 
   try {
-    await findIt();
-    let read: string | null = null;
-    for (let tries = 0; tries < 2; tries++) {
-      const at = effectivePath;
-      const was: string | null = identity;
-      let failure: { err: unknown } | null = null;
-      try {
-        await thumbnailAndSniff(record.id, desiredFilename, mime, at);
-      } catch (err) {
-        failure = { err };
-      }
-      if (!failure && at && (await stillAt(at, was))) {
-        read = at;
-        break;
-      }
-      if (at) await removePlateThumb(record.id);
-      if (tries === 0) {
+    const turn = await withStorageLock(async () => {
+      await findIt();
+      return storageLockTurn();
+    });
+    let failure = await readIt();
+    if (!(await withStorageLock(async () => storageLockTurn() === turn + 1))) {
+      failure = await withStorageLock(async () => {
+        await removeAsset(await plateAssetHome(record.id), plateThumbFile(record.id));
         await findIt();
-        if (effectivePath !== at || identity !== was) continue;
-      }
-      if (failure) throw failure.err;
-      break;
+        return readIt();
+      });
     }
-    if (read) await startPreviews(record.id, desiredFilename, read);
+    if (failure) throw failure.err;
+    const read = effectivePath;
+    if (read && fsSync.existsSync(read)) await startPreviews(record.id, desiredFilename, read);
   } catch (err) {
     // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice. Its row is read
     // again under the storage lock, as a reorganisation may have moved its file meanwhile, and the file only goes once

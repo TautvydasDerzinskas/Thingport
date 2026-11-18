@@ -245,8 +245,7 @@ export async function saveFileFromTemp(
     }
     if (metadata && !givenRole && !leavePrepared) role = "PREPARED";
 
-    let oldPreparedPath: string | null = null;
-    let oldPreparedId: string | null = null;
+    let replaced: string | null = null;
     const updatedPrint = await prisma.$transaction(async (tx) => {
       // The model's row locked before its prepared slot is read, as a merge locks it: two prepared prints saved at once
       // would otherwise both find the slot as it was, and the first stay a prepared print the model doesn't point at.
@@ -266,25 +265,20 @@ export async function saveFileFromTemp(
       });
       if (role === "PREPARED") {
         if (currentPrint.preparedFileId && currentPrint.preparedFileId !== record.id) {
-          const old = await tx.printFile.findUnique({ where: { id: currentPrint.preparedFileId } });
-          if (old) {
-            oldPreparedPath = managedPrintFilePath(old);
-            oldPreparedId = old.id;
-          }
+          replaced = currentPrint.preparedFileId;
+          // On its way out: from here nothing lists, moves or sweeps it, as with a save still under way, and the
+          // clean-up at startup takes its row if it's still there then.
+          await tx.printFile.updateMany({ where: { id: replaced }, data: { ready: false } });
         }
         await tx.print.update({ where: { id: printId }, data: { preparedFileId: record.id } });
-        if (oldPreparedId) {
-          await tx.printFile.delete({ where: { id: oldPreparedId } });
-        }
       }
       return tx.print.findUniqueOrThrow({ where: { id: printId } });
     });
 
-    // Committed by now: nothing after this may undo the save, or a replaced prepared print would be lost with it.
-    if (oldPreparedPath) {
-      await fs.rm(oldPreparedPath, { force: true }).catch(() => undefined);
-      await pruneEmptyStorageDirs(path.dirname(oldPreparedPath)).catch(() => undefined);
-    }
+    // Committed by now: nothing after this may undo the save, or a replaced prepared print would be lost with it. The
+    // one it replaced goes with its file, the row read under the storage lock as any removal reads it: a move that was
+    // already under way may have taken the file elsewhere, and another file the place it left.
+    if (replaced) await removeReplacedPrint(replaced);
     // To where the model's files are now: a move of them while this was on its way in passed it by.
     await relocatePrintFile(record.id).catch((err: unknown) =>
       console.warn(`Couldn't move ${safeName}, just saved, to where model ${printId}'s files are:`, err),
@@ -506,13 +500,29 @@ export async function deleteSupportingFile(userId: string, printId: string, file
 
 /** Takes a file's row away and then its file, both under the storage lock, the row read there: a move of the model's
  *  files renames one before it saves where it went, both under the lock, so a path read before it could be one the
- *  file has just left. `remove` takes the row away and says where the file is. */
-function removeRowAndFile(remove: () => Promise<string>): Promise<string> {
+ *  file has just left. `remove` takes the row away and says where the file is, or null when there's none to take. */
+function removeRowAndFile<T extends string | null>(remove: () => Promise<T>): Promise<T> {
   return withStorageLock(async () => {
     const where = await remove();
-    await fs.rm(where, { force: true }).catch(() => undefined);
+    if (where) await fs.rm(where, { force: true }).catch(() => undefined);
     return where;
   });
+}
+
+/** A prepared print another has just replaced, its row and then its file (removeRowAndFile). Best-effort: the save
+ *  that replaced it stands, and a row left behind is one nothing lists, which the clean-up at startup takes. */
+async function removeReplacedPrint(fileId: string): Promise<void> {
+  try {
+    const where = await removeRowAndFile(async () => {
+      const row = await prisma.printFile.findUnique({ where: { id: fileId } });
+      if (!row) return null;
+      await prisma.printFile.delete({ where: { id: fileId } });
+      return printFilePathOrNull(row);
+    });
+    if (where) await pruneEmptyStorageDirs(path.dirname(where));
+  } catch (err) {
+    console.warn(`Couldn't remove the prepared print ${fileId} that another replaced:`, err);
+  }
 }
 
 export async function deleteAllPrintFiles(printId: string): Promise<void> {

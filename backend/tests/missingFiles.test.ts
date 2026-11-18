@@ -710,6 +710,40 @@ describe("models whose files are gone", () => {
     expect(shown).toBe("new.gcode");
   });
 
+  it("removes a replaced prepared print from where a move took it, and nothing from the place it left", async () => {
+    const model = await makePrint(dir, owner.id, "Replaced as moved");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    const left = path.join(STORAGE, old.storagePath);
+    const moved = `${old.storagePath}.moved`;
+    // A move takes the old print elsewhere just before its removal reads its row, and another model's file takes the
+    // place it left.
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let moves = 0;
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      if (!moves && args.where.id === old.id) {
+        moves += 1;
+        fs.renameSync(left, path.join(STORAGE, moved));
+        await prisma.printFile.update({ where: { id: old.id }, data: { storagePath: moved } });
+        fs.writeFileSync(left, "another model's file");
+      }
+      return findUnique(args);
+    }) as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X1\n"), "new.gcode", null);
+      expect(moves).toBe(1);
+      expect(fs.readFileSync(left, "utf8")).toBe("another model's file");
+      expect(fs.existsSync(path.join(STORAGE, moved))).toBe(false);
+      expect(await prisma.printFile.count({ where: { id: old.id } })).toBe(0);
+    } finally {
+      spy.mockRestore();
+      fs.rmSync(left, { force: true });
+      fs.rmSync(path.join(STORAGE, moved), { force: true });
+    }
+  });
+
   it("leaves a file just saved where its model's rename took it, rather than move it back", async () => {
     const model = await makePrint(dir, owner.id, "Saved then renamed");
     // A second Notes.pdf is kept as "Notes (2).pdf", so once saved it's read as out of place.
@@ -963,40 +997,42 @@ describe("models whose files are gone", () => {
 
   it("keeps one prepared print when two are saved at once, the later in place of the first", async () => {
     const model = await makePrint(dir, owner.id, "Two prepared at once");
-    // Another request holds the model's row, so both saves reach their last step before either can go on.
-    let release = () => {};
-    const released = new Promise<void>((resolve) => (release = resolve));
+    // Another request holds the model's row against changes to it, but not against files being added to the model,
+    // so both saves reach their last step, where they change the row, before either can go on. It watches for them
+    // from its own transaction, so no fourth connection is asked of the pool, clearing the activity a transaction
+    // otherwise keeps as it first read it.
     let held = () => {};
-    const holding = new Promise<void>((resolve) => (held = resolve));
+    let notHeld: (error: unknown) => void = () => {};
+    const holding = new Promise<void>((resolve, reject) => {
+      held = resolve;
+      notHeld = reject;
+    });
     const holder = prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${model.print.id} FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${model.print.id} FOR NO KEY UPDATE`;
         held();
-        await released;
+        for (let tries = 0; ; tries++) {
+          await tx.$executeRaw`SELECT pg_stat_clear_snapshot()`;
+          const [{ waiting }] = await tx.$queryRaw<{ waiting: number }[]>`
+            SELECT count(*)::int AS waiting FROM pg_stat_activity
+            WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%"Print"%'`;
+          if (waiting >= 2) return;
+          if (tries >= 200) throw new Error("The saves never reached the model's row");
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
       },
       { timeout: 20_000 },
     );
-    let saves: Promise<unknown>[] = [];
-    try {
-      await holding;
-      saves = ["a.gcode", "b.gcode"].map((name) =>
+    holder.catch(notHeld);
+    await holding;
+    const saves = Promise.allSettled(
+      ["a.gcode", "b.gcode"].map((name) =>
         saveFileFromTemp(owner.id, model.print.id, tempFile(dir, `; ${name}\nG28\n`), name, null),
-      );
-      // Both waiting on the row.
-      await vi.waitFor(
-        async () => {
-          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
-            SELECT count(*)::int AS waiting FROM pg_stat_activity
-            WHERE datname = current_database() AND wait_event_type = 'Lock'`;
-          expect(waiting).toBeGreaterThanOrEqual(2);
-        },
-        { timeout: 10_000, interval: 50 },
-      );
-    } finally {
-      release();
-      await holder;
-      await Promise.allSettled(saves);
-    }
+      ),
+    );
+    // Lets go once both are waiting on the row.
+    await holder;
+    expect((await saves).map((save) => save.status)).toEqual(["fulfilled", "fulfilled"]);
     const print = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id }, include: { files: true } });
     const prepared = print.files.filter((file) => file.role === "PREPARED");
     expect(prepared).toHaveLength(1);
@@ -1254,7 +1290,6 @@ describe("models whose files are gone", () => {
     // The next try waits for this gate, opened once the database is back.
     let open = () => {};
     const gate = new Promise<void>((resolve) => (open = resolve));
-    setCleanupDelaysForTest([0], () => gate);
     const model = await makePrint(dir, owner.id, "Nothing made");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
     // The repair's first plate can't be saved, and the putting back then fails three times, as the database goes away.
@@ -1277,6 +1312,7 @@ describe("models whose files are gone", () => {
       return Promise.reject(new Error("The first plate couldn't be saved"));
     }) as never);
     try {
+      setCleanupDelaysForTest([0], () => gate);
       await expect(
         replaceModelPlates(owner.id, model.print.id, [
           { filename: "new.stl", tempFilePath: tempFile(dir, "solid new\nendsolid\n") },
@@ -1303,7 +1339,6 @@ describe("models whose files are gone", () => {
   });
 
   it("removes a failed repair's files only where their rows say they are, once the rows can be read", async () => {
-    setCleanupDelaysForTest([20, 20]);
     const model = await makePrint(dir, owner.id, "Moved while put back");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
     // The putting back fails three times, then the read of the plates it made, as the database stays away. In the
@@ -1331,6 +1366,7 @@ describe("models whose files are gone", () => {
       throw new Error("the database went away for a moment");
     }) as never);
     try {
+      setCleanupDelaysForTest([20, 20]);
       await repairStoppedAtSecond(model, async () => {
         failing = 4;
       });
@@ -1357,16 +1393,16 @@ describe("models whose files are gone", () => {
     // The clean-up's next try waits for this gate, opened once the merge is done.
     let open = () => {};
     const gate = new Promise<void>((resolve) => (open = resolve));
-    setCleanupDelaysForTest([0], () => gate);
     const model = await makePrint(dir, owner.id, "Merged before its clean-up");
     const keeper = await makePrint(dir, owner.id, "Keeps the merged plate");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
     // The putting back fails three times and the read of the plates it made once, so the clean-up waits for a while.
     const findMany = prisma.plate.findMany.bind(prisma.plate);
     let failing = 0;
-    // The clean-up's reads of the plates it made once the gate is open, each with when it's done.
+    // The clean-up's reads of the plates it made once the gate is open, each with how many rows it found, or null for
+    // one that failed.
     let opened = false;
-    const reads: { ids: string[]; printId?: string; done: Promise<unknown> }[] = [];
+    const reads: { ids: string[]; printId?: string; found: Promise<number | null> }[] = [];
     const spy = vi.spyOn(prisma.plate, "findMany").mockImplementation(((
       args: Parameters<typeof prisma.plate.findMany>[0],
     ) => {
@@ -1379,12 +1415,17 @@ describe("models whose files are gone", () => {
       }
       const rows = findMany(args);
       if (opened && cleanup) {
-        reads.push({ ids: where!.id!.in!, printId: where?.printId, done: rows.then(undefined, () => undefined) });
+        const found = rows.then(
+          (list) => list.length,
+          () => null,
+        );
+        reads.push({ ids: where!.id!.in!, printId: where?.printId, found });
       }
       return rows;
     }) as never);
     let made: string[] = [];
     try {
+      setCleanupDelaysForTest([0], () => gate);
       made = await repairStoppedAtSecond(model, async () => {
         failing = 4;
       });
@@ -1394,11 +1435,10 @@ describe("models whose files are gone", () => {
       // Then the try, which reads the plates it made that are still the model's: none, as the merge took the one.
       opened = true;
       open();
-      await vi.waitFor(
-        () => expect(reads.some((read) => read.ids.includes(made[0]) && read.printId === model.print.id)).toBe(true),
-        { timeout: 4000, interval: 10 },
-      );
-      await Promise.all(reads.map((read) => read.done));
+      const ownRead = () => reads.find((read) => read.ids.includes(made[0]) && read.printId === model.print.id);
+      await vi.waitFor(() => expect(ownRead()).toBeDefined(), { timeout: 4000, interval: 10 });
+      // It read the rows, and found the plate no longer the model's.
+      expect(await ownRead()!.found).toBe(0);
       // And past its turn at the model's plate order, whatever it removed is gone.
       await withPlateOrder(model.print.id, async () => undefined);
     } finally {
@@ -1411,7 +1451,6 @@ describe("models whose files are gone", () => {
   });
 
   it("tries a failed repair's clean-up again when a file won't go", async () => {
-    setCleanupDelaysForTest([20, 20]);
     const model = await makePrint(dir, owner.id, "File that wouldn't go");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
     // The first removal of the plate the repair made fails, as a disk might.
@@ -1426,6 +1465,7 @@ describe("models whose files are gone", () => {
     }) as never);
     let made: string[] = [];
     try {
+      setCleanupDelaysForTest([20, 20]);
       made = await repairPutBackFailing(model, 3);
       const plate = await prisma.plate.findUniqueOrThrow({ where: { id: made[0] } });
       await vi.waitFor(() => expect(fs.existsSync(path.join(STORAGE, plate.storagePath))).toBe(false), {

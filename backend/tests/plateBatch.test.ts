@@ -17,12 +17,16 @@ const stage = vi.hoisted(() => ({
   duringReading: null as ((filePath: string) => Promise<void>) | null,
   // Runs once the next reading of a file for whether it's a sliced print is done, before its answer, once.
   afterReading: null as (() => Promise<void>) | null,
-  // Runs as a new 3MF plate's format is read, once, which then fails.
+  // Runs as a new 3MF plate's format is first read, once; that reading and every one after it then fail, as an
+  // unreadable file's do.
   formatFails: null as ((plateId: string) => Promise<void>) | null,
+  formatFailed: false,
   // Each reading of a new 3MF plate's format, with the file it was given.
   formatReads: [] as { plateId: string; filePath: string }[],
   // Runs as the next reading of a new 3MF plate's format starts, given the file, once; the reading then goes on.
   beforeFormat: null as ((filePath: string) => Promise<void>) | null,
+  // Runs once the next look for a new 3MF plate's thumbnail is done, once.
+  afterThumbnail: null as (() => Promise<void>) | null,
   lockCalls: 0,
 }));
 
@@ -73,9 +77,24 @@ vi.mock("../src/services/threeMfFormat", async (original) => {
       }
       const hook = stage.formatFails;
       if (!hook) return actual.storePlateFormat(...args);
-      stage.formatFails = null;
-      await hook(args[0]);
+      if (!stage.formatFailed) {
+        stage.formatFailed = true;
+        await hook(args[0]);
+      }
       throw new Error("an unreadable 3MF");
+    },
+  };
+});
+vi.mock("../src/services/printService", async (original) => {
+  const actual = await original<typeof import("../src/services/printService")>();
+  return {
+    ...actual,
+    ensurePlateThumbnail: async (...args: Parameters<typeof actual.ensurePlateThumbnail>) => {
+      const made = await actual.ensurePlateThumbnail(...args);
+      const after = stage.afterThumbnail;
+      stage.afterThumbnail = null;
+      await after?.();
+      return made;
     },
   };
 });
@@ -199,7 +218,9 @@ afterEach(() => {
   stage.duringReading = null;
   stage.afterReading = null;
   stage.formatFails = null;
+  stage.formatFailed = false;
   stage.beforeFormat = null;
+  stage.afterThumbnail = null;
 });
 
 afterAll(() => {
@@ -542,6 +563,45 @@ describe("a model's plates, changed by two requests at once", () => {
     expect(left).not.toBe("");
     const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
     // Its thumbnail is its own file's picture, red, not the blue of the file that took its place.
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
+    const [red, , blue] = (await sharp(assetTarget(assetsPath!, plateThumbFile(part.id))).stats()).channels;
+    expect(red.mean).toBeGreaterThan(200);
+    expect(blue.mean).toBeLessThan(50);
+  });
+
+  it("keeps no thumbnail of another file that was in a new 3MF plate's place while it was read, its own back since", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const picture = async (background: string) =>
+      sharp({ create: { width: 8, height: 8, channels: 3, background } })
+        .png()
+        .toBuffer();
+    const other = await threeMf(false, await picture("#0000ff"));
+    const rename = async (name: string) => {
+      const moved = await prisma.print.update({ where: { id: print.id }, data: { name }, include: { plates: true } });
+      await relocatePrint(moved, moved.plates);
+    };
+    let left = "";
+    stage.beforeFormat = async (filePath) => {
+      // Another tab renames the model as the new plate is read, so its file moves, and another model's 3MF takes the
+      // place it left...
+      await rename(`Away and back ${stamp}`);
+      left = filePath;
+      fs.mkdirSync(path.dirname(left), { recursive: true });
+      fs.copyFileSync(other, left);
+    };
+    stage.afterThumbnail = async () => {
+      // ...which leaves again once its picture is taken, and the old name is put back, bringing the plate's file back
+      // to where it was read.
+      fs.rmSync(left, { force: true });
+      await rename(print.name);
+    };
+    await addPlatesToPrint(owner.id, print.id, [
+      { filename: "part.3mf", tempFilePath: await threeMf(false, await picture("#ff0000")) },
+    ]);
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    expect(left).not.toBe("");
+    expect(path.join(STORAGE, part.storagePath)).toBe(left);
+    // Its thumbnail is its own file's picture, red, not the blue of the file that was there while it was read.
     const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
     const [red, , blue] = (await sharp(assetTarget(assetsPath!, plateThumbFile(part.id))).stats()).channels;
     expect(red.mean).toBeGreaterThan(200);
