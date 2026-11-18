@@ -111,7 +111,7 @@ import {
   isGeneratorScript,
   keepGeneratorScripts,
   keepSupportingFiles,
-  refreshAutoPreparedMetadata,
+  refreshIfFirstPlate,
   resolvePlateFilePath,
   type NewPlateInput,
   type PrintMetaInput,
@@ -352,7 +352,7 @@ async function renameProfilePlates(printId: string, renames: { plate: Plate; fil
     const next = await availablePlateFilename(printId, filename, plate.id, plate.folder);
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: next } });
     await relocatePrint(print, [{ ...plate, filename: next }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(printId);
+    await refreshIfFirstPlate(printId, plate.id);
   }
 }
 

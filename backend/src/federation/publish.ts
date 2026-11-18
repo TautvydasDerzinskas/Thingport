@@ -292,7 +292,7 @@ const MODEL_SELECT = {
   previewImages: { orderBy: { position: "asc" }, select: { id: true, generated: true } },
   // A partner's copy writes its own LICENSE.txt from the licence.
   files: {
-    where: { role: { not: "LICENSE" } },
+    where: { role: { not: "LICENSE" }, ready: true },
     select: { id: true, filename: true, folder: true, mime: true, size: true, role: true },
   },
   descriptionImages: { select: { id: true, mime: true } },
@@ -932,8 +932,8 @@ export async function sendSharedFile(res: Response, kind: string, id: string, pe
           },
         })
       : kind === "file"
-        ? await prisma.printFile.findUnique({
-            where: { id },
+        ? await prisma.printFile.findFirst({
+            where: { id, ready: true },
             select: { filename: true, mime: true, storagePath: true, print: { select: { id: true, userId: true } } },
           })
         : null;

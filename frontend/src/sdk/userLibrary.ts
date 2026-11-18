@@ -1,5 +1,5 @@
 import { collectionsApi, type Collection } from "../api/collections";
-import { PrintApiError, printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
+import { printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
 import { searchApi } from "../api/search";
 import type {
   SdkCollection,
@@ -11,7 +11,7 @@ import type {
   SdkPrintProfile,
   SdkRelatedFile,
 } from "./types";
-import { preparedAfterFailure, sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
+import { sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
@@ -197,32 +197,29 @@ export function buildUserLibrary({
         );
       }
       // The model's own go in one request, all or none; the others one at a time after them. One that fails says what
-      // is in by then, so a retry can send only the rest.
-      let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
-      const added = model.map((file) => file.name);
+      // went in before it, and whether the rest must keep the prepared print, so a call with the rest carries on from
+      // there; it's the request's own error, with nothing read afterwards that could fail in its place.
+      const added: string[] = [];
       // The first sliced print among them becomes the prepared print, unless the caller is sending the rest of a call
       // that set it; the rest are kept as related files.
-      let preparedAdded = options.keepPrepared ?? false;
-      for (const file of supporting) {
-        try {
-          const res = await printsApi.uploadFile(id, file, { keepPrepared: preparedAdded });
-          if (res.prepared) preparedAdded = true;
+      let keepPrepared = options.keepPrepared ?? false;
+      let print: Print | null = null;
+      try {
+        if (model.length) {
+          print = (await printsApi.addPlates(id, model)).print;
+          added.push(...model.map((file) => file.name));
+        }
+        for (const file of supporting) {
+          const res = await printsApi.uploadFile(id, file, { keepPrepared });
+          if (res.prepared) keepPrepared = true;
           print = res.print;
           added.push(file.name);
-        } catch (err) {
-          // One whose answer was lost may be the prepared print all the same: the model is read to tell.
-          const status = err instanceof PrintApiError ? err.status : null;
-          if (await preparedAfterFailure(id, file.name, status)) preparedAdded = true;
-          if (!added.length && !preparedAdded) throw err;
-          const failure = err instanceof Error ? err : new Error(String(err));
-          throw Object.assign(failure, {
-            added,
-            model: toModel(print ?? (await printsApi.get(id))),
-            keepPrepared: preparedAdded,
-          });
         }
+      } catch (err) {
+        const failure = err instanceof Error ? err : new Error(String(err));
+        throw Object.assign(failure, { added, keepPrepared, ...(print ? { model: toModel(print) } : {}) });
       }
-      return toModel(print ?? (await printsApi.get(id)));
+      return toModel(print ?? (await printsApi.get(id, { record: false })));
     },
     addImages: async (id: string, images: SdkFileInput[]) =>
       toModel((await printsApi.addPreviewImages(id, images.map(toFile))).print),

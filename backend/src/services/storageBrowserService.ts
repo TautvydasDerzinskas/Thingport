@@ -97,8 +97,9 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
       where: below ? { storagePath: below } : undefined,
       select: { id: true, storagePath: true, sourcePath: true, size: true, print: MODEL_SELECT },
     }),
+    // Not a save still under way: its place isn't a file yet, or not a whole one.
     prisma.printFile.findMany({
-      where: below ? { storagePath: below } : undefined,
+      where: below ? { storagePath: below, ready: true } : { ready: true },
       select: { storagePath: true, size: true, role: true, print: MODEL_SELECT },
     }),
     prisma.print.findMany({

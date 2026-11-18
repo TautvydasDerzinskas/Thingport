@@ -61,6 +61,8 @@ type Props = {
   onUnauthorized?: () => void;
   onDeleted: () => void;
   onUpdated?: (print: Print) => void;
+  /** A download's count, for the owner of the model's state to put in (useDownloadPrint). */
+  onCounted?: (printId: string, printCount: number) => void;
   /** Only for a real collection; shows "Remove from collection". */
   collectionId?: string;
   onRemovedFromCollection?: () => void;
@@ -84,6 +86,7 @@ export default function ModelActionsMenu({
   onUnauthorized,
   onDeleted,
   onUpdated,
+  onCounted,
   collectionId,
   onRemovedFromCollection,
   onCollectionCountChange,
@@ -150,7 +153,7 @@ export default function ModelActionsMenu({
     downloadAllZip,
     sortedPlates,
     recordUse,
-  } = useDownloadPrint(print, onUnauthorized, onUpdated);
+  } = useDownloadPrint(print, onUnauthorized, onUpdated, onCounted);
 
   // A point rather than anchorPosition, so the slicer pickers this menu hands over to open in the same place.
   const menuAnchor: MenuAnchor =

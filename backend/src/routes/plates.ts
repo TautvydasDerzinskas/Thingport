@@ -1,23 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Router } from "express";
-import type { Plate } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
-import { createLogger } from "../logger";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload, thumbnailUpload } from "../uploadMiddleware";
 import {
-  addPlatesToPrint,
-  refreshAutoPreparedMetadata,
   removePlate,
   renamePlate,
-  renumberPlates,
-  withPlateOrder,
+  reorderPlates,
   resolvePlateFilePath,
+  withPlateBatch,
   type NewPlateInput,
 } from "../services/printCreation";
 import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
@@ -38,7 +34,6 @@ import { readablePrintWhere } from "../services/socialService";
 import { isProfileProject, plateThumbEntry } from "../services/printProfileFile";
 import { readZipEntry } from "../utils/zipReader";
 
-const log = createLogger("plates");
 const router = Router();
 router.use(requireAuth);
 
@@ -61,20 +56,12 @@ router.post(
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
       // All or none, the model read back for the answer included: a retry sends every file again, so those already
-      // in would come back twice. A plate that can't be taken back is logged, as there's no more to do then.
-      const added: Plate[] = [];
-      let out: Awaited<ReturnType<typeof printOutById>>;
-      try {
-        for (const input of plateInputs) added.push(...(await addPlatesToPrint(req.userId!, print.id, [input])));
-        out = await printOutById(req.userId!, print.id);
-      } catch (err) {
-        for (const plate of added) {
-          await removePlate(print, plate.id).catch((failure: unknown) =>
-            log.error("couldn't take back a plate of a batch that failed", { plate: plate.id, error: failure }),
-          );
-        }
-        throw err;
-      }
+      // in would come back twice. The plate order is held until the answer is read, so nothing removes or reorders the
+      // model's plates in between: the answer lists every plate made, and a failure takes all of them back.
+      const { added, out } = await withPlateBatch(req.userId!, print.id, async (add) => {
+        const made = await add(plateInputs);
+        return { added: made, out: await printOutById(req.userId!, print.id) };
+      });
       // Which plates are these files', in their order: the model can gain others meanwhile, from another tab.
       // `plate_ids` has one per plate made; `uploaded`, one per file sent: the plate it became, or `packed` where a
       // .gltf sent with it took it in.
@@ -108,21 +95,7 @@ router.post(
     const body = parseBody(reorderSchema, req.body);
     const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
     if (!print) throw new HttpError(404, "Print not found");
-    await withPlateOrder(print.id, async () => {
-      const plates = await prisma.plate.findMany({ where: { printId: print.id } });
-      const byId = new Map(plates.map((p) => [p.id, p]));
-      if (
-        body.plate_ids.length !== plates.length ||
-        new Set(body.plate_ids).size !== body.plate_ids.length ||
-        body.plate_ids.some((id) => !byId.has(id))
-      ) {
-        throw new HttpError(400, "plate_ids must contain exactly the print's current plate ids");
-      }
-      const first = plates.toSorted((a, b) => a.position - b.position)[0]?.id;
-      await renumberPlates(body.plate_ids);
-      // Read for the first plate while it's still first: a reorder after this lock would leave a reading of another.
-      if (first !== body.plate_ids[0]) await refreshAutoPreparedMetadata(print.id);
-    });
+    await reorderPlates(print.id, body.plate_ids);
     res.json({ print: await printOutById(req.userId!, print.id) });
   }),
 );

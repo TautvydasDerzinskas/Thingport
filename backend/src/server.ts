@@ -49,8 +49,8 @@ async function boot(): Promise<void> {
   // Before serving: settling them clears the uploads folder, and a run started meanwhile would be taken for one the
   // last process left.
   await settleMigrations();
-  // Before serving, so none of this process's own saves is under way: a save the last process didn't finish left a
-  // row with a placeholder for its place, and nothing else would ever remove it.
+  // Before serving, so none of this process's own saves is under way: a save the last process didn't finish left a row
+  // that isn't ready, at a placeholder or at the place it claimed, and nothing else would ever remove it or its file.
   await removeAbandonedPrintFileSaves().catch((err) => console.error("Failed to remove unfinished file saves:", err));
   const server = app.listen(API_PORT, () => {
     console.log(`Thingport API listening on port ${API_PORT}`);

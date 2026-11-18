@@ -165,9 +165,14 @@ async function gltfReferences(file: File): Promise<string[]> {
 /**
  * For each .gltf among `entries`, the entries it points at. A .gltf keeps its geometry in a .bin and its textures in
  * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
- * gallery pictures of their own. Found by path from the .gltf's folder, or by name when only one file in that folder or below has it.
+ * gallery pictures of their own. Found as the server finds them: by path from the .gltf's folder, or by name when only one
+ * file in that folder or below has it. Where more than one file could be the one it means, none is taken, and the name
+ * goes in `ambiguous`.
  */
-export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEntry, UploadEntry[]>> {
+export async function gltfBundles(
+  entries: UploadEntry[],
+  ambiguous?: Set<string>,
+): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
   const pathOf = (entry: UploadEntry) =>
     normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
@@ -184,14 +189,18 @@ export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEnt
         // A stray % in a file name: match it as written.
       }
       const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
-      const byPath = others.find((entry) => pathOf(entry) === wanted);
-      const name = wanted.split("/").pop()!.toLowerCase();
+      const byPath = others.filter((entry) => pathOf(entry) === wanted);
+      const named = wanted.split("/").pop()!;
+      const name = named.toLowerCase();
       // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
       const byName = others.filter(
         (entry) => nameOf(entry) === name && (!folder || pathOf(entry).startsWith(`${folder}/`)),
       );
-      const match = byPath ?? (byName.length === 1 ? byName[0] : undefined);
-      if (match) found.add(match);
+      // Two entries of one file are one file; two files are two the scene could mean, and it takes neither.
+      const candidates = byPath.length ? byPath : byName;
+      const distinct = new Set(candidates.map((entry) => entry.file));
+      if (distinct.size === 1) found.add(candidates[0]);
+      else if (distinct.size > 1) ambiguous?.add(named);
     }
     bundles.set(gltf, [...found]);
   }
@@ -354,6 +363,8 @@ export async function uploadEntriesAsOneModel(
         category_id: categoryId || undefined,
         mode: "multiplate",
         folders: files.map((entry) => folders[kept.indexOf(entry)]),
+        // Where each was in the pick, for a .gltf's references: a scene can name a file above the folders kept.
+        sourceFolders: files.map((entry) => splitPath(entry).join("/") || null),
       },
     );
     uploadedEntries.push(...files);

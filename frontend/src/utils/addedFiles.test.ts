@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   batchesByName,
+  holdsBackSliced,
   isModelFileName,
   isPreparedName,
-  mayHoldPrepared,
   sortAddedFiles,
   storedModelFileName,
   withGltfFiles,
@@ -32,6 +32,8 @@ describe("files added to a model", () => {
     expect(isPreparedName("frog.gcode.3mf")).toBe(true);
     expect(isPreparedName("frog.BGCODE")).toBe(true);
     expect(isPreparedName("frog.3mf")).toBe(false);
+    // As the server keeps the name: spaces at either end and control characters dropped.
+    expect(isPreparedName(" frog.gcode \u0000")).toBe(true);
   });
 
   it("keeps any picture a model can be made of with the model files, a GIF and an SVG too", () => {
@@ -53,18 +55,23 @@ describe("files added to a model", () => {
   });
 });
 
-describe("a sliced print whose upload failed", () => {
-  it("may be in all the same, unless the server turned it away", () => {
-    // No answer at all, or one after the save: the ones after it keep its place.
-    expect(mayHoldPrepared("A.gcode", null)).toBe(true);
-    expect(mayHoldPrepared("A.gcode.3mf", 500)).toBe(true);
-    expect(mayHoldPrepared("A.bgcode", 502)).toBe(true);
-    // Turned away: nothing was kept, so the next one may take the place.
-    expect(mayHoldPrepared("A.gcode", 413)).toBe(false);
-    expect(mayHoldPrepared("A.gcode", 400)).toBe(false);
-    // Never the prepared print, whatever happened.
-    expect(mayHoldPrepared("guide.pdf", null)).toBe(false);
-    expect(mayHoldPrepared("frog.3mf", 500)).toBe(false);
+describe("the sliced prints after one whose upload failed", () => {
+  it("wait when it may be the prepared print now and none before it is sure to be", () => {
+    // No answer at all, or one after the server failed: it may be in.
+    expect(holdsBackSliced("A.gcode", null, false)).toBe(true);
+    expect(holdsBackSliced("A.gcode.3mf", 500, false)).toBe(true);
+    expect(holdsBackSliced("A.bgcode", 502, false)).toBe(true);
+    // Kept by the server as "A.gcode", a sliced print all the same.
+    expect(holdsBackSliced("A.gcode ", null, false)).toBe(true);
+  });
+
+  it("go on when the server turned it away, when it isn't sliced, or when one before it is in", () => {
+    expect(holdsBackSliced("A.gcode", 413, false)).toBe(false);
+    expect(holdsBackSliced("A.gcode", 400, false)).toBe(false);
+    expect(holdsBackSliced("guide.pdf", null, false)).toBe(false);
+    expect(holdsBackSliced("frog.3mf", 500, false)).toBe(false);
+    // The rest are kept beside the one that's in, whatever this one did.
+    expect(holdsBackSliced("A.gcode", null, true)).toBe(false);
   });
 });
 
@@ -94,6 +101,26 @@ describe("a .gltf added with the files it points at", () => {
     expect(names(packedWith.get(files[1]) ?? [])).toEqual(["shared.bin"]);
     const plain = sortAddedFiles([file("part.stl"), file("guide.pdf")], "model");
     expect(await withGltfFiles(plain, (each) => each)).toMatchObject(plain);
+  });
+
+  it("names a file two of the addition could be, though the scene names it in a folder, and takes neither", async () => {
+    const files = [
+      scene("scene.gltf", "scene.bin", "textures/base.png"),
+      file("scene.bin"),
+      file("base.png", "one"),
+      file("base.png", "two"),
+    ];
+    const { packedWith, ambiguous } = await withGltfFiles(sortAddedFiles(files, "model"), (each) => each);
+    expect(ambiguous).toEqual(["base.png"]);
+    expect(names(packedWith.get(files[0]) ?? [])).toEqual(["scene.bin"]);
+  });
+
+  it("takes one file given twice as one, not as two it could be", async () => {
+    const texture = file("base.png", "one");
+    const files = [scene("scene.gltf", "scene.bin", "base.png"), file("scene.bin"), texture, texture];
+    const { packedWith, ambiguous } = await withGltfFiles(sortAddedFiles(files, "model"), (each) => each);
+    expect(ambiguous).toEqual([]);
+    expect(names(packedWith.get(files[0]) ?? [])).toEqual(["scene.bin", "base.png"]);
   });
 
   it("is stored as a .glb", () => {

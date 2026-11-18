@@ -6,14 +6,7 @@ import type { Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
-import {
-  addPlatesToPrint,
-  createPrint,
-  discardPrint,
-  removePlate,
-  type NewPlateInput,
-  type PrintMetaInput,
-} from "./printCreation";
+import { createPrint, discardPrint, withPlateBatch, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import { batchFileSaver, deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
@@ -33,7 +26,8 @@ export type UploadedFile = {
   /** The folder it came from within the upload ("docs"), kept on the model's file; none for a flat pick. */
   folder?: string | null;
   /** That folder as the upload named it, before it was cleaned up to be kept: what a .gltf's references are matched
-   *  against, as two folders can be kept alike ("A B" and "A  B"). `folder` where it's missing. */
+   *  against, as two folders can be kept alike ("A B" and "A  B"). Null for the top of the upload; `folder` where it
+   *  wasn't said. */
   sourceFolder?: string | null;
 };
 
@@ -65,7 +59,8 @@ export async function withGltfPacked<T extends UploadedFile>(
   if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [], packedInto: new Set() };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
   const named = files.map((file) => {
-    const folder = file.sourceFolder ?? file.folder;
+    // Null is the top of the upload, though the file is kept in a folder; only one not said takes the kept one.
+    const folder = file.sourceFolder !== undefined ? file.sourceFolder : file.folder;
     return { name: folder ? `${folder}/${file.originalname}` : file.originalname, path: file.path, file };
   });
   const { files: left, packed } = await packGltfFiles(
@@ -165,42 +160,48 @@ async function addFilesTo(
   // Last, since the print it replaces is gone once it's in: a file that fails before it leaves the model as it was.
   const prepared = files.find((f) => !f.kind && isPreparedPrintFilename(sanitizeFilename(f.originalname)));
 
-  const plateIds: string[] = [];
-  // The files this request saved, by the ids their saves gave: another tab's added meanwhile aren't ours to undo.
-  const saved: { id: string; role: "SUPPORTING" | "PREPARED" }[] = [];
-  try {
-    for (const f of prepared ? [...files.filter((other) => other !== prepared), prepared] : files) {
-      if (isPlate(f)) {
-        const safeName = sanitizeFilename(f.originalname);
-        const [plate] = await addPlatesToPrint(userId, printId, [
-          {
-            filename: safeName,
-            mime: mimeFromContentType(f.mimetype, safeName),
-            tempFilePath: f.path,
+  // With the plate order held throughout, so the plates added are all taken back if a later file fails, with no other
+  // request's change to the model's plates in between (withPlateBatch).
+  return withPlateBatch(userId, printId, async (add) => {
+    let plates = 0;
+    // The files this request saved, by the ids their saves gave: another tab's added meanwhile aren't ours to undo.
+    const saved: { id: string; role: "SUPPORTING" | "PREPARED" }[] = [];
+    try {
+      for (const f of prepared ? [...files.filter((other) => other !== prepared), prepared] : files) {
+        if (isPlate(f)) {
+          const safeName = sanitizeFilename(f.originalname);
+          await add([
+            {
+              filename: safeName,
+              mime: mimeFromContentType(f.mimetype, safeName),
+              tempFilePath: f.path,
+              folder: f.folder ?? null,
+            },
+          ]);
+          plates += 1;
+        } else {
+          // Asked for as a supporting file, a sliced print stays one rather than taking the prepared slot.
+          await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype, {
             folder: f.folder ?? null,
-          },
-        ]);
-        plateIds.push(plate.id);
-      } else {
-        // Asked for as a supporting file, a sliced print stays one rather than taking the prepared slot.
-        await saveFileFromTemp(userId, printId, f.path, f.originalname, f.mimetype, {
-          folder: f.folder ?? null,
-          ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
-          leavePrepared: f !== prepared,
-          onStored: (role, id) => saved.push({ id, role }),
-        });
+            ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
+            leavePrepared: f !== prepared,
+            onStored: (role, id) => saved.push({ id, role }),
+          });
+        }
       }
+    } catch (err) {
+      for (const file of saved) {
+        // The prepared print only while it's still this one: another upload may have replaced it since.
+        const undo =
+          file.role === "PREPARED"
+            ? deletePreparedFile(userId, printId, file.id)
+            : deleteSupportingFile(userId, printId, file.id);
+        await undo.catch(() => undefined);
+      }
+      throw err;
     }
-  } catch (err) {
-    for (const plateId of plateIds) await removePlate(print, plateId).catch(() => undefined);
-    for (const file of saved) {
-      const undo =
-        file.role === "PREPARED" ? deletePreparedFile(userId, printId) : deleteSupportingFile(userId, printId, file.id);
-      await undo.catch(() => undefined);
-    }
-    throw err;
-  }
-  return { plates: plateIds.length, files: files.length - plateIds.length };
+    return { plates, files: files.length - plates };
+  });
 }
 
 /** Adds pictures to a model's gallery; the first that decodes becomes its cover in place of our render. Undecodable

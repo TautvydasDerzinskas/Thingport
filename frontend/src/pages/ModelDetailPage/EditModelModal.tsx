@@ -461,6 +461,9 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         // and a file a .gltf sent with it took in became no plate, so it's gone from the list rather than given one.
         const became = new Map<string, PlateItem>();
         const packedInto = new Set<string>();
+        // Up, by the answer, but not on the model it answered with: taken away by another tab, as it may be. Said,
+        // with the dialog left open, rather than saved as if it were there.
+        const unsettled: string[] = [];
         for (const p of batch) {
           if (p.kind !== "new") continue;
           const result = uploadRes.uploaded?.[sent.indexOf(p.file)];
@@ -469,7 +472,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             continue;
           }
           const stored = latest.plates.find((each) => each.id === result?.plate_id);
-          if (!stored) continue;
+          if (!stored) {
+            unsettled.push(p.file.name);
+            continue;
+          }
           became.set(p.localId, {
             kind: "existing",
             id: stored.id,
@@ -484,11 +490,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           );
         plates = settle(plates);
         setPlateItems(settle);
+        if (unsettled.length) throw new Error(t("models:edit.platesUnsettled", { names: unsettled.join(", ") }));
       }
       for (const id of removedPlateIds) {
-        // One another tab took away already is as good as done: the model is read to be sure it's gone.
+        // One another tab took away already is as good as done: the model is read to be sure it's gone, as no view of it.
         const res = await printsApi.deletePlate(print.id, id).catch(async (err: unknown) => {
-          const now = await printsApi.get(print.id).catch(() => null);
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
           if (!now || now.plates.some((each) => each.id === id)) throw err;
           return { print: now };
         });
@@ -534,11 +541,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
       // Each change that's done leaves what's staged, so a retry after a later step fails sends only what's left.
       for (const id of removedSupportingIds) {
-        // One another tab took away already is as good as done: the model's files are read to be sure it's gone.
+        // One another tab took away already, or whose answer was lost, is as good as done: the model is read to be sure
+        // it's gone, as no view of it, and the dialog goes on from what it read, which no longer lists the file.
         const res = await printsApi.deleteFile(print.id, id).catch(async (err: unknown) => {
-          const files = await printsApi.listFiles(print.id).catch(() => null);
-          if (!files || files.some((file) => file.id === id)) throw err;
-          return { print: null };
+          const now = await printsApi.get(print.id, { record: false }).catch(() => null);
+          if (!now || (now.supporting_files ?? []).some((file) => file.id === id)) throw err;
+          return { print: now };
         });
         latest = res.print ?? latest;
         setRemovedSupportingIds((current) => {
@@ -587,7 +595,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         return;
       }
       console.error(err);
-      setError(err instanceof Error ? err.message : t("models:edit.updateFailed"));
+      // An error with nothing to say (an answer that couldn't be read) still says something.
+      setError(err instanceof Error && err.message ? err.message : t("models:edit.updateFailed"));
     } finally {
       setSaving(false);
     }

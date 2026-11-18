@@ -114,6 +114,13 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     (updated: Print) => setPrint((prev) => (prev && prev.id !== updated.id ? prev : updated)),
     [],
   );
+  // A download's count, put into the model as it is when it lands: a file added just before is in it, though the
+  // answer the count came in was read without it.
+  const countPrint = useCallback(
+    (id: string, printCount: number) =>
+      setPrint((prev) => (prev && prev.id === id ? { ...prev, print_count: printCount } : prev)),
+    [],
+  );
   // Here rather than in the attachments, so the header's "Add supporting files" shows its uploads among them.
   const supporting = useSupportingFiles(printId, updatePrint, onUnauthorized);
 
@@ -147,6 +154,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
           onUnauthorized={onUnauthorized}
           onDeleted={goBack}
           onUpdated={updatePrint}
+          onCounted={countPrint}
           onCollectionCountChange={setCollectionCount}
           viewer={viewer}
           offerLink
@@ -632,6 +640,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
               onSelectCategory={onSelectCategory}
               onUnauthorized={onUnauthorized}
               onUpdated={updatePrint}
+              onCounted={countPrint}
               viewer={viewer}
               profileEntries={entries}
               profilesView={profilesView}

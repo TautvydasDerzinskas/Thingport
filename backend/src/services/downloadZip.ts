@@ -59,7 +59,7 @@ export async function estimateDownloadSize(prints: PrintWithPlatesAndCategory[])
   const printIds = prints.map((p) => p.id);
   if (!printIds.length) return plateBytes;
   const supporting = await prisma.printFile.aggregate({
-    where: { printId: { in: printIds }, role: "SUPPORTING" },
+    where: { printId: { in: printIds }, role: "SUPPORTING", ready: true },
     _sum: { size: true },
   });
   return plateBytes + (supporting._sum.size ?? 0);
@@ -106,8 +106,9 @@ export async function buildZipEntries(
   const printIds = prints.map((p) => p.id);
   const supportingByPrint = new Map<string, { filename: string; folder: string | null; storagePath: string }[]>();
   if (printIds.length) {
+    // Only files whose saves are done: one on its way in isn't whole yet.
     const supporting = await prisma.printFile.findMany({
-      where: { printId: { in: printIds }, role: "SUPPORTING" },
+      where: { printId: { in: printIds }, role: "SUPPORTING", ready: true },
     });
     for (const file of supporting) {
       if (!isInFolder(file.folder, opts.folder)) continue;

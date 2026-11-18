@@ -401,8 +401,9 @@ export const printsApi = {
     return res.json();
   },
 
-  get: async (id: string): Promise<Print> => {
-    const res = await fetch(`${apiBase()}/print/${id}`, { headers: authHeaders() });
+  /** `record: false` reads the model without counting it as viewed (Browsing History), as after a change made to it. */
+  get: async (id: string, { record = true }: { record?: boolean } = {}): Promise<Print> => {
+    const res = await fetch(`${apiBase()}/print/${id}${record ? "" : "?record=false"}`, { headers: authHeaders() });
     if (res.status === 401) throw new UnauthorizedError();
     assertOk(res, "Failed to load model");
     return res.json();
@@ -519,7 +520,8 @@ export const printsApi = {
     if (opts.origin) fd.set("origin", opts.origin);
     if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
     if (opts.folders?.some(Boolean)) fd.set("folders", JSON.stringify(opts.folders));
-    if (opts.sourceFolders?.some(Boolean)) fd.set("source_folders", JSON.stringify(opts.sourceFolders));
+    // Even all at the top: that isn't the same as left out, which means where `folders` puts each.
+    if (opts.sourceFolders) fd.set("source_folders", JSON.stringify(opts.sourceFolders));
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,
@@ -682,7 +684,7 @@ export const printsApi = {
     });
     if (res.status === 401) throw new UnauthorizedError();
     if (!res.ok) {
-      // With its status: a caller sending several needs to know whether the server kept this one (mayHoldPrepared).
+      // With its status: a caller sending several needs to know whether the server may have kept it (holdsBackSliced).
       throw new PrintApiError(await readErrorMessage(res, "Failed to add file"), res.status, null);
     }
     return res.json();
@@ -695,7 +697,8 @@ export const printsApi = {
       body: JSON.stringify({ filename }),
     });
     if (res.status === 401) throw new UnauthorizedError();
-    if (!res.ok) throw new Error(await readErrorMessage(res, "Failed to rename the file"));
+    // No fallback of its own: the caller has a translated one for an answer it can't read.
+    if (!res.ok) throw new Error(await readErrorMessage(res, ""));
     return res.json();
   },
 

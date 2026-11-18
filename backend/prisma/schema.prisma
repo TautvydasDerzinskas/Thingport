@@ -762,6 +762,9 @@ model PrintFile {
   mime          String
   size          Int           @default(0)
   storagePath   String        @unique
+  // False from when a save makes the row, before its file is in place, until the save is done: nothing lists, moves or
+  // sweeps it in between, and one left so at startup is a save that never finished (printFileService.saveFileFromTemp).
+  ready         Boolean       @default(true)
   metadata      Json?
   // See Plate.contentSha256.
   contentSha256 String?

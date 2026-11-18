@@ -7,7 +7,7 @@ import { useToast } from "../ToastProvider";
 import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
-import { preparedAfterFailure, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
+import { holdsBackSliced, isPreparedName, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -57,8 +57,9 @@ export function useSupportingFiles(
     [onUnauthorized, showToast, t],
   );
 
-  /** One at a time, each shown as it goes; one that fails is said and the rest still go up. A 3D file goes among the
-   *  model's files, as Edit model puts it. */
+  /** One at a time, each shown as it goes; one that fails is said and the rest still go up, except the sliced prints
+   *  after one whose answer was lost (holdsBackSliced), which are named to add again. A 3D file goes among the model's
+   *  files, as Edit model puts it. */
   const upload = useCallback(
     async (files: File[]) => {
       if (!files.length || !printId) return;
@@ -101,7 +102,14 @@ export function useSupportingFiles(
             settle(model);
           }
         }
-        for (const item of supporting) {
+        // The sliced prints after one whose answer was lost, which wait: each would replace it if it's in, or be kept
+        // beside the old one if it isn't. Added again, it goes first, and they're kept beside it.
+        const heldBack = new Set<(typeof supporting)[number]>();
+        for (const [index, item] of supporting.entries()) {
+          if (heldBack.has(item)) {
+            settle([item]);
+            continue;
+          }
           try {
             const { print: updated, prepared } = await printsApi.uploadFile(printId, item.file, {
               keepPrepared: preparedAdded,
@@ -110,16 +118,30 @@ export function useSupportingFiles(
             onUpdated?.(updated);
             added += 1;
           } catch (err) {
-            failed(err, "models:supporting.addFailed");
             anyFailed = true;
+            const status = err instanceof PrintApiError ? err.status : null;
+            const after = supporting.slice(index + 1).filter((next) => isPreparedName(next.name));
+            if (
+              after.length &&
+              !(err instanceof UnauthorizedError) &&
+              holdsBackSliced(item.name, status, preparedAdded)
+            ) {
+              // Said as it happens, as every failure is, so one after it isn't hidden under it.
+              for (const next of after) heldBack.add(next);
+              showToast({
+                message: t("models:supporting.preparedHeldBack", {
+                  name: item.name,
+                  names: after.map((next) => next.name).join(", "),
+                }),
+                severity: "error",
+              });
+              continue;
+            }
+            failed(err, "models:supporting.addFailed");
             if (err instanceof UnauthorizedError) {
               settle(queued);
               return;
             }
-            // In for all the answer said, it keeps its place from the ones after it: the model is read to tell, so the
-            // first that does arrive isn't kept aside for one that never did.
-            const status = err instanceof PrintApiError ? err.status : null;
-            if (await preparedAfterFailure(printId, item.name, status)) preparedAdded = true;
           } finally {
             settle([item]);
           }

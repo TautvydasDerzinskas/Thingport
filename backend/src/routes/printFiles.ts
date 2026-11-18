@@ -72,7 +72,8 @@ router.get(
     });
     if (!print) throw new HttpError(404, "Not found");
     const record = await prisma.printFile.findUnique({ where: { id: req.params.fileId } });
-    if (!record || record.printId !== print.id || record.role !== "SUPPORTING") {
+    // One whose save isn't done has no file to give yet.
+    if (!record || record.printId !== print.id || record.role !== "SUPPORTING" || !record.ready) {
       throw new HttpError(404, "Not found");
     }
     const filePath = managedPrintFilePath(record);
