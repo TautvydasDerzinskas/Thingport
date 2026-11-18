@@ -25,6 +25,7 @@ import {
 } from "../src/services/printFileService";
 import { savesUnderWay } from "../src/services/printFileSaves";
 import { relocatePrint } from "../src/services/printService";
+import { addPlatesToPrint, removePlate } from "../src/services/printCreation";
 import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
@@ -158,6 +159,26 @@ describe("models whose files are gone", () => {
     } finally {
       await setLicenseFiles(licenseFilesBefore);
     }
+  });
+
+  it("adds and removes a model's files at once without two taking one place", async () => {
+    const model = await makePrint(dir, owner.id, "At once");
+    const [extra] = await addPlatesToPrint(owner.id, model.print.id, [
+      { filename: "extra.stl", tempFilePath: tempFile(dir, "solid e\nendsolid\n") },
+    ]);
+    const settled = await Promise.allSettled([
+      addPlatesToPrint(owner.id, model.print.id, [
+        { filename: "one.stl", tempFilePath: tempFile(dir, "solid o\nendsolid\n") },
+      ]),
+      addPlatesToPrint(owner.id, model.print.id, [
+        { filename: "two.stl", tempFilePath: tempFile(dir, "solid t\nendsolid\n") },
+      ]),
+      removePlate(model.print, extra.id),
+    ]);
+    expect(settled.map((each) => each.status)).toEqual(["fulfilled", "fulfilled", "fulfilled"]);
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.position)).toEqual([0, 1, 2]);
+    expect(plates.map((plate) => plate.filename).toSorted()).toEqual(["one.stl", "own.stl", "two.stl"]);
   });
 
   it("leaves a file a move is carrying, rather than taking it for gone", async () => {

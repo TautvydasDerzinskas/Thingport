@@ -36,6 +36,7 @@ import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
 import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
+import { createKeyedLock } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
 
@@ -422,6 +423,20 @@ export async function discardPrintOrThrow(printId: string): Promise<void> {
   await removeAssetHome(home, assetOwners);
 }
 
+/** One model's plate order at a time: where the next plate goes is read and taken, and the plates renumbered, by one
+ *  request at a time, so two can't take one place, nor one read the place another is passing through. */
+export const withPlateOrder = createKeyedLock();
+
+/** The model's plates in `ids`' order, through negative places first so no two meet on one; one transaction, so no
+ *  other request sees the places in between. `before` runs in it first. */
+export async function renumberPlates(ids: string[], before: Prisma.PrismaPromise<unknown>[] = []): Promise<void> {
+  await prisma.$transaction([
+    ...before,
+    ...ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: -(idx + 1) } })),
+    ...ids.map((id, idx) => prisma.plate.update({ where: { id }, data: { position: idx } })),
+  ]);
+}
+
 export async function addPlatesToPrint(
   userId: string,
   printId: string,
@@ -429,36 +444,33 @@ export async function addPlatesToPrint(
 ): Promise<Plate[]> {
   const print = await prisma.print.findFirst({ where: { id: printId, userId } });
   if (!print) throw new Error("Print not found");
-  const maxPosition = await prisma.plate.aggregate({ where: { printId }, _max: { position: true } });
-  let nextPosition = (maxPosition._max.position ?? -1) + 1;
+  return withPlateOrder(printId, async () => {
+    const maxPosition = await prisma.plate.aggregate({ where: { printId }, _max: { position: true } });
+    let nextPosition = (maxPosition._max.position ?? -1) + 1;
 
-  const created: Plate[] = [];
-  for (const input of plateInputs) {
-    const { record } = await createPlateAtPosition(print, input, nextPosition);
-    created.push(record);
-    nextPosition += 1;
-  }
-  return created;
+    const created: Plate[] = [];
+    for (const input of plateInputs) {
+      const { record } = await createPlateAtPosition(print, input, nextPosition);
+      created.push(record);
+      nextPosition += 1;
+    }
+    return created;
+  });
 }
 
 /** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
 export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plateId: string): Promise<void> {
-  const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
-  const target = plates.find((p) => p.id === plateId);
-  if (!target) throw new HttpError(404, "Plate not found");
-  if (plates.length <= 1) {
-    throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
-  }
-
-  const remaining = plates.filter((p) => p.id !== target.id);
-  // Renumber in two phases (negative temp positions) to avoid (printId, position) collisions.
-  await prisma.plate.delete({ where: { id: target.id } });
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: -(idx + 1) } })),
-  );
-  await prisma.$transaction(
-    remaining.map((p, idx) => prisma.plate.update({ where: { id: p.id }, data: { position: idx } })),
-  );
+  const target = await withPlateOrder(print.id, async () => {
+    const plates = await prisma.plate.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    const found = plates.find((p) => p.id === plateId);
+    if (!found) throw new HttpError(404, "Plate not found");
+    if (plates.length <= 1) {
+      throw new HttpError(409, "Cannot remove the only plate of a print; delete the print instead.");
+    }
+    const remaining = plates.filter((p) => p.id !== found.id).map((p) => p.id);
+    await renumberPlates(remaining, [prisma.plate.delete({ where: { id: found.id } })]);
+    return found;
+  });
   await deletePlateFiles(target);
   await removePlatePictures(target.id, print.assetsPath);
   if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
