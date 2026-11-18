@@ -284,7 +284,8 @@ async function createModelOf(
   nameHint: string,
   options: ZipExtractOptions,
 ): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
-  const hasModel = entries.some(({ entry }) => isPlateName(entry.filename));
+  // A model file, not a script: one with only a script and pictures is a model of its pictures, the script beside them.
+  const hasModel = entries.some(({ entry }) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()));
   const photos = hasModel ? entries.filter(({ entry }) => isPhotoEntry(entry)) : [];
   const inputs: NewPlateInput[] = entries.flatMap(({ entry, folder }): NewPlateInput[] => {
     if (photos.some((photo) => photo.entry === entry)) return [];

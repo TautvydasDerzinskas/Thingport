@@ -413,6 +413,19 @@ describe("a zip from a link, by how its files become models", () => {
     expect(model.previewImages.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("one model of a script and pictures is a model of its pictures, the script kept beside them", async () => {
+    const files = { "design.scad": "cube(10);", "preview.png": photo };
+    const { prints } = await extractZipEntriesToOneModel(
+      userId,
+      await zipOf(files),
+      "Design.zip",
+      Object.keys(files),
+      {},
+    );
+    expect(prints[0].plates.map((plate) => plate.filename)).toEqual(["preview.png"]);
+    expect(await filesOf(prints[0].id)).toEqual([[null, "design.scad", "SUPPORTING"]]);
+  });
+
   it("one model leaves a picked zip inside the zip unopened, and says so", async () => {
     const files = { ...tree(), "Kit/parts.zip": fs.readFileSync(await zipOf({ "p.stl": "solid p endsolid" })) };
     const zip = await zipOf(files);
