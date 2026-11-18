@@ -546,6 +546,41 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
     expect(await prisma.collectionItem.count({ where: { collectionId: mechanical.id } })).toBe(2);
   }, 240_000);
 
+  it("brings a working copy made before this instance was upgraded level before it's read again", async () => {
+    const prepared = await request(app)
+      .post("/api/admin/migrate/thingport")
+      .set(auth())
+      .send({ dump_path: dumpFile, folder });
+    expect(prepared.status).toBe(202);
+    runs.push(prepared.body.id);
+    expect((await until(prepared.body.id, (status) => status !== "preparing")).status).toBe("ready");
+    // As the release before this one left it: without the database change that came with PrintFile.ready.
+    const name = stagingName(prepared.body.id);
+    const change = "20261221120000_print_file_ready";
+    const copy = stagingClient(name);
+    try {
+      await copy.$executeRawUnsafe(`ALTER TABLE "PrintFile" DROP COLUMN "ready"`);
+      await copy.$executeRawUnsafe(`DELETE FROM "_prisma_migrations" WHERE migration_name = '${change}'`);
+    } finally {
+      await copy.$disconnect();
+    }
+    try {
+      const changed = await changeFolder(prepared.body.id, folder);
+      expect(changed.status).toBe("ready");
+      expect(changed.plan.missingFiles).toBe(1);
+      const after = stagingClient(name);
+      try {
+        const ready = await after.$queryRaw<{ column_name: string }[]>`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'PrintFile' AND column_name = 'ready'`;
+        expect(ready).toHaveLength(1);
+      } finally {
+        await after.$disconnect();
+      }
+    } finally {
+      await removeRun(prepared.body.id);
+    }
+  }, 240_000);
+
   it("starts a run once however often Start is pressed, and is free again as soon as it says it's done", async () => {
     const prepared = await request(app)
       .post("/api/admin/migrate/thingport")

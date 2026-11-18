@@ -581,10 +581,11 @@ function movePrintFile(
  *  in left it where its save first put it. The model is read again under the lock for where that is: a rename of it
  *  whose move got there first has already taken the file along, and the model as read before would send it back. */
 export async function relocatePrintFile(fileId: string): Promise<boolean> {
-  const template = validateStorageTemplate(await getStorageTemplate());
+  // The storage structure too, read each time: one saved in between moved the file by itself already.
   const placeOf = async (row: Pick<PrintFile, "printId" | "filename" | "folder">) => {
     const print = await prisma.print.findUnique({ where: { id: row.printId } });
     if (!print) return null;
+    const template = validateStorageTemplate(await getStorageTemplate());
     const values = await printTemplateValues(print, template);
     return renderFilePath(print, template, values, row.filename, null, row.folder);
   };

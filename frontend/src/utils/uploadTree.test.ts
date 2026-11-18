@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { categoriesApi } from "../api/categories";
 import { UnauthorizedError } from "../api/client";
 import type { Print, printsApi } from "../api/prints";
+import en from "../i18n/locales/en.json";
 import lt from "../i18n/locales/lt.json";
 
 const upload = vi.fn<typeof printsApi.upload>();
@@ -111,20 +112,20 @@ describe("gltfBundles", () => {
       entry("M/b/base.png"),
       entry("Broken/broken.gltf", "{ not json"),
     ];
-    const ambiguous = new Set<string>();
+    const ambiguous = new Map<(typeof entries)[number], string[]>();
     const bundles = await gltfBundles(entries, ambiguous);
     expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["M/scene.bin"]);
     expect(bundles.get(entries[4])).toEqual([]);
-    expect([...ambiguous]).toEqual(["base.png"]);
+    expect(ambiguous.get(entries[0])).toEqual(["base.png"]);
   });
 
   it("takes neither of two files at the place a scene names, as in a flat pick of two of one name", async () => {
     const entries = [entry("scene.gltf", gltf("scene.bin", "base.png")), entry("scene.bin"), entry("base.png", "one")];
     entries.push(entry("base.png", "two"));
-    const ambiguous = new Set<string>();
+    const ambiguous = new Map<(typeof entries)[number], string[]>();
     const bundles = await gltfBundles(entries, ambiguous);
     expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["scene.bin"]);
-    expect([...ambiguous]).toEqual(["base.png"]);
+    expect(ambiguous.get(entries[0])).toEqual(["base.png"]);
   });
 });
 
@@ -201,6 +202,49 @@ describe("uploading a glTF download", () => {
     );
     const [, opts] = upload.mock.calls[0];
     expect(opts).toMatchObject({ folders: ["parts", "shared"], sourceFolders: ["Kit/parts", "Kit/shared"] });
+  });
+
+  it("leaves out a model whose scene names a file more than one picked file could be, and says which", async () => {
+    await i18next.init({
+      lng: "en",
+      ns: ["app"],
+      resources: { en: { app: en.app } },
+      interpolation: { escapeValue: false },
+    });
+    const kit = [
+      entry("Kit/scene.gltf", gltf("scene.bin", "textures/base.png")),
+      entry("Kit/scene.bin"),
+      entry("Kit/A/base.png"),
+      entry("Kit/B/base.png"),
+    ];
+    const one = await uploadEntriesAsOneModel(kit, "Kit", null);
+    expect(upload).not.toHaveBeenCalled();
+    expect(one.failed).toEqual([expect.stringMatching(/^Kit \(base\.png .+\)$/)]);
+    const each = await uploadEntriesToCategory(
+      [
+        entry("scene.gltf", gltf("scene.bin", "textures/base.png")),
+        entry("scene.bin"),
+        entry("A/base.png"),
+        entry("B/base.png"),
+      ],
+      null,
+    );
+    expect(each.failed).toContainEqual(expect.stringMatching(/^scene\.gltf \(base\.png .+\)$/));
+    expect(namesSent().flat()).not.toContain("scene.gltf");
+  });
+
+  it("one model per file: says where each of a scene's files was in the pick", async () => {
+    await uploadEntriesToCategory(
+      [
+        entry("Kit/scene.gltf", gltf("left/mesh.bin", "right/mesh.bin")),
+        entry("Kit/left/mesh.bin"),
+        entry("Kit/right/mesh.bin"),
+      ],
+      null,
+    );
+    const [files, opts] = upload.mock.calls[0];
+    expect((files as File[]).map((file) => file.name)).toEqual(["scene.gltf", "mesh.bin", "mesh.bin"]);
+    expect(opts?.sourceFolders).toEqual(["Kit", "Kit/left", "Kit/right"]);
   });
 
   it("one model per file: the scene goes up with its files, and its textures don't become models", async () => {

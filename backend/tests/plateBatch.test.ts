@@ -69,6 +69,7 @@ import { prisma } from "../src/db";
 import { addPlatesToPrint, createPrint } from "../src/services/printCreation";
 import { assetTarget, plateThumbFile } from "../src/services/modelAssets";
 import { relocatePrint, saveThumbFromBytes } from "../src/services/printService";
+import { addUploadedFiles } from "../src/services/uploadService";
 import { withStorageLock } from "../src/utils/storageLock";
 import { register } from "./helpers/fileReuse";
 
@@ -117,6 +118,30 @@ async function model(files: { filename: string; tempFilePath: string }[]) {
 
 const platesOf = async (printId: string) => prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
 
+/** Another tab's removal of a plate, sent and followed until its route has read the model, after which the next thing
+ *  it does is ask for the plate order. One let through is done shortly after; one kept waiting isn't. */
+async function removeMeanwhile(printId: string, plateId: string): Promise<{ removing: Promise<request.Response> }> {
+  const findFirst = prisma.print.findFirst.bind(prisma.print);
+  let reached = () => {};
+  const asked = new Promise<void>((resolve) => (reached = resolve));
+  const spy = vi.spyOn(prisma.print, "findFirst").mockImplementation(((
+    args: Parameters<typeof prisma.print.findFirst>[0],
+  ) => {
+    spy.mockRestore();
+    return findFirst(args).then((found) => {
+      reached();
+      return found;
+    });
+  }) as never);
+  const removing = request(app)
+    .delete(`/api/print/${printId}/plates/${plateId}`)
+    .set(auth())
+    .then((res) => res);
+  await Promise.race([asked, later(4000)]);
+  await Promise.race([removing, later(200)]);
+  return { removing };
+}
+
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-plate-batch-"));
   owner = await register(app, "plate-batch", "Owner");
@@ -133,16 +158,47 @@ afterAll(() => {
 });
 
 describe("a model's plates, changed by two requests at once", () => {
+  it("puts a plate where its model's new name puts it, though the model was renamed while a file before it saved", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const notes = path.join(dir, `notes-${count++}`);
+    fs.writeFileSync(notes, "notes");
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    let renamed = "";
+    const spy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      const updated = await update(args);
+      if (!renamed && typeof args.data.storagePath === "string") {
+        // Another tab renames the model, and its files move, while notes.txt, sent before lid.stl, is being saved.
+        renamed = `Renamed meanwhile ${stamp}`;
+        const moved = await prisma.print.update({
+          where: { id: print.id },
+          data: { name: renamed },
+          include: { plates: true },
+        });
+        await relocatePrint(moved, moved.plates);
+      }
+      return updated;
+    }) as never);
+    try {
+      await addUploadedFiles(owner.id, print.id, [
+        { path: notes, originalname: "notes.txt" },
+        { path: tempStl("lid"), originalname: "lid.stl" },
+      ]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(renamed).not.toBe("");
+    const lid = (await platesOf(print.id)).find((plate) => plate.filename === "lid.stl")!;
+    expect(lid.storagePath).toContain(renamed);
+  });
+
   it("takes back every plate it added when its answer can't be read, though another tab removed one meanwhile", async () => {
     const { print, plates } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
     let removing: Promise<request.Response> | null = null;
     stage.readBack = async () => {
       // Another tab removes the model's own plate while this request reads its answer.
-      removing = request(app)
-        .delete(`/api/print/${print.id}/plates/${plates[0].id}`)
-        .set(auth())
-        .then((res) => res);
-      await Promise.race([removing, later(400)]);
+      ({ removing } = await removeMeanwhile(print.id, plates[0].id));
       throw new Error("the database went away");
     };
 
@@ -159,11 +215,7 @@ describe("a model's plates, changed by two requests at once", () => {
     let removing: Promise<request.Response> | null = null;
     stage.readBack = async (read) => {
       const made = (await platesOf(print.id)).at(-1)!;
-      removing = request(app)
-        .delete(`/api/print/${print.id}/plates/${made.id}`)
-        .set(auth())
-        .then((res) => res);
-      await Promise.race([removing, later(400)]);
+      ({ removing } = await removeMeanwhile(print.id, made.id));
       return read();
     };
 
@@ -279,10 +331,14 @@ describe("a model's plates, changed by two requests at once", () => {
       () => null,
       (err: unknown) => err,
     );
-    await vi.waitFor(() => expect(holding).not.toBeNull(), { timeout: 4000, interval: 20 });
-    // The plate's taking back is in line behind the move.
-    await queuedAtLock(since, 3);
-    release();
+    try {
+      await vi.waitFor(() => expect(holding).not.toBeNull(), { timeout: 4000, interval: 20 });
+      // The plate's taking back is in line behind the move.
+      await queuedAtLock(since, 3);
+    } finally {
+      // Let go whatever happened, or every storage step after this test would wait for it.
+      release();
+    }
 
     expect(await adding).toBeInstanceOf(Error);
     await moving;

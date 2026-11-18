@@ -1854,14 +1854,17 @@ export async function replaceModelFiles(
   const { inputs, coverImageUrl, galleryImages, profiles } = files;
   try {
     return await withPrintLock(printId, async () => {
-      const recorded = await prisma.plate.findMany({
-        where: { printId, print: { userId } },
-        select: { storagePath: true, sourcePath: true },
+      // Asked with the model's plates held, so one an upload adds after the look can't go with the old ones.
+      const replaced = await replaceModelPlates(userId, printId, inputs, async () => {
+        const recorded = await prisma.plate.findMany({
+          where: { printId, print: { userId } },
+          select: { storagePath: true, sourcePath: true },
+        });
+        // A model with no plates at all has nothing to take away, so it is always worth the files.
+        return recorded.length === 0 || (await modelFilesMissing(recorded));
       });
-      // A model with no plates at all has nothing to take away, so it is always worth the files.
-      if (recorded.length > 0 && !(await modelFilesMissing(recorded))) return null;
-
-      const { plates, galleryWhole } = await replaceModelPlates(userId, printId, inputs);
+      if (!replaced) return null;
+      const { plates, galleryWhole } = replaced;
       // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
       // of its pictures is taken from the source afresh instead of left half there -- but what the model has goes
       // only once a picture is in to replace it: some of them may be the owner's own photographs, and a source

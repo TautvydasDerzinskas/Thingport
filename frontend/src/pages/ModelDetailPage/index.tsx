@@ -110,19 +110,27 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const { quality, outcome } = useQualityCheck(printId ?? "", onUnauthorized);
   // The header's menu stays across models, so an answer for the one before (a copy finishing, say) can arrive here
   // after another has opened: it's dropped rather than shown as this one.
+  // Its download count only grows, so an answer read before a download was counted doesn't take the count back.
   const updatePrint = useCallback(
-    (updated: Print) => setPrint((prev) => (prev && prev.id !== updated.id ? prev : updated)),
+    (updated: Print) =>
+      setPrint((prev) => {
+        if (prev && prev.id !== updated.id) return prev;
+        return prev && prev.print_count > updated.print_count ? { ...updated, print_count: prev.print_count } : updated;
+      }),
     [],
   );
   // A download's count, put into the model as it is when it lands: a file added just before is in it, though the
-  // answer the count came in was read without it.
+  // answer the count came in was read without it. Two downloads' answers can land in either order.
   const countPrint = useCallback(
     (id: string, printCount: number) =>
-      setPrint((prev) => (prev && prev.id === id ? { ...prev, print_count: printCount } : prev)),
+      setPrint((prev) =>
+        prev && prev.id === id ? { ...prev, print_count: Math.max(prev.print_count, printCount) } : prev,
+      ),
     [],
   );
-  // Here rather than in the attachments, so the header's "Add supporting files" shows its uploads among them.
-  const supporting = useSupportingFiles(printId, updatePrint, onUnauthorized);
+  // Here rather than in the attachments, so the header's "Add supporting files" shows its uploads among them. For the
+  // model shown: the page's address names the next one while the last one is still on it.
+  const supporting = useSupportingFiles(print?.id, updatePrint, onUnauthorized);
 
   // An older import's licence is read the first time its owner opens it, and lands here once it's there.
   const licenseFill = useLicenseFill(

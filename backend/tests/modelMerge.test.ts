@@ -791,7 +791,15 @@ describe("merging models", () => {
     models.forEach((model, index) => {
       expect(fs.readFileSync(stored(places[index].storagePath), "utf8")).toBe(`solid ${model.name} part.stl`);
     });
-    expect(places[0].storagePath).not.toBe(places[1].storagePath);
+    // Both moved into the category, whichever went first: one at the place they share, the other beside it, in a folder
+    // named after its model.
+    for (const place of places) expect(place.storagePath).toContain(category.name);
+    const aside = places.filter((place, index) => place.storagePath.includes(`/${models[index].id}/`));
+    expect(aside).toHaveLength(1);
+    const shared = places.find((place) => !aside.includes(place))!;
+    expect(aside[0].storagePath).toBe(
+      path.join(path.dirname(shared.storagePath), models[places.indexOf(aside[0])].id, "part.stl"),
+    );
     // Their pictures' folders too: the second is picked beside the first's rather than being the same one.
     const homes = await prisma.print.findMany({ where: { id: { in: models.map((model) => model.id) } } });
     expect(new Set(homes.map((home) => home.assetsPath)).size).toBe(2);

@@ -15,9 +15,14 @@ const PREPARED_SUFFIXES = [".gcode.3mf", ".gcode", ".gco", ".bgcode"];
 // oxlint-disable-next-line no-control-regex -- the server drops these from a name (sanitizeFilename), as this does.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
 
-/** By its name as the server keeps it (sanitizeFilename): without control characters, or spaces at either end. */
+/** A file's name as the server keeps it (sanitizeFilename): without control characters, or spaces at either end. What
+ *  a file is is told from that, so "A.3mf " goes where the server would take "A.3mf". */
+export function keptName(name: string): string {
+  return name.replace(CONTROL_CHARS, "").trim();
+}
+
 export function isPreparedName(name: string): boolean {
-  const lower = name.replace(CONTROL_CHARS, "").trim().toLowerCase();
+  const lower = keptName(name).toLowerCase();
   return PREPARED_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 }
 
@@ -35,13 +40,13 @@ export function holdsBackSliced(name: string, status: number | null, preparedAdd
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */
 export function isModelFileName(name: string): boolean {
   if (isPreparedName(name)) return false;
-  const ext = extOf(name);
+  const ext = extOf(keptName(name));
   // A .gltf is packed into a .glb with the files it points at.
   return MODEL_EXTS.has(ext) || LIGHTBURN_EXTS.has(ext) || ext === "gltf";
 }
 
 export function isPictureName(name: string): boolean {
-  return PICTURE_EXTS.has(extOf(name));
+  return PICTURE_EXTS.has(extOf(keptName(name)));
 }
 
 /**
@@ -77,8 +82,8 @@ export async function withGltfFiles<T>(
   const packedWith = new Map<T, T[]>();
   if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
-  const ambiguous = new Set<string>();
-  for (const [gltf, found] of await gltfBundles(entries, ambiguous)) {
+  const unclear = new Map<(typeof entries)[number], string[]>();
+  for (const [gltf, found] of await gltfBundles(entries, unclear)) {
     packedWith.set(
       all[entries.indexOf(gltf)],
       found.map((entry) => all[entries.indexOf(entry)]),
@@ -97,7 +102,7 @@ export async function withGltfFiles<T>(
     model: sorted.model.flatMap((item) => (packed.has(item) ? [] : once([item, ...(packedWith.get(item) ?? [])]))),
     supporting: sorted.supporting.filter((item) => !packed.has(item)),
     packedWith,
-    ambiguous: [...ambiguous],
+    ambiguous: [...new Set([...unclear.values()].flat())],
   };
 }
 

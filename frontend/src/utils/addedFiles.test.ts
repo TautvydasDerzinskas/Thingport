@@ -34,6 +34,12 @@ describe("files added to a model", () => {
     expect(isPreparedName("frog.3mf")).toBe(false);
     // As the server keeps the name: spaces at either end and control characters dropped.
     expect(isPreparedName(" frog.gcode \u0000")).toBe(true);
+    expect(isModelFileName("A.3mf ")).toBe(true);
+    // So a sliced 3MF named with a space after it goes among the model's files, as the server would take "A.3mf",
+    // rather than to the attachments, where its G-code would make it the prepared print.
+    const { model, supporting } = sortAddedFiles(named("A.3mf ", "B.gcode", "photo.png "), "supporting");
+    expect(names(model)).toEqual(["A.3mf "]);
+    expect(names(supporting)).toEqual(["B.gcode", "photo.png "]);
   });
 
   it("keeps any picture a model can be made of with the model files, a GIF and an SVG too", () => {

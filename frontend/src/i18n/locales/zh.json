@@ -115,6 +115,7 @@
       "alreadyInLibrary": "“{{name}}”已在你的模型库中",
       "uploaded": "已上传“{{name}}”",
       "photosOf": "{{name}}（照片）",
+      "gltfAmbiguous": "{{names}} 对应多个所选文件",
       "uploadedMultiple": "已上传 {{count}} 个模型",
       "makeronlineWaiting": "正在等待 Thingport Grab：用它打开 makeronline.com，模型就会导入",
       "makeronlineListWaiting_other": "{{count}} 个模型正在等待 Thingport Grab：用它打开 makeronline.com，它们就会导入"
@@ -6636,6 +6637,7 @@
       "addedToModel": "已添加到模型文件：{{files}}",
       "addFailed": "无法添加文件",
       "preparedHeldBack": "无法确定 {{name}} 是否已上传，因此以下文件未发送：{{names}}。请重新添加，先添加 {{name}}。",
+      "gltfAmbiguous": "一个 .gltf 用到 {{names}}，但所选文件中有多个同名文件：请只选择它需要的那个。",
       "removeTitle": "移除此文件？",
       "removeMessage": "{{name}} 将从此模型中删除。",
       "removeFailed": "无法移除文件",

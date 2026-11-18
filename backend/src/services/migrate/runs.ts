@@ -13,7 +13,7 @@ import { holdMigrationBusy } from "./busy";
 import { MigrateError, MigrateHttpError, storedError } from "./errors";
 import { readSourceHistory } from "./history";
 import { fileRunModels, Merge, MIGRATE_FOLDER, type MergePhase, type MigrateOptions } from "./merge";
-import { countMissingFiles, readPlan, type MigratePlan } from "./plan";
+import { countMissingFiles, countModelFiles, readPlan, type MigratePlan } from "./plan";
 import {
   createStaging,
   dropStaging,
@@ -437,10 +437,28 @@ export async function startRun(id: string, adminId: string, options: MigrateOpti
   return getRun(id);
 }
 
+/** Brings a saved working copy level with this instance's database changes before it's read again: one prepared before
+ *  this instance was upgraded lacks the upgrade's own, which this release's reads of it need. How many it applied. */
+async function levelStaging(name: string, state: Active): Promise<number> {
+  const copy = stagingClient(name);
+  let missing: number;
+  try {
+    missing = (await readSourceHistory(copy)).missing;
+  } finally {
+    await copy.$disconnect().catch(() => undefined);
+  }
+  if (missing) {
+    state.progress = { step: "upgrading", done: 0, total: missing };
+    await upgradeStaging(name, state.abort.signal);
+  }
+  return missing;
+}
+
 async function execute(state: Active, name: string, run: MigrationRun, options: MigrateOptions, adminId: string) {
   const source = stagingClient(name);
   let merge: Merge | null = null;
   try {
+    await levelStaging(name, state);
     merge = new Merge(source, await filesOf(run), state.id, options, (progress) => {
       state.progress = { step: progress.phase, done: progress.done, total: progress.total };
     });
@@ -511,16 +529,20 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
       throw asHttp(err);
     }
     const plan = run.plan as MigratePlan;
+    const added = await levelStaging(run.stagingDb, state);
     source = stagingClient(run.stagingDb);
-    const missingFiles = await countMissingFiles(
-      source,
-      await folderSource(folder),
-      plan.counts?.files ?? 0,
-      (done, total) => {
-        state.progress = { step: "files", done, total };
-      },
-    );
-    await prisma.migrationRun.update({ where: { id }, data: { plan: { ...plan, folder, missingFiles } } });
+    // Counted again once it's been brought level, as the check below counts them.
+    const files = added ? await countModelFiles(source) : (plan.counts?.files ?? 0);
+    const missingFiles = await countMissingFiles(source, await folderSource(folder), files, (done, total) => {
+      state.progress = { step: "files", done, total };
+    });
+    const levelled = added
+      ? {
+          ...(plan.counts ? { counts: { ...plan.counts, files } } : {}),
+          ...(plan.changes ? { changes: { ...plan.changes, added: plan.changes.added + added } } : {}),
+        }
+      : {};
+    await prisma.migrationRun.update({ where: { id }, data: { plan: { ...plan, ...levelled, folder, missingFiles } } });
   } finally {
     await source?.$disconnect().catch(() => undefined);
     release(state);
