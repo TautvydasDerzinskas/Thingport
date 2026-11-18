@@ -20,6 +20,7 @@ import {
 import { plateThumbPath, plateThumbReplaceable, saveThumbFromBytes } from "../services/printService";
 import { addGeneratedPreviewImageIfNone, generateCardRender } from "../services/previewImageService";
 import { printOutById } from "../services/printLoader";
+import { withGltfPacked } from "../services/uploadService";
 import {
   generateModelPreviewGlb,
   modelPreviewGlbPath,
@@ -42,12 +43,16 @@ router.post(
   modelUpload.array("files"),
   asyncHandler(async (req, res) => {
     const files = (req.files as Express.Multer.File[]) || [];
+    let glbs: string[] = [];
     try {
       if (!files.length) throw new HttpError(400, "No files uploaded");
       const print = await prisma.print.findFirst({ where: { id: req.params.id, userId: req.userId } });
       if (!print) throw new HttpError(404, "Print not found");
 
-      const plateInputs: NewPlateInput[] = files.map((f) => {
+      // A .gltf is one plate, a .glb packed with the files it points at that came with it, as an upload makes it.
+      const packed = await withGltfPacked(files);
+      glbs = packed.glbs;
+      const plateInputs: NewPlateInput[] = packed.files.map((f) => {
         const safeName = sanitizeFilename(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
@@ -59,11 +64,12 @@ router.post(
         for (const plate of added) await removePlate(print, plate.id).catch(() => undefined);
         throw err;
       }
-      // Which plates are these files', in their order: the model can gain others meanwhile, from another tab.
+      // Which plates are these files', in their order (a .gltf's files make none of their own): the model can gain
+      // others meanwhile, from another tab.
       res.json({ print: await printOutById(req.userId!, print.id), plate_ids: added.map((plate) => plate.id) });
     } finally {
-      for (const f of files) {
-        if (fs.existsSync(f.path)) fs.rmSync(f.path, { force: true });
+      for (const tempPath of [...files.map((f) => f.path), ...glbs]) {
+        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { force: true });
       }
     }
   }),

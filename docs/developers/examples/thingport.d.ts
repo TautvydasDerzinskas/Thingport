@@ -578,7 +578,8 @@ export interface SdkModels {
    * Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is
    * kept beside them as a related file (see `relatedFiles`). The first sliced print among them, by its name (`.gcode`,
    * `.gco`, `.bgcode`, `.gcode.3mf`), becomes its prepared print in place of the one it had; any more are kept as
-   * related files. A plain `.3mf` is one of its plates, sliced or not.
+   * related files. A plain `.3mf` is one of its plates, sliced or not. A `.gltf` is packed with the `.bin` and textures
+   * it points at among `files` into one `.glb` plate; it's refused when its `.bin` isn't among them.
    *
    * @param id The model's id.
    * @param files The files to add.

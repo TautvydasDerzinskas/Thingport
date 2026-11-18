@@ -46,7 +46,7 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
-import { sortAddedFiles } from "../../utils/addedFiles";
+import { sortAddedFiles, storedModelFileName, withGltfFiles } from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
 import { inFolder } from "../../utils/fileExtensions";
 import HelpTip from "../../components/HelpTip";
@@ -60,7 +60,8 @@ type ImageItem =
 type PlateItem =
   // `wanted`: the name a file added in place of one of the same name was picked with, to be named back to.
   | { kind: "existing"; id: string; filename: string; folder: string | null; wanted?: string }
-  | { kind: "new"; localId: string; file: File };
+  // `packedWith`: the .bin and textures a .gltf points at, which go up with it and are packed into its .glb.
+  | { kind: "new"; localId: string; file: File; packedWith: File[] };
 
 type SupportingItem =
   { kind: "existing"; file: PrintFile; renamedTo: string | null } | { kind: "new"; localId: string; file: File };
@@ -252,13 +253,24 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     markDirty();
   };
 
-  const onAddFiles = (fileList: FileList | null, addedTo: "model" | "supporting") => {
+  const onAddFiles = async (fileList: FileList | null, addedTo: "model" | "supporting") => {
     if (!fileList?.length) return;
-    const { model, supporting } = sortAddedFiles(Array.from(fileList), addedTo);
+    const { model, supporting, packedWith } = await withGltfFiles(
+      sortAddedFiles(Array.from(fileList), addedTo),
+      (file) => file,
+    );
+    const packed = new Set([...packedWith.values()].flat());
     if (model.length) {
       setPlateItems((prev) => [
         ...prev,
-        ...model.map((file): PlateItem => ({ kind: "new", localId: newLocalId(), file })),
+        ...model
+          .filter((file) => !packed.has(file))
+          .map((file): PlateItem => ({
+            kind: "new",
+            localId: newLocalId(),
+            file,
+            packedWith: packedWith.get(file) ?? [],
+          })),
       ]);
     }
     if (supporting.length) {
@@ -402,9 +414,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       let plates = plateItems;
       const newPlates = plates.filter((p) => p.kind === "new");
       if (newPlates.length) {
+        // One plate each: a .gltf's files are packed into it.
         const uploadRes = await printsApi.addPlates(
           print.id,
-          newPlates.map((p) => p.file),
+          newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : [])),
         );
         latest = uploadRes.print;
         // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
@@ -418,7 +431,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             id: stored.id,
             filename: stored.filename,
             folder: stored.folder ?? null,
-            wanted: p.file.name,
+            wanted: storedModelFileName(p.file.name),
           });
         });
         const settle = (list: PlateItem[]) => list.map((p) => (p.kind === "new" && became.get(p.localId)) || p);
@@ -796,6 +809,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 const key = plateKey(p);
                 const filename = p.kind === "existing" ? (p.wanted ?? p.filename) : p.file.name;
                 const folder = p.kind === "existing" ? p.folder : null;
+                const packedWith = p.kind === "new" ? p.packedWith.map((file) => file.name).join(", ") : "";
                 return (
                   <Stack
                     key={key}
@@ -809,6 +823,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                       <Typography variant="body2" noWrap title={filename}>
                         {filename}
                       </Typography>
+                      {packedWith && (
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" title={packedWith}>
+                          + {packedWith}
+                        </Typography>
+                      )}
                       {/* Its order is the model's, across folders, so the folder is said on each file. */}
                       {folder && (
                         <Typography
@@ -862,7 +881,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 multiple
                 hidden
                 onChange={(e) => {
-                  onAddFiles(e.target.files, "model");
+                  void onAddFiles(e.target.files, "model");
                   e.target.value = "";
                 }}
               />
@@ -957,7 +976,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                 multiple
                 hidden
                 onChange={(e) => {
-                  onAddFiles(e.target.files, "supporting");
+                  void onAddFiles(e.target.files, "supporting");
                   e.target.value = "";
                 }}
               />

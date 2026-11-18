@@ -11,7 +11,7 @@ import type {
   SdkPrintProfile,
   SdkRelatedFile,
 } from "./types";
-import { sortAddedFiles } from "../utils/addedFiles";
+import { sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
@@ -184,7 +184,8 @@ export function buildUserLibrary({
     },
     addFiles: async (id: string, files: SdkFileInput[]) => {
       // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
-      const { model, supporting } = sortAddedFiles(files.map(toFile), "model");
+      // A .gltf's .bin and textures go up with it, packed into one .glb.
+      const { model, supporting } = await withGltfFiles(sortAddedFiles(files.map(toFile), "model"), (file) => file);
       let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
       // The first sliced print among them becomes the prepared print; the rest are kept as related files.
       let preparedAdded = false;

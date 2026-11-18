@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isModelFileName, isPreparedName, mayHoldPrepared, sortAddedFiles } from "./addedFiles";
+import {
+  isModelFileName,
+  isPreparedName,
+  mayHoldPrepared,
+  sortAddedFiles,
+  storedModelFileName,
+  withGltfFiles,
+} from "./addedFiles";
 
 const named = (...names: string[]) => names.map((name) => ({ name }));
 const names = (files: { name: string }[]) => files.map((file) => file.name);
@@ -51,5 +58,38 @@ describe("a sliced print whose upload failed", () => {
     // Never the prepared print, whatever happened.
     expect(mayHoldPrepared("guide.pdf", null)).toBe(false);
     expect(mayHoldPrepared("frog.3mf", 500)).toBe(false);
+  });
+});
+
+describe("a .gltf added with the files it points at", () => {
+  const file = (name: string, body = "") => new File([body], name);
+  const scene = (name: string, bin: string, image?: string) =>
+    file(name, JSON.stringify({ buffers: [{ uri: bin }], images: image ? [{ uri: image }] : [] }));
+
+  it("takes its .bin and textures up with it, from wherever they were sorted, and leaves the rest", async () => {
+    const files = [
+      scene("scene.gltf", "scene.bin", "wood.png"),
+      file("scene.bin"),
+      file("wood.png"),
+      file("notes.txt"),
+    ];
+    const sorted = sortAddedFiles(files, "model");
+    const { model, supporting, packedWith } = await withGltfFiles(sorted, (each) => each);
+    expect(names(model)).toEqual(["scene.gltf", "scene.bin", "wood.png"]);
+    expect(names(supporting)).toEqual(["notes.txt"]);
+    expect(names(packedWith.get(files[0]) ?? [])).toEqual(["scene.bin", "wood.png"]);
+  });
+
+  it("sends a file two scenes share once, and changes nothing without a .gltf", async () => {
+    const files = [scene("a.gltf", "shared.bin"), scene("b.gltf", "shared.bin"), file("shared.bin")];
+    const { model } = await withGltfFiles(sortAddedFiles(files, "supporting"), (each) => each);
+    expect(names(model)).toEqual(["a.gltf", "shared.bin", "b.gltf"]);
+    const plain = sortAddedFiles([file("part.stl"), file("guide.pdf")], "model");
+    expect(await withGltfFiles(plain, (each) => each)).toMatchObject(plain);
+  });
+
+  it("is stored as a .glb", () => {
+    expect(storedModelFileName("Scene.GLTF")).toBe("Scene.glb");
+    expect(storedModelFileName("part.stl")).toBe("part.stl");
   });
 });

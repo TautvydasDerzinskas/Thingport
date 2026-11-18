@@ -1,5 +1,6 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
 import { extOf } from "./fileExtensions";
+import { gltfBundles } from "./uploadTree";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
 // are the model's files, and anything else is kept beside them as a supporting file.
@@ -52,4 +53,36 @@ export function sortAddedFiles<T extends { name: string }>(
     (belongsWithModel ? model : supporting).push(file);
   }
   return { model, supporting };
+}
+
+/**
+ * `sorted` with each .gltf among the model files followed by the files of the same addition it points at -- its .bin
+ * and textures -- wherever they were sorted to: the server packs them with it into one .glb, so they go up with it in
+ * one request, never as files of their own. `packedWith` says whose they are. Found as a folder upload finds them.
+ */
+export async function withGltfFiles<T>(
+  sorted: { model: T[]; supporting: T[] },
+  fileOf: (item: T) => File,
+): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]> }> {
+  const all = [...sorted.model, ...sorted.supporting];
+  const packedWith = new Map<T, T[]>();
+  if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith };
+  const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
+  const taken = new Set<T>();
+  for (const [gltf, found] of await gltfBundles(entries)) {
+    // A texture two scenes share goes up once, with the first: the server packs it into both.
+    const files = found.map((entry) => all[entries.indexOf(entry)]).filter((item) => !taken.has(item));
+    for (const item of files) taken.add(item);
+    packedWith.set(all[entries.indexOf(gltf)], files);
+  }
+  return {
+    model: sorted.model.flatMap((item) => (taken.has(item) ? [] : [item, ...(packedWith.get(item) ?? [])])),
+    supporting: sorted.supporting.filter((item) => !taken.has(item)),
+    packedWith,
+  };
+}
+
+/** The name a file added as a model file is stored by: a .gltf is packed into a .glb. */
+export function storedModelFileName(name: string): string {
+  return name.replace(/\.gltf$/i, ".glb");
 }

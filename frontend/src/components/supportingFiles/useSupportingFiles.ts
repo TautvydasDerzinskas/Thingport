@@ -7,7 +7,7 @@ import { useToast } from "../ToastProvider";
 import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
-import { mayHoldPrepared, sortAddedFiles } from "../../utils/addedFiles";
+import { mayHoldPrepared, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -68,7 +68,12 @@ export function useSupportingFiles(
         const keys = new Set(done.map((item) => item.key));
         setPending((current) => current.filter((item) => !keys.has(item.key)));
       };
-      const { model, supporting } = sortAddedFiles(queued, "supporting");
+      // A .gltf's .bin and textures go up with it, packed into its .glb.
+      const { model, supporting, packedWith } = await withGltfFiles(
+        sortAddedFiles(queued, "supporting"),
+        (item) => item.file,
+      );
+      const packed = new Set([...packedWith.values()].flat());
       await inTurn(async () => {
         let added = 0;
         let modelFilesAdded = false;
@@ -120,7 +125,12 @@ export function useSupportingFiles(
         // Where they went, as a 3D file isn't among the attachments it was added to.
         if (modelFilesAdded) {
           showToast({
-            message: t("models:supporting.addedToModel", { files: model.map((item) => item.name).join(", ") }),
+            message: t("models:supporting.addedToModel", {
+              files: model
+                .filter((item) => !packed.has(item))
+                .map((item) => item.name)
+                .join(", "),
+            }),
             severity: "success",
           });
         } else if (added) {

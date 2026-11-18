@@ -15,7 +15,7 @@ let token: string;
 const createdPrintIds: string[] = [];
 const createdCategoryIds: string[] = [];
 
-function tmpFile(name: string, contents: string): string {
+function tmpFile(name: string, contents: string | Buffer): string {
   // supertest uses the basename as the upload filename, so each file gets its own directory.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-test-"));
   const p = path.join(dir, name);
@@ -313,6 +313,39 @@ describe("plate add/remove/reorder/rename", () => {
     expect(calls).toBe(2);
     const plates = await prisma.plate.findMany({ where: { printId: modelId } });
     expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+  });
+
+  it("packs a .gltf sent with its .bin into one .glb plate, and refuses one sent without it", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const positions = Buffer.from(new Float32Array([0, 0, 0, 0.01, 0, 0, 0, 0.01, 0]).buffer);
+    const gltf = JSON.stringify({
+      asset: { version: "2.0" },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0 }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      buffers: [{ uri: "tri.bin", byteLength: positions.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [0.01, 0.01, 0] }],
+    });
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+      .attach("files", tmpFile("tri.gltf", gltf))
+      .attach("files", tmpFile("tri.bin", positions));
+    expect(res.status).toBe(200);
+    expect(res.body.plate_ids).toHaveLength(1);
+    const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
+    expect((byId.get(res.body.plate_ids[0]) as { filename: string }).filename).toBe("tri.glb");
+    expect(res.body.print.plates).toHaveLength(2);
+
+    const lone = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+      "files",
+      tmpFile("tri.gltf", gltf),
+    );
+    expect(lone.status).toBe(400);
+    expect(JSON.stringify(lone.body)).toContain("tri.bin");
+    expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(2);
   });
 
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
