@@ -55,7 +55,7 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
 
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
  *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
-async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
+export async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
   if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
   const named = files.map((file) => ({
