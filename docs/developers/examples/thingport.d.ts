@@ -581,6 +581,10 @@ export interface SdkModels {
    * related files. A plain `.3mf` is one of its plates, sliced or not. A `.gltf` is packed with the `.bin` and textures
    * it points at among `files` into one `.glb` plate; it's refused when its `.bin` isn't among them.
    *
+   * The plates go in first, all or none, then the other files one at a time. When one of those fails, the call rejects
+   * with its error, which also carries `added` (the names of the files that went in before it) and `model` (the model
+   * as it is then), so a retry can send only the rest.
+   *
    * @param id The model's id.
    * @param files The files to add.
    * @returns The model as it is now.
