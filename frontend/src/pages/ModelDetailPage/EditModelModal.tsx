@@ -50,7 +50,13 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
-import { batchesByName, sortAddedFiles, storedModelFileName, withGltfFiles } from "../../utils/addedFiles";
+import {
+  batchesByName,
+  isPreparedName,
+  sortAddedFiles,
+  storedModelFileName,
+  withGltfFiles,
+} from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
 import { inFolder, withExtensionOf } from "../../utils/fileExtensions";
 import RenameDialog from "../../components/RenameDialog";
@@ -67,7 +73,9 @@ type PlateItem =
   | { kind: "new"; localId: string; file: File; packedWith: File[] };
 
 type SupportingItem =
-  { kind: "existing"; file: PrintFile; renamedTo: string | null } | { kind: "new"; localId: string; file: File };
+  | { kind: "existing"; file: PrintFile; renamedTo: string | null }
+  // `picked`: the name it was picked by, which says whether it may take the prepared slot (see the upload below).
+  | { kind: "new"; localId: string; file: File; picked: string };
 
 const supportingKey = (item: SupportingItem) => (item.kind === "existing" ? item.file.id : item.localId);
 const supportingName = (item: SupportingItem) =>
@@ -216,6 +224,16 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       supportingRead.current += 1;
     };
   }, [print.supporting_files, print.supporting_file_count, readSupportingFiles]);
+  // A model read in full since the dialog opened, passed in from a card, lists its files: taken from it while the read
+  // of them is still under way, or failed, so the list and Update aren't left waiting for a read that won't land.
+  useEffect(() => {
+    if (!print.supporting_files || !(supportingLoading || supportingLoadFailed)) return;
+    supportingRead.current += 1;
+    const files = print.supporting_files;
+    setSupportingItems((current) => [...files.map(existingItem), ...current]);
+    setSupportingLoadFailed(false);
+    setSupportingLoading(false);
+  }, [print.supporting_files, supportingLoading, supportingLoadFailed]);
 
   const markDirty = () => setDirty(true);
   // Files picked whose .gltf is still being read for the files it points at: not in the lists yet.
@@ -284,9 +302,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     const sorted = sortAddedFiles(Array.from(fileList), addedTo);
     markDirty();
     setAdding((count) => count + 1);
-    const { model, supporting, packedWith } = await withGltfFiles(sorted, (file) => file).finally(() =>
+    const { model, supporting, packedWith, ambiguous } = await withGltfFiles(sorted, (file) => file).finally(() =>
       setAdding((count) => count - 1),
     );
+    // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either.
+    if (ambiguous.length) {
+      setError(t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }));
+      return;
+    }
     const packed = new Set([...packedWith.values()].flat());
     if (model.length) {
       setPlateItems((prev) => [
@@ -304,7 +327,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     if (supporting.length) {
       setSupportingItems((prev) => [
         ...prev,
-        ...supporting.map((file): SupportingItem => ({ kind: "new", localId: newLocalId(), file })),
+        ...supporting.map((file): SupportingItem => ({ kind: "new", localId: newLocalId(), file, picked: file.name })),
       ]);
     }
   };
@@ -568,7 +591,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
       for (const item of supportingItems) {
         if (item.kind !== "new") continue;
-        const res = await printsApi.uploadFile(print.id, item.file, { keepPrepared: preparedAdded.current });
+        // Only one picked as a sliced print may take the prepared slot: renamed to one here, it's still an attachment.
+        const res = await printsApi.uploadFile(print.id, item.file, {
+          keepPrepared: preparedAdded.current || !isPreparedName(item.picked),
+        });
         if (res.prepared) preparedAdded.current = true;
         latest = res.print ?? latest;
         // By the id the server gave it: a file another tab added meanwhile is new to this list too, and isn't this one.

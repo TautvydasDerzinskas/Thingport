@@ -167,11 +167,11 @@ async function gltfReferences(file: File): Promise<string[]> {
  * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
  * gallery pictures of their own. Found as the server finds them: by path from the .gltf's folder, or by name when only one
  * file in that folder or below has it. Where more than one file could be the one it means, none is taken, and the name
- * goes in `ambiguous`.
+ * goes in `ambiguous`, under the scene.
  */
 export async function gltfBundles(
   entries: UploadEntry[],
-  ambiguous?: Set<string>,
+  ambiguous?: Map<UploadEntry, string[]>,
 ): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
   const pathOf = (entry: UploadEntry) =>
@@ -200,7 +200,7 @@ export async function gltfBundles(
       const candidates = byPath.length ? byPath : byName;
       const distinct = new Set(candidates.map((entry) => entry.file));
       if (distinct.size === 1) found.add(candidates[0]);
-      else if (distinct.size > 1) ambiguous?.add(named);
+      else if (distinct.size > 1) ambiguous?.set(gltf, [...new Set([...(ambiguous.get(gltf) ?? []), named])]);
     }
     bundles.set(gltf, [...found]);
   }
@@ -245,6 +245,12 @@ function failureLabel(name: string, err: unknown) {
   return message && message !== "Upload failed" ? `${name} (${message})` : name;
 }
 
+/** Why a model whose .gltf names a file more than one picked file could be stays out: the server couldn't tell which
+ *  either, and would keep the scene without it. */
+function unclearScene(names: string[]): Error {
+  return new Error(i18next.t("uploadBar.gltfAmbiguous", { ns: "app", names: names.join(", ") }));
+}
+
 export function uploadEntriesToCategory(
   entries: UploadEntry[],
   parentCategoryId: string | null,
@@ -269,7 +275,8 @@ async function uploadEach(
   let uploaded = 0;
   const uploadedEntries: UploadEntry[] = [];
   const prints: Print[] = [];
-  const bundles = await gltfBundles(entries);
+  const unclear = new Map<UploadEntry, string[]>();
+  const bundles = await gltfBundles(entries, unclear);
   const bundled = new Set([...bundles.values()].flat());
   const todo = uploadable(entries).filter((entry) => !bundled.has(entry));
   const skipped = entries
@@ -278,6 +285,11 @@ async function uploadEach(
   const batched = partOfBatch || todo.length > 1;
 
   for (const entry of todo) {
+    const names = unclear.get(entry);
+    if (names) {
+      failed.push(failureLabel(entry.file.name, unclearScene(names)));
+      continue;
+    }
     try {
       const segments = splitPath(entry);
       let categoryId: string | null;
@@ -293,7 +305,14 @@ async function uploadEach(
       const parts = [entry, ...(bundles.get(entry) ?? [])];
       const result = await printsApi.upload(
         parts.map((part) => part.file),
-        { category_id: categoryId || undefined, notify: !batched, ...(parts.length > 1 ? { mode: "multiplate" } : {}) },
+        {
+          category_id: categoryId || undefined,
+          notify: !batched,
+          // A scene's files by where each was in the pick: two of one name in two folders are two files to the server.
+          ...(parts.length > 1
+            ? { mode: "multiplate", sourceFolders: parts.map((part) => splitPath(part).join("/") || null) }
+            : {}),
+        },
       );
       uploaded += 1;
       uploadedEntries.push(...parts);
@@ -348,7 +367,12 @@ export async function uploadEntriesAsOneModel(
   }
   const label = title ?? kept[0]?.file.name ?? "";
   // A texture is part of the scene that uses it, not a picture of the model.
-  const bundled = new Set([...(await gltfBundles(kept)).values()].flat());
+  const unclear = new Map<UploadEntry, string[]>();
+  const bundled = new Set([...(await gltfBundles(kept, unclear)).values()].flat());
+  if (unclear.size) {
+    failed.push(failureLabel(label, unclearScene([...new Set([...unclear.values()].flat())])));
+    return { uploaded: 0, failed, uploadedEntries, prints, batched: false, skipped: [] as string[] };
+  }
   const hasModel = kept.some((entry) => isModelFile(entry.file.name));
   const images = hasModel ? kept.filter((entry) => isPreviewImage(entry.file) && !bundled.has(entry)) : [];
   const files = kept.filter((entry) => !images.includes(entry));
@@ -411,7 +435,8 @@ export async function uploadFoldersAsModels(
 ) {
   const groups = new Map<string, { segments: string[]; entries: UploadEntry[] }>();
   // A .gltf's .bin and textures go in its folder's model, wherever they sit below it (a "textures" folder, often).
-  const bundles = await gltfBundles(entries);
+  const unclear = new Map<UploadEntry, string[]>();
+  const bundles = await gltfBundles(entries, unclear);
   const bundled = new Set([...bundles.values()].flat());
   for (const entry of entries) {
     if (bundled.has(entry)) continue;
@@ -454,6 +479,11 @@ export async function uploadFoldersAsModels(
 
   for (const group of modelGroups) {
     const folderName = group.segments[group.segments.length - 1];
+    const names = [...new Set(group.entries.flatMap((entry) => unclear.get(entry) ?? []))];
+    if (names.length) {
+      failed.push(failureLabel(folderName, unclearScene(names)));
+      continue;
+    }
     const sorted = group.entries.toSorted(byName);
     const attached = (attachedTo.get(group) ?? []).toSorted((a, b) => byName(a.entry, b.entry));
     // A texture is part of the scene that uses it, not a picture of the model.

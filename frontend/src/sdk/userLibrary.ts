@@ -185,10 +185,8 @@ export function buildUserLibrary({
     addFiles: async (id: string, files: SdkFileInput[], options: { keepPrepared?: boolean } = {}) => {
       // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
       // A .gltf's .bin and textures go up with it, packed into one .glb.
-      const { model, supporting, ambiguous } = await withGltfFiles(
-        sortAddedFiles(files.map(toFile), "model"),
-        (file) => file,
-      );
+      const inputs = files.map(toFile);
+      const { model, supporting, ambiguous } = await withGltfFiles(sortAddedFiles(inputs, "model"), (file) => file);
       // Before anything is added: a .gltf finds its files by name, and two files of one name leave it guessing.
       if (ambiguous.length) {
         throw new Error(
@@ -196,10 +194,19 @@ export function buildUserLibrary({
             "Add each scene with its files in a call of its own.",
         );
       }
-      // The model's own go in one request, all or none; the others one at a time after them. One that fails says what
-      // went in before it, and whether the rest must keep the prepared print, so a call with the rest carries on from
-      // there; it's the request's own error, with nothing read afterwards that could fail in its place.
+      // The model's own go in one request, which the server takes back as far as it can if it fails; the others one at
+      // a time after them. One that fails says what went in before it, and whether the rest must keep the prepared
+      // print, so a call with the rest carries on from there; it's the request's own error, with nothing read
+      // afterwards that could fail in its place. What went in is said by name, and by place in `files`, which tells two
+      // of one name apart.
       const added: string[] = [];
+      const addedIndexes: number[] = [];
+      const went = (sent: File[]) => {
+        for (const file of sent) {
+          added.push(file.name);
+          addedIndexes.push(inputs.indexOf(file));
+        }
+      };
       // The first sliced print among them becomes the prepared print, unless the caller is sending the rest of a call
       // that set it; the rest are kept as related files.
       let keepPrepared = options.keepPrepared ?? false;
@@ -207,17 +214,22 @@ export function buildUserLibrary({
       try {
         if (model.length) {
           print = (await printsApi.addPlates(id, model)).print;
-          added.push(...model.map((file) => file.name));
+          went(model);
         }
         for (const file of supporting) {
           const res = await printsApi.uploadFile(id, file, { keepPrepared });
           if (res.prepared) keepPrepared = true;
           print = res.print;
-          added.push(file.name);
+          went([file]);
         }
       } catch (err) {
         const failure = err instanceof Error ? err : new Error(String(err));
-        throw Object.assign(failure, { added, keepPrepared, ...(print ? { model: toModel(print) } : {}) });
+        throw Object.assign(failure, {
+          added,
+          addedIndexes,
+          keepPrepared,
+          ...(print ? { model: toModel(print) } : {}),
+        });
       }
       return toModel(print ?? (await printsApi.get(id, { record: false })));
     },

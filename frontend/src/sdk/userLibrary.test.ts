@@ -201,9 +201,10 @@ describe("files a script adds to a model", () => {
 
   it("says keepPrepared once a sliced print went in, with the model as the last answer had it", async () => {
     uploadFile.mockReset();
+    // The answer that came is told apart from any other model of the same id by its count.
     uploadFile.mockImplementation(async (_id, file) => {
       if (file.name === "notes.txt") throw new Error("Internal error");
-      return { print: model(), prepared: true };
+      return { print: { ...model(), supporting_file_count: 7 }, prepared: true };
     });
     const failure = await buildUserLibrary({ openModel: () => undefined })
       .models.addFiles("m1", [
@@ -211,7 +212,26 @@ describe("files a script adds to a model", () => {
         { name: "notes.txt", data: "n" },
       ])
       .catch((err: unknown) => err);
-    expect(failure).toMatchObject({ added: ["A.gcode"], keepPrepared: true, model: { id: "m1" } });
+    expect(failure).toMatchObject({
+      added: ["A.gcode"],
+      addedIndexes: [0],
+      keepPrepared: true,
+      model: { id: "m1", relatedCount: 7 },
+    });
+  });
+
+  it("tells which of two files of one name went in by its place in the files given", async () => {
+    uploadFile.mockReset();
+    uploadFile
+      .mockResolvedValueOnce({ print: model(), prepared: false })
+      .mockRejectedValueOnce(Object.assign(new Error("Related file exceeds size limit"), { status: 413 }));
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "notes.txt", data: "small" },
+        { name: "notes.txt", data: "too big" },
+      ])
+      .catch((err: unknown) => err);
+    expect(failure).toMatchObject({ added: ["notes.txt"], addedIndexes: [0] });
   });
 
   it("says nothing went in when the model files' request fails", async () => {

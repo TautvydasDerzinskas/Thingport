@@ -53,6 +53,26 @@ describe("readZipEntries", () => {
   });
 });
 
+describe("readZipEntries numbering", () => {
+  it("gives a second entry of a path a number no entry of the zip has, and keeps .gcode.3mf whole", async () => {
+    const text = (body: string) => new TextEncoder().encode(body);
+    const zip = zipSync({
+      "./A/mesh.bin": text("first"),
+      "A/mesh.bin": text("second"),
+      "A/mesh (2).bin": text("its own"),
+      "./B/job.gcode.3mf": text("one"),
+      "B/job.gcode.3mf": text("two"),
+    });
+    const { data } = await readZipEntries(new File([zip as BlobPart], "kit.zip"));
+    const read = (path: string) => (data[path] ? new TextDecoder().decode(data[path]) : null);
+    expect(read("A/mesh.bin")).toBe("first");
+    // The zip's own "mesh (2).bin" keeps its name: a scene that names it gets its bytes.
+    expect(read("A/mesh (2).bin")).toBe("its own");
+    expect(read("A/mesh (3).bin")).toBe("second");
+    expect(read("B/job (2).gcode.3mf")).toBe("two");
+  });
+});
+
 describe("hasModelFolderPaths", () => {
   it("finds a model file in a folder, a .gltf scene's included", () => {
     expect(hasModelFolderPaths(["A/scene.gltf", "A/scene.bin", "B/scene.gltf", "B/scene.bin"])).toBe(true);

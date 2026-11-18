@@ -61,10 +61,10 @@ export function useSupportingFiles(
    *  after one whose answer was lost (holdsBackSliced), which are named to add again. A 3D file goes among the model's
    *  files, as Edit model puts it. */
   const upload = useCallback(
-    async (files: File[]) => {
-      if (!files.length || !printId) return;
+    async (files: File[], target: string | undefined = printId) => {
+      if (!files.length || !target) return;
       const queued = files.map((file) => ({ key: newLocalId(), name: file.name, file }));
-      setPending((current) => [...current, ...queued.map(({ key, name }) => ({ key, name, printId }))]);
+      setPending((current) => [...current, ...queued.map(({ key, name }) => ({ key, name, printId: target }))]);
       const settle = (done: { key: string }[]) => {
         const keys = new Set(done.map((item) => item.key));
         setPending((current) => current.filter((item) => !keys.has(item.key)));
@@ -72,10 +72,20 @@ export function useSupportingFiles(
       // In line at once, before reading anything: a pick made after this one goes up after it.
       await inTurn(async () => {
         // A .gltf's .bin and textures go up with it, packed into its .glb.
-        const { model, supporting, packedWith } = await withGltfFiles(
+        const { model, supporting, packedWith, ambiguous } = await withGltfFiles(
           sortAddedFiles(queued, "supporting"),
           (item) => item.file,
         );
+        // Nothing of a pick whose .gltf names a file two picked files could be: the server couldn't tell which either,
+        // and would keep the scene without it.
+        if (ambiguous.length) {
+          showToast({
+            message: t("models:supporting.gltfAmbiguous", { names: ambiguous.join(", ") }),
+            severity: "error",
+          });
+          settle(queued);
+          return;
+        }
         const packed = new Set([...packedWith.values()].flat());
         let added = 0;
         let modelFilesAdded = false;
@@ -86,7 +96,7 @@ export function useSupportingFiles(
         if (model.length) {
           try {
             const { print: updated } = await printsApi.addPlates(
-              printId,
+              target,
               model.map((item) => item.file),
             );
             onUpdated?.(updated);
@@ -111,7 +121,7 @@ export function useSupportingFiles(
             continue;
           }
           try {
-            const { print: updated, prepared } = await printsApi.uploadFile(printId, item.file, {
+            const { print: updated, prepared } = await printsApi.uploadFile(target, item.file, {
               keepPrepared: preparedAdded,
             });
             if (prepared) preparedAdded = true;
@@ -235,16 +245,21 @@ export function useSupportingFiles(
     [printId, showToast, t],
   );
 
+  // The model the picker was opened for: what's picked goes there, though the page may show another by then.
+  const pickedFor = useRef<string | undefined>(undefined);
   /** Opens the file picker; what's picked goes straight up. */
-  const pick = useCallback(() => input?.click(), [input]);
+  const pick = useCallback(() => {
+    pickedFor.current = printId;
+    input?.click();
+  }, [input, printId]);
   /** The input's change: its files go up, and it's emptied so the same file can be picked again. */
   const onPicked = useCallback(
     (picker: HTMLInputElement) => {
       const files = Array.from(picker.files ?? []);
       picker.value = "";
-      void upload(files);
+      void upload(files, pickedFor.current ?? printId);
     },
-    [upload],
+    [printId, upload],
   );
 
   return { uploading, upload, remove, rename, download, openInTab, copyLink, pick, onPicked, bindInput: setInput };
