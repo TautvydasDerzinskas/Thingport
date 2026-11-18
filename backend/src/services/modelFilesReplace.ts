@@ -11,6 +11,7 @@ import {
   refreshAutoPreparedMetadata,
   restorePlates,
   withPlateBatch,
+  withPlateOrder,
   type NewPlateInput,
 } from "./printCreation";
 import { removeMissingPrintFiles } from "./printFileService";
@@ -131,8 +132,8 @@ export async function replaceModelPlates(
 
 /** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), tried again when
  *  that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
- *  there, so the scan would never offer it again: their files go instead, read where they are under the storage lock,
- *  and the model's plates point at files that aren't there, as when it was found. With the plate order held. */
+ *  there, so the scan would never offer it again: their files go instead (removeMadeFiles), and the model's plates
+ *  point at files that aren't there, as when it was found. With the plate order held. */
 async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<void> {
   let failure: unknown;
   for (let tries = 0; tries < 3; tries++) {
@@ -147,12 +148,47 @@ async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate
     print: printId,
     error: failure,
   });
-  await withStorageLock(async () => {
-    const ids = made.map((plate) => plate.id);
-    // Where they are now, a move having taken them elsewhere since; as they were made, if they can't be read.
-    const now = await prisma.plate.findMany({ where: { id: { in: ids } } }).catch(() => made);
-    for (const plate of now) {
-      if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
-    }
-  }).catch((error: unknown) => log.error("couldn't remove a failed repair's files", { print: printId, error }));
+  if (!(await removeMadeFiles(printId, made))) removeMadeFilesLater(printId, made);
+}
+
+/** The files of `made`, the plates a failed repair made, removed where their rows say they are now. Read under the
+ *  storage lock, which a move holds from renaming a file to saving where it went: a path a move has freed since, which
+ *  another model's file may hold by now, is never removed. False when the rows can't be read, and nothing went. */
+async function removeMadeFiles(printId: string, made: readonly Plate[]): Promise<boolean> {
+  try {
+    await withStorageLock(async () => {
+      const now = await prisma.plate.findMany({ where: { id: { in: made.map((plate) => plate.id) } } });
+      for (const plate of now) {
+        if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
+      }
+    });
+    return true;
+  } catch (error) {
+    log.error("couldn't read a failed repair's plates to remove their files", { print: printId, error });
+    return false;
+  }
+}
+
+const CLEANUP_DELAYS_MS = [30_000, 120_000, 600_000];
+let cleanupDelaysMs = CLEANUP_DELAYS_MS;
+
+/** The waits before each later try of removeMadeFiles; the defaults when none are given. */
+export function setCleanupDelaysForTest(delays?: number[]): void {
+  cleanupDelaysMs = delays ?? CLEANUP_DELAYS_MS;
+}
+
+/** removeMadeFiles tried again later, until the rows can be read or the tries run out: the database is away for
+ *  longer than a moment. Each try holds the plate order, as any change to the model's plates does. Pending in this
+ *  process only: one that's stopped first leaves the model with the plates the repair made. */
+function removeMadeFilesLater(printId: string, made: readonly Plate[], attempt = 0): void {
+  const wait = cleanupDelaysMs[attempt];
+  if (wait === undefined) {
+    log.error("gave up removing a failed repair's files, so the model keeps the plates it made", { print: printId });
+    return;
+  }
+  setTimeout(() => {
+    void withPlateOrder(printId, () => removeMadeFiles(printId, made)).then((done) => {
+      if (!done) removeMadeFilesLater(printId, made, attempt + 1);
+    });
+  }, wait).unref();
 }

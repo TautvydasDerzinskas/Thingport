@@ -24,7 +24,7 @@ import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { makePrint, register, tempFile, uniqueImage, upload } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
-import { replaceModelPlates } from "../src/services/modelFilesReplace";
+import { replaceModelPlates, setCleanupDelaysForTest } from "../src/services/modelFilesReplace";
 import { mergeModels } from "../src/services/modelMergeService";
 import { replaceModelFiles } from "../src/services/importService";
 import { addPreviewImage, removePreviewImage } from "../src/services/previewImageService";
@@ -1195,6 +1195,55 @@ describe("models whose files are gone", () => {
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual(made);
     expect(fs.existsSync(path.join(STORAGE, plates[0].storagePath))).toBe(false);
+    const scan = await scanMissingFiles(owner.id);
+    expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
+  it("removes a failed repair's files only where their rows say they are, once the rows can be read", async () => {
+    setCleanupDelaysForTest([20, 20]);
+    const model = await makePrint(dir, owner.id, "Moved while put back");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The putting back fails three times, then the read of the plates it made, as the database stays away. In the
+    // first try a move takes the plate the repair made elsewhere, under the lock the putting back holds, and another
+    // model's file takes the place it left.
+    const findMany = prisma.plate.findMany.bind(prisma.plate);
+    let failing = 0;
+    let left = "";
+    let moved = "";
+    const spy = vi.spyOn(prisma.plate, "findMany").mockImplementation((async (
+      args: Parameters<typeof prisma.plate.findMany>[0],
+    ) => {
+      const where = args?.where as { printId?: string; id?: { in?: string[] } } | undefined;
+      const puttingBack = where?.printId === model.print.id && !args?.orderBy;
+      if (failing <= 0 || !(puttingBack || Array.isArray(where?.id?.in))) return findMany(args);
+      failing -= 1;
+      if (!left && puttingBack) {
+        const [made] = await findMany({ where: { printId: model.print.id } });
+        left = path.join(STORAGE, made.storagePath);
+        moved = `${made.storagePath}.moved`;
+        fs.renameSync(left, path.join(STORAGE, moved));
+        await prisma.plate.update({ where: { id: made.id }, data: { storagePath: moved } });
+        fs.writeFileSync(left, "another model's file");
+      }
+      throw new Error("the database went away for a moment");
+    }) as never);
+    try {
+      await repairStoppedAtSecond(model, async () => {
+        failing = 4;
+      });
+      expect(failing).toBe(0);
+      // Nothing went from the place the plate left, which is another model's now.
+      expect(fs.readFileSync(left, "utf8")).toBe("another model's file");
+      // Its own file goes from where its row says it is, once the row can be read.
+      await vi.waitFor(() => expect(fs.existsSync(path.join(STORAGE, moved))).toBe(false), {
+        timeout: 4000,
+        interval: 20,
+      });
+    } finally {
+      spy.mockRestore();
+      setCleanupDelaysForTest();
+      fs.rmSync(left, { force: true });
+    }
     const scan = await scanMissingFiles(owner.id);
     expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
   });
