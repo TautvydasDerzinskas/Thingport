@@ -823,6 +823,20 @@ describe("a zip from a link, by how its files become models", () => {
     expect(failed).toEqual(["Shared/mesh.bin"]);
   });
 
+  it("a model per folder packs a scene with a file of a model stored before it", async () => {
+    const files = {
+      "Models/A/a.stl": "solid a endsolid",
+      "Models/A/mesh.bin": positions,
+      "Models/B/scene.gltf": gltfScene("../A/mesh.bin"),
+    };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["a.stl"], ["scene.glb"]]);
+    // A keeps the buffer beside it, and B's scene has it packed in.
+    expect(await filesOf(prints[0].id)).toEqual([[null, "mesh.bin", "SUPPORTING"]]);
+  });
+
   it("a model per folder keeps a file at the top that it made a model of, though a step after storing it fails", async () => {
     const zip = await zipOf({ "root.stl": "solid root endsolid" });
     pictures.localizeFails = true;

@@ -272,17 +272,15 @@ async function readPickedEntries(
 
 type ModelEntry = { entry: PickedEntry; folder: string | null };
 
-/** One model of `picked`, each .gltf among them packed first with the files it points at (withScenesPacked), which
- *  may be any of `others`, the zip's other picked files. */
+/** One model of `picked`, each .gltf among them packed first with the files it points at (withScenesPacked). */
 async function createModelOf(
   userId: string,
   picked: ModelEntry[],
   meta: PrintMetaInput,
   nameHint: string,
   options: ZipExtractOptions,
-  others: PickedEntry[] = [],
 ): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
-  const { entries, glbs } = await withScenesPacked(picked, others);
+  const { entries, glbs } = await withScenesPacked(picked);
   try {
     return await storeModelOf(userId, entries, meta, nameHint, options);
   } finally {
@@ -468,12 +466,13 @@ export async function extractZipEntriesToFolderModels(
   const { entries, failed } = await readPickedEntries(zipPath, selections);
   const prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[] = [];
   const loose: string[] = [];
+  const glbs: string[] = [];
   const categoryCache: CategoryCache = new Map();
   let total = 0;
   let processed = 0;
   try {
     // A script holds no shape, so a folder of nothing but scripts is attached to the model above it, not one itself. A
-    // glTF scene is a model's, packed with the files it points at into a .glb when the model is made (withScenesPacked).
+    // glTF scene is a model's, packed with the files it points at into a .glb (withScenesPacked).
     const units = modelFolderUnits(
       entries,
       (entry) => entry.folder,
@@ -484,29 +483,36 @@ export async function extractZipEntriesToFolderModels(
     total = units.length + failed.length;
     processed = failed.length;
     if (processed) onProgress?.(processed, total, 0, failed.length);
+    // Every model's scenes are packed before any model is stored, as storing one takes its files: a scene may point at
+    // a picked file outside its folder ("../../Shared/mesh.bin"), one a model stored before it holds among them. By
+    // folder, which each model folder has its own of.
+    const packed = new Map<string, { entries: ModelEntry[] } | { failure: unknown }>();
+    for (const unit of units) {
+      if (unit.kind === "file") continue;
+      const own = [
+        ...unit.files.map((entry) => ({ entry, folder: null })),
+        ...unit.attached.map(({ item, folder }) => ({ entry: item, folder })),
+      ];
+      try {
+        const scenes = await withScenesPacked(own, entries);
+        glbs.push(...scenes.glbs);
+        packed.set(unit.folder, { entries: scenes.entries });
+      } catch (failure) {
+        packed.set(unit.folder, { failure });
+      }
+    }
     for (const unit of units) {
       if (unit.kind === "file") {
         loose.push(unit.item.name);
         continue;
       }
       try {
+        const own = packed.get(unit.folder)!;
+        if ("failure" in own) throw own.failure;
         // The folders above the model's own, which is the model: Kit/A makes model A in category Kit.
         const categoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, unit.folder, categoryCache);
         const name = unit.folder.split("/").at(-1)!;
-        prints.push(
-          await createModelOf(
-            userId,
-            [
-              ...unit.files.map((entry) => ({ entry, folder: null })),
-              ...unit.attached.map(({ item, folder }) => ({ entry: item, folder })),
-            ],
-            metaFor(options, name, categoryId),
-            name,
-            options,
-            // A scene may point at a picked file outside its folder ("../../Shared/mesh.bin").
-            entries,
-          ),
-        );
+        prints.push(await storeModelOf(userId, own.entries, metaFor(options, name, categoryId), name, options));
       } catch (err) {
         console.warn("Zip import: couldn't make a model of", unit.folder, err);
         failed.push(unit.folder);
@@ -514,7 +520,9 @@ export async function extractZipEntriesToFolderModels(
       onProgress?.(++processed, total, prints.length, failed.length);
     }
   } finally {
-    await Promise.all(entries.map((entry) => fs.rm(entry.tempPath, { force: true }).catch(() => undefined)));
+    // The .glbs went into storage with their models, and are still here for one that wasn't made.
+    const temps = [...entries.map((entry) => entry.tempPath), ...glbs];
+    await Promise.all(temps.map((file) => fs.rm(file, { force: true }).catch(() => undefined)));
   }
   if (loose.length) {
     const [before, failedBefore] = [prints.length, failed.length];
