@@ -308,6 +308,19 @@ describe("3DExport specifics", () => {
     ]);
   });
 
+  it("asks for a drawing's zip whatever size the page lists it at, as each file in it is held to the limit", async () => {
+    await connect(ctx.userId);
+    // Over the 100 MB a supporting file may be: a zip's size isn't that of the file in it.
+    const listedLarge = (page: string) =>
+      page.replace("Autodesk ArchiCAD (.dxf) <b>19.48 kb</b>", "Autodesk ArchiCAD (.dxf) <b>101 MB</b>");
+    const stub = ctx.install(handlerFor("ok", { page: listedLarge }));
+    expectStatus(await ctx.importUrl(), 200);
+    expect(callsTo(stub.calls, "/download").map((call) => call.url.searchParams.get("nf"))).toContain("2401621");
+    const [print] = await ctx.prints();
+    const kept = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(kept.map((file) => file.filename)).toContain("Elephant.DXF");
+  });
+
   it("imports nothing of a model with no format a slicer opens", async () => {
     await connect(ctx.userId);
     const none = (page: string) => page.replace(/STEP \(\.step\)|Stereolithography \(\.stl\)/g, "Autodesk FBX (.fbx)");

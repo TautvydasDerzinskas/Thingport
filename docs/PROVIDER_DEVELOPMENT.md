@@ -207,9 +207,8 @@ Rules of thumb:
     takes only the supporting files from a zip, and skips one that's blocked or fails rather than failing the import.
     `kit.supportingLimit()` is null when the admin keeps none: ask nothing then, not even a file list or a signing
     call. Otherwise it's the largest file they keep: skip a file whose size the site lists as bigger before asking for
-    its link, and a zip of one file, as 3DExport gives each format, since what's in it is no smaller. Not a zip that
-    can hold several, though: each may fit where the zip doesn't, and `kit.downloadSupportingFile` holds such a zip to
-    what the model may keep.
+    its link. Not a zip, though, even one of a single file as 3DExport gives each format: its size isn't that of what's
+    in it, and `kit.downloadSupportingFile` holds a zip to what the model may keep and each file in it to the limit.
   - **Beside a print profile:** a model imported as one of its print profiles still brings the files its site lists
     beside it, as NexPrint, eufyMake, Snapmaker, Creality Cloud, VoxelShare and MakerWorld do. MakerWorld spends one
     of the account's daily downloads on its raw files, so only where the design's file list names such a file
