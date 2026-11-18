@@ -1,5 +1,7 @@
+import fs from "node:fs/promises";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
+import { sleep } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { withStorageLock } from "../utils/storageLock";
 import { assetExists, galleryImageFile } from "./modelAssets";
@@ -13,7 +15,7 @@ import {
   type NewPlateInput,
 } from "./printCreation";
 import { removeMissingPrintFiles } from "./printFileService";
-import { removePlatePictures } from "./printService";
+import { managedPlatePath, removePlatePictures } from "./printService";
 import { afterLicenseChange } from "./licenseService";
 import { Prisma, type Plate } from "@prisma/client";
 
@@ -36,10 +38,10 @@ export type ReplacedPlates = {
 
 /** Replaces every plate of the model with `inputs`, and drops the rows of its other files whose files are gone. Throws
  *  when the download holds nothing to print, before anything is removed, so a model is never left with less than it
- *  had -- and a replacement that fails halfway puts the plate rows back, since a model with no plates at all is one
- *  the scan passes over and could never offer a repair again. `stillBroken`, asked with the plate order and the
- *  storage lock held, so neither an upload nor a move changes the plates under it, says whether the model still needs
- *  this; when it doesn't, nothing changes and the answer is null. */
+ *  had -- and a replacement that fails halfway puts the plate rows back (putPlatesBack), since a model with no plates
+ *  at all is one the scan passes over and could never offer a repair again. `stillBroken`, asked with the plate order
+ *  and the storage lock held, so neither an upload nor a move changes the plates under it, says whether the model
+ *  still needs this; when it doesn't, nothing changes and the answer is null. */
 export async function replaceModelPlates(
   userId: string,
   printId: string,
@@ -59,7 +61,7 @@ export async function replaceModelPlates(
 
   // With the plate order held, from the look at the files to the new plates, as an upload's are added: one an upload
   // adds in between would otherwise go with the old rows, seen or not.
-  const swapped = await withPlateBatch(userId, printId, async (add) => {
+  const swapped = await withPlateBatch(userId, printId, async (add, added) => {
     // The look and the old rows' going are one step under the storage lock, which a move holds from renaming a file to
     // saving where it went: a plate whose file came back can't look gone for being on its way somewhere else. Let go
     // before the new plates, whose placing takes it.
@@ -78,9 +80,7 @@ export async function replaceModelPlates(
     } catch (error) {
       // The rows go back pointing at the files that are gone, so the model is left exactly as broken as it was found
       // -- and found again by the next scan.
-      await restorePlates(printId, old).catch((failure: unknown) =>
-        log.error("couldn't put a model's plates back", { print: printId, error: failure }),
-      );
+      await putPlatesBack(printId, old, added);
       throw error;
     }
   });
@@ -132,4 +132,32 @@ export async function replaceModelPlates(
     );
   });
   return { plates, galleryWhole, gallery };
+}
+
+/** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), tried again when
+ *  that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
+ *  there, so the scan would never offer it again: their files go instead, read where they are under the storage lock,
+ *  and the model's plates point at files that aren't there, as when it was found. With the plate order held. */
+async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<void> {
+  let failure: unknown;
+  for (let tries = 0; tries < 3; tries++) {
+    if (tries) await sleep(250 * tries);
+    try {
+      return await restorePlates(printId, old);
+    } catch (err) {
+      failure = err;
+    }
+  }
+  log.error("couldn't put a model's plates back, so the files of the ones a repair made go", {
+    print: printId,
+    error: failure,
+  });
+  await withStorageLock(async () => {
+    const ids = made.map((plate) => plate.id);
+    // Where they are now, a move having taken them elsewhere since; as they were made, if they can't be read.
+    const now = await prisma.plate.findMany({ where: { id: { in: ids } } }).catch(() => made);
+    for (const plate of now) {
+      if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
+    }
+  }).catch((error: unknown) => log.error("couldn't remove a failed repair's files", { print: printId, error }));
 }

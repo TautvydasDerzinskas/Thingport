@@ -642,14 +642,14 @@ export async function addPlatesToPrint(
  * Runs `run` with the model's plate order held until it's done, for a request that adds plates and must take them back
  * when a later step fails: no other change to the model's plates made through the plate order (adding, removing,
  * reordering, merging, a repair of a model whose files are gone) comes in between, so the others are all still there
- * and these can't become the model's only ones. `add` adds plates after the others;
- * when `run` fails, the ones it added are taken back as far as they can be, never the model's last: one that can't be
- * is logged and stays, and `run`'s own error is what the caller gets.
+ * and these can't become the model's only ones. `add` adds plates after the others, and `added` is every plate it has
+ * made so far, one that failed part-way included; when `run` fails, the ones it added are taken back as far as they can
+ * be, never the model's last: one that can't be is logged and stays, and `run`'s own error is what the caller gets.
  */
 export async function withPlateBatch<T>(
   userId: string,
   printId: string,
-  run: (add: (inputs: NewPlateInput[]) => Promise<Plate[]>) => Promise<T>,
+  run: (add: (inputs: NewPlateInput[]) => Promise<Plate[]>, added: readonly Plate[]) => Promise<T>,
 ): Promise<T> {
   return withPlateOrder(printId, async () => {
     // Read once it's this one's turn: where the plates go is the model's place as it is then.
@@ -662,7 +662,7 @@ export async function withPlateBatch<T>(
         const now = await prisma.print.findFirst({ where: { id: printId, userId } });
         if (!now) throw new HttpError(404, "Print not found");
         return addPlatesAfter(now, inputs, added);
-      });
+      }, added);
     } catch (err) {
       await takeBackPlates(printId, added).catch((failure: unknown) =>
         console.error(`Couldn't take back the plates a failed request added to model ${printId}:`, failure),
