@@ -92,7 +92,7 @@ the file, and the instance checks `bridge/package.json` in this repository for t
 
 To see which version you have:
 
-- Windows (PowerShell): `& "$env:LOCALAPPDATA\Programs\Thingport Bridge\thingport-bridge.exe" --version`
+- Windows (PowerShell): `& ((Get-Item 'HKCU:\Software\Microsoft\Windows\CurrentVersion\App Paths\thingport-bridge.exe').GetValue('')) --version`
 - macOS: `~/Applications/Thingport\ Bridge.app/Contents/MacOS/thingport-bridge --version`, or **Get Info** on the app
   in Finder (1.0.1 and older show 1.0 there)
 - Linux: `~/.local/bin/thingport-bridge --version`
