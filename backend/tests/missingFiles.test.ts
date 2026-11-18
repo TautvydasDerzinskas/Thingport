@@ -1156,6 +1156,49 @@ describe("models whose files are gone", () => {
     expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
   });
 
+  /** A repair of `model` stopped part-way, its putting back of the plates failing `failures` times, as the database
+   *  goes away: the read of the plates it made, which comes first, so a failed try changes nothing. The plates it made. */
+  async function repairPutBackFailing(model: Awaited<ReturnType<typeof makePrint>>, failures: number) {
+    const findMany = prisma.plate.findMany.bind(prisma.plate);
+    let failing = 0;
+    const spy = vi.spyOn(prisma.plate, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.plate.findMany>[0],
+    ) => {
+      // The putting back's read, which alone asks for a model's plates in no order.
+      if (failing <= 0 || args?.where?.printId !== model.print.id || args.orderBy) return findMany(args);
+      failing -= 1;
+      return Promise.reject(new Error("the database went away for a moment"));
+    }) as never);
+    try {
+      return await repairStoppedAtSecond(model, async () => {
+        failing = failures;
+      });
+    } finally {
+      failing = 0;
+      spy.mockRestore();
+    }
+  }
+
+  it("puts a model's plates back when a repair stops part-way, though the first try at it fails", async () => {
+    const model = await makePrint(dir, owner.id, "Put back at the second try");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    await repairPutBackFailing(model, 1);
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+  });
+
+  it("leaves a model whose plates can't be put back without the files the repair made, for the next scan", async () => {
+    const model = await makePrint(dir, owner.id, "Never put back");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    const made = await repairPutBackFailing(model, 3);
+    // The plate it made is all the model has, and its file is gone: the model reads as broken as it was found.
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual(made);
+    expect(fs.existsSync(path.join(STORAGE, plates[0].storagePath))).toBe(false);
+    const scan = await scanMissingFiles(owner.id);
+    expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
   it("keeps the plates a merge brings in while a repair runs, though the repair then stops part-way", async () => {
     const model = await makePrint(dir, owner.id, "Merged into meanwhile");
     const other = await makePrint(dir, owner.id, "Merged in meanwhile");
