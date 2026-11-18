@@ -18,7 +18,8 @@ export function bridgeDownloadUrl(asset: string): string {
 
 /** Prints the installed Bridge's version: in PowerShell on Windows, a terminal elsewhere (bridge/README.md#update). */
 export const BRIDGE_VERSION_COMMANDS: Record<BridgeDownload["os"], string> = {
-  windows: "& ((Get-Item 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\thingport-bridge.exe').GetValue('')) --version",
+  windows:
+    "& ((Get-Item 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\thingport-bridge.exe').GetValue('')) --version",
   macos: "~/Applications/Thingport\\ Bridge.app/Contents/MacOS/thingport-bridge --version",
   linux: "~/.local/bin/thingport-bridge --version",
 };
