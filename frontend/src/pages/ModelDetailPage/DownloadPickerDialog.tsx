@@ -11,6 +11,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Skeleton from "@mui/material/Skeleton";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
@@ -27,6 +29,9 @@ import { extOf } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { folderLabel, groupByFolder, hasFolders, shortNames } from "../../utils/fileFolders";
 
+/** Where the picker's supporting files are, while they're read for a card's model. */
+export type SupportingFilesState = "loading" | "failed";
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -36,6 +41,9 @@ type Props = {
   supportingCount?: number;
   /** Those files, each to download on its own where the model's page has them (a card's model has only the count). */
   supportingFiles?: PrintFile[];
+  /** Still being read, or the read failed; unset once they're here. */
+  supportingState?: SupportingFilesState;
+  onRetrySupporting?: () => void;
   downloadSupporting?: (file: PrintFile) => void;
   downloadAllZip: () => void;
   /** One folder of the model's (Plate.folder), with the folders in it, as a zip. */
@@ -54,6 +62,8 @@ export default function DownloadPickerDialog({
   sortedPlates,
   supportingCount = 0,
   supportingFiles = NO_FILES,
+  supportingState,
+  onRetrySupporting,
   downloadSupporting,
   downloadAllZip,
   downloadFolderZip,
@@ -143,7 +153,7 @@ export default function DownloadPickerDialog({
                   </li>
                 ))
               : sortedPlates.map(row)}
-            {downloadSupporting && supportingFiles.length > 0 && (
+            {downloadSupporting && (supportingFiles.length > 0 || (supportingState && supportingCount > 0)) && (
               <li>
                 <Stack
                   direction="row"
@@ -153,9 +163,25 @@ export default function DownloadPickerDialog({
                 >
                   <AttachFileIcon aria-hidden sx={{ fontSize: 16 }} />
                   <Typography variant="caption" fontWeight={700} noWrap sx={{ flex: 1, minWidth: 0 }}>
-                    {t("models:supporting.title")} · {supportingFiles.length}
+                    {t("models:supporting.title")} · {supportingFiles.length || supportingCount}
                   </Typography>
                 </Stack>
+                {supportingState === "loading" && (
+                  <Skeleton variant="rounded" height={48} sx={{ mx: 1, my: 0.75 }} aria-hidden />
+                )}
+                {supportingState === "failed" && (
+                  <Alert
+                    severity="error"
+                    sx={{ mt: 0.75 }}
+                    action={
+                      <Button color="inherit" size="small" onClick={onRetrySupporting}>
+                        {t("common:retry")}
+                      </Button>
+                    }
+                  >
+                    {t("models:supporting.loadFailed")}
+                  </Alert>
+                )}
                 <List disablePadding>
                   {supportingFiles.map((file) => (
                     <ListItemButton
