@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasModelFolderPaths, startingSelection } from "./zipUtils";
+import { hasModelFolderPaths, normalizeZipPath, startingSelection } from "./zipUtils";
 
 const entries = (...paths: string[]) => paths.map((path) => ({ path }));
 
@@ -43,5 +43,13 @@ describe("hasModelFolderPaths", () => {
 
   it("finds none when the model files are loose, or the folders hold none", () => {
     expect(hasModelFolderPaths(["hull.stl", "scene.gltf", "docs/guide.pdf", "docs/scene.bin"])).toBe(false);
+  });
+});
+
+describe("normalizeZipPath", () => {
+  it('drops the folders a "." names, so ./A and A are one folder, and still refuses climbing out', () => {
+    expect(normalizeZipPath("./A/body.stl")).toBe("A/body.stl");
+    expect(normalizeZipPath("A/./docs/guide.pdf")).toBe("A/docs/guide.pdf");
+    expect(normalizeZipPath("A/../x.stl")).toBeNull();
   });
 });

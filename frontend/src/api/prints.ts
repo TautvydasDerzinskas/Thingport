@@ -501,6 +501,9 @@ export const printsApi = {
       createdWithTool?: string;
       /** For one model: each file's folder within the upload ("docs"), or null, in `files` order. */
       folders?: (string | null)[];
+      /** Where each file was in what was picked, for a .gltf's references only, which can reach outside the folder its
+       *  model keeps ("../shared/mesh.bin"): `folders` where it's left out. */
+      sourceFolders?: (string | null)[];
     } = {},
   ): Promise<UploadPrintsResult> => {
     const fd = new FormData();
@@ -516,6 +519,7 @@ export const printsApi = {
     if (opts.origin) fd.set("origin", opts.origin);
     if (opts.createdWithTool) fd.set("created_with_tool", opts.createdWithTool);
     if (opts.folders?.some(Boolean)) fd.set("folders", JSON.stringify(opts.folders));
+    if (opts.sourceFolders?.some(Boolean)) fd.set("source_folders", JSON.stringify(opts.sourceFolders));
     const res = await fetch(`${apiBase()}/upload`, {
       method: "POST",
       body: fd,

@@ -151,15 +151,35 @@ describe("uploading a glTF download", () => {
       [
         entry("Robot/robot.gltf", gltf("robot.bin", "textures/body.png")),
         entry("Robot/robot.bin"),
-        entry("Robot/textures/body.png"),
+        entry("Robot/textures/body.png", "the body"),
         entry("Robot/variant.gltf", gltf("robot.bin", "variant/body.png")),
-        entry("Robot/variant/body.png"),
+        entry("Robot/variant/body.png", "the variant"),
       ],
       null,
     );
     expect(namesSent()).toEqual([["body.png", "body.png", "robot.bin", "robot.gltf", "variant.gltf"]]);
     expect(foldersSent()).toEqual([["textures", "variant", null, null, null]]);
+    // Each texture in its own folder, not swapped for the other of its name.
+    const [files] = upload.mock.calls[0];
+    const textures = await Promise.all(
+      (files as File[]).slice(0, 2).map(async (file, index) => [await file.text(), foldersSent()[0]?.[index]]),
+    );
+    expect(textures).toEqual([
+      ["the body", "textures"],
+      ["the variant", "variant"],
+    ]);
     expect(addPreviewImages).not.toHaveBeenCalled();
+  });
+
+  it("one model per folder: says where each file was in the pick, for a scene naming one outside its folder", async () => {
+    await uploadFoldersAsModels(
+      [entry("Pack/Model/scene.gltf", gltf("../shared/mesh.bin", "base.png")), entry("Pack/shared/mesh.bin")],
+      null,
+    );
+    const [files, opts] = upload.mock.calls[0];
+    const where = new Map((files as File[]).map((file, index) => [file.name, opts?.sourceFolders?.[index]]));
+    expect(where.get("scene.gltf")).toBe("Pack/Model");
+    expect(where.get("mesh.bin")).toBe("Pack/shared");
   });
 
   it("one model per file: the scene goes up with its files, and its textures don't become models", async () => {
@@ -265,6 +285,22 @@ describe("a model's photos", () => {
     expect(one.failed).toEqual(["Frog (nuotraukos)"]);
     const folders = await uploadFoldersAsModels([entry("Toad/toad.stl"), entry("Toad/side.jpg")], null);
     expect(folders.failed).toEqual(["Toad (nuotraukos)"]);
+  });
+
+  it("names a photo the gallery couldn't keep among the failures, not among those uploaded", async () => {
+    addPreviewImages.mockImplementation(async (id) => ({ print: printOf(id), image_ids: ["image-1", null] }));
+    const one = await uploadEntriesAsOneModel(
+      [entry("Frog/body.stl"), entry("Frog/pics/side.png"), entry("Frog/pics/broken.png")],
+      "Frog",
+      null,
+    );
+    expect(one.failed).toEqual(["broken.png"]);
+    expect(one.uploadedEntries.map((each) => each.relativePath)).not.toContain("Frog/pics/broken.png");
+    const folders = await uploadFoldersAsModels(
+      [entry("Toad/toad.stl"), entry("Toad/a.jpg"), entry("Toad/b.jpg")],
+      null,
+    );
+    expect(folders.failed).toEqual(["b.jpg"]);
   });
 
   it("leave a model that went up among those uploaded, though the session ran out before its photos did", async () => {

@@ -1,7 +1,20 @@
+/** A Content-Disposition header's parameters by lowercased name, the first of each: a quoted value read whole, its
+ *  semicolons and all, with \" and \\ for a quote and a backslash. */
+function dispositionParams(header: string): Map<string, string> {
+  const params = new Map<string, string>();
+  for (const match of header.matchAll(/;\s*([^=;\s]+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^;]*))/g)) {
+    const name = match[1].toLowerCase();
+    if (params.has(name)) continue;
+    params.set(name, match[2] !== undefined ? match[2].replace(/\\(.)/g, "$1") : match[3].trim());
+  }
+  return params;
+}
+
 export function filenameFromDisposition(res: Response, fallback: string): string {
-  const dispo = res.headers.get("content-disposition") || "";
-  // A name beyond ASCII comes in filename*, the plain filename holding a stand-in for it.
-  const extended = dispo.match(/filename\*=UTF-8''([^;]+)/i);
+  const params = dispositionParams(res.headers.get("content-disposition") || "");
+  // A name beyond ASCII comes in filename*, the plain filename holding a stand-in for it. Only as a parameter of its
+  // own: a quoted name can hold the same text ("Parts; filename*=UTF-8''notes.csv").
+  const extended = params.get("filename*")?.match(/^UTF-8''(.+)$/i);
   if (extended) {
     try {
       return decodeURIComponent(extended[1]);
@@ -9,11 +22,7 @@ export function filenameFromDisposition(res: Response, fallback: string): string
       // Malformed: the plain one below.
     }
   }
-  // Quoted, a name holds what a bare one can't ("Parts; small.csv"), with \" and \\ for a quote and a backslash.
-  const quoted = dispo.match(/filename="((?:[^"\\]|\\.)*)"/i);
-  if (quoted) return quoted[1].replace(/\\(.)/g, "$1") || fallback;
-  const bare = dispo.match(/filename=([^";\s]+)/i);
-  return (bare && bare[1]) || fallback;
+  return params.get("filename") || fallback;
 }
 
 export async function saveResponseToDisk(res: Response, fallback: string): Promise<void> {

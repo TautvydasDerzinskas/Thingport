@@ -23,6 +23,12 @@ describe("the name a download is saved under", () => {
     );
   });
 
+  it("takes filename* only as a parameter of its own, never from inside a quoted name", () => {
+    expect(named("attachment; filename=\"Parts; filename*=UTF-8''notes.csv; rev2.csv\"")).toBe(
+      "Parts; filename*=UTF-8''notes.csv; rev2.csv",
+    );
+  });
+
   it("falls back to the name it was given when the header names none", () => {
     expect(named("attachment")).toBe("fallback.bin");
     expect(named('attachment; filename=""')).toBe("fallback.bin");

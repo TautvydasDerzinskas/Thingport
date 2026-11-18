@@ -198,6 +198,16 @@ export async function gltfBundles(entries: UploadEntry[]): Promise<Map<UploadEnt
   return bundles;
 }
 
+/** The pictures the gallery took, by the id its answer gave each in turn: one it couldn't keep (null) is named among
+ *  the failures rather than counted as up. An answer without ids, from an older backend, took them all. */
+function photosKept(images: UploadEntry[], ids: (string | null)[] | undefined, failed: string[]): UploadEntry[] {
+  if (!ids) return images;
+  images.forEach((entry, index) => {
+    if (ids[index] === null) failed.push(entry.file.name);
+  });
+  return images.filter((_, index) => ids[index] !== null);
+}
+
 // Larger images than the preview-image endpoint takes are attached to the model as files instead.
 const PREVIEW_IMAGE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "bmp"]);
 const PREVIEW_IMAGE_MAX_BYTES = 8 * 1024 * 1024;
@@ -350,13 +360,12 @@ export async function uploadEntriesAsOneModel(
     let print = result.prints[0];
     if (print && images.length) {
       try {
-        print = (
-          await printsApi.addPreviewImages(
-            print.id,
-            images.map((entry) => entry.file),
-          )
-        ).print;
-        uploadedEntries.push(...images);
+        const added = await printsApi.addPreviewImages(
+          print.id,
+          images.map((entry) => entry.file),
+        );
+        print = added.print;
+        uploadedEntries.push(...photosKept(images, added.image_ids, failed));
       } catch (err) {
         if (err instanceof UnauthorizedError) {
           // Up already, without its photos: still one of those uploaded.
@@ -464,22 +473,30 @@ export async function uploadFoldersAsModels(
         failed.push(folderName);
         continue;
       }
+      // Where each was in the pick, for a scene that names a file outside its model's folder ("../shared/mesh.bin").
+      const sourceFolders = files.map((e) => splitPath(e).join("/") || null);
       const result = await printsApi.upload(
         files.map((e) => e.file),
-        { title: folderName, category_id: categoryId || undefined, mode: "multiplate", notify: !batched, folders },
+        {
+          title: folderName,
+          category_id: categoryId || undefined,
+          mode: "multiplate",
+          notify: !batched,
+          folders,
+          sourceFolders,
+        },
       );
       uploaded += 1;
       uploadedEntries.push(...files);
       let print = result.prints[0];
       if (print && images.length) {
         try {
-          print = (
-            await printsApi.addPreviewImages(
-              print.id,
-              images.map((e) => e.file),
-            )
-          ).print;
-          uploadedEntries.push(...images);
+          const added = await printsApi.addPreviewImages(
+            print.id,
+            images.map((e) => e.file),
+          );
+          print = added.print;
+          uploadedEntries.push(...photosKept(images, added.image_ids, failed));
         } catch (err) {
           if (err instanceof UnauthorizedError) {
             prints.push(print);
