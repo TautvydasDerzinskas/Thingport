@@ -172,6 +172,22 @@ describe("a model made with a site's other files", () => {
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
   });
 
+  it("keeps to a model's limit when two imports bring its files at once", async () => {
+    const made = [input("b.stl", "solid b endsolid")];
+    const { print } = await createPrint(userId, { title: "At once" }, "At once", made);
+    remove(made);
+    limits.value = { perFile: 10, perModel: 15 };
+    const first = [input("one.txt", "x".repeat(10), { supporting: true })];
+    const second = [input("two.txt", "x".repeat(10), { supporting: true })];
+    const kept = await Promise.all([
+      keepSupportingFiles(userId, print.id, first),
+      keepSupportingFiles(userId, print.id, second),
+    ]);
+    remove([...first, ...second]);
+    expect(kept.toSorted()).toEqual([0, 1]);
+    expect(await prisma.printFile.count({ where: { printId: print.id } })).toBe(1);
+  });
+
   it("brings a supporting file back on a repair, where it went with the plates", async () => {
     const made = [input("hook.stl", "solid hook endsolid"), input("guide.pdf", "%PDF one", { supporting: true })];
     const { print } = await createPrint(userId, { title: "Repaired" }, "Repaired", made);

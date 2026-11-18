@@ -38,7 +38,8 @@ import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
-import { supportingImportName, supportingLimits } from "./supportingImports";
+import { supportingImportName, supportingLimits, type SupportingLimits } from "./supportingImports";
+import { createKeyedLock } from "../utils/concurrency";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -258,6 +259,19 @@ export async function keepSupportingFiles(userId: string, printId: string, input
   if (!inputs.length) return 0;
   const limits = await supportingLimits();
   if (!limits) return 0;
+  // One model's at a time, from what's stored to the last save: a repair and a profile's import of the same model would
+  // otherwise both read the same total and each keep a file that fits only alone.
+  return withSupportingAllowance(printId, () => keepWithin(userId, printId, inputs, limits));
+}
+
+const withSupportingAllowance = createKeyedLock();
+
+async function keepWithin(
+  userId: string,
+  printId: string,
+  inputs: NewPlateInput[],
+  limits: SupportingLimits,
+): Promise<number> {
   const keyOf = (filename: string, folder: string | null | undefined) =>
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
   const files = await prisma.printFile.findMany({
