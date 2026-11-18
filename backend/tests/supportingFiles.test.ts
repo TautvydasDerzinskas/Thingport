@@ -7,6 +7,7 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { buildZipEntries } from "../src/services/downloadZip";
+import { normalizeZipEntryPath } from "../src/services/zipService";
 import { renameSupportingFile } from "../src/services/printFileService";
 import { createPrint } from "../src/services/printCreation";
 import { relocatePrint } from "../src/services/printService";
@@ -309,6 +310,47 @@ describe("supporting files", () => {
     const arcnames = (await buildZipEntries(prints)).map((entry) => entry.arcname.replace(/\\/g, "/"));
     expect(new Set(arcnames.map((arcname) => arcname.toLowerCase())).size).toBe(arcnames.length);
     expect(arcnames.filter((arcname) => arcname.endsWith("/own.stl"))).toHaveLength(2);
+  });
+
+  it("keep to a folder of their own in a zip when a category or a model is called . or ..", async () => {
+    const model = await makePrint(dir, owner.id, "Dots");
+    const category = await prisma.category.create({ data: { userId: owner.id, name: ".." } });
+    await prisma.print.update({
+      where: { id: model.print.id },
+      data: { name: ".", nameNormalized: ".", categoryId: category.id },
+    });
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    const arcnames = (await buildZipEntries([print])).map((entry) => entry.arcname);
+    expect(arcnames).toContain("__/_/own.stl");
+    // Each comes back whole through Thingport's own import, which drops a file under "..".
+    for (const arcname of arcnames) expect(normalizeZipEntryPath(arcname)).toBe(arcname);
+  });
+
+  it("each keep a path of their own in a zip, though two plates' differ only in case", async () => {
+    const model = await makePrint(dir, owner.id, "Cased");
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    const [own] = print.plates;
+    // A folder keeps the case it's given and a plate's name is told apart within its folder only, so these can all be
+    // one model's; the third is already called what the second would become.
+    const plates = [
+      { ...own, id: `${own.id}-1`, position: 0, folder: "Parts", filename: "lid.stl" },
+      { ...own, id: `${own.id}-2`, position: 1, folder: "parts", filename: "lid.stl" },
+      { ...own, id: `${own.id}-3`, position: 2, folder: "parts", filename: "lid (2).stl" },
+    ];
+    const arcnames = (await buildZipEntries([{ ...print, plates }]))
+      .map((entry) => entry.arcname)
+      .filter((arcname) => arcname.endsWith(".stl"));
+    expect(arcnames.map((arcname) => arcname.split("/").slice(-2).join("/"))).toEqual([
+      "Parts/lid.stl",
+      "parts/lid (3).stl",
+      "parts/lid (2).stl",
+    ]);
   });
 
   it("keep to their own model's folder in a zip, though another model has its name", async () => {

@@ -393,6 +393,35 @@ describe("uploading and consuming a .gltf", () => {
     expect(json.images).toEqual([{ bufferView: 3, mimeType: "image/png" }]);
   });
 
+  it("packs a .gltf named with a space after it as one without, by the name it's kept by", async () => {
+    const { gltf, bin } = cubeGltf();
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", gltf, { filename: "scene.gltf " })
+      .attach("files", bin, { filename: "scene.bin" });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true, files: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["scene.glb"]);
+    expect(print.files).toHaveLength(0);
+  });
+
+  it("makes a model file named with a space after it a plate, as the app sends it", async () => {
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("solid lid\nendsolid lid\n"), { filename: "lid.stl " })
+      .attach("files", Buffer.from("Print it upright."), { filename: "notes.txt" });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true, files: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["lid.stl"]);
+    expect(print.files.map((f) => [f.filename, f.role])).toEqual([["notes.txt", "SUPPORTING"]]);
+  });
+
   it("packs each scene of one model with the .bin in its own folder, though another folder's has its name", async () => {
     const small = cubeGltf({ edge: 0.02 });
     const large = cubeGltf({ edge: 0.05 });

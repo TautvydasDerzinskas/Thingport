@@ -606,6 +606,40 @@ export async function relocatePrintFile(fileId: string): Promise<boolean> {
   );
 }
 
+/** Moves a plate just stored to where its model's files are now, as relocatePrintFile does a supporting file: one placed
+ *  by the model as read before a rename is passed by the rename's move when that listed the plates before this one had
+ *  a row. The model is read again under the lock for where that is. Its row as it is then when it moved, else null. */
+export async function relocatePlate(plateId: string): Promise<Plate | null> {
+  // The storage structure too, read each time: one saved in between moved the plate by itself already.
+  const placeOf = async (row: Pick<Plate, "printId" | "filename" | "position" | "folder">) => {
+    const print = await prisma.print.findUnique({ where: { id: row.printId } });
+    if (!print) return null;
+    const template = validateStorageTemplate(await getStorageTemplate());
+    const values = await printTemplateValues(print, template);
+    return renderFilePath(print, template, values, row.filename, row.position, row.folder);
+  };
+  const row = await prisma.plate.findUnique({ where: { id: plateId } });
+  // In place by this read, which comes after its row was made: a change since then moves it with the rest.
+  if (!row || row.storagePath === (await placeOf(row))) return null;
+  let moved: Plate | null = null;
+  await moveStored(
+    async () => {
+      const now = await prisma.plate.findUnique({ where: { id: plateId } });
+      const place = now && (await placeOf(now));
+      if (!now || !place) return null;
+      // Where it already is counts as free, so a plate put aside by freePlatePath stays put.
+      return {
+        from: now.storagePath,
+        to: samePath(now.storagePath, place) ? place : await freePlatePath(place, now.printId, { plateId: now.id }),
+      };
+    },
+    async (to) => {
+      moved = await prisma.plate.update({ where: { id: plateId }, data: { storagePath: to } });
+    },
+  );
+  return moved;
+}
+
 /** Every picture the model has: its gallery images and their card-sized copies, its description images, and each
  *  plate's thumbnail, render and 3D preview. Slicer copies aren't brought over from the old shared folder: they're
  *  made again when next needed. */

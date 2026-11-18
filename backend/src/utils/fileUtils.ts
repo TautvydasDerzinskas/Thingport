@@ -8,8 +8,14 @@ import { IMPORT_ALLOWED_EXTS } from "../config";
 // oxlint-disable-next-line no-control-regex -- stripping control chars is the point here.
 const CONTROL_CHARS_RE = /[\u0000-\u001f\u007f-\u009f]/g;
 
+/** A file's name without what sanitizeFilename drops first: control characters, and spaces at either end. What a
+ *  file is is told from this, as it's what it's kept as ("scene.gltf " is a .gltf). */
+export function trimFilename(name: string | null | undefined): string {
+  return (name || "").replace(CONTROL_CHARS_RE, "").trim();
+}
+
 export function sanitizeFilename(name: string | null | undefined): string {
-  let cleaned = (name || "").replace(CONTROL_CHARS_RE, "").trim();
+  let cleaned = trimFilename(name);
   cleaned = cleaned.replace(/\//g, "_").replace(/\\/g, "_");
   cleaned = path.basename(cleaned);
   return cleaned || "imported-file";

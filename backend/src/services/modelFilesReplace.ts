@@ -1,12 +1,13 @@
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { HttpError } from "../utils/fileUtils";
+import { withStorageLock } from "../utils/storageLock";
 import { assetExists, galleryImageFile } from "./modelAssets";
 import {
-  deletePlateFiles,
   isGeneratorScript,
   keepGeneratorScripts,
   refreshAutoPreparedMetadata,
+  restorePlates,
   withPlateBatch,
   type NewPlateInput,
 } from "./printCreation";
@@ -27,13 +28,17 @@ export type ReplacedPlates = {
   plates: Plate[];
   /** Whether every picture the model has is still on disk, so the gallery needn't be fetched again. */
   galleryWhole: boolean;
+  /** The pictures that was asked of, by id: the ones a gallery fetched again replaces. One added since is the owner's,
+   *  and stays. */
+  gallery: string[];
 };
 
 /** Replaces every plate of the model with `inputs`, and drops the rows of its other files whose files are gone. Throws
  *  when the download holds nothing to print, before anything is removed, so a model is never left with less than it
  *  had -- and a replacement that fails halfway puts the plate rows back, since a model with no plates at all is one
- *  the scan passes over and could never offer a repair again. `stillBroken`, asked once the plates can't change under
- *  it, says whether the model still needs this; when it doesn't, nothing changes and the answer is null. */
+ *  the scan passes over and could never offer a repair again. `stillBroken`, asked with the plate order and the
+ *  storage lock held, so neither an upload nor a move changes the plates under it, says whether the model still needs
+ *  this; when it doesn't, nothing changes and the answer is null. */
 export async function replaceModelPlates(
   userId: string,
   printId: string,
@@ -52,12 +57,19 @@ export async function replaceModelPlates(
   // With the plate order held, from the look at the files to the new plates, as an upload's are added: one an upload
   // adds in between would otherwise go with the old rows, seen or not.
   const swapped = await withPlateBatch(userId, printId, async (add) => {
-    if (!(await stillBroken())) return null;
-    if (!plateInputs.length) throw new HttpError(400, "The source gave nothing to print");
-    const old = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
-    // Only the rows go before the download is in place, so the new files take the names and paths the model's own
-    // had: adding walks around a name a plate still holds, and would bring every file back as "name (1)".
-    await prisma.plate.deleteMany({ where: { printId } });
+    // The look and the old rows' going are one step under the storage lock, which a move holds from renaming a file to
+    // saving where it went: a plate whose file came back can't look gone for being on its way somewhere else. Let go
+    // before the new plates, whose placing takes it.
+    const old = await withStorageLock(async () => {
+      if (!(await stillBroken())) return null;
+      if (!plateInputs.length) throw new HttpError(400, "The source gave nothing to print");
+      const rows = await prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } });
+      // Only the rows go before the download is in place, so the new files take the names and paths the model's own
+      // had: adding walks around a name a plate still holds, and would bring every file back as "name (1)".
+      await prisma.plate.deleteMany({ where: { printId } });
+      return rows;
+    });
+    if (!old) return null;
     try {
       return { old, plates: await add(plateInputs) };
     } catch (error) {
@@ -95,24 +107,5 @@ export async function replaceModelPlates(
   const galleryWhole =
     print.previewImages.length > 0 &&
     print.previewImages.every((image) => assetExists(assetsPath, galleryImageFile(image.id)));
-  return { plates, galleryWhole };
-}
-
-/** The plates as they were before a replacement that didn't finish: whatever it managed to store goes, files and
- *  all, and the rows taken down at the start take their place. Nothing else of the model's has been touched by
- *  then, so the plates are all there is to put back. */
-async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
-  const half = await prisma.plate.findMany({ where: { printId } });
-  for (const plate of half) await deletePlateFiles(plate);
-  await prisma.plate.deleteMany({ where: { printId } });
-  await prisma.plate.createMany({
-    // The printability check, the profile and the format are nullable Json, which Prisma writes with a null of its own
-    // (providers/connections).
-    data: previous.map((plate) => ({
-      ...plate,
-      qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
-      profile: plate.profile === null ? Prisma.DbNull : (plate.profile as Prisma.InputJsonValue),
-      format: plate.format === null ? Prisma.DbNull : (plate.format as Prisma.InputJsonValue),
-    })),
-  });
+  return { plates, galleryWhole, gallery: print.previewImages.map((image) => image.id) };
 }

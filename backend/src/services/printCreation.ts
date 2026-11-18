@@ -15,6 +15,7 @@ import {
   ensurePlateThumbnail,
   managedPlatePath,
   pruneEmptyStorageDirs,
+  relocatePlate,
   relocatePrint,
   removeAssetHome,
   assetOwnerIds,
@@ -175,7 +176,8 @@ export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourceP
 /** What a model's first plate reads as when it's a sliced print, which stands for a prepared print where the model has
  *  none of its own; null when it isn't one. `first`, the plate that is or will be first; the first plate by default.
  *  Its file is found under the storage lock, as a move renames a file before it saves where it went, and read once more
- *  where a move took it elsewhere while it was being read. */
+ *  where a move took it elsewhere while it was being read: looked for under the lock too, so a move that has renamed
+ *  it has saved where by then. */
 async function firstPlateReading(
   printId: string,
   first?: Plate | null,
@@ -191,7 +193,9 @@ async function firstPlateReading(
     if (!found?.filePath) break;
     const sniffed = await inspectPreparedPrint(found.filePath, found.plate.filename);
     if (sniffed) return sniffed as unknown as Prisma.InputJsonValue;
-    const after = await prisma.plate.findUnique({ where: { id: plate0.id }, select: { storagePath: true } });
+    const after = await withStorageLock(() =>
+      prisma.plate.findUnique({ where: { id: plate0.id }, select: { storagePath: true } }),
+    );
     if (after?.storagePath === found.plate.storagePath) break;
   }
   return Prisma.JsonNull;
@@ -233,7 +237,9 @@ async function createPlateAtPosition(
   const desiredFilename = await availablePlateFilename(print.id, sanitized, undefined, folder);
   const storagePath = await renderPlateStoragePath(print, desiredFilename, position, folder);
   const destAbsPath = path.join(STORAGE, storagePath);
-  const { effectivePath, contentSha256, marker } = await placePlateFile(input, destAbsPath);
+  const placed = await placePlateFile(input, destAbsPath);
+  const { contentSha256, marker } = placed;
+  let effectivePath = placed.effectivePath;
   const size = await resolveSize(input, effectivePath);
   const mime = input.mime || guessMimeFromPath(desiredFilename) || "application/octet-stream";
 
@@ -259,6 +265,16 @@ async function createPlateAtPosition(
     // e.g. a concurrent import of the same profile won; don't orphan the placed file.
     if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
     throw err;
+  }
+  // To where the model's files are now: a rename of it while this was stored moved the plates it found, which this one
+  // wasn't among yet. Its file stays where it was put if it can't move, as one saved before a rename would.
+  const moved = await relocatePlate(record.id).catch((err: unknown) => {
+    console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
+    return null;
+  });
+  if (moved) {
+    record = moved;
+    if (effectivePath === destAbsPath) effectivePath = managedPlatePath(moved);
   }
 
   try {
@@ -535,11 +551,12 @@ export async function addPlatesToPrint(
 }
 
 /**
- * Runs `run` with the model's plate order held until it's done, for a request that adds plates and must take them all
- * back when a later step fails: no other change to the model's plates made through the plate order (adding, removing,
- * reordering) comes in between, so the others are all still there and these can't become the model's only ones. A
- * repair of a model whose files are gone, and a merge, change plates outside it. `add` adds plates after the others;
- * when `run` fails, every one it added goes again.
+ * Runs `run` with the model's plate order held until it's done, for a request that adds plates and must take them back
+ * when a later step fails: no other change to the model's plates made through the plate order (adding, removing,
+ * reordering, a repair of a model whose files are gone) comes in between, so the others are all still there and these
+ * can't become the model's only ones. A merge changes plates outside it. `add` adds plates after the others;
+ * when `run` fails, the ones it added are taken back as far as they can be, never the model's last: one that can't be
+ * is logged and stays, and `run`'s own error is what the caller gets.
  */
 export async function withPlateBatch<T>(
   userId: string,
@@ -621,6 +638,36 @@ async function afterPlatesRemoved({ plates, home }: RemovedPlates): Promise<void
     await pruneEmptyStorageDirs(path.dirname(managedPlatePath(plate))).catch(() => undefined);
     await removePlatePictures(plate.id, home).catch(() => undefined);
   }
+}
+
+/**
+ * The model's plates put back as `previous` were, after a replacement of them that stopped part-way
+ * (modelFilesReplace): the plates it made go, files, pictures and all, and `previous` take their place in the same
+ * transaction, so the model is never left with neither. Under the storage lock, the rows read there, as
+ * removePlateRows does. With the plate order held.
+ */
+export async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
+  const removed = await withStorageLock(async () => {
+    // Before anything goes: a read that fails then leaves the plates as they are, to put back again.
+    const home = await printAssetHome(printId);
+    const made = await prisma.plate.findMany({ where: { printId } });
+    await prisma.$transaction([
+      prisma.plate.deleteMany({ where: { printId } }),
+      prisma.plate.createMany({
+        // The printability check, the profile and the format are nullable Json, which Prisma writes with a null of its
+        // own (providers/connections).
+        data: previous.map((plate) => ({
+          ...plate,
+          qualityCheck: plate.qualityCheck === null ? Prisma.DbNull : (plate.qualityCheck as Prisma.InputJsonValue),
+          profile: plate.profile === null ? Prisma.DbNull : (plate.profile as Prisma.InputJsonValue),
+          format: plate.format === null ? Prisma.DbNull : (plate.format as Prisma.InputJsonValue),
+        })),
+      }),
+    ]);
+    for (const plate of made) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
+    return { plates: made, home };
+  });
+  await afterPlatesRemoved(removed);
 }
 
 /** Removes one of the model's plates and its file. The only plate can't go: the model is deleted instead. */
