@@ -73,8 +73,11 @@ export async function replaceModelPlates(
   // Of the other files, the rows whose files are gone go, whatever took them. A supporting file or prepared print
   // still on disk stays -- the owner's own among them, which no source can give back -- and a new plate whose name one
   // of them holds lands beside it rather than over it (printService's freePlatePath reads them too). The source's
-  // scripts come back below where theirs went.
-  await removeMissingPrintFiles(printId);
+  // scripts come back below where theirs went. Best-effort: the plates are in, so the scan won't offer this model again,
+  // and the steps after it must still run; a row left behind is only one the next sweep takes.
+  await removeMissingPrintFiles(printId).catch((error: unknown) =>
+    log.error("couldn't sweep a repaired model's missing files", { print: printId, error }),
+  );
   await keepGeneratorScripts(userId, printId, scripts);
   await refreshAutoPreparedMetadata(printId);
   // LICENSE.txt is written again when it went too.
