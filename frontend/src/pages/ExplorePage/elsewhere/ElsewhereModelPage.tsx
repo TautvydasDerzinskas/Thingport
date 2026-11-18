@@ -137,11 +137,14 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
     const file = supporting.find((item) => item.key === key);
     if (file) void download(file);
   };
+  // What the download panel offers: the model's files, or its supporting files where those alone can be had, so the
+  // ZIP of them is still there.
+  const offered = files.length ? files : supporting;
   // The first a slicer opens, until one is picked.
   const selected =
-    files.find((file) => file.key === selectedKey) ??
-    files.find((file) => SLICES.has(extOf(file.filename))) ??
-    files[0] ??
+    offered.find((file) => file.key === selectedKey) ??
+    offered.find((file) => SLICES.has(extOf(file.filename))) ??
+    offered[0] ??
     null;
 
   const copied = useCallback(
@@ -323,10 +326,10 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
           {(files.length > 0 || model.library_copy_id) && (
             <RemoteCopyPanel key={model.id} model={model} onCopied={copied} onUnauthorized={onUnauthorized} />
           )}
-          {files.length > 0 ? (
+          {offered.length > 0 ? (
             <>
-              {selected && files.length > 1 && (
-                <ModelFileSelect files={files} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
+              {selected && offered.length > 1 && (
+                <ModelFileSelect files={offered} selected={selected} onSelect={(file) => setSelectedKey(file.key)} />
               )}
               {selected && (
                 <OpenInSlicerButton
