@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
-import { HttpError, sanitizeFilename, guessMimeFromPath } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename, guessMimeFromPath, trimFilename } from "../utils/fileUtils";
 import { IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS, UPLOADABLE_EXTS } from "../config";
 import { listZipEntries as listRawZipEntries, readZipEntry } from "../utils/zipReader";
 import { validateParentCategory } from "./categoryService";
@@ -16,6 +16,7 @@ import { localizeDescriptionImages } from "./descriptionImageService";
 import { getPhotosPerModel } from "./settingsService";
 import { createPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import { isPreparedPrintFilename } from "./preparedPrint";
+import { isGltfName, packGltfFiles } from "./gltfPacker";
 import type { Print, Plate, PreviewImage } from "@prisma/client";
 
 export type ZipEntrySummary = { path: string; size: number };
@@ -272,14 +273,60 @@ async function readPickedEntries(
   return { entries, failed };
 }
 
+type ModelEntry = { entry: PickedEntry; folder: string | null };
+
+/** One model of `picked`, each .gltf among them packed first with the files it points at (withScenesPacked). */
+async function createModelOf(
+  userId: string,
+  picked: ModelEntry[],
+  meta: PrintMetaInput,
+  nameHint: string,
+  options: ZipExtractOptions,
+): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
+  const { entries, glbs } = await withScenesPacked(picked);
+  try {
+    return await storeModelOf(userId, entries, meta, nameHint, options);
+  } finally {
+    // Moved into storage when the model was made; still here when it wasn't.
+    await Promise.all(glbs.map((glb) => fs.rm(glb, { force: true }).catch(() => undefined)));
+  }
+}
+
+/** `entries` with each .gltf packed, with the files it points at, into one .glb in its place, as an upload's is
+ *  (uploadService's withGltfPacked): kept as it is, a scene would point at files its model doesn't have. They're found
+ *  by their paths in the zip, so a scene takes the .bin in its own folder. `glbs`, the temp files made. */
+async function withScenesPacked(entries: ModelEntry[]): Promise<{ entries: ModelEntry[]; glbs: string[] }> {
+  if (!entries.some(({ entry }) => isGltfName(entry.filename))) return { entries, glbs: [] };
+  const { files } = await packGltfFiles(
+    entries.map((item) => ({ name: item.entry.name, path: item.entry.tempPath, item })),
+    () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
+    (gltf, glbPath, glbName) => ({
+      name: glbName,
+      path: glbPath,
+      item: {
+        ...gltf.item,
+        entry: {
+          ...gltf.item.entry,
+          filename: trimFilename(gltf.item.entry.filename).replace(/\.gltf$/i, ".glb"),
+          tempPath: glbPath,
+        },
+      },
+    }),
+  );
+  return {
+    entries: files.map((file) => file.item),
+    glbs: files.filter((file) => !entries.includes(file.item)).map((file) => file.path),
+  };
+}
+
 /** One model of `entries`, its plates found as an upload finds them (uploadService's plateFilesOf): its model files
  *  that aren't sliced, a sliced 3MF beside them kept as a supporting file; else its sliced 3MFs, printed from all the
  *  same; else what can be a model on its own, such as a picture, an SVG or a GIF. A script goes along with any of
  *  them, pictures beside model files are its photos, and the rest are supporting files, each in its folder below the
  *  folders the model's own files share. With none of those, there's no model to make. */
-async function createModelOf(
+async function storeModelOf(
   userId: string,
-  entries: { entry: PickedEntry; folder: string | null }[],
+  entries: ModelEntry[],
   meta: PrintMetaInput,
   nameHint: string,
   options: ZipExtractOptions,
@@ -308,9 +355,31 @@ async function createModelOf(
     throw new HttpError(400, "None of the picked files can be a model: pick a model file (STL, 3MF, STEP…) too.");
   }
   const { print, plates } = await createPrint(userId, meta, nameHint, withoutModelsSharedTop(inputs));
+  // The model is stored, and what's left only adds its pictures: a step that fails is logged, so an import never says
+  // it failed for a model it made.
+  const didNot = (step: string) => (err: unknown) =>
+    console.warn(`Zip import: couldn't ${step} of model ${print.id}:`, err);
+  await addPicturesOf(print.id, plates[0]?.id, photos, options).catch(didNot("add the pictures"));
+  await localizeDescriptionImages(print.id).catch(didNot("keep the description's pictures"));
+  const previewImages = await prisma.previewImage
+    .findMany({ where: { printId: print.id }, orderBy: { position: "asc" } })
+    .catch((err: unknown): PreviewImage[] => {
+      didNot("read back the pictures")(err);
+      return [];
+    });
+  return { ...print, plates, previewImages };
+}
+
+/** A new model's pictures: the page's, then the zip's photos, as many as an import keeps. */
+async function addPicturesOf(
+  printId: string,
+  plateId: string | undefined,
+  photos: ModelEntry[],
+  options: ZipExtractOptions,
+): Promise<void> {
   const fromPage = await attachImportedPreviewImages(
-    print.id,
-    plates[0]?.id,
+    printId,
+    plateId,
     options.previewImageUrl,
     options.galleryImages ?? [],
   );
@@ -321,20 +390,14 @@ async function createModelOf(
   for (const { entry } of photos) {
     if (stored >= keep) break;
     const buffer = await fs.readFile(entry.tempPath).catch(() => null);
-    if (!buffer || !(await addPreviewImage(print.id, buffer, { keepExif: true }))) continue;
+    if (!buffer || !(await addPreviewImage(printId, buffer, { keepExif: true }))) continue;
     stored++;
     // The page's own pictures come first; a zip's stand in for none.
     if (!preferred) {
       preferred = true;
-      await preferImageOverRenders(print.id, plates[0]?.id, buffer, true);
+      await preferImageOverRenders(printId, plateId, buffer, true);
     }
   }
-  await localizeDescriptionImages(print.id);
-  const previewImages = await prisma.previewImage.findMany({
-    where: { printId: print.id },
-    orderBy: { position: "asc" },
-  });
-  return { ...print, plates, previewImages };
 }
 
 function metaFor(options: ZipExtractOptions, title: string | null, categoryId: string | null): PrintMetaInput {

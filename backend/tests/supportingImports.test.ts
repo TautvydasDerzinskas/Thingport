@@ -42,6 +42,19 @@ vi.mock("../src/services/supportingImports", async (importOriginal) => {
     },
   };
 });
+// The next keeping of a new model's description pictures fails, once.
+const pictures = vi.hoisted(() => ({ localizeFails: false }));
+vi.mock("../src/services/descriptionImageService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/descriptionImageService")>();
+  return {
+    ...actual,
+    localizeDescriptionImages: async (...args: Parameters<typeof actual.localizeDescriptionImages>) => {
+      if (!pictures.localizeFails) return actual.localizeDescriptionImages(...args);
+      pictures.localizeFails = false;
+      throw new Error("the description's pictures couldn't be read");
+    },
+  };
+});
 
 const app = createApp();
 let userId: string;
@@ -272,6 +285,47 @@ describe("one model of a zip from a link", () => {
     await expect(extractZipEntriesToOneModel(userId, documents, "notes.zip", ["notes.txt"], {})).rejects.toThrow(
       "None of the picked files can be a model",
     );
+  });
+
+  it("packs a glTF scene with the files it points at into one .glb, as an upload does", async () => {
+    const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
+    const texture = await sharp({ create: { width: 2, height: 2, channels: 3, background: "#808080" } })
+      .png()
+      .toBuffer();
+    const scene = JSON.stringify({
+      asset: { version: "2.0" },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0 }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      buffers: [{ uri: "mesh.bin", byteLength: positions.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [1, 1, 0] }],
+      images: [{ uri: "textures/skin.png" }],
+    });
+    const names = ["Frog/scene.gltf", "Frog/mesh.bin", "Frog/textures/skin.png", "Frog/notes.txt"];
+    const zip = await zipOf({
+      [names[0]]: scene,
+      [names[1]]: positions,
+      [names[2]]: texture,
+      [names[3]]: "print upright",
+    });
+    const [made] = (await extractZipEntriesToOneModel(userId, zip, "frog.zip", names, {})).prints;
+    expect(plateNames(made)).toEqual(["scene.glb"]);
+    // Its buffer and texture are inside it, neither a supporting file nor a photo.
+    expect(await filesOf(made.id)).toEqual([[null, "notes.txt", "SUPPORTING"]]);
+    expect(made.previewImages.filter((image) => !image.generated)).toEqual([]);
+    const glb = fs.readFileSync(path.join(STORAGE, made.plates[0].storagePath));
+    expect(glb.subarray(0, 4).toString()).toBe("glTF");
+  });
+
+  it("keeps the model and says so when a step after it's stored fails", async () => {
+    const zip = await zipOf({ "solo.stl": "solid solo endsolid" });
+    pictures.localizeFails = true;
+    const { prints } = await extractZipEntriesToOneModel(userId, zip, "solo.zip", ["solo.stl"], {});
+    expect(pictures.localizeFails).toBe(false);
+    expect(plateNames(prints[0])).toEqual(["solo.stl"]);
+    expect(await prisma.print.count({ where: { id: prints[0].id } })).toBe(1);
   });
 });
 
