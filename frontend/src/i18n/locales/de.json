@@ -118,8 +118,69 @@
       "makeronlineListWaiting_one": "{{count}} Modell wartet auf Thingport Grab: Öffne damit makeronline.com, und schon ist es da",
       "makeronlineListWaiting_other": "{{count}} Modelle warten auf Thingport Grab: Öffne damit makeronline.com, und schon sind sie da"
     },
+    "zipImport": {
+      "title": "ZIP importieren",
+      "chooseFilesTitle": "Dateien auswählen",
+      "prompt": "Was soll mit dieser ZIP-Datei passieren?",
+      "importAsZip": "Als ZIP importieren",
+      "importAndUnzip": "Importieren und entpacken",
+      "reading": "ZIP wird gelesen …",
+      "selectedCount": "{{selected}} von {{total}} ausgewählt",
+      "selectAll": "Alle auswählen",
+      "clear": "Abwählen",
+      "noFiles": "In dieser ZIP-Datei wurden keine Dateien gefunden.",
+      "importSelected": "Ausgewählte importieren",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "readError": "Der Inhalt der ZIP-Datei konnte nicht gelesen werden",
+      "importError": "Import fehlgeschlagen",
+      "selectAtLeastOne": "Wähle mindestens eine Datei zum Importieren aus."
+    },
+    "collectionImport": {
+      "title": "Sammlung importieren",
+      "loading": "Sammlung wird geladen …",
+      "loadError": "Diese Sammlung konnte nicht geladen werden",
+      "selectedCount": "{{selected}} von {{total}} ausgewählt",
+      "selectAll": "Alle auswählen",
+      "clear": "Abwählen",
+      "alreadyImported": "Schon in der Bibliothek",
+      "blocked": "Kann nicht importiert werden",
+      "noEntries": "In dieser Sammlung wurden keine Modelle gefunden.",
+      "importSelected": "Ausgewählte importieren",
+      "importing": "Wird importiert …",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "importError": "Import fehlgeschlagen",
+      "selectAtLeastOne": "Wähle mindestens ein Modell zum Importieren aus.",
+      "truncatedNotice": "Die ersten {{loaded}} von {{total}} Modellen dieser Sammlung wurden geladen."
+    },
+    "importMode": {
+      "title": "{{count}} Dateien importieren",
+      "prompt": "Wie sollen diese Dateien importiert werden?",
+      "separateTitle": "Als einzelne Drucke importieren",
+      "separateDesc": "Jede Datei wird ein eigener Druck mit einer Platte.",
+      "multiplateTitle": "Als ein Modell mit mehreren Dateien importieren",
+      "multiplateDesc": "Alle Dateien kommen in der gewählten Reihenfolge in ein neues Modell.",
+      "importing": "Wird importiert …",
+      "close": "Schließen",
+      "importError": "Import fehlgeschlagen",
+      "folders": {
+        "title": "Ordner importieren ({{count}} Dateien)",
+        "prompt": "Wie sollen die Modelle in diesen Ordnern importiert werden?",
+        "separateTitle": "Jede Modelldatei ist ein eigenes Modell",
+        "separateDesc": "Jede STL-, 3MF-, STEP- oder OBJ-Datei wird ein eigenes Modell. Jeder Ordner wird ein Ordner.",
+        "multiplateTitle": "Jeder Ordner ist ein Modell",
+        "multiplateDesc": "Ein Ordner mit Modelldateien wird ein einzelnes Modell mit dem Namen des Ordners. Seine Modelldateien werden zu Platten, seine Bilder zu Vorschaubildern, und andere Dateien werden angehängt."
+      }
+    },
     "tagInput": {
       "removeTag": "{{tag}} entfernen"
+    },
+    "retiredMakerworldCookie": {
+      "title": "Diese MakerWorld-Anmeldung behalten?",
+      "message": "Eine ältere Thingport-Version hat in diesem Browser eine MakerWorld-Anmeldung gespeichert. Speichere sie nur dann im Konto von {{name}}, wenn es deine ist: In einem gemeinsam genutzten Browser kann sie jemand anderem gehören.",
+      "keep": "In meinem Konto speichern",
+      "discard": "Verwerfen"
     },
     "addMenu": {
       "uploadFiles": "Dateien hochladen",
@@ -150,6 +211,55 @@
       "serviceConnected": "{{service}}: verbunden",
       "serviceNotConnected": "{{service}}: nicht verbunden",
       "myModels": "Meine Modelle"
+    },
+    "notifications": {
+      "label": "Benachrichtigungen",
+      "empty": "Noch keine Benachrichtigungen.",
+      "viewSource": "Quelle ansehen",
+      "justNow": "Gerade eben",
+      "minutesAgo_one": "vor {{count}} Minute",
+      "minutesAgo_other": "vor {{count}} Minuten",
+      "hoursAgo_one": "vor {{count}} Stunde",
+      "hoursAgo_other": "vor {{count}} Stunden",
+      "daysAgo_one": "vor {{count}} Tag",
+      "daysAgo_other": "vor {{count}} Tagen",
+      "clearAll": "Alle löschen",
+      "clearAllConfirm": "Alle deine Benachrichtigungen löschen? Das kann nicht rückgängig gemacht werden.",
+      "viewAll": "Alle ansehen",
+      "delete": "Benachrichtigung löschen",
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "loadFailed": "Benachrichtigungen konnten nicht geladen werden.",
+      "retention": "Gelesene Benachrichtigungen werden nach 30 Tagen gelöscht, ungelesene nach 90.",
+      "tabAll": "Alle",
+      "tabUnread": "Ungelesen",
+      "tabSystem": "System",
+      "emptyUnread": "Du bist auf dem neuesten Stand.",
+      "emptySystem": "Keine Ankündigungen von Thingport.",
+      "clearUnreadConfirm": "Alle ungelesenen Benachrichtigungen löschen? Das kann nicht rückgängig gemacht werden.",
+      "clearSystemConfirm": "Alle Systembenachrichtigungen löschen? Sie werden nicht erneut gesendet. Das kann nicht rückgängig gemacht werden.",
+      "messages": {
+        "importFailed": "Ein Modell konnte nicht importiert werden",
+        "alreadyInLibrary": "„{{name}}“ ist schon in deiner Bibliothek",
+        "imported": "„{{name}}“ importiert",
+        "profileAdded": "Weiteres Druckprofil zu „{{name}}“ hinzugefügt",
+        "importedModels_one": "{{count}} Modell importiert",
+        "importedModels_other": "{{count}} Modelle importiert",
+        "importRun_one": "{{done}} von {{count}} Modell importiert",
+        "importRun_other": "{{done}} von {{count}} Modellen importiert",
+        "importRunFrom_one": "{{done}} von {{count}} Modell von {{site}} importiert",
+        "importRunFrom_other": "{{done}} von {{count}} Modellen von {{site}} importiert",
+        "bridgeUpdate": "Thingport Bridge {{version}} ist verfügbar",
+        "migrateDone_one": "Migration abgeschlossen: {{count}} Modell wurde übernommen",
+        "migrateDone_other": "Migration abgeschlossen: {{count}} Modelle wurden übernommen",
+        "migrateFailed": "Eine Migration wurde abgebrochen",
+        "achievementUnlocked": "Erfolg freigeschaltet: {{name}} · {{tier}}",
+        "achievementsUnlocked_one": "{{count}} Erfolg freigeschaltet",
+        "achievementsUnlocked_other": "{{count}} Erfolge freigeschaltet",
+        "achievementsCredited_one": "Du hast bisher {{count}} Erfolg erreicht",
+        "achievementsCredited_other": "Du hast bisher {{count}} Erfolge erreicht",
+        "storageFreed": "{{size}} Speicher freigegeben"
+      }
     },
     "search": {
       "placeholder": "Modelle, Sammlungen, Tags durchsuchen …",
@@ -202,6 +312,362 @@
       "noCommand": "Kein Befehl mit diesem Namen. Gib nur ! ein, um alle zu sehen.",
       "builtInCollection": "Eingebaute Sammlung",
       "sectionPages": "Seiten"
+    },
+    "aiRunProgress": {
+      "starting": "KI-Kategorisierung wird gestartet …",
+      "label": "{{phrase}} {{done}} von {{total}}",
+      "phrases": [
+        "Modelle werden gethingportet …",
+        "Jedes Modell bekommt ein Zuhause …",
+        "Das Regal wird sortiert …",
+        "Die Schubladen werden beschriftet …",
+        "Die KI wird gefragt, wo das hier hingehört …",
+        "Die Filamentspule wird entwirrt …",
+        "Teile kommen in ihre Kisten …",
+        "Modelle werden ordentlich gestapelt …",
+        "Tetris mit deiner Bibliothek …",
+        "Benchy erfährt, dass er zu den Booten gehört …"
+      ],
+      "stopping": "Wird nach dem aktuellen Modell gestoppt …",
+      "stop": "Kategorisieren stoppen",
+      "descriptions": {
+        "starting": "Verbesserung der Beschreibungen wird gestartet …",
+        "label": "{{phrase}} {{done}} von {{total}}",
+        "phrases": [
+          "Beschreibungen werden gethingportet …",
+          "Formulierungen werden poliert …",
+          "Stützstrukturen werden aus dem Text entfernt …",
+          "Holprige Absätze werden glattgeschliffen …",
+          "Eigenwerbung wird verscheucht …",
+          "Tippfehler werden mit einem winzigen Inbus behoben …",
+          "Das Unübersetzbare wird übersetzt …",
+          "Bandwurmsätze werden neu gesliced …",
+          "Jeder Absatz wird neu nivelliert …",
+          "Fäden zwischen den Wörtern werden abgeschnitten …"
+        ],
+        "stop": "Verbesserung der Beschreibungen stoppen"
+      }
+    },
+    "importQueue": {
+      "title": "Importwarteschlange",
+      "titleEveryone": "Importwarteschlange des Servers",
+      "importingNow": "{{count}} werden gerade importiert",
+      "settings": "Einstellungen der Warteschlange",
+      "sectionsLabel": "Bereiche der Warteschlange",
+      "autoStart": "Links aus Grab automatisch starten",
+      "autoStartOn": "Neue Links kommen direkt in die Reihe.",
+      "autoStartOff": "Neue Links bleiben angehalten, bis du sie startest.",
+      "scope": {
+        "label": "Wessen Importe",
+        "mine": "Meine",
+        "everyone": "Alle"
+      },
+      "people": "Personen",
+      "everyone": "Alle",
+      "loadFailed": "Die Importwarteschlange konnte nicht geladen werden.",
+      "sentFromGrab": "Von Thingport Grab gesendet",
+      "untitled": "Import ohne Titel",
+      "sections": {
+        "run": "Wird importiert",
+        "att": "Braucht Aufmerksamkeit",
+        "wait": "Wartet",
+        "done": "Fertig"
+      },
+      "panel": {
+        "run": {
+          "sub": "Was gerade läuft, live."
+        },
+        "att": {
+          "sub": "Fehlgeschlagen oder abgebrochen, mit dem, was als Nächstes zu tun ist."
+        },
+        "wait": {
+          "subMine": "Es läuft immer nur ein Import, der Reihe nach. Die Importe anderer bleiben privat.",
+          "subAll": "Für den ganzen Server läuft immer nur ein Import, der Reihe nach."
+        },
+        "done": {
+          "sub": "Abgeschlossene Importe."
+        }
+      },
+      "empty": {
+        "running": {
+          "busyTitle": "Ein anderer Import läuft",
+          "busyNext": "Dein nächster Import ist Nr. {{n}} in der Reihe und startet von selbst.",
+          "busyNone": "Importe laufen nacheinander. Deine starten von selbst, wenn sie an der Reihe sind.",
+          "title": "Nichts wird importiert",
+          "text": "Laufende Importe zeigen hier ihren Fortschritt."
+        },
+        "att": {
+          "title": "Alles in Ordnung",
+          "text": "Fehlgeschlagene und abgebrochene Importe landen hier."
+        },
+        "wait": {
+          "title": "Nichts wartet",
+          "text": "Neue Importe warten hier, bis sie an der Reihe sind. Links, die du in Thingport Grab mit „Zur Warteschlange hinzufügen“ schickst, bleiben angehalten, bis du sie startest.",
+          "textAuto": "Neue Importe warten hier, bis sie an der Reihe sind."
+        },
+        "done": {
+          "title": "Noch nichts fertig",
+          "text": "Abgeschlossene Importe bleiben hier, bis du sie entfernst."
+        }
+      },
+      "group": {
+        "inLine": "In der Reihe",
+        "onHold": "Angehalten",
+        "inLineHintMine": "Deine Nummer wird nur kleiner",
+        "inLineHintAll": "Starten von selbst",
+        "onHoldHint": "Läuft erst, wenn gestartet",
+        "onHoldHintAuto": "Neue Grab-Links überspringen das"
+      },
+      "line": {
+        "now": "Jetzt",
+        "yourImport": "Dein Import: {{label}}",
+        "private": "Privater Import",
+        "privateMany_one": "{{count}} privater Import",
+        "privateMany_other": "{{count}} private Importe",
+        "nextUp": "Als Nächstes",
+        "place": "Nr. {{n}} in der Reihe",
+        "ahead_one": "{{count}} Import davor",
+        "ahead_other": "{{count}} Importe davor"
+      },
+      "unit": {
+        "link_one": "{{count}} Link",
+        "link_other": "{{count}} Links",
+        "model_one": "{{count}} Modell",
+        "model_other": "{{count}} Modelle"
+      },
+      "action": {
+        "hold": "Anhalten",
+        "pause": "Pausieren",
+        "pauseHint": "Nach dem aktuellen Link pausieren",
+        "start": "Starten",
+        "retry": "Erneut versuchen",
+        "retryMany": "{{count}} erneut versuchen",
+        "pauseAll": "Alle pausieren",
+        "retryAll": "Alle erneut versuchen ({{count}})",
+        "startAll": "Alle angehaltenen starten ({{count}})",
+        "clearFinished": "Fertige entfernen ({{count}})"
+      },
+      "menu": {
+        "more": "Weitere Aktionen für {{label}}",
+        "openSource": "Quelle öffnen",
+        "openModel": "Modell öffnen",
+        "openCollection": "Sammlung öffnen",
+        "delete": "Import löschen"
+      },
+      "hub": {
+        "open": "Öffnen",
+        "attention": "Achtung",
+        "nothing": "Nichts wird importiert"
+      },
+      "clear": {
+        "title": "Fertige Importe entfernen?",
+        "message": "Sie verschwinden aus dieser Liste, zusammen mit fehlgeschlagenen Links darin, die danach nicht mehr erneut versucht werden können. Bereits importierte Modelle bleiben in der Bibliothek.",
+        "messageEveryone_one": "Damit wird {{count}} fertiger Import entfernt, egal wem er gehört, zusammen mit fehlgeschlagenen Links darin, die danach nicht mehr erneut versucht werden können. Bereits importierte Modelle bleiben in den Bibliotheken.",
+        "messageEveryone_other": "Damit werden {{count}} fertige Importe entfernt, egal wem sie gehören, zusammen mit fehlgeschlagenen Links darin, die danach nicht mehr erneut versucht werden können. Bereits importierte Modelle bleiben in den Bibliotheken.",
+        "messagePerson_one": "Damit wird {{count}} fertiger Import von {{name}} entfernt, zusammen mit fehlgeschlagenen Links darin, die danach nicht mehr erneut versucht werden können. Bereits importierte Modelle bleiben in der Bibliothek.",
+        "messagePerson_other": "Damit werden {{count}} fertige Importe von {{name}} entfernt, zusammen mit fehlgeschlagenen Links darin, die danach nicht mehr erneut versucht werden können. Bereits importierte Modelle bleiben in der Bibliothek.",
+        "confirm": "Entfernen"
+      },
+      "finishedList": {
+        "newest": "Die neuesten {{shown}} von {{total}} werden angezeigt",
+        "older_one": "{{count}} älterer Import ist hier nicht aufgeführt",
+        "older_other": "{{count}} ältere Importe sind hier nicht aufgeführt"
+      },
+      "delete": {
+        "title": "Diesen Import löschen?",
+        "message": "Damit wird „{{label}}“ aus der Warteschlange entfernt. Bereits importierte Modelle bleiben in der Bibliothek.",
+        "messageSync": "Damit wird „{{label}}“ endgültig aus der Warteschlange entfernt: Die Synchronisierung bringt die Links nicht zurück. Bereits importierte Modelle bleiben in der Bibliothek.",
+        "confirm": "Löschen"
+      },
+      "links": {
+        "show_one": "{{count}} Link anzeigen",
+        "show_other": "{{count}} Links anzeigen",
+        "hide_one": "{{count}} Link ausblenden",
+        "hide_other": "{{count}} Links ausblenden",
+        "remove": "Link entfernen",
+        "empty": "Keine Links in dieser Warteschlange.",
+        "loadFailed": "Die Links konnten nicht geladen werden."
+      },
+      "itemStatus": {
+        "PENDING": "wartet",
+        "RUNNING": "wird importiert",
+        "DONE": "importiert",
+        "FAILED": "fehlgeschlagen",
+        "cutOff": "abgebrochen"
+      },
+      "linkScope": {
+        "designer": "Alle Druckprofile des Designers",
+        "all": "Druckprofile von Designer und Community"
+      },
+      "syncTag": "SYNC",
+      "syncTagHint": "Synchronisierte Sammlungen laufen neben der Reihe und halten sie daher nie auf",
+      "syncWaitingHelp": "Synchronisierte Sammlungen laufen nacheinander neben der Reihe und lassen ihr den Vortritt, während sie von derselben Plattform importiert",
+      "type": {
+        "LINKS": "Links",
+        "COLLECTION": "Sammlung",
+        "ZIP": "ZIP",
+        "PROFILES": "Druckprofile",
+        "SINGLE": "Einzelner Link"
+      },
+      "status": {
+        "running": "Wird importiert",
+        "queued": "In der Reihe",
+        "paused": "Angehalten",
+        "pausing": "Wird pausiert",
+        "error": "Fehler",
+        "partial": "Teilweise fehlgeschlagen",
+        "done": "Fertig",
+        "unknown": "Unbekannt",
+        "grabWaiting": "Wartet auf Captcha",
+        "grabWaitingSome_one": "{{count}} wartet auf Captcha",
+        "grabWaitingSome_other": "{{count}} warten auf Captcha"
+      },
+      "statusHint": {
+        "running": "Wird gerade importiert.",
+        "queued": "Startet von selbst, wenn es an der Reihe ist.",
+        "paused": "Läuft erst, wenn es jemand startet.",
+        "pausing": "Beendet den aktuellen Link und hält dann an.",
+        "error": "Der Import ist fehlgeschlagen.",
+        "partial": "Fertig, aber einige Links sind fehlgeschlagen.",
+        "partialModels": "Fertig, aber einige Modelle sind fehlgeschlagen.",
+        "done": "Alle Links importiert.",
+        "doneModels": "Alle Modelle importiert.",
+        "unknown": "Diese Thingport-Version kennt diesen Zustand nicht.",
+        "grabWaiting_one": "Die Plattform will, dass ihr Captcha gelöst wird. Thingport Grab schließt ihn dort ab, oder versuche es erneut, sobald das Captcha gelöst ist.",
+        "grabWaiting_other": "Die Plattform will, dass ihr Captcha gelöst wird. Thingport Grab schließt sie dort ab, oder versuche es erneut, sobald das Captcha gelöst ist."
+      },
+      "progress": "{{processed}} von {{total}}",
+      "progressFailed": "{{processed}} von {{total}}, {{failed}} fehlgeschlagen",
+      "why": {
+        "linksFailed_one": "{{count}} Link ist fehlgeschlagen. Öffne die Links, um den Grund zu sehen.",
+        "linksFailed_other": "{{count}} Links sind fehlgeschlagen. Öffne die Links, um den Grund zu sehen.",
+        "modelsFailed_one": "{{count}} Modell ist fehlgeschlagen.",
+        "modelsFailed_other": "{{count}} Modelle sind fehlgeschlagen.",
+        "interruptedNoRetry": "Durch einen Serverneustart abgebrochen. Einige Dateien sind vielleicht schon in deiner Bibliothek.",
+        "interruptedNoRetryOwner": "Durch einen Serverneustart abgebrochen. Einige Dateien sind vielleicht schon in der Bibliothek dieser Person.",
+        "interrupted": "Durch einen Serverneustart abgebrochen. Ein Modell ist in deiner Bibliothek vielleicht unvollständig: Lösche es, bevor du es erneut versuchst.",
+        "interruptedOwner": "Durch einen Serverneustart abgebrochen. Ein Modell ist in der Bibliothek dieser Person vielleicht unvollständig: Es sollte vor einem neuen Versuch gelöscht werden.",
+        "interruptedZip": "Durch einen Serverneustart abgebrochen. Einige Modelle sind schon da. Starte einen neuen Import nur mit den fehlenden Dateien.",
+        "stalled": "Dieser Import hat nicht mehr reagiert, deshalb ging es in der Reihe weiter. Wenn „Erneut versuchen“ nicht angeboten wird, starte den Server neu.",
+        "noRequest": "Zu diesem älteren Import ist keine Anfrage gespeichert."
+      },
+      "when": {
+        "started": "Gestartet {{time}}",
+        "startedJustNow": "Gerade gestartet",
+        "added": "Hinzugefügt {{time}}",
+        "addedJustNow": "Gerade hinzugefügt",
+        "waiting": "Wartet",
+        "onHold": "Angehalten",
+        "justNow": "Gerade eben",
+        "today": "Heute, {{time}}",
+        "yesterday": "Gestern"
+      },
+      "indicator": {
+        "importing": "Wird importiert, {{pct}} %",
+        "importingNoPercent": "Wird importiert",
+        "inLine": "{{count}} in der Reihe",
+        "needsAttention_one": "{{count}} braucht Aufmerksamkeit",
+        "needsAttention_other": "{{count}} brauchen Aufmerksamkeit",
+        "nextUp": "Dein nächster Import ist als Nächstes dran",
+        "nextPlace": "Dein nächster Import ist Nr. {{n}} in der Reihe",
+        "finished": "Alle Importe fertig",
+        "onHold": "{{count}} angehalten",
+        "syncing": "Eine synchronisierte Sammlung wird aktualisiert"
+      },
+      "toast": {
+        "added": "Zur Warteschlange hinzugefügt. Ist als Nächstes dran.",
+        "addedPlace": "Zur Warteschlange hinzugefügt. Ist Nr. {{n}} in der Reihe.",
+        "started": "Import gestartet.",
+        "open": "Öffnen",
+        "tryAgain": "Erneut versuchen",
+        "retriedAll_one": "Wieder in der Reihe: {{count}} Import.",
+        "retriedAll_other": "Wieder in der Reihe: {{count}} Importe.",
+        "startedAll_one": "{{count}} Import in die Reihe gestellt.",
+        "startedAll_other": "{{count}} Importe in die Reihe gestellt.",
+        "cleared_one": "{{count}} fertiger Import entfernt.",
+        "cleared_other": "{{count}} fertige Importe entfernt.",
+        "finishFailed": "„{{name}}“ konnte nicht importiert werden",
+        "finishedPlain": "„{{name}}“ fertig",
+        "finishedImported_one": "{{count}} Modell importiert.",
+        "finishedImported_other": "{{count}} Modelle importiert.",
+        "finishedWithExisting": "{{imported}} importiert, {{alreadyInLibrary}} schon in deiner Bibliothek.",
+        "finishedWithFailures": "{{imported}} importiert, {{alreadyInLibrary}} schon in deiner Bibliothek, {{failedCount}} fehlgeschlagen.",
+        "finishedSomeFailed_one": "{{count}} Modell importiert, {{failedCount}} fehlgeschlagen.",
+        "finishedSomeFailed_other": "{{count}} Modelle importiert, {{failedCount}} fehlgeschlagen.",
+        "finishedAllFailed_one": "{{count}} Modell konnte nicht importiert werden.",
+        "finishedAllFailed_other": "{{count}} Modelle konnten nicht importiert werden.",
+        "finishedExistingFailed": "{{alreadyInLibrary}} schon in deiner Bibliothek, {{failedCount}} fehlgeschlagen.",
+        "finishedOnlyExisting": "{{alreadyInLibrary}} schon in deiner Bibliothek.",
+        "finishedMany_one": "{{count}} Import fertig.",
+        "finishedMany_other": "{{count}} Importe fertig.",
+        "finishedManyFailed_one": "{{count}} Import fertig, mit Problemen.",
+        "finishedManyFailed_other": "{{count}} Importe fertig, einige mit Problemen.",
+        "finishedGrabWaiting": "„{{name}}“ wartet auf Thingport Grab",
+        "finishedGrabWaitingSome_one": "„{{name}}“: {{count}} wartet auf Thingport Grab",
+        "finishedGrabWaitingSome_other": "„{{name}}“: {{count}} warten auf Thingport Grab"
+      },
+      "progressGrabWaiting_one": "{{processed}} von {{total}}, {{count}} wartet auf Grab",
+      "progressGrabWaiting_other": "{{processed}} von {{total}}, {{count}} warten auf Grab",
+      "grabWaiting": {
+        "title_one": "{{count}} Import wartet auf das Captcha von {{site}}",
+        "title_other": "{{count}} Importe warten auf das Captcha von {{site}}",
+        "text_one": "Thingport Grab schließt ihn auf {{host}} ab.",
+        "text_other": "Thingport Grab schließt sie auf {{host}} ab.",
+        "solve": "Captcha auf {{site}} lösen"
+      }
+    },
+    "download": {
+      "pageTitle": "Downloads",
+      "intro": "Begleit-Apps, die mit deiner Thingport-Instanz zusammenarbeiten.",
+      "extension": {
+        "heading": "Thingport Grab",
+        "intro": "Eine Browser-Erweiterung, die Modelle von MakerWorld, Thingiverse, Printables und MyMiniFactory direkt von deren Seiten importiert.",
+        "name": "Thingport Grab",
+        "store": {
+          "chrome": "Im Chrome Web Store holen",
+          "edge": "Bei Edge-Add-ons holen",
+          "firefox": "Bei Firefox-Add-ons holen"
+        }
+      },
+      "bridge": {
+        "heading": "Thingport Bridge",
+        "intro": "Eine kleine Hilfs-App auf deinem Computer, damit „Im Slicer öffnen“ ein Modell direkt an deinen Slicer übergeben kann."
+      },
+      "modal": {
+        "startedNote": "Dein Download sollte automatisch starten. So schließt du die Installation ab:",
+        "windows": {
+          "heading": "Installation unter Windows",
+          "step1": "Doppelklicke die heruntergeladene .exe (oder starte sie ohne Argumente in einem Terminal). Sie installiert sich selbst und registriert das Protokoll automatisch."
+        },
+        "linux": {
+          "heading": "Installation unter Linux",
+          "step1": "Falls dein Dateimanager das Ausführen blockiert, markiere die Datei zuerst als ausführbar.",
+          "step2": "Starte sie dann einmal – per Doppelklick oder in einem Terminal."
+        },
+        "macos": {
+          "heading": "Installation unter macOS",
+          "step1": "Mach sie ausführbar.",
+          "step2": "Entferne die Gatekeeper-Quarantäne – heruntergeladene Dateien werden automatisch unter Quarantäne gestellt.",
+          "step3": "Installiere sie. Dabei wird die App nach ~/Applications kopiert und der Link thingport:// registriert.",
+          "note": "Falls macOS das Ausführen weiterhin verweigert, öffne Systemeinstellungen -> Datenschutz & Sicherheit und erlaube es dort."
+        },
+        "update": {
+          "title": "Aktualisierung?",
+          "text": "Führe dieselben Schritte über der alten Version aus. Du musst vorher nichts entfernen, und deine Einstellungen bleiben erhalten.",
+          "macosQuit": "Die Installation beendet auch die laufende Bridge, sodass der nächste Link die neue Version öffnet.",
+          "checkVersion": "Version prüfen",
+          "hideVersion": "Versionsprüfung ausblenden",
+          "inPowerShell": "In PowerShell:",
+          "inTerminal": "In einem Terminal:",
+          "uninstall": "Deinstallieren"
+        }
+      }
+    },
+    "captcha": {
+      "imageAlt": "Captcha: die einzugebenden Zeichen",
+      "newImage": "Neues Bild",
+      "label": "Zeichen im Bild",
+      "loadFailed": "Das Bild konnte nicht geladen werden. Versuche ein neues."
     },
     "appearance": {
       "title": "Darstellung",
@@ -415,6 +881,52 @@
       "printer": "Drucker",
       "askPrinter": "Beim Öffnen eines Modells fragen",
       "addPrinters": "Drucker hinzufügen …"
+    },
+    "storageMoveProgress": {
+      "label": "{{phrase}} {{done}} von {{total}} Modellen",
+      "phrases": [
+        "Modelldateien werden verschoben …",
+        "Die Regale werden umgeräumt …",
+        "Die Ordner werden neu beschriftet …",
+        "STLs werden den Flur entlanggetragen …",
+        "3MFs werden in neue Kisten gepackt …",
+        "Jede Datei bekommt ihren neuen Schreibtisch …",
+        "Der Aktenschrank wird aufgeräumt …",
+        "Dateien lernen ihre neue Adresse …",
+        "Die alten Ordner werden ausgefegt …",
+        "Es wird geprüft, ob nichts hinter die Schublade gefallen ist …"
+      ],
+      "starting": "Verschieben der Modelldateien wird vorbereitet …"
+    },
+    "modelRepairProgress": {
+      "stop": "Reparatur stoppen",
+      "stopping": "Wird nach dem aktuellen Modell gestoppt …",
+      "reimport": {
+        "starting": "Holen der fehlenden Dateien wird vorbereitet …",
+        "label": "{{phrase}} {{done}} von {{total}}",
+        "phrases": [
+          "Fehlende Dateien werden geholt …",
+          "Die Plattform wird um die STL gebeten …",
+          "Deine Modelle werden neu gethingportet …",
+          "3MFs werden an der Quelle abgeholt …",
+          "Dateien kommen zurück zu ihren Modellen …",
+          "Es wird gesucht, was beim Umzug liegen blieb …",
+          "Die leeren Regale werden wieder gefüllt …",
+          "Beim Designer wird angeklopft …"
+        ]
+      },
+      "delete": {
+        "starting": "Löschen der Modelle wird vorbereitet …",
+        "label": "{{phrase}} {{done}} von {{total}}",
+        "phrases": [
+          "Modelle ohne Dateien werden gelöscht …",
+          "Die leeren Kisten werden ausgeräumt …",
+          "Was weg ist, wird weggeräumt …",
+          "Das Altpapier wird rausgebracht …",
+          "Das leere Regal wird abgestaubt …",
+          "Abschied von den Geistern …"
+        ]
+      }
     },
     "printers": {
       "subtitle": "Doppelklick auf einen Drucker fügt ihn hinzu oder entfernt ihn; Rechtsklick für Düse und Slicer.",
