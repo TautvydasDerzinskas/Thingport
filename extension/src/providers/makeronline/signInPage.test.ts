@@ -140,6 +140,24 @@ describe("MakerOnline's download call, made in its page", () => {
     expect(asks).toHaveLength(3);
   });
 
+  it("passes by a file beside the model's own the site never answers, and asks for the rest", async () => {
+    page();
+    let asked = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        asked += 1;
+        // The guide's ask hangs.
+        if (asked === 2) return new Promise<never>(() => undefined);
+        return { json: async () => SIGNED };
+      }),
+    );
+    const guide: DownloadRequest = { ...SECOND, name: "Guide.pdf", supporting: true };
+    const answers = await signInPage([REQUEST, guide, SECOND], 0, "mo_access_token", HOSTS, 1000, undefined, 20);
+    expect(answers.map((answer) => answer.code)).toEqual([0, null, 0]);
+    expect(asked).toBe(3);
+  });
+
   it("stops at a file it isn't handed, as when signed out", async () => {
     page();
     const asks = api({ code: -1, message: "Please sign in", data: null }, SIGNED);

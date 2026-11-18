@@ -17,7 +17,8 @@ export type SignAnswer = { code: number | null; message: string | null; data: un
  *  site's download call for each file, as its Download button does: the sign-in from its cookie, a fresh Risk-Token
  *  from its anti-bot script. Where the site asks for a puzzle first and `puzzleMs` allows, it shows the site's own,
  *  as its Download does, and asks again with the answer; `puzzleMs` is how long the user has to solve it. Ends at the
- *  first file it doesn't hand over, whose answer is the last one returned, bar a supporting file, which is passed by. */
+ *  first file it doesn't hand over, whose answer is the last one returned, bar a supporting file, which is passed by,
+ *  as one still unanswered after `supportingMs` is. */
 export async function signInPage(
   requests: DownloadRequest[],
   gapMs: number,
@@ -28,6 +29,7 @@ export async function signInPage(
     notOnSite: "Not on MakerOnline",
     requestFailed: "Request failed",
   },
+  supportingMs = 30_000,
 ): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (
@@ -52,7 +54,11 @@ export async function signInPage(
     ?.slice(cookieName.length + 1);
   const auth = cookie ? decodeURIComponent(cookie) : "";
   /** One ask, with a fresh Risk-Token, and a solved puzzle's answer where there is one. */
-  const ask = async (request: DownloadRequest, puzzle: { validate: string; level: number } | null) => {
+  const askOnce = async (
+    request: DownloadRequest,
+    puzzle: { validate: string; level: number } | null,
+    signal?: AbortSignal,
+  ): Promise<SignAnswer> => {
     let risk: string | undefined;
     try {
       risk = (await neg?.getToken())?.token;
@@ -76,6 +82,7 @@ export async function signInPage(
           ...(puzzle ? { "Captcha-Validate": puzzle.validate, "Captcha-Level": String(puzzle.level) } : {}),
         },
         body: JSON.stringify(request.payload),
+        signal,
       });
       const body = (await res.json().catch(() => null)) as { code?: unknown; message?: unknown; data?: unknown } | null;
       return {
@@ -85,6 +92,27 @@ export async function signInPage(
       };
     } catch (err) {
       return { code: null, message: err instanceof Error ? err.message : messages.requestFailed, data: null };
+    }
+  };
+  /** A file beside the model's own is done without, so its ask has a deadline: one the site never answers mustn't hold
+   *  up the model's files, which are only handed back once every ask is done. Theirs wait as long as the site takes. */
+  const ask = async (
+    request: DownloadRequest,
+    puzzle: { validate: string; level: number } | null,
+  ): Promise<SignAnswer> => {
+    if (!request.supporting) return askOnce(request, puzzle);
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<SignAnswer>((resolve) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        resolve({ code: null, message: messages.requestFailed, data: null });
+      }, supportingMs);
+    });
+    try {
+      return await Promise.race([askOnce(request, puzzle, controller.signal), late]);
+    } finally {
+      clearTimeout(timer);
     }
   };
   /** The site's own puzzle at `level`, solved: its answer, or null once `puzzleMs` is up. The site never says when
