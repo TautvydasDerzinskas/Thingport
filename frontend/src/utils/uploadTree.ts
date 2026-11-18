@@ -129,6 +129,19 @@ function splitPath(entry: UploadEntry) {
   return segments;
 }
 
+/** A file as it goes up. A zip's numbered copy a scene took ("mesh (2).bin") goes under the name the zip gave it, the
+ *  one the scene names, as the server finds a scene's files by name; anything else as picked. */
+function sentFile(entry: UploadEntry, scenePart: boolean): File {
+  if (!scenePart || !entry.zipPath) return entry.file;
+  return new File([entry.file], entry.zipPath.split("/").pop()!, { type: entry.file.type });
+}
+
+/** Where a file was in the pick, for a scene's references: a zip's numbered copy a scene took, where the zip had it. */
+function sourceFolderOf(entry: UploadEntry, scenePart: boolean): string | null {
+  const path = scenePart && entry.zipPath ? entry.zipPath : entry.relativePath || entry.file.name;
+  return normalizeRelativePath(path).split("/").filter(Boolean).slice(0, -1).join("/") || null;
+}
+
 /** By the name it's kept by, as the server tells what a file is: "part.stl " is a model file, "stl" isn't. */
 function extOf(name: string) {
   return keptExt(name);
@@ -326,13 +339,13 @@ async function uploadEach(
       // Folder-tree leaves are always single-plate prints; a .gltf brings the files it points at along.
       const parts = [entry, ...(bundles.get(entry) ?? [])];
       const result = await printsApi.upload(
-        parts.map((part) => part.file),
+        parts.map((part) => sentFile(part, part !== entry)),
         {
           category_id: categoryId || undefined,
           notify: !batched,
           // A scene's files by where each was in the pick: two of one name in two folders are two files to the server.
           ...(parts.length > 1
-            ? { mode: "multiplate", sourceFolders: parts.map((part) => splitPath(part).join("/") || null) }
+            ? { mode: "multiplate", sourceFolders: parts.map((part) => sourceFolderOf(part, part !== entry)) }
             : {}),
         },
       );
@@ -403,14 +416,14 @@ export async function uploadEntriesAsOneModel(
     const segments = folder.split("/").filter(Boolean);
     const categoryId = segments.length ? await categoryResolver(parentCategoryId)(segments) : parentCategoryId;
     const result = await printsApi.upload(
-      files.map((entry) => entry.file),
+      files.map((entry) => sentFile(entry, bundled.has(entry))),
       {
         ...(title ? { title } : {}),
         category_id: categoryId || undefined,
         mode: "multiplate",
         folders: files.map((entry) => folders[kept.indexOf(entry)]),
         // Where each was in the pick, for a .gltf's references: a scene can name a file above the folders kept.
-        sourceFolders: files.map((entry) => splitPath(entry).join("/") || null),
+        sourceFolders: files.map((entry) => sourceFolderOf(entry, bundled.has(entry))),
       },
     );
     uploadedEntries.push(...files);
@@ -537,9 +550,9 @@ export async function uploadFoldersAsModels(
         continue;
       }
       // Where each was in the pick, for a scene that names a file outside its model's folder ("../shared/mesh.bin").
-      const sourceFolders = files.map((e) => splitPath(e).join("/") || null);
+      const sourceFolders = files.map((e) => sourceFolderOf(e, bundled.has(e)));
       const result = await printsApi.upload(
-        files.map((e) => e.file),
+        files.map((e) => sentFile(e, bundled.has(e))),
         {
           title: folderName,
           category_id: categoryId || undefined,

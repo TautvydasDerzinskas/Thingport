@@ -1,19 +1,30 @@
 import { describe, expect, it, vi } from "vitest";
 
-// How often the zip's central directory is read, which readZipEntries does through unzipSync.
-const reads = vi.hoisted(() => ({ unzipSync: 0 }));
+// How often the zip's central directory is read, which readZipEntries does through unzipSync; and a streaming
+// reader that fails, when `streamFails` says so.
+const reads = vi.hoisted(() => ({ unzipSync: 0, streamFails: false }));
 vi.mock("fflate", async (original) => {
   const actual = await original<typeof import("fflate")>();
+  class FailingUnzip extends actual.Unzip {
+    push(): void {
+      throw new Error("the stream broke off");
+    }
+  }
   return {
     ...actual,
     unzipSync: (...args: Parameters<typeof actual.unzipSync>) => {
       reads.unzipSync += 1;
       return actual.unzipSync(...args);
     },
+    get Unzip() {
+      return reads.streamFails ? FailingUnzip : actual.Unzip;
+    },
   };
 });
 
+import i18next from "i18next";
 import { Zip, ZipPassThrough, zipSync } from "fflate";
+import en from "../i18n/locales/en.json";
 import { hasModelFolderPaths, normalizeZipPath, readZipEntries, startingSelection } from "./zipUtils";
 
 const entries = (...paths: string[]) => paths.map((path) => ({ path }));
@@ -129,6 +140,56 @@ describe("readZipEntries of an unusual zip", () => {
     );
     expect(Object.keys(data).toSorted()).toEqual(["__proto__", "notes.txt"]);
     expect(new TextDecoder().decode(data["__proto__"])).toBe("proto");
+  });
+
+  /** `raw` with the compression method of each record named `name` set to `method`, local header and directory both. */
+  const withMethod = async (file: File, name: string, method: number) => {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const view = new DataView(bytes.buffer);
+    const target = new TextEncoder().encode(name);
+    const named = (at: number, length: number) =>
+      length === target.length && target.every((byte, index) => bytes[at + index] === byte);
+    for (let at = 0; at + 46 < bytes.length; at++) {
+      const signature = view.getUint32(at, true);
+      if (signature === 0x04034b50 && named(at + 30, view.getUint16(at + 26, true)))
+        view.setUint16(at + 8, method, true);
+      if (signature === 0x02014b50 && named(at + 46, view.getUint16(at + 28, true)))
+        view.setUint16(at + 10, method, true);
+    }
+    return new File([bytes], file.name);
+  };
+
+  it("keeps every entry it's to keep, though one it leaves out is in a compression it can't unpack", async () => {
+    const zip = await withMethod(
+      zipOf([
+        ["A/x.txt", "first"],
+        ["__MACOSX/._x.txt", "what the OS left"],
+        ["A/x.txt", "second"],
+        ["__proto__", "proto"],
+      ]),
+      "__MACOSX/._x.txt",
+      99,
+    );
+    const { data } = await readZipEntries(zip);
+    expect(Object.keys(data).toSorted()).toEqual(["A/x (2).txt", "A/x.txt", "__proto__"]);
+    expect(new TextDecoder().decode(data["A/x (2).txt"])).toBe("second");
+  });
+
+  it("says so, rather than leave copies out, when it can't read a zip's entries apart", async () => {
+    await i18next.init({ lng: "en", ns: ["app"], resources: { en: { app: en.app } } });
+    reads.streamFails = true;
+    try {
+      await expect(
+        readZipEntries(
+          zipOf([
+            ["A/x.txt", "first"],
+            ["A/x.txt", "second"],
+          ]),
+        ),
+      ).rejects.toThrow("This zip names a file more than once in a way that can't be read apart.");
+    } finally {
+      reads.streamFails = false;
+    }
   });
 
   it("reads its directory once however many times it repeats a folder or a file", async () => {

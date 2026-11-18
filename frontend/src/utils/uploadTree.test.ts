@@ -288,6 +288,18 @@ describe("uploading a glTF download", () => {
     expect(namesSent()).toEqual([["scene.gltf ", "scene.bin", "base.png"]]);
   });
 
+  it("sends a zip's numbered copy a scene takes under the name and folder the zip gave it, as the scene names it", async () => {
+    const scene = () => entry("A/scene.gltf", gltf("mesh.bin", "base.png"));
+    const copy = () => ({ ...entry("A/mesh (2).bin"), zipPath: "A/mesh.bin" });
+    await uploadEntriesAsOneModel([scene(), copy()], "Kit", null);
+    await uploadEntriesToCategory([scene(), copy()], null);
+    for (const [files, opts] of upload.mock.calls) {
+      expect((files as File[]).map((file) => file.name)).toEqual(["scene.gltf", "mesh.bin"]);
+      expect(opts?.sourceFolders).toEqual(["A", "A"]);
+    }
+    expect(upload).toHaveBeenCalledTimes(2);
+  });
+
   it("one model per file: says where each of a scene's files was in the pick", async () => {
     await uploadEntriesToCategory(
       [

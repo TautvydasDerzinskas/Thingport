@@ -272,16 +272,38 @@ async function createPlateAtPosition(
   }
   // To where the model's files are now: a rename of it while this was stored moved the plates it found, which this one
   // wasn't among yet. Its file stays where it was put if it can't move, as one saved before a rename would.
-  const moved = await relocatePlate(record.id).catch((err: unknown) => {
+  await relocatePlate(record.id).catch((err: unknown) => {
     console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
-    return null;
   });
-  // As it is now, whether this moved it or a rename's own move took it along first: its file is read where it is.
-  record = moved ?? (await prisma.plate.findUnique({ where: { id: record.id } })) ?? record;
-  effectivePath = resolvePlateFilePath(record) ?? effectivePath;
+  // Its file read where it is now, whoever moved it: the row read under the storage lock, which a move holds from
+  // renaming the file to saving where it went. A move after that, before the reading is done, leaves the file read
+  // from nowhere, or half: it's then read once more where it went, as firstPlateReading does.
+  const findIt = async () => {
+    const now = await withStorageLock(() => prisma.plate.findUnique({ where: { id: record.id } }));
+    if (now) {
+      record = now;
+      effectivePath = resolvePlateFilePath(now) ?? effectivePath;
+    }
+  };
 
   try {
-    await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+    await findIt();
+    for (let tries = 0; tries < 2; tries++) {
+      const at = effectivePath;
+      let failure: { err: unknown } | null = null;
+      try {
+        await thumbnailAndSniff(record.id, desiredFilename, mime, at);
+      } catch (err) {
+        failure = { err };
+      }
+      if (!failure && at && fsSync.existsSync(at)) break;
+      if (tries === 0) {
+        await findIt();
+        if (effectivePath !== at) continue;
+      }
+      if (failure) throw failure.err;
+      break;
+    }
   } catch (err) {
     // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice. Its row is read
     // again under the storage lock, as a reorganisation may have moved its file meanwhile, and the file only goes once

@@ -146,6 +146,7 @@
       "cancel": "Annuler",
       "close": "Fermer",
       "readError": "Impossible de lire le contenu de l’archive ZIP",
+      "repeatsUnreadable": "Cette archive ZIP nomme un fichier plusieurs fois d’une façon qui ne peut pas être lue séparément. Décompressez-la et choisissez ses fichiers.",
       "importError": "Échec de l’importation",
       "selectAtLeastOne": "Sélectionnez au moins un fichier à importer."
     },
