@@ -28,15 +28,28 @@ export function ourMigrations(): Promise<Set<string>> {
 
 type Row = { migration_name: string; finished_at: Date | null; rolled_back_at: Date | null };
 
-/** This instance's own database changes that an upgrade of the working copy started and never finished, stopped or
- *  failed, marked rolled back as `prisma migrate resolve --rolled-back` marks one: Prisma runs no more on a database
- *  that has one, and Postgres took back all the change did when it stopped, so the next upgrade runs it again. Only the
- *  working copy's: one the old instance never finished stopped its preparing (readSourceHistory). How many. */
-export async function settleStoppedUpgrade(copy: PrismaClient): Promise<number> {
+/** This instance's own database changes that an upgrade of the working copy ran and saw fail, marked rolled back as
+ *  `prisma migrate resolve --rolled-back` marks one: Prisma runs no more on a database that has one, and Postgres took
+ *  back all a change that failed did, as each runs in one transaction, so the next upgrade runs it again. Told by the
+ *  log Prisma keeps of why it failed: one with none was stopped, before or after its own commit, or is still running,
+ *  and is left (stoppedUpgrade). Only the working copy's: one the old instance never finished stopped its preparing
+ *  (readSourceHistory). How many. */
+export async function settleFailedUpgrade(copy: PrismaClient): Promise<number> {
   const names = [...(await ourMigrations())];
   return copy.$executeRaw`
     UPDATE "_prisma_migrations" SET rolled_back_at = now()
-    WHERE finished_at IS NULL AND rolled_back_at IS NULL AND migration_name = ANY(${names})`;
+    WHERE finished_at IS NULL AND rolled_back_at IS NULL AND logs IS NOT NULL AND migration_name = ANY(${names})`;
+}
+
+/** One of this instance's own changes an upgrade of the working copy started without finishing or saying why: what it
+ *  did can't be told from its record, so nothing can bring the copy level. Null when there's none. */
+export async function stoppedUpgrade(copy: PrismaClient): Promise<string | null> {
+  const names = [...(await ourMigrations())];
+  const rows = await copy.$queryRaw<{ migration_name: string }[]>`
+    SELECT migration_name FROM "_prisma_migrations"
+    WHERE finished_at IS NULL AND rolled_back_at IS NULL AND logs IS NULL AND migration_name = ANY(${names})
+    LIMIT 1`;
+  return rows[0]?.migration_name ?? null;
 }
 
 /** What the working copy says of the instance it came from, read before anything changes it. Throws when it isn't a

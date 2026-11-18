@@ -19,6 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { createApp } from "../src/app";
+import { Prisma } from "@prisma/client";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { makePrint, register, tempFile, uniqueImage, upload } from "./helpers/fileReuse";
@@ -1075,14 +1076,21 @@ describe("models whose files are gone", () => {
     expect(ids).toHaveLength(2);
   });
 
-  it("takes back the pictures of the plates a repair made when it stops part-way", async () => {
-    const model = await makePrint(dir, owner.id, "Half repaired");
-    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+  /** A repair of `model` whose second plate fails as its row is saved, `meanwhile` running just before, by which time
+   *  the first plate (a picture) is stored, its thumbnail with it. The ids of the plates it made. */
+  async function repairStoppedAtSecond(
+    model: Awaited<ReturnType<typeof makePrint>>,
+    meanwhile: (first: string) => Promise<void>,
+  ): Promise<string[]> {
     const create = prisma.plate.create.bind(prisma.plate);
     const made: string[] = [];
     const spy = vi.spyOn(prisma.plate, "create").mockImplementation((async (
       args: Parameters<typeof prisma.plate.create>[0],
     ) => {
+      if (args.data.printId === model.print.id && made.length === 1) {
+        await meanwhile(made[0]);
+        throw new Error("The second plate couldn't be saved");
+      }
       const plate = await create(args);
       if (args.data.printId === model.print.id) made.push(plate.id);
       return plate;
@@ -1090,20 +1098,104 @@ describe("models whose files are gone", () => {
     try {
       await expect(
         replaceModelPlates(owner.id, model.print.id, [
-          // A picture, whose thumbnail is made as it's stored, then a file that never came, which stops the repair.
           { filename: "photo.png", tempFilePath: tempFile(dir, await uniqueImage("png")), mime: "image/png" },
-          { filename: "never.stl", tempFilePath: path.join(dir, `never-${randomUUID()}.stl`) },
+          { filename: "second.stl", tempFilePath: tempFile(dir, "solid second\nendsolid\n") },
         ]),
-      ).rejects.toThrow(/ENOENT/);
+      ).rejects.toThrow("The second plate couldn't be saved");
     } finally {
       spy.mockRestore();
     }
+    return made;
+  }
+
+  it("takes back the pictures of the plates a repair made when it stops part-way", async () => {
+    const model = await makePrint(dir, owner.id, "Half repaired");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    let thumbnailBefore = false;
+    const made = await repairStoppedAtSecond(model, async (first) => {
+      const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+      thumbnailBefore = fs.existsSync(assetTarget(assetsPath!, plateThumbFile(first)));
+    });
     expect(made).toHaveLength(1);
+    expect(thumbnailBefore).toBe(true);
     const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
     expect(fs.existsSync(assetTarget(assetsPath!, plateThumbFile(made[0])))).toBe(false);
     // The model as it was found: its own plate, whose file is still gone, for the next scan to find.
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+  });
+
+  it("puts a model's plates back when a repair stops part-way, though its pictures' folder can't be read then", async () => {
+    const model = await makePrint(dir, owner.id, "Half repaired, folder unread");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The next read of the model's pictures' folder fails: the one putting its plates back.
+    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    let failNext = false;
+    let failed = false;
+    const spy = vi.spyOn(prisma.print, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.print.findUnique>[0],
+    ) => {
+      const select = args.select as { assetsPath?: boolean } | undefined;
+      if (failNext && args.where.id === model.print.id && select?.assetsPath) {
+        failNext = false;
+        failed = true;
+        return Promise.reject(new Error("the database went away for a moment"));
+      }
+      return findUnique(args);
+    }) as never);
+    try {
+      await repairStoppedAtSecond(model, async () => {
+        failNext = true;
+      });
+    } finally {
+      spy.mockRestore();
+    }
+    expect(failed).toBe(true);
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+  });
+
+  it("keeps a whole gallery that a rename moves while a repair runs", async () => {
+    const model = await makePrint(dir, owner.id, "Gallery moved meanwhile");
+    const photo = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // Once the new files are in, the model is renamed and its pictures move with it.
+    const update = prisma.print.update.bind(prisma.print);
+    let moved = false;
+    const spy = vi.spyOn(prisma.print, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.print.update>[0],
+    ) => {
+      const done = await update(args);
+      if (!moved && args.where.id === model.print.id && args.data.preparedMetadata === Prisma.JsonNull) {
+        moved = true;
+        const renamed = await update({
+          where: { id: model.print.id },
+          data: { name: `Gallery away ${randomUUID()}` },
+          include: { plates: true },
+        });
+        await relocatePrint(renamed, renamed.plates);
+      }
+      return done;
+    }) as never);
+    // A source whose picture would arrive, so a gallery taken for broken would be replaced by it.
+    const image = await uniqueImage("jpeg");
+    const fetchBefore = global.fetch;
+    global.fetch = (async () => new Response(image, { headers: { "content-type": "image/jpeg" } })) as typeof fetch;
+    try {
+      const replaced = await replaceModelFiles(owner.id, model.print.id, {
+        inputs: [{ filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") }],
+        coverImageUrl: null,
+        galleryImages: [{ url: "http://93.184.216.34/one.jpg", filename: "one.jpg" }],
+        profiles: {},
+      });
+      expect(replaced).not.toBeNull();
+    } finally {
+      spy.mockRestore();
+      global.fetch = fetchBefore;
+    }
+    expect(moved).toBe(true);
+    const ids = (await prisma.previewImage.findMany({ where: { printId: model.print.id } })).map((each) => each.id);
+    expect(ids).toEqual([photo!.id]);
   });
 
   it("refuses an action it doesn't know, and a request with no sign-in", async () => {

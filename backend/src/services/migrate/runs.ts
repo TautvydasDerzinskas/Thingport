@@ -11,7 +11,7 @@ import { discardPrintOrThrow } from "../printCreation";
 import { currentStorageMove } from "../storageMoveService";
 import { holdMigrationBusy } from "./busy";
 import { MigrateError, MigrateHttpError, storedError } from "./errors";
-import { readSourceHistory, settleStoppedUpgrade, type SourceHistory } from "./history";
+import { readSourceHistory, settleFailedUpgrade, stoppedUpgrade, type SourceHistory } from "./history";
 import { fileRunModels, Merge, MIGRATE_FOLDER, type MergePhase, type MigrateOptions } from "./merge";
 import { countMissingFiles, countModelFiles, readPlan, type MigratePlan } from "./plan";
 import {
@@ -444,8 +444,17 @@ async function levelStaging(name: string, state: Active): Promise<number> {
   const copy = stagingClient(name);
   let history: SourceHistory;
   try {
-    // An upgrade of it an earlier try began and didn't finish would keep this one from running.
-    await settleStoppedUpgrade(copy);
+    // An upgrade of it an earlier try saw fail would keep this one from running; one stopped part-way can't be told
+    // from one that got as far as its own commit, so the copy is left as it is and the admin is told to prepare again.
+    await settleFailedUpgrade(copy);
+    const stopped = await stoppedUpgrade(copy);
+    if (stopped) {
+      throw new MigrateError(
+        "upgrade_interrupted",
+        `An upgrade of the working copy stopped part-way (${stopped}), so what it changed can't be told. Discard this migration and prepare it again.`,
+        { name: stopped },
+      );
+    }
     history = await readSourceHistory(copy);
   } finally {
     await copy.$disconnect().catch(() => undefined);
@@ -532,7 +541,13 @@ export async function changeFolder(id: string, given: string): Promise<RunOut> {
       throw asHttp(err);
     }
     const plan = run.plan as MigratePlan;
-    const changes = await levelStaging(run.stagingDb, state);
+    let changes: number;
+    try {
+      changes = await levelStaging(run.stagingDb, state);
+    } catch (err) {
+      // Said as the folder's check says why: by its code, for the app to put in the admin's language.
+      throw asHttp(err);
+    }
     source = stagingClient(run.stagingDb);
     // Counted again each time, as the check below counts them: a copy an earlier try brought level, then stopped before
     // saving the count, has one by the newer rule too.
