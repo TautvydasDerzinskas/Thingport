@@ -114,9 +114,9 @@
       "alreadyInLibrary": "„{{name}}“ ist schon in deiner Bibliothek",
       "uploaded": "„{{name}}“ hochgeladen",
       "uploadedMultiple": "{{count}} Modelle hochgeladen",
-      "makeronlineWaiting": "Warte auf Thingport Grab: Öffne damit makeronline.com, dann kommt das Modell herein",
-      "makeronlineListWaiting_one": "{{count}} Modell wartet auf Thingport Grab: Öffne damit makeronline.com, dann kommt es herein",
-      "makeronlineListWaiting_other": "{{count}} Modelle warten auf Thingport Grab: Öffne damit makeronline.com, dann kommen sie herein"
+      "makeronlineWaiting": "Warte auf Thingport Grab: Öffne damit makeronline.com, und schon ist das Modell da",
+      "makeronlineListWaiting_one": "{{count}} Modell wartet auf Thingport Grab: Öffne damit makeronline.com, und schon ist es da",
+      "makeronlineListWaiting_other": "{{count}} Modelle warten auf Thingport Grab: Öffne damit makeronline.com, und schon sind sie da"
     },
     "tagInput": {
       "removeTag": "{{tag}} entfernen"
@@ -136,7 +136,7 @@
       "profilesDesigner": "Alle Druckprofile des Designers",
       "profilesAll": "Druckprofile von Designer und Community",
       "profilesHelpUrl": "Das Profil, auf das der Link zeigt, oder das Standardprofil des Modells. Weitere Profile kannst du später hinzufügen.",
-      "profilesHelpMany": "Jedes Profil wird eine eigene Datei am Modell. Sie werden nacheinander im Hintergrund importiert, was ein paar Minuten dauern kann.",
+      "profilesHelpMany": "Jedes Profil wird zu einer eigenen Datei im Modell. Sie werden nacheinander im Hintergrund importiert, was einige Minuten dauern kann.",
       "linksPlaceholder": "Modelllinks einfügen, einen pro Zeile. Mehrere Links werden als Warteschlange importiert.",
       "linksDetected": "{{count}} Links werden nacheinander als Hintergrundaufgabe importiert. Fehlgeschlagene Links kannst du danach erneut versuchen.",
       "batchCollectionsBlocked": "Sammlungslinks (Likes, Sammlungen) lassen sich nur einzeln importieren. Füge hier stattdessen Modelllinks ein, oder importiere eine Sammlung für sich."
@@ -157,7 +157,7 @@
       "reset": {
         "action": "Auf Standard zurücksetzen",
         "title": "Darstellung zurücksetzen?",
-        "message": "Design, Farben, Modellkarten, Diashow beim Überfahren und Autorenvorschau werden auf den Standard zurückgesetzt. Deine Sprache bleibt, wie sie ist."
+        "message": "Design, Farben, Modellkarten, Bildwechsel bei Mauskontakt und Autorenvorschau werden auf den Standard zurückgesetzt. Deine Sprache bleibt, wie sie ist."
       },
       "themes": {
         "light": "Hell",
@@ -183,7 +183,7 @@
         "images": "Bilder",
         "renders": "3D-Renderings",
         "failed": "Die Auswahl für Modellkarten konnte nicht gespeichert werden.",
-        "help": "Was Modellkarten zuerst zeigen. Bilder: die Bilder, die zum Modell gehören, oder ein 3D-Rendering, wenn es keine hat. 3D-Renderings: ein Rendering jedes Modells in deiner Renderfarbe, oder seine Bilder, wenn sich die Datei nicht darstellen lässt."
+        "help": "Was bei Modellkarten zuerst angezeigt wird. Bilder: die Bilder, die zum Modell gehören, oder ein 3D-Rendering, falls keine vorhanden sind. 3D-Renderings: ein Rendering jedes Modells in deiner Renderfarbe, oder seine Bilder, falls sich die Datei nicht darstellen lässt."
       },
       "printProfiles": {
         "heading": "Druckprofile",
@@ -195,9 +195,9 @@
         "failed": "Die Anzeige der Druckprofile konnte nicht gespeichert werden."
       },
       "hoverSlideshow": {
-        "heading": "Diashow beim Überfahren",
-        "failed": "Die Einstellung für die Diashow konnte nicht gespeichert werden.",
-        "help": "Modellkarten zeigen nacheinander die Bilder eines Modells, solange der Mauszeiger darauf ruht."
+        "heading": "Bildwechsel bei Mauskontakt",
+        "failed": "Die Einstellung für den Bildwechsel konnte nicht gespeichert werden.",
+        "help": "Modellkarten wechseln durch die Bilder eines Modells, solange der Mauszeiger darauf ruht."
       },
       "renderColor": {
         "heading": "Renderfarbe",
