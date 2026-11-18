@@ -26,7 +26,7 @@ const log = createLogger("model-files");
 
 export type ReplacedPlates = {
   plates: Plate[];
-  /** Whether every picture the model has is still on disk, so the gallery needn't be fetched again. */
+  /** Whether every picture the model had, of those it still has, is on disk, so the gallery needn't be fetched again. */
   galleryWhole: boolean;
   /** The pictures that was asked of, by id: the ones a gallery fetched again replaces. One added since is the owner's,
    *  and stays. */
@@ -85,9 +85,16 @@ export async function replaceModelPlates(
   const { old, plates } = swapped;
 
   // The old plates' pictures go once the new files are stored, not before, so an attempt that threw halfway takes
-  // nothing with it.
-  const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: printId }, select: { assetsPath: true } });
-  for (const plate of old) await removePlatePictures(plate.id, assetsPath);
+  // nothing with it. Best-effort, as the sweep below: the plates are in, and the steps after must still run; a picture
+  // left behind is only clutter.
+  await prisma.print
+    .findUniqueOrThrow({ where: { id: printId }, select: { assetsPath: true } })
+    .then(async ({ assetsPath }) => {
+      for (const plate of old) await removePlatePictures(plate.id, assetsPath);
+    })
+    .catch((error: unknown) =>
+      log.error("couldn't remove a repaired model's old plate pictures", { print: printId, error }),
+    );
   // The reading of plate 0 describes a plate that has gone: emptied here rather than left for the refresh below, which
   // would leave the old reading behind if it threw.
   await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: Prisma.JsonNull } });
@@ -105,11 +112,19 @@ export async function replaceModelPlates(
   await afterLicenseChange(printId);
 
   // Looked for where the pictures are now, with the storage lock a move of them holds: where they were read from above,
-  // a gallery a rename has just moved would look gone, and the owner's own photos be replaced for it.
+  // a gallery a rename has just moved would look gone, and the owner's own photos be replaced for it. Of the pictures
+  // read above, those still there: one the owner removed meanwhile has no file either, and would have the rest
+  // replaced for it.
   const gallery = print.previewImages.map((image) => image.id);
   const galleryWhole = await withStorageLock(async () => {
-    const now = await prisma.print.findUniqueOrThrow({ where: { id: printId }, select: { assetsPath: true } });
-    return gallery.length > 0 && gallery.every((id) => assetExists(now.assetsPath, galleryImageFile(id)));
+    const now = await prisma.print.findUniqueOrThrow({
+      where: { id: printId },
+      select: { assetsPath: true, previewImages: { where: { id: { in: gallery } }, select: { id: true } } },
+    });
+    return (
+      now.previewImages.length > 0 &&
+      now.previewImages.every((image) => assetExists(now.assetsPath, galleryImageFile(image.id)))
+    );
   });
   return { plates, galleryWhole, gallery };
 }
