@@ -20,10 +20,11 @@ its headings, lists and links, plain text as it is, a CSV as a table and a pictu
 Fusion 360 source, offers a download instead.
 Right-click a file, or use the **⋮** in the viewer, to open it in a new tab, download it or copy a link to it.
 
-To add them, drop files onto the attachments, use **Add supporting files** in the model's **⋮** menu, or open
-**Edit**. Edit model lists them under the model files, where you can add, rename and remove them. A document added
-among the model files goes to the supporting files, and a 3D file added among the supporting files goes to the model
-files. A sliced file added this way becomes the prepared print.
+To add the first, use **Add supporting files** in the model's **⋮** menu or open **Edit**. Once a model has some, you
+can also drop more onto them. Edit model lists them under the model files, where you can add, rename and remove them.
+A document added among the model files goes to the supporting files, and a 3D file added among the supporting files
+goes to the model files. A sliced file added this way becomes the prepared print, in place of the one before. Add
+several at once and the first does, while the others stay with the supporting files.
 
 Supporting files come with the model's downloads: **Download** lists them under the model files, to take one at a time,
 and the zip holds them in a `supporting` folder. They come with copies others make of the model too. When you [upload a folder](../guides/upload-folders.md) with one model per folder, its images become photos and

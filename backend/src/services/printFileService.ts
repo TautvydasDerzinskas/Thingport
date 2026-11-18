@@ -248,6 +248,9 @@ export async function saveFileFromTemp(
     let oldPreparedPath: string | null = null;
     let oldPreparedId: string | null = null;
     const updatedPrint = await prisma.$transaction(async (tx) => {
+      // The model's row locked before its prepared slot is read, as a merge locks it: two prepared prints saved at once
+      // would otherwise both find the slot as it was, and the first stay a prepared print the model doesn't point at.
+      await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${printId} FOR UPDATE`;
       const currentPrint = await tx.print.findUnique({ where: { id: printId } });
       if (!currentPrint) throw new HttpError(404, "Print not found");
       await tx.printFile.update({

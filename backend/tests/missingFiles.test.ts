@@ -635,6 +635,7 @@ describe("models whose files are gone", () => {
     const released = new Promise<void>((resolve) => (release = resolve));
     let readDone = () => {};
     const read = new Promise<void>((resolve) => (readDone = resolve));
+    let readFirst = false;
     const findMany = prisma.printFile.findMany.bind(prisma.printFile);
     let held = false;
     const listSpy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
@@ -664,12 +665,17 @@ describe("models whose files are gone", () => {
           .set(auth(owner.token))
           .then((res) => res);
         // Bounded, so a list that never reads the rows fails the test rather than holding the save for good.
-        await Promise.race([read, new Promise((resolve) => setTimeout(resolve, 5000))]);
+        readFirst = await Promise.race([
+          read.then(() => true),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000)),
+        ]);
       }
       return updated;
     }) as never);
     try {
       await expect(saveFileFromTemp(owner.id, model.print.id, temp, "lost.txt", null)).rejects.toThrow(/ENOENT/);
+      // The list had read the rows by then.
+      expect(readFirst).toBe(true);
       release();
       const res = await listing!;
       expect(held).toBe(true);
@@ -955,6 +961,48 @@ describe("models whose files are gone", () => {
     expect(saved.preparedFileId).toBe(mine.id);
   });
 
+  it("keeps one prepared print when two are saved at once, the later in place of the first", async () => {
+    const model = await makePrint(dir, owner.id, "Two prepared at once");
+    // Another request holds the model's row, so both saves reach their last step before either can go on.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let held = () => {};
+    const holding = new Promise<void>((resolve) => (held = resolve));
+    const holder = prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${model.print.id} FOR UPDATE`;
+        held();
+        await released;
+      },
+      { timeout: 20_000 },
+    );
+    let saves: Promise<unknown>[] = [];
+    try {
+      await holding;
+      saves = ["a.gcode", "b.gcode"].map((name) =>
+        saveFileFromTemp(owner.id, model.print.id, tempFile(dir, `; ${name}\nG28\n`), name, null),
+      );
+      // Both waiting on the row.
+      await vi.waitFor(
+        async () => {
+          const [{ waiting }] = await prisma.$queryRaw<{ waiting: number }[]>`
+            SELECT count(*)::int AS waiting FROM pg_stat_activity
+            WHERE datname = current_database() AND wait_event_type = 'Lock'`;
+          expect(waiting).toBeGreaterThanOrEqual(2);
+        },
+        { timeout: 10_000, interval: 50 },
+      );
+    } finally {
+      release();
+      await holder;
+      await Promise.allSettled(saves);
+    }
+    const print = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id }, include: { files: true } });
+    const prepared = print.files.filter((file) => file.role === "PREPARED");
+    expect(prepared).toHaveLength(1);
+    expect(print.preparedFileId).toBe(prepared[0].id);
+  });
+
   it("touches nothing when the files came back while they were being fetched", async () => {
     const model = await makePrint(dir, owner.id, "Came back");
 
@@ -1170,9 +1218,12 @@ describe("models whose files are gone", () => {
       return Promise.reject(new Error("the database went away for a moment"));
     }) as never);
     try {
-      return await repairStoppedAtSecond(model, async () => {
+      const made = await repairStoppedAtSecond(model, async () => {
         failing = failures;
       });
+      // Every failure asked for came: a putting back that read the plates some other way would pass them by.
+      expect(failing).toBe(0);
+      return made;
     } finally {
       failing = 0;
       spy.mockRestore();
@@ -1195,6 +1246,58 @@ describe("models whose files are gone", () => {
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual(made);
     expect(fs.existsSync(path.join(STORAGE, plates[0].storagePath))).toBe(false);
+    const scan = await scanMissingFiles(owner.id);
+    expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
+  it("puts a model's plates back later when its repair made none and putting them back failed then", async () => {
+    // The next try waits for this gate, opened once the database is back.
+    let open = () => {};
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    setCleanupDelaysForTest([0], () => gate);
+    const model = await makePrint(dir, owner.id, "Nothing made");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The repair's first plate can't be saved, and the putting back then fails three times, as the database goes away.
+    const findMany = prisma.plate.findMany.bind(prisma.plate);
+    let failing = 0;
+    const findSpy = vi.spyOn(prisma.plate, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.plate.findMany>[0],
+    ) => {
+      // The putting back's read, which alone asks for a model's plates in no order.
+      if (failing <= 0 || args?.where?.printId !== model.print.id || args.orderBy) return findMany(args);
+      failing -= 1;
+      return Promise.reject(new Error("the database went away for a moment"));
+    }) as never);
+    const create = prisma.plate.create.bind(prisma.plate);
+    const createSpy = vi.spyOn(prisma.plate, "create").mockImplementation(((
+      args: Parameters<typeof prisma.plate.create>[0],
+    ) => {
+      if (args.data.printId !== model.print.id) return create(args);
+      failing = 3;
+      return Promise.reject(new Error("The first plate couldn't be saved"));
+    }) as never);
+    try {
+      await expect(
+        replaceModelPlates(owner.id, model.print.id, [
+          { filename: "new.stl", tempFilePath: tempFile(dir, "solid new\nendsolid\n") },
+        ]),
+      ).rejects.toThrow("The first plate couldn't be saved");
+      expect(failing).toBe(0);
+      // For now the model has no plates at all, which the scan passes over.
+      expect(await prisma.plate.count({ where: { printId: model.print.id } })).toBe(0);
+      findSpy.mockRestore();
+      createSpy.mockRestore();
+      // The next try puts them back, as soon as it has the model's plate order once the gate opens.
+      open();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await withPlateOrder(model.print.id, async () => undefined);
+    } finally {
+      findSpy.mockRestore();
+      createSpy.mockRestore();
+      setCleanupDelaysForTest();
+    }
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
     const scan = await scanMissingFiles(owner.id);
     expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
   });
@@ -1232,13 +1335,15 @@ describe("models whose files are gone", () => {
         failing = 4;
       });
       expect(failing).toBe(0);
-      // Nothing went from the place the plate left, which is another model's now.
-      expect(fs.readFileSync(left, "utf8")).toBe("another model's file");
       // Its own file goes from where its row says it is, once the row can be read.
       await vi.waitFor(() => expect(fs.existsSync(path.join(STORAGE, moved))).toBe(false), {
         timeout: 4000,
         interval: 20,
       });
+      // The clean-up removes files with the storage lock held, so past this turn at it, it's done.
+      await withStorageLock(async () => undefined);
+      // Nothing went from the place the plate left, which is another model's now.
+      expect(fs.readFileSync(left, "utf8")).toBe("another model's file");
     } finally {
       spy.mockRestore();
       setCleanupDelaysForTest();
@@ -1259,15 +1364,24 @@ describe("models whose files are gone", () => {
     // The putting back fails three times and the read of the plates it made once, so the clean-up waits for a while.
     const findMany = prisma.plate.findMany.bind(prisma.plate);
     let failing = 0;
+    // The clean-up's reads of the plates it made once the gate is open, each with when it's done.
+    let opened = false;
+    const reads: { ids: string[]; printId?: string; done: Promise<unknown> }[] = [];
     const spy = vi.spyOn(prisma.plate, "findMany").mockImplementation(((
       args: Parameters<typeof prisma.plate.findMany>[0],
     ) => {
       const where = args?.where as { printId?: string; id?: { in?: string[] } } | undefined;
       const cleanup = Array.isArray(where?.id?.in);
       const puttingBack = !cleanup && where?.printId === model.print.id && !args?.orderBy;
-      if (failing <= 0 || !(puttingBack || cleanup)) return findMany(args);
-      failing -= 1;
-      return Promise.reject(new Error("the database went away for a moment"));
+      if (failing > 0 && (puttingBack || cleanup)) {
+        failing -= 1;
+        return Promise.reject(new Error("the database went away for a moment"));
+      }
+      const rows = findMany(args);
+      if (opened && cleanup) {
+        reads.push({ ids: where!.id!.in!, printId: where?.printId, done: rows.then(undefined, () => undefined) });
+      }
+      return rows;
     }) as never);
     let made: string[] = [];
     try {
@@ -1277,9 +1391,15 @@ describe("models whose files are gone", () => {
       expect(failing).toBe(0);
       // Before the clean-up's next try, the owner merges the model into another, which takes the plate the repair made.
       await mergeModels(owner.id, keeper.print.id, [model.print.id]);
-      // Then the try, which asks for the model's plate order as soon as the gate opens: past that turn, it's done.
+      // Then the try, which reads the plates it made that are still the model's: none, as the merge took the one.
+      opened = true;
       open();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await vi.waitFor(
+        () => expect(reads.some((read) => read.ids.includes(made[0]) && read.printId === model.print.id)).toBe(true),
+        { timeout: 4000, interval: 10 },
+      );
+      await Promise.all(reads.map((read) => read.done));
+      // And past its turn at the model's plate order, whatever it removed is gone.
       await withPlateOrder(model.print.id, async () => undefined);
     } finally {
       spy.mockRestore();

@@ -8,7 +8,7 @@ import { assetExists, galleryImageFile } from "./modelAssets";
 import {
   isGeneratorScript,
   keepGeneratorScripts,
-  refreshAutoPreparedMetadata,
+  refreshPreparedReading,
   restorePlates,
   withPlateBatch,
   withPlateOrder,
@@ -17,7 +17,7 @@ import {
 import { removeMissingPrintFiles } from "./printFileService";
 import { managedPlatePath, removePlatePictures } from "./printService";
 import { afterLicenseChange } from "./licenseService";
-import { Prisma, type Plate } from "@prisma/client";
+import type { Plate } from "@prisma/client";
 
 const log = createLogger("model-files");
 
@@ -73,14 +73,28 @@ export async function replaceModelPlates(
       return rows;
     });
     if (!old) return null;
+    let plates: Plate[];
     try {
-      return { old, plates: await add(plateInputs) };
+      plates = await add(plateInputs);
+      // The new first plate's reading, saved before the plate order goes, as a reorder saves it: a merge reads it to
+      // decide whether this model takes another's prepared print, and would otherwise go by the old first plate's.
+      await refreshPreparedReading(printId);
     } catch (error) {
       // The rows go back pointing at the files that are gone, so the model is left exactly as broken as it was found
       // -- and found again by the next scan.
       await putPlatesBack(printId, old, added);
       throw error;
     }
+    // Of the other files, the rows whose files are gone go, whatever took them, before the plate order goes too: a
+    // prepared print whose file is gone stands in a merge's way as the old reading would. A supporting file or prepared
+    // print still on disk stays -- the owner's own among them, which no source can give back -- and a new plate whose
+    // name one of them holds landed beside it rather than over it (printService's freePlatePath reads them too).
+    // The source's scripts come back below where theirs went. Best-effort: the plates are in, so the scan won't offer
+    // this model again, and the steps after it must still run; a row left behind is only one the next sweep takes.
+    await removeMissingPrintFiles(printId).catch((error: unknown) =>
+      log.error("couldn't sweep a repaired model's missing files", { print: printId, error }),
+    );
+    return { old, plates };
   });
   if (!swapped) return null;
   const { old, plates } = swapped;
@@ -96,19 +110,7 @@ export async function replaceModelPlates(
     .catch((error: unknown) =>
       log.error("couldn't remove a repaired model's old plate pictures", { print: printId, error }),
     );
-  // The reading of plate 0 describes a plate that has gone: emptied here rather than left for the refresh below, which
-  // would leave the old reading behind if it threw.
-  await prisma.print.update({ where: { id: printId }, data: { preparedMetadata: Prisma.JsonNull } });
-  // Of the other files, the rows whose files are gone go, whatever took them. A supporting file or prepared print
-  // still on disk stays -- the owner's own among them, which no source can give back -- and a new plate whose name one
-  // of them holds lands beside it rather than over it (printService's freePlatePath reads them too). The source's
-  // scripts come back below where theirs went. Best-effort: the plates are in, so the scan won't offer this model again,
-  // and the steps after it must still run; a row left behind is only one the next sweep takes.
-  await removeMissingPrintFiles(printId).catch((error: unknown) =>
-    log.error("couldn't sweep a repaired model's missing files", { print: printId, error }),
-  );
   await keepGeneratorScripts(userId, printId, scripts);
-  await refreshAutoPreparedMetadata(printId);
   // LICENSE.txt is written again when it went too.
   await afterLicenseChange(printId);
 
@@ -133,7 +135,8 @@ export async function replaceModelPlates(
 /** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), tried again when
  *  that fails. One that can't be leaves the model with only the plates the replacement made (`made`), whose files are
  *  there, so the scan would never offer it again: their files go instead (removeMadeFiles), and the model's plates
- *  point at files that aren't there, as when it was found. With the plate order held. */
+ *  point at files that aren't there, as when it was found. One that made none leaves the model with no plates at all,
+ *  so `old` goes back later instead (putPlatesBackLater). With the plate order held. */
 async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate[]): Promise<void> {
   let failure: unknown;
   for (let tries = 0; tries < 3; tries++) {
@@ -143,6 +146,16 @@ async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate
     } catch (err) {
       failure = err;
     }
+  }
+  if (!made.length) {
+    // None made, as when the first of them failed: the model has no plates at all, which the scan passes over, so its
+    // own go back once they can.
+    log.error("couldn't put a model's plates back, so it waits with none to try again", {
+      print: printId,
+      error: failure,
+    });
+    putPlatesBackLater(printId, old);
+    return;
   }
   log.error("couldn't put a model's plates back, so the files of the ones a repair made go", {
     print: printId,
@@ -198,4 +211,34 @@ function removeMadeFilesLater(printId: string, made: readonly Plate[], attempt =
     .then((done) => {
       if (!done) removeMadeFilesLater(printId, made, attempt + 1);
     });
+}
+
+/** putPlatesBack tried again later, as removeMadeFilesLater is, for a model a failed repair left with no plates: `old`
+ *  goes back only while it has none, as one added since is the owner's. Each try holds the plate order. */
+function putPlatesBackLater(printId: string, old: Plate[], attempt = 0): void {
+  const delay = cleanupDelaysMs[attempt];
+  if (delay === undefined) {
+    log.error("gave up putting a failed repair's model's plates back, so it has none", { print: printId });
+    return;
+  }
+  void cleanupWait(delay)
+    .then(() => withPlateOrder(printId, () => putBackIfNone(printId, old)))
+    .then((done) => {
+      if (!done) putPlatesBackLater(printId, old, attempt + 1);
+    });
+}
+
+/** `old` put back as the model's plates while it's there and has none. False when that fails, for a later try. */
+async function putBackIfNone(printId: string, old: Plate[]): Promise<boolean> {
+  try {
+    const model = await prisma.print.findUnique({
+      where: { id: printId },
+      select: { _count: { select: { plates: true } } },
+    });
+    if (model && !model._count.plates) await restorePlates(printId, old);
+    return true;
+  } catch (error) {
+    log.error("couldn't put a failed repair's model's plates back", { print: printId, error });
+    return false;
+  }
 }

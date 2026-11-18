@@ -128,6 +128,22 @@ describe("consume folder", () => {
     expect(frog.preparedFileId).toBe(frog.files.find((file) => file.filename === "a1.gcode")!.id);
   });
 
+  it("keeps a subfolder with the nearest model folder above it, where one model's folder holds another's", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Nest/Hen/hen.stl", STL);
+    put("Nest/Hen/Chick/chick.stl", STL);
+    put("Nest/Hen/Chick/docs/feeding.pdf", "%PDF-1.4 feeding");
+    put("Nest/Hen/docs/laying.pdf", "%PDF-1.4 laying");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 2, failed: [] });
+    const [hen] = await printsNamed("Hen");
+    const [chick] = await printsNamed("Chick");
+    expect(hen.files.map((file) => [file.filename, file.folder])).toEqual([["laying.pdf", "docs"]]);
+    expect(chick.files.map((file) => [file.filename, file.folder])).toEqual([["feeding.pdf", "docs"]]);
+  });
+
   it("keeps a model folder's subfolders with it: documents in their folder, pictures as photos", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });
