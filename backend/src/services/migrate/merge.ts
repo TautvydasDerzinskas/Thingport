@@ -607,6 +607,8 @@ export class Merge {
     }
     const files: SourcePrint["files"] = [];
     for (const file of print.files) {
+      // A save the other instance hadn't finished when its dump was taken: its file may not be whole.
+      if (!file.ready) continue;
       const storagePath = path.join(temp, `${file.id}${path.extname(file.filename)}`);
       if (await this.copyFile(file.storagePath, storagePath)) files.push({ ...file, storagePath });
     }

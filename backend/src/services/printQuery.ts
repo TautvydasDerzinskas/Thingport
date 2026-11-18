@@ -125,7 +125,7 @@ export async function buildPrintWhere(
     // A generator script is kept beside a model, never as one of its plates, so this is what marks one as
     // generated rather than only printed. `.scad` is the only kind so far; config.ts's set is the list.
     andClauses.push({
-      files: { some: { role: "SUPPORTING", filename: { endsWith: ".scad", mode: "insensitive" } } },
+      files: { some: { role: "SUPPORTING", ready: true, filename: { endsWith: ".scad", mode: "insensitive" } } },
     });
   }
   // Matched as the search palette matches, so its "see all results" lists what it found.
@@ -187,7 +187,9 @@ export async function listPrints(
   const paged = options.limit !== undefined ? sorted.slice(start, start + options.limit) : sorted;
   // Files only for the page: the sort above reads nothing but Print columns.
   const pagedIds = paged.map((p) => p.id);
-  const files = pagedIds.length ? await prisma.printFile.findMany({ where: { printId: { in: pagedIds } } }) : [];
+  const files = pagedIds.length
+    ? await prisma.printFile.findMany({ where: { printId: { in: pagedIds }, ready: true } })
+    : [];
   const filesByPrint = new Map<string, typeof files>();
   for (const f of files) {
     const list = filesByPrint.get(f.printId) ?? [];

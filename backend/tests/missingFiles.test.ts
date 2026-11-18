@@ -23,8 +23,8 @@ import {
   renameSupportingFile,
   saveFileFromTemp,
 } from "../src/services/printFileService";
-import { savesUnderWay } from "../src/services/printFileSaves";
-import { relocatePrint } from "../src/services/printService";
+import { relocatePrint, relocatePrintFile } from "../src/services/printService";
+import { printOutsByIds } from "../src/services/printLoader";
 import { addPlatesToPrint, removePlate } from "../src/services/printCreation";
 import { withStorageLock } from "../src/utils/storageLock";
 
@@ -281,7 +281,14 @@ describe("models whose files are gone", () => {
     const fresh = await Promise.all(
       [`pending:${randomUUID()}`, "pending"].map((storagePath) =>
         prisma.printFile.create({
-          data: { printId: model.print.id, filename: "fresh.txt", mime: "text/plain", role: "SUPPORTING", storagePath },
+          data: {
+            printId: model.print.id,
+            filename: "fresh.txt",
+            mime: "text/plain",
+            role: "SUPPORTING",
+            storagePath,
+            ready: storagePath === "pending",
+          },
         }),
       ),
     );
@@ -322,19 +329,33 @@ describe("models whose files are gone", () => {
     for (const row of rows) expect(fs.existsSync(path.join(STORAGE, row.storagePath))).toBe(true);
   });
 
-  it("removes at startup the rows saves left at their placeholder, and only those", async () => {
+  it("removes at startup the rows of saves that never finished, with their files, and only those", async () => {
     const model = await makePrint(dir, owner.id, "Cut off");
     const kept = await upload(dir, owner.id, model.print.id, "kept.txt", "stays");
+    // Cut off before claiming a place, an older version's placeholder, one cut off once its file was in, and one whose
+    // place a plate took meanwhile: that file is the plate's.
+    const claimed = `cut-${randomUUID()}/cut.txt`;
+    fs.mkdirSync(path.dirname(path.join(STORAGE, claimed)), { recursive: true });
+    fs.writeFileSync(path.join(STORAGE, claimed), "half");
     const left = await Promise.all(
-      [`pending:${randomUUID()}`, "pending"].map((storagePath) =>
+      [`pending:${randomUUID()}`, "pending", claimed, model.plate.storagePath].map((storagePath) =>
         prisma.printFile.create({
-          data: { printId: model.print.id, filename: "cut.txt", mime: "text/plain", role: "SUPPORTING", storagePath },
+          data: {
+            printId: model.print.id,
+            filename: "cut.txt",
+            mime: "text/plain",
+            role: "SUPPORTING",
+            storagePath,
+            ready: storagePath === "pending",
+          },
         }),
       ),
     );
     try {
-      expect(await removeAbandonedPrintFileSaves()).toBeGreaterThanOrEqual(2);
+      expect(await removeAbandonedPrintFileSaves()).toBeGreaterThanOrEqual(4);
       expect(await prisma.printFile.count({ where: { id: { in: left.map((row) => row.id) } } })).toBe(0);
+      expect(fs.existsSync(path.join(STORAGE, claimed))).toBe(false);
+      expect(fs.existsSync(path.join(STORAGE, model.plate.storagePath))).toBe(true);
       expect(await prisma.printFile.findUnique({ where: { id: kept.id } })).not.toBeNull();
     } finally {
       // Left behind, the old placeholder would fail every later save that makes one.
@@ -376,7 +397,7 @@ describe("models whose files are gone", () => {
     expect(row.storagePath).toContain("Moving away");
   });
 
-  it("refuses to rename a file whose save hasn't said it's under way yet, and leaves it out of the lists", async () => {
+  it("refuses to rename a file whose save isn't done, and leaves it out of the lists", async () => {
     const model = await makePrint(dir, owner.id, "Early rename");
     const early = await prisma.printFile.create({
       data: {
@@ -385,6 +406,7 @@ describe("models whose files are gone", () => {
         mime: "text/plain",
         role: "SUPPORTING",
         storagePath: `pending:${randomUUID()}`,
+        ready: false,
       },
     });
     try {
@@ -436,9 +458,31 @@ describe("models whose files are gone", () => {
     fs.rmSync(path.join(STORAGE, script.storagePath), { force: true });
     // The disk fails when the sweep looks for the note, so the script's row is left behind.
     const access = fsPromises.access.bind(fsPromises);
+    let failed = false;
     const spy = vi.spyOn(fsPromises, "access").mockImplementation((async (where: fs.PathLike, mode?: number) => {
-      if (String(where).endsWith(note.storagePath)) throw Object.assign(new Error("EIO"), { code: "EIO" });
+      if (String(where).endsWith(note.storagePath)) {
+        failed = true;
+        throw Object.assign(new Error("EIO"), { code: "EIO" });
+      }
       return access(where, mode);
+    }) as never);
+    // Which rows went, and how: the sweep takes them together, the recovery of a script one at a time.
+    const swept: string[] = [];
+    const taken: string[] = [];
+    const deleteMany = prisma.printFile.deleteMany.bind(prisma.printFile);
+    const deleteOne = prisma.printFile.delete.bind(prisma.printFile);
+    const sweepSpy = vi.spyOn(prisma.printFile, "deleteMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.deleteMany>[0],
+    ) => {
+      const ids = (args?.where?.id as { in?: string[] } | undefined)?.in ?? [];
+      swept.push(...ids);
+      return deleteMany(args);
+    }) as never);
+    const takeSpy = vi.spyOn(prisma.printFile, "delete").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.delete>[0],
+    ) => {
+      if (args.where.id) taken.push(args.where.id);
+      return deleteOne(args);
     }) as never);
     try {
       await replaceModelPlates(owner.id, model.print.id, [
@@ -447,44 +491,326 @@ describe("models whose files are gone", () => {
       ]);
     } finally {
       spy.mockRestore();
+      sweepSpy.mockRestore();
+      takeSpy.mockRestore();
     }
+    // The sweep failed and took nothing, so the old row was there for the script's own recovery to take.
+    expect(failed).toBe(true);
+    expect(swept).not.toContain(script.id);
+    expect(taken).toContain(script.id);
     const scripts = await prisma.printFile.findMany({ where: { printId: model.print.id, filename: "shape.scad" } });
     expect(scripts).toHaveLength(1);
     expect(fs.readFileSync(path.join(STORAGE, scripts[0].storagePath), "utf8")).toBe("cube(2);\n");
   });
 
-  it("leaves the rows of saves a move listed before they said they were under way", async () => {
-    const model = await makePrint(dir, owner.id, "Listed early");
-    const row = (filename: string, storagePath: string) =>
-      prisma.printFile.create({
-        data: { printId: model.print.id, filename, mime: "text/plain", role: "SUPPORTING", storagePath },
-      });
-    // One still at its placeholder, and one listed at a place of its own whose save says it's under way only as the
-    // move reads it again.
-    const early = await row("early.txt", `pending:${randomUUID()}`);
-    const claimed = await row("claimed.txt", `listed-${randomUUID()}/claimed.txt`);
-    const place = `claimed-${randomUUID()}/claimed.txt`;
-    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
-    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation((async (
-      args: Parameters<typeof prisma.printFile.findUnique>[0],
-    ) => {
-      if (args.where.id === claimed.id && !savesUnderWay.has(claimed.id)) {
-        savesUnderWay.add(claimed.id);
-        await prisma.printFile.update({ where: { id: claimed.id }, data: { storagePath: place } });
-      }
-      return findUnique(args);
+  it("brings a repaired model's script back when another sweep took its old row after it was read", async () => {
+    const model = await makePrint(dir, owner.id, "Script taken");
+    const script = await upload(dir, owner.id, model.print.id, "shape.scad", "cube(1);\n");
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "kept");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    fs.rmSync(path.join(STORAGE, script.storagePath), { force: true });
+    // The repair's own sweep fails, as above; another takes the script's row once the script's recovery has read it.
+    const access = fsPromises.access.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "access").mockImplementation((async (where: fs.PathLike, mode?: number) => {
+      if (String(where).endsWith(note.storagePath)) throw Object.assign(new Error("EIO"), { code: "EIO" });
+      return access(where, mode);
     }) as never);
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    let took = false;
+    const listSpy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      const rows = findMany(args);
+      if (took || !args?.select?.id || !args.select.folder) return rows;
+      took = true;
+      return rows.then(async (found) => {
+        await prisma.printFile.deleteMany({ where: { id: script.id } });
+        return found;
+      });
+    }) as never);
+    try {
+      await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+        { filename: "shape.scad", tempFilePath: tempFile(dir, "cube(2);\n") },
+      ]);
+    } finally {
+      spy.mockRestore();
+      listSpy.mockRestore();
+    }
+    expect(took).toBe(true);
+    const scripts = await prisma.printFile.findMany({ where: { printId: model.print.id, filename: "shape.scad" } });
+    expect(scripts).toHaveLength(1);
+    expect(fs.readFileSync(path.join(STORAGE, scripts[0].storagePath), "utf8")).toBe("cube(2);\n");
+  });
+
+  it("keeps one copy of a repaired model's script when another arrived after the model's files were read", async () => {
+    const model = await makePrint(dir, owner.id, "Script arrived");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // Another save of the same script lands once the script's recovery has read the model's files.
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    let arrived = false;
+    const listSpy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      const rows = findMany(args);
+      if (arrived || !args?.select?.id || !args.select.folder) return rows;
+      arrived = true;
+      return rows.then(async (found) => {
+        await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "cube(3);\n"), "shape.scad", "text/plain");
+        return found;
+      });
+    }) as never);
+    try {
+      await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+        { filename: "shape.scad", tempFilePath: tempFile(dir, "cube(2);\n") },
+      ]);
+    } finally {
+      listSpy.mockRestore();
+    }
+    expect(arrived).toBe(true);
+    const scripts = await prisma.printFile.findMany({ where: { printId: model.print.id, filename: "shape.scad" } });
+    expect(scripts).toHaveLength(1);
+  });
+
+  it("moves a file whose save was done by the time a move reached it, and leaves one whose save wasn't", async () => {
+    const model = await makePrint(dir, owner.id, "Listed early");
+    const row = async (filename: string) => {
+      const storagePath = `listed-${randomUUID()}/${filename}`;
+      fs.mkdirSync(path.dirname(path.join(STORAGE, storagePath)), { recursive: true });
+      fs.writeFileSync(path.join(STORAGE, storagePath), filename);
+      return prisma.printFile.create({
+        data: { printId: model.print.id, filename, mime: "text/plain", role: "SUPPORTING", storagePath, ready: false },
+      });
+    };
+    // Both on their way in when the move reads the model's files; one's save is done by the time the move gets to it.
+    const done = await row("done.txt");
+    const saving = await row("saving.txt");
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    const spy = vi
+      .spyOn(prisma.printFile, "findUnique")
+      .mockImplementation(((args: Parameters<typeof prisma.printFile.findUnique>[0]) =>
+        args.where.id === done.id
+          ? prisma.printFile.update({ where: { id: done.id }, data: { ready: true } }).then(() => findUnique(args))
+          : findUnique(args)) as never);
     try {
       const moved = await prisma.print.update({ where: { id: model.print.id }, data: { name: "Listed elsewhere" } });
       await relocatePrint(moved, []);
-      expect(savesUnderWay.has(claimed.id)).toBe(true);
-      expect((await findUnique({ where: { id: early.id } }))?.storagePath).toMatch(/^pending:/);
-      expect((await findUnique({ where: { id: claimed.id } }))?.storagePath).toBe(place);
+      spy.mockRestore();
+      const after = await prisma.printFile.findUniqueOrThrow({ where: { id: done.id } });
+      expect(after.storagePath).toContain("Listed elsewhere");
+      expect(fs.readFileSync(path.join(STORAGE, after.storagePath), "utf8")).toBe("done.txt");
+      expect((await prisma.printFile.findUniqueOrThrow({ where: { id: saving.id } })).storagePath).toBe(
+        saving.storagePath,
+      );
     } finally {
       spy.mockRestore();
-      savesUnderWay.delete(claimed.id);
-      await prisma.printFile.deleteMany({ where: { id: { in: [early.id, claimed.id] } } });
+      const left = await prisma.printFile.findMany({ where: { id: { in: [done.id, saving.id] } } });
+      await prisma.printFile.deleteMany({ where: { id: { in: [done.id, saving.id] } } });
+      for (const file of left)
+        fs.rmSync(path.dirname(path.join(STORAGE, file.storagePath)), { recursive: true, force: true });
     }
+  });
+
+  it("doesn't list a file whose save failed after a list read the rows, though the list answers after", async () => {
+    const model = await makePrint(dir, owner.id, "Read mid-save");
+    // The list reads the model's files once the save has claimed its place, and answers after the save has failed.
+    let release = () => {};
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let readDone = () => {};
+    const read = new Promise<void>((resolve) => (readDone = resolve));
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    let held = false;
+    const listSpy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      const rows = findMany(args);
+      if (held || args?.where?.role !== "SUPPORTING") return rows;
+      held = true;
+      return rows.then(async (found) => {
+        readDone();
+        await released;
+        return found;
+      });
+    }) as never);
+    const temp = tempFile(dir, "never whole");
+    let listing: Promise<request.Response> | null = null;
+    const update = prisma.printFile.update.bind(prisma.printFile);
+    const claimSpy = vi.spyOn(prisma.printFile, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.update>[0],
+    ) => {
+      const updated = await update(args);
+      if (!listing && typeof args.data.storagePath === "string") {
+        // The upload is gone before it's put in place, so the save fails from here.
+        fs.rmSync(temp, { force: true });
+        listing = request(app)
+          .get(`/api/print/${model.print.id}/files`)
+          .set(auth(owner.token))
+          .then((res) => res);
+        await read;
+      }
+      return updated;
+    }) as never);
+    let res: request.Response;
+    try {
+      await expect(saveFileFromTemp(owner.id, model.print.id, temp, "lost.txt", null)).rejects.toThrow(/ENOENT/);
+    } finally {
+      claimSpy.mockRestore();
+      release();
+    }
+    try {
+      res = await listing!;
+    } finally {
+      listSpy.mockRestore();
+    }
+    expect(res.status).toBe(200);
+    expect(res.body.map((file: { filename: string }) => file.filename)).not.toContain("lost.txt");
+  });
+
+  it("lists a prepared print that has just replaced another while the old one's file is still going", async () => {
+    const model = await makePrint(dir, owner.id, "Replaced");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    // A bulk edit reads the model just as the old print's file is being removed.
+    const rm = fsPromises.rm.bind(fsPromises);
+    let shown: string | null | undefined;
+    const spy = vi.spyOn(fsPromises, "rm").mockImplementation((async (where: fs.PathLike, options?: fs.RmOptions) => {
+      if (shown === undefined && String(where) === path.join(STORAGE, old.storagePath)) {
+        shown = (await printOutsByIds(owner.id, [model.print.id])).get(model.print.id)?.slicer_filename ?? null;
+      }
+      return rm(where, options);
+    }) as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X1\n"), "new.gcode", null);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(shown).toBe("new.gcode");
+  });
+
+  it("leaves a file just saved where its model's rename took it, rather than move it back", async () => {
+    const model = await makePrint(dir, owner.id, "Saved then renamed");
+    // A second Notes.pdf is kept as "Notes (2).pdf", so once saved it's read as out of place.
+    await upload(dir, owner.id, model.print.id, "Notes.pdf", "first");
+    const second = await upload(dir, owner.id, model.print.id, "Notes.pdf", "second");
+    expect(path.basename(second.storagePath)).toBe("Notes (2).pdf");
+    // The model is renamed, and its files moved, between the save's read of the model and its turn at the lock.
+    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    let renamed = false;
+    const spy = vi.spyOn(prisma.print, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.print.findUnique>[0],
+    ) => {
+      if (renamed || args.where.id !== model.print.id) return findUnique(args);
+      renamed = true;
+      return findUnique(args).then(async (read) => {
+        const moved = await prisma.print.update({
+          where: { id: model.print.id },
+          data: { name: `Renamed after saving ${randomUUID()}` },
+        });
+        await relocatePrint(moved, []);
+        return read;
+      });
+    }) as never);
+    try {
+      await relocatePrintFile(second.id);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(renamed).toBe(true);
+    const { name } = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: second.id } });
+    expect(row.storagePath).toContain(name);
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("second");
+  });
+
+  it("moves a file to where its name now puts it, though it was renamed after the move read it", async () => {
+    const model = await makePrint(dir, owner.id, "Renamed on the way");
+    const note = await upload(dir, owner.id, model.print.id, "draft.txt", "notes");
+    // The rename's change to the row lands between the move's read of the model's files and its turn at the lock.
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let renamed = false;
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      if (renamed || args.where.id !== note.id) return findUnique(args);
+      renamed = true;
+      return prisma.printFile
+        .update({ where: { id: note.id }, data: { filename: "guide.txt" } })
+        .then(() => findUnique(args));
+    }) as never);
+    try {
+      const moved = await prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: `Renamed away ${randomUUID()}` },
+      });
+      await relocatePrint(moved, []);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(renamed).toBe(true);
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: note.id } });
+    expect(path.basename(row.storagePath)).toBe("guide.txt");
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("notes");
+  });
+
+  it("moves a plate to where its name now puts it, though it was renamed after the move read it", async () => {
+    const model = await makePrint(dir, owner.id, "Plate renamed on the way");
+    const findUnique = prisma.plate.findUnique.bind(prisma.plate);
+    let renamed = false;
+    const spy = vi.spyOn(prisma.plate, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.plate.findUnique>[0],
+    ) => {
+      if (renamed || args.where.id !== model.plate.id) return findUnique(args);
+      renamed = true;
+      return prisma.plate
+        .update({ where: { id: model.plate.id }, data: { filename: "guide.stl" } })
+        .then(() => findUnique(args));
+    }) as never);
+    try {
+      const moved = await prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: `Plate away ${randomUUID()}` },
+        include: { plates: true },
+      });
+      await relocatePrint(moved, moved.plates);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(renamed).toBe(true);
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: model.plate.id } });
+    expect(path.basename(plate.storagePath)).toBe("guide.stl");
+    expect(fs.existsSync(path.join(STORAGE, plate.storagePath))).toBe(true);
+  });
+
+  it("removes a file from where a move put it, though the move started once the removal had read its row", async () => {
+    const model = await makePrint(dir, owner.id, "Removed on the way");
+    const note = await upload(dir, owner.id, model.print.id, "gone.txt", "bye");
+    const moved = await prisma.print.update({
+      where: { id: model.print.id },
+      data: { name: `Removed away ${randomUUID()}` },
+    });
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let moving: Promise<unknown> | null = null;
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      if (moving || args.where.id !== note.id) return findUnique(args);
+      return findUnique(args).then(async (row) => {
+        // A move of the model's files that can get the storage lock is done before the removal goes on.
+        moving = relocatePrint(moved, []);
+        await Promise.race([moving, new Promise((resolve) => setTimeout(resolve, 300))]);
+        return row;
+      });
+    }) as never);
+    try {
+      await request(app).delete(`/api/print/${model.print.id}/files/${note.id}`).set(auth(owner.token)).expect(200);
+      await moving;
+    } finally {
+      spy.mockRestore();
+    }
+    const newPlace = path.join(STORAGE, path.dirname(path.dirname(note.storagePath)), moved.name, "gone.txt");
+    expect(fs.existsSync(path.join(STORAGE, note.storagePath))).toBe(false);
+    expect(fs.existsSync(newPlace)).toBe(false);
   });
 
   it("gives a batch's first sliced file the prepared slot, though another upload filled it as the batch saved", async () => {

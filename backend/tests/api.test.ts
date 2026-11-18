@@ -517,6 +517,21 @@ describe("plate add/remove/reorder/rename", () => {
     await trackPrint(picked.body.prints[0].id);
     expect(picked.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
     expect(picked.body.prints[0].plates[0].folder ?? null).toBeNull();
+
+    // One at the top of the pick, though kept in a folder, looks from the top: null there isn't "where it's kept".
+    const top = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "shared/mesh.bin", byteLength: positions.length }],
+    });
+    const atTop = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["models", "docs"]))
+      .field("source_folders", JSON.stringify([null, "shared"]))
+      .attach("files", tmpFile("scene.gltf", top))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(atTop.status).toBe(200);
+    await trackPrint(atTop.body.prints[0].id);
+    expect(atTop.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
   });
 
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.

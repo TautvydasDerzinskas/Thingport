@@ -287,11 +287,14 @@ router.get(
   "/print/:id",
   asyncHandler(async (req, res) => {
     // Counts owner views too: lastViewedAt drives Browsing History. Another user's views of a shared model are theirs,
-    // and nothing of the owner's.
-    await prisma.print.updateMany({
-      where: { id: req.params.id, userId: req.userId },
-      data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
-    });
+    // and nothing of the owner's. record=false reads it without counting a view, as an app checking what a change it
+    // made left behind does.
+    if (req.query.record !== "false") {
+      await prisma.print.updateMany({
+        where: { id: req.params.id, userId: req.userId },
+        data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
+      });
+    }
     // An older 3MF's kind, read once, so the page knows which slicers get an adapted copy of it.
     await fillPlateFormats(
       { printId: req.params.id, print: await readablePrintWhere(req.userId!) },

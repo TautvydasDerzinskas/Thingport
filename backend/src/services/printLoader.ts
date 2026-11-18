@@ -6,7 +6,6 @@ import { aiCategoryPaths, aiSuggestionOut, aiSuggestionsShown } from "./aiCatego
 import { aiDescriptionOut } from "./aiDescriptionService";
 import { printProfilesOut, profileFillRunning } from "./printProfileService";
 import { licenseFillRunning, licensePending, licenseReadFailed } from "./licenseService";
-import { settledFiles } from "./printFileSaves";
 import type { Author, Category, Plate, PreviewImage, Prisma, Print, PrintFile } from "@prisma/client";
 
 export type FullPrint = {
@@ -30,7 +29,8 @@ export async function loadFullPrint(
   if (!print) throw new HttpError(404, "Print not found");
   const [plates, files, previewImages] = await Promise.all([
     prisma.plate.findMany({ where: { printId }, orderBy: { position: "asc" } }),
-    prisma.printFile.findMany({ where: { printId } }).then(settledFiles),
+    // Only files whose saves are done (PrintFile.ready): one on its way in would answer 404, and stay if its save failed.
+    prisma.printFile.findMany({ where: { printId, ready: true } }),
     prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } }),
   ]);
   const preparedFile = print.preparedFileId
@@ -108,7 +108,7 @@ export async function printOutsByIds(
       include: { author: true, category: true },
     }),
     prisma.plate.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
-    prisma.printFile.findMany({ where: { printId: { in: printIds } } }).then(settledFiles),
+    prisma.printFile.findMany({ where: { printId: { in: printIds }, ready: true } }),
     prisma.previewImage.findMany({ where: { printId: { in: printIds } }, orderBy: { position: "asc" } }),
     aiCategoryPaths(userId),
     aiSuggestionsShown(),
