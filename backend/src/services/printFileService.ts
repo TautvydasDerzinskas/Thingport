@@ -5,7 +5,7 @@ import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { withStorageLock } from "../utils/storageLock";
-import { savesUnderWay } from "./printFileSaves";
+import { isPendingStoragePath, PENDING_STORAGE_PREFIX, savesUnderWay } from "./printFileSaves";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { isPreparedPrintFilename, inspectPreparedPrint } from "./preparedPrint";
@@ -159,12 +159,6 @@ async function normalizeGeneratorScript(tempPath: string, filename: string): Pro
     console.warn(`Couldn't normalize the line endings of ${filename}:`, err);
   }
 }
-
-// The storagePath a file's row has from when it's made until its place is claimed: one of its own, as the column is
-// unique, and one no rendered path can be, since a path's segments never hold ":". Rows made before were all "pending".
-const PENDING_STORAGE_PREFIX = "pending:";
-const isPendingStoragePath = (storagePath: string) =>
-  storagePath === "pending" || storagePath.startsWith(PENDING_STORAGE_PREFIX);
 
 /**
  * Saves an uploaded file onto a print, beside its plates where the storage structure puts them. The role comes

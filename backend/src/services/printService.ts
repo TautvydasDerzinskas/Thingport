@@ -29,7 +29,7 @@ import {
   type AssetHome,
 } from "./modelAssets";
 import type { Category, Plate, Prisma, Print } from "@prisma/client";
-import { savesUnderWay } from "./printFileSaves";
+import { isPendingStoragePath, savesUnderWay } from "./printFileSaves";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -553,7 +553,9 @@ async function relocatePrintFiles(
     const didMove = await moveStored(
       async () => {
         const now = await prisma.printFile.findUnique({ where: { id: file.id } });
-        if (!now) return null;
+        // Asked again here, as the list can hold a save's row before the save said it's under way: one still at its
+        // placeholder is, and one that claimed its place said so before claiming it.
+        if (!now || isPendingStoragePath(now.storagePath) || savesUnderWay.has(file.id)) return null;
         const place = renderFilePath(print, template, printValues, now.filename, null, now.folder);
         return samePath(now.storagePath, place) ? null : path.join(STORAGE, now.storagePath);
       },

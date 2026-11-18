@@ -23,6 +23,7 @@ import {
   renameSupportingFile,
   saveFileFromTemp,
 } from "../src/services/printFileService";
+import { savesUnderWay } from "../src/services/printFileSaves";
 import { relocatePrint } from "../src/services/printService";
 import { withStorageLock } from "../src/utils/storageLock";
 
@@ -326,6 +327,45 @@ describe("models whose files are gone", () => {
     const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id } });
     expect(row.filename).toBe("moving.txt");
     expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("on its way");
+  });
+
+  it("leaves the rows of saves a move listed before they said they were under way", async () => {
+    const model = await makePrint(dir, owner.id, "Listed early");
+    const row = (filename: string) =>
+      prisma.printFile.create({
+        data: {
+          printId: model.print.id,
+          filename,
+          mime: "text/plain",
+          role: "SUPPORTING",
+          storagePath: `pending:${randomUUID()}`,
+        },
+      });
+    // One still at its placeholder, and one whose save says it's under way and claims its place as the move reads it.
+    const early = await row("early.txt");
+    const claimed = await row("claimed.txt");
+    const place = `claimed-${randomUUID()}/claimed.txt`;
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      if (args.where.id === claimed.id && !savesUnderWay.has(claimed.id)) {
+        savesUnderWay.add(claimed.id);
+        await prisma.printFile.update({ where: { id: claimed.id }, data: { storagePath: place } });
+      }
+      return findUnique(args);
+    }) as never);
+    try {
+      const moved = await prisma.print.update({ where: { id: model.print.id }, data: { name: "Listed elsewhere" } });
+      await relocatePrint(moved, []);
+      expect(savesUnderWay.has(claimed.id)).toBe(true);
+      expect((await findUnique({ where: { id: early.id } }))?.storagePath).toMatch(/^pending:/);
+      expect((await findUnique({ where: { id: claimed.id } }))?.storagePath).toBe(place);
+    } finally {
+      spy.mockRestore();
+      savesUnderWay.delete(claimed.id);
+      await prisma.printFile.deleteMany({ where: { id: { in: [early.id, claimed.id] } } });
+    }
   });
 
   it("gives a batch's first sliced file the prepared slot, though another upload filled it as the batch saved", async () => {
