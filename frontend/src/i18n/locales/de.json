@@ -95,7 +95,7 @@
       "tags": "Tags",
       "downloads": "Downloads",
       "bookmarks": "Lesezeichen",
-      "tools": "Werkzeuge",
+      "tools": "Tools",
       "studio": "Studio",
       "explore": "Entdecken",
       "chats": "Chats",
@@ -139,7 +139,7 @@
       "profilesHelpMany": "Jedes Profil wird zu einer eigenen Datei im Modell. Sie werden nacheinander im Hintergrund importiert, was einige Minuten dauern kann.",
       "linksPlaceholder": "Modelllinks einfügen, einen pro Zeile. Mehrere Links werden als Warteschlange importiert.",
       "linksDetected": "{{count}} Links werden nacheinander als Hintergrundaufgabe importiert. Fehlgeschlagene Links kannst du danach erneut versuchen.",
-      "batchCollectionsBlocked": "Sammlungslinks (Likes, Sammlungen) lassen sich nur einzeln importieren. Füge hier stattdessen Modelllinks ein, oder importiere eine Sammlung für sich."
+      "batchCollectionsBlocked": "Sammlungslinks („Gefällt mir“-Listen, Sammlungen) lassen sich nur einzeln importieren. Füge hier stattdessen Modelllinks ein, oder importiere eine Sammlung für sich."
     },
     "userMenu": {
       "logOutFailed": "Abmelden fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.",
@@ -645,6 +645,413 @@
   },
   "models": {
     "pageTitle": "Modelle",
+    "defaultCategories": {
+      "100": {
+        "name": "Kunst",
+        "metaTitle": "3D-gedruckte Kunst",
+        "metaDescription": "Entdecke in der Kategorie „Kunst“ eine große Auswahl an beeindruckenden 3D-Druckmodellen zum Drucken und Ausstellen. Von 2D-Kunst bis zu Skulpturen: Lade hochwertige Modelldateien herunter und bring mit diesen einzigartigen Designs Schönheit und Kreativität in deine Räume."
+      },
+      "101": {
+        "name": "2D-Kunst",
+        "metaTitle": "2D-Kunst",
+        "metaDescription": "Erwecke deine Lieblingsgemälde, -zeichnungen und -illustrationen mit 3D-gedruckten 2D-Kunstmodellen zum Leben. Erlebe Kunst in einer neuen Dimension, wenn aus geliebten 2D-Werken beeindruckende 3D-Drucke werden."
+      },
+      "102": {
+        "name": "Schilder & Logos",
+        "metaTitle": "3D-gedruckte Schilder & Logos",
+        "metaDescription": "Werte dein Branding und deine Beschilderung mit auffälligen 3D-gedruckten Schildern und Logos auf. Gestalte eigene Schilder für Unternehmen, Veranstaltungen oder dein Zuhause, die aus der Masse herausstechen."
+      },
+      "103": {
+        "name": "Münzen & Abzeichen",
+        "metaTitle": "3D-gedruckte Münzen & Abzeichen",
+        "metaDescription": "Gestalte einzigartige Andenken mit anpassbaren 3D-gedruckten Münzen und Abzeichen. Erinnere an besondere Anlässe, würdige Leistungen oder zeig einfach deine Persönlichkeit mit individuellen Designs."
+      },
+      "104": {
+        "name": "Skulpturen",
+        "metaTitle": "3D-gedruckte Skulpturen",
+        "metaDescription": "Entdecke faszinierende 3D-gedruckte Skulpturen, die die Kunstfertigkeit dieser Technik zeigen. Von lebensechten Figuren und abstrakten Formen bis zu feinen Details und eindrucksvollen Texturen: Diese Auswahl bietet vielfältige künstlerische Ausdrucksformen, die inspirieren und begeistern."
+      },
+      "105": {
+        "name": "Sonstige Kunst",
+        "metaTitle": "Sonstige Kunstmodelle",
+        "metaDescription": "Verschönere dein Zuhause mit einzigartigen 3D-gedruckten Kunstmodellen. Entdecke Vasen, Lampen, Boxen, Skulpturen und mehr!"
+      },
+      "200": {
+        "name": "Mode",
+        "metaTitle": "3D-gedruckte Mode",
+        "metaDescription": "Entdecke in der Kategorie „Mode“ moderne und stilvolle Accessoires zum 3D-Drucken. Drucke deine eigenen Unikate, von Schmuck bis zu Taschen, Geldbörsen und Gürteln, und zeig deinen persönlichen Stil."
+      },
+      "201": {
+        "name": "Taschen",
+        "metaTitle": "3D-gedruckte Taschen",
+        "metaDescription": "Funktion trifft Mode: robuste und nachhaltige 3D-gedruckte Taschen, von trendigen Handtaschen bis zu praktischen Rucksäcken."
+      },
+      "202": {
+        "name": "Kleidung",
+        "metaTitle": "3D-gedruckte Kleidungsaccessoires",
+        "metaDescription": "Setze Akzente mit auffälligen, persönlichen 3D-gedruckten Kleidungsaccessoires, von markanten Ketten und Armbändern bis zu kräftigen Ohrringen und Tüchern."
+      },
+      "203": {
+        "name": "Brillen",
+        "metaTitle": "3D-gedruckte Brillen",
+        "metaDescription": "Sieh die Welt in neuem Licht mit stilvollen und praktischen 3D-gedruckten Brillen – mit vielen Gestellen und Gläsern für modische wie funktionale Brillen."
+      },
+      "204": {
+        "name": "Schuhe",
+        "metaTitle": "3D-gedruckte Schuhe",
+        "metaDescription": "Komfort und Stil mit innovativen, anpassbaren 3D-gedruckten Schuhen, die guten Halt geben und ein modisches Statement setzen."
+      },
+      "205": {
+        "name": "Ringe",
+        "metaTitle": "3D-gedruckte Ringe",
+        "metaDescription": "Finde den perfekten Ring als Zeichen deiner Liebe oder Verbundenheit: einzigartige 3D-gedruckte Ringe, von klassischen Eheringen über moderne Statement-Ringe bis zu Ringen mit eigener Gravur."
+      },
+      "206": {
+        "name": "Ohrringe",
+        "metaTitle": "3D-gedruckte Ohrringe",
+        "metaDescription": "Setze ein Zeichen mit exquisiten, einzigartigen 3D-gedruckten Ohrringen – von zart und filigran bis kräftig und geometrisch."
+      },
+      "207": {
+        "name": "Sonstige Mode",
+        "metaTitle": "Sonstige Modemodelle",
+        "metaDescription": "Entdecke unzählige Möglichkeiten mit vielfältigen 3D-gedruckten Modemodellen, darunter Hüte, Gürtel und Haarschmuck."
+      },
+      "208": {
+        "name": "Schmuck",
+        "metaTitle": "3D-gedruckter Schmuck",
+        "metaDescription": "Fertige einzigartige Schmuckstücke mit 3D-gedrucktem Schmuck – von zart und filigran bis auffällig und ausdrucksstark."
+      },
+      "300": {
+        "name": "Hobby & DIY",
+        "metaTitle": "3D-gedruckte Hobby- & DIY-Modelle",
+        "metaDescription": "Wer gern selbst baut, für den sind 3D-Drucker ideal – und diese Kategorie ist die passende Fundgrube für dein DIY-Hobby. Von Elektronik über RC-Fahrzeuge bis zur Robotik findest du hier etwas, das dich beschäftigt."
+      },
+      "301": {
+        "name": "Elektronik",
+        "metaTitle": "3D-gedrucktes Zubehör für Elektronik",
+        "metaDescription": "Bring deine Elektronikprojekte voran mit präzise gefertigten 3D-gedruckten Bauteilen, Gehäusen und Zubehör."
+      },
+      "302": {
+        "name": "Fahrzeuge",
+        "metaTitle": "3D-gedruckte Fahrzeuge",
+        "metaDescription": "Entwirf und baue deine Traumfahrzeuge im 3D-Druck, von Autos und Motorrädern bis zu Raumschiffen und U-Booten."
+      },
+      "303": {
+        "name": "Musik",
+        "metaTitle": "3D-gedruckte Musikinstrumente",
+        "metaDescription": "Gestalte einzigartige 3D-gedruckte Musikinstrumente, von Flöten und Trommeln bis zu Gitarren und Synthesizern."
+      },
+      "304": {
+        "name": "RC",
+        "metaTitle": "3D-gedruckte RC-Modelle",
+        "metaDescription": "Erlebe den Reiz, deine eigenen 3D-gedruckten RC-Fahrzeuge, Drohnen und Flugzeuge zu bauen und zu steuern."
+      },
+      "305": {
+        "name": "Robotik",
+        "metaTitle": "3D-gedruckte Robotik",
+        "metaDescription": "Entdecke die Welt der Robotik mit 3D-gedruckten Roboterteilen, Rahmen und Aktuatoren."
+      },
+      "306": {
+        "name": "Sport & Outdoor",
+        "metaTitle": "3D-gedruckte Sport- & Outdoor-Modelle",
+        "metaDescription": "Für alle, die sich gern bewegen und draußen unterwegs sind: Drucke eigene Ausrüstung, gestalte persönliches Zubehör und entdecke 3D-Modelle für deinen aktiven Alltag."
+      },
+      "307": {
+        "name": "Sonstiges Hobby & DIY",
+        "metaTitle": "Sonstige Hobby- & DIY-Modelle",
+        "metaDescription": "Entdecke unzählige Möglichkeiten für Kreativität und Selbstausdruck mit vielfältigen 3D-gedruckten Hobby- und DIY-Modellen."
+      },
+      "400": {
+        "name": "Haushalt",
+        "metaTitle": "3D-gedruckte Haushaltsmodelle",
+        "metaDescription": "Wenn du das liest, willst du wahrscheinlich etwas im Haushalt reparieren oder verbessern – mit einem der vielen Modelle hier. Von einfachen Türgriffen über aufwendige Deko bis zu nützlichen Helfern für den Garten ist sicher etwas für dich dabei. Also, ran an den Drucker!"
+      },
+      "401": {
+        "name": "Deko",
+        "metaTitle": "3D-gedruckte Wohndeko",
+        "metaDescription": "Verschönere dein Zuhause mit einzigartigen, auffälligen 3D-gedruckten Vasen, Skulpturen, Wandbildern und anderer Deko."
+      },
+      "402": {
+        "name": "Garten",
+        "metaTitle": "3D-gedruckte Gartenmodelle",
+        "metaDescription": "Verwandle deinen Außenbereich mit charmanten, anpassbaren 3D-gedruckten Gartenfiguren, Pflanzgefäßen und Skulpturen."
+      },
+      "403": {
+        "name": "Feste & Feiertage",
+        "metaTitle": "3D-gedruckte Modelle für Feste",
+        "metaDescription": "Feiere besondere Anlässe und Feiertage mit festlicher 3D-gedruckter Deko, Anhängern und Figuren."
+      },
+      "404": {
+        "name": "Büro",
+        "metaTitle": "3D-gedruckte Büromodelle",
+        "metaDescription": "Werte deinen Arbeitsplatz auf mit praktischen, stilvollen 3D-gedruckten Organizern, Stifthaltern und Schreibtischzubehör."
+      },
+      "405": {
+        "name": "Haustiere",
+        "metaTitle": "3D-gedruckte Modelle für Haustiere",
+        "metaDescription": "Gestalte persönliches Zubehör und Spielzeug für dein Haustier, mit anpassbaren 3D-gedruckten Marken, Näpfen und Spielsachen."
+      },
+      "406": {
+        "name": "Sonstiger Haushalt",
+        "metaTitle": "Sonstige Haushaltsmodelle",
+        "metaDescription": "Entdecke unzählige Möglichkeiten für Ordnung, persönliche Note und Spaß im Haushalt mit vielfältigen 3D-gedruckten Haushaltsmodellen."
+      },
+      "500": {
+        "name": "Bildung",
+        "metaTitle": "3D-gedruckte Lernmodelle",
+        "metaDescription": "Entdecke 3D-Druck-Designs, die das Lernen bereichern und interaktive Lernmittel schaffen – zu Naturwissenschaften, Geografie, Geschichte, Mathematik und mehr. Ideal für Lehrende und Lernende jeden Alters."
+      },
+      "501": {
+        "name": "Technik",
+        "metaTitle": "3D-gedruckte Technikmodelle",
+        "metaDescription": "Mach abstrakte technische Konzepte greifbar mit 3D-gedruckten Modellen zu mechanischen Bauteilen, Bauwerken und elektronischen Schaltungen."
+      },
+      "502": {
+        "name": "Mathematik",
+        "metaTitle": "3D-gedruckte Mathematikmodelle",
+        "metaDescription": "Mach abstrakte mathematische Konzepte greifbar mit anschaulichen 3D-gedruckten Modellen von geometrischen Formen, Funktionen und komplexen Zusammenhängen."
+      },
+      "503": {
+        "name": "Biologie",
+        "metaTitle": "3D-gedruckte Biologiemodelle",
+        "metaDescription": "Entdecke die faszinierende Welt des Lebens mit sorgfältig gestalteten 3D-gedruckten Biologiemodellen, die Anatomie, Molekülstrukturen und biologische Vorgänge anschaulich machen."
+      },
+      "504": {
+        "name": "Physik & Astronomie",
+        "metaTitle": "3D-gedruckte Physik- & Astronomiemodelle",
+        "metaDescription": "Ergründe die Geheimnisse des Universums mit 3D-gedruckten Physik- und Astronomiemodellen, die physikalische Kräfte, Himmelsphänomene und komplexe Theorien sichtbar machen."
+      },
+      "505": {
+        "name": "Chemie",
+        "metaTitle": "3D-gedruckte Chemiemodelle",
+        "metaDescription": "Ergründe die Geheimnisse der Materie mit 3D-gedruckten Chemiemodellen, die Molekülstrukturen, Verbindungen und komplexe Reaktionen anschaulich machen."
+      },
+      "506": {
+        "name": "Geografie",
+        "metaTitle": "3D-gedruckte Geografiemodelle",
+        "metaDescription": "Geh auf geografische Reise um die Welt mit 3D-gedruckten Modellen von Gebirgen, Kontinenten, Ozeanen, Flüssen und Klimazonen."
+      },
+      "507": {
+        "name": "Sonstige Bildung",
+        "metaTitle": "Sonstige Lernmodelle",
+        "metaDescription": "Entdecke unzählige Lernmöglichkeiten mit vielfältigen 3D-gedruckten Lernmodellen zu Geschichte, Gesellschaftskunde, Kunst, Design, Sprache und Literatur."
+      },
+      "600": {
+        "name": "Miniaturen",
+        "metaTitle": "3D-gedruckte Miniaturen",
+        "metaDescription": "Du magst Miniaturen? Dann bist du hier richtig. Von mystischen Wesen und Tieren bis zu Architektur findest du sicher etwas, das deinen Spieleabend aufpeppt!"
+      },
+      "601": {
+        "name": "Tiere",
+        "metaTitle": "3D-gedruckte Tiere",
+        "metaDescription": "Bevölkere deine Spielwelten mit realistischen, detailreichen 3D-gedruckten Tieren, von majestätischen Drachen bis zu verspielten Haustieren."
+      },
+      "602": {
+        "name": "Architektur",
+        "metaTitle": "3D-gedruckte Architektur",
+        "metaDescription": "Baue beeindruckende, realistische 3D-gedruckte Gebäude, Burgen und andere architektonische Wunder für deine Miniaturlandschaften."
+      },
+      "603": {
+        "name": "Kreaturen",
+        "metaTitle": "3D-gedruckte Kreaturen",
+        "metaDescription": "Lass deiner Fantasie freien Lauf mit fantastischen 3D-gedruckten Kreaturen, von mythischen Monstern bis zu frechen Feen."
+      },
+      "604": {
+        "name": "Menschen",
+        "metaTitle": "3D-gedruckte Menschen",
+        "metaDescription": "Gestalte vielfältige, realistische 3D-gedruckte Figuren für deine Tabletop-Spiele, Rollenspiel-Abenteuer und Dioramen."
+      },
+      "605": {
+        "name": "Sonstige Miniaturen",
+        "metaTitle": "Sonstige Miniaturen",
+        "metaDescription": "Entdecke eine riesige Auswahl einzigartiger 3D-gedruckter Miniaturen für deine Spiele und Sammlungen."
+      },
+      "700": {
+        "name": "Werkzeug",
+        "metaTitle": "3D-gedrucktes Werkzeug",
+        "metaDescription": "Werkzeug kann man nie genug haben – und auch nie genug Möglichkeiten, es ordentlich zu verstauen. Hier findest du die Dateien für die passende Vorrichtung oder den Organizer für dein neuestes Gadget."
+      },
+      "701": {
+        "name": "Organizer",
+        "metaTitle": "3D-gedruckte Organizer",
+        "metaDescription": "Halte Arbeitsplatz und Habseligkeiten in Ordnung mit praktischen, anpassbaren 3D-gedruckten Organizern, Schalen und Behältern."
+      },
+      "702": {
+        "name": "Messwerkzeuge",
+        "metaTitle": "3D-gedruckte Messwerkzeuge",
+        "metaDescription": "Miss genau mit präzisen, vielseitigen 3D-gedruckten Messwerkzeugen, Linealen und Messschiebern."
+      },
+      "703": {
+        "name": "Handwerkzeuge",
+        "metaTitle": "3D-gedruckte Handwerkzeuge",
+        "metaDescription": "Ergänze deinen Werkzeugkasten mit robusten, anpassbaren 3D-gedruckten Handwerkzeugen, Schlüsseln und Schraubendrehern."
+      },
+      "704": {
+        "name": "Maschinenwerkzeuge",
+        "metaTitle": "3D-gedruckte Maschinenwerkzeuge",
+        "metaDescription": "Rüste deine Werkstatt auf mit präzise gefertigten 3D-gedruckten Maschinenwerkzeugen, Lehren und Vorrichtungen."
+      },
+      "705": {
+        "name": "Gadgets",
+        "metaTitle": "3D-gedruckte Gadgets",
+        "metaDescription": "Entdecke einzigartige, praktische 3D-gedruckte Gadgets, von Handyhaltern bis zu Schreibtisch-Organizern."
+      },
+      "706": {
+        "name": "Sonstiges Werkzeug",
+        "metaTitle": "Sonstiges Werkzeug",
+        "metaDescription": "Entdecke eine große Auswahl an speziellen 3D-gedruckten Werkzeugen für deine ganz eigenen Bedürfnisse und Interessen."
+      },
+      "707": {
+        "name": "Medizinische Hilfsmittel",
+        "metaTitle": "3D-gedruckte medizinische Hilfsmittel",
+        "metaDescription": "Erlebe die Zukunft der Medizin mit innovativen 3D-gedruckten medizinischen Hilfsmitteln, OP-Schablonen und Implantaten."
+      },
+      "800": {
+        "name": "Spielzeug & Spiele",
+        "metaTitle": "3D-gedrucktes Spielzeug & Spiele",
+        "metaDescription": "Hier dreht sich alles um druckbaren Spaß! Du findest Brettspiele, Spielzeug, Rätsel und Spiele, die nach einem schnellen Druck bereit zum Spielen sind."
+      },
+      "801": {
+        "name": "Figuren",
+        "metaTitle": "3D-gedruckte Figuren",
+        "metaDescription": "Gestalte eigene 3D-gedruckte Figuren, Actionfiguren und Puppen zum fantasievollen Spielen und Geschichtenerzählen."
+      },
+      "802": {
+        "name": "Brettspiele",
+        "metaTitle": "3D-gedruckte Brettspiele",
+        "metaDescription": "Bereichere deine Spieleabende mit einzigartigen, anpassbaren 3D-gedruckten Brettspielen, Schachspielen und Spielfiguren."
+      },
+      "803": {
+        "name": "Spielzeug für draußen",
+        "metaTitle": "3D-gedrucktes Spielzeug für draußen",
+        "metaDescription": "Für aktives Spielen und Abenteuer im Freien: robustes 3D-gedrucktes Outdoor-Spielzeug, Frisbees und Sportzubehör."
+      },
+      "804": {
+        "name": "Rätsel & Puzzles",
+        "metaTitle": "3D-gedruckte Rätsel & Puzzles",
+        "metaDescription": "Fordere deinen Kopf heraus und teste deine Knobelfähigkeiten mit kniffligen, fesselnden 3D-gedruckten Rätseln."
+      },
+      "805": {
+        "name": "Sonstiges Spielzeug & Spiele",
+        "metaTitle": "Sonstiges Spielzeug & Spiele",
+        "metaDescription": "Entdecke unzählige Möglichkeiten zum Spielen, Lernen und Gestalten mit vielfältigem 3D-gedrucktem Spielzeug und Spielen."
+      },
+      "806": {
+        "name": "Baukästen",
+        "metaTitle": "3D-gedruckte Baukästen",
+        "metaDescription": "Baue beeindruckende Konstruktionen mit vielseitigen, lehrreichen 3D-gedruckten Baukästen, von klassischen Bausteinen bis zu MINT-Designs."
+      },
+      "900": {
+        "name": "3D-Drucker",
+        "metaTitle": "3D-Drucker",
+        "metaDescription": "Ob du deinen 3D-Drucker mit Zubehör aufwerten oder ein Ersatzteil selbst drucken willst – hier wirst du fündig. Eine große Auswahl an Modellen ist nur einen Klick entfernt."
+      },
+      "901": {
+        "name": "3D-Drucker-Zubehör",
+        "metaTitle": "3D-Drucker-Zubehör",
+        "metaDescription": "Werte deinen 3D-Druck auf mit ausgewähltem Zubehör. Entdecke Werkzeuge und Bauteile, die die Druckqualität verbessern, die Leistung steigern und deinem 3D-Drucker neue Möglichkeiten eröffnen."
+      },
+      "902": {
+        "name": "3D-Drucker-Teile",
+        "metaTitle": "3D-Drucker-Teile & Upgrades",
+        "metaDescription": "Mach deinen 3D-Drucker präziser und leistungsfähiger mit hochwertigen Ersatzteilen und Upgrades. Ob genauere Drucke, höheres Tempo oder mehr Funktionen – hier ist für jeden Bedarf etwas dabei."
+      },
+      "903": {
+        "name": "Testmodelle",
+        "metaTitle": "3D-Drucker-Testmodelle",
+        "metaDescription": "Für fehlerfreie Drucke und optimale Leistung: wichtige Testmodelle, mit denen du Druckereinstellungen prüfst, mögliche Probleme findest und die Druckqualität kontrollierst."
+      },
+      "1000": {
+        "name": "Requisiten & Cosplay",
+        "metaTitle": "3D-gedruckte Requisiten & Cosplay",
+        "metaDescription": "Auch wenn nicht Halloween ist: Für eine coole Maske, einen Helm oder andere Cosplay-Teile ist immer Zeit. Warte nicht zu lange und fang mit deinem neuen Outfit an!"
+      },
+      "1001": {
+        "name": "Masken & Helme",
+        "metaTitle": "3D-gedruckte Masken & Helme",
+        "metaDescription": "Werte dein Cosplay auf mit detaillierten, realistischen 3D-gedruckten Masken, Helmen und anderem Gesichtszubehör."
+      },
+      "1002": {
+        "name": "Cosplay-Waffen",
+        "metaTitle": "3D-gedruckte Cosplay-Waffen",
+        "metaDescription": "Tauche ein in die Welt des Cosplay mit 3D-gedruckten Requisiten! Fein gestaltete Schwerter und Schilde helfen dir, deine Lieblingsfiguren zu verkörpern."
+      },
+      "1003": {
+        "name": "Kostüme",
+        "metaTitle": "3D-gedruckte Kostüme",
+        "metaDescription": "Gestalte beeindruckende, authentische 3D-gedruckte Kostüme, vom Superheldenanzug bis zur Fantasy-Rüstung, für dein nächstes Cosplay-Event oder Halloween."
+      },
+      "1004": {
+        "name": "Sonstige Requisiten & Cosplay",
+        "metaTitle": "Sonstige Requisiten & Cosplay",
+        "metaDescription": "Vervollständige dein Cosplay mit vielfältigen 3D-gedruckten Requisiten, Accessoires und Gadgets."
+      },
+      "2000": {
+        "name": "Generative 3D-Modelle",
+        "metaTitle": "Generative 3D-Modelle",
+        "metaDescription": "Hier findest du kreative Modelle, die mit 3D-Modellgeneratoren erstellt wurden. Sie sind schön gestaltet und zeigen, was sich mit diesen Generatoren machen lässt."
+      },
+      "2001": {
+        "name": "Hueforge & Lithophanie",
+        "metaTitle": "Hueforge & Lithophanie",
+        "metaDescription": "Verwandle deine Lieblingsbilder mit Hueforge in beeindruckende 3D-Kunst und gestalte Lithophanien, die im Licht leuchten."
+      },
+      "2002": {
+        "name": "Make My Sign",
+        "metaTitle": "Make My Sign",
+        "metaDescription": "Gestalte persönliche, auffällige Schilder mit dem einfachen Generator Make My Sign – ideal für Zuhause, Unternehmen und besondere Anlässe."
+      },
+      "2003": {
+        "name": "Make My Vase",
+        "metaTitle": "Make My Vase",
+        "metaDescription": "Entwirf einzigartige Vasen mit dem Generator Make My Vase, von schlichten Formen bis zu feinen Mustern, massiv oder hohl."
+      },
+      "2004": {
+        "name": "Pixel Puzzle Maker",
+        "metaTitle": "Pixel Puzzle Maker",
+        "metaDescription": "Verwandle deine Lieblingsbilder mit dem Pixel Puzzle Maker in fesselnde Pixel-Art-Puzzles – für knifflige Herausforderungen und kreative Deko."
+      },
+      "2005": {
+        "name": "Relief Sculpture Maker",
+        "metaTitle": "Relief Sculpture Maker",
+        "metaDescription": "Verwandle 3D-Modelle oder Bilder mit dem Relief Sculpture Maker in beeindruckende Flachreliefs."
+      },
+      "2006": {
+        "name": "AI Scanner",
+        "metaTitle": "AI Scanner",
+        "metaDescription": "Erstelle 3D-Objekte erstaunlich genau nach: Nimm mit dem AI Scanner einfach ein durchgehendes Video auf, den Rest erledigt die KI."
+      },
+      "2007": {
+        "name": "Image to Keychain",
+        "metaTitle": "Image to Keychain",
+        "metaDescription": "Macht aus Bildern Schlüsselanhänger, Lesezeichen und andere 2D-Kunstmodelle."
+      },
+      "2008": {
+        "name": "Make My Desk Organizer",
+        "metaTitle": "Make My Desk Organizer",
+        "metaDescription": "Entwirf deinen perfekten Schreibtisch-Organizer und passe jedes Detail genau an deinen Bedarf an."
+      },
+      "2009": {
+        "name": "PrintMon Maker",
+        "metaTitle": "PrintMon Maker",
+        "metaDescription": "Erzeuge aus Text oder Bildern niedliche Kreaturen, fertig für den 3D-Druck."
+      },
+      "2010": {
+        "name": "Statue Maker",
+        "metaTitle": "Statue Maker",
+        "metaDescription": "Mach aus deinem Porträt ein lebensechtes 3D-Meisterwerk."
+      },
+      "2011": {
+        "name": "Christmas Ornament Maker",
+        "metaTitle": "Christmas Ornament Maker",
+        "metaDescription": "Gestalte mit dem Christmas Ornament Maker persönliche, drehbare 2D-Weihnachtsanhänger – ideal als Deko oder Geschenk."
+      },
+      "2012": {
+        "name": "Make My Lantern",
+        "metaTitle": "Make My Lantern",
+        "metaDescription": "Erzeugt aus einem Bild eine ausgehöhlte Laterne."
+      }
+    },
     "grid": {
       "empty": "Noch keine Modelle."
     },
@@ -660,6 +1067,94 @@
       "removedFromFavorites": "„{{name}}“ aus den Favoriten entfernt",
       "importedFrom": "Importiert von {{provider}}",
       "uploadedDirectly": "Direkt in Thingport hochgeladen"
+    },
+    "linkSource": {
+      "action": "Mit einer Plattform verknüpfen",
+      "title": "Mit einer Plattform verknüpfen",
+      "help": "Übernimmt Bilder, Beschreibung, Tags und Autor der Seite. Es werden keine Dateien heruntergeladen, und das Modell bleibt, wo es ist: Eine passende Kategorie der Plattform wird nur vorgeschlagen.",
+      "label": "Modelllink",
+      "placeholder": "Link zur Seite dieses Modells einfügen",
+      "link": "Verknüpfen",
+      "linking": "Wird verknüpft …",
+      "problem": {
+        "several": "Füge nur einen Link ein.",
+        "list": "Das ist eine Liste von Modellen. Füge den Link zu einem einzelnen Modell ein.",
+        "notModel": "Das ist kein Link zu einem Modell auf einer unterstützten Plattform.",
+        "disabled": "Ein Admin hat diese Plattform ausgeschaltet."
+      },
+      "previewFailed": "Keine Vorschau: {{reason}}",
+      "linkedElsewhere": "„{{name}}“ ist schon mit dieser Seite verknüpft.",
+      "openModel": "Öffnen",
+      "pictures_one": "{{count}} Bild",
+      "pictures_other": "{{count}} Bilder",
+      "tags_one": "{{count}} Tag",
+      "tags_other": "{{count}} Tags",
+      "replacesDescription": "Das ersetzt die aktuelle Beschreibung des Modells.",
+      "linked": "Mit {{provider}} verknüpft.",
+      "linkedWithSuggestion": "Mit {{provider}} verknüpft. Vorgeschlagene Kategorie: {{category}}.",
+      "failed": "Dieses Modell konnte nicht verknüpft werden. Bitte versuche es erneut.",
+      "alreadyLinked": "Schon mit einer Plattform verknüpft",
+      "selectOne": "Wähle ein Modell aus, um es zu verknüpfen"
+    },
+    "aiCategorization": {
+      "suggestionPending": "Nimm den Vorschlag zuerst an oder lehne ihn ab",
+      "section": "KI-Kategorisierung",
+      "recategorize": "Mit KI neu kategorisieren",
+      "categorize": "Mit KI kategorisieren",
+      "queued": "Für die KI-Kategorisierung eingereiht. Du wirst benachrichtigt, wenn es fertig ist.",
+      "scopeTitle": "Modelle kategorisieren",
+      "runInProgress": "Wird mit KI kategorisiert. Den Fortschritt siehst du unten auf der Seite.",
+      "nothingToCategorize": "Keine Modelle zum Kategorisieren.",
+      "scope": {
+        "uncategorized": "Ohne Kategorie ({{count}})",
+        "uncategorizedHelp": "Modelle, die noch keine Kategorie haben, etwa deine Uploads.",
+        "folders": "In Ordnern ({{count}})",
+        "foldersHelp": "Modelle, die du in einen Ordner gelegt hast. Eine Kategorie zuzuweisen nimmt das Modell aus seinem Ordner.",
+        "ai": "Von KI ({{count}})",
+        "aiHelp": "Modelle, deren Kategorie schon einmal von der KI kam. Prüft sie erneut, etwa nachdem du Kategorien hinzugefügt hast.",
+        "rule": "Beim Import ({{count}})",
+        "ruleHelp": "Modelle, die ihre Kategorie beim Import automatisch bekommen haben, aus der Kategorie der Quellplattform.",
+        "manual": "Manuell ({{count}})",
+        "manualHelp": "Modelle, deren Kategorie du selbst gewählt hast, und solche, die schon vor der KI-Kategorisierung eingeordnet wurden, weil nicht festgehalten wurde, wie das geschah. Im Automatikmodus kann die KI deine Wahl ersetzen."
+      },
+      "start": "Kategorisieren",
+      "suggestionsTitle": "Offene Vorschläge ({{count}})",
+      "selectAll": "Alle auswählen",
+      "deselectAll": "Alle abwählen",
+      "acceptSelected": "Ausgewählte annehmen",
+      "rejectSelected": "Ausgewählte ablehnen",
+      "accept": "Annehmen",
+      "reject": "Ablehnen",
+      "acceptDone_one": "{{count}} Vorschlag angenommen.",
+      "acceptDone_other": "{{count}} Vorschläge angenommen.",
+      "rejectDone_one": "{{count}} Vorschlag abgelehnt.",
+      "rejectDone_other": "{{count}} Vorschläge abgelehnt.",
+      "firstPage": "{{shown}} von {{total}} Vorschlägen werden angezeigt.",
+      "loadMore": "Mehr laden",
+      "noSuggestions": "Keine offenen Vorschläge.",
+      "suggestionLabel": "KI-Vorschlag",
+      "suggestionFromProvider": "Vorgeschlagen von {{provider}}",
+      "suggestionAccepted": "Kategorievorschlag angenommen.",
+      "suggestionRejected": "Kategorievorschlag abgelehnt.",
+      "byAi": "von KI",
+      "accepted": "KI-Vorschlag angenommen.",
+      "rejected": "KI-Vorschlag abgelehnt.",
+      "confirmManual": "{{name}} hat eine Kategorie, die du selbst gewählt hast. Durch ein KI-Ergebnis ersetzen?",
+      "failed": "KI-Neukategorisierung fehlgeschlagen."
+    },
+    "aiDescriptions": {
+      "improve": "Beschreibung mit KI verbessern",
+      "queued": "Die Beschreibung wird mit KI verbessert. Das kann einige Minuten dauern; du wirst benachrichtigt, wenn es fertig ist.",
+      "failed": "Die Verbesserung der Beschreibung konnte nicht gestartet werden.",
+      "suggestionTitle": "Die KI schlägt eine bessere Beschreibung vor",
+      "suggestionHint": "Vergleiche sie mit der aktuellen und entscheide, ob du sie übernimmst.",
+      "chipAria": "Beschreibung von KI: mit dem Original vergleichen oder zurücksetzen",
+      "compareOriginal": "Mit dem Original vergleichen",
+      "revertOriginal": "Auf das Original zurücksetzen",
+      "accepted": "Beschreibung aktualisiert.",
+      "rejected": "Vorschlag abgelehnt.",
+      "revertMessage": "Dieses Modell bekommt die Beschreibung zurück, die es vor der Änderung durch die KI hatte.",
+      "suggestionPending": "Nimm den Vorschlag zuerst an oder lehne ihn ab"
     },
     "detail": {
       "subtitle": "Modell",
@@ -877,7 +1372,7 @@
       "moreOpenOptions": "Weitere Slicer und Downloads",
       "openActions": "Öffnen oder herunterladen",
       "openInHeading": "Öffnen in",
-      "toolsHeading": "Werkzeuge",
+      "toolsHeading": "Tools",
       "sendTo": {
         "heading": "Senden an",
         "button": "An {{name}} senden",
@@ -886,7 +1381,7 @@
         "failed": "{{name}}: {{reason}}",
         "openAfter": "Öffnen"
       },
-      "toolOwned": "Gehört zu einem Werkzeug",
+      "toolOwned": "Gehört zu einem Tool",
       "toolOwnedHint": "Es kann nicht bearbeitet oder gelöscht werden",
       "customize": "Anpassen …",
       "scriptWithheld": "Skript nicht geteilt",
@@ -900,6 +1395,526 @@
         "remember": "Für {{slicer}} merken",
         "changeLater": "in der Konfiguration änderbar",
         "open": "Öffnen"
+      }
+    },
+    "customizer": {
+      "title": "{{model}} anpassen",
+      "model": {
+        "title": "Modell",
+        "script": "Skript"
+      },
+      "pane": {
+        "minimize": "Minimieren",
+        "expand": "Aufklappen"
+      },
+      "pick": {
+        "title": "Welches Skript?",
+        "body_one": "Dieses Modell kam mit {{count}} Skript. Wähle das, das du anpassen willst.",
+        "body_other": "Dieses Modell kam mit {{count}} Skripten. Wähle das, das du anpassen willst."
+      },
+      "form": {
+        "title": "Anpassen",
+        "generate": "Erzeugen",
+        "generating": "Wird erzeugt …",
+        "noParameters": "An diesem Skript gibt es nichts zu ändern.",
+        "undo": "Rückgängig",
+        "redo": "Wiederholen",
+        "reset": "Zurück zu den Werten des Skripts",
+        "code": "Code von {{name}} anzeigen",
+        "pickColor": "Farbe wählen",
+        "fontFallback": "{{name}} (verwendet {{fallback}})",
+        "fontGroup": {
+          "Sans": "Serifenlos",
+          "Condensed": "Schmal",
+          "Serif": "Serif",
+          "Heavy": "Fett",
+          "Rounded": "Abgerundet",
+          "Display": "Display",
+          "Script": "Schreibschrift"
+        },
+        "chooseFile": "{{type}} wählen",
+        "fileStandIn": "Vorerst ein einfacher Platzhalter",
+        "fileClear": "Zurück zum Platzhalter",
+        "fileWrongType": "Das ist keine {{type}}-Datei."
+      },
+      "notes": {
+        "missingFiles": "Dieses Skript braucht {{files}}, die nicht mit dem Modell kamen.",
+        "missingParts": "Teile des Ergebnisses fehlen vielleicht."
+      },
+      "busy": {
+        "reading": "Skript wird gelesen …",
+        "generating": "Wird erzeugt …"
+      },
+      "stage": {
+        "empty": "Noch nichts erzeugt."
+      },
+      "status": {
+        "generated": "Erzeugt in {{seconds}} s · {{size}} kB"
+      },
+      "download": {
+        "threeMf": "Als 3MF herunterladen",
+        "stl": "Als STL herunterladen",
+        "stlNoColors": "Behält die Form, nicht die Farben"
+      },
+      "save": {
+        "action": "In Thingport speichern",
+        "done": "{{name}} gespeichert",
+        "open": "Modell öffnen",
+        "description": "Erzeugt aus {{script}}, das mit {{model}} kam."
+      },
+      "code": {
+        "label": "Der Code von {{name}}",
+        "lines": "{{count}} Zeilen · schreibgeschützt",
+        "copy": "Kopieren",
+        "copied": "Kopiert",
+        "download": "Skript herunterladen"
+      },
+      "error": {
+        "failed": "Das Skript hat kein Modell erzeugt.",
+        "noGeometry": "Das Skript lief, hat aber keine Form zum Anzeigen erzeugt."
+      }
+    },
+    "edit": {
+      "title": "Modell bearbeiten",
+      "titleLabel": "Titel",
+      "noCategory": "Keine Kategorie",
+      "categoryOrFolder": "Kategorie / Ordner",
+      "resetAuthor": "Autor zurücksetzen",
+      "undoResetAuthor": "Rückgängig",
+      "authorWillBeYou": "Du (nach dem Aktualisieren)",
+      "previewImages": "Vorschaubilder",
+      "thumbnailBadge": "Vorschaubild",
+      "useAsThumbnail": "Als Vorschaubild verwenden",
+      "previewImagesHelp": "Modellkarten zeigen das erste Bild, außer „Modellkarten“ steht unter „Darstellung“ auf 3D-Renderings. Setze ein anderes Bild an den Anfang, um das zu ändern.",
+      "removeImage": "Bild entfernen",
+      "moveImageLeft": "Nach links",
+      "moveImageRight": "Nach rechts",
+      "newBadge": "Neu",
+      "modelFiles": "Modelldateien",
+      "addFiles": "Dateien hinzufügen",
+      "update": "Aktualisieren",
+      "confirmDiscard": "Alle ungespeicherten Änderungen an diesem Modell verwerfen?",
+      "discardConfirmLabel": "Verwerfen",
+      "updateSuccess": "Modell aktualisiert",
+      "updateFailed": "Das Modell konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+      "descriptionWrite": "Schreiben",
+      "descriptionPreview": "Vorschau",
+      "descriptionPlaceholder": "Beschreibe das Modell, die Druckeinstellungen, die Montageschritte …",
+      "descriptionMarkdownHint": "Formatiert mit Markdown. Bilder, die per URL eingefügt werden, werden mit dem Modell gespeichert.",
+      "toolbar": {
+        "label": "Formatierung",
+        "bold": "Fett",
+        "boldText": "fetter Text",
+        "italic": "Kursiv",
+        "italicText": "kursiver Text",
+        "heading": "Überschrift",
+        "bulletList": "Aufzählung",
+        "numberedList": "Nummerierte Liste",
+        "quote": "Zitat",
+        "code": "Code",
+        "codeText": "Code",
+        "link": "Link",
+        "linkText": "Linktext",
+        "image": "Bild von URL",
+        "imageText": "Bild"
+      }
+    },
+    "author": {
+      "pageTitle": "Autor",
+      "pageTitleWithName": "{{name}}",
+      "subtitle": "Autor",
+      "myModelsPageTitle": "Meine Modelle",
+      "bio": "Über mich",
+      "noBio": "Noch keine Beschreibung.",
+      "viewOnProvider": "Auf {{provider}} ansehen",
+      "notFound": "Autor nicht gefunden.",
+      "noModels": "Noch keine Modelle von diesem Autor.",
+      "itsMe": "Das bin ich!",
+      "linkedBadge": "Das bist du",
+      "linkConfirmTitle": "Diesen Autor mit deinem Konto verknüpfen?",
+      "linkConfirmMessage": "Damit wird „{{name}}“ als deine eigene Identität verknüpft. Deine Seite „Meine Modelle“ zeigt dann auch diese Modelle, und Beschreibung und Titelbild deines Profils werden von dort übernommen, falls du noch keine festgelegt hast.",
+      "linkConfirmLabel": "Ja, das bin ich",
+      "linkSuccess": "„{{name}}“ mit deinem Konto verknüpft",
+      "linkFailed": "Dieser Autor konnte nicht mit deinem Konto verknüpft werden",
+      "editProfile": {
+        "button": "Profil bearbeiten",
+        "title": "Profil bearbeiten",
+        "changeCover": "Titelbild ändern",
+        "cover": "Titelbild",
+        "coverHelp": "Wähle ein gezeichnetes Titelbild, das Titelbild eines verknüpften Kontos oder lade ein Bild bis 10 MB hoch. Ziehe das Bild, um den sichtbaren Ausschnitt zu wählen.",
+        "presets": {
+          "retro": "Retro",
+          "pixel": "Pixel-Art",
+          "mosaic": "Mosaik",
+          "ascii": "ASCII",
+          "blueprint": "Blaupause"
+        },
+        "yourPicture": "Dein Bild",
+        "fromAccount": "Von {{provider}}",
+        "upload": "Hochladen",
+        "uploadHint": "Bild hochladen, bis 10 MB",
+        "uploadTooBig": "Das Bild ist größer als 10 MB.",
+        "notAPicture": "Diese Datei ist kein Bild.",
+        "drag": "Ziehen zum Verschieben",
+        "position": "Position des Titelbilds",
+        "bio": "Über mich",
+        "bioHelp": "Wird anderen auf dieser Instanz in deinem Profil angezeigt. Markdown funktioniert.",
+        "bioPlaceholder": "Ein paar Worte über dich und was du machst",
+        "saved": "Profil gespeichert",
+        "saveFailed": "Dein Profil konnte nicht gespeichert werden.",
+        "links": "Links",
+        "linksHelp": "Bis zu {{count}} Webadressen, angezeigt unter deiner Beschreibung: deine Seite auf einer Modellplattform, ein Shop, ein Portfolio.",
+        "addLink": "Link hinzufügen",
+        "removeLink": "Link entfernen",
+        "linkLabel": "Link {{n}}",
+        "linkInvalid": "Gib eine Webadresse ein, etwa https://example.com"
+      },
+      "visibility": {
+        "toggle": "Meine Modelle unter „Entdecken“ zeigen",
+        "privateTip": "Privat: Nur du siehst diese Modelle. Klicke, um sie unter „Entdecken“ zu zeigen.",
+        "publicTip": "Öffentlich: Alle auf dieser Instanz sehen diese Modelle unter „Entdecken“. Klicke, um sie privat zu machen.",
+        "confirmTitle": "Deine Modelle unter „Entdecken“ zeigen?",
+        "confirmMessage": "Dann können alle auf dieser Instanz die Modelle dieser Seite über dein Profil unter „Entdecken“ sehen, herunterladen und kopieren. Ändern oder löschen kannst sie weiterhin nur du, und du kannst sie jederzeit wieder privat machen.",
+        "confirmLabel": "Öffentlich machen",
+        "nowPublic": "Deine Modelle sind jetzt unter „Entdecken“ zu sehen",
+        "nowPrivate": "Deine Modelle sind jetzt privat"
+      },
+      "popup": {
+        "modelCount_one": "{{count}} Modell von {{provider}} importiert",
+        "modelCount_other": "{{count}} Modelle von {{provider}} importiert",
+        "selfModelCount_one": "{{count}} Modell hochgeladen",
+        "selfModelCount_other": "{{count}} Modelle hochgeladen",
+        "loadFailed": "Dieser Autor konnte nicht geladen werden."
+      },
+      "username": {
+        "label": "Benutzername",
+        "why": "Dein Handle, benutzername@diese-instanz, ist das, womit dich Leute auf verbundenen Instanzen finden und erreichen.",
+        "help": "Kleinbuchstaben, Ziffern, Punkte, Bindestriche und Unterstriche.",
+        "invalid": "Bis zu 30 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche, beginnend und endend mit einem Buchstaben oder einer Ziffer.",
+        "taken": "Den hat schon jemand.",
+        "free": "Er ist frei.",
+        "checking": "Wird geprüft",
+        "copy": "Dein Handle kopieren",
+        "copied": "Handle kopiert",
+        "copyFailed": "Konnte nicht kopiert werden",
+        "change": "Benutzernamen ändern",
+        "saved": "Benutzername geändert",
+        "saveFailed": "Der Benutzername konnte nicht geändert werden"
+      }
+    },
+    "avatar": {
+      "change": "Avatar ändern",
+      "title": "Avatar",
+      "modes": {
+        "thingport": "Thingport",
+        "picture": "Bild",
+        "auto": "Automatisch"
+      },
+      "shuffle": "Zufällig",
+      "parts": {
+        "hair": "Haare",
+        "glasses": "Brille",
+        "mouth": "Mund",
+        "hair_color": "Haarfarbe",
+        "background": "Hintergrund"
+      },
+      "none": "Keine",
+      "hair": {
+        "spiky": "Stachelig",
+        "sideSwept": "Seitenscheitel",
+        "curly": "Lockig",
+        "long": "Lang",
+        "topBun": "Dutt",
+        "mohawk": "Irokese",
+        "ponytail": "Pferdeschwanz",
+        "flatTop": "Flattop",
+        "bob": "Bob",
+        "spaceBuns": "Zwei Dutts"
+      },
+      "glasses": {
+        "round": "Rund",
+        "square": "Eckig",
+        "sunglasses": "Sonnenbrille",
+        "catEye": "Cat-Eye",
+        "threeD": "3D"
+      },
+      "mouth": {
+        "smile": "Lächeln",
+        "toothy": "Zähne zeigen",
+        "wobbly": "Wackelig",
+        "surprised": "Überrascht",
+        "cheeky": "Frech"
+      },
+      "hair_color": {
+        "black": "Schwarz",
+        "darkBrown": "Dunkelbraun",
+        "brown": "Braun",
+        "blonde": "Blond",
+        "ginger": "Rot",
+        "grey": "Grau",
+        "blue": "Blau",
+        "pink": "Pink"
+      },
+      "background": {
+        "mint": "Mint",
+        "sky": "Himmelblau",
+        "peach": "Pfirsich",
+        "lavender": "Lavendel",
+        "sand": "Sand",
+        "teal": "Petrol",
+        "stone": "Stein",
+        "rose": "Rosé"
+      },
+      "upload": "Hochladen",
+      "uploadHint": "Bild hochladen, bis 10 MB",
+      "pictureHelp": "Ein Bild bis 10 MB, quadratisch zugeschnitten auf das, was darauf zu sehen ist, oder das Bild eines verknüpften Kontos.",
+      "yourPicture": "Dein Bild",
+      "fromAccount": "Von {{provider}}",
+      "autoHint": "Dein Gravatar, falls du einen hast, sonst der für dich gewählte Thingport-Avatar.",
+      "saved": "Avatar aktualisiert",
+      "saveFailed": "Dein Avatar konnte nicht gespeichert werden."
+    },
+    "collections": {
+      "pageTitle": "Sammlungen",
+      "newCollection": "Neue Sammlung",
+      "empty": "Noch keine Sammlungen.",
+      "noneShown": "Keine Sammlung passt zu den Filtern.",
+      "types": {
+        "system": "Systemsammlungen",
+        "user": "Eigene Sammlungen",
+        "tool": "Sammlungen von Tools"
+      },
+      "bookmarkCollection": "Sammlung als Lesezeichen speichern",
+      "unbookmarkCollection": "Lesezeichen entfernen",
+      "bookmarkFailed": "Das Lesezeichen konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+      "downloadAllZip": "Alle Modelle als ZIP herunterladen",
+      "downloadZipTitle": "„{{name}}“ als ZIP herunterladen",
+      "system": {
+        "favorites": "Favoriten",
+        "history": "Verlauf"
+      },
+      "card": {
+        "empty": "Noch keine Modelle",
+        "itemCount_one": "{{count}} Modell",
+        "itemCount_other": "{{count}} Modelle",
+        "ownerAndCount_one": "{{name}} · {{count}} Modell",
+        "ownerAndCount_other": "{{name}} · {{count}} Modelle",
+        "sharedWith": "Geteilt mit {{names}}",
+        "changeSharing": "Geteilt mit {{who}}: ändern, wer sie sieht"
+      },
+      "form": {
+        "createTitle": "Neue Sammlung",
+        "editTitle": "Sammlung bearbeiten",
+        "nameLabel": "Name",
+        "descriptionLabel": "Beschreibung",
+        "tagsLabel": "Tags",
+        "tagsPlaceholder": "Tags hinzufügen",
+        "create": "Erstellen",
+        "saveFailed": "Die Sammlung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+        "visibilityLabel": "Sichtbarkeit",
+        "visibilityHelp": "Private Sammlungen gehören nur dir. Geteilte sehen die Personen, die du auswählst – hier oder auf verbundenen Instanzen –, öffentliche sehen alle unter „Entdecken“. Wer eine Sammlung sieht, kann ihre Modelle öffnen, herunterladen und kopieren.",
+        "private": "Privat",
+        "public": "Öffentlich",
+        "shared": "Geteilt",
+        "sharedCount_one": "{{count}} Person kann sie sehen",
+        "sharedCount_other": "{{count}} Personen können sie sehen",
+        "sharedNobody": "Noch niemand: Nur du kannst sie sehen",
+        "sharedElsewhere_one": "{{count}} auf einer verbundenen Instanz",
+        "sharedElsewhere_other": "{{count}} auf verbundenen Instanzen",
+        "sharedHelp": "Diese Personen sehen sie wie eine öffentliche Sammlung: Sie können ihre Modelle öffnen, herunterladen und kopieren und werden benachrichtigt, wenn du sie mit ihnen teilst. Mit wem du sie sonst noch teilst, weißt nur du. Jemand auf einer verbundenen Instanz sieht sie über die eigene Instanz, die sie nur dieser Person zeigt; die Admins dieser Instanz könnten sie aber auch sehen.",
+        "keptPeople_one": "{{names}} bleibt auf der Liste: Wähle „Geteilt“, um wieder zu teilen.",
+        "keptPeople_other": "{{names}} bleiben auf der Liste: Wähle „Geteilt“, um wieder zu teilen.",
+        "andMore_one": "{{count}} weitere",
+        "andMore_other": "{{count}} weitere",
+        "peopleFailed": "Es ließ sich nicht laden, mit wem sie geteilt ist. Bis das klappt, kann nicht geändert werden, wer sie sieht.",
+        "createdNotShared": "„{{name}}“ wurde erstellt, konnte aber nicht geteilt werden. „Teilen …“ in ihrem Menü versucht es erneut.",
+        "findPeopleHelp": "Ein beliebiger Teil eines Namens findet jemanden hier oder auf einer verbundenen Instanz; eine E-Mail-Adresse findet nur hier jemanden, und nur vollständig eingegeben – sie wird nie angezeigt. Findest du jemanden von woanders nicht, gib das vollständige Handle ein, etwa name@ihre-instanz."
+      },
+      "detail": {
+        "title": "{{name}}",
+        "subtitle": "Sammlung",
+        "empty": "Noch keine Modelle in dieser Sammlung.",
+        "confirmDelete": "„{{name}}“ löschen? Die Modelle darin werden nicht gelöscht.",
+        "deleteFailed": "Die Sammlung konnte nicht gelöscht werden.",
+        "sharedWith_one": "Geteilt mit {{count}}",
+        "sharedWith_other": "Geteilt mit {{count}}"
+      },
+      "errors": {
+        "loadFailed": "Sammlungen konnten nicht geladen werden.",
+        "notFound": "Sammlung nicht gefunden."
+      },
+      "sync": {
+        "badgeOff": "{{provider}} ist auf dieser Thingport-Instanz ausgeschaltet, also wird nichts synchronisiert, bis ein Admin es wieder einschaltet",
+        "badgeSourceOff": "{{provider}} ist auf dieser Thingport-Instanz ausgeschaltet, also warten diese Quellen, bis ein Admin es wieder einschaltet; die übrigen werden weiter synchronisiert",
+        "menuProviderOff": "{{provider}} ist ausgeschaltet",
+        "badge": "Synchronisiert mit einer {{provider}}-Sammlung",
+        "menu": "Synchronisierung einrichten",
+        "title": "Synchronisierung einrichten",
+        "openSource": "Auf {{provider}} öffnen",
+        "lastChecked": "Zuletzt geprüft {{when}}",
+        "notCheckedYet": "Noch nicht geprüft",
+        "profilesLabel": "Für jedes neue Modell importieren",
+        "profiles": {
+          "url": "Standardprofil",
+          "designer": "Profile des Designers",
+          "all": "Alle Profile"
+        },
+        "profilesHelp": "„Alle Profile“ schließt die der Community ein. Jedes Druckprofil wird zu einer eigenen Datei im Modell. Gilt für Modelle, die ab jetzt gefunden werden.",
+        "stop": "Synchronisierung beenden",
+        "stopTitle": "Synchronisierung beenden?",
+        "stopMessage": "Neue Modelle kommen nicht mehr in „{{name}}“. Die Sammlung und ihre Modelle bleiben, und du kannst die Synchronisierung hier oder über Thingport Grab wieder einschalten.",
+        "saveFailed": "Die Synchronisierungseinstellungen konnten nicht gespeichert werden.",
+        "syncNow": "Jetzt synchronisieren",
+        "syncNowTitle": "Jetzt synchronisieren?",
+        "syncNowMessage": "Thingport prüft die {{provider}}-Sammlung auf neue Modelle und importiert sie in „{{name}}“. Du wirst benachrichtigt, wenn es fertig ist.",
+        "syncNowStarted": "„{{name}}“ wird synchronisiert. Du wirst benachrichtigt, wenn es fertig ist.",
+        "nextSync": "nächste Synchronisierung gegen {{time}}",
+        "syncNowIn": "„Jetzt synchronisieren“ ist in {{time}} wieder möglich",
+        "addSource": "Quelle hinzufügen",
+        "sourceLikes": "Modelle, die @{{user}} gefallen",
+        "sourceUntitled": "{{provider}}-Sammlung",
+        "sourceItem": "{{provider}} „{{name}}“",
+        "badgeMany_one": "Synchronisiert mit {{count}} Sammlung: {{sources}}",
+        "badgeMany_other": "Synchronisiert mit {{count}} Sammlungen: {{sources}}",
+        "introSource_one": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden jede Stunde hierher importiert.",
+        "introSource_other": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden alle {{count}} Stunden hierher importiert.",
+        "overviewIntro_one": "„{{name}}“ folgt {{count}} Sammlung. Modelle, die dort hinzukommen, werden hierher importiert; Modelle, die du selbst hinzufügst, bleiben.",
+        "overviewIntro_other": "„{{name}}“ folgt {{count}} Sammlungen. Modelle, die in einer davon hinzukommen, werden hierher importiert; Modelle, die du selbst hinzufügst, bleiben.",
+        "intervalEvery_one": "jede Stunde",
+        "intervalEvery_other": "alle {{count}} Stunden",
+        "checkedShort": "geprüft {{when}}",
+        "notCheckedShort": "noch nicht geprüft",
+        "lastFailed": "letzte Prüfung fehlgeschlagen",
+        "syncAll": "Alle jetzt synchronisieren",
+        "syncAllTitle": "Alle jetzt synchronisieren?",
+        "syncAllMessage_one": "Thingport prüft {{count}} Quelle von „{{name}}“ auf neue Modelle und importiert sie. Du wirst benachrichtigt, wenn es fertig ist.",
+        "syncAllMessage_other": "Thingport prüft {{count}} Quellen von „{{name}}“ auf neue Modelle und importiert sie. Du wirst für jede benachrichtigt.",
+        "syncAllStarted": "„{{name}}“ wird synchronisiert. Du wirst für jede Quelle benachrichtigt.",
+        "syncAllUnavailable": "Jede Quelle wurde gerade erst geprüft, oder ihre Plattform ist ausgeschaltet.",
+        "stopSourceMessage": "Neue Modelle aus „{{source}}“ kommen nicht mehr in „{{name}}“. Die Sammlung, ihre Modelle und ihre anderen Quellen bleiben.",
+        "stoppedSource": "„{{name}}“ wird nicht mehr mit „{{source}}“ synchronisiert.",
+        "stopped": "Synchronisierung von „{{name}}“ beendet.",
+        "saved": "Synchronisierungseinstellungen gespeichert.",
+        "sections": {
+          "overview": "Übersicht"
+        },
+        "intro_one": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden jede Stunde hierher importiert.",
+        "intro_other": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden alle {{count}} Stunden hierher importiert.",
+        "intervalLabel": "Auf neue Modelle prüfen, alle",
+        "intervalOption_one": "Stunde",
+        "intervalOption_other": "{{count}} Stunden",
+        "badgeLikes": "Synchronisiert mit den Modellen, die @{{user}} auf {{provider}} gefallen",
+        "introLikes_one": "Modelle, die @{{user}} auf {{provider}} gefallen, werden jede Stunde hierher importiert.",
+        "introLikes_other": "Modelle, die @{{user}} auf {{provider}} gefallen, werden alle {{count}} Stunden hierher importiert.",
+        "browse": {
+          "providerLabel": "Plattform",
+          "models_one": "{{count}} Modell",
+          "models_other": "{{count}} Modelle",
+          "things_one": "{{count}} Thing",
+          "things_other": "{{count}} Things",
+          "objects_one": "{{count}} Objekt",
+          "objects_other": "{{count}} Objekte",
+          "takenBy": "Synchronisiert mit „{{name}}“",
+          "loadFailed": "Die Sammlungen konnten nicht geladen werden.",
+          "lookupFailed": "Diese Sammlung wurde nicht gefunden.",
+          "notALink": "Füge einen Sammlungslink von MakerWorld, Printables, Thingiverse, MyMiniFactory, Snapmaker Space, MakerOnline, Creality Cloud, NexPrint, Thangs, Cults3D oder Pinshape ein.",
+          "usernameFailed": "Der Benutzername konnte nicht gespeichert werden.",
+          "openProviders": "Plattformen öffnen",
+          "usernameLabel": "Dein {{provider}}-Benutzername",
+          "change": "Ändern",
+          "empty": "Noch keine Sammlungen auf {{provider}}.",
+          "pasteLabel": "Sammlung von jemand anderem",
+          "pastedTaken": "Diese Sammlung wird schon mit „{{name}}“ synchronisiert. Eine Sammlung einer Plattform lässt sich nur mit einer Thingport-Sammlung synchronisieren.",
+          "syncsHere": "Wird schon hierher synchronisiert",
+          "pastedHere": "Diese Sammlung wird schon damit synchronisiert.",
+          "confirmMakerworld": "Importiert nur Modelle, die ab jetzt hinzukommen.",
+          "confirmImport_one": "Importiert jetzt ihr {{count}} Modell und neue, sobald sie hinzukommen.",
+          "confirmImport_other": "Importiert jetzt ihre {{count}} Modelle und neue, sobald sie hinzukommen.",
+          "started": "„{{name}}“ folgt jetzt der {{provider}}-Sammlung.",
+          "startedImporting": "„{{name}}“ folgt jetzt der {{provider}}-Sammlung. Die Modelle werden importiert; du wirst benachrichtigt.",
+          "yoursLabel": "Deine Sammlungen auf {{provider}}",
+          "likes": "Modelle mit „Gefällt mir“",
+          "bookmarks": "Gemerkte Modelle",
+          "startedWaiting": "„{{name}}“ wird jetzt mit „{{source}}“ synchronisiert. Die Modelle kommen, sobald du {{provider}} das nächste Mal mit Thingport Grab öffnest.",
+          "pickPrompt": "Wähle oben eine Sammlung oder füge einen Link ein.",
+          "startNothing": "Synchronisieren",
+          "makerworldHelp": "MakerWorld bremst Massenimporte schnell aus, deshalb werden die Modelle, die jetzt darin sind, nicht importiert. Alle, die schon in deiner Bibliothek sind, kommen zu „{{name}}“ hinzu.",
+          "forget": "Vergessen",
+          "forgetTitle": "Dein {{provider}}-Konto vergessen?"
+        }
+      },
+      "sortByModels": "Meiste Modelle",
+      "selection": {
+        "enter": "Sammlungen auswählen",
+        "toolbar": "Aktionen für die ausgewählten Sammlungen",
+        "builtIn": "Eingebaute Sammlungen können nicht zusammengeführt oder gelöscht werden",
+        "bookmarked_one": "{{count}} Sammlung als Lesezeichen gespeichert",
+        "bookmarked_other": "{{count}} Sammlungen als Lesezeichen gespeichert",
+        "unbookmarked_one": "{{count}} Sammlung aus den Lesezeichen entfernt",
+        "unbookmarked_other": "{{count}} Sammlungen aus den Lesezeichen entfernt",
+        "deleteTitle_one": "{{count}} Sammlung löschen?",
+        "deleteTitle_other": "{{count}} Sammlungen löschen?",
+        "deleteMessage_one": "Die Modelle darin bleiben erhalten. Das kann nicht rückgängig gemacht werden.",
+        "deleteMessage_other": "Die Modelle darin bleiben erhalten. Das kann nicht rückgängig gemacht werden.",
+        "deleted_one": "{{count}} Sammlung gelöscht",
+        "deleted_other": "{{count}} Sammlungen gelöscht",
+        "merged_one": "{{count}} Sammlung in „{{name}}“ zusammengeführt",
+        "merged_other": "{{count}} Sammlungen in „{{name}}“ zusammengeführt"
+      },
+      "tool": {
+        "badge": "Gehört zum Tool {{tool}}: Sie kann nicht bearbeitet oder gelöscht werden und verschwindet, wenn das Tool deinstalliert wird",
+        "badgeUnknown": "Gehört zu einem Tool: Sie kann nicht bearbeitet oder gelöscht werden",
+        "status": "Gehört zu {{tool}} · nicht änderbar",
+        "openCollection": "Sammlung öffnen",
+        "openTool": "{{tool}} öffnen",
+        "openToolUnknown": "Tool öffnen",
+        "cantSelect": "Die Sammlung eines Tools kann nicht zusammengeführt oder gelöscht werden"
+      },
+      "publicHint": "Öffentlich: für andere unter „Entdecken“ sichtbar",
+      "share": "Teilen …"
+    },
+    "tags": {
+      "pageTitle": "Tags",
+      "sortByName": "Name",
+      "empty": "Noch keine Tags.",
+      "minCount": "Tags ausblenden mit weniger Modellen als",
+      "allHidden": "Keine Tags mit {{min}}+ Modellen.",
+      "showAll": "Alle Tags anzeigen",
+      "bookmarkTag": "Tag als Lesezeichen speichern",
+      "unbookmarkTag": "Lesezeichen entfernen",
+      "deleteTag": "Tag löschen",
+      "deleteTitle": "Tag „{{name}}“ löschen?",
+      "deleteMessage": "Der Tag wird bei jedem Modell entfernt, das ihn hat. Die Modelle selbst bleiben erhalten.",
+      "deleteConfirm": "Tag löschen",
+      "deleted_one": "Tag „{{name}}“ bei {{count}} Modell entfernt",
+      "deleted_other": "Tag „{{name}}“ bei {{count}} Modellen entfernt",
+      "deleteFailed": "Der Tag konnte nicht gelöscht werden. Bitte versuche es erneut.",
+      "bookmarkFailed": "Das Lesezeichen konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+      "downloadAllZip": "Alle Modelle mit diesem Tag als ZIP herunterladen",
+      "downloadZipTitle": "Tag „{{name}}“ als ZIP herunterladen",
+      "detail": {
+        "title": "{{name}}",
+        "subtitle": "Tag",
+        "empty": "Noch keine Modelle mit diesem Tag."
+      },
+      "selection": {
+        "enter": "Tags auswählen",
+        "toolbar": "Aktionen für die ausgewählten Tags",
+        "selectAllLoaded": "Alle geladenen auswählen",
+        "bookmarked_one": "{{count}} Tag als Lesezeichen gespeichert",
+        "bookmarked_other": "{{count}} Tags als Lesezeichen gespeichert",
+        "unbookmarked_one": "{{count}} Tag aus den Lesezeichen entfernt",
+        "unbookmarked_other": "{{count}} Tags aus den Lesezeichen entfernt",
+        "deleteTitle_one": "{{count}} Tag löschen?",
+        "deleteTitle_other": "{{count}} Tags löschen?",
+        "deleteMessage_one": "Er wird bei jedem Modell entfernt, das ihn hat. Die Modelle selbst bleiben erhalten.",
+        "deleteMessage_other": "Sie werden bei jedem Modell entfernt, das sie hat. Die Modelle selbst bleiben erhalten.",
+        "deleteConfirm_one": "Tag löschen",
+        "deleteConfirm_other": "Tags löschen",
+        "deleted_one": "{{count}} Tag gelöscht",
+        "deleted_other": "{{count}} Tags gelöscht",
+        "merged_one": "{{count}} Tag in „{{name}}“ zusammengeführt",
+        "merged_other": "{{count}} Tags in „{{name}}“ zusammengeführt"
       }
     },
     "downloadZip": {
@@ -925,10 +1940,236 @@
       "updateCategoryMetaFailed": "Die Kategoriedetails konnten nicht gespeichert werden. Bitte versuche es erneut.",
       "notFound": "Modell nicht gefunden."
     },
+    "categories": {
+      "title": "Kategorien",
+      "subtitle": "Kategorie",
+      "all": "Alle",
+      "untitled": "Ohne Titel",
+      "empty": "Noch keine Kategorien",
+      "noSubcategories": "Noch keine Unterkategorien",
+      "manageTooltip": "Kategorien verwalten",
+      "reset": {
+        "title": "Kategorien auf Standard zurücksetzen?",
+        "added": "Hinzugefügt",
+        "restored": "Wiederhergestellt",
+        "removed": "Gelöscht",
+        "modelsUncategorized_one": "{{count}} Modell verliert seine Kategorie.",
+        "modelsUncategorized_other": "{{count}} Modelle verlieren ihre Kategorie.",
+        "modelsMoved_one": "{{count}} Modell wandert in die nächste verbleibende übergeordnete Kategorie.",
+        "modelsMoved_other": "{{count}} Modelle wandern in die nächste verbleibende übergeordnete Kategorie.",
+        "modelsRenamed_one": "{{count}} verschobenes Modell wird umbenannt, um Namensgleichheit zu vermeiden.",
+        "modelsRenamed_other": "{{count}} verschobene Modelle werden umbenannt, um Namensgleichheit zu vermeiden.",
+        "modelCount_one": "{{count}} Modell",
+        "modelCount_other": "{{count}} Modelle",
+        "noop": "Deine Kategorien entsprechen schon dem Standard.",
+        "foldersKept": "Ordner bleiben unberührt.",
+        "previewFailed": "Es ließ sich nicht ermitteln, was ein Zurücksetzen ändern würde."
+      },
+      "manager": {
+        "title": "Kategorien verwalten",
+        "addCategory": "Kategorie hinzufügen",
+        "reset": "Auf Standard zurücksetzen",
+        "addSubcategory": "Unterkategorie hinzufügen",
+        "noCategories": "Noch keine Kategorien. Füge eine hinzu, um loszulegen.",
+        "confirmDeleteCategory": "„{{name}}“ löschen? Modelle darin wandern nach „Nicht zugeordnet“.",
+        "confirmDeleteCategoryWithSub": "„{{name}}“ löschen? Die Unterkategorien rücken eine Ebene nach oben, und Modelle direkt darin wandern nach „Nicht zugeordnet“.",
+        "confirmDeleteSubcategory": "„{{name}}“ löschen? Modelle darin wandern nach „Nicht zugeordnet“.",
+        "addDetailsTooltip": "Details hinzufügen",
+        "editDetailsTooltip": "Details bearbeiten",
+        "metaDialogTitle": "Details – {{name}}",
+        "metaTitleLabel": "Meta-Titel",
+        "metaDescriptionLabel": "Meta-Beschreibung",
+        "dragToMove": "Zum Verschieben ziehen",
+        "mapping": {
+          "heading": "Quellkategorien",
+          "help": "Modelle, die aus diesen Kategorien der jeweiligen Plattform importiert werden, landen in „{{category}}“. Wähle sie über „Verwalten“.",
+          "none": "Keine",
+          "manage": "Verwalten ({{count}})",
+          "manageLabel": "{{provider}}-Kategorien verwalten, {{count}} gewählt",
+          "pickerTitle": "{{provider}}-Kategorien",
+          "pickerSubtitle": "Importe aus den gewählten landen in „{{category}}“",
+          "search": "{{provider}}-Kategorien durchsuchen",
+          "selected": "Gewählt ({{count}})",
+          "clearAll": "Alle abwählen",
+          "done": "Fertig",
+          "noMatches": "Keine Kategorie passt zu „{{query}}“.",
+          "empty": "Für {{provider}} sind keine Kategorien bekannt.",
+          "loadFailed": "Die Kategorieliste konnte nicht geladen werden. Schließe das hier und versuche es erneut.",
+          "unknown": "Unbekannt #{{id}}"
+        }
+      }
+    },
     "view": {
       "label": "Kategorien oder Ordner anzeigen",
       "categories": "Kategorien",
       "folders": "Ordner"
+    },
+    "folders": {
+      "title": "Ordner",
+      "subtitle": "Ordner",
+      "empty": "Noch keine Ordner",
+      "noSubfolders": "Noch keine Unterordner",
+      "manageTooltip": "Ordner verwalten",
+      "manager": {
+        "title": "Ordner verwalten",
+        "addCategory": "Ordner hinzufügen",
+        "addSubcategory": "Unterordner hinzufügen",
+        "noCategories": "Noch keine Ordner. Füge einen hinzu oder lade einen Ordner mit Modellen hoch."
+      }
+    },
+    "manager": {
+      "title": "Kategorien & Ordner verwalten",
+      "repair": "Reparieren"
+    },
+    "categoryPicker": {
+      "filter": "Kategorien filtern",
+      "noMatches": "Keine Kategorie passt zu „{{query}}“"
+    },
+    "assignCategory": {
+      "action": "Kategorie zuweisen",
+      "needOne": "Wähle mindestens 1 Modell aus, das nicht importiert wurde",
+      "title_one": "{{count}} Modell eine Kategorie zuweisen",
+      "title_other": "{{count}} Modellen eine Kategorie zuweisen",
+      "category": "Kategorie",
+      "folderWarning": "Eine Kategorie zuzuweisen nimmt Modelle aus der Ordnerstruktur: Danach liegen sie in keinem Ordner mehr.",
+      "replaces_one": "{{count}} ausgewähltes Modell hat schon eine Kategorie, die hiermit ersetzt wird.",
+      "replaces_other": "{{count}} ausgewählte Modelle haben schon eine Kategorie, die hiermit ersetzt wird.",
+      "empty": "Noch keine Kategorien zur Auswahl. Füge welche unter „Kategorien & Ordner verwalten“ hinzu.",
+      "done_one": "„{{name}}“ {{count}} Modell zugewiesen.",
+      "done_other": "„{{name}}“ {{count}} Modellen zugewiesen.",
+      "partlyFailed_one": "{{count}} Modell konnte nicht geändert werden.",
+      "partlyFailed_other": "{{count}} Modelle konnten nicht geändert werden.",
+      "failed": "Die Kategorie konnte nicht zugewiesen werden. Bitte versuche es erneut.",
+      "loadFailed": "Deine Kategorien konnten nicht geladen werden. Bitte versuche es erneut."
+    },
+    "selection": {
+      "skipped_one": "{{count}} ausgewähltes Modell wird ausgelassen: Es wurde importiert oder gehört zu einem Tool.",
+      "skipped_other": "{{count}} ausgewählte Modelle werden ausgelassen: Sie wurden importiert oder gehören zu einem Tool.",
+      "enter": "Modelle auswählen",
+      "exit": "Auswahl beenden",
+      "toolbar": "Aktionen für die ausgewählten Modelle",
+      "count": "{{count}} ausgewählt",
+      "selectAllLoaded": "Alle geladenen auswählen",
+      "aiActions": "KI-Aktionen",
+      "improveDescriptions": "Beschreibungen mit KI verbessern",
+      "aiRunActive": "Es läuft bereits ein KI-Durchlauf",
+      "aiTooMany": "Wähle für einen KI-Durchlauf höchstens {{max}} Modelle aus",
+      "downloadTitle_one": "{{count}} Modell herunterladen",
+      "downloadTitle_other": "{{count}} Modelle herunterladen",
+      "favorited_one": "{{count}} Modell zu den Favoriten hinzugefügt",
+      "favorited_other": "{{count}} Modelle zu den Favoriten hinzugefügt",
+      "unfavorited_one": "{{count}} Modell aus den Favoriten entfernt",
+      "unfavorited_other": "{{count}} Modelle aus den Favoriten entfernt",
+      "confirmDelete_one": "{{count}} Modell löschen? Das kann nicht rückgängig gemacht werden.",
+      "confirmDelete_other": "{{count}} Modelle löschen? Das kann nicht rückgängig gemacht werden.",
+      "deleted_one": "{{count}} Modell gelöscht",
+      "deleted_other": "{{count}} Modelle gelöscht",
+      "deletePartlyFailed_one": "{{count}} Modell konnte nicht gelöscht werden",
+      "deletePartlyFailed_other": "{{count}} Modelle konnten nicht gelöscht werden",
+      "confirmManual_one": "{{count}} der ausgewählten Modelle hat eine Kategorie, die du selbst gewählt hast. Soll die KI es trotzdem neu einordnen?",
+      "confirmManual_other": "{{count}} der ausgewählten Modelle haben eine Kategorie, die du selbst gewählt hast. Soll die KI sie trotzdem neu einordnen?",
+      "includeManual": "Mit einbeziehen",
+      "skipManual": "Auslassen",
+      "categorizeQueued_one": "{{count}} Modell wird mit KI kategorisiert. Den Fortschritt siehst du unten auf der Seite.",
+      "categorizeQueued_other": "{{count}} Modelle werden mit KI kategorisiert. Den Fortschritt siehst du unten auf der Seite.",
+      "improveQueued_one": "{{count}} Beschreibung wird mit KI verbessert. Den Fortschritt siehst du unten auf der Seite.",
+      "improveQueued_other": "{{count}} Beschreibungen werden mit KI verbessert. Den Fortschritt siehst du unten auf der Seite.",
+      "confirmRemoveFromCollection_one": "{{count}} Modell aus dieser Sammlung entfernen? Das Modell selbst bleibt erhalten.",
+      "confirmRemoveFromCollection_other": "{{count}} Modelle aus dieser Sammlung entfernen? Die Modelle selbst bleiben erhalten.",
+      "removedFromCollection_one": "{{count}} Modell aus der Sammlung entfernt",
+      "removedFromCollection_other": "{{count}} Modelle aus der Sammlung entfernt",
+      "addTagsPlaceholder": "Tag eingeben, Enter drücken",
+      "existingTags": "Deine Tags",
+      "editTags": "Tags bearbeiten",
+      "editTagsTitle_one": "Tags von {{count}} Modell",
+      "editTagsTitle_other": "Tags von {{count}} Modellen",
+      "selectedTags": "An den ausgewählten Modellen",
+      "selectedTagsHelp": "Klicke auf einen Tag, um ihn allen ausgewählten Modellen zu geben, ihn bei allen zu entfernen oder ihn – wenn nur manche ihn haben – so zu lassen, wie er ist.",
+      "noTags": "Keines davon hat bisher Tags.",
+      "summaryAdd": "{{count}} hinzufügen",
+      "summaryRemove": "{{count}} entfernen",
+      "tagsUpdated_one": "Tags von {{count}} Modell aktualisiert",
+      "tagsUpdated_other": "Tags von {{count}} Modellen aktualisiert",
+      "tagsFailed": "Die Tags konnten nicht aktualisiert werden. Bitte versuche es erneut.",
+      "apply": "Übernehmen",
+      "onSome": "{{name}}, an {{count}} von {{total}}",
+      "editCollections": "Sammlungen bearbeiten",
+      "editCollectionsTitle_one": "Sammlungen von {{count}} Modell",
+      "editCollectionsTitle_other": "Sammlungen von {{count}} Modellen",
+      "editCollectionsHelp": "Klicke auf eine Sammlung, um alle ausgewählten Modelle hineinzulegen, alle herauszunehmen oder sie – wenn nur manche darin sind – so zu lassen, wie sie ist.",
+      "summaryAddTo": "Zu {{count}} hinzufügen",
+      "summaryRemoveFrom": "Aus {{count}} entfernen",
+      "collectionsUpdated_one": "{{count}} Sammlung aktualisiert",
+      "collectionsUpdated_other": "{{count}} Sammlungen aktualisiert",
+      "collectionsFailed": "Die Sammlungen konnten nicht aktualisiert werden. Bitte versuche es erneut.",
+      "tagsPartlyUpdated_one": "Tags von {{count}} Modell aktualisiert, der Rest ist fehlgeschlagen. Bitte versuche es erneut.",
+      "tagsPartlyUpdated_other": "Tags von {{count}} Modellen aktualisiert, der Rest ist fehlgeschlagen. Bitte versuche es erneut.",
+      "toolOwned_one": "{{count}} der gewählten Modelle gehört zu einem Tool: Lass es weg, um das zu tun",
+      "toolOwned_other": "{{count}} der gewählten Modelle gehören zu einem Tool: Lass sie weg, um das zu tun",
+      "notFiled_one": "{{count}} Modell konnte nicht hinzugefügt werden: Es wird nicht mehr geteilt",
+      "notFiled_other": "{{count}} Modelle konnten nicht hinzugefügt werden: Sie werden nicht mehr geteilt",
+      "notFiledNames_one": "{{names}} konnte nicht hinzugefügt werden: Es wird nicht mehr geteilt",
+      "notFiledNames_other": "{{names}} konnten nicht hinzugefügt werden: Sie werden nicht mehr geteilt"
+    },
+    "merge": {
+      "action": "Zusammenführen",
+      "needTwo": "Wähle mindestens 2 zum Zusammenführen aus",
+      "previewFailed": "Es ließ sich nicht ermitteln, was das Zusammenführen bewirken würde. Bitte versuche es erneut.",
+      "failed": "Zusammenführen fehlgeschlagen. Bitte versuche es erneut.",
+      "keep": "Zusammenführen in",
+      "kept": "Bleibt",
+      "after": "Nach dem Zusammenführen",
+      "modelUnit_one": "Modell",
+      "modelUnit_other": "Modelle",
+      "new_one": "neu",
+      "new_other": "neu",
+      "quoted": "„{{name}}“",
+      "andMore_one": "{{count}} weitere",
+      "andMore_other": "{{count}} weitere",
+      "syncsWith": "synchronisiert mit {{provider}}",
+      "bookmarkMoves": "Das Lesezeichen wandert zu „{{name}}“.",
+      "cantUndo": "Zusammenführen kann nicht rückgängig gemacht werden.",
+      "mergeInto": "In „{{name}}“ zusammenführen",
+      "collections": {
+        "title_one": "{{count}} Sammlung zusammenführen",
+        "title_other": "{{count}} Sammlungen zusammenführen",
+        "keepHelp": "Wähle die Sammlung, die bleiben soll. Die Modelle der anderen kommen hinzu, dann werden die anderen gelöscht.",
+        "goes": "Wird gelöscht",
+        "othersGo_one": "{{names}} wird gelöscht. Die Modelle darin nicht: Sie wandern nach „{{name}}“.",
+        "othersGo_other": "{{names}} werden gelöscht. Die Modelle darin nicht: Sie wandern nach „{{name}}“.",
+        "keepsOwn": "„{{name}}“ behält Namen, Beschreibung, Tags und Synchronisierungen.",
+        "syncsMove_one": "{{names}} wird mit einer Sammlung einer Plattform synchronisiert, und „{{name}}“ übernimmt diese Synchronisierung.",
+        "syncsMove_other": "{{names}} werden mit Sammlungen von Plattformen synchronisiert, und „{{name}}“ übernimmt diese Synchronisierungen."
+      },
+      "tags": {
+        "title_one": "{{count}} Tag zusammenführen",
+        "title_other": "{{count}} Tags zusammenführen",
+        "keepHelp": "Wähle den Tag, der bleiben soll. Jedes Modell mit einem der anderen bekommt stattdessen diesen, dann werden die anderen entfernt.",
+        "goes": "Wird entfernt",
+        "othersGo_one": "{{names}} wird entfernt. Die Modelle damit bekommen stattdessen „{{name}}“.",
+        "othersGo_other": "{{names}} werden entfernt. Die Modelle damit bekommen stattdessen „{{name}}“.",
+        "keepsOwn": "Modelle, die schon „{{name}}“ haben, bleiben, wie sie sind."
+      },
+      "models": {
+        "action": "Modelle zusammenführen",
+        "needTwo": "Wähle mindestens 2 Modelle aus, die nicht importiert wurden",
+        "tooMany": "Wähle höchstens {{max}} Modelle zum Zusammenführen aus",
+        "title_one": "{{count}} Modell zusammenführen",
+        "title_other": "{{count}} Modelle zusammenführen",
+        "keepHelp": "Wähle das Hauptmodell. Dateien, Bilder und Beschreibungen der anderen wandern hinein, dann werden die anderen gelöscht.",
+        "goes": "Wird gelöscht",
+        "othersGo_one": "{{names}} wird gelöscht. Dateien, Bilder und Beschreibung wandern nach „{{name}}“.",
+        "othersGo_other": "{{names}} werden gelöscht. Dateien, Bilder und Beschreibungen wandern nach „{{name}}“.",
+        "keepsOwn": "„{{name}}“ behält Namen und Kategorie oder Ordner. Tags und Sammlungen werden zusammengelegt.",
+        "fileCount_one": "{{count}} Datei",
+        "fileCount_other": "{{count}} Dateien",
+        "pictureCount_one": "{{count}} Bild",
+        "pictureCount_other": "{{count}} Bilder",
+        "fileUnit_one": "Datei",
+        "fileUnit_other": "Dateien",
+        "merged_one": "{{count}} Modell in „{{name}}“ zusammengeführt.",
+        "merged_other": "{{count}} Modelle in „{{name}}“ zusammengeführt."
+      }
     },
     "filters": {
       "title": "Filter",
@@ -949,6 +2190,165 @@
       "allowsRemixHint": "Nur Modelle, deren Lizenz erlaubt, sie zu verändern.",
       "licensed": "Nur mit Lizenz",
       "licensedHint": "Modelle weglassen, bei denen die Quelle keine Lizenz angibt."
+    },
+    "license": {
+      "title": "Lizenz",
+      "notStated": "Von {{site}} nicht angegeben",
+      "reading": "Lizenz wird gelesen",
+      "readFailed": "Die Lizenz konnte nicht von {{site}} gelesen werden",
+      "retry": "Erneut versuchen",
+      "details": "{{license}}: Lizenzdetails",
+      "summary": {
+        "credit": "Namensnennung",
+        "nonCommercial": "Nicht kommerziell",
+        "noRemix": "Keine Bearbeitung",
+        "shareAlike": "Weitergabe unter gleichen Bedingungen",
+        "noSharing": "Dateien nicht weitergeben",
+        "personalUse": "Nur privater Gebrauch",
+        "nothingGiven": "Keine Rechte eingeräumt",
+        "noConditions": "Keine Bedingungen",
+        "seeTerms": "Siehe Bedingungen"
+      },
+      "deed": {
+        "share": "Dateien weitergeben",
+        "remix": "Bearbeiten",
+        "commercial": "Kommerzielle Nutzung",
+        "credit": "Urheber nennen",
+        "sameLicense": "Bearbeitungen unter derselben Lizenz"
+      },
+      "can": {
+        "yes": "Erlaubt",
+        "no": "Nicht erlaubt",
+        "must": "Pflicht"
+      },
+      "unknown": "Thingport kennt diese Lizenz nicht: Was erlaubt ist, steht in ihren Bedingungen.",
+      "siteAdds": "{{site}} ergänzt",
+      "terms": "Bedingungen",
+      "asListed": "Wie bei {{site}} angegeben",
+      "pickedByOwner": "Vom Eigentümer gewählt",
+      "fullLicense": "Vollständige Lizenz",
+      "copyCredit": "Quellenangabe kopieren",
+      "copied": "Quellenangabe kopiert",
+      "change": "Ändern",
+      "creditBy": "von {{creator}}",
+      "creditUnder": "steht unter der Lizenz {{license}}.",
+      "fromSource": "Wie bei {{site}} angegeben",
+      "none": "Keine",
+      "groups": {
+        "cc": "Creative Commons",
+        "open": "Open Source",
+        "reserved": "Sonstige"
+      }
+    },
+    "shared": {
+      "sharedBy": "Geteilt von {{name}}",
+      "sharedByLabel": "Geteilt von",
+      "inLibrary": "In deiner Bibliothek",
+      "copy": "In meine Bibliothek kopieren",
+      "openCopy": "Meine Kopie öffnen",
+      "copied": "„{{name}}“ in deine Bibliothek kopiert",
+      "alreadyInLibrary": "„{{name}}“ ist schon in deiner Bibliothek",
+      "copyFailed": "Das Modell konnte nicht kopiert werden",
+      "moreFrom": "Mehr von {{name}}",
+      "collectionSubtitle": "Geteilt von {{name}}"
+    },
+    "explore": {
+      "people": "Leute",
+      "peopleHelp": "Die Benutzer dieser Instanz, die ihre Modelle oder Sammlungen teilen. Öffne jemanden, um zu sehen, was geteilt wird.",
+      "recentModels": "Neue Modelle",
+      "recentModelsHelp": "Die Modelle, die zuletzt zu einer öffentlichen Sammlung oder einem öffentlichen Profil hinzugefügt wurden.",
+      "recentCollections": "Kürzlich aktualisierte Sammlungen",
+      "recentCollectionsHelp": "Öffentliche Sammlungen, die zuletzt öffentlich gemacht oder ergänzt wurden, zuerst.",
+      "mostCollected": "Am häufigsten gesammelt",
+      "mostCollectedHelp": "Die geteilten Modelle, die am häufigsten in die eigene Bibliothek kopiert wurden.",
+      "copies_one": "Von {{count}} Person gesammelt",
+      "copies_other": "Von {{count}} Personen gesammelt",
+      "personCounts": "{{collections}} · {{models}}",
+      "collectionCount_one": "{{count}} Sammlung",
+      "collectionCount_other": "{{count}} Sammlungen",
+      "modelCount_one": "{{count}} Modell",
+      "modelCount_other": "{{count}} Modelle",
+      "emptyTitle": "Noch nichts geteilt",
+      "emptyHint": "Sobald jemand Modelle oder eine Sammlung öffentlich macht, erscheint es hier.",
+      "emptyAction": "Zu meinen Sammlungen",
+      "unavailable": "„Entdecken“ ist gerade nicht verfügbar.",
+      "userNotFound": "Diese Person teilt nichts.",
+      "backToExplore": "Zurück zu „Entdecken“",
+      "joined": "Dabei seit {{date}}",
+      "ownEmpty": "Du hast noch keine Sammlung öffentlich gemacht.",
+      "loadFailed": "Diese Seite konnte nicht geladen werden.",
+      "refreshFailed": "Die neuesten Zahlen konnten nicht geladen werden.",
+      "sections": "Was geteilt wird",
+      "noModels": "Noch keine Modelle.",
+      "modelsLoadFailed": "Die Modelle konnten nicht geladen werden.",
+      "collectionsLoadFailed": "Die Sammlungen konnten nicht geladen werden.",
+      "noCollections": "{{name}} hat noch keine Sammlung öffentlich gemacht.",
+      "elsewhere": {
+        "open": "Jemand von woanders",
+        "title": "Mit jemandem von woanders verbinden",
+        "intro": "Jemand auf einer anderen Thingport-Instanz. Zuerst stimmt dein Admin zu, dann der Admin der anderen Seite.",
+        "handle": "Handle der Person",
+        "handlePlaceholder": "name@ihre.instanz",
+        "note": "Notiz (optional)",
+        "ask": "Verbindung anfragen",
+        "sent": "Anfrage an {{handle}} gestellt. Dein Admin bekommt sie zu sehen.",
+        "withdrawn": "Anfrage an {{handle}} zurückgezogen",
+        "failed": "Konnte nicht gesendet werden",
+        "loadFailed": "Deine Anfragen konnten nicht geladen werden.",
+        "yours": "Deine Anfragen",
+        "withdraw": "Zurückziehen",
+        "status": {
+          "waiting_admin": "Wartet auf deinen Admin",
+          "waiting_them": "Wartet auf den anderen Admin",
+          "connected": "Verbunden",
+          "declined": "Abgelehnt"
+        },
+        "errors": {
+          "federation_off": "Verbundene Instanzen sind ausgeschaltet.",
+          "invalid_handle": "Gib ein Handle wie name@ihre.instanz ein.",
+          "same_instance": "Diese Person ist auf dieser Instanz: Du findest sie unter „Leute“.",
+          "already_connected": "Die Instanz dieser Person ist schon verbunden: Du findest sie unter „Leute“.",
+          "already_asked": "Dein Admin hat die andere Instanz schon um eine Verbindung gebeten.",
+          "not_available": "Diese Instanz verbindet sich nicht mit der anderen.",
+          "exists": "Du hast diese Person schon angefragt.",
+          "request_limit": "Warte zuerst, bis dein Admin deine bisherigen Anfragen beantwortet hat.",
+          "daily_limit": "Du hast heute schon viele Anfragen an Leute von woanders gestellt. Versuche es morgen wieder.",
+          "copy_limit": "Warte zuerst, bis die laufenden Kopien fertig sind.",
+          "no_files": "Es hat keine Dateien zum Kopieren.",
+          "files_missing": "Nicht alle Dateien lassen sich von der anderen Instanz holen, deshalb kann es nicht vollständig kopiert werden.",
+          "copy_too_big": "Zu groß zum Kopieren: Die Dateien zusammen sind größer, als diese Instanz in einem Import annimmt.",
+          "zip_busy": "Gerade wird eine andere ZIP-Datei erstellt. Versuche es gleich noch einmal.",
+          "zip_too_big": "Zu groß zum Zippen: Lade die Dateien einzeln herunter."
+        },
+        "on": "Auf {{name}}",
+        "fileCount_one": "{{count}} Datei",
+        "fileCount_other": "{{count}} Dateien",
+        "copyHandle": "Handle kopieren",
+        "more": "Mehr anzeigen",
+        "gone": "Das wird nicht mehr geteilt, oder die Instanz, auf der es liegt, ist nicht mehr verbunden.",
+        "noPictures": "Keine Bilder",
+        "picture": "Bild {{number}}",
+        "inCollections": "In Sammlungen",
+        "copying": "Wird in deine Bibliothek kopiert …",
+        "copyFailed": "Konnte nicht kopiert werden",
+        "carriesOn": "Du kannst diese Seite verlassen: Es läuft weiter.",
+        "ofSize": "{{received}} von {{size}}",
+        "filesUnavailable": "Die andere Instanz stellt die Dateien noch nicht bereit.",
+        "copiedFrom": "Kopiert von",
+        "seeOriginal": "Original ansehen",
+        "message": "Nachricht",
+        "messageFailed": "Der Chat konnte nicht geöffnet werden"
+      },
+      "scope": {
+        "label": "Anzeigen",
+        "all": "Überall",
+        "here": "Diese Instanz"
+      },
+      "sharedWithYou": "Mit dir geteilt",
+      "sharedWithYouHelp": "Sammlungen, die ihre Eigentümer mit dir und ein paar anderen geteilt haben. Sonst sieht sie niemand unter „Entdecken“.",
+      "showMore_one": "{{count}} weitere anzeigen",
+      "showMore_other": "{{count}} weitere anzeigen",
+      "sharedFailed": "Weitere mit dir geteilte Inhalte konnten nicht geladen werden. Versuche es erneut."
     }
   }
 }
