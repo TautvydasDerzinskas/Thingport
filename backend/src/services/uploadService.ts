@@ -57,15 +57,18 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
 }
 
 /** `files` with each .gltf packed, with the files it points at, into one .glb that takes its place. The files it
- *  used leave the list, for the caller to clean up with the rest; the .glbs are new temp files. */
-export async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
-  if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
+ *  used leave the list (`packedInto` names them), for the caller to clean up with the rest; the .glbs are new temp
+ *  files. The rest keep their order, each .glb where its .gltf was. */
+export async function withGltfPacked<T extends UploadedFile>(
+  files: T[],
+): Promise<{ files: T[]; glbs: string[]; packedInto: Set<T> }> {
+  if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [], packedInto: new Set() };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
   const named = files.map((file) => {
     const folder = file.sourceFolder ?? file.folder;
     return { name: folder ? `${folder}/${file.originalname}` : file.originalname, path: file.path, file };
   });
-  const { files: left } = await packGltfFiles(
+  const { files: left, packed } = await packGltfFiles(
     named,
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
     (gltf, glbPath, glbName) => ({
@@ -80,7 +83,9 @@ export async function withGltfPacked<T extends UploadedFile>(files: T[]): Promis
     }),
   );
   const glbs = left.filter((f) => !files.includes(f.file)).map((f) => f.path);
-  return { files: left.map((f) => f.file), glbs };
+  // The files a .gltf took in, as against the .gltfs themselves, which became their .glbs.
+  const packedInto = new Set(packed.filter((f) => !isGltfName(f.name)).map((f) => f.file));
+  return { files: left.map((f) => f.file), glbs, packedInto };
 }
 
 const removeAll = (paths: string[]) => Promise.all(paths.map((p) => fs.rm(p, { force: true }).catch(() => undefined)));
@@ -161,9 +166,8 @@ async function addFilesTo(
   const prepared = files.find((f) => !f.kind && isPreparedPrintFilename(sanitizeFilename(f.originalname)));
 
   const plateIds: string[] = [];
-  const before = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { id: true } })).map((f) => f.id),
-  );
+  // The files this request saved, by the ids their saves gave: another tab's added meanwhile aren't ours to undo.
+  const saved: { id: string; role: "SUPPORTING" | "PREPARED" }[] = [];
   try {
     for (const f of prepared ? [...files.filter((other) => other !== prepared), prepared] : files) {
       if (isPlate(f)) {
@@ -183,13 +187,13 @@ async function addFilesTo(
           folder: f.folder ?? null,
           ...(f.kind === "supporting" ? { role: "SUPPORTING" as const } : {}),
           leavePrepared: f !== prepared,
+          onStored: (role, id) => saved.push({ id, role }),
         });
       }
     }
   } catch (err) {
     for (const plateId of plateIds) await removePlate(print, plateId).catch(() => undefined);
-    const added = await prisma.printFile.findMany({ where: { printId, id: { notIn: [...before] } } });
-    for (const file of added) {
+    for (const file of saved) {
       const undo =
         file.role === "PREPARED" ? deletePreparedFile(userId, printId) : deleteSupportingFile(userId, printId, file.id);
       await undo.catch(() => undefined);

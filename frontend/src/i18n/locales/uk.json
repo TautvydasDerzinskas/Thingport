@@ -7409,6 +7409,7 @@
       "discardConfirmLabel": "Відкинути",
       "updateSuccess": "Модель оновлена",
       "updateFailed": "Не вдалося оновити модель. Спробуйте ще раз.",
+      "photosNotSaved": "Не вдалося зберегти ці фото: {{names}}. Приберіть їх або спробуйте ще раз.",
       "descriptionWrite": "Напишіть",
       "descriptionPreview": "Попередній перегляд",
       "descriptionPlaceholder": "Опишіть модель, параметри друку, етапи складання...",

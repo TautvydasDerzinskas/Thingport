@@ -61,7 +61,7 @@ export default function DownloadPickerDialog({
   downloading,
   sortedPlates,
   supportingCount = 0,
-  supportingFiles = NO_FILES,
+  supportingFiles: loadedSupportingFiles,
   supportingState,
   onRetrySupporting,
   downloadSupporting,
@@ -70,6 +70,9 @@ export default function DownloadPickerDialog({
   downloadPlate,
 }: Props) {
   const { t } = useTranslation(["models", "common"]);
+  const supportingFiles = loadedSupportingFiles ?? NO_FILES;
+  // The files themselves once they're read, as another tab may have added one since the count was taken.
+  const zipCount = sortedPlates.length + (loadedSupportingFiles ? loadedSupportingFiles.length : supportingCount);
   const grouped = hasFolders(sortedPlates, folderOf);
   const names = useMemo(
     () =>
@@ -117,7 +120,7 @@ export default function DownloadPickerDialog({
             disabled={downloading}
             startIcon={downloading ? <CircularProgress size={14} /> : <DownloadIcon fontSize="small" />}
           >
-            {t("models:detail.downloadAllZip", { count: sortedPlates.length + supportingCount })}
+            {t("models:detail.downloadAllZip", { count: zipCount })}
           </Button>
           <Divider>{t("models:detail.orDownloadOne")}</Divider>
           <List disablePadding>

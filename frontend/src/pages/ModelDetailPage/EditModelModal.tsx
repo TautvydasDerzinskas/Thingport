@@ -52,7 +52,7 @@ import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
 import { batchesByName, sortAddedFiles, storedModelFileName, withGltfFiles } from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
-import { inFolder } from "../../utils/fileExtensions";
+import { inFolder, withExtensionOf } from "../../utils/fileExtensions";
 import RenameDialog from "../../components/RenameDialog";
 import TypeTile from "../../components/supportingFiles/TypeTile";
 import SupportingFileMenu, { type FileMenuAnchor } from "../../components/supportingFiles/SupportingFileMenu";
@@ -319,8 +319,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       prev.map((item) => {
         if (supportingKey(item) !== key) return item;
         if (item.kind === "existing") return { ...item, renamedTo: name === item.file.filename ? null : name };
-        // A file still to upload is uploaded under its new name.
-        return { ...item, file: new File([item.file], name, { type: item.file.type }) };
+        // A file still to upload is uploaded under its new name, keeping its extension where the name gives none, as
+        // a stored file's rename does.
+        return {
+          ...item,
+          file: new File([item.file], withExtensionOf(name, item.file.name), { type: item.file.type }),
+        };
       }),
     );
     markDirty();
@@ -395,6 +399,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       // Up now: each new picture is the stored one it became, so a retry doesn't upload it again. By the ids the upload
       // gave back: a picture another tab added meanwhile is new to this dialog too, and isn't one of these.
       const storedImages = new Map<string, { id: string; url: string }>();
+      const unsavedPhotos: string[] = [];
       if (newImages.length) {
         const uploadRes = await printsApi.addPreviewImages(
           print.id,
@@ -405,6 +410,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           const id = uploadRes.image_ids?.[index];
           const url = id ? latest.preview_images.find((each) => each.id === id)?.url : undefined;
           if (id && url) storedImages.set(img.localId, { id, url });
+          // One the server couldn't keep stays in the list, to be said below and tried again or taken out.
+          else unsavedPhotos.push(img.file.name);
         });
         setImages((current) =>
           current.map((img): ImageItem => {
@@ -446,14 +453,23 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         plates.filter((p) => p.kind === "new"),
         filesOf,
       )) {
-        const uploadRes = await printsApi.addPlates(print.id, [...new Set(batch.flatMap(filesOf))]);
+        const sent = [...new Set(batch.flatMap(filesOf))];
+        const uploadRes = await printsApi.addPlates(print.id, sent);
         latest = uploadRes.print;
-        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
-        // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
+        // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By what the upload
+        // said of its own file: a plate another tab added meanwhile is new to this dialog too, and isn't one of these,
+        // and a file a .gltf sent with it took in became no plate, so it's gone from the list rather than given one.
         const became = new Map<string, PlateItem>();
-        batch.forEach((p, index) => {
-          const stored = latest.plates.find((each) => each.id === uploadRes.plate_ids?.[index]);
-          if (!stored || p.kind !== "new") return;
+        const packedInto = new Set<string>();
+        for (const p of batch) {
+          if (p.kind !== "new") continue;
+          const result = uploadRes.uploaded?.[sent.indexOf(p.file)];
+          if (result?.packed) {
+            packedInto.add(p.localId);
+            continue;
+          }
+          const stored = latest.plates.find((each) => each.id === result?.plate_id);
+          if (!stored) continue;
           became.set(p.localId, {
             kind: "existing",
             id: stored.id,
@@ -461,13 +477,21 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
             folder: stored.folder ?? null,
             wanted: storedModelFileName(p.file.name),
           });
-        });
-        const settle = (list: PlateItem[]) => list.map((p) => (p.kind === "new" && became.get(p.localId)) || p);
+        }
+        const settle = (list: PlateItem[]) =>
+          list.flatMap((p) =>
+            p.kind === "new" && packedInto.has(p.localId) ? [] : [(p.kind === "new" && became.get(p.localId)) || p],
+          );
         plates = settle(plates);
         setPlateItems(settle);
       }
       for (const id of removedPlateIds) {
-        const res = await printsApi.deletePlate(print.id, id);
+        // One another tab took away already is as good as done: the model is read to be sure it's gone.
+        const res = await printsApi.deletePlate(print.id, id).catch(async (err: unknown) => {
+          const now = await printsApi.get(print.id).catch(() => null);
+          if (!now || now.plates.some((each) => each.id === id)) throw err;
+          return { print: now };
+        });
         latest = res.print ?? latest;
         setRemovedPlateIds((current) => {
           const next = new Set(current);
@@ -492,8 +516,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         setPlateItems(named);
       }
       {
+        // Only plates still on the model: one another tab took away meanwhile leaves the list, as the order would be
+        // refused with it in. Reorder needs an exhaustive id list; plates this dialog never saw go after, in order.
+        const present = new Set(latest.plates.map((each) => each.id));
+        const stillThere = (list: PlateItem[]) => list.filter((p) => p.kind !== "existing" || present.has(p.id));
+        plates = stillThere(plates);
+        setPlateItems(stillThere);
         const known = plates.flatMap((p) => (p.kind === "existing" ? [p.id] : []));
-        // Reorder needs an exhaustive id list; plates this dialog never saw go after, in their order.
         const knownIds = new Set(known);
         const unknown = latest.plates
           .filter((p) => !knownIds.has(p.id))
@@ -505,7 +534,12 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
       // Each change that's done leaves what's staged, so a retry after a later step fails sends only what's left.
       for (const id of removedSupportingIds) {
-        const res = await printsApi.deleteFile(print.id, id);
+        // One another tab took away already is as good as done: the model's files are read to be sure it's gone.
+        const res = await printsApi.deleteFile(print.id, id).catch(async (err: unknown) => {
+          const files = await printsApi.listFiles(print.id).catch(() => null);
+          if (!files || files.some((file) => file.id === id)) throw err;
+          return { print: null };
+        });
         latest = res.print ?? latest;
         setRemovedSupportingIds((current) => {
           const next = new Set(current);
@@ -540,6 +574,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       }
 
       onUpdated(latest);
+      if (unsavedPhotos.length) {
+        setError(t("models:edit.photosNotSaved", { names: unsavedPhotos.join(", ") }));
+        return;
+      }
       showToast({ message: t("models:edit.updateSuccess") });
       onClose();
     } catch (err) {

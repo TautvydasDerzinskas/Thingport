@@ -46,7 +46,7 @@ export default function SupportingFileMenu({
       anchorEl={anchor && "element" in anchor ? anchor.element : undefined}
       anchorReference={anchor && "top" in anchor ? "anchorPosition" : "anchorEl"}
       anchorPosition={anchor && "top" in anchor ? anchor : undefined}
-      // A right-click on the menu itself is the browser's, not another of ours.
+      // A right-click on the menu itself opens nothing over it, the browser's own menu included: one menu at a time.
       onContextMenu={(event) => event.preventDefault()}
       slotProps={{ paper: { sx: { minWidth: 220 } } }}
     >

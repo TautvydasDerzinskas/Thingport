@@ -1,12 +1,14 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
 import { extOf } from "./fileExtensions";
 import { gltfBundles } from "./uploadTree";
+import { printsApi } from "../api/prints";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
 // are the model's files, and anything else is kept beside them as a supporting file.
 
-/** Pictures a model's gallery takes, as the folder upload picks them (utils/uploadTree.ts). */
-const PICTURE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "bmp"]);
+/** Pictures a model can be made of, as an upload takes them on their own (UPLOAD_EXTS): an image model's files, GIFs
+ *  and SVGs among them. Not the gallery's narrower list. */
+const PICTURE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "bmp", "gif", "svg"]);
 
 /** A sliced print: kept beside the model as its prepared print, never one of its files to slice. */
 const PREPARED_SUFFIXES = [".gcode.3mf", ".gcode", ".gco", ".bgcode"];
@@ -23,6 +25,21 @@ export function isPreparedName(name: string): boolean {
  */
 export function mayHoldPrepared(name: string, status: number | null): boolean {
   return isPreparedName(name) && !(status !== null && status >= 400 && status < 500);
+}
+
+/**
+ * After the upload of sliced print `name` to model `printId` failed, whether it is the model's prepared print now: none
+ * where the server turned it away, else as the model says when read again. One the model can't be read for is taken
+ * as in, so the next is kept beside it rather than put over a print that may be there.
+ */
+export async function preparedAfterFailure(printId: string, name: string, status: number | null): Promise<boolean> {
+  if (!mayHoldPrepared(name, status)) return false;
+  try {
+    const model = await printsApi.get(printId);
+    return Boolean(model.prepared_print?.removable) && model.slicer_filename === name;
+  } catch {
+    return true;
+  }
 }
 
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */
@@ -59,15 +76,16 @@ export function sortAddedFiles<T extends { name: string }>(
  * `sorted` with each .gltf among the model files followed by the files of the same addition it points at -- its .bin
  * and textures -- wherever they were sorted to: the server packs them with it into one .glb, so they go up with it in
  * one request, never as files of their own. `packedWith` has every file each .gltf points at, one two scenes share
- * under both, though `model` lists it once. Found as a folder upload finds them.
+ * under both, though `model` lists it once. Found as a folder upload finds them. `ambiguous`: the names of those it
+ * took that another file of the addition has too, which names alone can't tell apart.
  */
 export async function withGltfFiles<T>(
   sorted: { model: T[]; supporting: T[] },
   fileOf: (item: T) => File,
-): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]> }> {
+): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]>; ambiguous: string[] }> {
   const all = [...sorted.model, ...sorted.supporting];
   const packedWith = new Map<T, T[]>();
-  if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith };
+  if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
   for (const [gltf, found] of await gltfBundles(entries)) {
     packedWith.set(
@@ -84,10 +102,16 @@ export async function withGltfFiles<T>(
       sent.add(item);
       return true;
     });
+  // A name a scene took that another file has too: by name alone, nothing says which is the scene's.
+  const namesOf = (item: T) => fileOf(item).name.toLowerCase();
+  const ambiguous = [...new Set([...packed].map(namesOf))].filter(
+    (name) => all.filter((item) => namesOf(item) === name).length > 1,
+  );
   return {
     model: sorted.model.flatMap((item) => (packed.has(item) ? [] : once([item, ...(packedWith.get(item) ?? [])]))),
     supporting: sorted.supporting.filter((item) => !packed.has(item)),
     packedWith,
+    ambiguous,
   };
 }
 

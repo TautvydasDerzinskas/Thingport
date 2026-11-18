@@ -7408,6 +7408,7 @@
       "discardConfirmLabel": "Адкідаць",
       "updateSuccess": "Мадэль абноўлена",
       "updateFailed": "Не ўдалося абнавіць мадэль. Калі ласка, паспрабуйце яшчэ раз.",
+      "photosNotSaved": "Не ўдалося захаваць гэтыя фота: {{names}}. Прыберыце іх або паспрабуйце яшчэ раз.",
       "descriptionWrite": "Пішыце",
       "descriptionPreview": "Папярэдні прагляд",
       "descriptionPlaceholder": "Апішыце мадэль, параметры друку, этапы зборкі...",

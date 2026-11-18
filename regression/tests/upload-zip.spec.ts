@@ -235,8 +235,9 @@ test("several zips are asked about one after another", async ({ page, api }) => 
   await (await unzip(page, ["Queue Two.stl"])).getByRole("button", { name: "Import selected" }).click();
   await expectUploaded(page, 2);
 
-  // Unzipped as one model, named after its zip.
-  await api.printsNamed("Queue First", "Queue Second");
+  // Unzipped as one model, named after its zip: its file in it, not the zip kept whole.
+  const [, second] = await api.printsNamed("Queue First", "Queue Second");
+  expect(second.plates.map((p) => p.filename)).toEqual(["Queue Two.stl"]);
 });
 
 test("cancelling the zip choice uploads nothing", async ({ page, api }) => {

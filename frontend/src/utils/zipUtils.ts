@@ -30,7 +30,8 @@ export function normalizeZipPath(path: string): string | null {
   if (!raw || raw.endsWith("/")) return null;
   const cleaned = normalizePath(raw);
   if (!cleaned) return null;
-  const parts = cleaned.split("/").filter(Boolean);
+  // "./A/body.stl" is "A/body.stl": a "." names no folder, so it mustn't make one apart from "A".
+  const parts = cleaned.split("/").filter((part) => part && part !== ".");
   if (!parts.length || parts.some((part) => part === "..")) return null;
   return parts.join("/");
 }

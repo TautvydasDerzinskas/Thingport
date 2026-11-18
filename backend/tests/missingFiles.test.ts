@@ -372,23 +372,97 @@ describe("models whose files are gone", () => {
     const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id } });
     expect(row.filename).toBe("moving.txt");
     expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("on its way");
+    // And once it's in, it follows the model's other files to where its new name puts them.
+    expect(row.storagePath).toContain("Moving away");
+  });
+
+  it("refuses to rename a file whose save hasn't said it's under way yet, and leaves it out of the lists", async () => {
+    const model = await makePrint(dir, owner.id, "Early rename");
+    const early = await prisma.printFile.create({
+      data: {
+        printId: model.print.id,
+        filename: "early.txt",
+        mime: "text/plain",
+        role: "SUPPORTING",
+        storagePath: `pending:${randomUUID()}`,
+      },
+    });
+    try {
+      const renamed = await renameSupportingFile(owner.id, model.print.id, early.id, "later.txt").catch((err) => err);
+      expect(renamed).toMatchObject({ status: 409 });
+      expect((await prisma.printFile.findUniqueOrThrow({ where: { id: early.id } })).filename).toBe("early.txt");
+      // Not a file anyone can have yet.
+      const detail = await request(app)
+        .get(`/api/print/${model.print.id}`)
+        .set("Authorization", `Bearer ${owner.token}`);
+      expect(detail.body.supporting_files.map((file: { id: string }) => file.id)).not.toContain(early.id);
+      expect(detail.body.supporting_file_count).toBe(0);
+      const listed = await request(app)
+        .get(`/api/print/${model.print.id}/files`)
+        .set("Authorization", `Bearer ${owner.token}`);
+      expect(listed.body.map((file: { id: string }) => file.id)).not.toContain(early.id);
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: early.id } });
+    }
+  });
+
+  it("finishes a rename whose move failed when the same name is asked for again", async () => {
+    const model = await makePrint(dir, owner.id, "Half renamed");
+    const note = await upload(dir, owner.id, model.print.id, "old.txt", "notes");
+    // As a rename left it whose move failed: the new name in the row, the file where the old one put it.
+    await prisma.printFile.update({ where: { id: note.id }, data: { filename: "new.txt" } });
+    await renameSupportingFile(owner.id, model.print.id, note.id, "new.txt");
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: note.id } });
+    expect(path.basename(row.storagePath)).toBe("new.txt");
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("notes");
+  });
+
+  it("keeps a saved file when the caller told of it fails", async () => {
+    const model = await makePrint(dir, owner.id, "Told");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "kept"), "told.txt", null, {
+      onStored: () => {
+        throw new Error("the caller failed");
+      },
+    });
+    const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "told.txt" } });
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("kept");
+  });
+
+  it("brings a repaired model's script back over a row whose file is gone, though the sweep failed", async () => {
+    const model = await makePrint(dir, owner.id, "Script back");
+    const script = await upload(dir, owner.id, model.print.id, "shape.scad", "cube(1);\n");
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "kept");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    fs.rmSync(path.join(STORAGE, script.storagePath), { force: true });
+    // The disk fails when the sweep looks for the note, so the script's row is left behind.
+    const access = fsPromises.access.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "access").mockImplementation((async (where: fs.PathLike, mode?: number) => {
+      if (String(where).endsWith(note.storagePath)) throw Object.assign(new Error("EIO"), { code: "EIO" });
+      return access(where, mode);
+    }) as never);
+    try {
+      await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+        { filename: "shape.scad", tempFilePath: tempFile(dir, "cube(2);\n") },
+      ]);
+    } finally {
+      spy.mockRestore();
+    }
+    const scripts = await prisma.printFile.findMany({ where: { printId: model.print.id, filename: "shape.scad" } });
+    expect(scripts).toHaveLength(1);
+    expect(fs.readFileSync(path.join(STORAGE, scripts[0].storagePath), "utf8")).toBe("cube(2);\n");
   });
 
   it("leaves the rows of saves a move listed before they said they were under way", async () => {
     const model = await makePrint(dir, owner.id, "Listed early");
-    const row = (filename: string) =>
+    const row = (filename: string, storagePath: string) =>
       prisma.printFile.create({
-        data: {
-          printId: model.print.id,
-          filename,
-          mime: "text/plain",
-          role: "SUPPORTING",
-          storagePath: `pending:${randomUUID()}`,
-        },
+        data: { printId: model.print.id, filename, mime: "text/plain", role: "SUPPORTING", storagePath },
       });
-    // One still at its placeholder, and one whose save says it's under way and claims its place as the move reads it.
-    const early = await row("early.txt");
-    const claimed = await row("claimed.txt");
+    // One still at its placeholder, and one listed at a place of its own whose save says it's under way only as the
+    // move reads it again.
+    const early = await row("early.txt", `pending:${randomUUID()}`);
+    const claimed = await row("claimed.txt", `listed-${randomUUID()}/claimed.txt`);
     const place = `claimed-${randomUUID()}/claimed.txt`;
     const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
     const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation((async (

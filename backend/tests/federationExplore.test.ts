@@ -460,6 +460,38 @@ describe("Explore with partners", () => {
     }
   });
 
+  it("hands out a file from a partner too old to say its kind, on the partner's own origin", async () => {
+    const legacyId = (
+      await prisma.remoteModel.create({
+        data: {
+          peerId,
+          personId,
+          apId: `${PARTNER}/api/ap/models/legacy-${Date.now()}`,
+          title: "Legacy files",
+          images: [],
+          sharedAt: new Date(Date.now() - 60_000),
+          files: [{ name: "legacy.stl", size: 40, url: `${PARTNER}/api/ap/files/plate/p3/legacy.stl` }],
+        },
+      })
+    ).id;
+    try {
+      const res = await request(app).get(`/api/explore/elsewhere/model/${legacyId}`).set(auth(viewer));
+      expect(res.body.files).toEqual([
+        {
+          name: "legacy.stl",
+          folder: null,
+          size: 40,
+          media_type: null,
+          url: `/explore/elsewhere/model/${legacyId}/files/${fileKey(`${PARTNER}/api/ap/files/plate/p3/legacy.stl`)}/legacy.stl`,
+          kind: null,
+          role: null,
+        },
+      ]);
+    } finally {
+      await prisma.remoteModel.deleteMany({ where: { id: legacyId } });
+    }
+  });
+
   it("hands out a partner's files through this instance, and only those the partner gave", async () => {
     const remoteFiles = await request(app).get(`/api/explore/elsewhere/model/${filesModelId}`).set(auth(viewer));
     expect(remoteFiles.body.files).toEqual([

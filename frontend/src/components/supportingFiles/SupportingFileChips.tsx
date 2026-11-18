@@ -91,8 +91,10 @@ export default function SupportingFileChips({
           setDragging(true);
         },
         onDragLeave: (event: DragEvent) => {
-          // Only on leaving the row, not on passing from one chip to the next.
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false);
+          // Only on leaving the row, not on passing from one chip to the next: left for nothing, or for anything that
+          // isn't in it.
+          const to = event.relatedTarget;
+          if (!(to instanceof Node) || !event.currentTarget.contains(to)) setDragging(false);
         },
         onDrop: (event: DragEvent) => {
           if (!isFileDrag(event)) return;

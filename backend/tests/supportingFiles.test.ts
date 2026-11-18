@@ -48,6 +48,7 @@ describe("supporting files", () => {
 
     const list = await request(app).get("/api/prints").set(auth(owner.token));
     const listed = (list.body as { id: string; supporting_files?: unknown }[]).find((p) => p.id === model.print.id);
+    expect(listed).toMatchObject({ supporting_file_count: 2 });
     expect(listed?.supporting_files).toBeUndefined();
   });
 

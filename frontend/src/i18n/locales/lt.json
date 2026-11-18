@@ -6554,6 +6554,7 @@
       "discardConfirmLabel": "Atmesti",
       "updateSuccess": "Modelis atnaujintas",
       "updateFailed": "Nepavyko atnaujinti modelio. Bandykite dar kartą.",
+      "photosNotSaved": "Nepavyko išsaugoti šių nuotraukų: {{names}}. Pašalinkite jas arba bandykite dar kartą.",
       "descriptionWrite": "Rašyti",
       "descriptionPreview": "Peržiūra",
       "descriptionPlaceholder": "Aprašykite modelį, spausdinimo nustatymus, surinkimo žingsnius...",

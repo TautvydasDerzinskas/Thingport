@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
 import { type Plate, type Print, printsApi } from "../../api/prints";
@@ -20,12 +20,21 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
     alert(t("models:detail.downloadFailed"));
   };
 
-  // Fire-and-forget. Only a real print is passed on: an older backend answers `{ ok: true }`.
+  // The model as the page has it now, for an answer that comes back after it changed.
+  const current = useRef(print);
+  useEffect(() => {
+    current.current = print;
+  });
+
+  // Fire-and-forget. Only a real print is passed on: an older backend answers `{ ok: true }`. Only the count it
+  // records is taken from it, into the model as it is by then: a rename made while it was on its way stays.
   const record = (kind: "download" | "slicer") => {
     printsApi
       .recordDownload(print.id, kind)
       .then((updated) => {
-        if (updated && typeof updated === "object" && updated.id === print.id) onRecorded?.(updated);
+        if (!updated || typeof updated !== "object" || updated.id !== print.id) return;
+        const now = current.current;
+        onRecorded?.(now.id === updated.id ? { ...now, print_count: updated.print_count } : updated);
       })
       .catch(() => {});
   };

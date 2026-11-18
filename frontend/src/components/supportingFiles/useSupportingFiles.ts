@@ -7,7 +7,7 @@ import { useToast } from "../ToastProvider";
 import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
-import { mayHoldPrepared, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
+import { preparedAfterFailure, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -116,8 +116,10 @@ export function useSupportingFiles(
               settle(queued);
               return;
             }
-            // In for all the answer said, it keeps its place from the ones after it.
-            if (mayHoldPrepared(item.name, err instanceof PrintApiError ? err.status : null)) preparedAdded = true;
+            // In for all the answer said, it keeps its place from the ones after it: the model is read to tell, so the
+            // first that does arrive isn't kept aside for one that never did.
+            const status = err instanceof PrintApiError ? err.status : null;
+            if (await preparedAfterFailure(printId, item.name, status)) preparedAdded = true;
           } finally {
             settle([item]);
           }

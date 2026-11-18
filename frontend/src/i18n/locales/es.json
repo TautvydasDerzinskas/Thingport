@@ -6427,6 +6427,7 @@
       "discardConfirmLabel": "Descartar",
       "updateSuccess": "Modelo actualizado",
       "updateFailed": "No se pudo actualizar el modelo. Inténtalo de nuevo.",
+      "photosNotSaved": "No se pudieron guardar estas fotos: {{names}}. Quítalas o inténtalo de nuevo.",
       "descriptionWrite": "Escribir",
       "descriptionPreview": "Vista previa",
       "descriptionPlaceholder": "Describe el modelo, los ajustes de impresión, los pasos de montaje...",

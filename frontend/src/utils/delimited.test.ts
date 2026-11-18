@@ -49,6 +49,14 @@ describe("a CSV or TSV preview", () => {
     expect(guessDelimiter("a;b\n1,2,3,4\n", "csv")).toBe(";");
   });
 
+  it("settles a header holding two delimiters by the rows under it", () => {
+    expect(guessDelimiter("Length, mm;Width, mm\n10;20\n30;40", "csv")).toBe(";");
+  });
+
+  it("reads a quote inside a field as text when guessing, as the parser does", () => {
+    expect(guessDelimiter('Diameter 5";Length;Qty\n5;20;2', "csv")).toBe(";");
+  });
+
   it("takes the header from the first line that isn't blank", () => {
     expect(previewTable("\npart;qty\nbolt;2\n", "csv", 10)).toMatchObject({
       head: ["part", "qty"],

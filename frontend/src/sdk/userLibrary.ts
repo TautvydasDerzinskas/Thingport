@@ -1,5 +1,5 @@
 import { collectionsApi, type Collection } from "../api/collections";
-import { printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
+import { PrintApiError, printsApi, type Plate, type Print, type ProfileFilament } from "../api/prints";
 import { searchApi } from "../api/search";
 import type {
   SdkCollection,
@@ -11,7 +11,7 @@ import type {
   SdkPrintProfile,
   SdkRelatedFile,
 } from "./types";
-import { sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
+import { preparedAfterFailure, sortAddedFiles, withGltfFiles } from "../utils/addedFiles";
 
 // The user's own library, as a widget's or a tool's script reaches it: the same API the app itself uses, as the
 // user. Kept small and plain — no Print objects, no React — so it stays the same as the app changes, and so what a
@@ -182,16 +182,27 @@ export function buildUserLibrary({
       if (input.collectionId) await collectionsApi.addItems(input.collectionId, [print.id]);
       return toModel(print);
     },
-    addFiles: async (id: string, files: SdkFileInput[]) => {
+    addFiles: async (id: string, files: SdkFileInput[], options: { keepPrepared?: boolean } = {}) => {
       // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
       // A .gltf's .bin and textures go up with it, packed into one .glb.
-      const { model, supporting } = await withGltfFiles(sortAddedFiles(files.map(toFile), "model"), (file) => file);
+      const { model, supporting, ambiguous } = await withGltfFiles(
+        sortAddedFiles(files.map(toFile), "model"),
+        (file) => file,
+      );
+      // Before anything is added: a .gltf finds its files by name, and two files of one name leave it guessing.
+      if (ambiguous.length) {
+        throw new Error(
+          `Two different files are named ${ambiguous.join(", ")}: a .gltf among them can't say which is its own. ` +
+            "Add each scene with its files in a call of its own.",
+        );
+      }
       // The model's own go in one request, all or none; the others one at a time after them. One that fails says what
       // is in by then, so a retry can send only the rest.
       let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
       const added = model.map((file) => file.name);
-      // The first sliced print among them becomes the prepared print; the rest are kept as related files.
-      let preparedAdded = false;
+      // The first sliced print among them becomes the prepared print, unless the caller is sending the rest of a call
+      // that set it; the rest are kept as related files.
+      let preparedAdded = options.keepPrepared ?? false;
       for (const file of supporting) {
         try {
           const res = await printsApi.uploadFile(id, file, { keepPrepared: preparedAdded });
@@ -199,9 +210,16 @@ export function buildUserLibrary({
           print = res.print;
           added.push(file.name);
         } catch (err) {
-          if (!added.length) throw err;
+          // One whose answer was lost may be the prepared print all the same: the model is read to tell.
+          const status = err instanceof PrintApiError ? err.status : null;
+          if (await preparedAfterFailure(id, file.name, status)) preparedAdded = true;
+          if (!added.length && !preparedAdded) throw err;
           const failure = err instanceof Error ? err : new Error(String(err));
-          throw Object.assign(failure, { added, model: toModel(print ?? (await printsApi.get(id))) });
+          throw Object.assign(failure, {
+            added,
+            model: toModel(print ?? (await printsApi.get(id))),
+            keepPrepared: preparedAdded,
+          });
         }
       }
       return toModel(print ?? (await printsApi.get(id)));

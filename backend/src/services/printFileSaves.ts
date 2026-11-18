@@ -8,3 +8,13 @@ export const savesUnderWay = new Set<string>();
 export const PENDING_STORAGE_PREFIX = "pending:";
 export const isPendingStoragePath = (storagePath: string) =>
   storagePath === "pending" || storagePath.startsWith(PENDING_STORAGE_PREFIX);
+
+/** A model's file rows with those still on their way in left out: a row has its place before its bytes are there,
+ *  so one listed then would answer 404, and stay listed if the save failed. */
+export function settledFiles<T extends { id: string; storagePath: string }>(rows: T[]): T[] {
+  return rows.filter((row) => !isPendingStoragePath(row.storagePath) && !savesUnderWay.has(row.id));
+}
+
+/** The files a move of their model's files passed by because they were on their way in: each follows once its save
+ *  is done (printFileService.saveFileFromTemp), or it stays where the model's files used to be. */
+export const movesMissed = new Set<string>();

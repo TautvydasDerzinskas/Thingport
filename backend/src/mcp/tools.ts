@@ -222,7 +222,8 @@ const getModel: McpToolDefinition = {
     "imported with carries `print_profile`: its name, whether the designer or the community made it, the printer, " +
     "settings, print time in minutes, filament in grams, and its build plates. `supporting_files` are the files kept " +
     "beside its model files that aren't printed, such as assembly instructions, notes and CAD sources (read one with " +
-    "get_model_file, its id from list_model_files). `license` is its licence as its source " +
+    "get_model_file, its id from list_model_files, where both tools are allowed; a large one comes without its " +
+    "contents, to fetch from its download_url with the Model files permission). `license` is its licence as its source " +
     "lists it or its owner picked: its id (SPDX where there is one), name, link, what it allows of share (pass the " +
     "files on unchanged), remix and commercial, whether it asks for credit or for remixes under the same licence, and " +
     "any terms the site or creator added; null when nothing says. Change it with edit_model.",

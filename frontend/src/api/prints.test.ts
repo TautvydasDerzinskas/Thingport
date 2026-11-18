@@ -68,14 +68,17 @@ describe("printsApi.upload", () => {
     vi.unstubAllGlobals();
   });
 
-  const foldersSent = async (files: File[], folders?: (string | null)[]) => {
+  const sent = async (files: File[], folders?: (string | null)[]) => {
     const answer = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () =>
       Response.json({ prints: [] }),
     );
     vi.stubGlobal("fetch", answer);
     await printsApi.upload(files, { mode: "multiplate", folders });
-    return (answer.mock.calls[0][1].body as FormData).get("folders");
+    const body = answer.mock.calls[0][1].body;
+    if (!(body instanceof FormData)) throw new Error("The upload wasn't sent as multipart form data");
+    return body;
   };
+  const foldersSent = async (files: File[], folders?: (string | null)[]) => (await sent(files, folders)).get("folders");
   const file = (name: string) => new File(["solid x endsolid"], name);
 
   it("sends where a lone file sat, as it does each of several, and nothing when none sat in a folder", async () => {
@@ -86,5 +89,11 @@ describe("printsApi.upload", () => {
     );
     expect(await foldersSent([file("body.stl")], [null])).toBeNull();
     expect(await foldersSent([file("body.stl")])).toBeNull();
+  });
+
+  it("sends the files themselves, in order, beside their folders, a file at the top keeping its place", async () => {
+    const body = await sent([file("body.stl"), file("guide.pdf")], [null, "docs"]);
+    expect(body.getAll("files").map((each) => (each as File).name)).toEqual(["body.stl", "guide.pdf"]);
+    expect(body.get("folders")).toBe(JSON.stringify([null, "docs"]));
   });
 });

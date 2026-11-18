@@ -63,29 +63,30 @@ function parseRows(text: string, delimiter: "," | "\t" | ";", maxRows: number, m
   return { rows, cut };
 }
 
-/** The delimiter a CSV file most likely uses, from its first record: some locales write `;` where `,` is the
- *  decimal mark. */
+/** The delimiter a CSV file most likely uses: some locales write `;` where `,` is the decimal mark. Each is tried on
+ *  the first few records, read as parseDelimited reads them (quotes only open a field, so an inch mark in
+ *  `Diameter 5"` is text), and the one whose rows have as many fields as its header wins: a header can hold both,
+ *  as `Length, mm;Width, mm` does. With no rows under the header, the one splitting it most. */
 export function guessDelimiter(text: string, extension: string): "," | "\t" | ";" {
   if (extension === "tsv") return "\t";
-  // Outside quoted fields only: `"size;colour",qty` is two fields split by a comma, and a line break inside quotes is
-  // part of a field, not the header's end. A doubled quote inside one turns quoting off and on again.
-  const counts = { "\t": 0, ",": 0, ";": 0 };
-  let quoted = false;
-  // Blank lines before it aren't the header.
-  let started = false;
-  for (const char of text) {
-    if (char === "\ufeff") continue;
-    if (char === '"') quoted = !quoted;
-    else if (quoted) continue;
-    else if (char === "\n" || char === "\r") {
-      if (started) break;
-      continue;
-    } else if (char === "\t" || char === "," || char === ";") counts[char] += 1;
-    started = true;
+  let best: "," | "\t" | ";" = ",";
+  let bestScore = 0;
+  for (const delimiter of [",", ";", "\t"] as const) {
+    const [head = [], ...rows] = parseRows(text, delimiter, GUESS_ROWS, GUESS_COLUMNS).rows;
+    if (head.length < 2) continue;
+    const agreeing = rows.filter((row) => row.length === head.length).length;
+    const score = (rows.length ? (agreeing / rows.length) * GUESS_COLUMNS : 0) + head.length;
+    if (score > bestScore) {
+      best = delimiter;
+      bestScore = score;
+    }
   }
-  if (counts["\t"] > counts[","] && counts["\t"] > counts[";"]) return "\t";
-  return counts[";"] > counts[","] ? ";" : ",";
+  return best;
 }
+
+// How much of a file the guess reads: its header and a few rows, each to this many fields at most.
+const GUESS_ROWS = 6;
+const GUESS_COLUMNS = 1000;
 
 /** What a table preview shows of a CSV or TSV file: its header and up to `limit` rows under it, each cut to `columns`
  *  fields, and whether the file has more rows, or wider ones, than that. */

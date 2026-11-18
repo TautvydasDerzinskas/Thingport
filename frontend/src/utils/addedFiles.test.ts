@@ -34,6 +34,12 @@ describe("files added to a model", () => {
     expect(isPreparedName("frog.3mf")).toBe(false);
   });
 
+  it("keeps any picture a model can be made of with the model files, a GIF and an SVG too", () => {
+    const { model, supporting } = sortAddedFiles(named("diagram.gif", "logo.svg", "notes.pdf"), "model");
+    expect(names(model)).toEqual(["diagram.gif", "logo.svg"]);
+    expect(names(supporting)).toEqual(["notes.pdf"]);
+  });
+
   it("sends a document added among the model files to the supporting ones, and keeps pictures where added", () => {
     const { model, supporting } = sortAddedFiles(named("body.stl", "guide.pdf", "photo.png", "ready.gcode"), "model");
     expect(names(model)).toEqual(["body.stl", "photo.png"]);

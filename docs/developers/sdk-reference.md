@@ -406,7 +406,7 @@ const source = await thingport.models.relatedText(id, scad.id);
 thingport.models.create(input: SdkNewModel): Promise<SdkModel>
 ```
 
-Makes a model of the files given, in a collection when one is given. Its 3D files become its plates, and anything else (instructions, notes, sources) is kept beside them as a related file. With no 3D file, a sliced 3MF is the plate, or else the files that can be a model on their own, such as a picture; only when none can is every file a plate.
+Makes a model of the files given, in a collection when one is given. Its 3D files become its plates. With no 3D file, every sliced 3MF is a plate, or else the files that can be a model on their own, such as a picture; only when none can is every file a plate. Of what's left, the first sliced print (`.gcode`, `.gco`, `.bgcode`, `.gcode.3mf`) becomes its prepared print, and anything else (instructions, notes, sources, any more sliced prints) is kept beside the plates as a related file.
 
 | Parameter | What it is                                         |
 | --------- | -------------------------------------------------- |
@@ -424,20 +424,23 @@ const model = await thingport.models.create({
 });
 ```
 
-#### `models.addFiles(id, files)`
+#### `models.addFiles(id, files, options?)`
 
 ```ts
-thingport.models.addFiles(id: string, files: SdkFileInput[]): Promise<SdkModel>
+thingport.models.addFiles(id: string, files: SdkFileInput[], options?: { keepPrepared?: boolean }): Promise<SdkModel>
 ```
 
-Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is kept beside them as a related file (see `relatedFiles`). The first sliced print among them, by its name (`.gcode`, `.gco`, `.bgcode`, `.gcode.3mf`), becomes its prepared print in place of the one it had; any more are kept as related files. A plain `.3mf` is one of its plates, sliced or not. A `.gltf` is packed with the `.bin` and textures it points at among `files` into one `.glb` plate; it's refused when its `.bin` isn't among them.
+Adds files to a model. 3D files and pictures become its plates; anything else (instructions, notes, sources) is kept beside them as a related file (see `relatedFiles`). The first sliced print among them, by its name (`.gcode`, `.gco`, `.bgcode`, `.gcode.3mf`), becomes its prepared print in place of the one it had, unless `keepPrepared`; any more are kept as related files. A plain `.3mf` is one of its plates, sliced or not.
 
-The plates go in first, all or none, then the other files one at a time. When one of those fails, the call rejects with its error, which also carries `added` (the names of the files that went in before it) and `model` (the model as it is then), so a retry can send only the rest.
+A `.gltf` is packed with the `.bin` and textures it points at among `files` into one `.glb` plate, each found by its name, as `files` have no folders: two different files of one name it could mean are refused before anything is added. It's refused too when a buffer it keeps in a file of its own isn't among them; one written into it (a data URI) needs none.
 
-| Parameter | What it is        |
-| --------- | ----------------- |
-| `id`      | The model's id.   |
-| `files`   | The files to add. |
+The plates go in first, in one request, then the other files one at a time. When one fails after others went in, the call rejects with its error carrying `added` (the names of the files in before it), `model` (the model as it was then) and `keepPrepared` (whether a prepared print came in), so a retry can send only the rest and pass that on; when nothing went in, the error comes as it was. A file whose answer was lost may be in all the same though `added` and `model` don't show it, and a plate request that failed may have kept some of its files where it couldn't take them back: read the model before sending a file again.
+
+| Parameter | What it is                                                                                                                                               |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | The model's id.                                                                                                                                          |
+| `files`   | The files to add.                                                                                                                                        |
+| `options` | `keepPrepared`: the model's prepared print stays, and every sliced print among `files` is kept as a related file, as for the rest of a call that set it. |
 
 **Returns:** The model as it is now.
 
@@ -1604,13 +1607,13 @@ A page of a collection's models.
 
 A model to make.
 
-| Field           | Type             | What it is                                                                                                 |
-| --------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| `name`          | `string`         |                                                                                                            |
-| `description?`  | `string`         |                                                                                                            |
-| `tags?`         | `string[]`       |                                                                                                            |
-| `collectionId?` | `string`         | A collection to save it into.                                                                              |
-| `files`         | `SdkFileInput[]` | Its files, at least one. Its 3D files become its plates and the rest related files, as `create` describes. |
+| Field           | Type             | What it is                                             |
+| --------------- | ---------------- | ------------------------------------------------------ |
+| `name`          | `string`         |                                                        |
+| `description?`  | `string`         |                                                        |
+| `tags?`         | `string[]`       |                                                        |
+| `collectionId?` | `string`         | A collection to save it into.                          |
+| `files`         | `SdkFileInput[]` | Its files, at least one, sorted as `create` describes. |
 
 ### `SdkNewCollection`
 
