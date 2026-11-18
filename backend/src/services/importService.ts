@@ -1465,7 +1465,7 @@ async function importLinkedFile(
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length) {
+  if (!plates.length && !sources.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
   // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
@@ -1522,8 +1522,8 @@ async function importLinkedFile(
 
 /** A zip of a model's raw files, from a provider whose links download them so (MakerWorld's, for a model with no print
  *  profiles): its model files, one plate each, and the scripts it can be generated from again, which become SUPPORTING
- *  files. The zip itself is removed once it gave up either. Empty for anything else, or a zip with neither in it,
- *  which is kept as it came. */
+ *  files -- the scripts alone make a model too. The zip itself is removed once it gave up either. Empty for anything
+ *  else, or a zip with neither in it, which is kept as it came. */
 async function rawFilesZipContents(
   source: { provider: string } | null,
   tempPath: string,
@@ -1532,9 +1532,8 @@ async function rawFilesZipContents(
   const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
   if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
   const { plates, sources } = await platesAndSourcesFromZip(tempPath);
-  // Only once it has given up something to print. A zip of nothing but scripts has no geometry in it, so the
-  // zip itself stands in as the model's file, and removing it would leave that pointing at nothing.
-  if (plates.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  // Only once it has given up something: a zip of neither stands in as the model's file itself.
+  if (plates.length || sources.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
   return { plates, sources };
 }
 
@@ -1592,7 +1591,7 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length) {
+  if (!plates.length && !sources.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
   if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);

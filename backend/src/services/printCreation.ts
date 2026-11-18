@@ -240,9 +240,15 @@ async function createPlateAtPosition(
  * describes a shape but holds none, so it is never a plate.
  *
  * Best-effort -- a script that won't store leaves the model itself there, since its plates are what the user asked
- * for. Line endings are put right by saveFileFromTemp, wherever a script comes from.
+ * for -- unless `required`: for a model made of its scripts alone, one that won't store fails it, as a plate would.
+ * Line endings are put right by saveFileFromTemp, wherever a script comes from.
  */
-export async function keepGeneratorScripts(userId: string, printId: string, inputs: NewPlateInput[]): Promise<void> {
+export async function keepGeneratorScripts(
+  userId: string,
+  printId: string,
+  inputs: NewPlateInput[],
+  { required = false } = {},
+): Promise<void> {
   if (!inputs.length) return;
   // A model's own script comes down again with every profile imported after the first (see importService's
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
@@ -257,6 +263,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
     if (!input.tempFilePath) {
       // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
       // build inputs another way can't carry a script at all -- so a skip means a new caller needs handling.
+      if (required) throw new Error(`The generator script ${input.filename} came with no temporary file`);
       console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
       continue;
     }
@@ -270,6 +277,7 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       });
       stored.add(key);
     } catch (err) {
+      if (required) throw err;
       console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
     }
   }
@@ -290,13 +298,9 @@ export async function createPrint(
   // whether it was imported, uploaded beside it, or unpacked from a provider's zip.
   const sourceInputs = plateInputs.filter((input) => isGeneratorScript(input.filename));
   const plateInputs2 = plateInputs.filter((input) => !isGeneratorScript(input.filename));
-  if (!plateInputs2.length) {
-    // A script on its own is answerable, not a bug: it describes a model but holds none, so there is nothing to
-    // show, print or render until something runs it. Attach it to a model instead.
-    if (sourceInputs.length)
-      throw new HttpError(400, "A generator script needs a model to go with: it holds no shape of its own");
-    throw new Error("createPrint requires at least one plate");
-  }
+  // Scripts alone still make a model: plenty of customizable designs are published as nothing else, and the
+  // customizer generates their shape in the browser.
+  if (!plateInputs2.length && !sourceInputs.length) throw new Error("createPrint requires a plate or a script");
   // categoryId may come straight from a request body, so verify ownership here.
   if (meta.categoryId) {
     const category = await prisma.category.findFirst({ where: { id: meta.categoryId, userId } });
@@ -360,7 +364,7 @@ export async function createPrint(
       }
     }
 
-    await keepGeneratorScripts(userId, print.id, sourceInputs);
+    await keepGeneratorScripts(userId, print.id, sourceInputs, { required: !plates.length });
     // Once the files are in place, so LICENSE.txt lands in the folder they chose.
     if (meta.licenseColumns?.licenseReadAt) await afterLicenseChange(print.id);
     else if (print.sourceProvider) scheduleLicenseFill(print.id);

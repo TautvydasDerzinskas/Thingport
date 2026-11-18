@@ -125,14 +125,21 @@ describe("models that came with a generator script", () => {
     expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "part.scad", folder: null }]);
   });
 
-  it("turns down a script with nothing to go with, rather than making a model of it", async () => {
+  // Plenty of customizable designs are nothing but their scripts (issue #385): the customizer makes their shape.
+  it("makes a model of scripts uploaded alone, with what came beside them as files rather than plates", async () => {
     const res = await request(app)
       .post("/api/upload")
       .set(auth())
       .field("title", `Script only ${stamp}`)
-      .attach("files", Buffer.from("size = 10;\n"), { filename: "lonely.scad", contentType: "text/plain" });
+      .field("mode", "multiplate")
+      .attach("files", Buffer.from("size = 10;\n"), { filename: "lonely.scad", contentType: "text/plain" })
+      .attach("files", Buffer.from("print it flat\n"), { filename: "notes.txt", contentType: "text/plain" });
+    expect(res.status).toBe(200);
 
-    expect(res.status).toBe(400);
+    const print = (await request(app).get(`/api/print/${res.body.prints[0].id}`).set(auth())).body;
+    expect(print.plates).toEqual([]);
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "lonely.scad", folder: null }]);
+    expect(print.supporting_file_count).toBe(2);
   });
 
   it("goes by the file beside the model, not by its plates", async () => {

@@ -521,6 +521,44 @@ describe("a partner's model, copied", () => {
     expect(twice.preparedFileId).toBe(twice.files[1].id);
   });
 
+  it("makes a partner's model of its scripts alone, with the rest of its files beside them", async () => {
+    const printId = await sharedModel(owner, "Scripted", "scripted.stl");
+    for (const [name, text] of [
+      ["box.scad", "width = 10;\n"],
+      ["README.md", "Print it flat.\n"],
+    ]) {
+      await saveFileFromTemp(owner.id, printId, tmpFile(name, text), name, null, { role: "SUPPORTING" });
+    }
+    const page = (await modelsPage(owner.id)) as {
+      orderedItems: { id: string; attachment: Record<string, unknown>[] }[];
+    };
+    const attachments = page.orderedItems.find((item) => item.id.endsWith(printId))!.attachment;
+    const files = attachments
+      .filter((file) => file.name !== "scripted.stl")
+      .map((file) => ({ name: file.name, size: file["thingport:size"], mediaType: null, url: file.url, kind: "file" }));
+    const row = await prisma.remoteModel.create({
+      data: {
+        peerId,
+        personId,
+        apId: `${ORIGIN}/api/ap/models/scripted-${stamp}`,
+        title: "Scripted",
+        images: [],
+        files: files as Prisma.InputJsonValue,
+      },
+    });
+
+    const copy = await prisma.print.findUniqueOrThrow({
+      where: { id: await copied(await register("Scripts"), row.id) },
+      include: { plates: true, files: { orderBy: { filename: "asc" } } },
+    });
+    // Neither is a plate: the script is what the model is made of, the notes stay notes.
+    expect(copy.plates).toEqual([]);
+    expect(copy.files.map((file) => [file.filename, file.role]).toSorted()).toEqual([
+      ["README.md", "SUPPORTING"],
+      ["box.scad", "SUPPORTING"],
+    ]);
+  });
+
   it("takes the partner's render as a plate's picture only where this instance won't render one", async () => {
     const printId = await sharedModel(owner, "Rendered", "rendered.stl");
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId } });

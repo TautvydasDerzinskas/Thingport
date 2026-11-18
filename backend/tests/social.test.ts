@@ -9,6 +9,7 @@ import sharp from "sharp";
 import { setSocialSettings } from "../src/services/settingsService";
 import { descriptionImagePath, saveDescriptionImage } from "../src/services/descriptionImageService";
 import { STORAGE } from "../src/config";
+import { createPrint } from "../src/services/printCreation";
 
 const app = createApp();
 
@@ -372,6 +373,25 @@ describe("copying, more closely", () => {
     expect(res.status).toBe(200);
     const copy = await prisma.printFile.findFirstOrThrow({ where: { printId: res.body.print.id, role: "LICENSE" } });
     expect(fs.readFileSync(path.join(STORAGE, copy.storagePath), "utf8")).toContain("Attribution 4.0");
+  });
+
+  it("copies a model made of its scripts alone", async () => {
+    const script = "width = 10; // [5:50]\n";
+    const { print: source } = await createPrint(owner.id, { title: `Scripted ${Date.now()}` }, "scripted", [
+      { filename: "box.scad", tempFilePath: tmpFile("box.scad", script) },
+    ]);
+    await shareModel(owner, source.id);
+
+    const res = await request(app).post(`/api/print/${source.id}/copy`).set(auth(viewer));
+    expect(res.status).toBe(200);
+    const copy = (await request(app).get(`/api/print/${res.body.print.id}`).set(auth(viewer))).body;
+    expect(copy.plates).toEqual([]);
+    // Once, though createPrint keeps it and the copy's other files follow.
+    expect(copy.generator_scripts).toEqual([{ id: expect.any(String), filename: "box.scad", folder: null }]);
+    const file = await request(app)
+      .get(`/api/print/${copy.id}/files/${copy.generator_scripts[0].id}`)
+      .set(auth(viewer));
+    expect(file.text).toBe(script);
   });
 
   it("refuses a model left with no files", async () => {

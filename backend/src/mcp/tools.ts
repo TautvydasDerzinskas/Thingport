@@ -641,7 +641,8 @@ const uploadModel: McpToolDefinition = {
   description:
     "Add one model to the library from the user's own files, as + Add > Upload files does: e.g. a test piece or a " +
     "part a script generated. Its 3D files (STL, 3MF, STEP, OBJ) become its plates, any other file a supporting " +
-    "file; with no 3D file among them, every file is a plate. " +
+    "file. With no 3D file among them, OpenSCAD scripts (.scad) make a model with no plates, its shape generated " +
+    "by the customizer, and the rest are supporting files; with neither, every file is a plate. " +
     `Files and images go as base64, up to ${MCP_UPLOAD_MAX_BYTES / MB} MB in all. Change it later with edit_model.`,
   readOnly: false,
   inputSchema: {

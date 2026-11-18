@@ -121,8 +121,7 @@ describe("importing a model built from a script", () => {
   }, 120000);
 
   // A design with no print profiles downloads as the zip of its raw files, and a script-only model's zip holds
-  // nothing to print. Removing that zip once it had given up its scripts left the model's own file pointing at
-  // a file that was gone, and the import failed on a model that is otherwise perfectly importable.
+  // nothing to print: the scripts alone make the model (issue #385).
   it("imports a model whose raw files are nothing but scripts", async () => {
     const designId = String((stamp % 1_000_000_000) + 3);
     mockMakerworld(designId, false, await zipOf({ "generator.scad": SCRIPT }), false);
@@ -130,8 +129,9 @@ describe("importing a model built from a script", () => {
 
     const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
     expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "generator.scad", folder: null }]);
-    // Nothing printable came in the zip, so the zip itself is the model's file.
-    expect(print.plates.length).toBe(1);
+    // Nothing printable came in the zip, and the zip itself isn't kept as one.
+    expect(print.plates).toEqual([]);
+    expect(print.supporting_file_count).toBe(1);
   }, 120000);
 
   it("records why there is no script when the creator withheld it, and asks for nothing", async () => {

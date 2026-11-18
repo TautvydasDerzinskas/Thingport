@@ -332,7 +332,8 @@ async function makeCopy(
 
 /** Which files are the copy's plates and which are kept beside them: as the partner says, or for one too old to say,
  *  the 3D files plates and a sliced print beside them its prepared print, as files added to a model are
- *  (addUploadedFiles); every file a plate when none is a 3D file. */
+ *  (addUploadedFiles). With no 3D file, a model made of its scripts alone is made of those (createPrint keeps them as
+ *  files), and anything else makes every file a plate. */
 function splitFiles(fetched: Fetched[]): { plates: Fetched[]; supporting: Fetched[] } {
   const said = fetched.filter(({ file }) => file.kind !== "file");
   if (fetched.some(({ file }) => file.kind) && said.length) {
@@ -340,7 +341,8 @@ function splitFiles(fetched: Fetched[]): { plates: Fetched[]; supporting: Fetche
   }
   const renderable = fetched.filter(({ file }) => RENDERABLE_MODEL_EXTS.has(path.extname(file.name).toLowerCase()));
   const geometry = renderable.filter(({ file }) => !isPreparedPrintFilename(file.name));
-  const plates = geometry.length ? geometry : renderable;
+  const scripts = fetched.filter(({ file }) => isGeneratorScript(sanitizeFilename(file.name) || "file"));
+  const plates = geometry.length ? geometry : renderable.length ? renderable : scripts;
   if (!plates.length) return { plates: fetched, supporting: [] };
   return { plates, supporting: fetched.filter((item) => !plates.includes(item)) };
 }

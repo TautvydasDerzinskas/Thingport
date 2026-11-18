@@ -2,9 +2,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import request from "supertest";
 import { createApp } from "../src/app";
 import { makePrint, nonce, register, tempFile } from "./helpers/fileReuse";
-import { keepGeneratorScripts } from "../src/services/printCreation";
+import { createPrint, keepGeneratorScripts } from "../src/services/printCreation";
 import { prisma } from "../src/db";
 
 // A generator script reaches a model as a supporting file, never as a plate, and reaches it once however many
@@ -14,11 +15,12 @@ import { prisma } from "../src/db";
 
 const app = createApp();
 let userId: string;
+let token: string;
 let dir: string;
 
 beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "script-keeping-"));
-  userId = (await register(app, "script-keeping", "owner")).id;
+  ({ id: userId, token } = await register(app, "script-keeping", "owner"));
 });
 
 afterAll(() => {
@@ -93,5 +95,42 @@ describe("keepGeneratorScripts", () => {
     await keepGeneratorScripts(userId, print.id, []);
 
     expect(await filesOf(print.id)).toEqual([]);
+  });
+});
+
+// Plenty of customizable designs are published as nothing but their scripts (issue #385): the model is made of
+// them, and the customizer makes its shape.
+describe("createPrint with scripts alone", () => {
+  it("makes a model with no plates, its scripts kept as supporting files", async () => {
+    const { print } = await createPrint(userId, { title: `Scripted ${nonce()}` }, "scripted", [
+      { filename: "box.scad", tempFilePath: tempFile(dir, SCRIPT) },
+      { filename: "lid.scad", folder: "parts", tempFilePath: tempFile(dir, "lid = 1;\n") },
+    ]);
+
+    expect(await prisma.plate.count({ where: { printId: print.id } })).toBe(0);
+    const res = await request(app).get(`/api/print/${print.id}`).set("Authorization", `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.plates).toEqual([]);
+    const scripts = (res.body.generator_scripts as { filename: string }[]).toSorted((a, b) =>
+      a.filename.localeCompare(b.filename),
+    );
+    expect(scripts).toEqual([
+      { id: expect.any(String), filename: "box.scad", folder: null },
+      { id: expect.any(String), filename: "lid.scad", folder: "parts" },
+    ]);
+  });
+
+  it("fails, leaving no model, when a script it is made of won't store", async () => {
+    const title = `Unstored ${nonce()}`;
+
+    await expect(
+      createPrint(userId, { title }, "unstored", [
+        { filename: "box.scad", tempFilePath: tempFile(dir, SCRIPT) },
+        { filename: "lid.scad", tempFilePath: path.join(dir, `absent-${nonce()}`) },
+      ]),
+    ).rejects.toThrow(/ENOENT/);
+
+    // Half its scripts would be a different model, and one with none would be nothing at all.
+    expect(await prisma.print.count({ where: { userId, title } })).toBe(0);
   });
 });

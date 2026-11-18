@@ -10,6 +10,7 @@ import {
   addPlatesToPrint,
   createPrint,
   discardPrint,
+  isGeneratorScript,
   removePlate,
   type NewPlateInput,
   type PrintMetaInput,
@@ -57,8 +58,8 @@ async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ fil
 const removeAll = (paths: string[]) => Promise.all(paths.map((p) => fs.rm(p, { force: true }).catch(() => undefined)));
 
 /** One model from `files`: the renderable ones become its plates and the rest supporting files. If nothing is
- *  renderable, every file becomes a plate so the model still has one. All or nothing: a file that can't be stored
- *  takes the model with it. */
+ *  renderable, its generator scripts make it (createPrint keeps them as files), and failing those every file becomes
+ *  a plate so the model still has one. All or nothing: a file that can't be stored takes the model with it. */
 export async function createUploadedModel(
   userId: string,
   meta: PrintMetaInput,
@@ -75,8 +76,9 @@ export async function createUploadedModel(
 
 async function createModelFrom(userId: string, meta: PrintMetaInput, files: UploadedFile[]): Promise<Print> {
   const renderable = files.filter(isRenderable);
-  const supporting = renderable.length ? files.filter((f) => !isRenderable(f)) : [];
-  const plateFiles = renderable.length ? renderable : files;
+  const scripts = files.filter((f) => isGeneratorScript(f.originalname));
+  const plateFiles = renderable.length ? renderable : scripts.length ? scripts : files;
+  const supporting = files.filter((f) => !plateFiles.includes(f));
 
   const plateInputs: NewPlateInput[] = plateFiles.map((f) => {
     const safeName = sanitizeFilename(f.originalname);
