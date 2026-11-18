@@ -143,6 +143,7 @@
       "cancel": "Cancel",
       "close": "Close",
       "readError": "Unable to read zip contents",
+      "repeatsUnreadable": "This zip names a file more than once in a way that can't be read apart. Unzip it and pick its files instead.",
       "importError": "Import failed",
       "selectAtLeastOne": "Select at least one file to import."
     },

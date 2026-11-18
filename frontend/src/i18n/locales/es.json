@@ -146,6 +146,7 @@
       "cancel": "Cancelar",
       "close": "Cerrar",
       "readError": "No se puede leer el contenido del ZIP",
+      "repeatsUnreadable": "Este ZIP nombra un archivo más de una vez de una forma que no se puede leer por separado. Descomprímelo y elige sus archivos.",
       "importError": "Error al importar",
       "selectAtLeastOne": "Selecciona al menos un archivo para importar."
     },

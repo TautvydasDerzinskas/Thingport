@@ -600,9 +600,11 @@ export interface SdkModels {
    * `addedIndexes`, the one that failed first. One whose answer was lost may be in all the same, and a plate request
    * that failed may have kept files it couldn't take back: look for those among the model's `files` and `relatedFiles`
    * before sending them. When the error's `keepPrepared` is false and the one that failed is a sliced print, it may hold
-   * the prepared slot, which neither lists: send it first with `keepPrepared` false, which puts it in the slot whatever
-   * holds it, itself included, then the rest with `keepPrepared: true`. When it's true, a sliced print that failed was
-   * sent as a related file: look for it among `relatedFiles`, and keep `keepPrepared: true` for what's still to send.
+   * the prepared slot, which neither lists. Sent again with `keepPrepared` false, it takes the slot from whatever holds
+   * it by then, a prepared print someone added since included, so send it so only where nothing else can have changed
+   * the model; else send it with `keepPrepared: true`, which keeps it as a related file and the prepared print as it
+   * is. The rest go with `keepPrepared: true` either way. When the error's `keepPrepared` is true, a sliced print that
+   * failed was sent as a related file: look for it among `relatedFiles`, and keep the flag true for what's still to send.
    *
    * @param id The model's id.
    * @param files The files to add.

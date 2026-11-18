@@ -8,6 +8,7 @@ import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
 import { holdsBackSliced, isPreparedName, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
+import { keepNotice } from "../../utils/sessionNotices";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -46,8 +47,14 @@ export function useSupportingFiles(
     return next;
   }, []);
 
+  // A session that ended is said as the app says it, rather than by the request's own English.
   const reasonOf = useCallback(
-    (err: unknown, fallback: string) => (err instanceof Error && err.message ? err.message : t(fallback)),
+    (err: unknown, fallback: string) =>
+      err instanceof UnauthorizedError
+        ? t("app:shell.sessionExpired")
+        : err instanceof Error && err.message
+          ? err.message
+          : t(fallback),
     [t],
   );
   const failed = useCallback(
@@ -133,6 +140,9 @@ export function useSupportingFiles(
         // Said once the rest have gone up, after any failure of theirs: what to add again, and in what order, is then the
         // message left showing, rather than one a later toast closes.
         let heldBackNotice: string | null = null;
+        const sayHeldBack = () => {
+          if (heldBackNotice) showToast({ message: [...notAdded, heldBackNotice].join(" "), severity: "error" });
+        };
         for (const [index, item] of supporting.entries()) {
           if (heldBack.has(item)) {
             settle([item]);
@@ -164,6 +174,9 @@ export function useSupportingFiles(
             failed(err, "models:supporting.addFailed");
             noteFailure(item.name, err);
             if (err instanceof UnauthorizedError) {
+              // The session ended part-way: what's held back is said where signing in again, or the app starting over
+              // on a renewed session, doesn't take it away with the toasts.
+              if (heldBackNotice) keepNotice([...notAdded, heldBackNotice].join(" "));
               settle(queued);
               return;
             }
@@ -171,7 +184,7 @@ export function useSupportingFiles(
             settle([item]);
           }
         }
-        if (heldBackNotice) showToast({ message: [...notAdded, heldBackNotice].join(" "), severity: "error" });
+        sayHeldBack();
         if (anyFailed) return;
         // Where they went, as a 3D file isn't among the attachments it was added to.
         if (modelFilesAdded) {

@@ -140,6 +140,7 @@
       "cancel": "取消",
       "close": "关闭",
       "readError": "无法读取 zip 文件内容",
+      "repeatsUnreadable": "此 zip 文件多次使用同一个文件名，且无法分开读取。请先解压，再选择其中的文件。",
       "importError": "导入失败",
       "selectAtLeastOne": "请至少选择一个要导入的文件。"
     },

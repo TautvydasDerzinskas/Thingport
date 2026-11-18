@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { isModelFile, isSystemFile, type UploadEntry } from "./uploadTree";
 
 export type ZipEntry = {
@@ -101,7 +102,8 @@ export async function readZipEntries(
 
 /** Every entry the zip lists that's kept (not a folder, nor what the OS left in it), in its order, at its path made
  *  one. The central directory is read as most zips are read, one entry a name; where it names a path twice, or one an
- *  object can't hold ("__proto__"), the zip is read once more, entry by entry, and that's kept if it found as many. */
+ *  object can't hold ("__proto__"), the zip is read once more, entry by entry. Where that finds other than the
+ *  directory lists, it throws, rather than leave the copies out unsaid. */
 function everyEntry(fflate: typeof import("fflate"), raw: Uint8Array): [string, Uint8Array][] {
   const kept = (name: string) => {
     const path = normalizeZipPath(name);
@@ -126,10 +128,12 @@ function everyEntry(fflate: typeof import("fflate"), raw: Uint8Array): [string, 
   );
   if (!oneByOne) return byName;
   const each = entryByEntry(fflate, raw, kept);
-  return each && each.length === listed ? each : byName;
+  if (each && each.length === listed) return each;
+  throw new Error(i18next.t("zipImport.repeatsUnreadable", { ns: "app" }));
 }
 
-/** The kept entries of the zip read in one pass, each apart, by fflate's streaming reader; null where that fails. */
+/** The kept entries of the zip read in one pass, each apart, by fflate's streaming reader; null where that fails. The
+ *  others aren't started, so one fflate can't unpack (a compression it doesn't know, in __MACOSX) costs nothing. */
 function entryByEntry(
   fflate: typeof import("fflate"),
   raw: Uint8Array,
@@ -139,11 +143,12 @@ function entryByEntry(
   try {
     const unzip = new fflate.Unzip((entry) => {
       const path = kept(entry.name);
+      if (!path) return;
       const chunks: Uint8Array[] = [];
       entry.ondata = (err, chunk, final) => {
         if (err) throw err;
         chunks.push(chunk);
-        if (final && path) out.push([path, joined(chunks)]);
+        if (final) out.push([path, joined(chunks)]);
       };
       entry.start();
     });

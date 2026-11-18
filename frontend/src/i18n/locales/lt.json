@@ -148,6 +148,7 @@
       "cancel": "Atšaukti",
       "close": "Uždaryti",
       "readError": "Nepavyko perskaityti zip failo turinio",
+      "repeatsUnreadable": "Šiame zip faile tas pats failas įrašytas kelis kartus taip, kad jų nepavyksta perskaityti atskirai. Išskleiskite jį ir pasirinkite jo failus.",
       "importError": "Importuoti nepavyko",
       "selectAtLeastOne": "Pasirinkite bent vieną failą importavimui."
     },
