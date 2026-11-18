@@ -84,9 +84,14 @@ describe("preview images", () => {
       .attach("files", Buffer.from("not a picture"), "b.png")
       .attach("files", await png(200), "c.png");
     expect(res.status).toBe(200);
+    expect(res.body.image_ids).toHaveLength(3);
     const [first, skipped, third] = res.body.image_ids;
     expect(skipped).toBeNull();
     expect(res.body.print.preview_images.map((image: { id: string }) => image.id)).toEqual([first, third]);
+    // Each id is its own file's picture: a.png's red is 10, c.png's 200.
+    const home = await printAssetHome(print.id);
+    expect(await redOf(previewImagePath(first, home))).toBeLessThan(60);
+    expect(await redOf(previewImagePath(third, home))).toBeGreaterThan(180);
   });
 
   // Two pictures can reach one model at once: an import adds its gallery while our own card render of the first
