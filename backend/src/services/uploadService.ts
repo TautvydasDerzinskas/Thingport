@@ -32,6 +32,9 @@ export type UploadedFile = {
   mimetype?: string | null;
   /** The folder it came from within the upload ("docs"), kept on the model's file; none for a flat pick. */
   folder?: string | null;
+  /** That folder as the upload named it, before it was cleaned up to be kept: what a .gltf's references are matched
+   *  against, as two folders can be kept alike ("A B" and "A  B"). `folder` where it's missing. */
+  sourceFolder?: string | null;
 };
 
 function isRenderable(file: UploadedFile): boolean {
@@ -58,11 +61,10 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
 export async function withGltfPacked<T extends UploadedFile>(files: T[]): Promise<{ files: T[]; glbs: string[] }> {
   if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [] };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
-  const named = files.map((file) => ({
-    name: file.folder ? `${file.folder}/${file.originalname}` : file.originalname,
-    path: file.path,
-    file,
-  }));
+  const named = files.map((file) => {
+    const folder = file.sourceFolder ?? file.folder;
+    return { name: folder ? `${folder}/${file.originalname}` : file.originalname, path: file.path, file };
+  });
   const { files: left } = await packGltfFiles(
     named,
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),

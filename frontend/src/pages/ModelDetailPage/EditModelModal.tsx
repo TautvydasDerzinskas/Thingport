@@ -50,7 +50,7 @@ import { translateCategoryDisplay } from "../../utils/translateCategoryDisplay";
 import { buildCategoryTree, flattenCategoryTree } from "../../utils/categoryTree";
 import { newLocalId } from "../../utils/localId";
 import { folderLabel } from "../../utils/fileFolders";
-import { sortAddedFiles, storedModelFileName, withGltfFiles } from "../../utils/addedFiles";
+import { batchesByName, sortAddedFiles, storedModelFileName, withGltfFiles } from "../../utils/addedFiles";
 import { formatFileSize } from "../../utils/fileSize";
 import { inFolder } from "../../utils/fileExtensions";
 import RenameDialog from "../../components/RenameDialog";
@@ -439,17 +439,19 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       // Upload before delete so a model's only file can be swapped in one save. `plates` follows each step as it's
       // done, for the steps after it, and so does the dialog's list, for a retry after a later step fails.
       let plates = plateItems;
-      const newPlates = plates.filter((p) => p.kind === "new");
-      if (newPlates.length) {
-        // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once.
-        const uploadRes = await printsApi.addPlates(print.id, [
-          ...new Set(newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : []))),
-        ]);
+      // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once. Two files of one
+      // name go in requests apart (picked with two scenes, "scene.bin" each), as the server matches a scene's by name.
+      const filesOf = (p: PlateItem) => (p.kind === "new" ? [p.file, ...p.packedWith] : []);
+      for (const batch of batchesByName(
+        plates.filter((p) => p.kind === "new"),
+        filesOf,
+      )) {
+        const uploadRes = await printsApi.addPlates(print.id, [...new Set(batch.flatMap(filesOf))]);
         latest = uploadRes.print;
         // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
         // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
         const became = new Map<string, PlateItem>();
-        newPlates.forEach((p, index) => {
+        batch.forEach((p, index) => {
           const stored = latest.plates.find((each) => each.id === uploadRes.plate_ids?.[index]);
           if (!stored || p.kind !== "new") return;
           became.set(p.localId, {

@@ -186,13 +186,23 @@ export function buildUserLibrary({
       // 3D files and pictures are the model's files; anything else is kept beside them, as the Edit dialog does.
       // A .gltf's .bin and textures go up with it, packed into one .glb.
       const { model, supporting } = await withGltfFiles(sortAddedFiles(files.map(toFile), "model"), (file) => file);
+      // The model's own go in one request, all or none; the others one at a time after them. One that fails says what
+      // is in by then, so a retry can send only the rest.
       let print = model.length ? (await printsApi.addPlates(id, model)).print : null;
+      const added = model.map((file) => file.name);
       // The first sliced print among them becomes the prepared print; the rest are kept as related files.
       let preparedAdded = false;
       for (const file of supporting) {
-        const res = await printsApi.uploadFile(id, file, { keepPrepared: preparedAdded });
-        if (res.prepared) preparedAdded = true;
-        print = res.print;
+        try {
+          const res = await printsApi.uploadFile(id, file, { keepPrepared: preparedAdded });
+          if (res.prepared) preparedAdded = true;
+          print = res.print;
+          added.push(file.name);
+        } catch (err) {
+          if (!added.length) throw err;
+          const failure = err instanceof Error ? err : new Error(String(err));
+          throw Object.assign(failure, { added, model: toModel(print ?? (await printsApi.get(id))) });
+        }
       }
       return toModel(print ?? (await printsApi.get(id)));
     },

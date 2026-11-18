@@ -4,8 +4,9 @@ import type { Plate, Print, PrintProfile, ProfileFilament, printsApi } from "../
 
 const get = vi.fn<(id: string) => Promise<Print>>();
 const uploadFile = vi.fn<typeof printsApi.uploadFile>();
+const addPlates = vi.fn<typeof printsApi.addPlates>();
 vi.mock("../api/prints", () => ({
-  printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url, uploadFile },
+  printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url, uploadFile, addPlates },
 }));
 vi.mock("../api/collections", () => ({ collectionsApi: {} }));
 vi.mock("../api/search", () => ({ searchApi: {} }));
@@ -116,5 +117,25 @@ describe("files a script adds to a model", () => {
       ["notes.txt", true],
       ["B.gcode", true],
     ]);
+  });
+
+  it("says what went in when a file after the plates fails, so a retry sends only the rest", async () => {
+    addPlates.mockReset();
+    addPlates.mockResolvedValue({ print: model(), plate_ids: ["p2"] });
+    uploadFile.mockReset();
+    uploadFile.mockImplementation(async (_id, file) => {
+      if (file.name === "big.txt") throw new Error("Related file exceeds size limit");
+      return { print: model(), prepared: false };
+    });
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "part.stl", data: "solid p endsolid" },
+        { name: "notes.txt", data: "n" },
+        { name: "big.txt", data: "b" },
+      ])
+      .catch((err: unknown) => err);
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).toMatchObject({ message: "Related file exceeds size limit", added: ["part.stl", "notes.txt"] });
+    expect((failure as { model?: { id: string } }).model?.id).toBe(model().id);
   });
 });

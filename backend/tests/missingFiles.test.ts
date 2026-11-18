@@ -25,6 +25,7 @@ import {
 } from "../src/services/printFileService";
 import { savesUnderWay } from "../src/services/printFileSaves";
 import { relocatePrint } from "../src/services/printService";
+import { addPlatesToPrint, removePlate } from "../src/services/printCreation";
 import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
@@ -158,6 +159,50 @@ describe("models whose files are gone", () => {
     } finally {
       await setLicenseFiles(licenseFilesBefore);
     }
+  });
+
+  it("adds and removes a model's files at once without two taking one place", async () => {
+    const model = await makePrint(dir, owner.id, "At once");
+    const [extra] = await addPlatesToPrint(owner.id, model.print.id, [
+      { filename: "extra.stl", tempFilePath: tempFile(dir, "solid e\nendsolid\n") },
+    ]);
+    const settled = await Promise.allSettled([
+      addPlatesToPrint(owner.id, model.print.id, [
+        { filename: "one.stl", tempFilePath: tempFile(dir, "solid o\nendsolid\n") },
+      ]),
+      addPlatesToPrint(owner.id, model.print.id, [
+        { filename: "two.stl", tempFilePath: tempFile(dir, "solid t\nendsolid\n") },
+      ]),
+      removePlate(model.print, extra.id),
+    ]);
+    expect(settled.map((each) => each.status)).toEqual(["fulfilled", "fulfilled", "fulfilled"]);
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.position)).toEqual([0, 1, 2]);
+    expect(plates.map((plate) => plate.filename).toSorted()).toEqual(["one.stl", "own.stl", "two.stl"]);
+  });
+
+  it("finishes a repair whose sweep of the other files fails, as the scan won't offer the model again", async () => {
+    const model = await makePrint(dir, owner.id, "Swept");
+    const note = await upload(dir, owner.id, model.print.id, "notes.txt", "kept");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The disk fails when the sweep looks for the note.
+    const access = fsPromises.access.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "access").mockImplementation((async (where: fs.PathLike, mode?: number) => {
+      if (String(where).endsWith(note.storagePath)) throw Object.assign(new Error("EIO"), { code: "EIO" });
+      return access(where, mode);
+    }) as never);
+    try {
+      const { plates } = await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+        { filename: "shape.scad", tempFilePath: tempFile(dir, "cube(1);\n") },
+      ]);
+      expect(plates.map((plate) => plate.filename)).toEqual(["fetched.stl"]);
+    } finally {
+      spy.mockRestore();
+    }
+    // The steps after the sweep ran: the source's script is beside the model.
+    const files = await prisma.printFile.findMany({ where: { printId: model.print.id } });
+    expect(files.map((file) => file.filename)).toEqual(expect.arrayContaining(["notes.txt", "shape.scad"]));
   });
 
   it("leaves a file a move is carrying, rather than taking it for gone", async () => {
