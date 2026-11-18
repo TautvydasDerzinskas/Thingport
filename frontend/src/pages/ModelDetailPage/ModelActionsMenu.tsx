@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
@@ -46,7 +46,7 @@ import StudioFileMenu from "./StudioFileMenu";
 import SlicerFileMenu, { type MenuAnchor } from "./SlicerFileMenu";
 import AdaptedInfoIcon from "./AdaptedInfoIcon";
 import { useAdaptedOpen } from "./useAdaptedOpen";
-import DownloadPickerDialog from "./DownloadPickerDialog";
+import DownloadPickerDialog, { type SupportingFilesState } from "./DownloadPickerDialog";
 import AddToCollectionModal from "./AddToCollectionModal";
 import EditModelModal from "./EditModelModal";
 import FillGapsDialog from "./FillGapsDialog";
@@ -165,25 +165,45 @@ export default function ModelActionsMenu({
   };
 
   // A card's model has only how many supporting files it holds: the picker reads them when it opens. They're kept with
-  // the model they're of, as the page header keeps this menu across models, and shown only while it has some.
-  const [readSupporting, setReadSupporting] = useState<{ printId: string; files: PrintFile[] } | null>(null);
+  // the model they're of, as the page header keeps this menu across models, and shown only while it has some. Null
+  // files: the read failed, which the picker says, with a retry.
+  const [readSupporting, setReadSupporting] = useState<{ printId: string; files: PrintFile[] | null } | null>(null);
+  const readSupportingFiles = useCallback((printId: string, active: () => boolean = () => true) => {
+    printsApi.listFiles(printId).then(
+      (files) => {
+        if (active()) setReadSupporting({ printId, files });
+      },
+      () => {
+        if (active()) setReadSupporting({ printId, files: null });
+      },
+    );
+  }, []);
   useEffect(() => {
     if (!pickerOpen || print.supporting_files || !print.supporting_file_count) return;
     let active = true;
-    const printId = print.id;
-    printsApi.listFiles(printId).then(
-      (files) => {
-        if (active) setReadSupporting({ printId, files });
-      },
-      () => undefined,
-    );
+    readSupportingFiles(print.id, () => active);
     return () => {
       active = false;
     };
-  }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count]);
-  const supportingFiles =
-    print.supporting_files ??
-    (print.supporting_file_count && readSupporting?.printId === print.id ? readSupporting.files : undefined);
+  }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count, readSupportingFiles]);
+  const supportingRead =
+    !print.supporting_files && print.supporting_file_count && readSupporting?.printId === print.id
+      ? readSupporting
+      : null;
+  const supportingFiles = print.supporting_files ?? supportingRead?.files ?? undefined;
+  const supportingState: SupportingFilesState | undefined =
+    print.supporting_files || !print.supporting_file_count
+      ? undefined
+      : !supportingRead
+        ? "loading"
+        : supportingRead.files === null
+          ? "failed"
+          : undefined;
+  // Kept by the model it's of, as the first read is, so an answer after another model opened is never shown there.
+  const retrySupporting = () => {
+    setReadSupporting(null);
+    readSupportingFiles(print.id);
+  };
 
   const customize = useCustomize(print, closeMenu, onUnauthorized);
   const studio = useOpenInStudio(print, onUnauthorized);
@@ -313,6 +333,16 @@ export default function ModelActionsMenu({
     download: downloadSupportingFile,
   } = useSupportingFiles(onAddSupportingFiles ? undefined : print.id, onUpdated, onUnauthorized);
   const addSupportingFiles = onAddSupportingFiles ?? pickOwnSupporting;
+  // Busy like the picker's other downloads, so a second click doesn't start another.
+  const [downloadingSupporting, setDownloadingSupporting] = useState(false);
+  const downloadSupporting = async (file: PrintFile) => {
+    setDownloadingSupporting(true);
+    try {
+      await downloadSupportingFile(file);
+    } finally {
+      setDownloadingSupporting(false);
+    }
+  };
   const adaptedMenuLabel = (slicer: string) => {
     const state = adaptedTargets.length === 1 ? adapted.stateOf(adaptedTargets[0]) : "idle";
     if (state === "preparing") return t("models:detail.adaptPreparing");
@@ -624,11 +654,13 @@ export default function ModelActionsMenu({
       <DownloadPickerDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        downloading={downloading}
+        downloading={downloading || downloadingSupporting}
         sortedPlates={sortedPlates}
         supportingCount={print.supporting_file_count}
         supportingFiles={supportingFiles}
-        downloadSupporting={(file) => void downloadSupportingFile(file)}
+        supportingState={supportingState}
+        onRetrySupporting={retrySupporting}
+        downloadSupporting={(file) => void downloadSupporting(file)}
         downloadAllZip={() => void downloadAllZip()}
         downloadFolderZip={(folder) => void downloadAllZip(folder)}
         downloadPlate={downloadPlate}
