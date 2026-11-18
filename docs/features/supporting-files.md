@@ -22,8 +22,9 @@ MakerWorld's Parametric Model Maker is one, and Thingiverse's customizable model
 that comes with a model is kept beside it, however it arrived: imported from any site, uploaded in the same
 folder as the model, dropped in the consume folder with it, or attached to a model you already have.
 
-A script on its own isn't a model — it describes one but holds no shape until something runs it — so it can't
-be uploaded by itself. Upload it with the model it belongs to, or attach it to one from the model's page.
+A design published as nothing but its scripts imports too: the model holds the scripts and the site's pictures,
+and **Customize** makes its shape. A script you upload goes with the model it belongs to, or attach it to one from
+the model's page.
 
 Such a model leads with **Customize** where it would otherwise lead with **Open**: generating it again is the
 thing to do with it, and what you'd slice or download is only one of the shapes it can make. Opening it in a
