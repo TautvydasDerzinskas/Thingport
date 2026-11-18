@@ -315,6 +315,32 @@ describe("plate add/remove/reorder/rename", () => {
     expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
   });
 
+  it("leaves nothing of a file whose plate fails after it's stored, so a retry doesn't bring it in twice", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    // Its thumbnail step reads the preview setting once the row and file are in.
+    const findSetting = prisma.setting.findUnique.bind(prisma.setting);
+    const spy = vi
+      .spyOn(prisma.setting, "findUnique")
+      .mockImplementation(((args: Parameters<typeof prisma.setting.findUnique>[0]) =>
+        args.where.key === "preview_mode"
+          ? Promise.reject(new Error("the settings went away"))
+          : findSetting(args)) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+    expect(fs.existsSync(path.join(STORAGE, path.dirname(plates[0].storagePath), "lid.stl"))).toBe(false);
+  });
+
   it("packs a .gltf sent with its .bin into one .glb plate, and refuses one sent without it", async () => {
     const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
     const modelId = made.body.prints[0].id;

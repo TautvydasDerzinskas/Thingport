@@ -24,7 +24,7 @@ import {
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
-import { printAssetHome } from "./modelAssets";
+import { plateAssetHome, printAssetHome } from "./modelAssets";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
 import { storePlateFormat } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
@@ -227,7 +227,16 @@ async function createPlateAtPosition(
     throw err;
   }
 
-  await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  try {
+    await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
+  } catch (err) {
+    // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice.
+    const home = await plateAssetHome(record.id).catch(() => undefined);
+    await prisma.plate.delete({ where: { id: record.id } }).catch(() => undefined);
+    await removePlatePictures(record.id, home).catch(() => undefined);
+    if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    throw err;
+  }
   // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
   if (record.sourceInstanceId) {
     void import("./printProfileService").then(({ scheduleProfileFill }) => scheduleProfileFill(print.id));
