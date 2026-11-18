@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import IconButton from "@mui/material/IconButton";
@@ -168,22 +168,25 @@ export default function ModelActionsMenu({
   // the model they're of, as the page header keeps this menu across models, and shown only while it has some. Null
   // files: the read failed, which the picker says, with a retry.
   const [readSupporting, setReadSupporting] = useState<{ printId: string; files: PrintFile[] | null } | null>(null);
-  const readSupportingFiles = useCallback((printId: string, active: () => boolean = () => true) => {
+  // Only the newest read lands, a retry's too: one for a model the menu has since left would put that model's answer
+  // in place of this one's.
+  const latestSupportingRead = useRef(0);
+  const readSupportingFiles = useCallback((printId: string) => {
+    const read = ++latestSupportingRead.current;
     printsApi.listFiles(printId).then(
       (files) => {
-        if (active()) setReadSupporting({ printId, files });
+        if (read === latestSupportingRead.current) setReadSupporting({ printId, files });
       },
       () => {
-        if (active()) setReadSupporting({ printId, files: null });
+        if (read === latestSupportingRead.current) setReadSupporting({ printId, files: null });
       },
     );
   }, []);
   useEffect(() => {
     if (!pickerOpen || print.supporting_files || !print.supporting_file_count) return;
-    let active = true;
-    readSupportingFiles(print.id, () => active);
+    readSupportingFiles(print.id);
     return () => {
-      active = false;
+      latestSupportingRead.current += 1;
     };
   }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count, readSupportingFiles]);
   const supportingRead =
@@ -199,7 +202,6 @@ export default function ModelActionsMenu({
         : supportingRead.files === null
           ? "failed"
           : undefined;
-  // Kept by the model it's of, as the first read is, so an answer after another model opened is never shown there.
   const retrySupporting = () => {
     setReadSupporting(null);
     readSupportingFiles(print.id);
