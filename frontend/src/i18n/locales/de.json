@@ -4453,5 +4453,816 @@
       "showMore_other": "{{count}} weitere anzeigen",
       "sharedFailed": "Weitere mit dir geteilte Inhalte konnten nicht geladen werden. Versuche es erneut."
     }
+  },
+  "providers": {
+    "makerworld": {
+      "connect": {
+        "steps": [
+          "Melde dich in deinem Browser bei makerworld.com an.",
+          "Öffne die Entwicklertools (F12 oder ⌥⌘I) und wechsle zum Tab „Network“.",
+          "Lade die Seite neu und wähle eine beliebige Anfrage an makerworld.com.",
+          "Kopiere unter „Request Headers“ den gesamten Wert des Cookie-Headers und füge ihn unten ein."
+        ],
+        "placeholder": "Beispiel: mw_session=...; mw_token=...;"
+      },
+      "status": {
+        "expired": "Anmeldung abgelaufen. Verbinde MakerWorld unter Konfiguration → Plattformen erneut mit einem frischen Cookie.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "MakerWorld: nicht verbunden"
+      },
+      "about": {
+        "summary": "Die Plattform von Bambu Lab zum Teilen von 3D-Druckmodellen, viele davon mit abgestimmten Druckprofilen. Offen für jeden Drucker, mit MakerLab-Tools zum Anpassen von Modellen.",
+        "signIn": "Dein eigenes MakerWorld-Sitzungscookie.",
+        "grab": "Liest das Cookie für dich aus und importiert ganze Sammlungen, ohne an die Ratenbegrenzung von MakerWorld zu stoßen.",
+        "setup": [
+          "Installiere Thingport Grab und importiere einmal angemeldet von einer MakerWorld-Seite: Damit wird MakerWorld für dich verbunden.",
+          "Oder von Hand: Kopiere das Token-Cookie aus den Entwicklertools deines Browsers („Application“ → „Cookies“ → makerworld.com).",
+          "Klicke unter Konfiguration → Plattformen mit der rechten Maustaste auf MakerWorld, wähle „Verbinden“ und füge es ein."
+        ]
+      },
+      "admin": {
+        "description": "Die Modellplattform von Bambu Lab: Importe mit Druckprofilen und Sammlungen zum Synchronisieren."
+      },
+      "sync": {
+        "notConnected": "Verbinde MakerWorld unter Konfiguration > Plattformen, um hier deine Sammlungen zu sehen. Am Cookie erkennt Thingport, wer du dort bist."
+      }
+    },
+    "printables": {
+      "status": {
+        "alwaysConnected": "Printables ist standardmäßig verbunden: Es braucht weder Konto noch Schlüssel."
+      },
+      "about": {
+        "summary": "Das kostenlose Modellarchiv von Prusa Research, früher PrusaPrinters, mit Wettbewerben und Prusameter-Belohnungen. Die Dateien funktionieren auf jedem Drucker.",
+        "signIn": "Nichts zu verbinden.",
+        "grab": "Nur für deine privaten Sammlungen und „Gefällt mir“ nötig, die Printables nur dir zeigt.",
+        "setup": [
+          "Nichts einzurichten: Füge einen Printables-Link ein oder importiere mit Thingport Grab direkt von der Seite.",
+          "Für deine privaten Sammlungen und „Gefällt mir“ besuche Printables angemeldet mit Thingport Grab."
+        ]
+      },
+      "admin": {
+        "description": "Die Modellplattform von Prusa: Importe sowie öffentliche und private Sammlungen zum Synchronisieren."
+      },
+      "sync": {
+        "notConnected": "Printables ist gerade nicht erreichbar.",
+        "usernameHint": "Thingport listet deine öffentlichen Printables-Sammlungen auf. Das musst du nur einmal angeben.",
+        "usernamePlaceholder": "@Handle oder Profillink",
+        "showing": "Sammlungen von @{{user}} werden angezeigt.",
+        "forgetMessage": "Thingport listet deine Printables-Sammlungen nicht mehr auf, und Thingport Grab sendet deine privaten Sammlungen und „Gefällt mir“ nicht mehr, bis du deinen Benutzernamen erneut angibst. Bereits eingerichtete Synchronisierungen behalten ihre Modelle; die von privaten Sammlungen und „Gefällt mir“ pausieren bis dahin.",
+        "showingHelp": "Private Sammlungen und „Gefällt mir“ kommen hinzu, sobald Thingport Grab dich bei Printables angemeldet sieht, weil Printables sie nur dir zeigt."
+      }
+    },
+    "thingiverse": {
+      "connect": {
+        "steps": [
+          "Melde dich bei thingiverse.com an und öffne thingiverse.com/apps/create.",
+          "Erstelle eine App beliebigen Typs, etwa „Desktop app“.",
+          "Kopiere das angezeigte App Token und füge es unten ein."
+        ],
+        "placeholder": "App Token einfügen",
+        "shared": "Dieses Token teilen sich alle auf dieser Thingport-Instanz."
+      },
+      "status": {
+        "adminOnly": "Nur ein Admin dieser Thingport-Instanz kann das einrichten.",
+        "disabledReason": "Thingiverse: Der Admin hat noch keinen API-Schlüssel eingerichtet"
+      },
+      "about": {
+        "summary": "Eine der ältesten und größten Bibliotheken mit 3D-Druckdesigns von Nutzern, die meisten kostenlos und unter offener Lizenz.",
+        "signIn": "Ein App Token für alle, von einem Admin eingerichtet.",
+        "grab": "Praktisch zum Importieren von den Thingiverse-Seiten, aber nicht nötig.",
+        "setup": [
+          "Melde dich bei thingiverse.com an und öffne thingiverse.com/apps/create.",
+          "Erstelle eine App eines Typs ohne Redirect-URL, etwa „Desktop app“, und kopiere ihr App Token.",
+          "Ein Admin fügt es unter Konfiguration → Plattformen → Thingiverse oder unter Administration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Importe, Sammlungen und Modelle mit „Gefällt mir“, über das App Token dieser Thingport-Instanz.",
+        "keyStatus": {
+          "set": "App Token eingerichtet",
+          "missing": "Kein App Token: Thingiverse-Importe funktionieren erst, wenn eines eingerichtet ist"
+        },
+        "key": {
+          "heading": "Thingiverse App Token",
+          "helpText": "Erstelle unter thingiverse.com/apps/create eine App (beliebiger Typ, z. B. „Desktop“) und füge das angezeigte App Token ein.",
+          "statusConfigured": "Ein App Token ist eingerichtet.",
+          "statusNotConfigured": "Noch kein App Token eingerichtet – Thingiverse-Importe schlagen fehl, bis eines eingerichtet ist.",
+          "tokenLabel": "App Token",
+          "tokenPlaceholder": "Neues Token einfügen, um das aktuelle zu ersetzen",
+          "tokenHelperConfigured": "Aus Sicherheitsgründen wird das aktuelle Token nie wieder angezeigt – lass das Feld leer, um es zu behalten, oder füge ein neues ein, um es zu ersetzen.",
+          "save": "Speichern",
+          "saving": "Wird gespeichert …",
+          "clear": "Token entfernen",
+          "saved": "Gespeichert.",
+          "cleared": "App Token entfernt.",
+          "failed": "Die Thingiverse-Einstellungen konnten nicht gespeichert werden."
+        }
+      },
+      "sync": {
+        "notConnected": "Thingiverse ist auf dieser Thingport-Instanz noch nicht verbunden. Ein Admin kann es unter Konfiguration > Plattformen verbinden.",
+        "usernameHint": "Thingport listet deine öffentlichen Thingiverse-Sammlungen auf. Das musst du nur einmal angeben.",
+        "usernamePlaceholder": "Benutzername oder Profillink",
+        "showing": "Öffentliche Sammlungen von @{{user}} werden angezeigt.",
+        "forgetMessage": "Thingport listet deine Thingiverse-Sammlungen nicht mehr auf, bis du deinen Benutzernamen erneut angibst. Bereits eingerichtete Synchronisierungen behalten ihre Modelle."
+      }
+    },
+    "myminifactory": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach myminifactory.com, während du angemeldet bist – dann wird dein Konto für dich verbunden.",
+          "Oder von Hand: Melde dich bei myminifactory.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → www.myminifactory.com den Wert von PHPSESSID und füge ihn unten ein."
+        ],
+        "placeholder": "Wert von PHPSESSID oder der gesamte Cookie-Header"
+      },
+      "status": {
+        "notConnected": "Kostenlose Modelle lassen sich auch ohne importieren. Verbinde dein Konto, um gekaufte Modelle und kostenlose, die eine Anmeldung brauchen, zu importieren.",
+        "expired": "Anmeldung abgelaufen. Besuche myminifactory.com mit Thingport Grab oder verbinde MyMiniFactory unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "MyMiniFactory: Der Admin hat noch keinen API-Schlüssel eingerichtet"
+      },
+      "about": {
+        "summary": "Ein kuratierter Marktplatz für kostenlose und kostenpflichtige 3D-Druckdateien, vor allem bekannt für Tabletop-Miniaturen. Modelle werden geprüft, bevor sie erscheinen.",
+        "signIn": "Ein API-Schlüssel, vom Admin eingerichtet; deine eigene Anmeldung ergänzt deine gekauften Modelle.",
+        "grab": "Verbindet dein Konto, sobald du einfach myminifactory.com besuchst.",
+        "setup": [
+          "Ein Admin erstellt unter myminifactory.com/settings/developer eine Anwendung und speichert ihren API-Schlüssel unter Administration → Plattformen.",
+          "Für gekaufte Modelle öffne myminifactory.com angemeldet mit Thingport Grab oder füge dein PHPSESSID-Cookie unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und öffentliche Sammlungen über den API-Schlüssel dieser Thingport-Instanz; gekaufte Modelle über das eigene MyMiniFactory-Konto jeder Person.",
+        "keyStatus": {
+          "set": "API-Schlüssel eingerichtet",
+          "missing": "Kein API-Schlüssel: MyMiniFactory-Importe funktionieren erst, wenn einer eingerichtet ist"
+        },
+        "key": {
+          "heading": "MyMiniFactory-API-Schlüssel",
+          "helpText": "Erstelle unter myminifactory.com/settings/developer/application eine App und füge den angezeigten API-Schlüssel ein. Kostenlose Modelle lassen sich auch ohne herunterladen, aber er wird gebraucht, um ihre Details und deine Sammlungen zu lesen.",
+          "statusConfigured": "Ein API-Schlüssel ist eingerichtet.",
+          "statusNotConfigured": "Noch kein API-Schlüssel eingerichtet – MyMiniFactory-Importe schlagen fehl, bis einer eingerichtet ist.",
+          "tokenLabel": "API-Schlüssel",
+          "tokenPlaceholder": "Neuen Schlüssel einfügen, um den aktuellen zu ersetzen",
+          "tokenHelperConfigured": "Aus Sicherheitsgründen wird der aktuelle Schlüssel nie wieder angezeigt – lass das Feld leer, um ihn zu behalten, oder füge einen neuen ein, um ihn zu ersetzen.",
+          "save": "Speichern",
+          "saving": "Wird gespeichert …",
+          "clear": "Schlüssel entfernen",
+          "saved": "Gespeichert.",
+          "cleared": "API-Schlüssel entfernt.",
+          "failed": "Die MyMiniFactory-Einstellungen konnten nicht gespeichert werden."
+        }
+      },
+      "sync": {
+        "notConnected": "MyMiniFactory ist auf dieser Thingport-Instanz noch nicht verbunden. Ein Admin kann es unter Konfiguration > Plattformen verbinden.",
+        "usernameHint": "Thingport listet deine öffentlichen MyMiniFactory-Sammlungen auf. Das musst du nur einmal angeben.",
+        "usernamePlaceholder": "Benutzername oder Profillink",
+        "showing": "Öffentliche Sammlungen von @{{user}} werden angezeigt.",
+        "forgetMessage": "Thingport listet deine MyMiniFactory-Sammlungen nicht mehr auf, bis du deinen Benutzernamen erneut angibst. Bereits eingerichtete Synchronisierungen behalten ihre Modelle."
+      }
+    },
+    "snapmaker": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.com, während du angemeldet bist. Es verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
+          "Oder von Hand: Melde dich bei space.snapmaker.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → space.snapmaker.com den Wert von login_access_token und füge ihn unten ein. Von Hand eingefügt gilt er einen Tag."
+        ],
+        "placeholder": "Wert von login_access_token oder der gesamte Cookie-Header",
+        "cn": {
+          "steps": [
+            "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.cn, während du angemeldet bist. Es verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
+            "Hast du Grab auf Snapmaker Space erlaubt, bevor es die China-Seite kannte? Dann erlaube es in den Erweiterungseinstellungen deines Browsers (Websitezugriff) auch auf space.snapmaker.cn und id.snapmaker.cn.",
+            "Oder von Hand: Melde dich bei space.snapmaker.cn an und öffne die Entwicklertools deines Browsers (F12).",
+            "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → space.snapmaker.cn den Wert von login_access_token und füge ihn unten ein. Von Hand eingefügt gilt er einen Tag."
+          ],
+          "placeholder": "Wert von login_access_token oder der gesamte Cookie-Header"
+        }
+      },
+      "status": {
+        "notConnected": "Snapmaker gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle sowie deine „Gefällt mir“ und Lesezeichen zu importieren.",
+        "expired": "Anmeldung abgelaufen. Besuche space.snapmaker.com mit Thingport Grab oder verbinde Snapmaker Space unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Snapmaker Space: Verbinde dein Konto unter Konfiguration → Plattformen",
+        "cn": {
+          "expired": "Anmeldung für China abgelaufen. Melde dich mit Thingport Grab auf space.snapmaker.cn an oder verbinde die China-Seite von Snapmaker Space unter Konfiguration → Plattformen erneut.",
+          "expiredStatus": "Anmeldung für China abgelaufen"
+        }
+      },
+      "about": {
+        "summary": "Die Modellplattform von Snapmaker, rund um den Drucker U1. Empfohlene Modelle sind testgedruckt, mit Profilen für mehrfarbige Drucke.",
+        "signIn": "Deine eigene Anmeldung. Sie gilt einen Tag.",
+        "grab": "Das Einzige, was die Anmeldung erneuert. Ohne Grab fügst du jeden Tag eine neue ein.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Snapmaker Space und öffne space.snapmaker.com angemeldet (space.snapmaker.cn für ein China-Konto).",
+          "Grab hält die Anmeldung dann frisch, solange dein Browser offen ist.",
+          "Von Hand: Füge das Cookie login_access_token unter Konfiguration → Plattformen ein. Es gilt einen Tag."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen sowie „Gefällt mir“ und Lesezeichen jeder Person, über das eigene Snapmaker-Konto jeder Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde Snapmaker Space unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Lesezeichen zu sehen."
+      }
+    },
+    "makeronline": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach makeronline.com, während du angemeldet bist. Es verbindet dein Konto und holt die MakerOnline-Modelle, die darauf warten, denn MakerOnline gibt seine Dateien nur an die eigenen Seiten.",
+          "Oder von Hand: Melde dich bei makeronline.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → www.makeronline.com den Wert von mo_access_token und füge ihn unten ein. Er gilt etwa drei Monate."
+        ],
+        "placeholder": "Wert von mo_access_token oder der gesamte Cookie-Header"
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von MakerOnline zu lesen. Die Dateien kommen immer über Thingport Grab.",
+        "expired": "Anmeldung abgelaufen. Besuche makeronline.com mit Thingport Grab oder verbinde MakerOnline unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "MakerOnline: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die Modellplattform von Anycubic: kostenlose und kostenpflichtige Modelle, Designer-Wettbewerbe und ein KI-Tool für Text zu 3D.",
+        "signIn": "Zum Importieren keine; deine Anmeldung ergänzt deine „Gefällt mir“ und privaten Sammlungen.",
+        "grab": "Grab lädt jede MakerOnline-Datei herunter, auf einer makeronline.com-Seite. Importe, die anderswo gestartet werden, warten darauf.",
+        "setup": [
+          "Installiere Thingport Grab und erlaube es auf MakerOnline.",
+          "Importiere von einer Modellseite oder öffne eine beliebige makeronline.com-Seite, um die Modelle zu holen, die auf Grab warten.",
+          "Bist du dort angemeldet, verbindet Grab auch dein Konto für deine „Gefällt mir“ und privaten Sammlungen."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen und „Gefällt mir“ jeder Person. Die Dateien kommen über Thingport Grab: MakerOnline gibt sie nur an die eigenen Seiten."
+      },
+      "sync": {
+        "notConnected": "Verbinde MakerOnline unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
+      }
+    },
+    "crealitycloud": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach crealitycloud.com, während du angemeldet bist. Es verbindet dein Konto, und das jedes Mal erneut, wenn du dich dort anmeldest.",
+          "Oder von Hand: Melde dich bei crealitycloud.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
+          "Wähle unter „Network“ eine beliebige Anfrage an crealitycloud.com/api, kopiere ihren Cookie-Request-Header und füge ihn unten ein. Er gilt eine Woche ab deiner Anmeldung."
+        ],
+        "placeholder": "Der Cookie-Header mit model_token und model_user_id"
+      },
+      "status": {
+        "notConnected": "Creality Cloud gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle und deine „Gefällt mir“ zu importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf crealitycloud.com an oder verbinde Creality Cloud unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Creality Cloud: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die 3D-Druck-Plattform von Creality: eine große Bibliothek kostenloser und Premium-Modelle, mit Cloud-Slicing und Drucken aus der Ferne.",
+        "signIn": "Deine eigene Anmeldung. Sie gilt eine Woche und wird nicht erneuert.",
+        "grab": "Sendet jede neue Anmeldung, sobald du dich auf crealitycloud.com anmeldest.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Creality Cloud und öffne crealitycloud.com angemeldet.",
+          "Von Hand: Kopiere den Cookie-Header einer Anfrage an crealitycloud.com/api und füge ihn unter Konfiguration → Plattformen ein.",
+          "Nach einer Woche meldest du dich dort erneut an, um wieder zu verbinden."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen und „Gefällt mir“ jeder Person, über das eigene Creality-Cloud-Konto jeder Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde Creality Cloud unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
+      }
+    },
+    "nexprint": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach nexprint.com, während du angemeldet bist. Es verbindet dein Konto und hält es bei jedem Besuch verbunden.",
+          "Oder von Hand: Melde dich bei nexprint.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
+          "Wähle unter „Network“ eine beliebige Anfrage an nexprint.com/gateway, kopiere ihren Authorization-Request-Header (oder das Cookie auth_token) und füge ihn unten ein."
+        ],
+        "placeholder": "Das Cookie auth_token oder der Authorization-Header"
+      },
+      "status": {
+        "notConnected": "NexPrint gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf nexprint.com an oder verbinde NexPrint unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "NexPrint: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die offene Modellplattform von Elegoo, gestartet 2025. Sie verbindet die eigene Bibliothek von Elegoo mit Designs der Community und funktioniert mit Elegoo Slicer und OrcaSlicer.",
+        "signIn": "Deine eigene Anmeldung, die die Seite bei Nutzung erneuert.",
+        "grab": "Sendet die erneuerte Anmeldung, wenn du nexprint.com besuchst.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf NexPrint und öffne nexprint.com angemeldet.",
+          "Von Hand: Kopiere den Authorization-Header einer Anfrage an nexprint.com/gateway und füge ihn unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen und Sammlungen, über das eigene NexPrint-Konto jeder Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde NexPrint unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen zu sehen."
+      }
+    },
+    "thangs": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach thangs.com, während du angemeldet bist. Es verbindet dein Konto, und Thingport hält es etwa ein Jahr lang verbunden.",
+          "Oder von Hand: Melde dich bei thangs.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
+          "Wähle unter „Network“ eine beliebige Anfrage an thangs.com/api, kopiere ihren Cookie-Request-Header (er enthält beide Tokens) und füge ihn unten ein."
+        ],
+        "placeholder": "Das Cookie accessToken oder refreshToken oder der gesamte Cookie-Header"
+      },
+      "status": {
+        "notConnected": "Thangs gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf thangs.com an oder verbinde Thangs unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Thangs: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Eine 3D-Modell-Suchmaschine von Physna, die Modelle nach ihrer Form und ihrem Namen findet, mit Marktplatz und Designer-Mitgliedschaften.",
+        "signIn": "Deine eigene Anmeldung; Thingport erneuert sie etwa ein Jahr lang.",
+        "grab": "Verbindet dein Konto mit einem einzigen Besuch auf thangs.com.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Thangs und öffne thangs.com angemeldet.",
+          "Von Hand: Kopiere den Cookie-Header einer Anfrage an thangs.com/api und füge ihn unter Konfiguration → Plattformen ein.",
+          "Kostenlose Konten können nur eine begrenzte Zahl von Modellen pro Tag herunterladen."
+        ]
+      },
+      "admin": {
+        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Sammlungen, über das eigene Thangs-Konto jeder Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde Thangs unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
+      }
+    },
+    "cults3d": {
+      "connect": {
+        "steps": [
+          "Melde dich bei cults3d.com an und öffne cults3d.com/en/api/keys. Erstelle dort einen Schlüssel und kopiere sein Secret.",
+          "Gib unten deinen Nicknamen genau so ein, wie er in deinem Profil steht (Groß- und Kleinschreibung zählt), und den Schlüssel. Damit liest Thingport Modelle, „Gefällt mir“, Printlists und deine Downloads.",
+          "Öffne dann einmal cults3d.com mit Thingport Grab, angemeldet: Cults3D gibt seine Dateien nur an die eigenen angemeldeten Seiten, und Grab gibt diese Anmeldung weiter."
+        ],
+        "placeholder": "Dein Nickname, so wie er im Profil steht",
+        "nickLabel": "Cults3D-Nickname",
+        "apiKeyLabel": "API-Schlüssel",
+        "browser": {
+          "title": "Cults3D-Anmeldung einfügen",
+          "paste": "Browser-Anmeldung einfügen",
+          "save": "Speichern",
+          "placeholder": "Die Request-Header einer angemeldeten cults3d.com-Seite",
+          "steps": [
+            "Am einfachsten: Öffne mit Thingport Grab einfach cults3d.com, während du angemeldet bist. Es sendet die Anmeldung selbst.",
+            "Oder von Hand: Öffne auf einer angemeldeten cults3d.com-Seite die Entwicklertools deines Browsers (F12) und lade sie neu.",
+            "Wähle unter „Network“ die Anfrage der Seite selbst, kopiere ihre Request-Header (mit Cookie und User-Agent) und füge sie unten ein. Das funktioniert nur, wenn Thingport das Internet über dieselbe Adresse erreicht wie dieser Browser."
+          ]
+        }
+      },
+      "status": {
+        "notConnected": "Thingport liest Cults3D mit deinem eigenen API-Schlüssel. Verbinde es mit deinem Nicknamen und einem auf cults3d.com erstellten Schlüssel.",
+        "expired": "Cults3D hat den API-Schlüssel abgelehnt. Erstelle auf cults3d.com einen neuen und verbinde erneut unter Konfiguration → Plattformen.",
+        "expiredStatus": "API-Schlüssel abgelehnt",
+        "siteMissing": "Verbunden, aber Downloads brauchen die Anmeldung des Browsers: Öffne cults3d.com angemeldet mit Thingport Grab oder füge sie über das Menü der Kachel ein.",
+        "siteExpired": "Die Anmeldung des Browsers ist abgelaufen: Öffne cults3d.com angemeldet mit Thingport Grab oder füge sie erneut über das Menü der Kachel ein.",
+        "siteMissingStatus": "Noch keine Browser-Anmeldung",
+        "disabledReason": "Cults3D: Gib deinen Nicknamen und API-Schlüssel unter Konfiguration → Plattformen ein"
+      },
+      "about": {
+        "summary": "Ein französischer Marktplatz für kostenlose und kostenpflichtige 3D-Druckdesigns, gegründet 2014, und ein soziales Netzwerk für Maker.",
+        "signIn": "Dein eigener API-Schlüssel, und für Dateien die Anmeldung deines Browsers.",
+        "grab": "Sendet die Anmeldung des Browsers und die Cloudflare-Freigabe. Thingport muss das Internet über die IP-Adresse dieses Browsers erreichen.",
+        "flaresolverr": "Hilft nicht: Sein Browser kann keinen Download-Link weitergeben.",
+        "setup": [
+          "Erstelle unter cults3d.com/en/api/keys einen API-Schlüssel.",
+          "Klicke unter Konfiguration → Plattformen mit der rechten Maustaste auf Cults3D, wähle „Verbinden“ und gib deinen Nicknamen und den Schlüssel ein.",
+          "Öffne cults3d.com angemeldet mit Thingport Grab, damit sich die Dateien herunterladen lassen."
+        ]
+      },
+      "admin": {
+        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Printlists, über den eigenen Cults3D-API-Schlüssel jeder Person. Die Dateien kommen mit der Anmeldung des Browsers, die Thingport Grab sendet."
+      },
+      "sync": {
+        "notConnected": "Gib deinen Cults3D-Nicknamen und API-Schlüssel unter Konfiguration > Plattformen ein, um hier deine „Gefällt mir“ und Printlists zu sehen."
+      }
+    },
+    "eufymake": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach makeitreal.eufymake.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei makeitreal.eufymake.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Local Storage“ → makeitreal.eufymake.com den gesamten Wert von mk-userinfo und füge ihn unten ein – eine lange Zeile aus Buchstaben und Ziffern oder JSON aus einer älteren Version"
+        ],
+        "placeholder": "Der gesamte Wert von mk-userinfo"
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ von eufyMake zu lesen. Die Modelle lassen sich auch ohne importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf makeitreal.eufymake.com an oder verbinde eufyMake unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "eufyMake: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Make it Real von eufyMake (Anker): Community-Modelle in eigenen Kategorien, mit KI- und Foto-zu-3D-Tools.",
+        "signIn": "Zum Importieren keine; deine Anmeldung ergänzt deine „Gefällt mir“.",
+        "grab": "Sendet deine Anmeldung, wenn du makeitreal.eufymake.com besuchst.",
+        "setup": [
+          "Importiere einen beliebigen Modelllink; eine Anmeldung ist nicht nötig.",
+          "Für deine „Gefällt mir“: Installiere Thingport Grab, erlaube es auf eufyMake und öffne makeitreal.eufymake.com angemeldet."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und „Gefällt mir“ jeder Person. Modelle lassen sich ohne Anmeldung importieren; „Gefällt mir“ braucht die eigene Anmeldung der Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde eufyMake unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ zu sehen."
+      }
+    },
+    "pinshape": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach pinshape.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei pinshape.com mit „Remember Me“ an, damit die Anmeldung ein Jahr gilt, und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → pinshape.com den Wert von remember_token und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an pinshape.com funktioniert auch."
+        ],
+        "placeholder": "Das Cookie remember_token oder der Cookie-Header einer angemeldeten Anfrage"
+      },
+      "status": {
+        "notConnected": "Pinshape gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; Sammlungen und „Gefällt mir“ lassen sich auch ohne lesen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf pinshape.com an oder verbinde Pinshape unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Pinshape: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Eine langjährige Community-Modellplattform, heute von MatterHackers betrieben: kostenlose Modelle und Sammlungen, denen jeder folgen kann.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien; Sammlungen und „Gefällt mir“ lassen sich auch ohne lesen.",
+        "grab": "Sendet deine Anmeldung, wenn du pinshape.com besuchst.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Pinshape und öffne pinshape.com angemeldet.",
+          "Von Hand: Kopiere das Cookie remember_token eines angemeldeten pinshape.com-Tabs und füge es unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle sowie Sammlungen und „Gefällt mir“ beliebiger Personen. Listen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde Pinshape unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
+      }
+    },
+    "toymakr3d": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach toymakr3d.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei toymakr3d.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an toymakr3d.com, kopiere ihren Cookie-Header und füge ihn unten ein."
+        ],
+        "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an toymakr3d.com"
+      },
+      "status": {
+        "notConnected": "Toymakr3D gibt seine Dateien nur angemeldeten Nutzern, auch die kostenlosen Modelle. Verbinde dein Konto, um sie zu importieren und deine Produkte mit „Gefällt mir“ zu lesen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf toymakr3d.com an oder verbinde Toymakr3D unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Toymakr3D: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die Seite eines einzelnen Designers mit beweglichen Roboter- und Mecha-Modellen, die meisten kostenlos: Transformers, Megazords, Gundams und Ähnliches.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien und deine „Gefällt mir“.",
+        "grab": "Sendet deine Anmeldung, wenn du toymakr3d.com besuchst.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Toymakr3D und öffne toymakr3d.com angemeldet.",
+          "Von Hand: Kopiere den Cookie-Header einer angemeldeten Anfrage an toymakr3d.com und füge ihn unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und die Produkte mit „Gefällt mir“ jeder Person. Beides braucht die eigene Anmeldung der Person; nur die Modellseiten lassen sich ohne lesen."
+      },
+      "sync": {
+        "notConnected": "Verbinde Toymakr3D unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Produkte mit „Gefällt mir“ zu sehen."
+      }
+    },
+    "makerables": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach makerables.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei makerables.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an makerables.com, kopiere ihren Cookie-Header und füge ihn unten ein."
+        ],
+        "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an makerables.com"
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um die Projekte zu lesen, die du auf Makerables gespeichert hast. Die Projekte lassen sich auch ohne importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf makerables.com an oder verbinde Makerables unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Makerables: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die Projektseite von Makera, die CNC und 3D-Druck verbindet: Jedes Projekt ist kostenlos und bringt seine NC- und CAM-Dateien neben den Modelldateien mit, die Thingport importiert.",
+        "signIn": "Zum Importieren keine; deine Anmeldung ergänzt deine gespeicherten Projekte.",
+        "grab": "Sendet deine Anmeldung, wenn du makerables.com besuchst.",
+        "setup": [
+          "Importiere einen beliebigen Projektlink; eine Anmeldung ist nicht nötig.",
+          "Für deine gespeicherten Projekte: Installiere Thingport Grab, erlaube es auf Makerables und öffne makerables.com angemeldet."
+        ]
+      },
+      "admin": {
+        "description": "Projekte und die gespeicherten Projekte jeder Person. Projekte lassen sich ohne Anmeldung importieren; gespeicherte Projekte brauchen die eigene Anmeldung der Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde Makerables unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine gespeicherten Projekte zu sehen."
+      }
+    },
+    "cgtrader": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach cgtrader.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Oder von Hand: Melde dich bei cgtrader.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an cgtrader.com, kopiere ihren Cookie-Header und füge ihn unten ein."
+        ],
+        "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an cgtrader.com"
+      },
+      "status": {
+        "notConnected": "CGTrader gibt seine Dateien nur angemeldeten Nutzern, auch die kostenlosen Modelle. Verbinde dein Konto, um sie zu importieren und deine Modelle mit „Gefällt mir“ und deine Wunschliste zu lesen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf cgtrader.com an oder verbinde CGTrader unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "CGTrader: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Ein Marktplatz mit über drei Millionen 3D-Modellen, gegründet in Vilnius: Assets für Spiele und Filme, Renderings und ein großer 3D-Druck-Katalog, viele Modelle kostenlos.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien, deine „Gefällt mir“ und deine Wunschliste.",
+        "grab": "Sendet deine Anmeldung, wenn du cgtrader.com besuchst, zusammen mit dem Token, das dein Browser für die bestandene Bot-Prüfung bekommen hat.",
+        "flaresolverr": "Besorgt Thingport ein eigenes Token für die Bot-Prüfung, damit Downloads nicht auf das von Grab warten.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf CGTrader und öffne cgtrader.com angemeldet.",
+          "Von Hand: Kopiere den Cookie-Header einer angemeldeten Anfrage an cgtrader.com und füge ihn unter Konfiguration → Plattformen ein.",
+          "Die Downloads liegen hinter der Bot-Prüfung von AWS: Richte FlareSolverr ein oder lass Grab das Token deines Browsers weitergeben."
+        ]
+      },
+      "admin": {
+        "description": "Modelle sowie die Modelle mit „Gefällt mir“ und die Wunschliste jeder Person. Alles braucht die eigene Anmeldung der Person, die Downloads zusätzlich ein Token für die Bot-Prüfung von Grab oder FlareSolverr; nur die Modellseiten lassen sich ohne lesen."
+      },
+      "sync": {
+        "notConnected": "Verbinde CGTrader unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Modelle mit „Gefällt mir“ und deine Wunschliste zu sehen."
+      }
+    },
+    "grabcad": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach grabcad.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Oder von Hand: Melde dich bei grabcad.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → grabcad.com den Wert von _grabcad_session und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an grabcad.com funktioniert auch."
+        ],
+        "placeholder": "Das Cookie _grabcad_session oder der Cookie-Header einer angemeldeten Anfrage"
+      },
+      "status": {
+        "notConnected": "GrabCAD gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; „Gefällt mir“ beliebiger Personen lassen sich auch ohne lesen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf grabcad.com an oder verbinde GrabCAD unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "GrabCAD: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die Ingenieurs-Community von Stratasys: eine kostenlose Bibliothek mit Millionen CAD-Modellen, von Maschinenteilen bis zu ganzen Baugruppen, meist als STEP-Dateien.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien; „Gefällt mir“ beliebiger Personen lassen sich auch ohne lesen.",
+        "grab": "Sendet deine Anmeldung, wenn du grabcad.com besuchst. Sie gilt zwei Tage ab der letzten Nutzung dort, ein gelegentlicher Besuch hält sie also aktiv.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf GrabCAD und öffne grabcad.com angemeldet.",
+          "Von Hand: Kopiere das Cookie _grabcad_session eines angemeldeten grabcad.com-Tabs und füge es unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und „Gefällt mir“ beliebiger Personen. „Gefällt mir“ lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Thingport importiert STEP-, STL-, 3MF- und OBJ-Dateien, nicht die eigenen Formate von CAD-Systemen."
+      },
+      "sync": {
+        "notConnected": "Verbinde GrabCAD unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ zu sehen."
+      }
+    },
+    "meshy": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach meshy.ai, während du angemeldet bist. Es verbindet dein Konto und gibt deine Anmeldung weiter, sobald sie sich dort ändert.",
+          "Oder von Hand: Melde dich bei meshy.ai an und öffne die Entwicklertools deines Browsers (F12).",
+          "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an www.meshy.ai, kopiere ihren Cookie-Header und füge ihn unten ein."
+        ],
+        "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an meshy.ai"
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um von Meshy zu importieren: Es gibt seine Dateien nur an ein angemeldetes Konto.",
+        "expired": "Anmeldung beendet. Melde dich mit Thingport Grab auf meshy.ai an oder verbinde Meshy unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung beendet",
+        "disabledReason": "Meshy: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Ein KI-Generator für 3D-Modelle mit einer großen Community-Galerie. Thingport importiert Community-Modelle und deine eigenen Generierungen als druckfertige 3MFs.",
+        "signIn": "Deine, für jeden Download; Community-Modelle brauchen außerdem einen Pro- oder Studio-Tarif.",
+        "grab": "Sendet deine Anmeldung, wenn du meshy.ai besuchst.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Meshy und öffne meshy.ai angemeldet.",
+          "Importiere einen beliebigen Beitragslink oder synchronisiere über „Quelle hinzufügen“ eine Sammlung oder deine eigenen Generierungen.",
+          "Mit einem kostenlosen Tarif lassen sich nur deine eigenen Generierungen herunterladen: Meshy behält Community-Modelle den Tarifen Pro und Studio vor."
+        ]
+      },
+      "blocked": {
+        "community": {
+          "title": "Braucht Meshy Pro",
+          "hint": "Meshy behält Community-Modelle anderer den Tarifen Pro und Studio vor. Deine eigenen lassen sich auch mit einem kostenlosen Tarif importieren, außer der KI-Agent hat sie erstellt."
+        },
+        "own": {
+          "title": "Braucht einen kostenpflichtigen Meshy-Tarif",
+          "hint": "Meshy behält Modelle, die sein KI-Agent erstellt hat, kostenpflichtigen Tarifen vor, auch deine."
+        }
+      },
+      "admin": {
+        "description": "Community-Beiträge, Sammlungen und die eigenen Generierungen jeder Person, alle mit der eigenen Anmeldung der Person heruntergeladen. Community-Modelle brauchen einen Meshy-Tarif Pro oder Studio."
+      },
+      "sync": {
+        "notConnected": "Verbinde Meshy unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Generierungen und Sammlungen zu sehen."
+      }
+    },
+    "owlcad": {
+      "status": {
+        "alwaysConnected": "OwlCAD ist standardmäßig verbunden: Es braucht weder Konto noch Schlüssel."
+      },
+      "about": {
+        "summary": "Eine CAD-App, die im Browser läuft. Ihre Galerie enthält eine große Bibliothek mit CC0- und CC-BY-Teilen und die CAD-Modelle, die ihre Nutzer teilen.",
+        "signIn": "Nichts zu verbinden.",
+        "grab": "Für die CAD-Projekte nötig: OwlCAD speichert dafür keine Datei, deshalb erstellt der Editor sie.",
+        "setup": [
+          "Nichts einzurichten: Füge einen OwlCAD-Link ein oder importiere mit Thingport Grab direkt von der Seite.",
+          "Ein Bibliotheksteil wird sofort importiert. Ein CAD-Projekt wartet, bis Thingport Grab es auf owlcad.com öffnet, wo der Editor von OwlCAD es exportiert."
+        ]
+      },
+      "admin": {
+        "description": "Eine CAD-App im Browser: Ihre Bibliotheksteile werden direkt importiert, ihre CAD-Projekte über Thingport Grab."
+      },
+      "sync": {
+        "notConnected": "OwlCAD ist gerade nicht erreichbar."
+      }
+    },
+    "pixup3d": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach pixup3d.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Oder von Hand: Melde dich bei pixup3d.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → pixup3d.com den Wert von _phrozen_session und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an pixup3d.com funktioniert auch."
+        ],
+        "placeholder": "Das Cookie _phrozen_session oder der Cookie-Header einer angemeldeten Anfrage"
+      },
+      "status": {
+        "notConnected": "PIXUP gibt seine Dateien nur angemeldeten Mitgliedern, auch die kostenlosen Modelle. Verbinde dein Konto, um die zu importieren, die dir gehören; Wunschlisten und Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf pixup3d.com an oder verbinde PIXUP unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "PIXUP: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Der Modell-Marktplatz von Phrozen: Figuren, Büsten und Tabletop-Miniaturen, viele mit vorbereiteten Stützstrukturen für den Resin-Druck, kostenlos und kostenpflichtig.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien der Modelle, die dir gehören; Wunschlisten und Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "grab": "Sendet deine Anmeldung, wenn du pixup3d.com besuchst, und markiert die kostenpflichtigen Modelle, die du nicht gekauft hast.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf PIXUP und öffne pixup3d.com angemeldet.",
+          "Von Hand: Kopiere das Cookie _phrozen_session eines angemeldeten pixup3d.com-Tabs und füge es unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle, Wunschlisten und Sammlungen. Listen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Ein kostenloses Modell wird zuerst mit einer 0-$-Bestellung in die PIXUP-Bibliothek der Person gelegt; ein kostenpflichtiges wird erst nach dem Kauf importiert."
+      },
+      "sync": {
+        "notConnected": "Verbinde PIXUP unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Wunschliste und Sammlungen zu sehen."
+      },
+      "blocked": {
+        "paid": {
+          "title": "Kostenpflichtiges Modell",
+          "hint": "Kaufe es zuerst auf PIXUP. Sobald es in deiner Bibliothek ist, importiert Thingport es."
+        }
+      }
+    },
+    "fab365": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach fab365.net, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Oder von Hand: Melde dich bei fab365.net an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Local storage“ → fab365.net die Werte von accessToken und refreshToken und füge sie unten ein, jeden in einer eigenen Zeile nach seinem Namen (accessToken: … und refreshToken: …). Mit dem Refresh-Token erneuert Thingport die Anmeldung selbst; ein accessToken allein funktioniert nach etwa 100 Minuten nicht mehr und muss erneut eingefügt werden."
+        ],
+        "placeholder": "accessToken: … und refreshToken: …, jeweils in einer eigenen Zeile"
+      },
+      "status": {
+        "notConnected": "Fab365 gibt seine Dateien nur angemeldeten Mitgliedern, auch die kostenlosen Modelle. Verbinde dein Konto, um die zu importieren, die dir gehören, und deine Favoriten zu sehen.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf fab365.net an oder verbinde Fab365 unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "Fab365: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Ein südkoreanischer Modell-Marktplatz, bekannt für fein konstruierte Drucke – SpaceX-Raketen, faltbare Roboter, Star-Wars-Schiffe –, die meisten so entworfen, dass sie ohne Stützstrukturen drucken.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien und deine Favoriten; die Modellseiten lassen sich auch ohne lesen.",
+        "grab": "Sendet deine Anmeldung, wenn du fab365.net besuchst, damit Thingport die Dateien herunterladen und deine Favoriten lesen kann.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf Fab365 und öffne fab365.net angemeldet.",
+          "Von Hand: Kopiere die Werte von accessToken und refreshToken aus dem Local Storage eines angemeldeten fab365.net-Tabs und füge sie unter Konfiguration → Plattformen ein, jeden in einer eigenen Zeile nach seinem Namen."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und deine Favoriten. Modellseiten lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Kostenlose Modelle und die, die dir gehören, werden importiert; ein kostenpflichtiges oder Ticket-Modell, das du nicht hast, musst du zuerst auf Fab365 kaufen oder einlösen."
+      },
+      "sync": {
+        "notConnected": "Verbinde Fab365 unter Konfiguration > Plattformen oder besuche es angemeldet mit Thingport Grab, um hier deine Favoriten zu sehen."
+      }
+    },
+    "threedexport": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach 3dexport.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Oder von Hand: Melde dich bei 3dexport.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an 3dexport.com, kopiere ihren Cookie-Header und füge ihn unten ein. Die Cookies nm_userid und nm_hash sind die Anmeldung, und eine Abmeldung bei 3dexport.com beendet sie."
+        ],
+        "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an 3dexport.com"
+      },
+      "status": {
+        "notConnected": "3DExport gibt seine Dateien nur angemeldeten Nutzern, auch die kostenlosen Modelle. Verbinde dein Konto, um sie und deine eigenen Sammlungen zu importieren; öffentliche Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "expired": "Anmeldung abgelaufen: Eine Abmeldung bei 3dexport.com beendet sie. Melde dich dort mit Thingport Grab erneut an oder verbinde 3DExport unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "3DExport: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Einer der ältesten 3D-Modell-Marktplätze, seit 2004 online: Assets für Spiele und Filme, Texturen und ein großer 3D-Druck-Katalog, teils kostenlos.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien und deine eigenen Sammlungen; öffentliche Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "grab": "Sendet deine Anmeldung, wenn du 3dexport.com besuchst, und markiert die kostenpflichtigen Modelle, die du nicht gekauft hast.",
+        "setup": [
+          "Installiere Thingport Grab, erlaube es auf 3DExport und öffne 3dexport.com angemeldet.",
+          "Von Hand: Kopiere den Cookie-Header einer angemeldeten Anfrage an 3dexport.com und füge ihn unter Konfiguration → Plattformen ein."
+        ]
+      },
+      "admin": {
+        "description": "Modelle und Sammlungen: die eigenen jeder Person und öffentliche beliebiger Personen. Modellseiten und öffentliche Sammlungen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Kostenlose Modelle werden importiert, ein kostenpflichtiges erst nach dem Kauf, und nur die Formate, die ein Slicer öffnet."
+      },
+      "sync": {
+        "notConnected": "Verbinde 3DExport unter Konfiguration > Plattformen oder besuche es angemeldet mit Thingport Grab, um hier deine Sammlungen zu sehen."
+      }
+    },
+    "qidimaker": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach www.qidimaker.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei www.qidimaker.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.qidimaker.com den Wert des Cookies token und füge ihn unten ein."
+        ],
+        "placeholder": "Der Wert des Cookies token"
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von QIDI Maker zu lesen. Die Modelle und öffentlichen Sammlungen beliebiger Personen lassen sich auch ohne importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf www.qidimaker.com an oder verbinde QIDI Maker unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "QIDI Maker: Verbinde dein Konto unter Konfiguration → Plattformen"
+      },
+      "about": {
+        "summary": "Die Modell-Community von QIDI Tech für die Drucker X-Plus, X-Max und Q, mit Druckprofilen aus QIDI Studio.",
+        "signIn": "Zum Importieren keine; deine Anmeldung ergänzt deine eigenen Sammlungen und „Gefällt mir“.",
+        "grab": "Sendet deine Anmeldung, wenn du www.qidimaker.com besuchst.",
+        "setup": [
+          "Importiere einen beliebigen Modelllink; eine Anmeldung ist nicht nötig.",
+          "Für deine eigenen Sammlungen und „Gefällt mir“: Installiere Thingport Grab, erlaube es auf QIDI Maker und öffne www.qidimaker.com angemeldet."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen jeder Person und öffentliche beliebiger Personen) und „Gefällt mir“ jeder Person. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; „Gefällt mir“ und private Sammlungen brauchen die eigene Anmeldung der Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde QIDI Maker unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen und „Gefällt mir“ zu sehen."
+      }
+    },
+    "voxelshare": {
+      "connect": {
+        "steps": [
+          "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Oder von Hand: Melde dich bei www.voxelshare.com an und öffne die Entwicklertools deines Browsers (F12).",
+          "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.voxelshare.com den Wert des Cookies token und füge ihn unten ein."
+        ],
+        "placeholder": "Der Wert des Cookies token",
+        "cn": {
+          "steps": [
+            "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.cn, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+            "Oder von Hand: Melde dich bei www.voxelshare.cn an und öffne die Entwicklertools deines Browsers (F12).",
+            "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.voxelshare.cn den Wert des Cookies token und füge ihn unten ein."
+          ],
+          "placeholder": "Der Wert des Cookies token"
+        }
+      },
+      "status": {
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von VoxelShare zu lesen. Die Modelle und öffentlichen Sammlungen beliebiger Personen lassen sich auch ohne importieren.",
+        "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf www.voxelshare.com an oder verbinde VoxelShare unter Konfiguration → Plattformen erneut.",
+        "expiredStatus": "Anmeldung abgelaufen",
+        "disabledReason": "VoxelShare: Verbinde dein Konto unter Konfiguration → Plattformen",
+        "cn": {
+          "expired": "Anmeldung für China abgelaufen. Melde dich mit Thingport Grab auf www.voxelshare.cn an oder verbinde die China-Seite von VoxelShare unter Konfiguration → Plattformen erneut.",
+          "expiredStatus": "Anmeldung für China abgelaufen"
+        }
+      },
+      "about": {
+        "summary": "Die Modell-Community von Flashforge für die Drucker Adventurer und Creator, mit Druckprofilen aus Flash Studio.",
+        "signIn": "Zum Importieren keine; deine Anmeldung ergänzt deine eigenen Sammlungen und „Gefällt mir“.",
+        "grab": "Sendet deine Anmeldung, wenn du www.voxelshare.com oder die China-Seite www.voxelshare.cn besuchst.",
+        "setup": [
+          "Importiere einen beliebigen Modelllink; eine Anmeldung ist nicht nötig.",
+          "Für deine eigenen Sammlungen und „Gefällt mir“: Installiere Thingport Grab, erlaube es auf VoxelShare und öffne www.voxelshare.com angemeldet (www.voxelshare.cn für ein China-Konto)."
+        ]
+      },
+      "admin": {
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen jeder Person und öffentliche beliebiger Personen) und „Gefällt mir“ jeder Person. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; „Gefällt mir“ und private Sammlungen brauchen die eigene Anmeldung der Person."
+      },
+      "sync": {
+        "notConnected": "Verbinde VoxelShare unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen und „Gefällt mir“ zu sehen."
+      }
+    }
   }
 }
