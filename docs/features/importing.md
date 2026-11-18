@@ -69,8 +69,8 @@ Fab365, 3DExport, QIDI Maker and VoxelShare.
     downloads, so it's only done where the design lists such a file. On MakerOnline it needs a Thingport Grab newer
     than 1.12.0.
   - Snapmaker's **Documents**, Thangs' **Reference Files** (not the zips of the model's other versions there),
-    Printables' sliced files and **Other files**, and Makerables' NC programs and CAM projects, each in a folder named
-    after its tab.
+    Printables' sliced files and **Other files**, in the folders the designer put them in, and Makerables' NC programs
+    and CAM projects, each in a folder named after its tab.
   - CGTrader, GrabCAD and 3DExport offer a model in many formats, so only their documents and 2D drawings come along
     (PDF, text, Office files, CSV, DXF and SVG), never the model again in another one.
   - Pictures are left out, since the gallery has them, and so are scenes only a CG program opens.
