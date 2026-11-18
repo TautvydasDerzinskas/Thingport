@@ -28,6 +28,17 @@ export function ourMigrations(): Promise<Set<string>> {
 
 type Row = { migration_name: string; finished_at: Date | null; rolled_back_at: Date | null };
 
+/** This instance's own database changes that an upgrade of the working copy started and never finished, stopped or
+ *  failed, marked rolled back as `prisma migrate resolve --rolled-back` marks one: Prisma runs no more on a database
+ *  that has one, and Postgres took back all the change did when it stopped, so the next upgrade runs it again. Only the
+ *  working copy's: one the old instance never finished stopped its preparing (readSourceHistory). How many. */
+export async function settleStoppedUpgrade(copy: PrismaClient): Promise<number> {
+  const names = [...(await ourMigrations())];
+  return copy.$executeRaw`
+    UPDATE "_prisma_migrations" SET rolled_back_at = now()
+    WHERE finished_at IS NULL AND rolled_back_at IS NULL AND migration_name = ANY(${names})`;
+}
+
 /** What the working copy says of the instance it came from, read before anything changes it. Throws when it isn't a
  *  Thingport database, or one this instance can't bring level. */
 export async function readSourceHistory(source: PrismaClient): Promise<SourceHistory> {

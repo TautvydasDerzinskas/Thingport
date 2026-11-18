@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { zipSync } from "fflate";
+import { Zip, ZipPassThrough, zipSync } from "fflate";
 import { hasModelFolderPaths, normalizeZipPath, readZipEntries, startingSelection } from "./zipUtils";
 
 const entries = (...paths: string[]) => paths.map((path) => ({ path }));
@@ -48,6 +48,38 @@ describe("readZipEntries", () => {
     const read = await readZipEntries(new File([zip as BlobPart], "kit.zip"));
     expect(read.entries.map((entry) => entry.path)).toEqual(["A/guide (2).pdf", "A/guide.pdf", "B/notes.txt"]);
     const { data } = read;
+    expect(new TextDecoder().decode(data["A/guide.pdf"])).toBe("first");
+    expect(new TextDecoder().decode(data["A/guide (2).pdf"])).toBe("second");
+  });
+});
+
+describe("readZipEntries of entries with one name", () => {
+  /** A zip that names one path more than once, as a tool that adds to an archive leaves one: zipSync can't, as it
+   *  takes its entries by name. */
+  const zipOf = (named: [string, string][]) => {
+    const chunks: Uint8Array[] = [];
+    const zip = new Zip((err, chunk) => {
+      if (err) throw err;
+      chunks.push(chunk);
+    });
+    for (const [name, body] of named) {
+      const entry = new ZipPassThrough(name);
+      zip.add(entry);
+      entry.push(new TextEncoder().encode(body), true);
+    }
+    zip.end();
+    return new File(chunks as BlobPart[], "kit.zip");
+  };
+
+  it("keeps each of two entries of one name, numbering the second, and two the same once", async () => {
+    const { entries: listed, data } = await readZipEntries(
+      zipOf([
+        ["A/guide.pdf", "first"],
+        ["A/guide.pdf", "second"],
+        ["A/guide.pdf", "first"],
+      ]),
+    );
+    expect(listed.map((entry) => entry.path).toSorted()).toEqual(["A/guide (2).pdf", "A/guide.pdf"]);
     expect(new TextDecoder().decode(data["A/guide.pdf"])).toBe("first");
     expect(new TextDecoder().decode(data["A/guide (2).pdf"])).toBe("second");
   });

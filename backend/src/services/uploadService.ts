@@ -5,7 +5,7 @@ import path from "node:path";
 import type { Print } from "@prisma/client";
 import { prisma } from "../db";
 import { RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
-import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
+import { HttpError, sanitizeFilename, mimeFromContentType, trimFilename } from "../utils/fileUtils";
 import { createPrint, discardPrint, withPlateBatch, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import { batchFileSaver, deletePreparedFile, deleteSupportingFile, saveFileFromTemp } from "./printFileService";
 import { isPreparedPrintFilename } from "./preparedPrint";
@@ -31,14 +31,18 @@ export type UploadedFile = {
   sourceFolder?: string | null;
 };
 
+// Each told by the name it's kept by, as the app tells them (addedFiles' keptName): "part.stl " is a model file.
+const extOf = (file: UploadedFile) => path.extname(trimFilename(file.originalname)).toLowerCase();
+
 function isRenderable(file: UploadedFile): boolean {
-  return RENDERABLE_MODEL_EXTS.has(path.extname(file.originalname).toLowerCase());
+  return RENDERABLE_MODEL_EXTS.has(extOf(file));
 }
 
 /** A file the model is printed from: a sliced 3MF beside them is its prepared print, not one of them. */
-const isPlateFile = (file: UploadedFile) => isRenderable(file) && !isPreparedPrintFilename(file.originalname);
+const isPlateFile = (file: UploadedFile) =>
+  isRenderable(file) && !isPreparedPrintFilename(trimFilename(file.originalname));
 
-const isUploadable = (file: UploadedFile) => UPLOADABLE_EXTS.has(path.extname(file.originalname).toLowerCase());
+const isUploadable = (file: UploadedFile) => UPLOADABLE_EXTS.has(extOf(file));
 
 /** The files a model of `files` is made of: its model files; else a sliced 3MF, printed from all the same; else what
  *  can be a model on its own, such as a picture or a design; else every file, so the model still has one. */
@@ -56,12 +60,14 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
 export async function withGltfPacked<T extends UploadedFile>(
   files: T[],
 ): Promise<{ files: T[]; glbs: string[]; packedInto: Set<T> }> {
-  if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [], packedInto: new Set() };
+  // Each by the name it's kept by, so "scene.gltf " is packed as "scene.gltf" is, and comes out "scene.glb".
+  const keptOf = (file: T) => trimFilename(file.originalname);
+  if (!files.some((f) => isGltfName(keptOf(f)))) return { files, glbs: [], packedInto: new Set() };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
   const named = files.map((file) => {
     // Null is the top of the upload, though the file is kept in a folder; only one not said takes the kept one.
     const folder = file.sourceFolder !== undefined ? file.sourceFolder : file.folder;
-    return { name: folder ? `${folder}/${file.originalname}` : file.originalname, path: file.path, file };
+    return { name: folder ? `${folder}/${keptOf(file)}` : keptOf(file), path: file.path, file };
   });
   const { files: left, packed } = await packGltfFiles(
     named,
@@ -72,7 +78,7 @@ export async function withGltfPacked<T extends UploadedFile>(
       file: {
         ...gltf.file,
         path: glbPath,
-        originalname: gltf.file.originalname.replace(/\.gltf$/i, ".glb"),
+        originalname: keptOf(gltf.file).replace(/\.gltf$/i, ".glb"),
         mimetype: "model/gltf-binary",
       },
     }),

@@ -69,9 +69,8 @@ export function isZipFile(name: string) {
 export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[]; data: Record<string, Uint8Array> }> {
   const { unzipSync } = await import("fflate");
   const raw = new Uint8Array(await file.arrayBuffer());
-  const zipEntries = unzipSync(raw);
   const found: [string, Uint8Array][] = [];
-  for (const [rawPath, content] of Object.entries(zipEntries)) {
+  for (const [rawPath, content] of everyEntry(unzipSync, raw)) {
     const normalized = normalizeZipPath(rawPath);
     if (normalized && !isArchiveJunk(normalized)) found.push([normalized, content]);
   }
@@ -82,9 +81,9 @@ export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[];
     if (Object.hasOwn(data, path)) later.push([path, content]);
     else data[path] = content;
   }
-  // Two entries can come to one path ("./A/guide.pdf" and "A/guide.pdf"): the same bytes are one file, and others are
-  // another, listed under a number rather than lost behind the first or uploaded under its name. Numbered once every
-  // entry has its own path, so the number is one no entry of the zip is called by.
+  // Two entries can come to one path ("./A/guide.pdf" and "A/guide.pdf", or two of one name): the same bytes are one
+  // file, and others are another, listed under a number rather than lost behind the first or uploaded under its name.
+  // Numbered once every entry has its own path, so the number is one no entry of the zip is called by.
   const copies = new Map<string, Uint8Array[]>();
   for (const [path, content] of later) {
     const held = [data[path], ...(copies.get(path) ?? [])];
@@ -96,6 +95,40 @@ export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[];
     .toSorted((a, b) => a.localeCompare(b))
     .map((path) => ({ path, size: data[path].length }));
   return { entries, data };
+}
+
+/** Every entry the zip lists, in its order, two of one name among them: unzipSync answers with one entry a name, so the
+ *  first of each is read first, then each pass after takes the next of every name that has more. */
+function everyEntry(unzipSync: typeof import("fflate").unzipSync, raw: Uint8Array): [string, Uint8Array][] {
+  const order: { name: string; nth: number }[] = [];
+  const counts = new Map<string, number>();
+  const passes = [
+    unzipSync(raw, {
+      filter: (entry) => {
+        const nth = counts.get(entry.name) ?? 0;
+        counts.set(entry.name, nth + 1);
+        order.push({ name: entry.name, nth });
+        return nth === 0;
+      },
+    }),
+  ];
+  let most = 0;
+  for (const count of counts.values()) most = Math.max(most, count);
+  for (let pass = 1; pass < most; pass++) {
+    const seen = new Map<string, number>();
+    passes.push(
+      unzipSync(raw, {
+        filter: (entry) => {
+          const nth = seen.get(entry.name) ?? 0;
+          seen.set(entry.name, nth + 1);
+          return nth === pass;
+        },
+      }),
+    );
+  }
+  return order.flatMap(({ name, nth }): [string, Uint8Array][] =>
+    Object.hasOwn(passes[nth], name) ? [[name, passes[nth][name]]] : [],
+  );
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {

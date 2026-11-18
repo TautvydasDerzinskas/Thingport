@@ -1,3 +1,12 @@
+// oxlint-disable-next-line no-control-regex -- the server drops these from a name (sanitizeFilename), as this does.
+const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+
+/** A file's name as the server keeps it (sanitizeFilename): without control characters, or spaces at either end. What
+ *  a file is is told from that, so "A.3mf " goes where the server would take "A.3mf". */
+export function keptName(name: string): string {
+  return (name || "").replace(CONTROL_CHARS, "").trim();
+}
+
 /** Lowercased file extension without the leading dot, e.g. "stl" for "model.STL". */
 export function extOf(name: string): string {
   const match = /\.([^.]+)$/.exec(name || "");

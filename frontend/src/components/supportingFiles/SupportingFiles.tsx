@@ -8,20 +8,28 @@ import SupportingFileMenu, { type FileMenuAnchor } from "./SupportingFileMenu";
 import SupportingFileViewer from "./SupportingFileViewer";
 import type { useSupportingFiles } from "./useSupportingFiles";
 
+type Actions = ReturnType<typeof useSupportingFiles>;
+
 type Props = {
   print: Print;
-  /** The page's, so the header's "Add supporting files" shows its uploads here too. */
-  actions: ReturnType<typeof useSupportingFiles>;
+  /** The page's, so the header's "Add supporting files" shows its uploads here too. Its file input is the page's
+   *  (SupportingFilesInput). */
+  actions: Omit<Actions, "bindInput" | "onPicked">;
   /** The owner's own model, and not a tool's: files can be added, renamed and removed. */
   canEdit: boolean;
 };
 
+/** The file input "Add supporting files" opens. The page keeps it apart from the list, in place while another model
+ *  loads: the header's menu, still the last model's then, opens it too. */
+export function SupportingFilesInput({ actions }: { actions: Pick<Actions, "bindInput" | "onPicked"> }) {
+  const { bindInput, onPicked } = actions;
+  return <input ref={bindInput} type="file" multiple hidden onChange={(event) => onPicked(event.currentTarget)} />;
+}
+
 /** A model's supporting files on its page: attachments under its pictures, each opening in the viewer. Nothing shows
  *  while it has none; its owner adds them from the ⋮ menu or Edit model. */
-export default function SupportingFiles({ print, actions, canEdit }: Props) {
+export default function SupportingFiles({ print, actions: fileActions, canEdit }: Props) {
   const { t } = useTranslation(["models"]);
-  // Apart, since the one handed to the input as its ref is read as a ref, not the others.
-  const { bindInput, onPicked, ...fileActions } = actions;
   const files = useMemo(() => print.supporting_files ?? [], [print.supporting_files]);
   const [viewing, setViewing] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ id: string; anchor: FileMenuAnchor } | null>(null);
@@ -55,7 +63,6 @@ export default function SupportingFiles({ print, actions, canEdit }: Props) {
 
   return (
     <>
-      <input ref={bindInput} type="file" multiple hidden onChange={(event) => onPicked(event.currentTarget)} />
       {(files.length > 0 || fileActions.uploading.length > 0) && (
         <SupportingFileChips
           files={files.map((file) => ({ key: file.id, name: file.filename, size: file.size, folder: file.folder }))}

@@ -1854,7 +1854,8 @@ export async function replaceModelFiles(
   const { inputs, coverImageUrl, galleryImages, profiles } = files;
   try {
     return await withPrintLock(printId, async () => {
-      // Asked with the model's plates held, so one an upload adds after the look can't go with the old ones.
+      // Asked with the model's plates held, so one an upload adds after the look can't go with the old ones, and with
+      // the storage lock, so a plate a move is taking elsewhere isn't read as gone.
       const replaced = await replaceModelPlates(userId, printId, inputs, async () => {
         const recorded = await prisma.plate.findMany({
           where: { printId, print: { userId } },
@@ -1864,14 +1865,14 @@ export async function replaceModelFiles(
         return recorded.length === 0 || (await modelFilesMissing(recorded));
       });
       if (!replaced) return null;
-      const { plates, galleryWhole } = replaced;
+      const { plates, galleryWhole, gallery } = replaced;
       // A gallery that survived the accident is the one the owner has been looking at, so it stays. One missing any
-      // of its pictures is taken from the source afresh instead of left half there -- but what the model has goes
+      // of its pictures is taken from the source afresh instead of left half there -- but what the model had goes
       // only once a picture is in to replace it: some of them may be the owner's own photographs, and a source
       // whose pictures can't be fetched would otherwise leave the gallery empty with nothing to bring it back.
       // The new ones land beside the old, which is why they take their places only here, renumbered as they go.
+      // Only the pictures the look was about go: one the owner added while the repair ran is theirs, and stays.
       if (!galleryWhole) {
-        const had = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
         // The files are in place by now, so a picture that won't come is no reason to call the repair a failure and
         // leave the model out of the next one -- the look only ever reads the plates.
         const stored = await attachImportedPreviewImages(printId, plates[0]?.id, coverImageUrl, galleryImages).catch(
@@ -1881,7 +1882,7 @@ export async function replaceModelFiles(
           },
         );
         if (stored > 0) {
-          for (const image of had) await removePreviewImage(printId, image.id).catch(() => undefined);
+          for (const id of gallery) await removePreviewImage(printId, id).catch(() => undefined);
         }
       }
       await applyProfileCovers(printId, profiles.covers);
