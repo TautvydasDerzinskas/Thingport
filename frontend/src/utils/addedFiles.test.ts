@@ -80,10 +80,11 @@ describe("a .gltf added with the files it points at", () => {
     expect(names(packedWith.get(files[0]) ?? [])).toEqual(["scene.bin", "wood.png"]);
   });
 
-  it("sends a file two scenes share once, and changes nothing without a .gltf", async () => {
+  it("sends a file two scenes share once, though each holds it, and changes nothing without a .gltf", async () => {
     const files = [scene("a.gltf", "shared.bin"), scene("b.gltf", "shared.bin"), file("shared.bin")];
-    const { model } = await withGltfFiles(sortAddedFiles(files, "supporting"), (each) => each);
+    const { model, packedWith } = await withGltfFiles(sortAddedFiles(files, "supporting"), (each) => each);
     expect(names(model)).toEqual(["a.gltf", "shared.bin", "b.gltf"]);
+    expect(names(packedWith.get(files[1]) ?? [])).toEqual(["shared.bin"]);
     const plain = sortAddedFiles([file("part.stl"), file("guide.pdf")], "model");
     expect(await withGltfFiles(plain, (each) => each)).toMatchObject(plain);
   });

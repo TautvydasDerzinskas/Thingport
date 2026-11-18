@@ -202,6 +202,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   }, [print.supporting_files, print.supporting_file_count, readSupportingFiles]);
 
   const markDirty = () => setDirty(true);
+  // Files picked whose .gltf is still being read for the files it points at: not in the lists yet.
+  const [adding, setAdding] = useState(0);
 
   // Each kind is ordered on its own, as in its box on the models page; categories come first.
   const [flatCategories, flatFolders] = useMemo(
@@ -255,9 +257,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
   const onAddFiles = async (fileList: FileList | null, addedTo: "model" | "supporting") => {
     if (!fileList?.length) return;
-    const { model, supporting, packedWith } = await withGltfFiles(
-      sortAddedFiles(Array.from(fileList), addedTo),
-      (file) => file,
+    const sorted = sortAddedFiles(Array.from(fileList), addedTo);
+    markDirty();
+    setAdding((count) => count + 1);
+    const { model, supporting, packedWith } = await withGltfFiles(sorted, (file) => file).finally(() =>
+      setAdding((count) => count - 1),
     );
     const packed = new Set([...packedWith.values()].flat());
     if (model.length) {
@@ -279,7 +283,6 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         ...supporting.map((file): SupportingItem => ({ kind: "new", localId: newLocalId(), file })),
       ]);
     }
-    markDirty();
   };
   const removeSupportingItem = (key: string) => {
     const target = supportingItems.find((item) => supportingKey(item) === key);
@@ -414,11 +417,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       let plates = plateItems;
       const newPlates = plates.filter((p) => p.kind === "new");
       if (newPlates.length) {
-        // One plate each: a .gltf's files are packed into it.
-        const uploadRes = await printsApi.addPlates(
-          print.id,
-          newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : [])),
-        );
+        // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once.
+        const uploadRes = await printsApi.addPlates(print.id, [
+          ...new Set(newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : []))),
+        ]);
         latest = uploadRes.print;
         // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
         // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
@@ -1024,8 +1026,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           variant="contained"
           onClick={handleUpdate}
           // Not until the model's supporting files are in the list, nor after a read of them failed until a retry
-          // brings them: a save before would leave them out of it.
-          disabled={saving || supportingLoading || supportingLoadFailed}
+          // brings them, nor while files just picked are being sorted: a save before would leave them out of it.
+          disabled={saving || adding > 0 || supportingLoading || supportingLoadFailed}
           startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
         >
           {t("models:edit.update")}

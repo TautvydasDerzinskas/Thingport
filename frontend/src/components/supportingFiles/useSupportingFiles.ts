@@ -68,13 +68,14 @@ export function useSupportingFiles(
         const keys = new Set(done.map((item) => item.key));
         setPending((current) => current.filter((item) => !keys.has(item.key)));
       };
-      // A .gltf's .bin and textures go up with it, packed into its .glb.
-      const { model, supporting, packedWith } = await withGltfFiles(
-        sortAddedFiles(queued, "supporting"),
-        (item) => item.file,
-      );
-      const packed = new Set([...packedWith.values()].flat());
+      // In line at once, before reading anything: a pick made after this one goes up after it.
       await inTurn(async () => {
+        // A .gltf's .bin and textures go up with it, packed into its .glb.
+        const { model, supporting, packedWith } = await withGltfFiles(
+          sortAddedFiles(queued, "supporting"),
+          (item) => item.file,
+        );
+        const packed = new Set([...packedWith.values()].flat());
         let added = 0;
         let modelFilesAdded = false;
         // The first sliced print among them becomes the prepared print; the rest are kept as supporting files.

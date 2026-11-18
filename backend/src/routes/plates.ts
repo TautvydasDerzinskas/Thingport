@@ -5,6 +5,7 @@ import type { Plate } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
+import { createLogger } from "../logger";
 import { HttpError, sanitizeFilename, mimeFromContentType } from "../utils/fileUtils";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -35,6 +36,7 @@ import { readablePrintWhere } from "../services/socialService";
 import { isProfileProject, plateThumbEntry } from "../services/printProfileFile";
 import { readZipEntry } from "../utils/zipReader";
 
+const log = createLogger("plates");
 const router = Router();
 router.use(requireAuth);
 
@@ -61,7 +63,11 @@ router.post(
       try {
         for (const input of plateInputs) added.push(...(await addPlatesToPrint(req.userId!, print.id, [input])));
       } catch (err) {
-        for (const plate of added) await removePlate(print, plate.id).catch(() => undefined);
+        for (const plate of added) {
+          await removePlate(print, plate.id).catch((failure: unknown) =>
+            log.error("couldn't take back a plate of a batch that failed", { plate: plate.id, error: failure }),
+          );
+        }
         throw err;
       }
       // Which plates are these files', in their order (a .gltf's files make none of their own): the model can gain

@@ -58,7 +58,8 @@ export function sortAddedFiles<T extends { name: string }>(
 /**
  * `sorted` with each .gltf among the model files followed by the files of the same addition it points at -- its .bin
  * and textures -- wherever they were sorted to: the server packs them with it into one .glb, so they go up with it in
- * one request, never as files of their own. `packedWith` says whose they are. Found as a folder upload finds them.
+ * one request, never as files of their own. `packedWith` has every file each .gltf points at, one two scenes share
+ * under both, though `model` lists it once. Found as a folder upload finds them.
  */
 export async function withGltfFiles<T>(
   sorted: { model: T[]; supporting: T[] },
@@ -68,16 +69,24 @@ export async function withGltfFiles<T>(
   const packedWith = new Map<T, T[]>();
   if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
-  const taken = new Set<T>();
   for (const [gltf, found] of await gltfBundles(entries)) {
-    // A texture two scenes share goes up once, with the first: the server packs it into both.
-    const files = found.map((entry) => all[entries.indexOf(entry)]).filter((item) => !taken.has(item));
-    for (const item of files) taken.add(item);
-    packedWith.set(all[entries.indexOf(gltf)], files);
+    packedWith.set(
+      all[entries.indexOf(gltf)],
+      found.map((entry) => all[entries.indexOf(entry)]),
+    );
   }
+  const packed = new Set([...packedWith.values()].flat());
+  // A file two scenes share goes up once, after the first: the server packs it into both.
+  const sent = new Set<T>();
+  const once = (items: T[]) =>
+    items.filter((item) => {
+      if (sent.has(item)) return false;
+      sent.add(item);
+      return true;
+    });
   return {
-    model: sorted.model.flatMap((item) => (taken.has(item) ? [] : [item, ...(packedWith.get(item) ?? [])])),
-    supporting: sorted.supporting.filter((item) => !taken.has(item)),
+    model: sorted.model.flatMap((item) => (packed.has(item) ? [] : once([item, ...(packedWith.get(item) ?? [])]))),
+    supporting: sorted.supporting.filter((item) => !packed.has(item)),
     packedWith,
   };
 }
