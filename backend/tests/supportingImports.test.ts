@@ -16,7 +16,7 @@ import {
 } from "../src/services/importService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { modelFolderUnits } from "../src/services/modelFolders";
-import { setImportSupportingFiles } from "../src/services/settingsService";
+import { setImportSupportingFiles, setPhotosPerModel } from "../src/services/settingsService";
 import {
   isSupportingImportFile,
   supportingImportName,
@@ -424,6 +424,23 @@ describe("a zip from a link, by how its files become models", () => {
     );
     expect(prints[0].plates.map((plate) => plate.filename)).toEqual(["preview.png"]);
     expect(await filesOf(prints[0].id)).toEqual([[null, "design.scad", "SUPPORTING"]]);
+  });
+
+  it("one model keeps no more of a zip's pictures than the admin's photos per model", async () => {
+    const files = { "a.stl": "solid a endsolid", "one.png": photo, "two.png": photo, "three.png": photo };
+    await setPhotosPerModel(1);
+    try {
+      const { prints } = await extractZipEntriesToOneModel(
+        userId,
+        await zipOf(files),
+        "Few.zip",
+        Object.keys(files),
+        {},
+      );
+      expect(prints[0].previewImages).toHaveLength(1);
+    } finally {
+      await setPhotosPerModel(null);
+    }
   });
 
   it("one model leaves a picked zip inside the zip unopened, and says so", async () => {

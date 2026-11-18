@@ -8,11 +8,12 @@ import { HttpError, sanitizeFilename, guessMimeFromPath } from "../utils/fileUti
 import { IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS, UPLOADABLE_EXTS } from "../config";
 import { listZipEntries as listRawZipEntries, readZipEntry } from "../utils/zipReader";
 import { validateParentCategory } from "./categoryService";
-import { attachImportedPreviewImages, MULTI_FILE_PLATE_EXTS } from "./importService";
+import { attachImportedPreviewImages, MULTI_FILE_PLATE_EXTS, PREVIEW_IMAGE_MAX_COUNT } from "./importService";
 import { addPreviewImage, preferImageOverRenders } from "./previewImageService";
 import { isSupportingImportFile, withoutModelsSharedTop } from "./supportingImports";
 import { modelFolderUnits } from "./modelFolders";
 import { localizeDescriptionImages } from "./descriptionImageService";
+import { getPhotosPerModel } from "./settingsService";
 import { createPrint, type NewPlateInput, type PrintMetaInput } from "./printCreation";
 import type { Print, Plate, PreviewImage } from "@prisma/client";
 
@@ -307,9 +308,14 @@ async function createModelOf(
     options.galleryImages ?? [],
   );
   let preferred = fromPage > 0;
+  // Administration → Storage's "Photos kept per model", the page's counted first, as this is an import.
+  const keep = (await getPhotosPerModel()) ?? PREVIEW_IMAGE_MAX_COUNT;
+  let stored = fromPage;
   for (const { entry } of photos) {
+    if (stored >= keep) break;
     const buffer = await fs.readFile(entry.tempPath).catch(() => null);
     if (!buffer || !(await addPreviewImage(print.id, buffer, { keepExif: true }))) continue;
+    stored++;
     // The page's own pictures come first; a zip's stand in for none.
     if (!preferred) {
       preferred = true;
