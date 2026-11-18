@@ -89,9 +89,13 @@ async function createdWithTool(
   return tool ? { kind: "tool", ref: tool.slug } : null;
 }
 
-/** `folders`: a JSON list beside the files, each one's folder within the upload or null. */
-function uploadFolders(raw: string | undefined, files: Express.Multer.File[]): Map<Express.Multer.File, string | null> {
-  const out = new Map<Express.Multer.File, string | null>();
+/** `folders`: a JSON list beside the files, each one's folder within the upload or null. Kept as it was sent too
+ *  (`source`), for a .gltf's references (UploadedFile.sourceFolder). */
+function uploadFolders(
+  raw: string | undefined,
+  files: Express.Multer.File[],
+): Map<Express.Multer.File, { folder: string | null; source: string | null }> {
+  const out = new Map<Express.Multer.File, { folder: string | null; source: string | null }>();
   if (!raw) return out;
   let list: unknown;
   try {
@@ -104,7 +108,10 @@ function uploadFolders(raw: string | undefined, files: Express.Multer.File[]): M
   }
   files.forEach((file, index) => {
     const folder = list[index];
-    out.set(file, typeof folder === "string" ? normalizeFolder(folder) : null);
+    out.set(
+      file,
+      typeof folder === "string" ? { folder: normalizeFolder(folder), source: folder } : { folder: null, source: null },
+    );
   });
   return out;
 }
@@ -148,7 +155,10 @@ router.post(
       const folders = uploadFolders(body.folders, files);
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
-        const withFolders = group.map((f) => ({ ...f, folder: groups.length === 1 ? (folders.get(f) ?? null) : null }));
+        const withFolders = group.map((f) => {
+          const placed = groups.length === 1 ? folders.get(f) : undefined;
+          return { ...f, folder: placed?.folder ?? null, sourceFolder: placed?.source ?? null };
+        });
         const print = await createUploadedModel(req.userId!, meta, withFolders);
         for (const f of group) pending.delete(f);
         created.push({ id: print.id, name: print.title || print.name });

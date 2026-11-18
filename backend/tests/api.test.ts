@@ -374,6 +374,30 @@ describe("plate add/remove/reorder/rename", () => {
     expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(2);
   });
 
+  it("finds a .gltf's files by the folders the upload named, not as they're kept", async () => {
+    const positions = Buffer.from(new Float32Array([0, 0, 0, 0.01, 0, 0, 0, 0.01, 0]).buffer);
+    const gltf = JSON.stringify({
+      asset: { version: "2.0" },
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+      nodes: [{ mesh: 0 }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+      buffers: [{ uri: "A%20%20B/mesh.bin", byteLength: positions.length }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [0.01, 0.01, 0] }],
+    });
+    // Two folders kept alike, "A B", each with a mesh.bin.
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify([null, "A B", "A  B"]))
+      .attach("files", tmpFile("scene.gltf", gltf))
+      .attach("files", tmpFile("mesh.bin", Buffer.alloc(8)))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(res.status).toBe(200);
+    await trackPrint(res.body.prints[0].id);
+    expect(res.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+  });
+
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
   it("replaces the only plate with a same-named file: upload, delete the old one, rename back", async () => {
     let res = await auth(request(app).get(`/api/print/${printId}`));
