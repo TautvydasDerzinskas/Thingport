@@ -30,7 +30,7 @@ import {
   type AssetHome,
 } from "./modelAssets";
 import type { Category, Plate, Prisma, Print } from "@prisma/client";
-import { isPendingStoragePath, savesUnderWay } from "./printFileSaves";
+import { isPendingStoragePath, movesMissed, savesUnderWay } from "./printFileSaves";
 
 export const STORAGE_TEMPLATE_TOKENS = [
   "category-or-folder",
@@ -546,8 +546,12 @@ async function relocatePrintFiles(
   const files = await prisma.printFile.findMany({ where: { printId: print.id }, orderBy: { id: "asc" } });
   let moved = 0;
   for (const file of files) {
-    // Still on its way in: its save puts the file at the place its row holds, which a move would change under it.
-    if (savesUnderWay.has(file.id)) continue;
+    // Still on its way in: its save puts the file at the place its row holds, which a move would change under it. It
+    // follows once the save is done.
+    if (savesUnderWay.has(file.id) || isPendingStoragePath(file.storagePath)) {
+      movesMissed.add(file.id);
+      continue;
+    }
     const rendered = renderFilePath(print, template, printValues, file.filename, null, file.folder);
     const newRelative = samePath(file.storagePath, rendered) ? rendered : await freePrintFilePath(rendered, file.id);
     if (samePath(file.storagePath, newRelative)) continue;
@@ -556,7 +560,11 @@ async function relocatePrintFiles(
         const now = await prisma.printFile.findUnique({ where: { id: file.id } });
         // Asked again here, as the list can hold a save's row before the save said it's under way: one still at its
         // placeholder is, and one that claimed its place said so before claiming it.
-        if (!now || isPendingStoragePath(now.storagePath) || savesUnderWay.has(file.id)) return null;
+        if (!now) return null;
+        if (isPendingStoragePath(now.storagePath) || savesUnderWay.has(file.id)) {
+          movesMissed.add(file.id);
+          return null;
+        }
         const place = renderFilePath(print, template, printValues, now.filename, null, now.folder);
         return samePath(now.storagePath, place) ? null : path.join(STORAGE, now.storagePath);
       },

@@ -89,29 +89,48 @@ async function createdWithTool(
   return tool ? { kind: "tool", ref: tool.slug } : null;
 }
 
-/** `folders`: a JSON list beside the files, each one's folder within the upload or null. Kept as it was sent too
- *  (`source`), for a .gltf's references (UploadedFile.sourceFolder). */
-function uploadFolders(
-  raw: string | undefined,
-  files: Express.Multer.File[],
-): Map<Express.Multer.File, { folder: string | null; source: string | null }> {
-  const out = new Map<Express.Multer.File, { folder: string | null; source: string | null }>();
-  if (!raw) return out;
+/** A folder as an upload named it, for matching a .gltf's references only: its separators made one kind and its
+ *  empty and "." levels dropped, so "/parts" and "parts/" are "parts", but its spaces kept as sent ("A  B"). */
+function lookupFolder(raw: string): string | null {
+  const levels = raw.split(/[\\/]+/).filter((level) => level !== "" && level !== ".");
+  return levels.length ? levels.join("/") : null;
+}
+
+/** A JSON list of one folder, or null, for each file; undefined where it was left out. */
+function folderList(field: string, raw: string | undefined, count: number): (string | null)[] | undefined {
+  if (raw === undefined) return undefined;
   let list: unknown;
   try {
     list = JSON.parse(raw);
   } catch {
-    throw new HttpError(400, "folders must be a JSON list");
+    throw new HttpError(400, `${field} must be a JSON list`);
   }
-  if (!Array.isArray(list) || list.length !== files.length) {
-    throw new HttpError(400, "folders must list one folder, or null, for each file");
+  if (!Array.isArray(list) || list.length !== count || list.some((each) => each !== null && typeof each !== "string")) {
+    throw new HttpError(400, `${field} must list one folder, or null, for each file`);
   }
+  return list as (string | null)[];
+}
+
+/** `folders`: a JSON list beside the files, each one's folder within the upload or null; left out, every file is at
+ *  the top. `source_folders`, as long, is where each was in what the user picked, for a .gltf's references only
+ *  (UploadedFile.sourceFolder), as a scene can name a file outside the folder its model keeps: `folders` where it's
+ *  left out. */
+function uploadFolders(
+  raw: string | undefined,
+  rawSources: string | undefined,
+  files: Express.Multer.File[],
+): Map<Express.Multer.File, { folder: string | null; source: string | null }> {
+  const out = new Map<Express.Multer.File, { folder: string | null; source: string | null }>();
+  const folders = folderList("folders", raw, files.length);
+  const sources = folderList("source_folders", rawSources, files.length) ?? folders;
+  if (!folders && !sources) return out;
   files.forEach((file, index) => {
-    const folder = list[index];
-    out.set(
-      file,
-      typeof folder === "string" ? { folder: normalizeFolder(folder), source: folder } : { folder: null, source: null },
-    );
+    const folder = folders?.[index] ?? null;
+    const source = sources?.[index] ?? null;
+    out.set(file, {
+      folder: folder === null ? null : normalizeFolder(folder),
+      source: source === null ? null : lookupFolder(source),
+    });
   });
   return out;
 }
@@ -152,7 +171,7 @@ router.post(
       const printsOut = [];
       // One model per file, or one holding them all, each of its files in the folder it came from ("docs"), a lone file
       // too: a zip's "parts/body.stl" goes up alone when its photo goes to the gallery. A model per file has no folders.
-      const folders = uploadFolders(body.folders, files);
+      const folders = uploadFolders(body.folders, body.source_folders, files);
       const groups = files.length === 1 || mode === "separate" ? files.map((f) => [f]) : [files];
       for (const group of groups) {
         const withFolders = group.map((f) => {

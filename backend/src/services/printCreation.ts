@@ -34,7 +34,7 @@ import { Prisma } from "@prisma/client";
 import type { CategorySource, Plate, Print } from "@prisma/client";
 import { enqueueAiCategorization } from "./aiCategorizationService";
 import { enqueueAiDescription } from "./aiDescriptionService";
-import { deleteAllPrintFiles, saveFileFromTemp } from "./printFileService";
+import { deleteAllPrintFiles, removePrintFileIfGone, saveFileFromTemp } from "./printFileService";
 import { importingQuietly } from "../utils/quietImport";
 import { createKeyedLock } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
@@ -231,11 +231,21 @@ async function createPlateAtPosition(
   try {
     await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
   } catch (err) {
-    // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice.
+    // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice. Its row is read
+    // again under the storage lock, as a reorganisation may have moved its file meanwhile, and the file only goes once
+    // the row has: a plate listed without its file is worse than a file nothing lists.
     const home = await plateAssetHome(record.id).catch(() => undefined);
-    await prisma.plate.delete({ where: { id: record.id } }).catch(() => undefined);
-    await removePlatePictures(record.id, home).catch(() => undefined);
-    if (effectivePath && !input.sourcePath) await fs.rm(effectivePath, { force: true }).catch(() => undefined);
+    const removed = await withStorageLock(async () => {
+      const now = await prisma.plate.findUnique({ where: { id: record.id } });
+      if (!now) return true;
+      await prisma.plate.delete({ where: { id: record.id } });
+      if (!input.sourcePath) await fs.rm(managedPlatePath(now), { force: true }).catch(() => undefined);
+      return true;
+    }).catch((failure: unknown) => {
+      console.error(`Couldn't take back the plate ${record.id} after its file couldn't be read:`, failure);
+      return false;
+    });
+    if (removed) await removePlatePictures(record.id, home).catch(() => undefined);
     throw err;
   }
   // A print profile's facts are read once its import has settled. Loaded when used: the service reaches this file.
@@ -258,11 +268,15 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
   // addProfiles), and storing it each time would leave the model holding "model.scad", "model (1).scad" and on.
   const keyOf = (filename: string, folder: string | null | undefined) =>
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
-  const stored = new Set(
-    (await prisma.printFile.findMany({ where: { printId }, select: { filename: true, folder: true } })).map((file) =>
-      keyOf(file.filename, file.folder),
-    ),
-  );
+  const stored = new Map<string, string[]>();
+  const keptNow = new Set<string>();
+  for (const file of await prisma.printFile.findMany({
+    where: { printId },
+    select: { id: true, filename: true, folder: true },
+  })) {
+    const key = keyOf(file.filename, file.folder);
+    stored.set(key, [...(stored.get(key) ?? []), file.id]);
+  }
   for (const input of inputs) {
     if (!input.tempFilePath) {
       // Nothing reaches here today -- every caller that passes a script passes a temp file, and the ones that
@@ -270,15 +284,20 @@ export async function keepGeneratorScripts(userId: string, printId: string, inpu
       console.warn(`Couldn't keep the generator script ${input.filename}: it came with no temporary file.`);
       continue;
     }
-    // Compared as it will be stored, since that is the name a second copy would collide with.
+    // Compared as it will be stored, since that is the name a second copy would collide with. One whose file is gone
+    // for sure, a row a failed sweep of a repair left, makes way for this one rather than keep it out.
     const key = keyOf(sanitizeFilename(input.filename), input.folder);
-    if (stored.has(key)) continue;
+    if (keptNow.has(key)) continue;
+    const held = stored.get(key) ?? [];
+    let gone = 0;
+    for (const id of held) if (await removePrintFileIfGone(id)) gone++;
+    if (held.length > gone) continue;
     try {
       // Plain text, which no mime table knows .scad for, so it is given rather than guessed.
       await saveFileFromTemp(userId, printId, input.tempFilePath, input.filename, "text/plain", {
         folder: input.folder,
       });
-      stored.add(key);
+      keptNow.add(key);
     } catch (err) {
       console.warn(`Couldn't keep the generator script ${input.filename}:`, err);
     }
@@ -469,11 +488,12 @@ export async function removePlate(print: Pick<Print, "id" | "assetsPath">, plate
     }
     const remaining = plates.filter((p) => p.id !== found.id).map((p) => p.id);
     await renumberPlates(remaining, [prisma.plate.delete({ where: { id: found.id } })]);
+    // Read for the new first plate while it's still first (see the reorder route).
+    if (found.position === 0) await refreshAutoPreparedMetadata(print.id);
     return found;
   });
   await deletePlateFiles(target);
   await removePlatePictures(target.id, print.assetsPath);
-  if (target.position === 0) await refreshAutoPreparedMetadata(print.id);
 }
 
 /** Renames one of the model's plates, suffixed when another plate has the name. Returns the name it got. */
@@ -484,7 +504,7 @@ export async function renamePlate(print: Print, plateId: string, filename: strin
   if (nextFilename !== plate.filename) {
     await prisma.plate.update({ where: { id: plate.id }, data: { filename: nextFilename } });
     await relocatePrint(print, [{ ...plate, filename: nextFilename }]);
-    if (plate.position === 0) await refreshAutoPreparedMetadata(print.id);
+    if (plate.position === 0) await withPlateOrder(print.id, () => refreshAutoPreparedMetadata(print.id));
   }
   return nextFilename;
 }

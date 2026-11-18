@@ -7,6 +7,7 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { listZipEntries } from "../src/utils/zipReader";
 import { addUploadedFiles } from "../src/services/uploadService";
+import { saveFileFromTemp } from "../src/services/printFileService";
 import { STORAGE } from "../src/config";
 
 const app = createApp();
@@ -315,18 +316,32 @@ describe("plate add/remove/reorder/rename", () => {
     expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
   });
 
-  it("leaves nothing of a file whose plate fails after it's stored, so a retry doesn't bring it in twice", async () => {
+  // Its thumbnail step reads the preview setting once the row and file are in: `then` runs there, before it fails.
+  const failingThumbnailStep = (then: () => Promise<void> = async () => undefined) => {
+    const findSetting = prisma.setting.findUnique.bind(prisma.setting);
+    return vi.spyOn(prisma.setting, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.setting.findUnique>[0],
+    ) => {
+      if (args.where.key !== "preview_mode") return findSetting(args);
+      await then();
+      throw new Error("the settings went away");
+    }) as never);
+  };
+
+  it("leaves nothing of a file whose plate fails after it's stored, from wherever it was moved meanwhile", async () => {
     const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
     const modelId = made.body.prints[0].id;
     await trackPrint(modelId);
-    // Its thumbnail step reads the preview setting once the row and file are in.
-    const findSetting = prisma.setting.findUnique.bind(prisma.setting);
-    const spy = vi
-      .spyOn(prisma.setting, "findUnique")
-      .mockImplementation(((args: Parameters<typeof prisma.setting.findUnique>[0]) =>
-        args.where.key === "preview_mode"
-          ? Promise.reject(new Error("the settings went away"))
-          : findSetting(args)) as never);
+    // A reorganisation moves the new plate's file while its thumbnail is read.
+    let movedTo = "";
+    const spy = failingThumbnailStep(async () => {
+      const lid = await prisma.plate.findFirstOrThrow({ where: { printId: modelId, filename: "lid.stl" } });
+      expect(fs.existsSync(path.join(STORAGE, lid.storagePath))).toBe(true);
+      movedTo = path.join(path.dirname(lid.storagePath), "moved", "lid.stl");
+      fs.mkdirSync(path.join(STORAGE, path.dirname(movedTo)), { recursive: true });
+      fs.renameSync(path.join(STORAGE, lid.storagePath), path.join(STORAGE, movedTo));
+      await prisma.plate.update({ where: { id: lid.id }, data: { storagePath: movedTo } });
+    });
     try {
       const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
         "files",
@@ -338,7 +353,77 @@ describe("plate add/remove/reorder/rename", () => {
     }
     const plates = await prisma.plate.findMany({ where: { printId: modelId } });
     expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
-    expect(fs.existsSync(path.join(STORAGE, path.dirname(plates[0].storagePath), "lid.stl"))).toBe(false);
+    expect(movedTo).not.toBe("");
+    expect(fs.existsSync(path.join(STORAGE, movedTo))).toBe(false);
+  });
+
+  it("keeps a failed plate's file while its row couldn't be taken back, so the model never lists it without one", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const spy = failingThumbnailStep();
+    const remove = vi.spyOn(prisma.plate, "delete").mockRejectedValue(new Error("the database went away"));
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+      remove.mockRestore();
+    }
+    const lid = await prisma.plate.findFirstOrThrow({ where: { printId: modelId, filename: "lid.stl" } });
+    expect(fs.existsSync(path.join(STORAGE, lid.storagePath))).toBe(true);
+  });
+
+  it("takes a batch back when the model can't be read for the answer, so a retry doesn't bring it in twice", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const findPrint = prisma.print.findFirst.bind(prisma.print);
+    // The read for the answer is the one with the author and category in it.
+    const spy = vi
+      .spyOn(prisma.print, "findFirst")
+      .mockImplementation(((args: Parameters<typeof prisma.print.findFirst>[0]) =>
+        args?.include && "author" in args.include
+          ? Promise.reject(new Error("the database went away"))
+          : findPrint(args)) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
+        "files",
+        tmpFile("lid.stl", "solid l endsolid"),
+      );
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
+  });
+
+  it("refuses an order that names a plate twice", async () => {
+    const made = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", tmpFile("a.stl", "solid a endsolid"))
+      .attach("files", tmpFile("b.stl", "solid b endsolid"))
+      .attach("files", tmpFile("c.stl", "solid c endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const [a, b, c] = made.body.prints[0].plates.map((plate: { id: string }) => plate.id);
+    const res = await auth(request(app).post(`/api/print/${modelId}/plates/reorder`)).send({ plate_ids: [c, c, b] });
+    expect(res.status).toBe(400);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.id)).toEqual([a, b, c]);
+  });
+
+  it("refuses folders that aren't one string or null for each file", async () => {
+    for (const folders of ["[42]", "", "{}"]) {
+      const res = await auth(request(app).post("/api/upload"))
+        .field("folders", folders)
+        .attach("files", tmpFile("one.stl", "solid o endsolid"));
+      expect(res.status).toBe(400);
+    }
   });
 
   it("packs a .gltf sent with its .bin into one .glb plate, and refuses one sent without it", async () => {
@@ -358,12 +443,19 @@ describe("plate add/remove/reorder/rename", () => {
     });
     const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
       .attach("files", tmpFile("tri.gltf", gltf))
-      .attach("files", tmpFile("tri.bin", positions));
+      .attach("files", tmpFile("tri.bin", positions))
+      .attach("files", tmpFile("lid.stl", "solid l endsolid"));
     expect(res.status).toBe(200);
-    expect(res.body.plate_ids).toHaveLength(1);
+    expect(res.body.plate_ids).toHaveLength(2);
     const byId = new Map(res.body.print.plates.map((plate: { id: string; filename: string }) => [plate.id, plate]));
     expect((byId.get(res.body.plate_ids[0]) as { filename: string }).filename).toBe("tri.glb");
-    expect(res.body.print.plates).toHaveLength(2);
+    // One answer for each file sent: the .bin went into the .glb, made of the .gltf.
+    expect(res.body.uploaded).toEqual([
+      { plate_id: res.body.plate_ids[0], packed: false },
+      { plate_id: null, packed: true },
+      { plate_id: res.body.plate_ids[1], packed: false },
+    ]);
+    expect(res.body.print.plates).toHaveLength(3);
 
     const lone = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
       "files",
@@ -371,7 +463,7 @@ describe("plate add/remove/reorder/rename", () => {
     );
     expect(lone.status).toBe(400);
     expect(JSON.stringify(lone.body)).toContain("tri.bin");
-    expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(2);
+    expect(await prisma.plate.count({ where: { printId: modelId } })).toBe(3);
   });
 
   it("finds a .gltf's files by the folders the upload named, not as they're kept", async () => {
@@ -396,6 +488,35 @@ describe("plate add/remove/reorder/rename", () => {
     expect(res.status).toBe(200);
     await trackPrint(res.body.prints[0].id);
     expect(res.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+
+    // A folder named with a slash in front is the same one: the scene in "parts" finds its "/parts" buffer.
+    const sibling = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "mesh.bin", byteLength: positions.length }],
+    });
+    const slashed = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("folders", JSON.stringify(["parts", "/parts"]))
+      .attach("files", tmpFile("scene.gltf", sibling))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(slashed.status).toBe(200);
+    await trackPrint(slashed.body.prints[0].id);
+    expect(slashed.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+
+    // A scene naming a file outside its model's folder finds it by where each was in the pick, kept or not.
+    const outside = JSON.stringify({
+      ...JSON.parse(gltf),
+      buffers: [{ uri: "../shared/mesh.bin", byteLength: positions.length }],
+    });
+    const picked = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .field("source_folders", JSON.stringify(["Pack/Model", "Pack/shared"]))
+      .attach("files", tmpFile("scene.gltf", outside))
+      .attach("files", tmpFile("mesh.bin", positions));
+    expect(picked.status).toBe(200);
+    await trackPrint(picked.body.prints[0].id);
+    expect(picked.body.prints[0].plates.map((plate: { filename: string }) => plate.filename)).toEqual(["scene.glb"]);
+    expect(picked.body.prints[0].plates[0].folder ?? null).toBeNull();
   });
 
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
@@ -663,6 +784,39 @@ describe("uploads of one model's several files", () => {
     expect(after.preparedFile && fs.existsSync(path.join(STORAGE, after.preparedFile.storagePath))).toBe(true);
     expect(await prisma.printFile.count({ where: { printId } })).toBe(1);
     for (const file of [stl, replacement]) fs.rmSync(file, { force: true });
+  });
+
+  it("takes back only its own files when one fails, never one another tab added meanwhile", async () => {
+    const stl = tmpFile("own.stl", "solid own endsolid");
+    const made = await auth(request(app).post("/api/upload")).attach("files", stl);
+    const printId = made.body.prints[0].id;
+    await trackPrint(printId);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_EMAIL } });
+    const notes = tmpFile("notes.txt", "mine");
+    const gone = path.join(path.dirname(notes), "gone.txt");
+    // Another tab's file lands just as this request reaches the one that fails.
+    const create = prisma.printFile.create.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "create").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.create>[0],
+    ) => {
+      if (args.data.filename === "gone.txt") {
+        await saveFileFromTemp(user.id, printId, tmpFile("other.txt", "theirs"), "other.txt", null);
+      }
+      return create(args);
+    }) as never);
+    try {
+      await expect(
+        addUploadedFiles(user.id, printId, [
+          { path: notes, originalname: "notes.txt" },
+          { path: gone, originalname: "gone.txt" },
+        ]),
+      ).rejects.toThrow(/ENOENT/);
+    } finally {
+      spy.mockRestore();
+    }
+    const files = await prisma.printFile.findMany({ where: { printId } });
+    expect(files.map((file) => file.filename)).toEqual(["other.txt"]);
+    fs.rmSync(stl, { force: true });
   });
 
   it("keeps a sliced file asked for as a supporting one as that, rather than the prepared print", async () => {
