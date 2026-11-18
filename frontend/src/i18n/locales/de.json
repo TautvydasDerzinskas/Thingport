@@ -2259,6 +2259,672 @@
         ]
       }
     },
+    "studio": {
+      "toolbar": {
+        "label": "Studio-Werkzeuge",
+        "shapes": "Formen",
+        "modify": "Ändern"
+      },
+      "emptyDesign": "Füge über die Werkzeugleiste eine Form hinzu oder beginne eine Skizze",
+      "types": {
+        "box": "Quader",
+        "cylinder": "Zylinder",
+        "cone": "Kegel",
+        "sphere": "Kugel",
+        "torus": "Torus",
+        "extrude": "Extrusion",
+        "boolean": "Kombinieren",
+        "sketch": "Skizze",
+        "mesh": "Mesh",
+        "revolve": "Rotation",
+        "press_pull": "Drücken/Ziehen",
+        "fillet": "Verrundung",
+        "chamfer": "Fase",
+        "hole": "Bohrung",
+        "shell": "Schale",
+        "split": "Teilen",
+        "part": "Teil",
+        "pattern": "Muster",
+        "mirror": "Spiegeln",
+        "hull": "Hülle",
+        "thread": "Gewinde",
+        "loft": "Loft",
+        "sweep": "Sweep"
+      },
+      "tree": {
+        "heading": "Elemente",
+        "empty": "Noch nichts hier",
+        "expand": "Aufklappen",
+        "collapse": "Zuklappen"
+      },
+      "actions": {
+        "sketch": "Skizze",
+        "extrude": "Extrudieren",
+        "editSketch": "Skizze bearbeiten",
+        "drawOnSketch": "Auf Skizze zeichnen",
+        "union": "Vereinigen",
+        "subtract": "Subtrahieren",
+        "intersect": "Schnittmenge",
+        "undo": "Rückgängig",
+        "redo": "Wiederholen",
+        "rename": "Umbenennen",
+        "duplicate": "Duplizieren",
+        "delete": "Löschen",
+        "hide": "Ausblenden",
+        "show": "Einblenden",
+        "add": {
+          "box": "Quader hinzufügen",
+          "cylinder": "Zylinder hinzufügen",
+          "cone": "Kegel hinzufügen",
+          "sphere": "Kugel hinzufügen",
+          "torus": "Torus hinzufügen"
+        },
+        "revolve": "Rotieren",
+        "separate": "Teile trennen",
+        "hull": "Hülle",
+        "loft": "Loft"
+      },
+      "shapes": {
+        "rectangle": "Rechteck",
+        "circle": "Kreis",
+        "polygon": "Polygon",
+        "text": "Text",
+        "trace": "Nachgezeichnetes Bild",
+        "path": "Pfad",
+        "line": "Linie",
+        "arc": "Bogen"
+      },
+      "planes": {
+        "XY": "Oben",
+        "XZ": "Vorne",
+        "YZ": "Rechts",
+        "FACE": "Auf einer Fläche",
+        "faceHint": "Wähle eine ebene Fläche"
+      },
+      "sketch": {
+        "on": "Skizze auf {{plane}}",
+        "tool": "Zeichenwerkzeug",
+        "finish": "Fertig",
+        "hint": {
+          "rectangle": "Ziehen, um ein Rechteck zu zeichnen",
+          "circle": "Von der Mitte aus ziehen, um einen Kreis zu zeichnen",
+          "polygon": "Klicken, um Ecken hinzuzufügen; Doppelklick, Enter oder die erste Ecke schließt es",
+          "line": "Klicken, um Punkte hinzuzufügen. Für eine Kurve zu „Bogen“ wechseln; schließen mit dem ersten Punkt, per Doppelklick oder Enter",
+          "arc": "Klicke, wo der Bogen endet, dann auf einen Punkt, durch den er läuft. Für gerade Kanten zu „Linie“ wechseln; schließen mit dem ersten Punkt oder Enter"
+        }
+      },
+      "transform": {
+        "label": "Gizmo",
+        "translate": "Verschieben",
+        "rotate": "Drehen",
+        "scale": "Skalieren",
+        "select": "Auswählen"
+      },
+      "view": {
+        "label": "Ansichten",
+        "iso": "Isometrisch",
+        "top": "Oben",
+        "front": "Vorne",
+        "right": "Rechts",
+        "fit": "Ansicht einpassen",
+        "navigation": "Mit gedrückter rechter Maustaste drehst du die Ansicht. Mit gedrückter mittlerer Maustaste (oder Umschalt + rechte Maustaste) verschiebst du sie. Mit dem Mausrad zoomst du. Mit gedrückter linker Maustaste ziehst du einen Auswahlrahmen auf: Von links nach rechts werden nur vollständig eingeschlossene Elemente ausgewählt, von rechts nach links auch berührte Elemente. Mit Umschalt ergänzt du die Auswahl."
+      },
+      "properties": {
+        "heading": "Eigenschaften",
+        "none": "Wähle ein Element aus, um es zu bearbeiten.",
+        "selectedCount_one": "{{count}} ausgewählt",
+        "selectedCount_other": "{{count}} ausgewählt",
+        "partOf": "Teil von",
+        "name": "Name",
+        "size": "Größe",
+        "extrude": "Extrusion",
+        "extrudeHelp": "Wie weit die Skizze gezogen wird, in mm. Ein negativer Abstand geht in die andere Richtung.",
+        "operation": "Operation",
+        "position": "Position",
+        "rotation": "Drehung",
+        "scale": "Skalierung",
+        "plane": "Ebene",
+        "planeHelp": "Oben (XY) extrudiert nach oben, Vorne (XZ) nach vorne, Rechts (YZ) nach rechts. Der Versatz verschiebt die Ebene in diese Richtung.",
+        "shapes": "Formen",
+        "noShapes": "Noch keine: Zeichne auf der Skizze.",
+        "removeShape": "Form entfernen",
+        "hole": "Loch",
+        "points_one": "{{count}} Punkt",
+        "points_other": "{{count}} Punkte",
+        "fields": {
+          "width": "Breite",
+          "depth": "Tiefe",
+          "height": "Höhe",
+          "radius": "Radius",
+          "segments": "Segmente",
+          "radius_bottom": "Radius unten",
+          "radius_top": "Radius oben",
+          "major_radius": "Ringradius",
+          "minor_radius": "Rohrradius",
+          "distance": "Abstand",
+          "offset": "Versatz",
+          "angle": "Winkel",
+          "diameter": "Durchmesser",
+          "thickness": "Dicke",
+          "count": "Anzahl",
+          "spacing": "Abstand",
+          "grid_count": "Reihen",
+          "grid_spacing": "Reihenabstand",
+          "pitch": "Steigung",
+          "length": "Länge",
+          "clearance": "Spiel"
+        },
+        "mesh": {
+          "source": "Quelle",
+          "triangles_one": "{{count}} Dreieck",
+          "triangles_other": "{{count}} Dreiecke",
+          "importedSize": "Importiert mit {{size}} mm",
+          "solid": "Geschlossener Körper",
+          "open": "Kein geschlossener Körper",
+          "openHelp": "Er hat Lücken, kann also verschoben, skaliert und exportiert, aber nicht mit anderen Körpern kombiniert werden.",
+          "parts_one": "{{count}} Teil",
+          "parts_other": "{{count}} getrennte Teile"
+        },
+        "cornerRadius": "Eckenradius"
+      },
+      "design": {
+        "none": "Kein Design",
+        "new": "Neues Design",
+        "open": "Öffnen …",
+        "openTitle": "Design öffnen",
+        "rename": "Design umbenennen",
+        "export": "STL herunterladen",
+        "delete": "Design löschen",
+        "deleteTitle": "„{{name}}“ löschen?",
+        "deleteMessage": "Das Design und sein Verlauf werden endgültig gelöscht.",
+        "empty": "Noch keine Designs.",
+        "emptyTitle": "Noch keine Designs",
+        "emptyHint": "Beginne eines und baue es dann aus Formen und Skizzen auf.",
+        "untitled": "Design ohne Titel",
+        "nothingToExport": "Nichts Sichtbares zum Herunterladen",
+        "features_one": "{{count}} Element",
+        "features_other": "{{count}} Elemente",
+        "saveToLibrary": "In Thingport speichern",
+        "saving": "Wird in Thingport gespeichert …",
+        "saved": "„{{name}}“ in deiner Bibliothek gespeichert",
+        "openSaved": "Öffnen"
+      },
+      "prompt": {
+        "title": "KI fragen",
+        "open": "„KI fragen“ öffnen",
+        "help": "Beschreibe ein Teil oder eine Änderung am offenen Design, und die KI baut es Schritt für Schritt mit denselben Werkzeugen wie die Werkzeugleiste. Du siehst jeden Schritt ankommen, und „Rückgängig“ nimmt sie einzeln zurück. Ein Admin wählt, welche KIs angeboten werden. Eine KI, die Bilder sieht, nimmt bis zu 4: ein Foto oder eine Zeichnung als Vorlage oder ein Logo zum Nachzeichnen.",
+        "model": "KI-Modell",
+        "addModel": "KI-Modell hinzufügen",
+        "noModels": "Für Studio wird noch keine KI angeboten.",
+        "minimize": "Minimieren",
+        "placeholder": "Beschreibe ein Teil oder eine Änderung an diesem",
+        "send": "Senden",
+        "chooseModels": "Verfügbare Modelle wählen",
+        "off": "Der Studio-Assistent ist ausgeschaltet.",
+        "turnOn": "Einschalten",
+        "stop": "Stoppen",
+        "working": "Arbeitet …",
+        "clear": "Unterhaltung leeren",
+        "clearTitle": "Unterhaltung leeren?",
+        "clearMessage": "Der Assistent vergisst, was zu diesem Design gesagt wurde. Das Design bleibt, wie es ist.",
+        "steps_one": "{{count}} Schritt",
+        "steps_other": "{{count}} Schritte",
+        "stopped": "Gestoppt.",
+        "limit_one": "Nach {{count}} Schritt gestoppt.",
+        "limit_other": "Nach {{count}} Schritten gestoppt.",
+        "failed": "Konnte nicht abgeschlossen werden: {{error}}",
+        "showConversation": "Unterhaltung anzeigen",
+        "hideConversation": "Unterhaltung ausblenden",
+        "live": "Schritt {{number}}: {{step}}",
+        "attach": "Bilder anhängen",
+        "picture": "Bild {{number}}",
+        "removePicture": "Bild {{number}} entfernen",
+        "noVision": "Diese KI sieht keine Bilder. Wähle eine, die das kann, oder entferne sie."
+      },
+      "panels": {
+        "label": "Panels",
+        "features": "Elemente",
+        "properties": "Eigenschaften",
+        "hide": "{{panel}} ausblenden",
+        "show": "{{panel}} einblenden"
+      },
+      "viewCube": {
+        "label": "Ansichtswürfel: Klicke auf eine Fläche, Kante oder Ecke, um von dort zu schauen, ziehe ihn, um die Ansicht zu drehen",
+        "home": "Startansicht",
+        "top": "OBEN",
+        "bottom": "UNTEN",
+        "front": "VORNE",
+        "back": "HINTEN",
+        "left": "LINKS",
+        "right": "RECHTS"
+      },
+      "open": {
+        "designs": "Designs",
+        "library": "Bibliothek",
+        "search": "Deine Modelle durchsuchen",
+        "help": "STL-, 3MF-, STEP-, OBJ- und GLB-Dateien kommen als Mesh-Körper in ihrer eigenen Größe herein. Das Design behält eine eigene Kopie, spätere Änderungen am Modell kommen also nicht dort an.",
+        "open": "Öffnen",
+        "openHelp": "Als neues Design",
+        "insert": "Einfügen",
+        "insertHelp": "In dieses Design",
+        "noMatches": "Keine Modelle mit 3D-Datei passen",
+        "emptyLibrary": "Deine Bibliothek hat noch keine STL-, 3MF-, STEP-, OBJ- oder GLB-Dateien",
+        "loadMore": "Mehr laden"
+      },
+      "working": "Arbeitet …",
+      "edges": {
+        "none": "Scharf",
+        "fillet": "Verrundung",
+        "chamfer": "Fase",
+        "radius": "Radius",
+        "distance": "Abstand"
+      },
+      "ops": {
+        "cancel": "Abbrechen",
+        "ok": "OK",
+        "pickBody": "Klicke auf einen Körper",
+        "combine": {
+          "label": "Ergebnis",
+          "new": "Neu",
+          "join": "Verbinden",
+          "cut": "Ausschneiden",
+          "intersect": "Schnittmenge"
+        },
+        "extrude": {
+          "title": "Extrudieren",
+          "help": "Zieht die Skizze zu einem Körper. Die Formschräge neigt die Seiten zum fernen Ende hin nach innen; die Kanten der Enden können verrundet oder angefast werden. Verbinden, Ausschneiden oder Schnittmenge verarbeitet sie mit einem anderen Körper.",
+          "taper": "Formschräge",
+          "startOffset": "Startversatz",
+          "symmetric": "Beidseitig",
+          "topEdge": "Fernes Ende",
+          "bottomEdge": "Nahes Ende",
+          "topRim": "Oberer Rand",
+          "bottomRim": "Unterer Rand"
+        },
+        "revolve": {
+          "title": "Rotieren",
+          "help": "Dreht die Skizze um eine ihrer Achsen. Ihre Formen müssen alle auf einer Seite der Achse liegen.",
+          "axis": "Achse",
+          "axisU": "Quer (u)",
+          "axisV": "Hoch (v)",
+          "angle": "Winkel"
+        },
+        "press_pull": {
+          "title": "Drücken/Ziehen",
+          "help": "Bewegt eine ebene Fläche gerade heraus (fügt hinzu) oder hinein (schneidet), mit gleichem Umriss.",
+          "pick": "Klicke auf eine ebene Fläche"
+        },
+        "fillet": {
+          "title": "Verrunden",
+          "help": "Verrundet gerade Kanten zwischen ebenen Flächen. Außenkanten werden verrundet, Innenkanten ausgefüllt. Klicke auf Kanten, um sie hinzuzufügen oder zu entfernen.",
+          "pick": "Klicke auf Kanten zum Verrunden"
+        },
+        "chamfer": {
+          "title": "Fasen",
+          "help": "Fast gerade Kanten zwischen ebenen Flächen an und schneidet auf beiden Seiten gleich weit zurück. Klicke auf Kanten, um sie hinzuzufügen oder zu entfernen.",
+          "pick": "Klicke auf Kanten zum Anfasen"
+        },
+        "hole": {
+          "title": "Bohrung",
+          "help": "Bohrt ein rundes Loch dort, wo du klickst, in die Oberfläche. Flachsenkung und Kegelsenkung schaffen Platz für einen Schraubenkopf.",
+          "pick": "Klicke, wo gebohrt werden soll",
+          "diameter": "Durchmesser",
+          "depth": "Tiefe",
+          "through": "Durch alles",
+          "style": "Art",
+          "simple": "Einfach",
+          "counterbore": "Flachsenkung",
+          "countersink": "Kegelsenkung",
+          "angle": "Winkel",
+          "boreDiameter": "Flachsenkungsdurchmesser",
+          "boreDepth": "Flachsenkungstiefe",
+          "sinkDiameter": "Kegelsenkungsdurchmesser",
+          "threaded": "Mit Gewinde",
+          "threadedAs": "Gewinde {{size}}"
+        },
+        "shell": {
+          "title": "Aushöhlen",
+          "help": "Höhlt den Körper aus, mit Wänden dieser Dicke. Klicke auf ebene Flächen, um sie offen zu lassen, etwa die Oberseite einer Schale.",
+          "thickness": "Wanddicke",
+          "pick": "Klicke auf Flächen, die offen bleiben sollen",
+          "open_one": "{{count}} Fläche offen",
+          "open_other": "{{count}} Flächen offen"
+        },
+        "split": {
+          "title": "Teilen",
+          "help": "Teilt den Körper in zwei: an einer Ebene, an der Ebene einer ebenen Fläche oder an einem anderen Körper. Beide Teile bleiben bearbeitbar.",
+          "by": "Teilen an",
+          "plane": "Ebene",
+          "face": "Fläche",
+          "body": "Körper",
+          "pickFace": "Klicke auf eine ebene Fläche",
+          "facePicked": "Fläche gewählt",
+          "pickTool": "Klicke auf den Körper, an dem geteilt wird",
+          "keep": "Teil",
+          "front": "Vorne",
+          "back": "Hinten",
+          "inside": "Innen",
+          "outside": "Außen"
+        },
+        "scale": {
+          "title": "Skalieren",
+          "help": "Skaliert den Körper um seinen eigenen Ursprung.",
+          "factor": "Faktor"
+        },
+        "sketch_face": {
+          "title": "Skizze auf einer Fläche",
+          "help": "Beginnt eine Skizze auf der ebenen Fläche, auf die du klickst.",
+          "pick": "Klicke auf eine ebene Fläche für die Skizze"
+        },
+        "edges_one": "{{count}} Kante",
+        "edges_other": "{{count}} Kanten",
+        "separate": {
+          "title": "Teile trennen",
+          "help": "Macht jedes lose Teil des Körpers – jedes Stück, das den Rest nicht berührt – zu einem eigenen Körper. Ein Hohlraum in einem Teil bleibt bei diesem; Teile, die sich überschneiden, ohne verbunden zu sein, bleiben getrennt, jedes hier in eigener Farbe. Löscht man alle Teile, kommt der Körper zurück.",
+          "count_one": "{{count}} Teil",
+          "count_other": "{{count}} Teile",
+          "open_one": "{{count}} hat Lücken: Es kann verschoben und exportiert, aber nicht kombiniert werden",
+          "open_other": "{{count}} haben Lücken: Sie können verschoben und exportiert, aber nicht kombiniert werden"
+        },
+        "text": {
+          "title": "Text",
+          "help": "Schreibt Wörter als Körper: erhabene Buchstaben auf einer Ebene oder erhaben bzw. graviert auf der ebenen Fläche eines Körpers. Die Buchstabenhöhe ist die Höhe eines Großbuchstabens; ab 6 mm lässt sie sich gut drucken. Wörter, Schrift und Größe bleiben in der Skizze bearbeitbar.",
+          "on": "Wo",
+          "onPlane": "Auf einer Ebene",
+          "onFace": "Auf einer Fläche",
+          "style": "Stil",
+          "raised": "Erhaben",
+          "engraved": "Graviert",
+          "height": "Höhe",
+          "depth": "Tiefe",
+          "pick": "Klicke auf eine ebene Fläche, auf die geschrieben wird"
+        },
+        "pattern": {
+          "title": "Muster",
+          "help": "Wiederholt einen Körper in einer Reihe, einem Raster oder rund um eine Achse und macht die Kopien zusammen mit ihm zu einem Körper. Änderst du den Körper, folgt jede Kopie. Für viele Löcher erstelle ein Muster aus dem Zylinder eines Lochs und subtrahiere das Muster.",
+          "style": "Art",
+          "linear": "In einer Reihe",
+          "circular": "Um eine Achse",
+          "along": "Entlang",
+          "around": "Um",
+          "count": "Anzahl",
+          "spacing": "Abstand",
+          "grid": "Zweite Richtung (ein Raster)",
+          "rows": "Reihen",
+          "rowSpacing": "Reihenabstand",
+          "angle": "Verteilt über",
+          "center": "Mitte {{axis}}"
+        },
+        "mirror": {
+          "title": "Spiegeln",
+          "help": "Spiegelt einen Körper an einer Ebene, für etwas Symmetrisches, das man Hälfte für Hälfte baut. Wird das Original behalten, werden die Hälfte und ihr Spiegelbild ein Körper.",
+          "plane": "An",
+          "keep": "Original behalten"
+        },
+        "align": {
+          "title": "Ausrichten",
+          "help": "Richtet einen Körper an einem anderen Körper oder am Druckbett aus: Anfänge, Mitten oder Enden bündig oder daneben (davor oder dahinter) mit Abstand. Auf Z setzt „Dahinter“ ihn obendrauf. Der Körper wird dabei nur verschoben.",
+          "pickBody": "Klicke auf den Körper, der verschoben wird",
+          "pickReference": "Klicke auf einen Körper, an dem ausgerichtet wird, oder lass ihn am Druckbett ausgerichtet",
+          "with": "An {{name}}",
+          "axis": "Entlang {{axis}}",
+          "none": "Aus",
+          "before": "Davor",
+          "start": "Anfang",
+          "center": "Mitte",
+          "end": "Ende",
+          "after": "Dahinter",
+          "z_none": "Aus",
+          "z_before": "Darunter",
+          "z_start": "Unten",
+          "z_center": "Mitte",
+          "z_end": "Oben",
+          "z_after": "Obendrauf",
+          "gap": "Abstand"
+        },
+        "lay_flat": {
+          "title": "Flach hinlegen",
+          "help": "Dreht einen Körper so, dass die Fläche, auf die du klickst, auf dem Druckbett liegt – so wie man ein Teil zum Drucken drehen würde – und setzt ihn aufs Druckbett.",
+          "pick": "Klicke auf die Fläche, auf die er gelegt wird"
+        },
+        "sweep": {
+          "title": "Sweep",
+          "help": "Bewegt den Umriss der Skizze entlang eines Pfads aus Punkten und erzeugt den Körper, den er dabei durchläuft: ein Rohr, einen Griff, eine Schiene. Der Ursprung der Skizze fährt auf dem Pfad, zeichne den Umriss also um ihn herum; er beginnt im rechten Winkel zum Pfad am ersten Punkt. „Glatt“ legt eine Kurve durch die Punkte, „Geschlossen“ macht einen Ring.",
+          "path": "Pfadpunkte (mm)",
+          "addPoint": "Punkt hinzufügen",
+          "removePoint": "Punkt {{number}} entfernen",
+          "smooth": "Glatt",
+          "closed": "Geschlossen"
+        }
+      },
+      "imported": {
+        "parts_one": "Das Modell kam als ein Körper aus {{count}} Teil herein",
+        "parts_other": "Das Modell kam als ein Körper aus {{count}} getrennten Teilen herein",
+        "separate": "Trennen"
+      },
+      "text": {
+        "words": "Text",
+        "font": "Schrift",
+        "size": "Buchstabenhöhe",
+        "spacing": "Buchstabenabstand",
+        "align": "Ausrichten",
+        "aligns": {
+          "left": "Links",
+          "center": "Mitte",
+          "right": "Rechts"
+        },
+        "placeholder": "Text",
+        "newLine": "Umschalt+Enter beginnt eine neue Zeile",
+        "add": "Text hinzufügen"
+      },
+      "trace": {
+        "title": "Bild nachzeichnen",
+        "help": "Macht aus den Formen eines Bildes einen Umriss, der massiv werden kann: ein Logo, eine Silhouette, Schrift, eine Zeichnung. Dunkle Formen auf hellem Grund werden nachgezeichnet („Invertieren“ für hell auf dunkel; Durchsichtiges zählt als hell), und Löcher bleiben Löcher. Ein sauberes Bild mit starkem Kontrast lässt sich am besten nachzeichnen.",
+        "picture": "Bild",
+        "drop": "Bild hier ablegen oder einfügen",
+        "choose": "Bild wählen",
+        "another": "Anderes Bild",
+        "resultEmpty": "Hier erscheint der nachgezeichnete Umriss",
+        "threshold": "Schwellenwert",
+        "auto": "Ermitteln",
+        "invert": "Invertieren",
+        "detail": "Detail",
+        "details": {
+          "low": "Niedrig",
+          "medium": "Mittel",
+          "high": "Hoch"
+        },
+        "found_one": "{{count}} Form",
+        "found_other": "{{count}} Formen",
+        "holes_one": "{{count}} Loch",
+        "holes_other": "{{count}} Löcher",
+        "make": "Erstellen als",
+        "solid": "Körper",
+        "sketch": "Nur Skizze",
+        "ok": "Nachzeichnen"
+      },
+      "edit": {
+        "start": "Design bearbeiten",
+        "done": "Bearbeitung beenden"
+      },
+      "emptyView": "Frag unten die KI, etwas zu bauen, oder klicke auf „Bearbeiten“, um es selbst zu bauen",
+      "thread": {
+        "kind": "Art",
+        "external": "Außen",
+        "internal": "Innen",
+        "hand": "Richtung",
+        "hands": {
+          "right": "Rechtsgängig",
+          "left": "Linksgängig"
+        },
+        "chamfer": "Angefaste Enden"
+      },
+      "path": {
+        "title": "Pfad hinzufügen",
+        "help": "SVG-Pfaddaten in den Millimetern der Skizze, x nach rechts und y nach oben: M, L, H, V, C, S, Q, T, A und Z, jeder Unterpfad ein geschlossener Umriss. Füge einen aus einem Zeichenprogramm ein oder schreibe ihn von Hand.",
+        "data": "Pfaddaten",
+        "fill": "Füllregel",
+        "fills": {
+          "evenodd": "Even-Odd",
+          "nonzero": "Non-Zero"
+        },
+        "nothing": "Noch nichts zu zeichnen",
+        "add": "Hinzufügen"
+      },
+      "parameters": {
+        "title": "Parameter",
+        "help": "Benannte Zahlen, denen die Maße des Designs folgen können. Gib in einem Maßfeld = und eine Formel ein, etwa =wall * 2 + 10. Änderst du hier einen Parameter, wird jede Formel, die ihn nutzt, neu berechnet.",
+        "follows": "Folgt = {{expression}}",
+        "name": "Name",
+        "value": "Wert",
+        "add": "Parameter hinzufügen",
+        "delete": "{{name}} löschen",
+        "inUse": "In Verwendung: Ändere zuerst die Felder, die ihm folgen",
+        "none": "Noch keine Parameter.",
+        "taken": "Es gibt schon einen mit diesem Namen",
+        "badName": "Buchstaben, Ziffern und _, nicht mit einer Ziffer beginnend",
+        "unused": "Nicht verwendet",
+        "uses_one": "Von {{count}} Feld verwendet",
+        "uses_other": "Von {{count}} Feldern verwendet",
+        "noUnit": "Keine",
+        "unit": "Einheit",
+        "unitOf": "Einheit von {{name}}"
+      },
+      "check": {
+        "title": "Druckprüfung",
+        "help": "Prüft jeden sichtbaren Körper dort, wo er steht: auf dem Druckbett und innerhalb davon, an einem Stück, ohne Überschneidung mit anderen, ohne Überhang, der Stützstrukturen braucht, und ohne Wand, die zu dünn zum Drucken ist. Es ist dieselbe Prüfung, die der Assistent bei seiner eigenen Arbeit macht.",
+        "bed_x": "Bett X",
+        "bed_y": "Bett Y",
+        "bed_z": "Bett Z",
+        "overhangLimit": "Überhang",
+        "minWall": "Min. Wand",
+        "ready": "Druckbereit",
+        "nothing": "Es gibt keine sichtbaren Körper zum Prüfen.",
+        "empty": "Leer",
+        "tooBig": "Zu groß für das Druckbett",
+        "offBed": "Außerhalb des Druckbetts",
+        "floating": "Schwebt {{value}} über dem Druckbett",
+        "sunk": "{{value}} unter dem Druckbett",
+        "pieces_one": "{{count}} loses Teil",
+        "pieces_other": "{{count}} lose Teile",
+        "overhang": "{{value}} Überhang",
+        "thin": "Wände bis zu {{value}} dünn",
+        "overlaps": "Überschneidet {{name}}",
+        "open": "Kein geschlossener Körper",
+        "toBed": "Aufs Druckbett",
+        "measure": "Messen",
+        "measureNeedsTwo": "Füge zwei Körper hinzu, um zwischen ihnen zu messen.",
+        "first": "Von",
+        "second": "Bis",
+        "gap": "Lücke {{value}}",
+        "touching": "Berührt sich",
+        "overlap": "Überschneidung {{value}}",
+        "far": "Über 1 m voneinander entfernt",
+        "toBedOf": "{{name}} aufs Druckbett setzen"
+      },
+      "status": {
+        "label": "Maße des Designs",
+        "design": "Design",
+        "selection": "Auswahl",
+        "bodiesLabel": "Körper",
+        "size": "Größe",
+        "volume": "Volumen",
+        "openMeshes": "Offene Meshes haben kein Volumen und werden daher weggelassen",
+        "units": "Einheiten"
+      },
+      "measure": {
+        "title": "Messen",
+        "help": "Wähle Punkte, Kanten, Flächen oder Körper. Eine Auswahl zeigt ihre eigene Größe: die Position eines Punkts, die Länge einer Kante, die Fläche einer Fläche, Größe und Volumen eines Körpers. Zwei zeigen den kürzesten Abstand zwischen ihnen, wie weit das entlang X, Y und Z ist, und den Winkel zwischen ihnen. Die Werte stehen in den Einheiten der Statusleiste, und Messen ändert das Design nicht.",
+        "filter": "Was auswählen",
+        "clear": "Leeren",
+        "done": "Fertig",
+        "again": "Erneut klicken, um neu zu beginnen",
+        "kinds": {
+          "point": "Punkt",
+          "edge": "Kante",
+          "face": "Fläche",
+          "body": "Körper"
+        },
+        "pickFirst": {
+          "point": "Klicke auf einen Punkt, um zu messen",
+          "edge": "Klicke auf eine Kante, um zu messen",
+          "face": "Klicke auf eine Fläche, um zu messen",
+          "body": "Klicke auf einen Körper, um zu messen"
+        },
+        "pickSecond": {
+          "point": "Klicke auf einen zweiten Punkt, um zwischen ihnen zu messen",
+          "edge": "Klicke auf eine zweite Kante, um zwischen ihnen zu messen",
+          "face": "Klicke auf eine zweite Fläche, um zwischen ihnen zu messen",
+          "body": "Klicke auf einen zweiten Körper, um zwischen ihnen zu messen"
+        },
+        "readings": {
+          "distance": "Abstand",
+          "length": "Länge",
+          "gap": "Lücke",
+          "area": "Flächeninhalt",
+          "volume": "Volumen",
+          "overlap": "Überschneidung",
+          "angle": "Winkel",
+          "size": "Größe",
+          "touching": "Berührt sich",
+          "far": "Über 1 m voneinander entfernt",
+          "openMesh": "Ein offenes Mesh hat kein Volumen",
+          "measuring": "Wird gemessen …",
+          "x": "X",
+          "y": "Y",
+          "z": "Z",
+          "dx": "ΔX",
+          "dy": "ΔY",
+          "dz": "ΔZ"
+        }
+      },
+      "settings": {
+        "title": "Studio-Einstellungen",
+        "sections": {
+          "assistant": "KI fragen",
+          "units": "Einheiten",
+          "grid": "Raster"
+        },
+        "assistantIntro": "Wo „KI fragen“ die Unterhaltung zeigt.",
+        "layout": "Anordnung",
+        "layoutHelp": "Leiste: unter der Ansicht, eine Zeile, während die KI arbeitet, der Rest, wenn du sie öffnest. Seitenleiste: neben der Ansicht, sodass nichts das Modell verdeckt.",
+        "layouts": {
+          "bar": "Leiste",
+          "panel": "Seitenleiste"
+        },
+        "failed": "Die Einstellung konnte nicht gespeichert werden.",
+        "unitsIntro": "In welcher Einheit Größen angezeigt und eingegeben werden. Die Größen bleiben genau, wie sie sind; nur ihre Anzeige ändert sich.",
+        "designUnits": "Dieses Design",
+        "designUnitsHelp": "Wird mit dem Design gespeichert und wie jede Änderung rückgängig gemacht. Eine Größe ohne Einheit gilt in diesen; eine mit Einheit, etwa 2 in oder 5 mm, in jener.",
+        "newUnits": "Neue Designs",
+        "newUnitsHelp": "Die Einheiten, mit denen ein neues Design beginnt. In deinem Konto gespeichert, also auf jedem Gerät gleich.",
+        "unitNames": {
+          "mm": "Millimeter",
+          "cm": "Zentimeter",
+          "in": "Zoll"
+        },
+        "grid": {
+          "intro": "Wie das Raster hinter einem Design gezeichnet wird und woran ein Punkt einrastet.",
+          "show": "Raster anzeigen",
+          "spacing": "Abstand",
+          "spacingHelp": "„Adaptiv“ folgt dem Zoom wie ein CAD-Raster: Feinere Linien blenden beim Hineinzoomen ein, in Zehnerschritten (Viererschritten in Zoll), jede zehnte (vierte) Linie dunkler. „Fest“ behält den eingestellten Abstand.",
+          "spacings": {
+            "adaptive": "Adaptiv",
+            "fixed": "Fest"
+          },
+          "density": "Dichte",
+          "densities": {
+            "coarse": "Grob",
+            "normal": "Normal",
+            "fine": "Fein"
+          },
+          "major": "Hauptlinien alle",
+          "subdivisions": "Unterteilt in",
+          "snap": "Am Raster einrasten",
+          "snapHelp": "Skizzenpunkte und verschobene Körper rasten an den feinsten sichtbaren Rasterlinien ein. Ausgeschaltet landen sie dort, wo du zeigst."
+        }
+      }
+    },
     "chats": {
       "open": "Öffnen",
       "off": "Chats sind auf dieser Instanz ausgeschaltet. Ein Admin kann sie unter Administration > Benutzer einschalten.",
