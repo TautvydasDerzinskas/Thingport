@@ -1,6 +1,7 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
 import { extOf } from "./fileExtensions";
 import { gltfBundles } from "./uploadTree";
+import { printsApi } from "../api/prints";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
 // are the model's files, and anything else is kept beside them as a supporting file.
@@ -23,6 +24,21 @@ export function isPreparedName(name: string): boolean {
  */
 export function mayHoldPrepared(name: string, status: number | null): boolean {
   return isPreparedName(name) && !(status !== null && status >= 400 && status < 500);
+}
+
+/**
+ * After the upload of sliced print `name` to model `printId` failed, whether it is the model's prepared print now: none
+ * where the server turned it away, else as the model says when read again. One the model can't be read for is taken
+ * as in, so the next is kept beside it rather than put over a print that may be there.
+ */
+export async function preparedAfterFailure(printId: string, name: string, status: number | null): Promise<boolean> {
+  if (!mayHoldPrepared(name, status)) return false;
+  try {
+    const model = await printsApi.get(printId);
+    return Boolean(model.prepared_print?.removable) && model.slicer_filename === name;
+  } catch {
+    return true;
+  }
 }
 
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */

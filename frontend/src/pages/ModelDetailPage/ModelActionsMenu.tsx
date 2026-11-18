@@ -187,6 +187,8 @@ export default function ModelActionsMenu({
     readSupportingFiles(print.id);
     return () => {
       latestSupportingRead.current += 1;
+      // Each opening reads them afresh, and shows them loading till then: the list the last one read may be gone.
+      setReadSupporting(null);
     };
   }, [pickerOpen, print.id, print.supporting_files, print.supporting_file_count, readSupportingFiles]);
   const supportingRead =

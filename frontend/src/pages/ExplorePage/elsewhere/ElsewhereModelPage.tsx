@@ -89,7 +89,9 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   usePageHeader({ title: model?.title });
 
   const { slicerOption, slicerOptions } = useSlicerChoice();
-  const [downloading, setDownloading] = useState(false);
+  // How many downloads are on their way, so one ending doesn't free the controls while another still runs.
+  const [downloads, setDownloads] = useState(0);
+  const downloading = downloads > 0;
   // Those it can be had of, through this instance. Two can share a name: told apart by where they are in the list,
   // which never changes here.
   const files = useMemo<ModelFile[]>(
@@ -163,7 +165,7 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
     });
   };
   const download = async (file: ModelFile) => {
-    setDownloading(true);
+    setDownloads((count) => count + 1);
     try {
       const res = await fetch(printsApi.fileUrl(file.url));
       if (res.status === 401) throw new UnauthorizedError();
@@ -172,18 +174,18 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
     } catch (err) {
       failedDownload(err);
     } finally {
-      setDownloading(false);
+      setDownloads((count) => count - 1);
     }
   };
   const downloadZip = async () => {
     if (!model) return;
-    setDownloading(true);
+    setDownloads((count) => count + 1);
     try {
       await saveResponseToDisk(await socialApi.elsewhere.zip(model.id), `${model.title || "model"}.zip`);
     } catch (err) {
       failedDownload(err);
     } finally {
-      setDownloading(false);
+      setDownloads((count) => count - 1);
     }
   };
 
@@ -334,7 +336,8 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
               {selected && (
                 <OpenInSlicerButton
                   file={selected}
-                  canOpen={SLICES.has(extOf(selected.filename))}
+                  // A supporting file offered when the model's own aren't is downloaded, never opened in a slicer.
+                  canOpen={files.length > 0 && SLICES.has(extOf(selected.filename))}
                   slicerOption={slicerOption}
                   slicerOptions={slicerOptions}
                   onOpened={(slicerId) => void switchSlicer(slicerId)}

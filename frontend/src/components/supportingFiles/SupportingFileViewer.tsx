@@ -24,7 +24,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { type PrintFile, printsApi } from "../../api/prints";
 import { neutralTint } from "../../theme";
-import { extOf, inFolder } from "../../utils/fileExtensions";
+import { extnameOf, extOf, inFolder } from "../../utils/fileExtensions";
 import { formatFileSize } from "../../utils/fileSize";
 import { previewTable } from "../../utils/delimited";
 import MarkdownDescription from "../MarkdownDescription";
@@ -48,7 +48,8 @@ const TABLE_COLUMNS = 50;
 type PreviewKind = "pdf" | "picture" | "markdown" | "table" | "text";
 
 function previewKind(filename: string): PreviewKind | null {
-  const ext = extOf(filename);
+  // As the server reads the name, so a file it sends as a download (".pdf", all extension) isn't framed as a PDF.
+  const ext = extnameOf(filename).slice(1).toLowerCase();
   if (ext === "pdf") return "pdf";
   if (PICTURES.has(ext)) return "picture";
   if (MARKDOWN.has(ext)) return "markdown";
@@ -290,7 +291,9 @@ export default function SupportingFileViewer({
   const theme = useTheme();
   const narrow = useMediaQuery(theme.breakpoints.down("md"));
   const toastHost = useToastHost(open);
-  const [menu, setMenu] = useState<FileMenuAnchor>(null);
+  // With the file it was opened for: another shown in its place (the one it was for removed) closes it, so its actions
+  // never land on a file it wasn't opened for.
+  const [menu, setMenu] = useState<{ anchor: FileMenuAnchor; fileId: string } | null>(null);
   const file = files.find((item) => item.id === selectedId) ?? files[0] ?? null;
 
   // The last one removed leaves nothing to show.
@@ -511,7 +514,7 @@ export default function SupportingFileViewer({
                   size="small"
                   aria-label={t("common:moreActions")}
                   aria-haspopup="menu"
-                  onClick={(event) => setMenu({ element: event.currentTarget })}
+                  onClick={(event) => setMenu({ anchor: { element: event.currentTarget }, fileId: file.id })}
                 >
                   <MoreVertIcon fontSize="small" />
                 </IconButton>
@@ -519,7 +522,7 @@ export default function SupportingFileViewer({
             </Stack>
             <FilePreview file={file} onDownload={() => onDownload(file)} />
             <SupportingFileMenu
-              anchor={menu}
+              anchor={menu?.fileId === file.id ? menu.anchor : null}
               onClose={() => setMenu(null)}
               onCopyLink={() => onCopyLink(file)}
               onRename={onRename ? () => onRename(file) : undefined}
