@@ -1249,7 +1249,10 @@ describe("models whose files are gone", () => {
   });
 
   it("leaves a failed repair's plate alone once a merge has taken it to another model", async () => {
-    setCleanupDelaysForTest([500, 500]);
+    // The clean-up's next try waits for this gate, opened once the merge is done.
+    let open = () => {};
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    setCleanupDelaysForTest([0], () => gate);
     const model = await makePrint(dir, owner.id, "Merged before its clean-up");
     const keeper = await makePrint(dir, owner.id, "Keeps the merged plate");
     fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
@@ -1271,12 +1274,12 @@ describe("models whose files are gone", () => {
       made = await repairStoppedAtSecond(model, async () => {
         failing = 4;
       });
-      const stopped = Date.now();
       expect(failing).toBe(0);
       // Before the clean-up's next try, the owner merges the model into another, which takes the plate the repair made.
       await mergeModels(owner.id, keeper.print.id, [model.print.id]);
-      // That try comes 500 ms after the first and holds the model's plate order while it runs: past both.
-      await new Promise((resolve) => setTimeout(resolve, Math.max(0, stopped + 800 - Date.now())));
+      // Then the try, which asks for the model's plate order as soon as the gate opens: past that turn, it's done.
+      open();
+      await new Promise((resolve) => setTimeout(resolve, 0));
       await withPlateOrder(model.print.id, async () => undefined);
     } finally {
       spy.mockRestore();

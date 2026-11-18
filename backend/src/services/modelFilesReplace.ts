@@ -172,25 +172,30 @@ async function removeMadeFiles(printId: string, made: readonly Plate[]): Promise
 }
 
 const CLEANUP_DELAYS_MS = [30_000, 120_000, 600_000];
+// A timer that doesn't keep the process up for a clean-up still to come.
+const timerWait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms).unref());
 let cleanupDelaysMs = CLEANUP_DELAYS_MS;
+let cleanupWait = timerWait;
 
-/** The waits before each later try of removeMadeFiles; the defaults when none are given. */
-export function setCleanupDelaysForTest(delays?: number[]): void {
+/** The waits before each later try of removeMadeFiles, and how they're waited out (a test's own gate); the defaults
+ *  when none are given. */
+export function setCleanupDelaysForTest(delays?: number[], wait?: (ms: number) => Promise<void>): void {
   cleanupDelaysMs = delays ?? CLEANUP_DELAYS_MS;
+  cleanupWait = wait ?? timerWait;
 }
 
 /** removeMadeFiles tried again later, until it's done or the tries run out: the database or the disk is away for
  *  longer than a moment. Each try holds the plate order, as any change to the model's plates does. Pending in this
  *  process only: one that's stopped first leaves the model with the plates the repair made. */
 function removeMadeFilesLater(printId: string, made: readonly Plate[], attempt = 0): void {
-  const wait = cleanupDelaysMs[attempt];
-  if (wait === undefined) {
+  const delay = cleanupDelaysMs[attempt];
+  if (delay === undefined) {
     log.error("gave up removing a failed repair's files, so the model keeps the plates it made", { print: printId });
     return;
   }
-  setTimeout(() => {
-    void withPlateOrder(printId, () => removeMadeFiles(printId, made)).then((done) => {
+  void cleanupWait(delay)
+    .then(() => withPlateOrder(printId, () => removeMadeFiles(printId, made)))
+    .then((done) => {
       if (!done) removeMadeFilesLater(printId, made, attempt + 1);
     });
-  }, wait).unref();
 }
