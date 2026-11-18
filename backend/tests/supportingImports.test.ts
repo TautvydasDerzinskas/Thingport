@@ -19,6 +19,7 @@ import { modelFolderUnits } from "../src/services/modelFolders";
 import { setImportSupportingFiles, setPhotosPerModel } from "../src/services/settingsService";
 import {
   isSupportingImportFile,
+  SUPPORTING_FILES_PER_MODEL,
   supportingImportName,
   withoutModelsSharedTop,
   type SupportingLimits,
@@ -75,6 +76,7 @@ beforeAll(async () => {
 afterEach(async () => {
   limits.value = undefined;
   limits.fail = false;
+  pictures.localizeFails = false;
   await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
 });
 
@@ -95,6 +97,20 @@ const zipOf = async (files: Record<string, string | Buffer>) => {
   fs.writeFileSync(p, await zip.generateAsync({ type: "nodebuffer" }));
   return p;
 };
+// A glTF scene of one triangle, its buffer in `bin`, and a texture at `image` when given.
+const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
+const gltfScene = (bin: string, image?: string) =>
+  JSON.stringify({
+    asset: { version: "2.0" },
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+    nodes: [{ mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+    buffers: [{ uri: bin, byteLength: positions.length }],
+    bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
+    accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [1, 1, 0] }],
+    ...(image ? { images: [{ uri: image }] } : {}),
+  });
 const filesOf = async (printId: string) =>
   (await prisma.printFile.findMany({ where: { printId }, orderBy: [{ folder: "asc" }, { filename: "asc" }] })).map(
     (file) => [file.folder, file.filename, file.role],
@@ -200,6 +216,20 @@ describe("a model made with a site's other files", () => {
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt"]);
   });
 
+  it("keeps no more files beside a model than it may have, however small they are", async () => {
+    const made = [input("c.stl", "solid c endsolid")];
+    const { print } = await createPrint(userId, { title: "Many" }, "Many", made);
+    remove(made);
+    const many = Array.from({ length: SUPPORTING_FILES_PER_MODEL + 5 }, (_, index) =>
+      input(`note-${index}.txt`, "x", { supporting: true }),
+    );
+    expect(await keepSupportingFiles(userId, print.id, many)).toBe(SUPPORTING_FILES_PER_MODEL);
+    remove(many);
+    expect(await prisma.printFile.count({ where: { printId: print.id, role: "SUPPORTING" } })).toBe(
+      SUPPORTING_FILES_PER_MODEL,
+    );
+  });
+
   it("counts what a model keeps already against its limit, when a later profile brings more", async () => {
     limits.value = { perFile: 10, perModel: 25 };
     const made = [
@@ -288,21 +318,10 @@ describe("one model of a zip from a link", () => {
   });
 
   it("packs a glTF scene with the files it points at into one .glb, as an upload does", async () => {
-    const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
     const texture = await sharp({ create: { width: 2, height: 2, channels: 3, background: "#808080" } })
       .png()
       .toBuffer();
-    const scene = JSON.stringify({
-      asset: { version: "2.0" },
-      scene: 0,
-      scenes: [{ nodes: [0] }],
-      nodes: [{ mesh: 0 }],
-      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
-      buffers: [{ uri: "mesh.bin", byteLength: positions.length }],
-      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
-      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [1, 1, 0] }],
-      images: [{ uri: "textures/skin.png" }],
-    });
+    const scene = gltfScene("mesh.bin", "textures/skin.png");
     const names = ["Frog/scene.gltf", "Frog/mesh.bin", "Frog/textures/skin.png", "Frog/notes.txt"];
     const zip = await zipOf({
       [names[0]]: scene,
@@ -378,6 +397,27 @@ describe("a site's zip", () => {
     remove([...plates, ...supporting]);
     expect(plates.map((each) => [each.folder ?? null, each.filename])).toEqual([[null, "frog.stl"]]);
     expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([["docs", "guide.pdf"]]);
+  });
+
+  it("keeps the files of zips beside the model's own zip apart, each in its zip's folder", async () => {
+    const frog = fs.readFileSync(await zipOf({ "frog.stl": "solid frog endsolid" }));
+    const a = fs.readFileSync(await zipOf({ "guide.pdf": "%PDF-1.4 a" }));
+    const b = fs.readFileSync(await zipOf({ "guide.pdf": "%PDF-1.4 b" }));
+    const supporting = await supportingFilesFromZip(await zipOf({ "Frog.zip": frog, "A.zip": a, "B.zip": b }));
+    remove(supporting);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename]).toSorted()).toEqual([
+      ["A", "guide.pdf"],
+      ["B", "guide.pdf"],
+    ]);
+  });
+
+  it("writes out no more of a zip's files than a model may keep beside it, however small they are", async () => {
+    const many = Object.fromEntries(
+      Array.from({ length: SUPPORTING_FILES_PER_MODEL + 20 }, (_, index) => [`notes/${index}.txt`, "x"]),
+    );
+    const supporting = await supportingFilesFromZip(await zipOf({ "a.stl": "solid a endsolid", ...many }));
+    remove(supporting);
+    expect(supporting).toHaveLength(SUPPORTING_FILES_PER_MODEL);
   });
 
   it("opens a zip beside a script for the files beside its model files, as it does for those", async () => {
@@ -639,6 +679,28 @@ describe("a zip from a link, by how its files become models", () => {
       [5, 6, 4, 1],
       [6, 6, 4, 2],
     ]);
+  });
+
+  it("a model per folder makes one model of a folder holding a glTF scene, packed with its files", async () => {
+    const files = {
+      "Glade/scene.gltf": gltfScene("mesh.bin"),
+      "Glade/mesh.bin": positions,
+      "Glade/notes.txt": "upright",
+    };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["scene.glb"]]);
+    expect(await filesOf(prints[0].id)).toEqual([[null, "notes.txt", "SUPPORTING"]]);
+  });
+
+  it("a model per folder keeps a file at the top that it made a model of, though a step after storing it fails", async () => {
+    const zip = await zipOf({ "root.stl": "solid root endsolid" });
+    pictures.localizeFails = true;
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, ["root.stl"], {});
+    expect(pictures.localizeFails).toBe(false);
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["root.stl"]]);
   });
 
   it("a model per folder keeps a subfolder of scripts with the model above it", async () => {

@@ -40,7 +40,12 @@ import { importingQuietly } from "../utils/quietImport";
 import { createKeyedLock } from "../utils/concurrency";
 import { authorIdByName } from "./authorService";
 import { afterLicenseChange, scheduleLicenseFill } from "./licenseService";
-import { supportingImportName, supportingLimits, type SupportingLimits } from "./supportingImports";
+import {
+  SUPPORTING_FILES_PER_MODEL,
+  supportingImportName,
+  supportingLimits,
+  type SupportingLimits,
+} from "./supportingImports";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp", ".bmp"]);
 
@@ -368,9 +373,19 @@ async function keepWithin(
   });
   const stored = new Set(files.map((file) => keyOf(file.filename, file.folder)));
   let kept = 0;
-  // What the model keeps already counts: a later profile's files share the model's allowance.
+  // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
   let bytes = files.reduce((sum, file) => sum + (file.role === "SUPPORTING" ? file.size : 0), 0);
-  for (const input of inputs) {
+  let count = files.filter((file) => file.role === "SUPPORTING").length;
+  for (const [index, input] of inputs.entries()) {
+    if (count >= SUPPORTING_FILES_PER_MODEL) {
+      console.warn(
+        `Model ${printId} keeps the ${SUPPORTING_FILES_PER_MODEL} files beside it that it may have; left out:`,
+        {
+          files: inputs.length - index,
+        },
+      );
+      break;
+    }
     if (!input.tempFilePath) continue;
     const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
     const key = keyOf(filename, input.folder);
@@ -384,6 +399,7 @@ async function keepWithin(
       });
       stored.add(key);
       bytes += size;
+      count++;
       kept++;
     } catch (err) {
       console.warn(`Couldn't keep ${filename} beside the model:`, err);

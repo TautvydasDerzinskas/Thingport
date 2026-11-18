@@ -92,6 +92,10 @@ export function isDocumentFile(name: string): boolean {
 /** A model may keep this many times the largest supporting file in all. */
 const PER_MODEL_FACTOR = 2.5;
 
+/** How many of a site's files one model keeps beside it at most, whatever their size: a zip of many small or empty
+ *  files would otherwise be written out one temp file each, which the byte total never stops. */
+export const SUPPORTING_FILES_PER_MODEL = 100;
+
 export type SupportingLimits = { perFile: number; perModel: number };
 
 /** How large a supporting file an import keeps, and how much of them one model takes in all; null when an admin keeps

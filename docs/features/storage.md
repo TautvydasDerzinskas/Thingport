@@ -91,7 +91,7 @@ already stored keep theirs until **Free up space** trims them, and photos users 
 
 - **The choices:** Off, 25 MB, 100 MB (the default), 500 MB or any size.
 - **Per model:** a model keeps two and a half times that in all, so 250 MB at the default. With any size there's no
-  total.
+  total. Whatever the size, a model keeps 100 of a site's files at most.
 - **Never past an import's own limit:** whatever the choice, a file is kept only up to the size an import takes, 512 MB
   by default (`IMPORT_MAX_MB`). A larger choice counts as that, for the total too.
 - **Over the size:** a file is skipped.

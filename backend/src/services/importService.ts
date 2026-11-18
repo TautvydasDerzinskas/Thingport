@@ -98,6 +98,7 @@ import {
 import {
   isDocumentFile,
   isSupportingImportFile,
+  SUPPORTING_FILES_PER_MODEL,
   supportingLimits,
   withoutModelsSharedTop,
   type SupportingLimits,
@@ -1076,7 +1077,12 @@ async function filesFromNestedZips(
   }
   const shared = sharedTopLevels(everyFolder);
   placements?.push(...modelFolders.map((folder) => withoutTopLevels(folder, shared)));
-  return inputs.map((input) => ({ ...input, folder: withoutTopLevels(input.folder, shared) }));
+  // A supporting file loses only the levels it shares with the model's files, as supportingZipEntries places one: a
+  // guide from a zip of its own beside the model's keeps that zip's folder, so two such guides don't meet on one name.
+  const top = sharedTopFolder(everyFolder);
+  const keptFolder = (folder: string | null | undefined) =>
+    picksSupporting(pick) ? withoutTopOf(folder, top) : withoutTopLevels(folder, shared);
+  return inputs.map((input) => ({ ...input, folder: keptFolder(input.folder) }));
 }
 
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
@@ -1096,7 +1102,7 @@ export async function supportingFilesFromZip(zipPath: string): Promise<NewPlateI
   const limits = await supportingLimits();
   if (!limits) return [];
   try {
-    return await filesFromZip(zipPath, { supporting: limits, kept: { bytes: 0 } });
+    return await filesFromZip(zipPath, { supporting: limits, kept: { bytes: 0, files: 0 } });
   } catch (err) {
     console.warn("Couldn't read the files beside a zip's model files:", err);
     return [];
@@ -1207,7 +1213,7 @@ async function supportingZipEntries(
 
 /** What one pass over a zip takes: the files with one of these extensions, or the supporting files beside them, as far
  *  as their limits go, counting what the pass has kept so far. */
-type SupportingPick = { supporting: SupportingLimits; kept: { bytes: number } };
+type SupportingPick = { supporting: SupportingLimits; kept: { bytes: number; files: number } };
 type ZipPick = ReadonlySet<string> | SupportingPick;
 const picksSupporting = (pick: ZipPick): pick is SupportingPick => "supporting" in pick;
 
@@ -1229,6 +1235,17 @@ async function filesFromZip(
       ? await supportingZipEntries(zipPath)
       : (await placedZipEntries(zipPath)).filter(({ parts }) => pick.has(path.extname(parts.at(-1)!).toLowerCase()));
     for (const { entry, parts, folder } of entries) {
+      // As many files as a model keeps, whatever their size: each is written out before it's counted.
+      if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
+        console.warn(
+          `Kept the ${SUPPORTING_FILES_PER_MODEL} files beside a model that it may have, and left the rest:`,
+          {
+            zip: path.basename(zipPath),
+            left: entries.length - entries.findIndex((each) => each.entry === entry),
+          },
+        );
+        break;
+      }
       const cap = picksSupporting(pick)
         ? Math.min(pick.supporting.perFile, pick.supporting.perModel - pick.kept.bytes)
         : IMPORT_MAX_BYTES;
@@ -1241,7 +1258,10 @@ async function filesFromZip(
       // Straight to the file: a model file is as big as an import is allowed to be, and holding it is pointless.
       const written = await extractZipEntryToFile(zipPath, entry.name, tempFilePath, cap);
       if (written === null) continue;
-      if (picksSupporting(pick)) pick.kept.bytes += written;
+      if (picksSupporting(pick)) {
+        pick.kept.bytes += written;
+        pick.kept.files += 1;
+      }
       inputs.push({
         filename,
         mime: guessMimeFromPath(filename),

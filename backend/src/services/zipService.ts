@@ -190,12 +190,9 @@ export async function extractZipEntriesToPrints(
         { filename, mime, tempFilePath: tempPath },
       ]);
       tempPath = null;
-      await attachImportedPreviewImages(print.id, plates[0]?.id, options.previewImageUrl, options.galleryImages ?? []);
-      await localizeDescriptionImages(print.id);
-      const previewImages = await prisma.previewImage.findMany({
-        where: { printId: print.id },
-        orderBy: { position: "asc" },
-      });
+      const previewImages = await picturedAfterStoring(print.id, () =>
+        attachImportedPreviewImages(print.id, plates[0]?.id, options.previewImageUrl, options.galleryImages ?? []),
+      );
       prints.push({ ...print, plates, previewImages });
     } catch {
       if (tempPath) await fs.rm(tempPath, { force: true }).catch(() => undefined);
@@ -355,19 +352,26 @@ async function storeModelOf(
     throw new HttpError(400, "None of the picked files can be a model: pick a model file (STL, 3MF, STEP…) too.");
   }
   const { print, plates } = await createPrint(userId, meta, nameHint, withoutModelsSharedTop(inputs));
-  // The model is stored, and what's left only adds its pictures: a step that fails is logged, so an import never says
-  // it failed for a model it made.
+  const previewImages = await picturedAfterStoring(print.id, () =>
+    addPicturesOf(print.id, plates[0]?.id, photos, options),
+  );
+  return { ...print, plates, previewImages };
+}
+
+/** The pictures of a model just stored, `addPictures` first, then the description's, and read back for the answer.
+ *  The model stands by now, and these only add to it: a step that fails is logged, so an import never says it failed
+ *  for a model it made. */
+async function picturedAfterStoring(printId: string, addPictures: () => Promise<unknown>): Promise<PreviewImage[]> {
   const didNot = (step: string) => (err: unknown) =>
-    console.warn(`Zip import: couldn't ${step} of model ${print.id}:`, err);
-  await addPicturesOf(print.id, plates[0]?.id, photos, options).catch(didNot("add the pictures"));
-  await localizeDescriptionImages(print.id).catch(didNot("keep the description's pictures"));
-  const previewImages = await prisma.previewImage
-    .findMany({ where: { printId: print.id }, orderBy: { position: "asc" } })
+    console.warn(`Zip import: couldn't ${step} of model ${printId}:`, err);
+  await addPictures().catch(didNot("add the pictures"));
+  await localizeDescriptionImages(printId).catch(didNot("keep the description's pictures"));
+  return prisma.previewImage
+    .findMany({ where: { printId }, orderBy: { position: "asc" } })
     .catch((err: unknown): PreviewImage[] => {
       didNot("read back the pictures")(err);
       return [];
     });
-  return { ...print, plates, previewImages };
 }
 
 /** A new model's pictures: the page's, then the zip's photos, as many as an import keeps. */
@@ -457,11 +461,12 @@ export async function extractZipEntriesToFolderModels(
   let total = 0;
   let processed = 0;
   try {
-    // A script holds no shape, so a folder of nothing but scripts is attached to the model above it, not one itself.
+    // A script holds no shape, so a folder of nothing but scripts is attached to the model above it, not one itself. A
+    // glTF scene is a model's, packed with the files it points at into a .glb when the model is made (withScenesPacked).
     const units = modelFolderUnits(
       entries,
       (entry) => entry.folder,
-      (entry) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()),
+      (entry) => MULTI_FILE_PLATE_EXTS.has(path.extname(entry.filename).toLowerCase()) || isGltfName(entry.filename),
     );
     // Each model folder and each file on its own counts once, as the job reports them, and so does each picked file
     // that couldn't be read, which is done with already.
