@@ -60,14 +60,14 @@ function plateFilesOf(files: UploadedFile[]): UploadedFile[] {
 export async function withGltfPacked<T extends UploadedFile>(
   files: T[],
 ): Promise<{ files: T[]; glbs: string[]; packedInto: Set<T> }> {
-  // Each by the name it's kept by, so "scene.gltf " is packed as "scene.gltf" is, and comes out "scene.glb".
-  const keptOf = (file: T) => trimFilename(file.originalname);
-  if (!files.some((f) => isGltfName(keptOf(f)))) return { files, glbs: [], packedInto: new Set() };
+  // A scene is told by the name it's kept by ("scene.gltf "), as is the .glb it becomes; the files it names are found
+  // by their names as they came (gltfPacker's findReferenced).
+  if (!files.some((f) => isGltfName(f.originalname))) return { files, glbs: [], packedInto: new Set() };
   // By its path in the upload, so a scene takes the .bin in its own folder, not one of that name in another's.
   const named = files.map((file) => {
     // Null is the top of the upload, though the file is kept in a folder; only one not said takes the kept one.
     const folder = file.sourceFolder !== undefined ? file.sourceFolder : file.folder;
-    return { name: folder ? `${folder}/${keptOf(file)}` : keptOf(file), path: file.path, file };
+    return { name: folder ? `${folder}/${file.originalname}` : file.originalname, path: file.path, file };
   });
   const { files: left, packed } = await packGltfFiles(
     named,
@@ -78,7 +78,7 @@ export async function withGltfPacked<T extends UploadedFile>(
       file: {
         ...gltf.file,
         path: glbPath,
-        originalname: keptOf(gltf.file).replace(/\.gltf$/i, ".glb"),
+        originalname: trimFilename(gltf.file.originalname).replace(/\.gltf$/i, ".glb"),
         mimetype: "model/gltf-binary",
       },
     }),
@@ -139,8 +139,10 @@ async function createModelFrom(userId: string, meta: PrintMetaInput, files: Uplo
 export type FileKind = "plate" | "supporting";
 
 /** Adds files to one of the user's models: 3D files become plates, the rest supporting files (the first sliced print
- *  takes the place of the model's own, and any more are kept as supporting files), unless `kind` says otherwise. All
- *  or nothing. */
+ *  takes the place of the model's own, and any more are kept as supporting files), unless `kind` says otherwise. When
+ *  one can't be stored, what this added is taken back as far as it can be (the plates by withPlateBatch, the other files
+ *  by addFilesTo) and the error is the caller's: one that couldn't be taken back stays, for the caller to look for
+ *  before trying again. */
 export async function addUploadedFiles(
   userId: string,
   printId: string,
@@ -166,8 +168,8 @@ async function addFilesTo(
   // Last, since the print it replaces is gone once it's in: a file that fails before it leaves the model as it was.
   const prepared = files.find((f) => !f.kind && isPreparedPrintFilename(sanitizeFilename(f.originalname)));
 
-  // With the plate order held throughout, so the plates added are all taken back if a later file fails, with no other
-  // request's change to the model's plates in between (withPlateBatch).
+  // With the plate order held throughout, so the plates added are taken back, as far as they can be, if a later file
+  // fails, with no other request's change to the model's plates in between (withPlateBatch).
   return withPlateBatch(userId, printId, async (add) => {
     let plates = 0;
     // The files this request saved, by the ids their saves gave: another tab's added meanwhile aren't ours to undo.

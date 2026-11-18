@@ -16,6 +16,8 @@ const stage = vi.hoisted(() => ({
   duringReading: null as ((filePath: string) => Promise<void>) | null,
   // Runs as a new 3MF plate's format is read, once, which then fails.
   formatFails: null as ((plateId: string) => Promise<void>) | null,
+  // Each reading of a new 3MF plate's format, with the file it was given.
+  formatReads: [] as { plateId: string; filePath: string }[],
   lockCalls: 0,
 }));
 
@@ -52,6 +54,7 @@ vi.mock("../src/services/threeMfFormat", async (original) => {
   return {
     ...actual,
     storePlateFormat: async (...args: Parameters<typeof actual.storePlateFormat>) => {
+      stage.formatReads.push({ plateId: String(args[0]), filePath: String(args[2]) });
       const hook = stage.formatFails;
       if (!hook) return actual.storePlateFormat(...args);
       stage.formatFails = null;
@@ -333,15 +336,19 @@ describe("a model's plates, changed by two requests at once", () => {
     const [job] = await addPlatesToPrint(owner.id, print.id, [
       { filename: "job.3mf", tempFilePath: await threeMf(true) },
     ]);
-    // A move saves where a file went a moment after it has gone there.
+    // The move's saving of where the file went waits until the reorder, having found the file gone, asks for the
+    // storage lock to look where it went; one that never asks is let go after a while, and finds the old place.
+    let open = () => {};
+    const gate = new Promise<void>((resolve) => (open = resolve));
     const update = prisma.plate.update.bind(prisma.plate);
     const spy = vi.spyOn(prisma.plate, "update").mockImplementation(((
       args: Parameters<typeof prisma.plate.update>[0],
     ) => {
       if (args.where.id !== job.id || typeof args.data.storagePath !== "string") return update(args);
-      return later(300).then(() => update(args));
+      return gate.then(() => update(args));
     }) as never);
     let moving: Promise<unknown> | null = null;
+    let watching: Promise<void> | null = null;
     stage.duringReading = async (filePath) => {
       // A rename of the model moves its files as the reorder reads its new first plate, which is gone when read.
       const moved = await prisma.print.update({
@@ -351,6 +358,12 @@ describe("a model's plates, changed by two requests at once", () => {
       });
       moving = relocatePrint(moved, moved.plates);
       await vi.waitFor(() => expect(fs.existsSync(filePath)).toBe(false), { timeout: 4000, interval: 10 });
+      // The move holds the lock from here until its save: the next lock asked for is the reorder's second look.
+      const since = stage.lockCalls;
+      watching = (async () => {
+        for (let waited = 0; stage.lockCalls <= since && waited < 4000; waited += 10) await later(10);
+        open();
+      })();
     };
     try {
       const res = await request(app)
@@ -358,12 +371,47 @@ describe("a model's plates, changed by two requests at once", () => {
         .set(auth())
         .send({ plate_ids: [job.id, plates[0].id] });
       expect(res.status).toBe(200);
-      await moving;
     } finally {
+      open();
+      await Promise.allSettled([watching, moving]);
       spy.mockRestore();
     }
     expect(moving).not.toBeNull();
     expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
+  });
+
+  it("reads a new 3MF plate's file where a rename moved it as it was stored", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const create = prisma.plate.create.bind(prisma.plate);
+    let renamed = "";
+    const spy = vi.spyOn(prisma.plate, "create").mockImplementation((async (
+      args: Parameters<typeof prisma.plate.create>[0],
+    ) => {
+      const made = await create(args);
+      if (!renamed && args.data.printId === print.id && args.data.filename === "part.3mf") {
+        // Another tab renames the model as the plate's row is made, and its move takes the new plate along first.
+        renamed = `Read where moved ${stamp}`;
+        const moved = await prisma.print.update({
+          where: { id: print.id },
+          data: { name: renamed },
+          include: { plates: true },
+        });
+        await relocatePrint(moved, moved.plates);
+      }
+      return made;
+    }) as never);
+    stage.formatReads = [];
+    try {
+      await addPlatesToPrint(owner.id, print.id, [{ filename: "part.3mf", tempFilePath: await threeMf(false) }]);
+    } finally {
+      spy.mockRestore();
+    }
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    expect(part.storagePath).toContain(renamed);
+    // Its format was read, from the file where it is.
+    const reads = stage.formatReads.filter((read) => read.plateId === part.id);
+    expect(reads).toHaveLength(1);
+    expect(fs.existsSync(reads[0].filePath)).toBe(true);
   });
 
   it("puts each plate of a batch where its model's new name puts it, though the model was renamed after the first was stored", async () => {
@@ -435,9 +483,11 @@ describe("a model's plates, changed by two requests at once", () => {
       await queuedAtLock(since, 3);
     } finally {
       // Let go whatever happened, or every storage step after this test would wait for it, and see what started
-      // through, so none of it is still going in the next test.
+      // through, so none of it is still going in the next test: the adding first, as its hook is what starts the
+      // other two, which are then set if they ever will be.
       release();
-      await Promise.allSettled([adding, moving, holding]);
+      await Promise.allSettled([adding]);
+      await Promise.allSettled([moving, holding]);
     }
 
     expect(await adding).toBeInstanceOf(Error);

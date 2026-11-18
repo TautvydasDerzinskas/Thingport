@@ -1,5 +1,5 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
-import { extOf, keptName } from "./fileExtensions";
+import { keptExt, keptName } from "./fileExtensions";
 import { gltfBundles } from "./uploadTree";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
@@ -31,13 +31,13 @@ export function holdsBackSliced(name: string, status: number | null, preparedAdd
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */
 export function isModelFileName(name: string): boolean {
   if (isPreparedName(name)) return false;
-  const ext = extOf(keptName(name));
+  const ext = keptExt(name);
   // A .gltf is packed into a .glb with the files it points at.
   return MODEL_EXTS.has(ext) || LIGHTBURN_EXTS.has(ext) || ext === "gltf";
 }
 
 export function isPictureName(name: string): boolean {
-  return PICTURE_EXTS.has(extOf(keptName(name)));
+  return PICTURE_EXTS.has(keptExt(name));
 }
 
 /**
@@ -72,8 +72,7 @@ export async function withGltfFiles<T>(
   const all = [...sorted.model, ...sorted.supporting];
   const packedWith = new Map<T, T[]>();
   // By the name it's kept by, as the server packs it: "scene.gltf " is a scene too.
-  if (!all.some((item) => extOf(keptName(fileOf(item).name)) === "gltf"))
-    return { ...sorted, packedWith, ambiguous: [] };
+  if (!all.some((item) => keptExt(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
   const unclear = new Map<(typeof entries)[number], string[]>();
   for (const [gltf, found] of await gltfBundles(entries, unclear)) {

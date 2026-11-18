@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import type { Prisma } from "@prisma/client";
 import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
@@ -327,6 +328,20 @@ describe("supporting files", () => {
     expect(arcnames).toContain("__/_/own.stl");
     // Each comes back whole through Thingport's own import, which drops a file under "..".
     for (const arcname of arcnames) expect(normalizeZipEntryPath(arcname)).toBe(arcname);
+  });
+
+  it("leave a model's licence its own place in a zip, numbering a plate of its name", async () => {
+    const model = await makePrint(dir, owner.id, "Licensed");
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    // A model of text files is all plates, LICENSE.txt among them.
+    const plates = print.plates.map((plate) => ({ ...plate, folder: null, filename: "LICENSE.txt" }));
+    const names = async (license: Prisma.JsonValue) =>
+      (await buildZipEntries([{ ...print, plates, license }])).map((entry) => entry.arcname.split("/").pop());
+    expect(await names({ id: "CC-BY-4.0", source: "user" })).toEqual(["LICENSE (2).txt", "LICENSE.txt"]);
+    expect(await names(null)).toEqual(["LICENSE.txt"]);
   });
 
   it("each keep a path of their own in a zip, though two plates' differ only in case", async () => {

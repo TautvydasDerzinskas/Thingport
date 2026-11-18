@@ -3,11 +3,14 @@ import { UnauthorizedError } from "../api/client";
 import { categoriesApi, type Category } from "../api/categories";
 import { printsApi, type Print } from "../api/prints";
 import { MODEL_EXTS, UPLOAD_EXTS } from "../constants/fileTypes";
-import { keptName } from "./fileExtensions";
+import { keptExt, keptName } from "./fileExtensions";
 
 export type UploadEntry = {
   file: File;
   relativePath: string;
+  /** The path a zip named it by, where another entry of that path made this a numbered copy ("mesh (2).bin"): a scene
+   *  naming that path could mean either. */
+  zipPath?: string;
 };
 
 type FileSystemEntry = {
@@ -126,9 +129,9 @@ function splitPath(entry: UploadEntry) {
   return segments;
 }
 
-/** By the name it's kept by, as the server tells what a file is: "part.stl " is a model file. */
+/** By the name it's kept by, as the server tells what a file is: "part.stl " is a model file, "stl" isn't. */
 function extOf(name: string) {
-  return keptName(name).split(".").pop()?.toLowerCase() ?? "";
+  return keptExt(name);
 }
 
 /** A model file, by its name or its path. */
@@ -176,13 +179,18 @@ export async function gltfBundles(
   ambiguous?: Map<UploadEntry, string[]>,
 ): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
-  // By the names they're kept by, as the server packs them.
+  // By their paths as they were picked, as the server finds them (gltfPacker's findReferenced), and the path a zip
+  // gave a numbered copy too, which the scene could mean as well.
   const pathOf = (entry: UploadEntry) =>
-    normalizeSegments(normalizeRelativePath(keptName(entry.relativePath || entry.file.name)));
-  const nameOf = (entry: UploadEntry) => keptName(entry.file.name).toLowerCase();
+    normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
+  const pathsOf = (entry: UploadEntry) =>
+    entry.zipPath ? [pathOf(entry), normalizeSegments(normalizeRelativePath(entry.zipPath))] : [pathOf(entry)];
+  const nameOf = (path: string) => path.split("/").pop()!.toLowerCase();
   const others = entries.filter((entry) => !isGltf(entry.file.name));
   for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
     const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
+    // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
+    const inFolder = (path: string) => !folder || path.startsWith(`${folder}/`);
     const found = new Set<UploadEntry>();
     for (const uri of await gltfReferences(gltf.file)) {
       let decoded = uri;
@@ -192,15 +200,16 @@ export async function gltfBundles(
         // A stray % in a file name: match it as written.
       }
       const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
-      const byPath = others.filter((entry) => pathOf(entry) === wanted);
+      const byPath = others.filter((entry) => pathsOf(entry).includes(wanted));
       const named = wanted.split("/").pop()!;
       const name = named.toLowerCase();
-      // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
-      const byName = others.filter(
-        (entry) => nameOf(entry) === name && (!folder || pathOf(entry).startsWith(`${folder}/`)),
+      const byName = others.filter((entry) => pathsOf(entry).some((path) => nameOf(path) === name && inFolder(path)));
+      // By the name one is kept by ("mesh.bin " for "mesh.bin"), only when none has it as written.
+      const byKeptName = others.filter((entry) =>
+        pathsOf(entry).some((path) => keptName(nameOf(path)) === keptName(name) && inFolder(path)),
       );
       // Two entries of one file are one file; two files are two the scene could mean, and it takes neither.
-      const candidates = byPath.length ? byPath : byName;
+      const candidates = byPath.length ? byPath : byName.length ? byName : byKeptName;
       const distinct = new Set(candidates.map((entry) => entry.file));
       if (distinct.size === 1) found.add(candidates[0]);
       else if (distinct.size > 1) ambiguous?.set(gltf, [...new Set([...(ambiguous.get(gltf) ?? []), named])]);

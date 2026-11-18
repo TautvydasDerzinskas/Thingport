@@ -119,6 +119,30 @@ describe("gltfBundles", () => {
     expect(ambiguous.get(entries[0])).toEqual(["base.png"]);
   });
 
+  it("finds a texture in a folder whose name starts with a space, as the scene writes it", async () => {
+    const scene = entry("M/scene.gltf", gltf("scene.bin", "../%20Assets/base.png"));
+    const base = entry(" Assets/base.png");
+    const bundles = await gltfBundles([scene, entry("M/scene.bin"), base]);
+    expect(bundles.get(scene)).toContain(base);
+  });
+
+  it("finds a file by the name it's kept by only where none has it as written, and two copies of a zip's path as two", async () => {
+    const scene = entry("scene.gltf", gltf("mesh.bin", "base.png"));
+    const spaced = entry("mesh.bin ");
+    expect((await gltfBundles([scene, spaced])).get(scene)).toEqual([spaced]);
+    const exact = entry("mesh.bin");
+    expect((await gltfBundles([scene, spaced, exact])).get(scene)).toEqual([exact]);
+    // A zip's second "A/mesh.bin", of other bytes, numbered apart: the scene could mean either, and takes neither.
+    const zipped = entry("A/scene.gltf", gltf("mesh.bin", "base.png"));
+    const unclear = new Map<ReturnType<typeof entry>, string[]>();
+    const bundles = await gltfBundles(
+      [zipped, entry("A/mesh.bin"), { ...entry("A/mesh (2).bin"), zipPath: "A/mesh.bin" }],
+      unclear,
+    );
+    expect(bundles.get(zipped)).toEqual([]);
+    expect(unclear.get(zipped)).toEqual(["mesh.bin"]);
+  });
+
   it("takes neither of two files at the place a scene names, as in a flat pick of two of one name", async () => {
     const entries = [entry("scene.gltf", gltf("scene.bin", "base.png")), entry("scene.bin"), entry("base.png", "one")];
     entries.push(entry("base.png", "two"));
@@ -359,6 +383,12 @@ describe("a model's documents", () => {
     );
     expect(upload).not.toHaveBeenCalled();
     expect(result).toMatchObject({ uploaded: 0, failed: [], skipped: ["guide.pdf", "notes.txt"] });
+  });
+
+  it("one model of only documents: a name with no dot is one, though it reads like an extension", async () => {
+    const result = await uploadEntriesAsOneModel([entry("stl "), entry("guide.pdf")], null, null);
+    expect(upload).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ uploaded: 0, skipped: ["stl ", "guide.pdf"] });
   });
 
   it("one model of only what the OS leaves about sends nothing, and comes back", async () => {

@@ -109,8 +109,12 @@ export async function replaceModelPlates(
   // LICENSE.txt is written again when it went too.
   await afterLicenseChange(printId);
 
-  const galleryWhole =
-    print.previewImages.length > 0 &&
-    print.previewImages.every((image) => assetExists(assetsPath, galleryImageFile(image.id)));
-  return { plates, galleryWhole, gallery: print.previewImages.map((image) => image.id) };
+  // Looked for where the pictures are now, with the storage lock a move of them holds: where they were read from above,
+  // a gallery a rename has just moved would look gone, and the owner's own photos be replaced for it.
+  const gallery = print.previewImages.map((image) => image.id);
+  const galleryWhole = await withStorageLock(async () => {
+    const now = await prisma.print.findUniqueOrThrow({ where: { id: printId }, select: { assetsPath: true } });
+    return gallery.length > 0 && gallery.every((id) => assetExists(now.assetsPath, galleryImageFile(id)));
+  });
+  return { plates, galleryWhole, gallery };
 }

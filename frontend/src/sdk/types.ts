@@ -591,17 +591,18 @@ export interface SdkModels {
    * is added. It's refused too when a buffer it keeps in a file of its own isn't among them; one written into it (a
    * data URI) needs none.
    *
-   * The plates go in first, in one request, then the other files one at a time. When one fails, the call rejects with
-   * its error, which carries `added` (the names of the files in before it, none if it was the first), `addedIndexes`
-   * (their places in `files`, which tell two of one name apart), `keepPrepared` (what to pass when sending the rest:
-   * true when the call was given it, or an answer said a sliced print of the call went in) and, once a request of the
-   * call was answered, `model` (the model as the last answer had it). The rest are the files not in `addedIndexes`,
-   * the one that failed first. One whose answer was lost may be in all the same, and a plate request that failed may
-   * have kept files it couldn't take back: look for those among the model's `files` and `relatedFiles` before sending
-   * them again. The prepared print is in neither, so a sliced print whose answer was lost goes again first, as it went:
-   * with `keepPrepared` false, it takes the prepared slot again, whatever holds it by then, itself included. The rest
-   * then go with `keepPrepared: true`: the error's counts only the answers that came, and false would have the next
-   * sliced print take the slot from it.
+   * The plates go in first, in one request, then the other files one at a time. When one of those requests fails, the
+   * call rejects with its error, which carries `added` (the names of the files in before it, none if it was the first),
+   * `addedIndexes` (their places in `files`, which tell two of one name apart), `keepPrepared` (what to pass when
+   * sending the rest: true when the call was given it, or an answer said a sliced print of the call went in) and, once
+   * a request of the call was answered, `model` (the model as the last answer had it). An error the call gives before
+   * sending anything, as for two files a `.gltf` could mean, carries none of these. The rest are the files not in
+   * `addedIndexes`, the one that failed first. One whose answer was lost may be in all the same, and a plate request
+   * that failed may have kept files it couldn't take back: look for those among the model's `files` and `relatedFiles`
+   * before sending them. When the error's `keepPrepared` is false and the one that failed is a sliced print, it may hold
+   * the prepared slot, which neither lists: send it first with `keepPrepared` false, which puts it in the slot whatever
+   * holds it, itself included, then the rest with `keepPrepared: true`. When it's true, a sliced print that failed was
+   * sent as a related file: look for it among `relatedFiles`, and keep `keepPrepared: true` for what's still to send.
    *
    * @param id The model's id.
    * @param files The files to add.

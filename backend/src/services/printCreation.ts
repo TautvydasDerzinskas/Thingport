@@ -276,10 +276,9 @@ async function createPlateAtPosition(
     console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
     return null;
   });
-  if (moved) {
-    record = moved;
-    if (effectivePath === destAbsPath) effectivePath = managedPlatePath(moved);
-  }
+  // As it is now, whether this moved it or a rename's own move took it along first: its file is read where it is.
+  record = moved ?? (await prisma.plate.findUnique({ where: { id: record.id } })) ?? record;
+  effectivePath = resolvePlateFilePath(record) ?? effectivePath;
 
   try {
     await thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath);
@@ -657,7 +656,9 @@ async function takeBackPlates(printId: string, added: Plate[]): Promise<void> {
   await afterPlatesRemoved(await removePlateRows(printId, gone, plates));
 }
 
-type RemovedPlates = { plates: Plate[]; home: AssetHome };
+/** `picturesLeft` when the pictures' folder couldn't be read: the plates are gone all the same, and their pictures stay
+ *  where they are (a null `home` is a model from before, whose pictures are in the old shared folders). */
+type RemovedPlates = { plates: Plate[]; home: AssetHome; picturesLeft?: boolean };
 
 /**
  * Takes `gone` out of the model's plates, `plates` in their order: their rows go and the others are renumbered in one
@@ -693,11 +694,11 @@ async function removePlateRows(printId: string, gone: Plate[], plates: Plate[]):
 }
 
 /** What's left of plates whose rows and files have gone: their adapted copies, emptied folders and pictures. */
-async function afterPlatesRemoved({ plates, home }: RemovedPlates): Promise<void> {
+async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates): Promise<void> {
   for (const plate of plates) {
     await deleteAdapted3mfs(plate.id).catch(() => undefined);
     await pruneEmptyStorageDirs(path.dirname(managedPlatePath(plate))).catch(() => undefined);
-    await removePlatePictures(plate.id, home).catch(() => undefined);
+    if (!picturesLeft) await removePlatePictures(plate.id, home).catch(() => undefined);
   }
 }
 
@@ -709,8 +710,6 @@ async function afterPlatesRemoved({ plates, home }: RemovedPlates): Promise<void
  */
 export async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
   const removed = await withStorageLock(async () => {
-    // Before anything goes: a read that fails then leaves the plates as they are, to put back again.
-    const home = await printAssetHome(printId);
     const made = await prisma.plate.findMany({ where: { printId } });
     await prisma.$transaction([
       prisma.plate.deleteMany({ where: { printId } }),
@@ -726,7 +725,16 @@ export async function restorePlates(printId: string, previous: Plate[]): Promise
       }),
     ]);
     for (const plate of made) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
-    return { plates: made, home };
+    // Read once the rows are back: a read that fails then costs only the made plates' pictures, never the model its
+    // own plates, nor the caller the error it's putting them back for.
+    const found = await printAssetHome(printId).then(
+      (home) => ({ home }),
+      (err: unknown) => {
+        console.warn(`Couldn't find model ${printId}'s pictures to take back a failed repair's:`, err);
+        return null;
+      },
+    );
+    return { plates: made, home: found?.home, picturesLeft: !found };
   });
   await afterPlatesRemoved(removed);
 }

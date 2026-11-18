@@ -1,4 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// How often the zip's central directory is read, which readZipEntries does through unzipSync.
+const reads = vi.hoisted(() => ({ unzipSync: 0 }));
+vi.mock("fflate", async (original) => {
+  const actual = await original<typeof import("fflate")>();
+  return {
+    ...actual,
+    unzipSync: (...args: Parameters<typeof actual.unzipSync>) => {
+      reads.unzipSync += 1;
+      return actual.unzipSync(...args);
+    },
+  };
+});
+
 import { Zip, ZipPassThrough, zipSync } from "fflate";
 import { hasModelFolderPaths, normalizeZipPath, readZipEntries, startingSelection } from "./zipUtils";
 
@@ -57,7 +71,7 @@ describe("readZipEntries of entries with one name", () => {
   /** A zip that names one path more than once, as a tool that adds to an archive leaves one: zipSync can't, as it
    *  takes its entries by name. */
   const zipOf = (named: [string, string][]) => {
-    const chunks: Uint8Array[] = [];
+    const chunks: Uint8Array<ArrayBuffer>[] = [];
     const zip = new Zip((err, chunk) => {
       if (err) throw err;
       chunks.push(chunk);
@@ -68,11 +82,15 @@ describe("readZipEntries of entries with one name", () => {
       entry.push(new TextEncoder().encode(body), true);
     }
     zip.end();
-    return new File(chunks as BlobPart[], "kit.zip");
+    return new File(chunks, "kit.zip");
   };
 
   it("keeps each of two entries of one name, numbering the second, and two the same once", async () => {
-    const { entries: listed, data } = await readZipEntries(
+    const {
+      entries: listed,
+      data,
+      numbered,
+    } = await readZipEntries(
       zipOf([
         ["A/guide.pdf", "first"],
         ["A/guide.pdf", "second"],
@@ -80,8 +98,50 @@ describe("readZipEntries of entries with one name", () => {
       ]),
     );
     expect(listed.map((entry) => entry.path).toSorted()).toEqual(["A/guide (2).pdf", "A/guide.pdf"]);
+    expect(numbered).toEqual({ "A/guide (2).pdf": "A/guide.pdf" });
     expect(new TextDecoder().decode(data["A/guide.pdf"])).toBe("first");
     expect(new TextDecoder().decode(data["A/guide (2).pdf"])).toBe("second");
+  });
+});
+
+describe("readZipEntries of an unusual zip", () => {
+  const zipOf = (named: [string, string][]) => {
+    const chunks: Uint8Array<ArrayBuffer>[] = [];
+    const zip = new Zip((err, chunk) => {
+      if (err) throw err;
+      chunks.push(chunk);
+    });
+    for (const [name, body] of named) {
+      const entry = new ZipPassThrough(name);
+      zip.add(entry);
+      entry.push(new TextEncoder().encode(body), true);
+    }
+    zip.end();
+    return new File(chunks, "kit.zip");
+  };
+
+  it("keeps an entry named __proto__, which an object can't key", async () => {
+    const { data } = await readZipEntries(
+      zipOf([
+        ["__proto__", "proto"],
+        ["notes.txt", "n"],
+      ]),
+    );
+    expect(Object.keys(data).toSorted()).toEqual(["__proto__", "notes.txt"]);
+    expect(new TextDecoder().decode(data["__proto__"])).toBe("proto");
+  });
+
+  it("reads its directory once however many times it repeats a folder or a file", async () => {
+    const folders = Array.from({ length: 300 }, (): [string, string] => ["A/", ""]);
+    reads.unzipSync = 0;
+    const read = await readZipEntries(zipOf([...folders, ["A/x.txt", "x"]]));
+    expect(read.entries.map((entry) => entry.path)).toEqual(["A/x.txt"]);
+    expect(reads.unzipSync).toBe(1);
+    reads.unzipSync = 0;
+    const copies = Array.from({ length: 50 }, (_, n): [string, string] => ["A/x.txt", `copy ${n}`]);
+    const again = await readZipEntries(zipOf(copies));
+    expect(again.entries).toHaveLength(50);
+    expect(reads.unzipSync).toBe(1);
   });
 });
 

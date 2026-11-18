@@ -145,6 +145,12 @@ export async function buildZipEntries(
     // Every name the model takes in the zip, which can't hold one twice, nor two that differ only in case, which
     // unzipped on Windows or a Mac are one file: a supporting file steps around these.
     const taken = new Set<string>();
+    // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
+    // Its place is held first, as it's the model's own: a plate of that name (a model of text files is all plates) is
+    // the one numbered.
+    const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
+    const licensePath = `${prefix}/${LICENSE_FILENAME}`;
+    if (license) taken.add(licensePath.toLowerCase());
     const plates = print.plates
       .filter((plate) => isInFolder(plate.folder, opts.folder))
       .toSorted((a, b) => a.position - b.position)
@@ -166,12 +172,12 @@ export async function buildZipEntries(
       taken.add(arcname.toLowerCase());
       entries.push({ arcname, filePath: each.filePath });
     }
-    // Made now rather than read from disk: it's then there whether or not LICENSE.txt files are written beside them.
-    const license = licenseFileText({ ...print, author: print.authorId ? authors.get(print.authorId) : null });
     if (license) {
-      const arcname = `${prefix}/${LICENSE_FILENAME}`;
-      taken.add(arcname.toLowerCase());
-      entries.push({ arcname, content: Buffer.from(license, "utf8"), mtime: print.licenseReadAt ?? undefined });
+      entries.push({
+        arcname: licensePath,
+        content: Buffer.from(license, "utf8"),
+        mtime: print.licenseReadAt ?? undefined,
+      });
     }
     // A model file in a folder named "supporting" can hold a supporting file's name, and two supporting files may share
     // one (a merge brings each model's along).

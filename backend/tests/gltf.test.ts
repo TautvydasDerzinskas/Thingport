@@ -408,6 +408,41 @@ describe("uploading and consuming a .gltf", () => {
     expect(print.files).toHaveLength(0);
   });
 
+  it("finds the file a scene names with an encoded space at its end, uploaded under that name", async () => {
+    const { gltf, bin } = cubeGltf({ binUri: "mesh.bin%20" });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", gltf, { filename: "scene.gltf" })
+      .attach("files", bin, { filename: "mesh.bin " });
+    expect(res.status).toBe(200);
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: res.body.prints[0].id },
+      include: { plates: true },
+    });
+    expect(print.plates.map((p) => p.filename)).toEqual(["scene.glb"]);
+  });
+
+  it("takes the file a scene names as written, beside one that's only that name once it's trimmed", async () => {
+    const small = cubeGltf({ edge: 0.02, binUri: "mesh.bin" });
+    const large = cubeGltf({ edge: 0.05, binUri: "mesh.bin" });
+    const res = await auth(request(app).post("/api/upload"))
+      .field("mode", "multiplate")
+      .attach("files", small.gltf, { filename: "scene.gltf" })
+      .attach("files", large.bin, { filename: "mesh.bin " })
+      .attach("files", small.bin, { filename: "mesh.bin" });
+    expect(res.status).toBe(200);
+    const file = await auth(request(app).get(`/api${res.body.prints[0].plates[0].url}`))
+      .buffer(true)
+      .parse((stream, done) => {
+        const chunks: Buffer[] = [];
+        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        stream.on("end", () => done(null, Buffer.concat(chunks)));
+      });
+    expect(file.status).toBe(200);
+    const { bin } = readGlb(file.body as Buffer);
+    expect(bin.subarray(0, small.bin.length).equals(small.bin)).toBe(true);
+  });
+
   it("makes a model file named with a space after it a plate, as the app sends it", async () => {
     const res = await auth(request(app).post("/api/upload"))
       .field("mode", "multiplate")
