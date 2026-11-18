@@ -1024,12 +1024,14 @@ function isUnreadableZip(err: unknown): boolean {
 
 /** The files wanted from the zips a zip holds, for an archive that wraps the model's own instead of its files. Each
  *  nested zip's files go in a folder named after it, where it sat ("Base/32mm.zip" gives "Base/32mm"), less what all of
- *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. */
+ *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. `placements` is told the
+ *  folders the model's own files ended up in, for an archive wrapping this one to go by. */
 async function filesFromNestedZips(
   zipPath: string,
   pick: ZipPick,
   depth: number,
   budget: NestedZipBudget,
+  placements?: (string | null)[],
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
     (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
@@ -1039,6 +1041,7 @@ async function filesFromNestedZips(
   // read twice over (platesAndSourcesFromZip) lose the same levels. The files beside the zips count too: a script at
   // the top keeps the folder the zip of its parts gives them.
   const everyFolder: (string | null)[] = (await zipEntriesInFolders(zipPath)).map((placed) => placed.folder);
+  const modelFolders: (string | null)[] = [];
   try {
     for (const entry of nested) {
       if (budget.archives <= 0 || budget.bytes <= 0) break;
@@ -1049,13 +1052,17 @@ async function filesFromNestedZips(
         if (written === null) continue;
         budget.bytes -= written;
         const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
-        const found = await filesFromZip(tempZipPath, pick, depth + 1, budget);
-        for (const input of found) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
-        // A zip that only wraps yet another has no files of its own to go by: the ones found in it stand in, bar
-        // supporting files, which aren't the model's own.
-        const placed = await placedZipEntries(tempZipPath);
-        const stand = placed.length ? placed : picksSupporting(pick) ? [] : found;
-        for (const each of stand) everyFolder.push(joinFolders(folder, each.folder));
+        const found: (string | null)[] = [];
+        for (const input of await filesFromZip(tempZipPath, pick, depth + 1, budget, found)) {
+          inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
+        }
+        // A zip that only wraps yet another has no files of its own to go by: where the model's files turned up in
+        // it stands in, however deep, and never a supporting file, which isn't the model's own.
+        const placed = (await placedZipEntries(tempZipPath)).map((each) => each.folder);
+        for (const each of placed.length ? placed : found) {
+          everyFolder.push(joinFolders(folder, each));
+          modelFolders.push(joinFolders(folder, each));
+        }
       } catch (err) {
         // One entry that isn't the zip it's named like doesn't make the files out of its siblings unimportable.
         if (!isUnreadableZip(err)) throw err;
@@ -1068,6 +1075,7 @@ async function filesFromNestedZips(
     throw err;
   }
   const shared = sharedTopLevels(everyFolder);
+  placements?.push(...modelFolders.map((folder) => withoutTopLevels(folder, shared)));
   return inputs.map((input) => ({ ...input, folder: withoutTopLevels(input.folder, shared) }));
 }
 
@@ -1213,6 +1221,7 @@ async function filesFromZip(
   pick: ZipPick,
   depth = 0,
   budget: NestedZipBudget = { archives: NESTED_ZIP_BUDGET, bytes: IMPORT_MAX_BYTES },
+  placements?: (string | null)[],
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   try {
@@ -1253,9 +1262,12 @@ async function filesFromZip(
         MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()),
       )
     : !inputs.length;
-  if (!wraps || depth >= NESTED_ZIP_DEPTH) return inputs;
+  if (!wraps || depth >= NESTED_ZIP_DEPTH) {
+    placements?.push(...(await placedZipEntries(zipPath)).map((each) => each.folder));
+    return inputs;
+  }
   try {
-    return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget))];
+    return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget, placements))];
   } catch (err) {
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
