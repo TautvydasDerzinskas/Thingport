@@ -12,6 +12,7 @@ import { FORGOTTEN_AI_DESCRIPTION } from "./aiDescriptionService";
 import { pruneDescriptionImages } from "./descriptionImageService";
 import { assetKindOf, assetPath, galleryImageFile, ownedAssetFiles, plateThumbFile, removeAsset } from "./modelAssets";
 import { pruneWhatModelsLeft } from "./printEditService";
+import { withPlateOrder } from "./printCreation";
 import {
   ensureAssetHome,
   freePlateFilename,
@@ -127,6 +128,49 @@ export async function mergeModels(
   primaryId: string,
   ids: string[],
 ): Promise<{ primary: Print; merged: Print[] }> {
+  // With every model's plate order held from the reading of their plates to the commit, as adding, removing and
+  // reordering plates hold their model's: a repair that fails part-way puts its model's plates back as they were, which
+  // would take any merged in meanwhile with the ones it made.
+  const { primary, others, home, cover } = await withPlateOrders([primaryId, ...ids], () =>
+    mergeRows(userId, primaryId, ids),
+  );
+
+  // The merge stands from here on, so nothing below fails it.
+  const didNot = (step: string) => (error: unknown) => log.warn(`couldn't ${step}`, { print: primary.id, error });
+  for (const other of others) {
+    for (const plate of other.plates) await removeAsset(other.assetsPath, plateThumbFile(plate.id));
+    await removeAssetHome(other.assetsPath, ownerIds(other)).catch(didNot("clear a merged model's pictures"));
+  }
+  const kept = await prisma.print
+    .findUnique({ where: { id: primary.id }, include: { plates: { orderBy: { position: "asc" } } } })
+    .catch(didNot("read it back"));
+  if (kept) {
+    // Before the move below takes the pictures it reads.
+    await leadWithAdoptedCover(primary, home, kept.plates[0], cover).catch(didNot("take on its new cover"));
+    await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
+  }
+  // The merged models' LICENSE.txt files came along with their other files: only the kept model's licence stays.
+  await afterLicenseChange(primary.id);
+  await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
+  await pruneWhatModelsLeft(userId, others).catch(didNot("tidy what the merged models left"));
+  return { primary, merged: others };
+}
+
+type Mergeable = Awaited<ReturnType<typeof mergeableModels>>[number];
+
+/** What of a model's is in its pictures' folder: its plates', pictures' and description images' ids. */
+const ownerIds = (print: Mergeable) =>
+  [...print.plates, ...print.previewImages, ...print.descriptionImages].map((row) => row.id);
+
+/** `fn` with the plate order of every model in `ids` held, taken in one order, so two merges sharing a model can't
+ *  each hold one the other waits for. */
+function withPlateOrders<T>(ids: string[], fn: () => Promise<T>): Promise<T> {
+  const [first, ...rest] = [...new Set(ids)].toSorted();
+  return first === undefined ? fn() : withPlateOrder(first, () => withPlateOrders(rest, fn));
+}
+
+/** A merge up to its commit, which mergeModels runs with the models' plate orders held. */
+async function mergeRows(userId: string, primaryId: string, ids: string[]) {
   const [primary, ...others] = await mergeableModels(userId, [primaryId, ...ids]);
   if (!others.length) throw new HttpError(400, "Pick at least one other model to merge");
   const otherIds = others.map((other) => other.id);
@@ -134,8 +178,6 @@ export async function mergeModels(
 
   const everyone = [primary, ...others];
   const everyoneIds = everyone.map((print) => print.id);
-  const ownerIds = (print: (typeof everyone)[number]) =>
-    [...print.plates, ...print.previewImages, ...print.descriptionImages].map((row) => row.id);
   const pictureCopies: [string, string][] = [];
   for (const other of others) {
     if (!other.assetsPath) continue;
@@ -283,24 +325,5 @@ export async function mergeModels(
       { timeout: 60_000 },
     ),
   );
-
-  // The merge stands from here on, so nothing below fails it.
-  const didNot = (step: string) => (error: unknown) => log.warn(`couldn't ${step}`, { print: primary.id, error });
-  for (const other of others) {
-    for (const plate of other.plates) await removeAsset(other.assetsPath, plateThumbFile(plate.id));
-    await removeAssetHome(other.assetsPath, ownerIds(other)).catch(didNot("clear a merged model's pictures"));
-  }
-  const kept = await prisma.print
-    .findUnique({ where: { id: primary.id }, include: { plates: { orderBy: { position: "asc" } } } })
-    .catch(didNot("read it back"));
-  if (kept) {
-    // Before the move below takes the pictures it reads.
-    await leadWithAdoptedCover(primary, home, kept.plates[0], cover).catch(didNot("take on its new cover"));
-    await relocatePrint(kept, kept.plates).catch(didNot("move its files where the storage structure puts them"));
-  }
-  // The merged models' LICENSE.txt files came along with their other files: only the kept model's licence stays.
-  await afterLicenseChange(primary.id);
-  await pruneDescriptionImages(primary.id).catch(didNot("remove description images nothing uses"));
-  await pruneWhatModelsLeft(userId, others).catch(didNot("tidy what the merged models left"));
-  return { primary, merged: others };
+  return { primary, others, home, cover };
 }

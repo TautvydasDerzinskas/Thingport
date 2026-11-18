@@ -3,7 +3,7 @@ import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { STORAGE, PARAMETRIC_SOURCE_EXTS } from "../config";
-import { withStorageLock } from "../utils/storageLock";
+import { storageLockTurn, withStorageLock } from "../utils/storageLock";
 import { HttpError, sanitizeFilename, guessMimeFromPath, mimeFromContentType } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
@@ -179,9 +179,9 @@ export function resolvePlateFilePath(plate: Pick<Plate, "storagePath" | "sourceP
 
 /** What a model's first plate reads as when it's a sliced print, which stands for a prepared print where the model has
  *  none of its own; null when it isn't one. `first`, the plate that is or will be first; the first plate by default.
- *  Its file is found under the storage lock, as a move renames a file before it saves where it went, and read once more
- *  where a move took it elsewhere while it was being read: looked for under the lock too, so a move that has renamed
- *  it has saved where by then. */
+ *  Its file is found under the storage lock, as a move renames a file before it saves where it went, and the reading
+ *  kept only when nothing else had the lock while it was read (storageLockTurn): a move then, even away and back, could
+ *  have put another file where it was read. Otherwise it's read again with the lock held throughout. */
 async function firstPlateReading(
   printId: string,
   first?: Plate | null,
@@ -189,20 +189,19 @@ async function firstPlateReading(
   const plate0 =
     first === undefined ? await prisma.plate.findFirst({ where: { printId }, orderBy: { position: "asc" } }) : first;
   if (!plate0) return Prisma.JsonNull;
-  for (let tries = 0; tries < 2; tries++) {
-    const found = await withStorageLock(async () => {
-      const now = await prisma.plate.findUnique({ where: { id: plate0.id } });
-      return now && { plate: now, filePath: resolvePlateFilePath(now) };
-    });
-    if (!found?.filePath) break;
-    const sniffed = await inspectPreparedPrint(found.filePath, found.plate.filename);
-    if (sniffed) return sniffed as unknown as Prisma.InputJsonValue;
-    const after = await withStorageLock(() =>
-      prisma.plate.findUnique({ where: { id: plate0.id }, select: { storagePath: true } }),
-    );
-    if (after?.storagePath === found.plate.storagePath) break;
-  }
-  return Prisma.JsonNull;
+  const look = async () => {
+    const plate = await prisma.plate.findUnique({ where: { id: plate0.id } });
+    return { plate, filePath: plate && resolvePlateFilePath(plate) };
+  };
+  const read = async ({ plate, filePath }: Awaited<ReturnType<typeof look>>) => {
+    if (!plate || !filePath) return Prisma.JsonNull;
+    const sniffed = await inspectPreparedPrint(filePath, plate.filename);
+    return sniffed ? (sniffed as unknown as Prisma.InputJsonValue) : Prisma.JsonNull;
+  };
+  const found = await withStorageLock(async () => ({ ...(await look()), turn: storageLockTurn() }));
+  const reading = await read(found);
+  if (await withStorageLock(async () => storageLockTurn() === found.turn + 1)) return reading;
+  return withStorageLock(async () => read(await look()));
 }
 
 /** Reads the model's first plate again for its prepared metadata, with the plate order held: a reorder between the
@@ -642,8 +641,8 @@ export async function addPlatesToPrint(
 /**
  * Runs `run` with the model's plate order held until it's done, for a request that adds plates and must take them back
  * when a later step fails: no other change to the model's plates made through the plate order (adding, removing,
- * reordering, a repair of a model whose files are gone) comes in between, so the others are all still there and these
- * can't become the model's only ones. A merge changes plates outside it. `add` adds plates after the others;
+ * reordering, merging, a repair of a model whose files are gone) comes in between, so the others are all still there
+ * and these can't become the model's only ones. `add` adds plates after the others;
  * when `run` fails, the ones it added are taken back as far as they can be, never the model's last: one that can't be
  * is logged and stays, and `run`'s own error is what the caller gets.
  */
@@ -735,7 +734,8 @@ async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates)
  * The model's plates put back as `previous` were, after a replacement of them that stopped part-way
  * (modelFilesReplace): the plates it made go, files, pictures and all, and `previous` take their place in the same
  * transaction, so the model is never left with neither. Under the storage lock, the rows read there, as
- * removePlateRows does. With the plate order held.
+ * removePlateRows does. With the plate order held since the old rows went, which whatever adds plates to a model
+ * takes, a merge included: the model's plates are then only those the replacement made.
  */
 export async function restorePlates(printId: string, previous: Plate[]): Promise<void> {
   const removed = await withStorageLock(async () => {

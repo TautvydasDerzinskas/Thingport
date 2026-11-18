@@ -25,8 +25,9 @@ import { prisma } from "../src/db";
 import { makePrint, register, tempFile, uniqueImage, upload } from "./helpers/fileReuse";
 import { modelFilesMissing, scanMissingFiles } from "../src/services/missingFilesService";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
+import { mergeModels } from "../src/services/modelMergeService";
 import { replaceModelFiles } from "../src/services/importService";
-import { addPreviewImage } from "../src/services/previewImageService";
+import { addPreviewImage, removePreviewImage } from "../src/services/previewImageService";
 import { assetTarget, galleryImageFile, plateThumbFile } from "../src/services/modelAssets";
 import { licenseData } from "../src/services/licenseService";
 import { syncLicenseFile } from "../src/services/licenseFile";
@@ -1153,6 +1154,88 @@ describe("models whose files are gone", () => {
     expect(failed).toBe(true);
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });
     expect(plates.map((plate) => plate.id)).toEqual([model.plate.id]);
+  });
+
+  it("keeps the plates a merge brings in while a repair runs, though the repair then stops part-way", async () => {
+    const model = await makePrint(dir, owner.id, "Merged into meanwhile");
+    const other = await makePrint(dir, owner.id, "Merged in meanwhile");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    let merging: Promise<unknown> | null = null;
+    await repairStoppedAtSecond(model, async () => {
+      // The owner merges another model into it once the repair's first plate is in.
+      merging = mergeModels(owner.id, model.print.id, [other.print.id]);
+      // One that isn't kept waiting is done before the repair stops.
+      await Promise.race([merging.catch(() => undefined), new Promise((resolve) => setTimeout(resolve, 600))]);
+    });
+    await merging;
+
+    // The model as it was found, and the merged one's plate after it, its file still there.
+    const plates = await prisma.plate.findMany({ where: { printId: model.print.id }, orderBy: { position: "asc" } });
+    expect(plates.map((plate) => plate.id)).toEqual([model.plate.id, other.plate.id]);
+    expect(plates.map((plate) => plate.position)).toEqual([0, 1]);
+    expect(fs.existsSync(path.join(STORAGE, plates[1].storagePath))).toBe(true);
+  });
+
+  it("finishes a repair whose look for the old plates' pictures fails, as the scan won't offer the model again", async () => {
+    const model = await makePrint(dir, owner.id, "Old pictures unread");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The read of where the model's pictures are, for the old plates' thumbnails, fails.
+    const findUniqueOrThrow = prisma.print.findUniqueOrThrow.bind(prisma.print);
+    let failed = false;
+    const spy = vi.spyOn(prisma.print, "findUniqueOrThrow").mockImplementation(((
+      args: Parameters<typeof prisma.print.findUniqueOrThrow>[0],
+    ) => {
+      const select = args.select as { assetsPath?: boolean } | undefined;
+      if (failed || args.where.id !== model.print.id || !select?.assetsPath) return findUniqueOrThrow(args);
+      failed = true;
+      return Promise.reject(new Error("the database went away for a moment"));
+    }) as never);
+    try {
+      const replaced = await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+        { filename: "shape.scad", tempFilePath: tempFile(dir, "cube(3);\n") },
+      ]);
+      expect(replaced?.plates.map((plate) => plate.filename)).toEqual(["fetched.stl"]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(failed).toBe(true);
+    // The steps after it ran: the source's script is beside the model.
+    const scripts = await prisma.printFile.findMany({ where: { printId: model.print.id, filename: "shape.scad" } });
+    expect(scripts).toHaveLength(1);
+  });
+
+  it("calls a gallery whole whose pictures are all there, though the owner removed one as the repair ran", async () => {
+    const model = await makePrint(dir, owner.id, "Picture removed meanwhile");
+    const kept = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    const removed = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The owner removes a picture just after the repair read the gallery.
+    const findFirst = prisma.print.findFirst.bind(prisma.print);
+    let removing: Promise<void> | null = null;
+    const spy = vi.spyOn(prisma.print, "findFirst").mockImplementation((async (
+      args: Parameters<typeof prisma.print.findFirst>[0],
+    ) => {
+      const found = await findFirst(args);
+      const include = args?.include as { previewImages?: unknown } | undefined;
+      if (!removing && include?.previewImages && args?.where?.id === model.print.id) {
+        removing = removePreviewImage(model.print.id, removed!.id);
+        await removing;
+      }
+      return found;
+    }) as never);
+    let replaced: Awaited<ReturnType<typeof replaceModelPlates>> | undefined;
+    try {
+      replaced = await replaceModelPlates(owner.id, model.print.id, [
+        { filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") },
+      ]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(removing).not.toBeNull();
+    // So the source's pictures don't replace the owner's.
+    expect(replaced?.galleryWhole).toBe(true);
+    expect(replaced?.gallery).toEqual(expect.arrayContaining([kept!.id, removed!.id]));
   });
 
   it("keeps a whole gallery that a rename moves while a repair runs", async () => {

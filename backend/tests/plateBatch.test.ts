@@ -14,6 +14,8 @@ const stage = vi.hoisted(() => ({
   readingFails: false,
   // Runs as the next reading of a file for whether it's a sliced print starts, given the file, once.
   duringReading: null as ((filePath: string) => Promise<void>) | null,
+  // Runs once the next reading of a file for whether it's a sliced print is done, before its answer, once.
+  afterReading: null as (() => Promise<void>) | null,
   // Runs as a new 3MF plate's format is read, once, which then fails.
   formatFails: null as ((plateId: string) => Promise<void>) | null,
   // Each reading of a new 3MF plate's format, with the file it was given.
@@ -45,7 +47,13 @@ vi.mock("../src/services/preparedPrint", async (original) => {
         stage.duringReading = null;
         await hook(args[0]);
       }
-      if (!stage.readingFails) return actual.inspectPreparedPrint(...args);
+      if (!stage.readingFails) {
+        const reading = await actual.inspectPreparedPrint(...args);
+        const after = stage.afterReading;
+        stage.afterReading = null;
+        await after?.();
+        return reading;
+      }
       stage.readingFails = false;
       return Promise.reject(new Error("the disk went away"));
     },
@@ -184,6 +192,7 @@ afterEach(() => {
   stage.readBack = null;
   stage.readingFails = false;
   stage.duringReading = null;
+  stage.afterReading = null;
   stage.formatFails = null;
   stage.beforeFormat = null;
 });
@@ -386,6 +395,46 @@ describe("a model's plates, changed by two requests at once", () => {
     }
     expect(moving).not.toBeNull();
     expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
+  });
+
+  it("keeps no reading of a file that moves put where a reorder's new first plate was read, and took away again", async () => {
+    const { print, plates } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const [plain, job] = await addPlatesToPrint(owner.id, print.id, [
+      { filename: "plain.3mf", tempFilePath: await threeMf(false) },
+      { filename: "job.3mf", tempFilePath: await threeMf(true) },
+    ]);
+    // Each file renamed and its row saved where it went, under the storage lock, as a move does.
+    const move = (moves: [string, string][]) =>
+      withStorageLock(async () => {
+        for (const [plateId, storagePath] of moves) {
+          const now = await prisma.plate.findUniqueOrThrow({ where: { id: plateId } });
+          fs.renameSync(path.join(STORAGE, now.storagePath), path.join(STORAGE, storagePath));
+          await prisma.plate.update({ where: { id: plateId }, data: { storagePath } });
+        }
+      });
+    const aside = `${plain.storagePath}.aside`;
+    // As the plain plate is read, the sliced one's file is put where it was, and once read, each goes back: the plate's
+    // path is the same before and after.
+    stage.duringReading = () =>
+      move([
+        [plain.id, aside],
+        [job.id, plain.storagePath],
+      ]);
+    stage.afterReading = () =>
+      move([
+        [job.id, job.storagePath],
+        [plain.id, plain.storagePath],
+      ]);
+
+    const res = await request(app)
+      .post(`/api/print/${print.id}/plates/reorder`)
+      .set(auth())
+      .send({ plate_ids: [plain.id, plates[0].id, job.id] });
+    expect(res.status).toBe(200);
+    expect(stage.afterReading).toBeNull();
+    // The plain plate first, which isn't sliced: no reading of the sliced one stands for it.
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).toBeNull();
+    expect((await platesOf(print.id)).map((plate) => plate.id)).toEqual([plain.id, plates[0].id, job.id]);
   });
 
   it("reads a new 3MF plate's file where a rename moved it as it was stored", async () => {
