@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Router } from "express";
+import type { Plate } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../auth";
@@ -50,7 +51,14 @@ router.post(
         const safeName = sanitizeFilename(f.originalname);
         return { filename: safeName, mime: mimeFromContentType(f.mimetype, safeName), tempFilePath: f.path };
       });
-      const added = await addPlatesToPrint(req.userId!, print.id, plateInputs);
+      // All or none: a retry sends every file again, so those already in would come back twice.
+      const added: Plate[] = [];
+      try {
+        for (const input of plateInputs) added.push(...(await addPlatesToPrint(req.userId!, print.id, [input])));
+      } catch (err) {
+        for (const plate of added) await removePlate(print, plate.id).catch(() => undefined);
+        throw err;
+      }
       // Which plates are these files', in their order: the model can gain others meanwhile, from another tab.
       res.json({ print: await printOutById(req.userId!, print.id), plate_ids: added.map((plate) => plate.id) });
     } finally {

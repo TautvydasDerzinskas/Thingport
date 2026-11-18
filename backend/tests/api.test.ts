@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import fs from "node:fs";
 import path from "node:path";
@@ -288,6 +288,31 @@ describe("plate add/remove/reorder/rename", () => {
       "lid.stl",
       "arm.stl",
     ]);
+  });
+
+  it("adds none of a batch's files when one can't be stored, so a retry doesn't bring any in twice", async () => {
+    const made = await auth(request(app).post("/api/upload")).attach("files", tmpFile("base.stl", "solid b endsolid"));
+    const modelId = made.body.prints[0].id;
+    await trackPrint(modelId);
+    const create = prisma.plate.create.bind(prisma.plate);
+    let calls = 0;
+    const spy = vi.spyOn(prisma.plate, "create").mockImplementation(((
+      args: Parameters<typeof prisma.plate.create>[0],
+    ) => {
+      calls += 1;
+      return calls === 2 ? Promise.reject(new Error("the disk is full")) : create(args);
+    }) as never);
+    try {
+      const res = await auth(request(app).post(`/api/print/${modelId}/plates`))
+        .attach("files", tmpFile("lid.stl", "solid l endsolid"))
+        .attach("files", tmpFile("arm.stl", "solid a endsolid"));
+      expect(res.status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(calls).toBe(2);
+    const plates = await prisma.plate.findMany({ where: { printId: modelId } });
+    expect(plates.map((plate) => plate.filename)).toEqual(["base.stl"]);
   });
 
   // The Edit dialog's order for swapping a model's only file for an edited copy of the same name.
