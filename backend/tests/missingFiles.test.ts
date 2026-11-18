@@ -41,7 +41,7 @@ import {
 } from "../src/services/printFileService";
 import { relocatePrint, relocatePrintFile } from "../src/services/printService";
 import { printOutsByIds } from "../src/services/printLoader";
-import { addPlatesToPrint, keepGeneratorScripts, removePlate } from "../src/services/printCreation";
+import { addPlatesToPrint, keepGeneratorScripts, removePlate, withPlateOrder } from "../src/services/printCreation";
 import { withStorageLock } from "../src/utils/storageLock";
 
 // Finding the models whose files are gone, and the repair that deletes them. Re-importing is not covered here: it
@@ -1244,6 +1244,76 @@ describe("models whose files are gone", () => {
       setCleanupDelaysForTest();
       fs.rmSync(left, { force: true });
     }
+    const scan = await scanMissingFiles(owner.id);
+    expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
+  });
+
+  it("leaves a failed repair's plate alone once a merge has taken it to another model", async () => {
+    setCleanupDelaysForTest([500, 500]);
+    const model = await makePrint(dir, owner.id, "Merged before its clean-up");
+    const keeper = await makePrint(dir, owner.id, "Keeps the merged plate");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The putting back fails three times and the read of the plates it made once, so the clean-up waits for a while.
+    const findMany = prisma.plate.findMany.bind(prisma.plate);
+    let failing = 0;
+    const spy = vi.spyOn(prisma.plate, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.plate.findMany>[0],
+    ) => {
+      const where = args?.where as { printId?: string; id?: { in?: string[] } } | undefined;
+      const cleanup = Array.isArray(where?.id?.in);
+      const puttingBack = !cleanup && where?.printId === model.print.id && !args?.orderBy;
+      if (failing <= 0 || !(puttingBack || cleanup)) return findMany(args);
+      failing -= 1;
+      return Promise.reject(new Error("the database went away for a moment"));
+    }) as never);
+    let made: string[] = [];
+    try {
+      made = await repairStoppedAtSecond(model, async () => {
+        failing = 4;
+      });
+      const stopped = Date.now();
+      expect(failing).toBe(0);
+      // Before the clean-up's next try, the owner merges the model into another, which takes the plate the repair made.
+      await mergeModels(owner.id, keeper.print.id, [model.print.id]);
+      // That try comes 500 ms after the first and holds the model's plate order while it runs: past both.
+      await new Promise((resolve) => setTimeout(resolve, Math.max(0, stopped + 800 - Date.now())));
+      await withPlateOrder(model.print.id, async () => undefined);
+    } finally {
+      spy.mockRestore();
+      setCleanupDelaysForTest();
+    }
+    const moved = await prisma.plate.findUniqueOrThrow({ where: { id: made[0] } });
+    expect(moved.printId).toBe(keeper.print.id);
+    expect(fs.existsSync(path.join(STORAGE, moved.storagePath))).toBe(true);
+  });
+
+  it("tries a failed repair's clean-up again when a file won't go", async () => {
+    setCleanupDelaysForTest([20, 20]);
+    const model = await makePrint(dir, owner.id, "File that wouldn't go");
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    // The first removal of the plate the repair made fails, as a disk might.
+    const rm = fsPromises.rm.bind(fsPromises);
+    let refused = 0;
+    const rmSpy = vi.spyOn(fsPromises, "rm").mockImplementation((async (where: fs.PathLike, options?: fs.RmOptions) => {
+      if (!refused && String(where).endsWith("photo.png")) {
+        refused += 1;
+        throw Object.assign(new Error("EIO: i/o error, unlink"), { code: "EIO" });
+      }
+      return rm(where, options);
+    }) as never);
+    let made: string[] = [];
+    try {
+      made = await repairPutBackFailing(model, 3);
+      const plate = await prisma.plate.findUniqueOrThrow({ where: { id: made[0] } });
+      await vi.waitFor(() => expect(fs.existsSync(path.join(STORAGE, plate.storagePath))).toBe(false), {
+        timeout: 4000,
+        interval: 20,
+      });
+    } finally {
+      rmSpy.mockRestore();
+      setCleanupDelaysForTest();
+    }
+    expect(refused).toBe(1);
     const scan = await scanMissingFiles(owner.id);
     expect(scan.broken.map((broken) => broken.id)).toContain(model.print.id);
   });

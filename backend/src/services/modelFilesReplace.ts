@@ -153,18 +153,20 @@ async function putPlatesBack(printId: string, old: Plate[], made: readonly Plate
 
 /** The files of `made`, the plates a failed repair made, removed where their rows say they are now. Read under the
  *  storage lock, which a move holds from renaming a file to saving where it went: a path a move has freed since, which
- *  another model's file may hold by now, is never removed. False when the rows can't be read, and nothing went. */
+ *  another model's file may hold by now, is never removed. Only the plates the model still has: a merge since keeps a
+ *  plate's id but makes it another model's. False when the rows can't be read or a file won't go, for a later try to
+ *  read them again; a file that's gone already counts as gone. */
 async function removeMadeFiles(printId: string, made: readonly Plate[]): Promise<boolean> {
   try {
     await withStorageLock(async () => {
-      const now = await prisma.plate.findMany({ where: { id: { in: made.map((plate) => plate.id) } } });
+      const now = await prisma.plate.findMany({ where: { id: { in: made.map((plate) => plate.id) }, printId } });
       for (const plate of now) {
-        if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true }).catch(() => undefined);
+        if (!plate.sourcePath) await fs.rm(managedPlatePath(plate), { force: true });
       }
     });
     return true;
   } catch (error) {
-    log.error("couldn't read a failed repair's plates to remove their files", { print: printId, error });
+    log.error("couldn't remove the files of a failed repair's plates", { print: printId, error });
     return false;
   }
 }
@@ -177,7 +179,7 @@ export function setCleanupDelaysForTest(delays?: number[]): void {
   cleanupDelaysMs = delays ?? CLEANUP_DELAYS_MS;
 }
 
-/** removeMadeFiles tried again later, until the rows can be read or the tries run out: the database is away for
+/** removeMadeFiles tried again later, until it's done or the tries run out: the database or the disk is away for
  *  longer than a moment. Each try holds the plate order, as any change to the model's plates does. Pending in this
  *  process only: one that's stopped first leaves the model with the plates the repair made. */
 function removeMadeFilesLater(printId: string, made: readonly Plate[], attempt = 0): void {
