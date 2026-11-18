@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UnauthorizedError } from "../../api/client";
 import { type Print, type PrintFile, PrintApiError, printsApi } from "../../api/prints";
@@ -28,7 +28,12 @@ export function useSupportingFiles(
   const { t } = useTranslation(["models", "common"]);
   const showToast = useToast();
   const confirmDialog = useConfirm();
-  const [uploading, setUploading] = useState<UploadingFile[]>([]);
+  // Each with the model it's going to: the page stays as another model opens, and those still go up to the first.
+  const [pending, setPending] = useState<(UploadingFile & { printId: string })[]>([]);
+  const uploading = useMemo<UploadingFile[]>(
+    () => pending.filter((item) => item.printId === printId).map(({ key, name }) => ({ key, name })),
+    [pending, printId],
+  );
   // The hidden file input the picker is, bound by the component that renders it.
   const [input, setInput] = useState<HTMLInputElement | null>(null);
 
@@ -58,10 +63,10 @@ export function useSupportingFiles(
     async (files: File[]) => {
       if (!files.length || !printId) return;
       const queued = files.map((file) => ({ key: newLocalId(), name: file.name, file }));
-      setUploading((current) => [...current, ...queued.map(({ key, name }) => ({ key, name }))]);
+      setPending((current) => [...current, ...queued.map(({ key, name }) => ({ key, name, printId }))]);
       const settle = (done: { key: string }[]) => {
         const keys = new Set(done.map((item) => item.key));
-        setUploading((current) => current.filter((item) => !keys.has(item.key)));
+        setPending((current) => current.filter((item) => !keys.has(item.key)));
       };
       const { model, supporting } = sortAddedFiles(queued, "supporting");
       await inTurn(async () => {
