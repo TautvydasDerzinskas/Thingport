@@ -67,9 +67,12 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
     if (!resolved.files.length && !resolved.zipPath && resolved.price) {
       throw new HttpError(403, `This is a paid Pinshape model (${resolved.price}): Thingport can't download it.`);
     }
-    // What a plate takes, a zip to unpack, and the other files a model keeps beside it: no point asking for pictures.
+    // What a plate takes, a zip to unpack, and the other files a model keeps beside it where the admin keeps any: no
+    // point asking for pictures, nor for a link to a file that would be dropped.
+    const besideToo = (await kit.supportingLimit()) !== null;
     const wanted = resolved.files.filter(
-      (file) => kit.isImportableFile(file.name) || kit.isSupportingFile(file.name) || /\.zip$/i.test(file.name),
+      (file) =>
+        kit.isImportableFile(file.name) || (besideToo && kit.isSupportingFile(file.name)) || /\.zip$/i.test(file.name),
     );
     const files =
       resolved.files.length || !resolved.zipPath

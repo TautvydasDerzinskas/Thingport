@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { prisma } from "../../src/db";
+import { setImportSupportingFiles } from "../../src/services/settingsService";
 import { pinshapeBrowse } from "../../src/providers/pinshape/browse";
 import { pinshapeConnection } from "../../src/providers/pinshape/connection";
 import { getPinshapeConnection, setUserPinshapeSession } from "../../src/providers/pinshape/session";
@@ -48,7 +49,10 @@ function handlerFor(scenario: string): FetchHandler {
     if (url.hostname !== "pinshape.com") return undefined;
     const path = url.pathname;
     if (path === "/items/111504") {
-      return scenario === "missing" ? redirect("/index") : html(loadFixtureHtml("pinshape", "model-page"));
+      if (scenario === "missing") return redirect("/index");
+      const page = loadFixtureHtml("pinshape", "model-page");
+      // Its second file a guide instead, as a model's instructions come.
+      return html(scenario === "guide" ? page.replaceAll("Resin_Draco_short.stl", "guide.pdf") : page);
     }
     const file = path.match(/^\/items\/111504-articulated-dragon\/download\/file\/(\d+)$/)?.[1];
     if (file && FILES[file]) {
@@ -142,6 +146,26 @@ describe("Pinshape specifics", () => {
       "/items/111504-articulated-dragon/download/file/1784513",
       "/items/111504-articulated-dragon/download/file/1784514",
     ]);
+  });
+
+  it("asks for a file kept beside the model only where the admin keeps any", async () => {
+    await connect(ctx.userId);
+    const guide = "/items/111504-articulated-dragon/download/file/1784514";
+    await setImportSupportingFiles("off");
+    try {
+      const off = ctx.stub("guide");
+      expectStatus(await ctx.importUrl(), 200);
+      expect(off.callsTo("pinshape.com").some((call) => call.url.pathname === guide)).toBe(false);
+    } finally {
+      await setImportSupportingFiles(100);
+    }
+    await prisma.print.deleteMany({ where: { userId: ctx.userId } });
+    const on = ctx.stub("guide");
+    expectStatus(await ctx.importUrl(), 200);
+    expect(on.callsTo("pinshape.com").some((call) => call.url.pathname === guide)).toBe(true);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
+    expect(files.map((file) => file.filename)).toEqual(["guide.pdf"]);
   });
 
   it("lists someone's likes, as many as their profile shows, named after them", async () => {
