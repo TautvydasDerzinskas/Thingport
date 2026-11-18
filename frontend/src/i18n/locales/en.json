@@ -6183,6 +6183,7 @@
       "discardConfirmLabel": "Discard",
       "updateSuccess": "Model updated",
       "updateFailed": "Failed to update the model. Please try again.",
+      "photosNotSaved": "Couldn't save these photos: {{names}}. Take them out or try again.",
       "descriptionWrite": "Write",
       "descriptionPreview": "Preview",
       "descriptionPlaceholder": "Describe the model, print settings, assembly steps...",

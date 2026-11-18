@@ -5951,6 +5951,7 @@
       "discardConfirmLabel": "放弃",
       "updateSuccess": "模型已更新",
       "updateFailed": "更新模型失败，请重试。",
+      "photosNotSaved": "无法保存这些照片：{{names}}。请将其移除或重试。",
       "descriptionWrite": "编写",
       "descriptionPreview": "预览",
       "descriptionPlaceholder": "描述模型、打印设置、组装步骤……",

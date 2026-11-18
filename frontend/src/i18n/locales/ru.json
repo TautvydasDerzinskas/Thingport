@@ -7392,6 +7392,7 @@
       "discardConfirmLabel": "Отказаться",
       "updateSuccess": "Модель обновлена",
       "updateFailed": "Не удалось обновить модель. Пожалуйста, попробуйте еще раз.",
+      "photosNotSaved": "Не удалось сохранить эти фото: {{names}}. Уберите их или попробуйте ещё раз.",
       "descriptionWrite": "Писать",
       "descriptionPreview": "Предварительный просмотр",
       "descriptionPlaceholder": "Опишите модель, настройки печати, этапы сборки...",

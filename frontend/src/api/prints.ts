@@ -534,7 +534,16 @@ export const printsApi = {
   },
 
   /** `plate_ids`: the plates `files` became, in their order. */
-  addPlates: async (printId: string, files: File[]): Promise<{ print: Print; plate_ids?: string[] }> => {
+  /** `plate_ids`: one per plate made, in order. `uploaded`: one per file sent, in order: the plate it became, or
+   *  `packed` where a .gltf sent with it took it in. */
+  addPlates: async (
+    printId: string,
+    files: File[],
+  ): Promise<{
+    print: Print;
+    plate_ids?: string[];
+    uploaded?: { plate_id: string | null; packed: boolean }[];
+  }> => {
     const fd = new FormData();
     for (const file of files) {
       fd.append("files", file);
