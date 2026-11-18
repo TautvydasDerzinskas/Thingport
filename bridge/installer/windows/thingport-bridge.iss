@@ -47,7 +47,7 @@ Name: "belarusian"; MessagesFile: "languages\Belarusian.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 Name: "lithuanian"; MessagesFile: "languages\Lithuanian.isl"
-Name: "chinese"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinese"; MessagesFile: "languages\ChineseSimplified.isl"
 
 [CustomMessages]
 LegacyExeRemovalFailed=The previous Bridge executable could not be removed. Close Thingport Bridge and remove this file manually:
