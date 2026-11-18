@@ -230,8 +230,9 @@ export async function packGltfFiles<T extends PackableFile>(
         return fs.readFile(file.path);
       });
       const glbPath = tempPath();
-      await fs.writeFile(glbPath, glb);
+      // Listed before it's written, so one a failed write leaves part-way goes with the rest.
       written.push(glbPath);
+      await fs.writeFile(glbPath, glb);
       glbs.set(gltf, made(gltf, glbPath, glbNameOf(gltf.name)));
     }
   } catch (err) {

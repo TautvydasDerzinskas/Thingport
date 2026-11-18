@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 
 // What a request adding, removing, reordering or renaming a model's plates leaves when another request changes the same
 // plates at the same time, or when a step after the plates are in fails.
@@ -94,6 +95,9 @@ import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { addPlatesToPrint, createPrint } from "../src/services/printCreation";
 import { assetTarget, plateThumbFile } from "../src/services/modelAssets";
+import { replaceModelPlates } from "../src/services/modelFilesReplace";
+import { mergeModels } from "../src/services/modelMergeService";
+import { saveFileFromTemp } from "../src/services/printFileService";
 import { relocatePrint, saveThumbFromBytes } from "../src/services/printService";
 import { addUploadedFiles } from "../src/services/uploadService";
 import { withStorageLock } from "../src/utils/storageLock";
@@ -120,12 +124,13 @@ const MODEL_XML =
   '<vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object>' +
   '</resources><build><item objectid="1"/></build></model>';
 
-/** A .3mf in a temp file; `sliced`, with the G-code a slicer puts in one. */
-async function threeMf(sliced: boolean): Promise<string> {
+/** A .3mf in a temp file; `sliced`, with the G-code a slicer puts in one, and with `thumbnail` as its picture. */
+async function threeMf(sliced: boolean, thumbnail?: Buffer): Promise<string> {
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
   zip.file("3D/3dmodel.model", MODEL_XML);
   if (sliced) zip.file("Metadata/plate_1.gcode", "; printer_model = Bambu Lab P1S\nG28\n");
+  if (thumbnail) zip.file("Metadata/thumbnail.png", thumbnail);
   const file = path.join(dir, `part-${count++}.3mf`);
   fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer" }));
   return file;
@@ -276,7 +281,8 @@ describe("a model's plates, changed by two requests at once", () => {
       { filename: "sliced.3mf", tempFilePath: await threeMf(true) },
       { filename: "plain.stl", tempFilePath: tempStl("plain") },
     ]);
-    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
+    const reading = (await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata;
+    expect(reading).not.toBeNull();
     const order = [plates[1].id, plates[0].id];
 
     stage.readingFails = true;
@@ -285,6 +291,9 @@ describe("a model's plates, changed by two requests at once", () => {
       .set(auth())
       .send({ plate_ids: order });
     expect(failed.status).toBe(500);
+    // Nothing of it saved: neither the order nor a reading.
+    expect((await platesOf(print.id)).map((plate) => plate.id)).toEqual(plates.map((plate) => plate.id));
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).toEqual(reading);
     const retried = await request(app)
       .post(`/api/print/${print.id}/plates/reorder`)
       .set(auth())
@@ -301,11 +310,16 @@ describe("a model's plates, changed by two requests at once", () => {
       { filename: "sliced.3mf", tempFilePath: await threeMf(true) },
       { filename: "plain.stl", tempFilePath: tempStl("plain") },
     ]);
-    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
+    const reading = (await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata;
+    expect(reading).not.toBeNull();
     const remove = () => request(app).delete(`/api/print/${print.id}/plates/${plates[0].id}`).set(auth());
 
     stage.readingFails = true;
     expect((await remove()).status).toBe(500);
+    // Nothing of it saved: the plates, their places and the reading are as they were.
+    const places = (list: { id: string; position: number }[]) => list.map((plate) => [plate.id, plate.position]);
+    expect(places(await platesOf(print.id))).toEqual(places(plates));
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).toEqual(reading);
     expect((await remove()).status).toBe(200);
 
     expect((await platesOf(print.id)).map((plate) => plate.filename)).toEqual(["plain.stl"]);
@@ -464,6 +478,7 @@ describe("a model's plates, changed by two requests at once", () => {
       spy.mockRestore();
     }
     const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    expect(renamed).not.toBe("");
     expect(part.storagePath).toContain(renamed);
     // Its format was read, from the file where it is.
     const reads = stage.formatReads.filter((read) => read.plateId === part.id);
@@ -495,6 +510,97 @@ describe("a model's plates, changed by two requests at once", () => {
     expect(fs.existsSync(reads[1].filePath)).toBe(true);
   });
 
+  it("keeps no thumbnail of another file that took a new 3MF plate's place while it was being read", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const picture = async (background: string) =>
+      sharp({ create: { width: 8, height: 8, channels: 3, background } })
+        .png()
+        .toBuffer();
+    const other = await threeMf(false, await picture("#0000ff"));
+    let left = "";
+    stage.beforeFormat = async (filePath) => {
+      // Another tab renames the model, and its files move, as the new plate's format is read; another model's 3MF then
+      // takes the place the plate's file left.
+      const moved = await prisma.print.update({
+        where: { id: print.id },
+        data: { name: `Took its place ${stamp}` },
+        include: { plates: true },
+      });
+      await relocatePrint(moved, moved.plates);
+      left = filePath;
+      fs.mkdirSync(path.dirname(left), { recursive: true });
+      fs.copyFileSync(other, left);
+    };
+    try {
+      await addPlatesToPrint(owner.id, print.id, [
+        { filename: "part.3mf", tempFilePath: await threeMf(false, await picture("#ff0000")) },
+      ]);
+    } finally {
+      stage.beforeFormat = null;
+      if (left) fs.rmSync(left, { force: true });
+    }
+    expect(left).not.toBe("");
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    // Its thumbnail is its own file's picture, red, not the blue of the file that took its place.
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
+    const [red, , blue] = (await sharp(assetTarget(assetsPath!, plateThumbFile(part.id))).stats()).channels;
+    expect(red.mean).toBeGreaterThan(200);
+    expect(blue.mean).toBeLessThan(50);
+  });
+
+  it("takes back the plate a failed upload added to a model that had none, so asking again adds it once", async () => {
+    const name = `No plates ${stamp} ${count++}`;
+    const print = await prisma.print.create({ data: { userId: owner.id, name, nameNormalized: name.toLowerCase() } });
+    // The file beside the plate is gone by the time it's saved, so the upload fails once the plate is in.
+    const upload = (guide: string) =>
+      addUploadedFiles(owner.id, print.id, [
+        { path: tempStl("body"), originalname: "body.stl", mimetype: "model/stl" },
+        { path: guide, originalname: "guide.pdf", mimetype: "application/pdf" },
+      ]);
+    await expect(upload(path.join(dir, `gone-${count++}.pdf`))).rejects.toThrow(/ENOENT/);
+    expect(await platesOf(print.id)).toEqual([]);
+    const guide = path.join(dir, `guide-${count++}.pdf`);
+    fs.writeFileSync(guide, "%PDF-1.4 guide");
+    await upload(guide);
+    expect((await platesOf(print.id)).map((plate) => plate.filename)).toEqual(["body.stl"]);
+  });
+
+  it("gives a repaired model its new first plate's reading before a merge into it can read the old one", async () => {
+    // Its first plate a sliced print whose file has gone, and another model with a prepared print of its own.
+    const { print, plates } = await model([{ filename: "sliced.3mf", tempFilePath: await threeMf(true) }]);
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedMetadata).not.toBeNull();
+    fs.rmSync(path.join(STORAGE, plates[0].storagePath), { force: true });
+    const other = await model([{ filename: "b.stl", tempFilePath: tempStl("b") }]);
+    const gcode = path.join(dir, `b-${count++}.gcode`);
+    fs.writeFileSync(gcode, "; printer_model = Bambu Lab P1S\nG28\n");
+    await saveFileFromTemp(owner.id, other.print.id, gcode, "b.gcode", null);
+    const prepared = (await prisma.print.findUniqueOrThrow({ where: { id: other.print.id } })).preparedFileId;
+    expect(prepared).not.toBeNull();
+    // The owner merges the other model into it once the repair's plates are in and it has let go of their order: at
+    // the repair's next step, its look for where the old plates' pictures are.
+    const findUniqueOrThrow = prisma.print.findUniqueOrThrow.bind(prisma.print);
+    let merged = false;
+    const spy = vi.spyOn(prisma.print, "findUniqueOrThrow").mockImplementation((async (
+      args: Parameters<typeof prisma.print.findUniqueOrThrow>[0],
+    ) => {
+      const select = Object.keys(args.select ?? {});
+      if (!merged && args.where.id === print.id && select.join() === "assetsPath") {
+        merged = true;
+        await mergeModels(owner.id, print.id, [other.print.id]);
+      }
+      return findUniqueOrThrow(args);
+    }) as never);
+    try {
+      await replaceModelPlates(owner.id, print.id, [{ filename: "plain.stl", tempFilePath: tempStl("plain") }]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(merged).toBe(true);
+    // With a plain file first, nothing stands for a prepared print, so the model took the other's as its own.
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: print.id } })).preparedFileId).toBe(prepared);
+    expect((await prisma.printFile.findUniqueOrThrow({ where: { id: prepared! } })).role).toBe("PREPARED");
+  });
+
   it("puts each plate of a batch where its model's new name puts it, though the model was renamed after the first was stored", async () => {
     const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
     const create = prisma.plate.create.bind(prisma.plate);
@@ -523,6 +629,7 @@ describe("a model's plates, changed by two requests at once", () => {
     } finally {
       spy.mockRestore();
     }
+    expect(renamed).not.toBe("");
     const now = await platesOf(print.id);
     expect(now.map((plate) => plate.filename)).toEqual(["a.stl", "first.stl", "second.stl"]);
     for (const plate of now) {

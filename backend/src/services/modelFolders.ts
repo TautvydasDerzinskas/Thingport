@@ -18,13 +18,20 @@ export function modelFolderUnits<T>(
     if (group) group.push(item);
     else groups.set(key, [item]);
   }
-  const modelKeys = [...groups].filter(([key, group]) => key && group.some(isModelFile)).map(([key]) => key);
+  const modelKeys = new Set([...groups].filter(([key, group]) => key && group.some(isModelFile)).map(([key]) => key));
   // A subfolder with no model files of its own belongs to the model folder above it, rather than coming in file by
-  // file: its documents are that model's, in their folder, and its pictures are that model's photos.
+  // file: its documents are that model's, in their folder, and its pictures are that model's photos. The nearest
+  // folder above that is a model, found by walking up from it rather than by looking through every model.
+  const ownerOf = (key: string) => {
+    for (let cut = key.lastIndexOf("/"); cut > 0; cut = key.lastIndexOf("/", cut - 1)) {
+      if (modelKeys.has(key.slice(0, cut))) return key.slice(0, cut);
+    }
+    return null;
+  };
   const attached = new Map<string, { item: T; folder: string }[]>();
   for (const [key, group] of groups) {
-    if (!key || modelKeys.includes(key)) continue;
-    const owner = modelKeys.filter((m) => key.startsWith(`${m}/`)).toSorted((a, b) => b.length - a.length)[0];
+    if (!key || modelKeys.has(key)) continue;
+    const owner = ownerOf(key);
     if (!owner) continue;
     const folder = key.slice(owner.length + 1);
     const list = attached.get(owner) ?? [];
@@ -33,7 +40,7 @@ export function modelFolderUnits<T>(
   }
   const taken = new Set([...attached.values()].flat().map((entry) => entry.item));
   return [...groups].flatMap(([key, group]): ModelFolderUnit<T>[] =>
-    modelKeys.includes(key)
+    modelKeys.has(key)
       ? [{ kind: "model", folder: key, files: group, attached: attached.get(key) ?? [] }]
       : group.filter((item) => !taken.has(item)).map((item) => ({ kind: "file", item })),
   );

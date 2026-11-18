@@ -800,8 +800,10 @@ describe("merging models", () => {
     expect(aside[0].storagePath).toBe(
       path.join(path.dirname(shared.storagePath), models[places.indexOf(aside[0])].id, "part.stl"),
     );
-    // Their pictures' folders too: the second is picked beside the first's rather than being the same one.
+    // Their pictures' folders too, into the category: the second is picked beside the first's rather than being the
+    // same one.
     const homes = await prisma.print.findMany({ where: { id: { in: models.map((model) => model.id) } } });
+    for (const home of homes) expect(home.assetsPath).toContain(category.name);
     expect(new Set(homes.map((home) => home.assetsPath)).size).toBe(2);
   });
 

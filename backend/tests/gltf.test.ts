@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
@@ -231,6 +232,28 @@ describe("finding what a .gltf points at among files", () => {
     const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];
     const { files: left } = await packGltfFiles(files, tempPath, made);
     expect(left.map((f) => f.name)).toEqual(["scene.glb"]);
+  });
+
+  it("removes a .glb that a failed write left part-way", async () => {
+    const { gltf, bin } = cubeGltf();
+    const files = [write("scene.gltf", gltf), write("scene.bin", bin), write("base.png", await png())];
+    const glbPath = tempPath();
+    // The disk fills up half-way through the .glb.
+    const writeFile = fsPromises.writeFile.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "writeFile").mockImplementation((async (
+      file: Parameters<typeof fsPromises.writeFile>[0],
+      ...rest: [never]
+    ) => {
+      if (String(file) !== glbPath) return writeFile(file, ...rest);
+      await writeFile(file, Buffer.from("half a glb"));
+      throw Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" });
+    }) as never);
+    try {
+      await expect(packGltfFiles(files, () => glbPath, made)).rejects.toThrow(/ENOSPC/);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(fs.existsSync(glbPath)).toBe(false);
   });
 
   it("leaves a texture out when two files share its name and neither is on its path", async () => {
