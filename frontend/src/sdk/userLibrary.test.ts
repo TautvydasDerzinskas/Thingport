@@ -6,6 +6,14 @@ const get = vi.fn<(id: string) => Promise<Print>>();
 const uploadFile = vi.fn<typeof printsApi.uploadFile>();
 const addPlates = vi.fn<typeof printsApi.addPlates>();
 vi.mock("../api/prints", () => ({
+  PrintApiError: class PrintApiError extends Error {
+    constructor(
+      message: string,
+      readonly status: number,
+    ) {
+      super(message);
+    }
+  },
   printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url, uploadFile, addPlates },
 }));
 vi.mock("../api/collections", () => ({ collectionsApi: {} }));
@@ -135,7 +143,40 @@ describe("files a script adds to a model", () => {
       ])
       .catch((err: unknown) => err);
     expect(failure).toBeInstanceOf(Error);
-    expect(failure).toMatchObject({ message: "Related file exceeds size limit", added: ["part.stl", "notes.txt"] });
+    expect(failure).toMatchObject({
+      message: "Related file exceeds size limit",
+      added: ["part.stl", "notes.txt"],
+      keepPrepared: false,
+    });
     expect((failure as { model?: { id: string } }).model?.id).toBe(model().id);
+  });
+
+  it("keeps the prepared print a call set when the rest is sent with keepPrepared", async () => {
+    uploadFile.mockReset();
+    uploadFile.mockResolvedValue({ print: model(), prepared: false });
+    get.mockResolvedValue(model());
+    await buildUserLibrary({ openModel: () => undefined }).models.addFiles("m1", [{ name: "B.gcode", data: "G28" }], {
+      keepPrepared: true,
+    });
+    expect(uploadFile.mock.calls.map(([, file, options]) => [file.name, options?.keepPrepared])).toEqual([
+      ["B.gcode", true],
+    ]);
+  });
+
+  it("refuses two different files of one name a .gltf could mean, before adding anything", async () => {
+    addPlates.mockReset();
+    uploadFile.mockReset();
+    const scene = (bin: string) => JSON.stringify({ buffers: [{ uri: bin }] });
+    const refused = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "a.gltf", data: scene("scene.bin") },
+        { name: "scene.bin", data: "aaaa" },
+        { name: "b.gltf", data: scene("scene.bin") },
+        { name: "scene.bin", data: "bbbb" },
+      ])
+      .catch((err: unknown) => err);
+    expect(String(refused)).toContain("scene.bin");
+    expect(addPlates).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
   });
 });
