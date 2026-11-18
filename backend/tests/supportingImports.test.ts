@@ -12,6 +12,7 @@ import {
   downloadSupportingFile,
   downloadSupportingFiles,
   fetchDesignRawFiles,
+  importKit,
   withDesignRawFiles,
   modelFilesFromZip,
   supportingFilesFromZip,
@@ -621,6 +622,61 @@ describe("a file a site gives beside a model's own", () => {
     expect(asked).toEqual(["/a.pdf", "/b.pdf", "/c.pdf"]);
   });
 
+  it("holds a zip that comes after other files to what they left of a model's share", async () => {
+    // Two 1000-byte guides, then a small zip of two more: 2500 bytes in all leaves room for neither in the zip.
+    const docs = await new JSZip()
+      .file("docs/a.txt", "a".repeat(1000))
+      .file("docs/b.txt", "b".repeat(1000))
+      .generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    served({ "/one.pdf": "1".repeat(1000), "/two.pdf": "2".repeat(1000), "/docs.zip": docs });
+    limits.value = { perFile: 1000, perModel: 2500 };
+    const kept = await downloadSupportingFiles([at("one.pdf"), at("two.pdf"), at("docs.zip")], site);
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["one.pdf", "two.pdf"]);
+    // And to what's left of the number a model keeps: after 99 files, one of the zip's.
+    limits.value = { perFile: 1000, perModel: 1_000_000 };
+    const many = Object.fromEntries(Array.from({ length: 99 }, (_, n) => [`/note-${n}.txt`, `note ${n}`]));
+    served({ ...many, "/docs.zip": docs });
+    const notes = Object.keys(many).map((pathname) => at(pathname.slice(1)));
+    const full = await downloadSupportingFiles([...notes, at("docs.zip")], site);
+    remove(full);
+    expect(full).toHaveLength(SUPPORTING_FILES_PER_MODEL);
+    expect(full.at(-1)!.filename).toBe("a.txt");
+  });
+
+  it("holds every file one model's import gives beside its own to one share, however they're asked for", async () => {
+    let inFlight = 0;
+    let most = 0;
+    const asked: string[] = [];
+    global.fetch = (async (target: string | URL | Request) => {
+      asked.push(new URL(String(target instanceof Request ? target.url : target)).pathname);
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      inFlight -= 1;
+      return new Response("x".repeat(60), { status: 200 });
+    }) as typeof fetch;
+    // Sixty bytes a file and a hundred and twenty in all: two fill it.
+    limits.value = { perFile: 100, perModel: 120 };
+    const kit = importKit();
+    // Asked for all at once, as a site's list is, one of them through a signed link.
+    const kept = (
+      await Promise.all([
+        kit.downloadSupportingFile(at("a.pdf"), site),
+        kit.downloadSupportingFile(at("b.pdf"), site),
+        kit.downloadSignedFile(at("c.pdf"), site, "blocked").then((inputs) => inputs ?? []),
+      ])
+    ).flat();
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["a.pdf", "b.pdf"]);
+    expect(asked).toEqual(["/a.pdf", "/b.pdf"]);
+    expect(most).toBe(1);
+    // Another model's import has a share of its own.
+    const other = await importKit().downloadSupportingFile(at("d.pdf"), site);
+    remove(other);
+    expect(other.map((each) => each.filename)).toEqual(["d.pdf"]);
+  });
+
   it("fetches a design's scripts where its raw files gave the files beside the model but no script", async () => {
     const scripts = await new JSZip()
       .file("frog.scad", "cube(1);")
@@ -810,7 +866,7 @@ describe("a zip from a link, by how its files become models", () => {
     expect(await filesOf(prints[0].id)).toEqual([[null, "notes.txt", "SUPPORTING"]]);
   });
 
-  it("a model per folder packs a scene with a picked file from outside its folder, which stays where it is", async () => {
+  it("a model per folder packs a scene with a picked file from outside its folder, which goes with it", async () => {
     const files = {
       "Models/A/scene.gltf": gltfScene("../../Shared/mesh.bin"),
       "Models/A/notes.txt": "upright",
@@ -819,8 +875,31 @@ describe("a zip from a link, by how its files become models", () => {
     const zip = await zipOf(files);
     const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
     expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["scene.glb"]]);
-    // The buffer is no file of A's: it goes as a file on its own does, which it can't be a model of.
-    expect(failed).toEqual(["Shared/mesh.bin"]);
+    // The buffer is in A's scene, rather than a file on its own that no model could be made of.
+    expect(failed).toEqual([]);
+  });
+
+  it("a model per folder makes a scene at the top a model of its own, packed with what it points at", async () => {
+    const files = {
+      "scene.gltf": gltfScene("mesh.bin"),
+      "mesh.bin": positions,
+      "Models/A/a.stl": "solid a endsolid",
+    };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(failed).toEqual([]);
+    const made = prints.map((print) => [print.title, print.plates.map((plate) => plate.filename)]);
+    expect(made.toSorted()).toEqual([
+      ["A", ["a.stl"]],
+      ["scene", ["scene.glb"]],
+    ]);
+  });
+
+  it("a model per file takes a file whose name ends in a space for what its name says it is", async () => {
+    const zip = await zipOf({ "part.stl ": "solid part endsolid" });
+    const { prints, failed } = await extractZipEntriesToPrints(userId, zip, ["part.stl "], {});
+    expect(failed).toEqual([]);
+    expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["part.stl"]]);
   });
 
   it("a model per folder packs a scene with a file of a model stored before it", async () => {

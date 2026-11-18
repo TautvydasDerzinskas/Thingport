@@ -154,8 +154,10 @@ export async function extractZipEntriesToPrints(
 
   for (const entryName of ordered) {
     const info = entryMap.get(entryName);
+    // Its name as it's kept: "part.stl " is a part.stl.
+    const filename = sanitizeFilename(path.basename(entryName));
     // A document can't be a model on its own: one per file makes models of what can be.
-    if (!info || info.isDirectory || !UPLOADABLE_EXTS.has(path.extname(entryName).toLowerCase())) {
+    if (!info || info.isDirectory || !UPLOADABLE_EXTS.has(path.extname(filename).toLowerCase())) {
       failed.push(entryName);
       onProgress?.(++processedCount, ordered.length, prints.length, failed.length);
       continue;
@@ -163,7 +165,6 @@ export async function extractZipEntriesToPrints(
     let tempPath: string | null = null;
     try {
       const targetCategoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, entryName, categoryCache);
-      const filename = sanitizeFilename(path.basename(entryName));
       const buffer = await readZipEntry(zipPath, info.rawName, IMPORT_MAX_BYTES);
       if (!buffer) throw new Error("Extracted file exceeds size limit or could not be read");
 
@@ -292,17 +293,18 @@ async function createModelOf(
 /** `entries` with each .gltf packed, with the files it points at, into one .glb in its place, as an upload's is
  *  (uploadService's withGltfPacked): kept as it is, a scene would point at files its model doesn't have. They're found
  *  by their paths in the zip, so a scene takes the .bin in its own folder. One of `others`, picked files of another
- *  model's folder or none, is packed in too, and stays theirs: it's read, not taken. `glbs`, the temp files made. */
+ *  model's folder or none, is packed in too, and stays theirs: it's read, not taken. `glbs`, the temp files made, and
+ *  `took`, the ones of `others` packed in. */
 async function withScenesPacked(
   entries: ModelEntry[],
   others: PickedEntry[] = [],
-): Promise<{ entries: ModelEntry[]; glbs: string[] }> {
-  if (!entries.some(({ entry }) => isGltfName(entry.filename))) return { entries, glbs: [] };
+): Promise<{ entries: ModelEntry[]; glbs: string[]; took: PickedEntry[] }> {
+  if (!entries.some(({ entry }) => isGltfName(entry.filename))) return { entries, glbs: [], took: [] };
   // Never another folder's scene: packing takes every .gltf it's handed.
   const outside: ModelEntry[] = others
     .filter((entry) => !isGltfName(entry.filename) && !entries.some((own) => own.entry === entry))
     .map((entry) => ({ entry, folder: null }));
-  const { files } = await packGltfFiles(
+  const { files, packed } = await packGltfFiles(
     [...entries, ...outside].map((item) => ({ name: item.entry.name, path: item.entry.tempPath, item })),
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
     (gltf, glbPath, glbName) => ({
@@ -322,6 +324,7 @@ async function withScenesPacked(
   return {
     entries: files.flatMap((file) => (outside.includes(file.item) ? [] : [file.item])),
     glbs: made.map((file) => file.path),
+    took: packed.flatMap((file) => (outside.includes(file.item) ? [file.item.entry] : [])),
   };
 }
 
@@ -454,7 +457,8 @@ export async function extractZipEntriesToOneModel(
 
 /** A zip's picked entries as "Each folder is a model" takes a folder tree (modelFolders.ts), the rules the consume
  *  folder goes by: each folder holding model files one model, named after it, in the categories of the folders above
- *  it, with the subfolders holding none attached; the other files a model each, as a model per file makes them. */
+ *  it, with the subfolders holding none attached; the other files a model each, as a model per file makes them, but
+ *  for a glTF scene, which is packed with what it points at as a model folder's is. */
 export async function extractZipEntriesToFolderModels(
   userId: string,
   zipPath: string,
@@ -484,38 +488,48 @@ export async function extractZipEntriesToFolderModels(
     processed = failed.length;
     if (processed) onProgress?.(processed, total, 0, failed.length);
     // Every model's scenes are packed before any model is stored, as storing one takes its files: a scene may point at
-    // a picked file outside its folder ("../../Shared/mesh.bin"), one a model stored before it holds among them. By
-    // folder, which each model folder has its own of.
-    const packed = new Map<string, { entries: ModelEntry[] } | { failure: unknown }>();
+    // a picked file outside its folder ("../../Shared/mesh.bin"), one a model stored before it holds among them. A
+    // scene at the top is a model of its own, packed as one in a folder is, and a file on its own that a scene packed
+    // in goes with it, rather than being a model, or a failure, of its own.
+    const packed = new Map<(typeof units)[number], { entries: ModelEntry[] } | { failure: unknown }>();
+    const taken = new Set<PickedEntry>();
     for (const unit of units) {
-      if (unit.kind === "file") continue;
-      const own = [
-        ...unit.files.map((entry) => ({ entry, folder: null })),
-        ...unit.attached.map(({ item, folder }) => ({ entry: item, folder })),
-      ];
+      if (unit.kind === "file" && !isGltfName(unit.item.filename)) continue;
+      const own =
+        unit.kind === "model"
+          ? [
+              ...unit.files.map((entry) => ({ entry, folder: null })),
+              ...unit.attached.map(({ item, folder }) => ({ entry: item, folder })),
+            ]
+          : [{ entry: unit.item, folder: null }];
       try {
         const scenes = await withScenesPacked(own, entries);
         glbs.push(...scenes.glbs);
-        packed.set(unit.folder, { entries: scenes.entries });
+        for (const entry of scenes.took) taken.add(entry);
+        packed.set(unit, { entries: scenes.entries });
       } catch (failure) {
-        packed.set(unit.folder, { failure });
+        packed.set(unit, { failure });
       }
     }
     for (const unit of units) {
-      if (unit.kind === "file") {
-        loose.push(unit.item.name);
+      const own = packed.get(unit);
+      if (!own) {
+        if (unit.kind === "file") {
+          if (taken.has(unit.item)) onProgress?.(++processed, total, prints.length, failed.length);
+          else loose.push(unit.item.name);
+        }
         continue;
       }
+      const where = unit.kind === "model" ? unit.folder : unit.item.name;
       try {
-        const own = packed.get(unit.folder)!;
         if ("failure" in own) throw own.failure;
         // The folders above the model's own, which is the model: Kit/A makes model A in category Kit.
-        const categoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, unit.folder, categoryCache);
-        const name = unit.folder.split("/").at(-1)!;
+        const categoryId = await resolveZipCategoryId(userId, options.categoryId ?? null, where, categoryCache);
+        const name = unit.kind === "model" ? unit.folder.split("/").at(-1)! : path.parse(unit.item.filename).name;
         prints.push(await storeModelOf(userId, own.entries, metaFor(options, name, categoryId), name, options));
       } catch (err) {
-        console.warn("Zip import: couldn't make a model of", unit.folder, err);
-        failed.push(unit.folder);
+        console.warn("Zip import: couldn't make a model of", where, err);
+        failed.push(where);
       }
       onProgress?.(++processed, total, prints.length, failed.length);
     }

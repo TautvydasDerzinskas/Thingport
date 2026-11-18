@@ -66,9 +66,13 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
   async downloadModel(_target, resolved, _auth, _requested, kit) {
     const files = await fetchMakerablesModelFiles(resolved.projectId);
     // What a plate takes, a zip to unpack, and the other files a model keeps beside it, its native CAD files among
-    // them: no point asking for its pictures.
+    // them, where the admin keeps any and the site doesn't say they're over the limit: no point asking for its
+    // pictures, nor for a file that would only be thrown away.
     const own = files.filter((file) => kit.isImportableFile(file.name) || /\.zip$/i.test(file.name));
-    const wanted = files.filter((file) => own.includes(file) || kit.isSupportingFile(file.name));
+    const limit = await kit.supportingLimit();
+    const beside = (file: (typeof files)[number]) =>
+      limit !== null && kit.isSupportingFile(file.name) && (file.size ?? 0) <= limit;
+    const wanted = files.filter((file) => own.includes(file) || beside(file));
     const downloaded: NewPlateInput[] = [];
     try {
       for (const file of wanted) {
@@ -78,12 +82,10 @@ export const makerablesImport: SourcedImport<null, MakerablesModelResolution> = 
         const folder = own.length > 1 && /\.zip$/i.test(file.name) ? file.name.replace(/\.zip$/i, "") : null;
         downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) })));
       }
-      // The toolpaths cut from them, from the project's other tabs, where the admin keeps any: never the import's
-      // failure, and none the site says is over the limit is asked for.
-      const limit = await kit.supportingLimit();
+      // The toolpaths cut from them, from the project's other tabs, the same way: never the import's failure.
       if (limit !== null) {
         const machine = await fetchMakerablesMachineFiles(resolved.projectId).catch(() => []);
-        for (const file of machine.filter((each) => kit.isSupportingFile(each.name) && (each.size ?? 0) <= limit)) {
+        for (const file of machine.filter(beside)) {
           const inputs = await kit.downloadSupportingFile(file, isMakerablesFileHost);
           downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
         }

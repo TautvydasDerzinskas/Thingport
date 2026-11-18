@@ -205,6 +205,9 @@ Rules of thumb:
   - **From a file list:** a site that lists files one by one asks for them with `kit.isSupportingFile`, and downloads
     them through `kit.downloadSupportingFile`. That keeps them within the admin's limits (Administration → Storage),
     takes only the supporting files from a zip, and skips one that's blocked or fails rather than failing the import.
+    The kit a model's download is given holds all of its supporting files, however they're fetched, to what the model
+    keeps of them in all: they're fetched one at a time, each within what the ones before it left, so a list started
+    together can't fill the disk with files that would only be thrown away.
     `kit.supportingLimit()` is null when the admin keeps none: ask nothing then, not even a file list or a signing
     call. Otherwise it's the largest file they keep: skip a file whose size the site lists as bigger before asking for
     its link. Not a zip, though, even one of a single file as 3DExport gives each format: its size isn't that of what's

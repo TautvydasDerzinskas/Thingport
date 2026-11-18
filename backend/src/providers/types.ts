@@ -64,7 +64,9 @@ export type ImportKit = {
   /**
    * A file a site gives beside a model's own, from one of its hosts, kept within the admin's limits. Never fails the
    * import: a block, an error, or a file over the limit is skipped. A zip is unpacked into the supporting files it
-   * holds, and only those, so a format a site also offers the model in never becomes more plates.
+   * holds, and only those, so a format a site also offers the model in never becomes more plates. Every such file of
+   * the model, this way or through `downloadSignedFile`, shares what the model keeps of them: they're fetched one at a
+   * time, each held to the room the ones before it left, so ones asked for at once can't each take the same room.
    */
   downloadSupportingFile(
     file: { url: string; name: string },

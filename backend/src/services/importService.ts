@@ -1096,14 +1096,18 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
   return filesFromZip(zipPath, PARAMETRIC_SOURCE_EXTS);
 }
 
+/** What a model has kept so far of the files beside its own, in bytes and in number. */
+type Kept = { readonly bytes: number; readonly files: number };
+const NOTHING_KEPT: Kept = { bytes: 0, files: 0 };
+
 /** The other files beside a zip's model files -- instructions, notes, sources -- as far as the admin's limits allow,
- *  marked as supporting. Best-effort: a zip whose other files can't be read gives none, rather than failing the
- *  import of its model. */
-export async function supportingFilesFromZip(zipPath: string): Promise<NewPlateInput[]> {
+ *  marked as supporting, counted on from `kept`, what the model has of them already. Best-effort: a zip whose other
+ *  files can't be read gives none, rather than failing the import of its model. */
+export async function supportingFilesFromZip(zipPath: string, kept: Kept = NOTHING_KEPT): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits) return [];
   try {
-    return await filesFromZip(zipPath, { supporting: limits, kept: { bytes: 0, files: 0 } });
+    return await filesFromZip(zipPath, { supporting: limits, kept: { ...kept } });
   } catch (err) {
     console.warn("Couldn't read the files beside a zip's model files:", err);
     return [];
@@ -1116,10 +1120,11 @@ export async function supportingFilesFromZip(zipPath: string): Promise<NewPlateI
  *
  * Each pass writes a temp file per entry and cleans up only its own if it throws. So the plates are removed here
  * when reading the scripts fails -- the caller is handed all of them or none, and never a set of temp files it
- * doesn't know it has to clean up.
+ * doesn't know it has to clean up. `supportingOf` is the last pass, held to what the model keeps by the caller.
  */
 async function platesAndSourcesFromZip(
   zipPath: string,
+  supportingOf: (zipPath: string) => Promise<NewPlateInput[]> = (zip) => supportingFilesFromZip(zip),
 ): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   const plates = await modelFilesFromZip(zipPath);
   let sources: NewPlateInput[];
@@ -1129,7 +1134,7 @@ async function platesAndSourcesFromZip(
     await Promise.all(plates.map((plate) => fs.rm(plate.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
-  return { plates, sources, supporting: await supportingFilesFromZip(zipPath) };
+  return { plates, sources, supporting: await supportingOf(zipPath) };
 }
 
 /**
@@ -1329,12 +1334,42 @@ async function filesFromZip(
   }
 }
 
+/** A model's turn at what it keeps of the files beside its own: `fetch` is given what it has of them by then, and the
+ *  supporting files it gives count from then on. */
+type SupportingTake = (fetch: (kept: Kept) => Promise<NewPlateInput[]>) => Promise<NewPlateInput[]>;
+
+/** The turn of a download that's the only one, with nothing kept before it. */
+const takeAlone: SupportingTake = (fetch) => fetch(NOTHING_KEPT);
+
+/** One model's share of the files a site gives beside its own, which every download of them for it takes its turn at
+ *  (an import's kit, importKit): one at a time, each given what the ones before it kept, in bytes and in number, so
+ *  files asked for at once can't each take the same room. */
+export function supportingAllowance(): SupportingTake {
+  let kept = NOTHING_KEPT;
+  let turn: Promise<unknown> = Promise.resolve();
+  return (fetch) => {
+    const next = turn.then(async () => {
+      const inputs = await fetch(kept);
+      for (const input of inputs) {
+        if (!input.supporting || !input.tempFilePath) continue;
+        const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size ?? 0;
+        kept = { bytes: kept.bytes + size, files: kept.files + 1 };
+      }
+      return inputs;
+    });
+    turn = next.catch(() => undefined);
+    return next;
+  };
+}
+
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it
- *  didn't download. */
+ *  didn't download. A file beside the model's own, and the ones in a zip beside its model files, take their turn at
+ *  what the model keeps of them (`take`). */
 async function downloadSignedFile(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
   blockedMessage: string,
+  take: SupportingTake = takeAlone,
 ): Promise<NewPlateInput[] | null> {
   let hostname: string;
   try {
@@ -1343,21 +1378,17 @@ async function downloadSignedFile(
     return null;
   }
   if (!isFileHost(hostname)) return null;
-  // A file beside the model's own is worth what the admin's limits allow, and never the import: a block or a failure
-  // skips it.
-  const extra = isSupportingImportFile(file.name) ? await supportingLimits() : undefined;
-  if (extra === null) return [];
-  const result = await downloadPlainFileToTemp(file.url, file.name, extra?.perFile);
-  if (result && "rateLimited" in result) {
-    if (extra) return [];
-    throw new HttpError(429, blockedMessage);
-  }
-  if (!result) return extra ? [] : null;
+  if (isSupportingImportFile(file.name)) return take((kept) => signedSupportingFile(file, kept));
+  const result = await downloadPlainFileToTemp(file.url, file.name);
+  if (result && "rateLimited" in result) throw new HttpError(429, blockedMessage);
+  if (!result) return null;
   const ext = path.extname(result.input.filename).toLowerCase();
   if (ext === ".zip") {
     try {
       // The scripts and the other files come along with the model files; createPrint keeps each as what it is.
-      const { plates, sources, supporting } = await platesAndSourcesFromZip(result.input.tempFilePath!);
+      const { plates, sources, supporting } = await platesAndSourcesFromZip(result.input.tempFilePath!, (zip) =>
+        take((kept) => supportingFilesFromZip(zip, kept)),
+      );
       return [...plates, ...sources, ...supporting];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
@@ -1366,45 +1397,61 @@ async function downloadSignedFile(
   // A site that lists a model's files one by one -- Thingiverse's customizable models, Printables' sources --
   // offers the script as a file of its own rather than inside a zip.
   if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
-  if (extra) return [{ ...result.input, supporting: true }];
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
 
-/** A file a site gives beside a model's own (ImportKit.downloadSupportingFile): within the admin's limits, never the
- *  import's failure, and a zip only for the supporting files in it. No larger than `room`, in bytes, where a model has
- *  only that much left of what it keeps. */
-export async function downloadSupportingFile(
-  file: { url: string; name: string },
-  isFileHost: (hostname: string) => boolean,
-  room = Number.POSITIVE_INFINITY,
-): Promise<NewPlateInput[]> {
+/** A file beside the model's own from a signed link: worth what the admin's limits allow, held to the room `kept`
+ *  leaves, and never the import's failure, so a block or a failure skips it. */
+async function signedSupportingFile(file: { url: string; name: string }, kept: Kept): Promise<NewPlateInput[]> {
+  const limits = await supportingLimits();
+  if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
+  const cap = Math.min(limits.perFile, limits.perModel - kept.bytes);
+  if (cap <= 0) return [];
   try {
-    return await supportingDownload(file, isFileHost, room);
+    const result = await downloadPlainFileToTemp(file.url, file.name, cap);
+    return result && "input" in result ? [{ ...result.input, supporting: true }] : [];
   } catch (err) {
     console.warn(`Couldn't keep ${file.name} beside the model:`, err);
     return [];
   }
 }
 
-/** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), fetched one at a time and only as far
- *  as what a model keeps of them goes: once the ones fetched fill it, in bytes or in number, the rest aren't fetched,
- *  and each is held to the room left. One that fails or is over the limit is skipped and counts for nothing. */
+/** A file a site gives beside a model's own (ImportKit.downloadSupportingFile): within the admin's limits, never the
+ *  import's failure, and a zip only for the supporting files in it. Held, with a zip's files, to the room `kept`
+ *  leaves of what a model keeps. */
+export async function downloadSupportingFile(
+  file: { url: string; name: string },
+  isFileHost: (hostname: string) => boolean,
+  kept: Kept = NOTHING_KEPT,
+): Promise<NewPlateInput[]> {
+  try {
+    return await supportingDownload(file, isFileHost, kept);
+  } catch (err) {
+    console.warn(`Couldn't keep ${file.name} beside the model:`, err);
+    return [];
+  }
+}
+
+/** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), each in its turn at what the model keeps
+ *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched. One that fails or
+ *  is over the limit is skipped and counts for nothing. */
 export async function downloadSupportingFiles(
   files: { url: string; name: string }[],
   isFileHost: (hostname: string) => boolean,
+  take: SupportingTake = supportingAllowance(),
 ): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits) return [];
   const fetched: NewPlateInput[] = [];
-  let bytes = 0;
   for (const file of files) {
-    const room = limits.perModel - bytes;
-    if (fetched.length >= SUPPORTING_FILES_PER_MODEL || room <= 0) break;
-    for (const input of await downloadSupportingFile(file, isFileHost, room)) {
-      fetched.push(input);
-      bytes += (await fs.stat(input.tempFilePath!).catch(() => null))?.size ?? 0;
-    }
+    let filled = false;
+    const inputs = await take(async (kept) => {
+      filled = kept.files >= SUPPORTING_FILES_PER_MODEL || kept.bytes >= limits.perModel;
+      return filled ? [] : downloadSupportingFile(file, isFileHost, kept);
+    });
+    if (filled) break;
+    fetched.push(...inputs);
   }
   return fetched;
 }
@@ -1412,10 +1459,11 @@ export async function downloadSupportingFiles(
 async function supportingDownload(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
-  room: number,
+  kept: Kept,
 ): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
-  if (!limits) return [];
+  if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
+  const room = limits.perModel - kept.bytes;
   let hostname: string;
   try {
     hostname = new URL(file.url).hostname;
@@ -1433,7 +1481,7 @@ async function supportingDownload(
   const input = result.input;
   if (path.extname(input.filename).toLowerCase() === ".zip") {
     try {
-      return await supportingFilesFromZip(input.tempFilePath!);
+      return await supportingFilesFromZip(input.tempFilePath!, kept);
     } finally {
       await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
     }
@@ -1540,6 +1588,19 @@ async function createSourcedPrint(
   }
 }
 
+/** The kit one model's download is given: every file a site gives beside the model's own, whichever way it's fetched,
+ *  takes its turn at the one share of them the model has (supportingAllowance). */
+export function importKit(): PipelineKit {
+  const take = supportingAllowance();
+  return {
+    ...IMPORT_KIT,
+    downloadSignedFile: (file, isFileHost, blockedMessage) =>
+      downloadSignedFile(file, isFileHost, blockedMessage, take),
+    downloadSupportingFile: (file, isFileHost) => take((kept) => downloadSupportingFile(file, isFileHost, kept)),
+    downloadSupportingFiles: (files, isFileHost) => downloadSupportingFiles(files, isFileHost, take),
+  };
+}
+
 const IMPORT_KIT: PipelineKit = {
   downloadSignedFile,
   downloadFile: downloadPlainFileToTemp,
@@ -1630,7 +1691,7 @@ async function importSourced(
       resolved,
       auth,
       requested,
-      IMPORT_KIT,
+      importKit(),
     );
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
@@ -1674,7 +1735,7 @@ async function addSourcedProfile(
       model ??= await impl.resolveModel(externalId, auth);
       if (!model) throw new HttpError(404, impl.missingMessage);
     }
-    profile = await profiles.download({ userId, externalId }, model, wanted, auth, IMPORT_KIT);
+    profile = await profiles.download({ userId, externalId }, model, wanted, auth, importKit());
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
   }
@@ -1742,8 +1803,8 @@ async function importNewOrExisting(userId: string, url: string, body: ImportRequ
   if (existing && sourced) return addSourcedProfile(existing, url, body, sourced);
   if (sourced) return importSourced(userId, source!, url, body, sourced);
   const custom = source && isProviderId(source.provider) ? PROVIDERS[source.provider].customImport : undefined;
-  if (existing && custom) return custom.addToExisting(existing, body, IMPORT_KIT);
-  if (custom) return custom.importModel(userId, source!, body, IMPORT_KIT);
+  if (existing && custom) return custom.addToExisting(existing, body, importKit());
+  if (custom) return custom.importModel(userId, source!, body, importKit());
   // MakerWorld still imports here: its pages are what the link import below reads.
   if (existing) return addMakerworldProfileToPrint(existing, url, body);
   return importLinkedFile(userId, url, source, body);
@@ -1874,7 +1935,7 @@ export async function downloadSourcedModelFiles(
   if (!resolved) throw new HttpError(404, impl.missingMessage);
   let downloaded: NewPlateInput[];
   try {
-    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, IMPORT_KIT);
+    downloaded = await impl.downloadModel({ userId, externalId }, resolved, auth, null, importKit());
   } catch (err) {
     throw await impl.mapError(userId, err, auth);
   }

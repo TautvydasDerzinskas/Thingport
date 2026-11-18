@@ -58,6 +58,7 @@ function handlerFor(scenario: string, files = "model-files"): FetchHandler {
       // Its NC programs and CAM projects, whatever's in them.
       if (/\.(nc|mks)$/.test(name)) return binary(Buffer.from(`G21 ; ${name}`));
       if (/\.ste?p$/.test(name)) return binary(step(name));
+      if (name.endsWith(".pdf")) return binary(Buffer.from(`%PDF-1.4 ${name}`));
       // Its pictures fall through to the stub's own PNG.
       return undefined;
     }
@@ -208,6 +209,17 @@ describe("Makerables specifics", () => {
     } finally {
       await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
     }
+  });
+
+  it("asks for no document on the Model Files tab that it says is over the limit", async () => {
+    // A 600 MB assembly guide and a small parts list beside the model files, against the 100 MB default.
+    const stub = ctx.install(handlerFor("ok", "model-files-guides"));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING", folder: null } });
+    expect(files.map((file) => file.filename)).toEqual(["Parts list.pdf"]);
+    const asked = stub.calls.map((call) => call.url.pathname).filter((path) => path.endsWith(".pdf"));
+    expect(asked).toEqual(["/projects/original-files/Parts_list-mv6kp06b.pdf"]);
   });
 
   it("unpacks a Model Files zip into the files inside it", async () => {
