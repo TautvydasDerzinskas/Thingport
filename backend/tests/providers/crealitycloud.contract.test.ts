@@ -28,7 +28,7 @@ const DESIGNER_PROFILE = "6ac6f004729f5ba4b35740a6";
 const OTHER_PROFILE = "6ad5fedd23030f2e2c08899b";
 const API = "/api/cxy";
 
-type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" };
+type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "refused" };
 
 /** The recorded files with a guide among them, as a model's instructions come. */
 function filesWithGuide() {
@@ -69,7 +69,9 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
       }
       case "/v3/model/memberDownload":
         assertThat(signedIn, "the model's files are signed for the signed-in user");
-        if (scenario === "rejected") return json(loadFixture("crealitycloud", "invalid-token"));
+        if (scenario === "rejected" || variant.files === "refused") {
+          return json(loadFixture("crealitycloud", "invalid-token"));
+        }
         if (variant.files === "guide") return json(filesWithGuide());
         return json(loadFixture("crealitycloud", variant.files === "missing" ? "model-missing" : "model-files"));
       case "/v2/thematic/detail":
@@ -221,6 +223,17 @@ describe("Creality Cloud specifics", () => {
     const files = await prisma.printFile.findMany({ where: { printId: print.id, role: "SUPPORTING" } });
     // Named, as its model files are, by the signed link's extension.
     expect(files.map((file) => file.filename)).toEqual(["Assembly guide.pdf"]);
+  });
+
+  it("keeps the profile when Creality Cloud turns down listing the files beside it", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "refused" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.sourceInstanceId)).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    expect(await prisma.printFile.count({ where: { printId: print.id, role: "SUPPORTING" } })).toBe(0);
   });
 
   it("answers a model it can't find with 404, and files that are gone too", async () => {

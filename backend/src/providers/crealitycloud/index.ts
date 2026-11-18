@@ -71,7 +71,7 @@ async function downloadProfile(
 }
 
 /** The model's own files a profile doesn't bring that it keeps beside it -- instructions, sources -- listed only when
- *  the admin keeps any. Never the import's failure, bar a sign-in Creality Cloud refused, which every call would meet. */
+ *  the admin keeps any. Never the import's failure, a sign-in refused here included: the profile came with it already. */
 async function supportingFiles(
   resolved: CrealitycloudModelResolution,
   auth: CrealitycloudAuth,
@@ -81,8 +81,7 @@ async function supportingFiles(
   let files: CrealitycloudFile[] | null;
   try {
     files = await fetchCrealitycloudModelFiles(resolved.groupId, auth);
-  } catch (err) {
-    if (err instanceof CrealitycloudAuthError) throw err;
+  } catch {
     return [];
   }
   const wanted = (files ?? []).filter((file) => kit.isSupportingFile(file.name));
