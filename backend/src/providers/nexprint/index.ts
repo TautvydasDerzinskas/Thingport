@@ -57,7 +57,7 @@ async function downloadProfile(
 
 /** The files a model lists beside its own that it keeps as supporting files -- instructions, sources -- for a model
  *  that came as a profile, which brings none of its own files. Signed only when the admin keeps any; never the import's
- *  failure, bar a sign-in NexPrint refused, which every call would meet. */
+ *  failure, a sign-in refused here included: the profile came with that sign-in already. */
 async function supportingFiles(
   resolved: NexprintModelResolution,
   token: string,
@@ -68,8 +68,7 @@ async function supportingFiles(
   let signed: NexprintFile[];
   try {
     signed = await fetchNexprintModelFiles({ files: wanted, internalId: resolved.internalId }, token);
-  } catch (err) {
-    if (err instanceof NexprintAuthError) throw err;
+  } catch {
     return [];
   }
   return (await Promise.all(signed.map((file) => kit.downloadSupportingFile(file, isNexprintFileHost)))).flat();

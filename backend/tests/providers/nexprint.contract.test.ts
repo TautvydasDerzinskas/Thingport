@@ -151,6 +151,24 @@ describe("NexPrint specifics", () => {
     expect(signed.at(-1)).toEqual([["2", GUIDE_ID]]);
   });
 
+  it("keeps the profile when NexPrint turns down signing the files beside it", async () => {
+    await spec.connect(ctx.userId);
+    const withGuideHandler = handlerFor("ok", "with-guide");
+    ctx.install(async (call) => {
+      const asked = call.url.pathname.endsWith("/presigned-download-url")
+        ? (call.json as { fileInfoList: { fileId: string }[] }).fileInfoList
+        : [];
+      if (asked.some((file) => file.fileId === GUIDE_ID)) return json(loadFixture("nexprint", "unauthorized"));
+      return withGuideHandler(call);
+    });
+    const res = await ctx.importUrl("https://www.nexprint.com/en/models/G1215165");
+    expectStatus(res, 200);
+    const [print] = await prisma.print.findMany({ where: { userId: ctx.userId, sourceExternalId: "G1215165" } });
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates.map((plate) => plate.sourceInstanceId)).toEqual(["G6354239"]);
+    expect(await prisma.printFile.count({ where: { printId: print.id, role: "SUPPORTING" } })).toBe(0);
+  });
+
   it("reads a link's ids in upper case, as NexPrint's own are", async () => {
     await spec.connect(ctx.userId);
     ctx.stub("ok");
