@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ThreeMfFormat } from "../adapter/format.generated";
 import type { Plate, Print, PrintProfile, ProfileFilament, printsApi } from "../api/prints";
 
-const get = vi.fn<(id: string) => Promise<Print>>();
+const get = vi.fn<(id: string, options?: { record?: boolean }) => Promise<Print>>();
 const uploadFile = vi.fn<typeof printsApi.uploadFile>();
 const addPlates = vi.fn<typeof printsApi.addPlates>();
 vi.mock("../api/prints", () => ({
@@ -14,7 +14,12 @@ vi.mock("../api/prints", () => ({
       super(message);
     }
   },
-  printsApi: { get: (id: string) => get(id), fileUrl: (url: string) => url, uploadFile, addPlates },
+  printsApi: {
+    get: (id: string, options?: { record?: boolean }) => get(id, options),
+    fileUrl: (url: string) => url,
+    uploadFile,
+    addPlates,
+  },
 }));
 vi.mock("../api/collections", () => ({ collectionsApi: {} }));
 vi.mock("../api/search", () => ({ searchApi: {} }));
@@ -161,6 +166,93 @@ describe("files a script adds to a model", () => {
     expect(uploadFile.mock.calls.map(([, file, options]) => [file.name, options?.keepPrepared])).toEqual([
       ["B.gcode", true],
     ]);
+  });
+
+  it("rejects with the request's own error when the first file fails, and reads nothing to say so", async () => {
+    addPlates.mockReset();
+    uploadFile.mockReset();
+    get.mockReset();
+    const refusal = Object.assign(new Error("Related file exceeds size limit"), { status: 413 });
+    uploadFile.mockRejectedValue(refusal);
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [{ name: "B.gcode", data: "G28" }], { keepPrepared: true })
+      .catch((err: unknown) => err);
+    // The same error, with nothing in yet, and the caller's keepPrepared to pass on with the rest.
+    expect(failure).toBe(refusal);
+    expect(failure).toMatchObject({ added: [], keepPrepared: true });
+    expect(failure).not.toHaveProperty("model");
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it("leaves keepPrepared off when a sliced print's answer was lost, as sent again first it takes the slot", async () => {
+    uploadFile.mockReset();
+    get.mockReset();
+    uploadFile.mockRejectedValue(new TypeError("Failed to fetch"));
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "A.gcode", data: "G28" },
+        { name: "B.gcode", data: "G28" },
+      ])
+      .catch((err: unknown) => err);
+    expect(failure).toMatchObject({ message: "Failed to fetch", added: [], keepPrepared: false });
+    expect(uploadFile).toHaveBeenCalledTimes(1);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it("says keepPrepared once a sliced print went in, with the model as the last answer had it", async () => {
+    uploadFile.mockReset();
+    uploadFile.mockImplementation(async (_id, file) => {
+      if (file.name === "notes.txt") throw new Error("Internal error");
+      return { print: model(), prepared: true };
+    });
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "A.gcode", data: "G28" },
+        { name: "notes.txt", data: "n" },
+      ])
+      .catch((err: unknown) => err);
+    expect(failure).toMatchObject({ added: ["A.gcode"], keepPrepared: true, model: { id: "m1" } });
+  });
+
+  it("says nothing went in when the model files' request fails", async () => {
+    addPlates.mockReset();
+    uploadFile.mockReset();
+    addPlates.mockRejectedValue(new Error("Upload failed"));
+    const failure = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "part.stl", data: "solid p endsolid" },
+        { name: "notes.txt", data: "n" },
+      ])
+      .catch((err: unknown) => err);
+    expect(failure).toMatchObject({ message: "Upload failed", added: [], keepPrepared: false });
+    expect(failure).not.toHaveProperty("model");
+    expect(uploadFile).not.toHaveBeenCalled();
+  });
+
+  it("answers with the model read without counting a view when nothing was sent", async () => {
+    get.mockReset();
+    get.mockResolvedValue(model());
+    await buildUserLibrary({ openModel: () => undefined }).models.addFiles("m1", []);
+    expect(get).toHaveBeenCalledWith("m1", { record: false });
+  });
+
+  it("refuses two different files of one name a .gltf names in a folder of its own, before adding anything", async () => {
+    addPlates.mockReset();
+    uploadFile.mockReset();
+    const scene = JSON.stringify({
+      buffers: [{ uri: "data:application/octet-stream;base64,AAAA" }],
+      images: [{ uri: "textures/base.png" }],
+    });
+    const refused = await buildUserLibrary({ openModel: () => undefined })
+      .models.addFiles("m1", [
+        { name: "scene.gltf", data: scene },
+        { name: "base.png", data: "one" },
+        { name: "base.png", data: "two" },
+      ])
+      .catch((err: unknown) => err);
+    expect(String(refused)).toContain("base.png");
+    expect(addPlates).not.toHaveBeenCalled();
+    expect(uploadFile).not.toHaveBeenCalled();
   });
 
   it("refuses two different files of one name a .gltf could mean, before adding anything", async () => {

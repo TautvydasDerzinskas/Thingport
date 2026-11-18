@@ -51,9 +51,9 @@ function isArchiveJunk(path: string) {
 }
 
 /** Some path is a model file in a folder, so a model per folder means something: a folder uploadFoldersAsModels
- *  makes a model of, a .gltf's included. */
+ *  makes a model of, a .gltf's included. Not one the OS left in the zip (__MACOSX/._hull.stl), though it's ticked. */
 export function hasModelFolderPaths(paths: Iterable<string>) {
-  for (const path of paths) if (path.includes("/") && isModelFile(path)) return true;
+  for (const path of paths) if (!isArchiveJunk(path) && path.includes("/") && isModelFile(path)) return true;
   return false;
 }
 
@@ -70,16 +70,39 @@ export async function readZipEntries(file: File): Promise<{ entries: ZipEntry[];
   const { unzipSync } = await import("fflate");
   const raw = new Uint8Array(await file.arrayBuffer());
   const zipEntries = unzipSync(raw);
-  const data: Record<string, Uint8Array> = {};
+  // Without a prototype, so an entry named "__proto__" is an entry like any other.
+  const data: Record<string, Uint8Array> = Object.create(null);
   for (const [rawPath, content] of Object.entries(zipEntries)) {
     const normalized = normalizeZipPath(rawPath);
     if (!normalized || isArchiveJunk(normalized)) continue;
-    data[normalized] = content;
+    // Two entries can come to one path ("./A/guide.pdf" and "A/guide.pdf"): the same bytes are one file, and others
+    // are another, listed under a number rather than lost behind the first or uploaded under its name.
+    const held = Object.hasOwn(data, normalized) ? data[normalized] : undefined;
+    if (held && sameBytes(held, content)) continue;
+    data[held ? numberedPath(normalized, data) : normalized] = content;
   }
   const entries = Object.keys(data)
     .toSorted((a, b) => a.localeCompare(b))
     .map((path) => ({ path, size: data[path].length }));
   return { entries, data };
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/** `path` as "guide (2).pdf", with the first number no entry has. */
+function numberedPath(path: string, taken: Record<string, unknown>): string {
+  const slash = path.lastIndexOf("/");
+  const name = path.slice(slash + 1);
+  const dot = name.lastIndexOf(".");
+  const [stem, ext] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ""];
+  for (let n = 2; ; n++) {
+    const next = `${path.slice(0, slash + 1)}${stem} (${n})${ext}`;
+    if (!Object.hasOwn(taken, next)) return next;
+  }
 }
 
 export function buildUploadEntriesFromZip(

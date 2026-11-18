@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { hasModelFolderPaths, normalizeZipPath, startingSelection } from "./zipUtils";
+import { zipSync } from "fflate";
+import { hasModelFolderPaths, normalizeZipPath, readZipEntries, startingSelection } from "./zipUtils";
 
 const entries = (...paths: string[]) => paths.map((path) => ({ path }));
 
@@ -35,6 +36,23 @@ describe("startingSelection", () => {
   });
 });
 
+describe("readZipEntries", () => {
+  it("keeps two entries that come to one path apart where their bytes differ, and once where they don't", async () => {
+    const text = (body: string) => new TextEncoder().encode(body);
+    const zip = zipSync({
+      "./A/guide.pdf": text("first"),
+      "A/guide.pdf": text("second"),
+      "B/notes.txt": text("same"),
+      "./B/notes.txt": text("same"),
+    });
+    const read = await readZipEntries(new File([zip as BlobPart], "kit.zip"));
+    expect(read.entries.map((entry) => entry.path)).toEqual(["A/guide (2).pdf", "A/guide.pdf", "B/notes.txt"]);
+    const { data } = read;
+    expect(new TextDecoder().decode(data["A/guide.pdf"])).toBe("first");
+    expect(new TextDecoder().decode(data["A/guide (2).pdf"])).toBe("second");
+  });
+});
+
 describe("hasModelFolderPaths", () => {
   it("finds a model file in a folder, a .gltf scene's included", () => {
     expect(hasModelFolderPaths(["A/scene.gltf", "A/scene.bin", "B/scene.gltf", "B/scene.bin"])).toBe(true);
@@ -43,6 +61,8 @@ describe("hasModelFolderPaths", () => {
 
   it("finds none when the model files are loose, or the folders hold none", () => {
     expect(hasModelFolderPaths(["hull.stl", "scene.gltf", "docs/guide.pdf", "docs/scene.bin"])).toBe(false);
+    // What the OS left in the zip is no folder of models, though it's been ticked.
+    expect(hasModelFolderPaths(["hull.stl", "__MACOSX/._hull.stl"])).toBe(false);
   });
 });
 

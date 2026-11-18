@@ -17,4 +17,10 @@ describe("a file's extension as the server reads it", () => {
     expect(withExtensionOf("Setup", "guide.pdf")).toBe("Setup.pdf");
     expect(withExtensionOf("Setup.txt", "guide.pdf")).toBe("Setup.txt");
   });
+
+  it("agrees with Node's path.extname, which the server's rename goes by, for names made of dots", () => {
+    const node: Record<string, string> = { "..": "", "...": ".", "a.": ".", "..a": ".a", ".a.b": ".b", "a..": "." };
+    for (const [name, ext] of Object.entries(node)) expect(extnameOf(name)).toBe(ext);
+    expect(withExtensionOf("..", "guide.pdf")).toBe("...pdf");
+  });
 });

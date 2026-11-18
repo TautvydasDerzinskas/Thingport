@@ -295,6 +295,12 @@ export default function SupportingFileViewer({
   // never land on a file it wasn't opened for.
   const [menu, setMenu] = useState<{ anchor: FileMenuAnchor; fileId: string } | null>(null);
   const file = files.find((item) => item.id === selectedId) ?? files[0] ?? null;
+  // Closed for good when another is shown, not only hidden: showing the first file again would open it unasked.
+  const [shownId, setShownId] = useState(file?.id);
+  if (shownId !== file?.id) {
+    setShownId(file?.id);
+    setMenu(null);
+  }
 
   // The last one removed leaves nothing to show.
   useEffect(() => {

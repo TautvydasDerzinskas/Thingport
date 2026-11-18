@@ -1,7 +1,6 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
 import { extOf } from "./fileExtensions";
 import { gltfBundles } from "./uploadTree";
-import { printsApi } from "../api/prints";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
 // are the model's files, and anything else is kept beside them as a supporting file.
@@ -13,33 +12,24 @@ const PICTURE_EXTS = new Set(["png", "jpg", "jpeg", "webp", "bmp", "gif", "svg"]
 /** A sliced print: kept beside the model as its prepared print, never one of its files to slice. */
 const PREPARED_SUFFIXES = [".gcode.3mf", ".gcode", ".gco", ".bgcode"];
 
+// oxlint-disable-next-line no-control-regex -- the server drops these from a name (sanitizeFilename), as this does.
+const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
+
+/** By its name as the server keeps it (sanitizeFilename): without control characters, or spaces at either end. */
 export function isPreparedName(name: string): boolean {
-  const lower = name.toLowerCase();
+  const lower = name.replace(CONTROL_CHARS, "").trim().toLowerCase();
   return PREPARED_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 }
 
 /**
- * After the upload of `name` failed, whether it may be the model's prepared print all the same: a sliced print whose
- * answer never came (a dropped connection) or that failed after it was saved may be in. `status` is the server's
- * answer, null for none; one it turned away (4xx) kept nothing.
+ * After the upload of `name` failed, whether the sliced prints after it in the same addition must wait: it may be the
+ * model's prepared print now, or may not, and the next would then either replace it or be kept beside an older one.
+ * Only a sliced print whose answer never came (`status` null) or came after the server failed (5xx) may be in: one the
+ * server turned away (4xx) kept nothing. None waits once one before it is sure to be in (`preparedAdded`), as the
+ * rest are kept beside that one whatever this one did.
  */
-export function mayHoldPrepared(name: string, status: number | null): boolean {
-  return isPreparedName(name) && !(status !== null && status >= 400 && status < 500);
-}
-
-/**
- * After the upload of sliced print `name` to model `printId` failed, whether it is the model's prepared print now: none
- * where the server turned it away, else as the model says when read again. One the model can't be read for is taken
- * as in, so the next is kept beside it rather than put over a print that may be there.
- */
-export async function preparedAfterFailure(printId: string, name: string, status: number | null): Promise<boolean> {
-  if (!mayHoldPrepared(name, status)) return false;
-  try {
-    const model = await printsApi.get(printId);
-    return Boolean(model.prepared_print?.removable) && model.slicer_filename === name;
-  } catch {
-    return true;
-  }
+export function holdsBackSliced(name: string, status: number | null, preparedAdded: boolean): boolean {
+  return !preparedAdded && isPreparedName(name) && (status === null || status >= 500);
 }
 
 /** A file the model is printed, cut or engraved from: a mesh, a CAD exchange file or a LightBurn project. */
@@ -76,8 +66,8 @@ export function sortAddedFiles<T extends { name: string }>(
  * `sorted` with each .gltf among the model files followed by the files of the same addition it points at -- its .bin
  * and textures -- wherever they were sorted to: the server packs them with it into one .glb, so they go up with it in
  * one request, never as files of their own. `packedWith` has every file each .gltf points at, one two scenes share
- * under both, though `model` lists it once. Found as a folder upload finds them. `ambiguous`: the names of those it
- * took that another file of the addition has too, which names alone can't tell apart.
+ * under both, though `model` lists it once. Found as a folder upload finds them. `ambiguous`: the names a .gltf points
+ * at that more than one file of the addition could be, which it then takes none of, as the server can't tell either.
  */
 export async function withGltfFiles<T>(
   sorted: { model: T[]; supporting: T[] },
@@ -87,7 +77,8 @@ export async function withGltfFiles<T>(
   const packedWith = new Map<T, T[]>();
   if (!all.some((item) => extOf(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
-  for (const [gltf, found] of await gltfBundles(entries)) {
+  const ambiguous = new Set<string>();
+  for (const [gltf, found] of await gltfBundles(entries, ambiguous)) {
     packedWith.set(
       all[entries.indexOf(gltf)],
       found.map((entry) => all[entries.indexOf(entry)]),
@@ -102,16 +93,11 @@ export async function withGltfFiles<T>(
       sent.add(item);
       return true;
     });
-  // A name a scene took that another file has too: by name alone, nothing says which is the scene's.
-  const namesOf = (item: T) => fileOf(item).name.toLowerCase();
-  const ambiguous = [...new Set([...packed].map(namesOf))].filter(
-    (name) => all.filter((item) => namesOf(item) === name).length > 1,
-  );
   return {
     model: sorted.model.flatMap((item) => (packed.has(item) ? [] : once([item, ...(packedWith.get(item) ?? [])]))),
     supporting: sorted.supporting.filter((item) => !packed.has(item)),
     packedWith,
-    ambiguous,
+    ambiguous: [...ambiguous],
   };
 }
 

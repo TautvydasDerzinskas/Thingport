@@ -17,11 +17,11 @@ export function stemOf(name: string): string {
 }
 
 /** A file's extension with its dot, as the server reads one (Node's path.extname): none for a name that is all
- *  extension (".pdf"), which it serves as a file with no type. */
+ *  extension (".pdf"), which it serves as a file with no type, nor for "..". */
 export function extnameOf(name: string): string {
   const base = (name || "").split(/[\\/]/).pop() ?? "";
   const dot = base.lastIndexOf(".");
-  return dot > 0 ? base.slice(dot) : "";
+  return dot > 0 && base !== ".." ? base.slice(dot) : "";
 }
 
 /** `name` with `from`'s extension where it has none of its own, as a stored file's rename keeps it. */

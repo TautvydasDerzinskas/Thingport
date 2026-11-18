@@ -5,8 +5,14 @@ import { type Plate, type Print, printsApi } from "../../api/prints";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 
 /** A model with one file downloads it directly; one with more (plates or supporting files) opens a picker.
- *  `recordUse` records an Open in {Slicer}. */
-export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRecorded?: (print: Print) => void) {
+ *  `recordUse` records an Open in {Slicer}. The count a download records goes to `onCounted` where the owner of the
+ *  model can put it in the model as it is by then, else into the model as this has it, through `onRecorded`. */
+export function useDownloadPrint(
+  print: Print,
+  onUnauthorized?: () => void,
+  onRecorded?: (print: Print) => void,
+  onCounted?: (printId: string, printCount: number) => void,
+) {
   const { t } = useTranslation(["models"]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -33,6 +39,9 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
       .recordDownload(print.id, kind)
       .then((updated) => {
         if (!updated || typeof updated !== "object" || updated.id !== print.id) return;
+        // The owner of the model's state puts it in as it is when this lands, which a change queued just before (a
+        // file added) may not have reached this hook's copy of yet.
+        if (onCounted) return onCounted(updated.id, updated.print_count);
         const now = current.current;
         onRecorded?.(now.id === updated.id ? { ...now, print_count: updated.print_count } : updated);
       })

@@ -111,9 +111,20 @@ describe("gltfBundles", () => {
       entry("M/b/base.png"),
       entry("Broken/broken.gltf", "{ not json"),
     ];
-    const bundles = await gltfBundles(entries);
+    const ambiguous = new Set<string>();
+    const bundles = await gltfBundles(entries, ambiguous);
     expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["M/scene.bin"]);
     expect(bundles.get(entries[4])).toEqual([]);
+    expect([...ambiguous]).toEqual(["base.png"]);
+  });
+
+  it("takes neither of two files at the place a scene names, as in a flat pick of two of one name", async () => {
+    const entries = [entry("scene.gltf", gltf("scene.bin", "base.png")), entry("scene.bin"), entry("base.png", "one")];
+    entries.push(entry("base.png", "two"));
+    const ambiguous = new Set<string>();
+    const bundles = await gltfBundles(entries, ambiguous);
+    expect(bundles.get(entries[0])?.map((e) => e.relativePath)).toEqual(["scene.bin"]);
+    expect([...ambiguous]).toEqual(["base.png"]);
   });
 });
 
@@ -180,6 +191,16 @@ describe("uploading a glTF download", () => {
     const where = new Map((files as File[]).map((file, index) => [file.name, opts?.sourceFolders?.[index]]));
     expect(where.get("scene.gltf")).toBe("Pack/Model");
     expect(where.get("mesh.bin")).toBe("Pack/shared");
+  });
+
+  it("one model of all: says where each file was in the pick, as it keeps them below the folder they share", async () => {
+    await uploadEntriesAsOneModel(
+      [entry("Kit/parts/scene.gltf", gltf("../../Kit/shared/mesh.bin", "base.png")), entry("Kit/shared/mesh.bin")],
+      "Kit",
+      null,
+    );
+    const [, opts] = upload.mock.calls[0];
+    expect(opts).toMatchObject({ folders: ["parts", "shared"], sourceFolders: ["Kit/parts", "Kit/shared"] });
   });
 
   it("one model per file: the scene goes up with its files, and its textures don't become models", async () => {

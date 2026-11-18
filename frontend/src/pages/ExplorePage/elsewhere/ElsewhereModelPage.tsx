@@ -89,9 +89,10 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
   usePageHeader({ title: model?.title });
 
   const { slicerOption, slicerOptions } = useSlicerChoice();
-  // How many downloads are on their way, so one ending doesn't free the controls while another still runs.
-  const [downloads, setDownloads] = useState(0);
-  const downloading = downloads > 0;
+  // How many downloads of each model are on their way, so one ending doesn't free the controls while another still
+  // runs, and one of the model before (the page stays as another opens) doesn't hold this one's.
+  const [downloads, setDownloads] = useState<Record<string, number>>({});
+  const downloading = Boolean(modelId && downloads[modelId]);
   // Those it can be had of, through this instance. Two can share a name: told apart by where they are in the list,
   // which never changes here.
   const files = useMemo<ModelFile[]>(
@@ -164,29 +165,32 @@ export default function ElsewhereModelPage({ onUnauthorized }: { onUnauthorized?
       severity: "error",
     });
   };
-  const download = async (file: ModelFile) => {
-    setDownloads((count) => count + 1);
+  /** Counted against the model it was started on, until it's done, wherever the page has gone meanwhile. */
+  const downloadingFor = async (id: string, task: () => Promise<void>) => {
+    setDownloads((counts) => ({ ...counts, [id]: (counts[id] ?? 0) + 1 }));
     try {
+      await task();
+    } catch (err) {
+      failedDownload(err);
+    } finally {
+      setDownloads(({ [id]: count = 1, ...rest }) => (count > 1 ? { ...rest, [id]: count - 1 } : rest));
+    }
+  };
+  const download = async (file: ModelFile) => {
+    if (!modelId) return;
+    await downloadingFor(modelId, async () => {
       const res = await fetch(printsApi.fileUrl(file.url));
       if (res.status === 401) throw new UnauthorizedError();
       if (!res.ok) throw new Error("Download failed");
       await saveResponseToDisk(res, file.filename);
-    } catch (err) {
-      failedDownload(err);
-    } finally {
-      setDownloads((count) => count - 1);
-    }
+    });
   };
   const downloadZip = async () => {
-    if (!model) return;
-    setDownloads((count) => count + 1);
-    try {
-      await saveResponseToDisk(await socialApi.elsewhere.zip(model.id), `${model.title || "model"}.zip`);
-    } catch (err) {
-      failedDownload(err);
-    } finally {
-      setDownloads((count) => count - 1);
-    }
+    if (!modelId || !model) return;
+    const { id, title } = model;
+    await downloadingFor(modelId, async () => {
+      await saveResponseToDisk(await socialApi.elsewhere.zip(id), `${title || "model"}.zip`);
+    });
   };
 
   if (gone) return <ElsewhereGone />;
