@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  batchesByName,
   isModelFileName,
   isPreparedName,
   mayHoldPrepared,
@@ -92,5 +93,25 @@ describe("a .gltf added with the files it points at", () => {
   it("is stored as a .glb", () => {
     expect(storedModelFileName("Scene.GLTF")).toBe("Scene.glb");
     expect(storedModelFileName("part.stl")).toBe("part.stl");
+  });
+});
+
+describe("model files sent in requests", () => {
+  const file = (name: string) => new File([name], name);
+  it("sends files of one name apart, in their order, and a file items share together", () => {
+    const [a, aBin, b, bBin, part, shared] = ["a.gltf", "scene.bin", "b.gltf", "scene.bin", "part.stl", "wood.png"].map(
+      file,
+    );
+    const items = [
+      { name: "a", files: [a, aBin, shared] },
+      { name: "part", files: [part] },
+      { name: "b", files: [b, bBin, shared] },
+    ];
+    expect(batchesByName(items, (item) => item.files).map((batch) => batch.map((item) => item.name))).toEqual([
+      ["a", "part"],
+      ["b"],
+    ]);
+    const together = [items[0], { name: "c", files: [file("c.gltf"), aBin, shared] }];
+    expect(batchesByName(together, (item) => item.files)).toHaveLength(1);
   });
 });

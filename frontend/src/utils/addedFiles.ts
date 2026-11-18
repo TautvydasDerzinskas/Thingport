@@ -95,3 +95,28 @@ export async function withGltfFiles<T>(
 export function storedModelFileName(name: string): string {
   return name.replace(/\.gltf$/i, ".glb");
 }
+
+/**
+ * `items` in the order given, split into groups to send a request each: one group never holds two different files of
+ * one name, which the server would take for each other where it packs a .gltf with the files it points at, by name.
+ * A file two items share is one file, so it doesn't split them.
+ */
+export function batchesByName<T>(items: T[], filesOf: (item: T) => File[]): T[][] {
+  const batches: { items: T[]; byName: Map<string, File> }[] = [];
+  for (const item of items) {
+    const files = filesOf(item);
+    let batch = batches.at(-1);
+    const clashes = (open: { byName: Map<string, File> }) =>
+      files.some((file) => {
+        const other = open.byName.get(file.name.toLowerCase());
+        return other !== undefined && other !== file;
+      });
+    if (!batch || clashes(batch)) {
+      batch = { items: [], byName: new Map() };
+      batches.push(batch);
+    }
+    batch.items.push(item);
+    for (const file of files) batch.byName.set(file.name.toLowerCase(), file);
+  }
+  return batches.map((batch) => batch.items);
+}
