@@ -29,6 +29,19 @@ reviews:
     - "!web/.astro/**"
     - "!**/dist/**"
     - "!backend/assets/printers/**"
+    # Written by `npm run sdk:sync` from frontend/src/sdk/types.ts, which is reviewed; CI's sdk:check keeps them in step.
+    # Left out, as the translations below are, so a pull request near the 100-file review limit stays reviewed.
+    - "!backend/src/services/sdkReference.generated.ts"
+    - "!docs/developers/sdk-reference.md"
+    - "!docs/developers/examples/thingport.d.ts"
+    # Translations of en.json, which is reviewed; `npm --prefix frontend run i18n:check` finds a key one is missing.
+    - "!frontend/src/i18n/locales/be.json"
+    - "!frontend/src/i18n/locales/es.json"
+    - "!frontend/src/i18n/locales/fr.json"
+    - "!frontend/src/i18n/locales/lt.json"
+    - "!frontend/src/i18n/locales/ru.json"
+    - "!frontend/src/i18n/locales/uk.json"
+    - "!frontend/src/i18n/locales/zh.json"
     # Fixtures
     - "!regression/fixtures/**"
 
