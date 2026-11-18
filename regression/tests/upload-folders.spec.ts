@@ -202,7 +202,9 @@ test("a model folder's subfolders come with it: documents in their folders, pict
   page,
   api,
 }, testInfo) => {
-  const dir = writeTree(path.join(testInfo.outputPath(), "Fold Kits"), {
+  // A retry runs against the same database, where the first try's folder is already there.
+  const kitsName = testInfo.retry ? `Fold Kits ${testInfo.retry}` : "Fold Kits";
+  const dir = writeTree(path.join(testInfo.outputPath(), kitsName), {
     "Fold Toad/toad.stl": stl(),
     "Fold Toad/docs/toad guide.pdf": text("%PDF-1.4 not really"),
     "Fold Toad/docs/extra/notes.txt": text("sand the seams"),
@@ -221,8 +223,8 @@ test("a model folder's subfolders come with it: documents in their folders, pict
   // In no model's folder, the stray document can't come in: said, not dropped in silence.
   await expect(page.getByText(/loose\.pdf wasn't added/)).toBeVisible();
 
-  const kits = await api.folderAt("Fold Kits");
-  expect(await api.folderAt("Fold Kits", "Fold Toad")).toBeUndefined();
+  const kits = await api.folderAt(kitsName);
+  expect(await api.folderAt(kitsName, "Fold Toad")).toBeUndefined();
   const toad = await api.print(page.url().match(/\/models\/([^/?]+)/)![1]);
   expect(toad).toMatchObject({ title: "Fold Toad", category_id: kits!.id });
   expect(toad.plates.map((p) => p.filename)).toEqual(["toad.stl"]);
