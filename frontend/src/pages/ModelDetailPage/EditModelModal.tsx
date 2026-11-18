@@ -375,9 +375,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         );
       }
       if (images.length) {
+        // Our own render gives way to the first picture uploaded, so it may be gone by now: left out of the order, and
+        // of the dialog's list, so a retry doesn't send it either.
+        const present = new Set(latest.preview_images.map((img) => img.id));
+        setImages((current) => current.filter((img) => img.kind !== "existing" || present.has(img.id)));
         const known = images.flatMap((img) => {
           const id = img.kind === "existing" ? img.id : storedImages.get(img.localId)?.id;
-          return id ? [id] : [];
+          return id && present.has(id) ? [id] : [];
         });
         // Reorder needs an exhaustive id list; images this modal never saw go after, in their order.
         const knownIds = new Set(known);
