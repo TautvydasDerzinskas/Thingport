@@ -76,12 +76,17 @@ describe("makerworldDesignForImport", () => {
         { modelName: "photo.jpg", modelType: "" },
         { modelName: "Assembly guide.pdf", modelType: "pdf" },
         { modelName: "README", modelType: "" },
+        { modelName: "scan.ply", modelType: "ply" },
+        { modelName: "colours.amf", modelType: "amf" },
         { modelName: "Sources", modelType: "", isDir: true, dirName: "Sources", children: [{ modelName: "body.f3d" }] },
       ]),
     );
     expect(getModelFiles(sent)).toEqual([
       { modelType: "pdf", modelName: "Assembly guide.pdf", protected: undefined },
       { modelType: "", modelName: "README", protected: undefined },
+      // Kept beside the model by the backend, so sent, though they're the model again in another format.
+      { modelType: "ply", modelName: "scan.ply", protected: undefined },
+      { modelType: "amf", modelName: "colours.amf", protected: undefined },
       { modelType: undefined, modelName: "body.f3d", protected: undefined },
     ]);
     // They're no scripts.

@@ -10,7 +10,9 @@ import { prisma } from "../src/db";
 import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
 import {
   downloadSupportingFile,
+  downloadSupportingFiles,
   fetchDesignRawFiles,
+  withDesignRawFiles,
   modelFilesFromZip,
   supportingFilesFromZip,
 } from "../src/services/importService";
@@ -40,6 +42,32 @@ vi.mock("../src/services/supportingImports", async (importOriginal) => {
     supportingLimits: async () => {
       if (limits.fail) throw new Error("the settings couldn't be read");
       return limits.value !== undefined ? limits.value : actual.supportingLimits();
+    },
+  };
+});
+// The zip reader as it is, unless told otherwise: the entry named `failing` can't be read, the listing numbered
+// `listFailsAt` from when it was set fails, and every entry written out is noted with where it went.
+const zipReads = vi.hoisted(() => ({
+  failing: null as string | null,
+  listFailsAt: null as number | null,
+  lists: 0,
+  written: [] as { entry: string; to: string }[],
+}));
+vi.mock("../src/utils/zipReader", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/utils/zipReader")>();
+  return {
+    ...actual,
+    listZipEntries: async (...args: Parameters<typeof actual.listZipEntries>) => {
+      zipReads.lists += 1;
+      if (zipReads.listFailsAt !== null && zipReads.lists === zipReads.listFailsAt) {
+        throw new Error("the zip couldn't be listed");
+      }
+      return actual.listZipEntries(...args);
+    },
+    extractZipEntryToFile: async (...args: Parameters<typeof actual.extractZipEntryToFile>) => {
+      zipReads.written.push({ entry: args[1], to: args[2] });
+      if (zipReads.failing && args[1].endsWith(zipReads.failing)) throw new Error("invalid stored block lengths");
+      return actual.extractZipEntryToFile(...args);
     },
   };
 });
@@ -77,6 +105,9 @@ afterEach(async () => {
   limits.value = undefined;
   limits.fail = false;
   pictures.localizeFails = false;
+  zipReads.failing = null;
+  zipReads.listFailsAt = null;
+  zipReads.written = [];
   await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
 });
 
@@ -411,6 +442,37 @@ describe("a site's zip", () => {
     ]);
   });
 
+  it("keeps the files read before one of a zip's that can't be read, and skips that one", async () => {
+    const zip = await zipOf({ "a.stl": "solid a endsolid", "guide.pdf": "%PDF-1.4", "broken.txt": "unreadable" });
+    zipReads.failing = "broken.txt";
+    const supporting = await supportingFilesFromZip(zip);
+    remove(supporting);
+    expect(supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
+  });
+
+  it("removes the files it wrote out when the zip can't be listed after them", async () => {
+    // The first listing finds the files to keep; the next, for whether the zip only wraps another, fails.
+    const inner = fs.readFileSync(await zipOf({ "a.stl": "solid a endsolid" }));
+    const zip = await zipOf({ "Docs.zip": inner, "guide.pdf": "%PDF-1.4" });
+    zipReads.lists = 0;
+    zipReads.listFailsAt = 2;
+    expect(await supportingFilesFromZip(zip)).toEqual([]);
+    const written = zipReads.written.filter((each) => each.entry === "guide.pdf");
+    expect(written).toHaveLength(1);
+    expect(fs.existsSync(written[0].to)).toBe(false);
+  });
+
+  it("opens no zip a model's files are in once it keeps all the files beside it that it may", async () => {
+    const many = Object.fromEntries(
+      Array.from({ length: SUPPORTING_FILES_PER_MODEL }, (_, index) => [`notes/${index}.txt`, "x"]),
+    );
+    const frog = fs.readFileSync(await zipOf({ "frog.stl": "solid frog endsolid", "guide.pdf": "%PDF-1.4" }));
+    const supporting = await supportingFilesFromZip(await zipOf({ ...many, "Frog.zip": frog }));
+    remove(supporting);
+    expect(supporting).toHaveLength(SUPPORTING_FILES_PER_MODEL);
+    expect(zipReads.written.some((each) => each.entry === "Frog.zip")).toBe(false);
+  });
+
   it("writes out no more of a zip's files than a model may keep beside it, however small they are", async () => {
     const many = Object.fromEntries(
       Array.from({ length: SUPPORTING_FILES_PER_MODEL + 20 }, (_, index) => [`notes/${index}.txt`, "x"]),
@@ -529,6 +591,60 @@ describe("a file a site gives beside a model's own", () => {
     remove([...both.sources, ...both.supporting]);
     expect(both.sources.map((each) => each.filename)).toEqual(["frog.scad"]);
     expect(both.supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
+  });
+
+  it("fetches a site's files one at a time, and none once what a model keeps of them is taken", async () => {
+    let inFlight = 0;
+    let most = 0;
+    const asked: string[] = [];
+    global.fetch = (async (target: string | URL | Request) => {
+      asked.push(new URL(String(target instanceof Request ? target.url : target)).pathname);
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      inFlight -= 1;
+      return new Response("x".repeat(60), { status: 200 });
+    }) as typeof fetch;
+    // Sixty bytes a file and a hundred and twenty in all: two fill it.
+    limits.value = { perFile: 100, perModel: 120 };
+    const kept = await downloadSupportingFiles([at("a.pdf"), at("b.pdf"), at("c.pdf"), at("d.pdf")], site);
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["a.pdf", "b.pdf"]);
+    expect(asked).toEqual(["/a.pdf", "/b.pdf"]);
+    expect(most).toBe(1);
+    // With room for less than a file, one that doesn't fit what's left is skipped, and counts for nothing.
+    limits.value = { perFile: 100, perModel: 150 };
+    asked.length = 0;
+    const roomy = await downloadSupportingFiles([at("a.pdf"), at("b.pdf"), at("c.pdf")], site);
+    remove(roomy);
+    expect(roomy.map((each) => each.filename)).toEqual(["a.pdf", "b.pdf"]);
+    expect(asked).toEqual(["/a.pdf", "/b.pdf", "/c.pdf"]);
+  });
+
+  it("fetches a design's scripts where its raw files gave the files beside the model but no script", async () => {
+    const scripts = await new JSZip()
+      .file("frog.scad", "cube(1);")
+      .file("guide.pdf", "%PDF-1.4 again")
+      .file("notes.txt", "print upright")
+      .generateAsync({ type: "nodebuffer" });
+    served({ "/scripts.zip": scripts });
+    const meta = {
+      parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: "https://example.com/scripts.zip" },
+      supportingZipUrl: "https://example.com/raw.zip",
+    };
+    const given = [input("guide.pdf", "%PDF-1.4", { supporting: true })];
+    const { sources, supporting } = await withDesignRawFiles(meta, [], given);
+    remove([...sources, ...supporting]);
+    expect(sources.map((each) => each.filename)).toEqual(["frog.scad"]);
+    // The guide the raw files gave stays, and the scripts' zip adds only what they didn't.
+    expect(supporting.map((each) => each.filename)).toEqual(["guide.pdf", "notes.txt"]);
+    expect(supporting[0]).toBe(given[0]);
+    // With scripts already, nothing is fetched.
+    const fetchMock = served({});
+    const script = [input("frog.scad", "cube(1);")];
+    expect(await withDesignRawFiles(meta, script, given)).toEqual({ sources: script, supporting: given });
+    remove([...script, ...given]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {
@@ -692,6 +808,19 @@ describe("a zip from a link, by how its files become models", () => {
     expect(failed).toEqual([]);
     expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["scene.glb"]]);
     expect(await filesOf(prints[0].id)).toEqual([[null, "notes.txt", "SUPPORTING"]]);
+  });
+
+  it("a model per folder packs a scene with a picked file from outside its folder, which stays where it is", async () => {
+    const files = {
+      "Models/A/scene.gltf": gltfScene("../../Shared/mesh.bin"),
+      "Models/A/notes.txt": "upright",
+      "Shared/mesh.bin": positions,
+    };
+    const zip = await zipOf(files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zip, Object.keys(files), {});
+    expect(prints.map((print) => print.plates.map((plate) => plate.filename))).toEqual([["scene.glb"]]);
+    // The buffer is no file of A's: it goes as a file on its own does, which it can't be a model of.
+    expect(failed).toEqual(["Shared/mesh.bin"]);
   });
 
   it("a model per folder keeps a file at the top that it made a model of, though a step after storing it fails", async () => {

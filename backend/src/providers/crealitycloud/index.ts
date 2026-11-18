@@ -85,7 +85,7 @@ async function supportingFiles(
     return [];
   }
   const wanted = (files ?? []).filter((file) => kit.isSupportingFile(file.name));
-  return (await Promise.all(wanted.map((file) => kit.downloadSupportingFile(file, isCrealitycloudFileHost)))).flat();
+  return kit.downloadSupportingFiles(wanted, isCrealitycloudFileHost);
 }
 
 /** Like Snapmaker: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the

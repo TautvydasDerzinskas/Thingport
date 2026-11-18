@@ -71,7 +71,7 @@ async function supportingFiles(
   } catch {
     return [];
   }
-  return (await Promise.all(signed.map((file) => kit.downloadSupportingFile(file, isNexprintFileHost)))).flat();
+  return kit.downloadSupportingFiles(signed, isNexprintFileHost);
 }
 
 /** Like Creality Cloud: a model is one print, and each print profile its 3MF on a plate of its own, tagged with the

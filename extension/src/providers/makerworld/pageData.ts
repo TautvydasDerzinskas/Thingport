@@ -140,8 +140,10 @@ function scadEntries(design: MakerworldDesign): Record<string, unknown>[] {
   );
 }
 
-/** Files the import never keeps beside a model: the model files its profile's 3MF stands for, and pictures. */
-const NEVER_BESIDE = /\.(stl|3mf|obj|amf|ply|step|stp|gltf|glb|jpe?g|png|gif|webp|bmp)$/i;
+/** Files the import never keeps beside a model, as the backend's isSupportingImportFile tells them: the model files a
+ *  plate takes, which its profile's 3MF stands for, and pictures. A model in another format, such as AMF, PLY or glTF,
+ *  it keeps, so those are sent. */
+const NEVER_BESIDE = /\.(stl|3mf|obj|step|stp|glb|lbrn2?|jpe?g|jfif|png|gif|webp|bmp|tiff?|heic|heif|avif)$/i;
 
 /** The entries that might be the files a model keeps beside its own -- instructions, notes, sources: what isn't a
  *  script, model file or picture. The backend decides which it keeps; it fetches the design's raw files for them only

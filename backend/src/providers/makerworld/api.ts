@@ -377,6 +377,8 @@ async function fetchMakerworldRawFiles(
   startsCooloff = true,
 ): Promise<{ url: string; filename: string | null } | null> {
   await maybeSleep(paceMs);
+  // An optional request skips a block a required one started while it waited, as it skips one before.
+  if (!startsCooloff && makerworldCaptchaCooloffActive()) return null;
   const body = downloadReplyBody(
     await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
     startsCooloff,

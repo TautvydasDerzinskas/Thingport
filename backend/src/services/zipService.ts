@@ -272,15 +272,17 @@ async function readPickedEntries(
 
 type ModelEntry = { entry: PickedEntry; folder: string | null };
 
-/** One model of `picked`, each .gltf among them packed first with the files it points at (withScenesPacked). */
+/** One model of `picked`, each .gltf among them packed first with the files it points at (withScenesPacked), which
+ *  may be any of `others`, the zip's other picked files. */
 async function createModelOf(
   userId: string,
   picked: ModelEntry[],
   meta: PrintMetaInput,
   nameHint: string,
   options: ZipExtractOptions,
+  others: PickedEntry[] = [],
 ): Promise<Print & { plates: Plate[]; previewImages: PreviewImage[] }> {
-  const { entries, glbs } = await withScenesPacked(picked);
+  const { entries, glbs } = await withScenesPacked(picked, others);
   try {
     return await storeModelOf(userId, entries, meta, nameHint, options);
   } finally {
@@ -291,11 +293,19 @@ async function createModelOf(
 
 /** `entries` with each .gltf packed, with the files it points at, into one .glb in its place, as an upload's is
  *  (uploadService's withGltfPacked): kept as it is, a scene would point at files its model doesn't have. They're found
- *  by their paths in the zip, so a scene takes the .bin in its own folder. `glbs`, the temp files made. */
-async function withScenesPacked(entries: ModelEntry[]): Promise<{ entries: ModelEntry[]; glbs: string[] }> {
+ *  by their paths in the zip, so a scene takes the .bin in its own folder. One of `others`, picked files of another
+ *  model's folder or none, is packed in too, and stays theirs: it's read, not taken. `glbs`, the temp files made. */
+async function withScenesPacked(
+  entries: ModelEntry[],
+  others: PickedEntry[] = [],
+): Promise<{ entries: ModelEntry[]; glbs: string[] }> {
   if (!entries.some(({ entry }) => isGltfName(entry.filename))) return { entries, glbs: [] };
+  // Never another folder's scene: packing takes every .gltf it's handed.
+  const outside: ModelEntry[] = others
+    .filter((entry) => !isGltfName(entry.filename) && !entries.some((own) => own.entry === entry))
+    .map((entry) => ({ entry, folder: null }));
   const { files } = await packGltfFiles(
-    entries.map((item) => ({ name: item.entry.name, path: item.entry.tempPath, item })),
+    [...entries, ...outside].map((item) => ({ name: item.entry.name, path: item.entry.tempPath, item })),
     () => path.join(os.tmpdir(), `thingport-glb-${crypto.randomBytes(8).toString("hex")}.glb`),
     (gltf, glbPath, glbName) => ({
       name: glbName,
@@ -310,9 +320,10 @@ async function withScenesPacked(entries: ModelEntry[]): Promise<{ entries: Model
       },
     }),
   );
+  const made = files.filter((file) => !entries.includes(file.item) && !outside.includes(file.item));
   return {
-    entries: files.map((file) => file.item),
-    glbs: files.filter((file) => !entries.includes(file.item)).map((file) => file.path),
+    entries: files.flatMap((file) => (outside.includes(file.item) ? [] : [file.item])),
+    glbs: made.map((file) => file.path),
   };
 }
 
@@ -492,6 +503,8 @@ export async function extractZipEntriesToFolderModels(
             metaFor(options, name, categoryId),
             name,
             options,
+            // A scene may point at a picked file outside its folder ("../../Shared/mesh.bin").
+            entries,
           ),
         );
       } catch (err) {

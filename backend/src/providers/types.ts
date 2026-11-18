@@ -70,6 +70,15 @@ export type ImportKit = {
     file: { url: string; name: string },
     isFileHost: (hostname: string) => boolean,
   ): Promise<NewPlateInput[]>;
+  /**
+   * Several such files, fetched one at a time and only as far as what a model keeps of them goes: once the ones fetched
+   * fill it, in bytes or in number, the rest aren't fetched at all. For a site that lists them all at once, rather than
+   * starting every download together. Never fails the import either.
+   */
+  downloadSupportingFiles(
+    files: { url: string; name: string }[],
+    isFileHost: (hostname: string) => boolean,
+  ): Promise<NewPlateInput[]>;
 };
 
 /** Whose import it is, and of which model, by the id it's kept under. */

@@ -251,6 +251,17 @@ describe("resolveMakerworldSourcesUrl", () => {
     expect(await resolveMakerworldSourcesUrl("831106", "test-token")).toBeNull();
     expect(makerworldCaptchaCooloffActive()).toBe(false);
   });
+
+  // A required download that meets the CAPTCHA while this one waits its turn starts the cooloff, which this one keeps.
+  it("asks for nothing when the cooloff starts while it waits its turn", async () => {
+    const fetched = mockCloud(designWithProfiles([]), () => {
+      throw new Error("no request may reach MakerWorld during the cooloff");
+    });
+    setTimeout(noteCaptchaChallenge, 10);
+
+    expect(await resolveMakerworldSourcesUrl("831106", "test-token", 100)).toBeNull();
+    expect(fetched).toHaveLength(0);
+  });
 });
 
 // An import through Grab brings the design the page holds, trimmed to fit the request. Grab 1.8.1 and older trim
