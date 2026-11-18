@@ -21,9 +21,10 @@ browser, so there's nothing to install.
 
 ## Card thumbnails
 
-Model cards in the library show a small 3D thumbnail, whatever the format: STL, 3MF, OBJ, STEP or glTF. A sliced 3MF's own
-thumbnail is used when it has one. For other files, admins choose under **Administration → Rendering** how missing
-thumbnails are made:
+Model cards in the library show a small 3D thumbnail, whatever the format: STL, 3MF, OBJ, STEP or glTF. A model with
+pictures shows its first one instead, while [**Model cards**](appearance.md) is set to **Images**. A sliced 3MF's own
+thumbnail is used when it has no pictures. For other files, admins choose under **Administration → Rendering** how
+missing thumbnails are made:
 
 - **Automatic:** rendered in the browser as a card scrolls into view, then saved for everyone.
 - **On demand:** a card shows a **Generate preview** button instead.

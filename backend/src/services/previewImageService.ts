@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { prisma } from "../db";
 import { HttpError } from "../utils/fileUtils";
@@ -9,6 +10,8 @@ import {
   assetPath,
   assetTarget,
   galleryImageFile,
+  galleryThumbFile,
+  legacyAssetPath,
   plateAssetHome,
   printAssetHome,
   removeAsset,
@@ -32,6 +35,67 @@ export function previewImagePath(id: string, home: AssetHome): string {
 
 export function previewImageExists(id: string, home: AssetHome): boolean {
   return assetExists(home, galleryImageFile(id));
+}
+
+// Thumbnail-sized, as a plate's thumbnail is (printService saveThumbBuffer).
+const GALLERY_THUMB_SIZE = 512;
+const GALLERY_THUMB_QUALITY = 88;
+const galleryThumbsMaking = new Map<string, Promise<string | null>>();
+
+/**
+ * The image at card size, made from it the first time it's asked for. Cards lead with the gallery's first image
+ * (dto.ts coverThumbUrl), and the full one is sized for the model's page, too big for a page of cards. Each image's
+ * own, so whichever comes first, by any route, already has one or makes it. Null when the image can't be read.
+ */
+export async function galleryThumbPath(id: string, home: AssetHome): Promise<string | null> {
+  const file = galleryThumbFile(id);
+  const existing = assetPath(home, file);
+  if (fsSync.existsSync(existing)) return existing;
+  const dest = home ? assetTarget(home, file) : legacyAssetPath(file);
+  // A page of cards asks for it more than once at a time.
+  const making = galleryThumbsMaking.get(dest);
+  if (making) return making;
+  const made = makeGalleryThumb(previewImagePath(id, home), dest).finally(() => galleryThumbsMaking.delete(dest));
+  galleryThumbsMaking.set(dest, made);
+  return made;
+}
+
+/**
+ * What a card shows of the image: its card-sized copy, else the image itself where no copy can be written (a full
+ * disk), as the card was handed this image's address either way. `copy` says which. Null when the image is gone.
+ */
+export async function galleryCardPicture(id: string, home: AssetHome): Promise<{ path: string; copy: boolean } | null> {
+  const copy = await galleryThumbPath(id, home);
+  if (copy) return { path: copy, copy: true };
+  const image = previewImagePath(id, home);
+  return fsSync.existsSync(image) ? { path: image, copy: false } : null;
+}
+
+async function makeGalleryThumb(source: string, dest: string): Promise<string | null> {
+  const tmp = `${dest}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    const input = await fs.readFile(source);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    // Without its metadata: a card has no use for a photo's camera details.
+    await fs.writeFile(tmp, await photoJpeg(input, GALLERY_THUMB_SIZE, GALLERY_THUMB_QUALITY));
+    await fs.rename(tmp, dest);
+    // Removing an image takes it, then its copy (removeGalleryFiles, storageCleanup trimPhotos): a copy that lands
+    // after that, made from it as it went, goes here instead of outliving it.
+    if (!fsSync.existsSync(source)) {
+      await fs.rm(dest, { force: true });
+      return null;
+    }
+    return dest;
+  } catch {
+    await fs.rm(tmp, { force: true }).catch(() => undefined);
+    return null;
+  }
+}
+
+/** The image and its card-sized copy, wherever they are: the image first, which a copy being made looks for. */
+async function removeGalleryFiles(home: AssetHome, id: string): Promise<void> {
+  await removeAsset(home, galleryImageFile(id));
+  await removeAsset(home, galleryThumbFile(id));
 }
 
 /** Where the JPEG was stored, its size, and its SHA-256 when it was hashed for sharing (file reuse on),
@@ -143,7 +207,7 @@ export async function removeGeneratedPreviewImages(printId: string): Promise<voi
   const remaining = await prisma.previewImage.findMany({ where: { printId }, orderBy: { position: "asc" } });
   await renumberPreviewImages(remaining.map((img) => img.id));
   const home = await printAssetHome(printId);
-  for (const img of generated) await removeAsset(home, galleryImageFile(img.id));
+  for (const img of generated) await removeGalleryFiles(home, img.id);
 }
 
 /** Call once a real image is added: it takes over from our own render, as the cover and, when the plate's thumb is
@@ -162,12 +226,12 @@ export async function deleteAllPreviewImages(printId: string): Promise<void> {
   const rows = await prisma.previewImage.findMany({ where: { printId } });
   await prisma.previewImage.deleteMany({ where: { printId } });
   const home = await printAssetHome(printId);
-  for (const row of rows) await removeAsset(home, galleryImageFile(row.id));
+  for (const row of rows) await removeGalleryFiles(home, row.id);
 }
 
-/** Removes one gallery image's file, wherever it is. */
+/** Removes one gallery image's file, and its card-sized copy, wherever they are. */
 export async function removePreviewImageFile(printId: string, id: string): Promise<void> {
-  await removeAsset(await printAssetHome(printId), galleryImageFile(id));
+  await removeGalleryFiles(await printAssetHome(printId), id);
 }
 
 /** Renumbers the model's gallery in this order. Two phases, as in plates.ts, to avoid (printId, position) collisions,
@@ -188,14 +252,25 @@ export async function removePreviewImage(printId: string, imageId: string): Prom
   await removePreviewImageFile(printId, imageId);
 }
 
-/** Puts the model's gallery in this order; `ids` must be exactly its images. The first is the cover. */
+/** Puts the model's gallery in this order; `ids` must be exactly its images, bar those whose file is gone, which no one
+ *  is shown (toPrintOut leaves them out) and so no one can list: they keep their order after the rest. The first is
+ *  the cover. */
 export async function reorderPreviewImages(printId: string, ids: string[]): Promise<void> {
-  const images = await prisma.previewImage.findMany({ where: { printId }, select: { id: true } });
+  const print = await prisma.print.findUnique({ where: { id: printId }, select: { assetsPath: true } });
+  const images = await prisma.previewImage.findMany({
+    where: { printId },
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
   const known = new Set(images.map((img) => img.id));
-  if (ids.length !== images.length || new Set(ids).size !== ids.length || ids.some((id) => !known.has(id))) {
+  const listed = new Set(ids);
+  const unseen = images
+    .filter((img) => !listed.has(img.id) && !previewImageExists(img.id, print?.assetsPath))
+    .map((img) => img.id);
+  if (ids.length + unseen.length !== images.length || listed.size !== ids.length || ids.some((id) => !known.has(id))) {
     throw new HttpError(400, "image_ids must contain exactly the print's current preview image ids");
   }
-  await renumberPreviewImages(ids);
+  await renumberPreviewImages([...ids, ...unseen]);
 }
 
 // The card render is white shading for the cards to tint, too pale on a light background as it is; as a thumb it's
