@@ -43,7 +43,8 @@ Each folder that directly contains model files becomes **one** model, named afte
   if the model files don't carry one
 - everything else, like a PDF manual, a readme or slicer settings, is attached to the model
 - a subfolder with no model files of its own, like `docs` or `photos`, belongs to the model too: its documents are
-  attached in that subfolder, and its pictures become photos
+  attached in that subfolder, and its pictures become photos as above, a larger one than a photo can be attached
+  there instead
 
 The folders above it become folders in Thingport.
 
