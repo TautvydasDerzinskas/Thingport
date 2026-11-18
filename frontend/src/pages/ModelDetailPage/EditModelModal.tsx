@@ -414,11 +414,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
       let plates = plateItems;
       const newPlates = plates.filter((p) => p.kind === "new");
       if (newPlates.length) {
-        // One plate each: a .gltf's files are packed into it.
-        const uploadRes = await printsApi.addPlates(
-          print.id,
-          newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : [])),
-        );
+        // One plate each: a .gltf's files are packed into it, and one two scenes share is sent once.
+        const uploadRes = await printsApi.addPlates(print.id, [
+          ...new Set(newPlates.flatMap((p) => (p.kind === "new" ? [p.file, ...p.packedWith] : []))),
+        ]);
         latest = uploadRes.print;
         // Up now: each new file is the stored plate it became, so a retry doesn't upload it again. By the ids the
         // upload gave back: a plate another tab added meanwhile is new to this dialog too, and isn't one of these.
