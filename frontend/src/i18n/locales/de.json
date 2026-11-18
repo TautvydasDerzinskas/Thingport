@@ -193,7 +193,7 @@
         "importNotSupported": "Kein Link von MakerWorld, Printables, Thingiverse oder MyMiniFactory; öffnet das Importfenster",
         "language": "Sprache: {{name}}",
         "appearance": "Darstellung öffnen",
-        "providers": "Anbieter öffnen",
+        "providers": "Plattformen öffnen",
         "slicer": "Slicer öffnen",
         "configuration": "Konfiguration öffnen"
       },
@@ -262,7 +262,7 @@
       "title": "Konfiguration",
       "tabs": {
         "appearance": "Darstellung",
-        "providers": "Anbieter",
+        "providers": "Plattformen",
         "slicer": "Slicer",
         "printers": "Drucker",
         "sendTo": "Senden an"
@@ -380,8 +380,8 @@
       }
     },
     "providers": {
-      "title": "Anbieter",
-      "subtitle": "Die Seiten, von denen du Modelle importierst. Klicke mit der rechten Maustaste auf eine, um sie zu verbinden, zu trennen oder mehr darüber zu lesen.",
+      "title": "Plattformen",
+      "subtitle": "Die Plattformen, von denen du Modelle importierst. Klicke mit der rechten Maustaste auf eine, um sie zu verbinden, zu trennen oder mehr darüber zu lesen.",
       "connected": "Verbunden",
       "connectedSites": "Verbunden · {{sites}}",
       "notConnected": "Nicht verbunden",
@@ -424,8 +424,8 @@
       "suggested": "Vorgeschlagen",
       "notYours": "Nicht deiner",
       "nozzleShort": "{{nozzle}} mm",
-      "suggestedSliced_one": "{{count}} deiner Drucke wurde dafür geslict",
-      "suggestedSliced_other": "{{count}} deiner Drucke wurden dafür geslict",
+      "suggestedSliced_one": "{{count}} deiner Drucke wurde dafür gesliced",
+      "suggestedSliced_other": "{{count}} deiner Drucke wurden dafür gesliced",
       "suggestedProjects_one": "{{count}} deiner Projekte ist dafür gemacht",
       "suggestedProjects_other": "{{count}} deiner Projekte sind dafür gemacht",
       "empty": "Füge die Drucker hinzu, auf denen du druckst, dann öffnen sich Modelle passend dafür in deinem Slicer.",
@@ -437,8 +437,8 @@
         "found_one": "{{count}} Drucker von {{sites}} hinzugefügt.",
         "found_other": "{{count}} Drucker von {{sites}} hinzugefügt.",
         "none": "{{sites}}: keine Drucker, die Thingport kennt.",
-        "expired_one": "Deine Anmeldung bei {{sites}} ist abgelaufen. Melde dich unter „Anbieter“ erneut an.",
-        "expired_other": "Deine Anmeldungen bei {{sites}} sind abgelaufen. Melde dich unter „Anbieter“ erneut an.",
+        "expired_one": "Deine Anmeldung bei {{sites}} ist abgelaufen. Melde dich unter „Plattformen“ erneut an.",
+        "expired_other": "Deine Anmeldungen bei {{sites}} sind abgelaufen. Melde dich unter „Plattformen“ erneut an.",
         "failed": "{{sites}} hat deine Drucker nicht aufgelistet. Versuche es später erneut.",
         "error": "Deine Drucker konnten nicht gefunden werden. Versuche es später erneut."
       },
