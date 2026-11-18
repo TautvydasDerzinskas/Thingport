@@ -3,7 +3,7 @@ import type { PreviewImage } from "@prisma/client";
 import { prisma } from "../db";
 import { createLogger } from "../logger";
 import { formatBytes } from "../utils/formatBytes";
-import { galleryImageFile, removeAssetFiles, removeFile } from "./modelAssets";
+import { galleryImageFile, galleryThumbFile, removeAssetFiles, removeFile } from "./modelAssets";
 import { compressPreviewGlb, currentPreviewGlbs, isPreviewCompressed } from "./modelPreviewCache";
 import { createNotification } from "./notificationService";
 import { setPhotosPerModel, type PhotoKeep } from "./settingsService";
@@ -160,7 +160,10 @@ async function trimPhotos(task: CleanupTask, keep: PhotoKeep): Promise<void> {
         await restorePhoto(image).catch((error: unknown) => {
           log.error("couldn't give back the row of a photo whose file stayed", { printId, id: image.id, error });
         });
-      } else task.freed += freed;
+      } else {
+        // Its card-sized copy, if it was ever first; one left behind is only a few kilobytes.
+        task.freed += freed + ((await removeAssetFiles(print?.assetsPath, galleryThumbFile(image.id))) ?? 0);
+      }
       task.done += 1;
     }
   }

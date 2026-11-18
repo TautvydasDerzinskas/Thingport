@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import request from "supertest";
@@ -8,11 +9,17 @@ import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
 import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
-import { addPreviewImage, generateCardRender, previewImagePath } from "../src/services/previewImageService";
+import {
+  addPreviewImage,
+  galleryThumbPath,
+  generateCardRender,
+  previewImagePath,
+} from "../src/services/previewImageService";
 import { modelImagePath, modelImageState } from "../src/services/modelPreviewCache";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { getPreviewMode, setPreviewMode } from "../src/services/settingsService";
-import { plateAssetHome, printAssetHome } from "../src/services/modelAssets";
+import { assetPath, galleryThumbFile, plateAssetHome, printAssetHome } from "../src/services/modelAssets";
+import { MODEL_SUMMARY_SELECT, toModelSummary } from "../src/services/dashboardService";
 import { MOSAICS, renderTagMosaic } from "../src/services/tagMosaicService";
 import { TAG_MOSAICS } from "../src/config";
 
@@ -144,6 +151,218 @@ describe("a 3D render saved before uploaded images land", () => {
     ]);
     expect(await redOf(previewImagePath(previews[0].id, await printAssetHome(print.id)))).toBeGreaterThan(180);
     expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(180);
+  });
+});
+
+// Issue #368: Edit model marks the gallery's first picture as the thumbnail, so putting another first changes the card.
+describe("the model's thumbnail", () => {
+  type PrintBody = {
+    id: string;
+    thumb_url: string | null;
+    thumb_generated: boolean;
+    preview_images: { id: string }[];
+    plates: { id: string; thumb_url: string | null }[];
+  };
+
+  async function withPictures(...pictures: Buffer[]): Promise<PrintBody> {
+    const print = await uploadStl();
+    let req = request(app).post(`/api/print/${print.id}/preview-images`).set(auth());
+    for (const [index, picture] of pictures.entries()) req = req.attach("files", picture, `${index}.png`);
+    const res = await req;
+    expect(res.status).toBe(200);
+    return res.body.print;
+  }
+  const reorder = async (printId: string, ids: string[]) => {
+    const res = await request(app)
+      .post(`/api/print/${printId}/preview-images/reorder`)
+      .set(auth())
+      .send({ image_ids: ids });
+    expect(res.status).toBe(200);
+    return res.body.print as PrintBody;
+  };
+  const remove = async (printId: string, imageId: string) => {
+    const res = await request(app).delete(`/api/print/${printId}/preview-images/${imageId}`).set(auth());
+    expect(res.status).toBe(200);
+    return res.body.print as PrintBody;
+  };
+  const fetchPicture = async (url: string) => {
+    const res = await request(app).get(`/api${url}`).set(auth());
+    expect(res.status).toBe(200);
+    expect(res.headers["content-type"]).toBe("image/jpeg");
+    return res;
+  };
+  const redOfBytes = async (bytes: Buffer) => Math.round((await sharp(bytes).stats()).channels[0].mean);
+  const cardOf = (id: string) => new RegExp(`^/preview-image/${id}/thumb\\.jpg\\?v=`);
+  const copyOf = async (printId: string, imageId: string) =>
+    assetPath(await printAssetHome(printId), galleryThumbFile(imageId));
+
+  it("is the gallery's first picture, and follows it when another is put first", async () => {
+    const print = await withPictures(await png(10), await png(200), await png(120));
+    const [a, b, c] = print.preview_images.map((image) => image.id);
+    expect(print.thumb_url).toMatch(cardOf(a));
+    expect(print.thumb_generated).toBe(false);
+
+    const reordered = await reorder(print.id, [b, a, c]);
+    expect(reordered.thumb_url).toMatch(cardOf(b));
+    expect(await redOfBytes((await fetchPicture(reordered.thumb_url!)).body)).toBeGreaterThan(180);
+    // The address apps read a model's thumbnail from follows it too, asked again each time.
+    const own = await fetchPicture(`/print/${print.id}/thumb.jpg`);
+    expect(own.headers["cache-control"]).toBe("private, no-cache");
+    expect(await redOfBytes(own.body)).toBeGreaterThan(180);
+  });
+
+  it("is made at card size the first time it's asked for, and goes with its picture", async () => {
+    const big = await sharp({ create: { width: 1400, height: 900, channels: 3, background: { r: 200, g: 0, b: 0 } } })
+      .png()
+      .toBuffer();
+    const print = await withPictures(big, await png(10));
+    const [first, second] = print.preview_images.map((image) => image.id);
+    expect(fsSync.existsSync(await copyOf(print.id, first))).toBe(false);
+
+    const res = await fetchPicture(print.thumb_url!);
+    expect(res.headers["cache-control"]).toContain("immutable");
+    expect(await sharp(await copyOf(print.id, first)).metadata()).toMatchObject({ width: 512, height: 329 });
+
+    // The next one up takes over.
+    const after = await remove(print.id, first);
+    expect(fsSync.existsSync(await copyOf(print.id, first))).toBe(false);
+    expect(after.thumb_url).toMatch(cardOf(second));
+    expect(await redOfBytes((await fetchPicture(after.thumb_url!)).body)).toBeLessThan(30);
+  });
+
+  // A full disk, say: the card was handed that address, so it shows the picture itself rather than nothing.
+  it("is the picture itself while its card-sized copy can't be written", async () => {
+    const print = await withPictures(await png(10), await png(200));
+    const [a, b] = print.preview_images.map((image) => image.id);
+    const reordered = await reorder(print.id, [b, a]);
+    const copy = await copyOf(print.id, b);
+    const writeFile = fs.writeFile;
+    const full = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).startsWith(`${copy}.`)) {
+        throw Object.assign(new Error("ENOSPC: no space left on device"), { code: "ENOSPC" });
+      }
+      return writeFile(file, data, options);
+    });
+    try {
+      const res = await fetchPicture(reordered.thumb_url!);
+      // Not kept, so its copy is what's served once there's room.
+      expect(res.headers["cache-control"]).toBe("private, no-cache");
+      expect(await redOfBytes(res.body)).toBeGreaterThan(180);
+      // The model's own address too, rather than the file's thumbnail, which is the picture that was first before.
+      expect(await redOfBytes((await fetchPicture(`/print/${print.id}/thumb.jpg`)).body)).toBeGreaterThan(180);
+      expect(fsSync.existsSync(copy)).toBe(false);
+    } finally {
+      full.mockRestore();
+    }
+    expect((await fetchPicture(reordered.thumb_url!)).headers["cache-control"]).toContain("immutable");
+    expect(fsSync.existsSync(copy)).toBe(true);
+  });
+
+  // Removing a picture takes the picture, then its copy; one being made from it as that ran is written after both.
+  it("doesn't outlive its picture when that's removed while the copy is being made", async () => {
+    const print = await withPictures(await png(200), await png(10));
+    const [first] = print.preview_images.map((image) => image.id);
+    const copy = await copyOf(print.id, first);
+    let reached!: () => void;
+    const encoded = new Promise<void>((resolve) => (reached = resolve));
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const writeFile = fs.writeFile;
+    const spy = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
+      if (String(file).startsWith(`${copy}.`)) {
+        reached();
+        await held;
+      }
+      return writeFile(file, data, options);
+    });
+    try {
+      const making = galleryThumbPath(first, await printAssetHome(print.id));
+      // The picture is read and encoded; the copy is held before it's written.
+      await encoded;
+      await remove(print.id, first);
+      release();
+      expect(await making).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+    expect((await fs.readdir(path.dirname(copy))).filter((name) => name.startsWith(first))).toEqual([]);
+  });
+
+  it("leaves the files' own thumbnails as they are", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    // As a 3MF's embedded picture or a print profile's: the plate's own, which no gallery picture replaces.
+    await saveThumbFromBytes(plate.id, await png(250));
+    const res = await request(app)
+      .post(`/api/print/${print.id}/preview-images`)
+      .set(auth())
+      .attach("files", await png(10), "a.png")
+      .attach("files", await png(120), "b.png");
+    const [a, b] = (res.body.print as PrintBody).preview_images.map((image) => image.id);
+    expect(res.body.print.thumb_url).toMatch(cardOf(a));
+
+    const reordered = await reorder(print.id, [b, a]);
+    expect(reordered.thumb_url).toMatch(cardOf(b));
+    expect(reordered.plates[0].thumb_url).toMatch(new RegExp(`^/plate/${plate.id}/thumb\\.jpg`));
+    expect(await redOf(plateThumbPath(plate.id, await plateAssetHome(plate.id)))).toBeGreaterThan(240);
+  });
+
+  it("is the first file's thumbnail with no picture, or only our own render", async () => {
+    const print = await uploadStl();
+    const plate = await prisma.plate.findFirstOrThrow({ where: { printId: print.id } });
+    const rendered = await request(app)
+      .post(`/api/plate/${plate.id}/thumbnail-generated`)
+      .set(auth())
+      .attach("file", await png(10), "render.png");
+    expect(rendered.body.print.preview_images).toHaveLength(1);
+    expect(rendered.body.print.thumb_url).toMatch(new RegExp(`^/plate/${plate.id}/thumb\\.jpg`));
+    expect(rendered.body.print.thumb_generated).toBe(true);
+
+    const pictured = await withPictures(await png(200));
+    const emptied = await remove(pictured.id, pictured.preview_images[0].id);
+    expect(emptied.thumb_url).toBe(emptied.plates[0].thumb_url);
+    expect(emptied.thumb_url).toMatch(/^\/plate\//);
+  });
+
+  it("leads the dashboard's rows too", async () => {
+    const print = await withPictures(await png(10), await png(200));
+    const [a, b] = print.preview_images.map((image) => image.id);
+    await reorder(print.id, [b, a]);
+    const row = toModelSummary(
+      await prisma.print.findUniqueOrThrow({ where: { id: print.id }, select: MODEL_SUMMARY_SELECT }),
+    );
+    expect(row.thumbUrl).toMatch(cardOf(b));
+    expect(row.photoUrl).toMatch(cardOf(b));
+  });
+
+  it("goes by the first picture that's there, wherever it's read, when the first one's file is gone", async () => {
+    const print = await withPictures(await png(10), await png(200));
+    const [a, b] = print.preview_images.map((image) => image.id);
+    await fs.rm(previewImagePath(a, await printAssetHome(print.id)));
+    const card = (await request(app).get(`/api/print/${print.id}`).set(auth())).body as PrintBody;
+    expect(card.thumb_url).toMatch(cardOf(b));
+    expect(await redOfBytes((await fetchPicture(`/print/${print.id}/thumb.jpg`)).body)).toBeGreaterThan(180);
+    const row = toModelSummary(
+      await prisma.print.findUniqueOrThrow({ where: { id: print.id }, select: MODEL_SUMMARY_SELECT }),
+    );
+    expect(row.thumbUrl).toMatch(cardOf(b));
+    expect(row.photoUrl).toMatch(cardOf(b));
+  });
+
+  it("is reordered by the pictures that are there, one whose file is gone kept after them", async () => {
+    const print = await withPictures(await png(10), await png(200), await png(120));
+    const [a, b, c] = print.preview_images.map((image) => image.id);
+    await fs.rm(previewImagePath(a, await printAssetHome(print.id)));
+    // What Edit model shows, and so can send: b and c.
+    expect((await reorder(print.id, [c, b])).thumb_url).toMatch(cardOf(c));
+    const order = await prisma.previewImage.findMany({ where: { printId: print.id }, orderBy: { position: "asc" } });
+    expect(order.map((image) => image.id)).toEqual([c, b, a]);
+    // A picture that's there still has to be listed.
+    const short = await request(app)
+      .post(`/api/print/${print.id}/preview-images/reorder`)
+      .set(auth())
+      .send({ image_ids: [c] });
+    expect(short.status).toBe(400);
   });
 });
 
