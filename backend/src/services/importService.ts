@@ -157,6 +157,9 @@ export type ImportRequestBody = ImportCookies & {
   makerworld_design?: Record<string, unknown> | null;
   /** Internal only: per-request delay for MakerWorld collection imports. Never from the body. */
   makerworldPaceMs?: number;
+  /** Internal only: false where the import keeps no supporting files -- a profile added to a model already in the
+   *  library -- so none of the account's daily downloads goes on a zip of them. Never from the body. */
+  makerworldSupporting?: false;
   /** Internal only: the 3MF Thingport Grab exported from OwlCAD's editor, already written to a temp file by its
    *  route. OwlCAD hands out no link for a CAD project's geometry -- the editor builds the file in the page -- so
    *  unlike `resolved_files` this is the file itself. Never from the body. */
@@ -217,7 +220,7 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
   // Grab sent, which names them beside the scripts. One from a Grab that sent scripts only names none, so none is
   // fetched; MakerWorld isn't asked to say it again.
   const supportingZipUrl =
-    bearerToken && sentFileList && !parametricSource?.zipUrl
+    bearerToken && sentFileList && !parametricSource?.zipUrl && body.makerworldSupporting !== false
       ? await resolveMakerworldSupportingUrl(parsed.designId, design, bearerToken, body.makerworldPaceMs)
       : null;
   return {
@@ -410,6 +413,7 @@ async function tryMakerworldCloudApi(url: string, body: ImportRequestBody): Prom
       parsed.requestedInstanceId,
       bearerToken,
       body.makerworldPaceMs,
+      body.makerworldSupporting !== false,
     );
     return resolved;
   } catch (err) {
@@ -868,11 +872,13 @@ async function addMakerworldProfileToPrint(
   const wanted = body.resolved_instance_id ?? parseMakerworldModelUrl(url)?.requestedInstanceId ?? null;
   if (!wanted || hasProfile(wanted)) return alreadyImported;
 
-  // Fetch the extension-resolved download as is: another page request per profile risks the CAPTCHA.
+  // Fetch the extension-resolved download as is: another page request per profile risks the CAPTCHA. Only the profile
+  // is kept, so no supporting files are looked for.
   const presolved = Boolean(body.resolved_download_url && body.resolved_instance_id);
+  const profileOnly = { ...body, makerworldSupporting: false as const };
   const opened = presolved
-    ? await openImportResponse(body.resolved_download_url!, { ...body, resolved_download_url: null }, url)
-    : await openImportResponse(url, body);
+    ? await openImportResponse(body.resolved_download_url!, { ...profileOnly, resolved_download_url: null }, url)
+    : await openImportResponse(url, profileOnly);
   // The presolved download is fetched bare, so its profile's details come from the design the extension sent.
   const profile = presolved ? extensionProfile(url, body) : opened.meta.makerworldProfile;
   const instanceId = profile?.instanceId ?? null;

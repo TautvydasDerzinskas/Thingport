@@ -474,6 +474,8 @@ export async function resolveMakerworldViaCloudApi(
   requestedInstanceId: string | null,
   bearerToken: string,
   paceMs?: number,
+  /** False where only the profile is kept: no download goes on a zip of the files beside it. */
+  supporting = true,
 ): Promise<MakerworldCloudResolution | null> {
   if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
 
@@ -528,9 +530,10 @@ export async function resolveMakerworldViaCloudApi(
     paceMs,
   );
   // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched.
-  const supportingZipUrl = parametricSource?.zipUrl
-    ? null
-    : await resolveMakerworldSupportingUrl(designId, design, bearerToken, paceMs);
+  const supportingZipUrl =
+    parametricSource?.zipUrl || !supporting
+      ? null
+      : await resolveMakerworldSupportingUrl(designId, design, bearerToken, paceMs);
 
   return {
     downloadUrl,

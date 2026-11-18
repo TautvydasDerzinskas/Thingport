@@ -39,9 +39,10 @@ function json(body: unknown): Response {
 }
 
 const DESIGNER = { uid: 1692606088, name: "Deus Cat" };
-/** Two designer profiles and two community ones. */
-function design(designId: string) {
+/** Two designer profiles and two community ones; `guide`, a document among its files too. */
+function design(designId: string, guide = false) {
   return {
+    ...(guide ? { designExtension: { model_files: [{ modelName: "Assembly guide.pdf", modelType: "pdf" }] } } : {}),
     id: Number(designId),
     modelId: `US${designId}`,
     title: "Articulated Phoenix",
@@ -123,12 +124,12 @@ describe("importing several MakerWorld print profiles", () => {
   });
 
   /** `sameName`: every profile's file comes named alike, as MakerWorld often does. */
-  function mockMakerworld(designId: string, { sameName = false } = {}) {
+  function mockMakerworld(designId: string, { sameName = false, guide = false } = {}) {
     const fetched: string[] = [];
     global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {
       const url = String(input);
       fetched.push(url);
-      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) return json(design(designId));
+      if (url === `https://api.bambulab.com/v1/design-service/design/${designId}`) return json(design(designId, guide));
       const profile = url.match(/^https:\/\/api\.bambulab\.com\/v1\/design-service\/instance\/(\d+)\/f3mf/);
       if (profile)
         return json({
@@ -235,6 +236,19 @@ describe("importing several MakerWorld print profiles", () => {
     // The renamed first file moved on disk with its new name.
     expect(plates.every((p) => fs.existsSync(path.join(STORAGE, p.storagePath)))).toBe(true);
     expect(plates[0].storagePath.endsWith("phoenix - multi-colored version.stl")).toBe(true);
+  });
+
+  it("spends no download on the files beside a design when it only adds profiles to the model", async () => {
+    const designId = String((stamp % 1_000_000_000) + 2);
+    const raw = (urls: string[]) => urls.filter((url) => url.includes("/model?modelType=all&type=download"));
+    const first = mockMakerworld(designId, { guide: true });
+    await runJob(designId, "designer");
+    // The first import keeps the files beside the model, so it asks for the zip of them.
+    expect(raw(first)).not.toEqual([]);
+    const later = mockMakerworld(designId, { guide: true });
+    const job = await runJob(designId, "all");
+    expect(job).toMatchObject({ status: "DONE", imported: 2, failed_count: 0 });
+    expect(raw(later)).toEqual([]);
   });
 
   it("refuses a link that isn't a MakerWorld model", async () => {
