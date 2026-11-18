@@ -18,6 +18,8 @@ const stage = vi.hoisted(() => ({
   formatFails: null as ((plateId: string) => Promise<void>) | null,
   // Each reading of a new 3MF plate's format, with the file it was given.
   formatReads: [] as { plateId: string; filePath: string }[],
+  // Runs as the next reading of a new 3MF plate's format starts, given the file, once; the reading then goes on.
+  beforeFormat: null as ((filePath: string) => Promise<void>) | null,
   lockCalls: 0,
 }));
 
@@ -55,6 +57,11 @@ vi.mock("../src/services/threeMfFormat", async (original) => {
     ...actual,
     storePlateFormat: async (...args: Parameters<typeof actual.storePlateFormat>) => {
       stage.formatReads.push({ plateId: String(args[0]), filePath: String(args[2]) });
+      const before = stage.beforeFormat;
+      if (before) {
+        stage.beforeFormat = null;
+        await before(String(args[2]));
+      }
       const hook = stage.formatFails;
       if (!hook) return actual.storePlateFormat(...args);
       stage.formatFails = null;
@@ -178,6 +185,7 @@ afterEach(() => {
   stage.readingFails = false;
   stage.duringReading = null;
   stage.formatFails = null;
+  stage.beforeFormat = null;
 });
 
 afterAll(() => {
@@ -412,6 +420,30 @@ describe("a model's plates, changed by two requests at once", () => {
     const reads = stage.formatReads.filter((read) => read.plateId === part.id);
     expect(reads).toHaveLength(1);
     expect(fs.existsSync(reads[0].filePath)).toBe(true);
+  });
+
+  it("reads a new 3MF plate once more where a rename moved it while it was being read", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    let renamed = "";
+    stage.formatReads = [];
+    stage.beforeFormat = async () => {
+      // Another tab renames the model, and its files move, as the new plate's format is read.
+      renamed = `Moved mid-read ${stamp}`;
+      const moved = await prisma.print.update({
+        where: { id: print.id },
+        data: { name: renamed },
+        include: { plates: true },
+      });
+      await relocatePrint(moved, moved.plates);
+    };
+    await addPlatesToPrint(owner.id, print.id, [{ filename: "part.3mf", tempFilePath: await threeMf(false) }]);
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    expect(part.storagePath).toContain(renamed);
+    // The first reading found the file gone; the second was where it went.
+    const reads = stage.formatReads.filter((read) => read.plateId === part.id);
+    expect(reads).toHaveLength(2);
+    expect(reads[1].filePath).not.toBe(reads[0].filePath);
+    expect(fs.existsSync(reads[1].filePath)).toBe(true);
   });
 
   it("puts each plate of a batch where its model's new name puts it, though the model was renamed after the first was stored", async () => {
