@@ -330,7 +330,8 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         const res = await printsApi.renamePlate(print.id, plateId, wanted);
         latest = res.print ?? latest;
       }
-      {
+      // A model made of its scripts alone has no plates to order.
+      if (plateItems.length) {
         let nextNew = 0;
         const finalOrder = plateItems.map((p) => (p.kind === "existing" ? p.id : newPlateIdsInOrder[nextNew++]));
         const reorderRes = await printsApi.reorderPlates(print.id, finalOrder);

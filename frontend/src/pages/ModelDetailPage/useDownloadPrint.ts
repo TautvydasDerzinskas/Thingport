@@ -69,7 +69,15 @@ export function useDownloadPrint(print: Print, onUnauthorized?: () => void, onRe
   };
 
   const handleDownload = () => {
-    if (print.plates.length <= 1) {
+    if (!print.plates.length) {
+      // A model made of its scripts alone: the one file it has, or the whole of it.
+      const [only] = print.generator_scripts ?? [];
+      if (only && print.supporting_file_count === 1) {
+        void downloadFile({ url: `/print/${print.id}/files/${only.id}`, filename: only.filename });
+      } else void downloadAllZip();
+      return;
+    }
+    if (print.plates.length === 1) {
       const plate = print.plates[0];
       if (plate) void downloadFile(plate);
       return;

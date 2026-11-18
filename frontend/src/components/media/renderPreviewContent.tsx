@@ -84,15 +84,20 @@ export function renderPreviewContent(
       ? { width: "100%", height: "100%", objectFit: "cover" as const }
       : { width: "100%", height: "100%", objectFit: "contain" as const, bgcolor: "action.hover" };
 
+  // The model's own picture where it has one, so a model drawn in colours of its own leads with those rather than
+  // with the grey thumbnail made beside them; the thumbnail still stands in where there is no picture at all.
+  const cardPicture = ownPictureUrl(print) ?? print.thumb_url;
+
   if (!plate) {
+    // A model made of its scripts alone has no file to draw, though it usually has pictures.
+    if (variant === "card" && cardPicture) {
+      return <Box component="img" src={printsApi.fileUrl(cardPicture)} alt={print.title || print.name} sx={imgSx} />;
+    }
     return <PreviewPlaceholder text={t("library:modelViewer.noPreview")} />;
   }
 
   const ext = extOf(plate.filename);
   const plateUrl = printsApi.fileUrl(plate.url);
-  // The model's own picture where it has one, so a model drawn in colours of its own leads with those rather than
-  // with the grey thumbnail made beside them; the thumbnail still stands in where there is no picture at all.
-  const cardPicture = ownPictureUrl(print) ?? print.thumb_url;
   const thumbUrl =
     variant === "card"
       ? cardPicture

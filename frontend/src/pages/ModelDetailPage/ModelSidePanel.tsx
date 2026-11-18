@@ -186,7 +186,7 @@ export default function ModelSidePanel({
   // The provider whose own category this maps from, when it isn't AI's answer.
   const suggestedBy = importProviderInfo(print.ai_suggestion?.provider)?.label;
   const viewerAvatarUrl = viewer?.avatar_url;
-  const { downloading, downloadFile, downloadAllZip, recordUse, recordDownload } = useDownloadPrint(
+  const { downloading, downloadFile, downloadAllZip, handleDownload, recordUse, recordDownload } = useDownloadPrint(
     print,
     onUnauthorized,
     onUpdated,
@@ -611,7 +611,8 @@ export default function ModelSidePanel({
               <ModelFileSelect files={files} selected={selectedFile} onSelect={(file) => selectKey(file.key)} />
             )
           )}
-          {selectedFile && (
+          {/* A model made of its scripts alone has no file to pick, but still customizes and downloads. */}
+          {(selectedFile || customize.available) && (
             <OpenInSlicerButton
               file={selectedFile}
               canOpen={canOpen}
@@ -622,9 +623,9 @@ export default function ModelSidePanel({
                 void switchSlicer(slicerId);
               }}
               downloading={downloading}
-              onDownload={() => void downloadFile(selectedFile)}
+              onDownload={() => (selectedFile ? void downloadFile(selectedFile) : handleDownload())}
               // The zip holds the plates and supporting files, not the prepared print.
-              zipCount={files.filter((file) => file.plate).length}
+              zipCount={selectedFile ? files.filter((file) => file.plate).length : print.supporting_file_count}
               onDownloadZip={() => void downloadAllZip()}
               onCustomize={customize.available ? customize.start : undefined}
               onOpenInStudio={studioPlate ? () => void studio.open(studioPlate) : undefined}
@@ -641,8 +642,8 @@ export default function ModelSidePanel({
             sending={sendTo.sending}
             onSend={(target) => void sendTo.send(target)}
           />
-          {/* With no file there's no main button, so the commands on the whole model get one of their own. */}
-          {!selectedFile && toolCommands.commands.length > 0 && (
+          {/* With no main button, the commands on the whole model get one of their own. */}
+          {!selectedFile && !customize.available && toolCommands.commands.length > 0 && (
             <ToolCommandsButton commands={toolCommands.commands} onRun={toolCommands.run} />
           )}
           {toolCommands.element}

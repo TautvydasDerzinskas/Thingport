@@ -27,8 +27,9 @@ import { useSlicerSettings } from "../../hooks/useSlicerPreference";
 import { slicerHref, type ModelFile } from "./useOpenInSlicer";
 
 type Props = {
-  /** The file every action but the zip applies to. */
-  file: ModelFile;
+  /** The file every action but the zip applies to; null for a model made of its scripts alone, which has only the
+   *  whole of it to download. */
+  file: ModelFile | null;
   /** False when the model has nothing a slicer opens; the button downloads instead. */
   canOpen: boolean;
   slicerOption: SlicerOption | null;
@@ -36,7 +37,7 @@ type Props = {
   onOpened: (slicerId: string) => void;
   downloading: boolean;
   onDownload: () => void;
-  /** Offered with more than one file. */
+  /** Offered with more than one file: the plates, or for a model without, its files. */
   zipCount: number;
   onDownloadZip: () => void;
   /** Set for a model that came with its generator script, which then takes the main action. */
@@ -84,7 +85,8 @@ function LogoTile({ id, size }: { id: string; size: number }) {
  *
  * A model that came with its generator script leads with Customize instead -- generating it again is the thing
  * to do with it, and what you'd slice or download is only one of the shapes it can make. Whatever Customize
- * displaces moves into the menu, so nothing becomes unreachable.
+ * displaces moves into the menu, so nothing becomes unreachable. One made of its scripts alone has nothing to open,
+ * so only the download is behind the arrow.
  */
 export default function OpenInSlicerButton({
   file,
@@ -111,13 +113,13 @@ export default function OpenInSlicerButton({
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const group = anchor?.parentElement ?? null;
   const customizes = Boolean(onCustomize);
-  const opensSlicer = canOpen && Boolean(slicerOption);
+  const opensSlicer = file !== null && canOpen && Boolean(slicerOption);
   // The list, when it appears, holds every installed slicer. It is skipped only where it would say nothing the
   // main button doesn't: one slicer, already on that button. With Customize there instead, even one is worth
   // listing, since the button no longer opens anything.
-  const offersSlicers = canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
-  // Likewise the download: in the menu unless it is the main button.
-  const offersDownload = customizes || opensSlicer;
+  const offersSlicers = file !== null && canOpen && slicerOptions.length > (opensSlicer && !customizes ? 1 : 0);
+  // Likewise the download: in the menu unless it is the main button. Without a file, the zip is the download.
+  const offersDownload = (customizes || opensSlicer) && (file !== null || zipCount <= 1);
   const offersTools = Boolean(onToolCommand) && toolCommands.length > 0;
   const offersSending = Boolean(onSend) && sendTargets.length > 0;
   const offersAbove = offersSlicers || offersSending || Boolean(onOpenInStudio) || offersDownload || zipCount > 1;
@@ -134,7 +136,7 @@ export default function OpenInSlicerButton({
               {t("models:detail.customize")}
             </Box>
           </Button>
-        ) : opensSlicer && slicerOption ? (
+        ) : opensSlicer && file && slicerOption ? (
           <Button
             component="a"
             href={slicerHref(slicerOption.id, file, bridged)}
@@ -182,6 +184,7 @@ export default function OpenInSlicerButton({
       >
         {offersSlicers && <ListSubheader sx={{ lineHeight: "32px" }}>{t("models:detail.openInHeading")}</ListSubheader>}
         {offersSlicers &&
+          file &&
           slicerOptions.map((option) => (
             <MenuItem
               key={option.id}

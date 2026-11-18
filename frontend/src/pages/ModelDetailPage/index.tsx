@@ -357,7 +357,8 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   onUnavailable={onRenderUnavailable}
                 />
               ) : (
-                firstPlate && renderPreviewContent(print, "modal", theme, t, "automatic", firstPlate)
+                // Its placeholder too, for a model made of its scripts alone with no picture.
+                renderPreviewContent(print, "modal", theme, t, "automatic", firstPlate)
               )}
 
               {images.length > 1 && (
