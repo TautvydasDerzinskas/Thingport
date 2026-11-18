@@ -186,7 +186,16 @@ export async function gltfBundles(
   const pathsOf = (entry: UploadEntry) =>
     entry.zipPath ? [pathOf(entry), normalizeSegments(normalizeRelativePath(entry.zipPath))] : [pathOf(entry)];
   const nameOf = (path: string) => path.split("/").pop()!.toLowerCase();
-  const others = entries.filter((entry) => !isGltf(entry.file.name));
+  // Each file's places worked out once, as every name each scene points at is looked for among them.
+  const others = entries
+    .filter((entry) => !isGltf(entry.file.name))
+    .map((entry) => ({
+      entry,
+      places: pathsOf(entry).map((path) => ({ path, name: nameOf(path), kept: keptName(nameOf(path)) })),
+    }));
+  type Place = (typeof others)[number]["places"][number];
+  const matching = (test: (place: Place) => boolean) =>
+    others.filter(({ places }) => places.some(test)).map(({ entry }) => entry);
   for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
     const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
     // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
@@ -200,16 +209,15 @@ export async function gltfBundles(
         // A stray % in a file name: match it as written.
       }
       const wanted = normalizeSegments(`${folder}/${decoded.replace(/\\/g, "/")}`);
-      const byPath = others.filter((entry) => pathsOf(entry).includes(wanted));
       const named = wanted.split("/").pop()!;
       const name = named.toLowerCase();
-      const byName = others.filter((entry) => pathsOf(entry).some((path) => nameOf(path) === name && inFolder(path)));
-      // By the name one is kept by ("mesh.bin " for "mesh.bin"), only when none has it as written.
-      const byKeptName = others.filter((entry) =>
-        pathsOf(entry).some((path) => keptName(nameOf(path)) === keptName(name) && inFolder(path)),
-      );
+      const kept = keptName(name);
+      // Each looked for only when the one before found none: at its path, by its name in the scene's folder, then by
+      // the name one is kept by ("mesh.bin " for "mesh.bin").
+      let candidates = matching((place) => place.path === wanted);
+      if (!candidates.length) candidates = matching((place) => place.name === name && inFolder(place.path));
+      if (!candidates.length) candidates = matching((place) => place.kept === kept && inFolder(place.path));
       // Two entries of one file are one file; two files are two the scene could mean, and it takes neither.
-      const candidates = byPath.length ? byPath : byName.length ? byName : byKeptName;
       const distinct = new Set(candidates.map((entry) => entry.file));
       if (distinct.size === 1) found.add(candidates[0]);
       else if (distinct.size > 1) ambiguous?.set(gltf, [...new Set([...(ambiguous.get(gltf) ?? []), named])]);
