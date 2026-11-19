@@ -4457,6 +4457,8 @@
         "front": "Frontal",
         "right": "Derecha",
         "fit": "Ajustar a la vista",
+        "hand": "Modo mano",
+        "handNavigation": "Arrastra con el botón izquierdo o con un dedo para desplazar la vista. Arrastra con el botón derecho o con dos dedos para girarla. Usa la rueda o pellizca para hacer zoom.",
         "navigation": "Arrastrar con el botón derecho gira la vista, con el central (o Mayús + derecho) la desplaza, la rueda acerca. Arrastrar con el izquierdo dibuja un cuadro de selección: de izquierda a derecha toma lo que queda dentro por completo, de derecha a izquierda también lo que toca. Mayús añade a la selección."
       },
       "properties": {

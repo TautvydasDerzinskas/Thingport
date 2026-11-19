@@ -4567,6 +4567,8 @@
         "front": "Iš priekio",
         "right": "Iš dešinės",
         "fit": "Talpinti į vaizdą",
+        "hand": "Rankos režimas",
+        "handNavigation": "Vilkite kairiuoju pelės mygtuku arba vienu pirštu, kad pastumtumėte vaizdą. Vilkite dešiniuoju pelės mygtuku arba dviem pirštais, kad jį pasuktumėte. Mastelį keiskite ratuku arba suglausdami ar praskėsdami pirštus.",
         "navigation": "Vilkdami dešiniuoju mygtuku sukate vaizdą, viduriniu (arba Shift + dešiniuoju) – stumiate, ratuku – artinate. Vilkdami kairiuoju brėžiate žymėjimo rėmelį: iš kairės į dešinę jis pažymi tai, kas visiškai viduje, iš dešinės į kairę – ir tai, ką paliečia. Shift prideda prie pažymėtų."
       },
       "properties": {

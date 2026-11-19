@@ -27,6 +27,7 @@ import LibraryAddOutlinedIcon from "@mui/icons-material/LibraryAddOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import HighlightAltOutlinedIcon from "@mui/icons-material/HighlightAltOutlined";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
+import PanToolOutlinedIcon from "@mui/icons-material/PanToolOutlined";
 import PentagonOutlinedIcon from "@mui/icons-material/PentagonOutlined";
 import RectangleOutlinedIcon from "@mui/icons-material/RectangleOutlined";
 import RedoIcon from "@mui/icons-material/Redo";
@@ -82,6 +83,8 @@ type Props = {
   /** Edit mode: the tools show, after the Edit button that turns it on and off. */
   editing: boolean;
   onToggleEditing: () => void;
+  handMode: boolean;
+  onToggleHandMode: () => void;
   designName: string | null;
   canUndo: boolean;
   canRedo: boolean;
@@ -236,7 +239,7 @@ export default function StudioToolbar(props: Props) {
         py: 0.5,
         minHeight: 48,
         borderBottom: 1,
-        // Only a toolbar while editing; otherwise the Edit button sits on the view.
+        // The design menu and Edit button sit on the view in browse mode.
         borderColor: props.editing ? "divider" : "transparent",
         transition: "border-color 200ms",
         "@media (prefers-reduced-motion: reduce)": { transition: "none" },
@@ -256,6 +259,71 @@ export default function StudioToolbar(props: Props) {
           <EditOutlinedIcon />
         </ToggleButton>
       </Tooltip>
+      <Button
+        size="small"
+        color="inherit"
+        endIcon={<KeyboardArrowDownIcon />}
+        onClick={(event) => setDesignMenu(event.currentTarget)}
+        aria-haspopup="menu"
+        aria-expanded={Boolean(designMenu)}
+        sx={{ textTransform: "none", fontWeight: 600, maxWidth: 220, flexShrink: 0 }}
+      >
+        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+          {props.designName ?? t("studio.design.none")}
+        </Typography>
+      </Button>
+      <Menu anchorEl={designMenu} open={Boolean(designMenu)} onClose={closeDesign}>
+        {menuItem(<AddBoxOutlinedIcon fontSize="small" />, t("studio.design.new"), props.onNewDesign, closeDesign)}
+        {menuItem(
+          <FolderOpenOutlinedIcon fontSize="small" />,
+          t("studio.design.open"),
+          props.onOpenDesign,
+          closeDesign,
+        )}
+        {!noDesign &&
+          menuItem(
+            <DriveFileRenameOutlineOutlinedIcon fontSize="small" />,
+            t("studio.design.rename"),
+            props.onRenameDesign,
+            closeDesign,
+          )}
+        {!noDesign &&
+          menuItem(
+            <TuneOutlinedIcon fontSize="small" />,
+            t("studio.parameters.title"),
+            props.onParameters,
+            closeDesign,
+          )}
+        {!noDesign &&
+          menuItem(
+            <FileDownloadOutlinedIcon fontSize="small" />,
+            t("studio.design.export"),
+            props.onExport,
+            closeDesign,
+          )}
+        {!noDesign &&
+          menuItem(
+            <LibraryAddOutlinedIcon fontSize="small" />,
+            t("studio.design.saveToLibrary"),
+            props.onSaveToLibrary,
+            closeDesign,
+          )}
+        {!noDesign && <Divider />}
+        {!noDesign && (
+          <MenuItem
+            onClick={() => {
+              closeDesign();
+              props.onDeleteDesign();
+            }}
+            sx={{ color: "error.main" }}
+          >
+            <ListItemIcon sx={{ color: "inherit" }}>
+              <DeleteOutlineIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>{t("studio.design.delete")}</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
       {props.editing && (
         <Box
           sx={{
@@ -280,71 +348,6 @@ export default function StudioToolbar(props: Props) {
           >
             <RedoIcon />
           </Tool>
-          <Gap />
-          <Button
-            size="small"
-            color="inherit"
-            endIcon={<KeyboardArrowDownIcon />}
-            onClick={(event) => setDesignMenu(event.currentTarget)}
-            aria-haspopup="menu"
-            sx={{ textTransform: "none", fontWeight: 600, maxWidth: 220, flexShrink: 0 }}
-          >
-            <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-              {props.designName ?? t("studio.design.none")}
-            </Typography>
-          </Button>
-          <Menu anchorEl={designMenu} open={Boolean(designMenu)} onClose={closeDesign}>
-            {menuItem(<AddBoxOutlinedIcon fontSize="small" />, t("studio.design.new"), props.onNewDesign, closeDesign)}
-            {menuItem(
-              <FolderOpenOutlinedIcon fontSize="small" />,
-              t("studio.design.open"),
-              props.onOpenDesign,
-              closeDesign,
-            )}
-            {!noDesign &&
-              menuItem(
-                <DriveFileRenameOutlineOutlinedIcon fontSize="small" />,
-                t("studio.design.rename"),
-                props.onRenameDesign,
-                closeDesign,
-              )}
-            {!noDesign &&
-              menuItem(
-                <TuneOutlinedIcon fontSize="small" />,
-                t("studio.parameters.title"),
-                props.onParameters,
-                closeDesign,
-              )}
-            {!noDesign &&
-              menuItem(
-                <FileDownloadOutlinedIcon fontSize="small" />,
-                t("studio.design.export"),
-                props.onExport,
-                closeDesign,
-              )}
-            {!noDesign &&
-              menuItem(
-                <LibraryAddOutlinedIcon fontSize="small" />,
-                t("studio.design.saveToLibrary"),
-                props.onSaveToLibrary,
-                closeDesign,
-              )}
-            {!noDesign && <Divider />}
-            {!noDesign && (
-              <MenuItem
-                onClick={() => {
-                  closeDesign();
-                  props.onDeleteDesign();
-                }}
-                sx={{ color: "error.main" }}
-              >
-                <ListItemIcon sx={{ color: "inherit" }}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>{t("studio.design.delete")}</ListItemText>
-              </MenuItem>
-            )}
-          </Menu>
           <Gap />
 
           {props.sketch ? (
@@ -539,7 +542,15 @@ export default function StudioToolbar(props: Props) {
           >
             <StraightenOutlinedIcon />
           </Tool>
-          <HelpTip text={t("studio.view.navigation")} />
+          <Tool
+            label={t("studio.view.hand")}
+            active={props.handMode}
+            disabled={noDesign}
+            onClick={props.onToggleHandMode}
+          >
+            <PanToolOutlinedIcon />
+          </Tool>
+          <HelpTip text={t(props.handMode ? "studio.view.handNavigation" : "studio.view.navigation")} />
           <Tool label={t("studio.view.label")} onClick={(event) => setViewMenu(event.currentTarget)}>
             <VideocamOutlinedIcon />
           </Tool>

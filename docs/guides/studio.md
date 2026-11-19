@@ -10,12 +10,11 @@ ones.
 
 ## Designing
 
-Studio opens on the design and the **Ask AI** box alone. The **Edit** button (the pencil) at the top brings in the
-toolbar, with undo and redo first, the side panels and the status bar, and turns them off again. Out of edit mode you
-can still turn the view, select bodies for Ask AI, and undo or redo (<kbd>⌘</kbd><kbd>Z</kbd>). The **Features** and
-**Properties** panels each fold away to their side with the arrow in their header, leaving a tab with their name there
-that opens them again; the panels button at the right of the status bar does the same, beside the print check and
-**Studio settings**.
+The design name at the top of Studio opens a menu for opening, renaming, exporting, and saving designs to the
+library. It's available in both modes. The **Edit** button (the pencil) shows and hides the editing tools, side
+panels, and status bar. You can turn the view and use the undo and redo shortcuts in either mode. The **Features**
+and **Properties** panels fold away with the arrows in their headers. Reopen them from their tabs or from the panels
+button at the right of the status bar, beside the print check and **Studio settings**.
 
 A design is a list of features, built in order:
 
@@ -116,7 +115,11 @@ why, and OK waits until it can.
 - **Lay flat**: click a flat face and the body turns so that face is on the bed, as you'd turn a part for printing.
 - **Hole** can be **tapped**: threaded for an ISO bolt of that diameter to screw into.
 
-The mouse works as in most CAD:
+Studio opens in **Hand** mode. Drag with the left mouse button or one finger anywhere on the model or grid to
+pan the view. Drag with the right mouse button or two fingers to rotate. Pinch or scroll to zoom. In Edit mode,
+use the hand icon to pause viewport selection and editing while you navigate. Tap it again to resume.
+
+With **Hand** off in Edit mode:
 
 - **Left button** selects. Click a body, or drag a box over empty space: from left to right it takes what's wholly
   inside, from right to left also what it touches. <kbd>Shift</kbd> adds to the selection. Right-click a body for its

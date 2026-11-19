@@ -4279,6 +4279,8 @@
         "front": "Vorne",
         "right": "Rechts",
         "fit": "Ansicht einpassen",
+        "hand": "Handmodus",
+        "handNavigation": "Ziehe mit der linken Maustaste oder einem Finger, um die Ansicht zu verschieben. Ziehe mit der rechten Maustaste oder zwei Fingern, um sie zu drehen. Zoome mit dem Mausrad oder einer Zwei-Finger-Geste.",
         "navigation": "Mit gedrückter rechter Maustaste drehst du die Ansicht. Mit gedrückter mittlerer Maustaste (oder Umschalt + rechte Maustaste) verschiebst du sie. Mit dem Mausrad zoomst du. Mit gedrückter linker Maustaste ziehst du einen Auswahlrahmen auf: Von links nach rechts werden nur vollständig eingeschlossene Elemente ausgewählt, von rechts nach links auch berührte Elemente. Mit Umschalt ergänzt du die Auswahl."
       },
       "properties": {

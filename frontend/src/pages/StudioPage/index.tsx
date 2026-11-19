@@ -215,8 +215,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [promptInset, setPromptInset] = useState(0);
 
   const [selected, setSelected] = useState<string[]>([]);
-  // The page opens on the design and the prompt alone; Edit brings in the toolbar and the side panels.
+  // Edit adds the design tools and side panels.
   const [editing, setEditing] = useState(false);
+  const [editHandMode, setEditHandMode] = useState(false);
+  const handMode = !editing || editHandMode;
   const assistant = useStudioAssistant({
     designId: design?.id ?? null,
     offered: aiModels,
@@ -687,6 +689,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
       setSketch(null);
       setMeasureTool(null);
       setMode("select");
+      setEditHandMode(false);
       setMenu(null);
     }
     setEditing(!editing);
@@ -846,6 +849,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           document={shown ?? doc}
           selected={selected}
           mode={mode}
+          handMode={handMode}
           sketch={sketch}
           onSelect={select}
           onBoxSelect={boxSelect}
@@ -975,13 +979,15 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           borderRadius: 2,
           transition: "border-color 200ms, background-color 200ms",
           "@media (prefers-reduced-motion: reduce)": { transition: "none" },
-          // Out of edit mode the frame is the view's own: no border, and the Edit button on the view's background.
+          // In view mode the design menu and Edit button sit on the view's background.
           ...(editing ? {} : { borderColor: "transparent", bgcolor: theme.thingport.pageBackground }),
         })}
       >
         <StudioToolbar
           editing={editing}
           onToggleEditing={toggleEditing}
+          handMode={handMode}
+          onToggleHandMode={() => setEditHandMode((active) => !active)}
           designName={design?.name ?? null}
           canUndo={Boolean(design?.can_undo)}
           canRedo={Boolean(design?.can_redo)}

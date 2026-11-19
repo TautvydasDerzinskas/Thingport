@@ -4470,6 +4470,8 @@
         "front": "Face",
         "right": "Droite",
         "fit": "Ajuster à la vue",
+        "hand": "Mode main",
+        "handNavigation": "Faites glisser avec le bouton gauche ou avec un doigt pour déplacer la vue. Faites glisser avec le bouton droit ou avec deux doigts pour la faire pivoter. Utilisez la molette ou pincez pour zoomer.",
         "navigation": "Glisser avec le bouton droit fait pivoter la vue, avec le bouton du milieu (ou Maj + droit) la déplace, la molette zoome. Glisser avec le bouton gauche trace un cadre de sélection : de gauche à droite il prend ce qui est entièrement dedans, de droite à gauche aussi ce qu’il touche. Maj ajoute à la sélection."
       },
       "properties": {

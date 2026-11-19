@@ -38,8 +38,8 @@ import { createViewCube, type ViewCube, type ViewCubeStyle } from "./viewCube";
 // The design in 3D: Z up, on a bed of 10 mm squares. It only shows the document and reports what the pointer did; the
 // page turns that into commands, so nothing changes here that an assistant couldn't change the same way.
 //
-// The mouse works as in most CAD: the left button selects (a click, or a box dragged over empty space), the right
-// button turns the view, the middle one (or Shift with the right) moves it, the wheel zooms.
+// The left button selects in Edit and pans in Hand mode. The right button orbits, the middle one pans, and the
+// wheel zooms.
 
 /** "select" only picks; the others also put the gizmo on the one body selected. */
 export type StudioMode = "select" | "translate" | "rotate" | "scale";
@@ -88,6 +88,7 @@ type Props = {
   document: StudioDocument;
   selected: readonly string[];
   mode: StudioMode;
+  handMode: boolean;
   /** The sketch being drawn on, and with what. */
   sketch: { id: string; tool: SketchTool } | null;
   onSelect: (id: string | null, additive: boolean) => void;
@@ -283,8 +284,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
 
     const orbit = new OrbitControls(camera, renderer.domElement);
     orbit.target.set(0, 0, 0);
-    // The left button selects; the right turns the view (Shift with it moves it), the middle moves it.
-    orbit.mouseButtons = { LEFT: -1 as THREE.MOUSE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE };
+    orbit.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
+    orbit.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 
     let frame = 0;
     let cube: ViewCube | null = null;
@@ -701,8 +702,11 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
   const attachGizmo = () => {
     const s = stage.current;
     if (!s) return;
-    const { selected, sketch, mode } = latest.current;
-    const body = mode !== "select" && selected.length === 1 && !sketch ? s.bodies.get(selected[0]) : undefined;
+    const { selected, sketch, mode, handMode, pick } = latest.current;
+    const body =
+      mode !== "select" && selected.length === 1 && !sketch && !handMode && !pick
+        ? s.bodies.get(selected[0])
+        : undefined;
     if (body && body.group.visible && mode !== "select") {
       if (s.gizmo.object !== body.group) s.gizmo.attach(body.group);
       s.gizmo.setMode(mode);
@@ -730,9 +734,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       body.edgeLines.visible = request?.kind === "edge" && (!request.bodies || request.bodies.includes(id));
     clear(s.chosenLayer);
     if (!request) clear(s.hoverLayer);
-    // The gizmo would take the clicks a tool wants.
-    if (request && s.gizmo.object) s.gizmo.detach();
-    else attachGizmo();
+    attachGizmo();
     if (request) {
       const box = new THREE.Box3();
       for (const body of s.bodies.values()) if (body.group.visible) box.expandByObject(body.group);
@@ -823,6 +825,36 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     if (boxRef.current) boxRef.current.style.display = "none";
     return true;
   };
+
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    const { handMode } = props;
+    s.orbit.mouseButtons.LEFT = handMode ? THREE.MOUSE.PAN : (-1 as THREE.MOUSE);
+    s.orbit.touches.ONE = handMode ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+    s.orbit.touches.TWO = handMode ? THREE.TOUCH.DOLLY_ROTATE : THREE.TOUCH.DOLLY_PAN;
+    if (handMode && s.gizmo.dragging) {
+      if (s.gizmo.object) s.gizmo.reset();
+      s.gizmo.detach();
+      s.gizmo.pointerUp(null);
+    }
+    s.gizmo.enabled = !handMode;
+    s.renderer.domElement.style.cursor = "";
+    if (handMode) {
+      cancelBox();
+      s.pointer = null;
+      s.hovered = null;
+      clear(s.hoverLayer);
+      if (s.drawing?.tool === "rectangle" || s.drawing?.tool === "circle") {
+        s.drawing = null;
+        clear(s.preview);
+      }
+      paint();
+    }
+    s.preview.visible = !handMode;
+    attachGizmo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.handMode]);
 
   useImperativeHandle(ref, () => ({
     fit: () => {
@@ -1132,6 +1164,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
 
     const onPointerDown = (event: PointerEvent) => {
       s.settleCamera();
+      if (latest.current.handMode) return;
       s.pointer = { x: event.clientX, y: event.clientY, button: event.button, boxing: false };
       const sketch = activeSketchFeature();
       const tool = latest.current.sketch?.tool;
@@ -1267,6 +1300,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       if (hoverFrame) return;
       hoverFrame = requestAnimationFrame(() => {
         hoverFrame = 0;
+        if (latest.current.handMode) return;
         if (latest.current.pick) return pickHover(event);
         const id = latest.current.sketch || s.gizmo.dragging ? null : pick(event);
         if (id === s.hovered) return;
@@ -1277,6 +1311,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      if (latest.current.handMode) return;
       const sketch = activeSketchFeature();
       if (s.drawing && sketch) {
         const at = onPlane(event, sketch);
@@ -1309,6 +1344,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onPointerUp = (event: PointerEvent) => {
+      if (latest.current.handMode) return;
       const start = s.pointer;
       s.pointer = null;
       const sketch = activeSketchFeature();
@@ -1357,6 +1393,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     };
 
     const onDoubleClick = () => {
+      if (latest.current.handMode) return;
       finishPolygon();
       finishChain();
     };
@@ -1365,6 +1402,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const onContextMenu = (event: MouseEvent) => event.preventDefault();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (latest.current.handMode) return;
       if (s.drawing?.tool === "chain") {
         // Enter closes it straight back to its start; Backspace takes back the last click.
         if (event.key === "Enter") {
@@ -1417,7 +1455,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         sx={{
           position: "absolute",
           inset: 0,
-          cursor: props.sketch || props.pick ? "crosshair" : "default",
+          cursor: props.handMode ? "grab" : props.sketch || props.pick ? "crosshair" : "default",
+          "& canvas:active": { cursor: props.handMode ? "grabbing" : undefined },
           touchAction: "none",
         }}
       />

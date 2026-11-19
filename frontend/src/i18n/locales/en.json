@@ -4276,6 +4276,8 @@
         "front": "Front",
         "right": "Right",
         "fit": "Fit to view",
+        "hand": "Hand mode",
+        "handNavigation": "Drag with the left button or one finger to pan. Drag with the right button or two fingers to rotate. Scroll or pinch to zoom.",
         "navigation": "Right-drag turns the view, middle-drag (or Shift + right-drag) moves it, the wheel zooms. Left-drag draws a box to select: from left to right it takes what's wholly inside, from right to left also what it touches. Shift adds to the selection."
       },
       "properties": {
