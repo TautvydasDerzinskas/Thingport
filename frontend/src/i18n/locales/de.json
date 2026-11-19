@@ -7067,7 +7067,7 @@
     },
     "printables": {
       "status": {
-        "alwaysConnected": "Printables ist standardmäßig verbunden: Es braucht weder Konto noch Schlüssel."
+        "alwaysConnected": "Printables ist standardmäßig verbunden: Konto oder Schlüssel sind nicht nötig."
       },
       "about": {
         "summary": "Das kostenlose Modellarchiv von Prusa Research, früher PrusaPrinters, mit Wettbewerben und Prusameter-Belohnungen. Die Dateien funktionieren auf jedem Drucker.",
@@ -7201,14 +7201,14 @@
     "snapmaker": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.com, während du angemeldet bist. Es verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.com, während du angemeldet bist. Grab verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
           "Oder von Hand: Melde dich bei space.snapmaker.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → space.snapmaker.com den Wert von login_access_token und füge ihn unten ein. Von Hand eingefügt gilt er einen Tag."
         ],
         "placeholder": "Wert von login_access_token oder der gesamte Cookie-Header",
         "cn": {
           "steps": [
-            "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.cn, während du angemeldet bist. Es verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
+            "Am einfachsten: Öffne mit Thingport Grab einfach space.snapmaker.cn, während du angemeldet bist. Grab verbindet dein Konto und hält die Anmeldung frisch, denn die von Snapmaker gilt nur einen Tag.",
             "Hast du Grab auf Snapmaker Space erlaubt, bevor es die China-Seite kannte? Dann erlaube es in den Erweiterungseinstellungen deines Browsers (Websitezugriff) auch auf space.snapmaker.cn und id.snapmaker.cn.",
             "Oder von Hand: Melde dich bei space.snapmaker.cn an und öffne die Entwicklertools deines Browsers (F12).",
             "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → space.snapmaker.cn den Wert von login_access_token und füge ihn unten ein. Von Hand eingefügt gilt er einen Tag."
@@ -7246,7 +7246,7 @@
     "makeronline": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach makeronline.com, während du angemeldet bist. Es verbindet dein Konto und holt die MakerOnline-Modelle, die darauf warten, denn MakerOnline gibt seine Dateien nur an die eigenen Seiten.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach makeronline.com, während du angemeldet bist. Grab verbindet dein Konto und holt die MakerOnline-Modelle, die darauf warten, denn MakerOnline gibt seine Dateien nur an die eigenen Seiten.",
           "Oder von Hand: Melde dich bei makeronline.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → www.makeronline.com den Wert von mo_access_token und füge ihn unten ein. Er gilt etwa drei Monate."
         ],
@@ -7278,7 +7278,7 @@
     "crealitycloud": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach crealitycloud.com, während du angemeldet bist. Es verbindet dein Konto, und das jedes Mal erneut, wenn du dich dort anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach crealitycloud.com, während du angemeldet bist. Grab verbindet dein Konto, und das jedes Mal erneut, wenn du dich dort anmeldest.",
           "Oder von Hand: Melde dich bei crealitycloud.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
           "Wähle unter „Network“ eine beliebige Anfrage an crealitycloud.com/api, kopiere ihren Cookie-Request-Header und füge ihn unten ein. Er gilt eine Woche ab deiner Anmeldung."
         ],
@@ -7310,7 +7310,7 @@
     "nexprint": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach nexprint.com, während du angemeldet bist. Es verbindet dein Konto und hält es bei jedem Besuch verbunden.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach nexprint.com, während du angemeldet bist. Grab verbindet dein Konto und hält es bei jedem Besuch verbunden.",
           "Oder von Hand: Melde dich bei nexprint.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
           "Wähle unter „Network“ eine beliebige Anfrage an nexprint.com/gateway, kopiere ihren Authorization-Request-Header (oder das Cookie auth_token) und füge ihn unten ein."
         ],
@@ -7341,7 +7341,7 @@
     "thangs": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach thangs.com, während du angemeldet bist. Es verbindet dein Konto, und Thingport hält es etwa ein Jahr lang verbunden.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach thangs.com, während du angemeldet bist. Grab verbindet dein Konto, und Thingport hält es etwa ein Jahr lang verbunden.",
           "Oder von Hand: Melde dich bei thangs.com an, öffne die Entwicklertools deines Browsers (F12) und lade die Seite neu.",
           "Wähle unter „Network“ eine beliebige Anfrage an thangs.com/api, kopiere ihren Cookie-Request-Header (er enthält beide Tokens) und füge ihn unten ein."
         ],
@@ -7386,7 +7386,7 @@
           "save": "Speichern",
           "placeholder": "Die Request-Header einer angemeldeten cults3d.com-Seite",
           "steps": [
-            "Am einfachsten: Öffne mit Thingport Grab einfach cults3d.com, während du angemeldet bist. Es sendet die Anmeldung selbst.",
+            "Am einfachsten: Öffne mit Thingport Grab einfach cults3d.com, während du angemeldet bist. Grab sendet die Anmeldung selbst.",
             "Oder von Hand: Öffne auf einer angemeldeten cults3d.com-Seite die Entwicklertools deines Browsers (F12) und lade sie neu.",
             "Wähle unter „Network“ die Anfrage der Seite selbst, kopiere ihre Request-Header (mit Cookie und User-Agent) und füge sie unten ein. Das funktioniert nur, wenn Thingport das Internet über dieselbe Adresse erreicht wie dieser Browser."
           ]
@@ -7422,7 +7422,7 @@
     "eufymake": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach makeitreal.eufymake.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach makeitreal.eufymake.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei makeitreal.eufymake.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Local Storage“ → makeitreal.eufymake.com den gesamten Wert von mk-userinfo und füge ihn unten ein – eine lange Zeile aus Buchstaben und Ziffern oder JSON aus einer älteren Version"
         ],
@@ -7453,7 +7453,7 @@
     "pinshape": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach pinshape.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach pinshape.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei pinshape.com mit „Remember Me“ an, damit die Anmeldung ein Jahr gilt, und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → pinshape.com den Wert von remember_token und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an pinshape.com funktioniert auch."
         ],
@@ -7484,7 +7484,7 @@
     "toymakr3d": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach toymakr3d.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach toymakr3d.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei toymakr3d.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an toymakr3d.com, kopiere ihren Cookie-Header und füge ihn unten ein."
         ],
@@ -7515,7 +7515,7 @@
     "makerables": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach makerables.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach makerables.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei makerables.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an makerables.com, kopiere ihren Cookie-Header und füge ihn unten ein."
         ],
@@ -7546,7 +7546,7 @@
     "cgtrader": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach cgtrader.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach cgtrader.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
           "Oder von Hand: Melde dich bei cgtrader.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an cgtrader.com, kopiere ihren Cookie-Header und füge ihn unten ein."
         ],
@@ -7579,7 +7579,7 @@
     "grabcad": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach grabcad.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach grabcad.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
           "Oder von Hand: Melde dich bei grabcad.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → grabcad.com den Wert von _grabcad_session und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an grabcad.com funktioniert auch."
         ],
@@ -7610,14 +7610,14 @@
     "meshy": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach meshy.ai, während du angemeldet bist. Es verbindet dein Konto und gibt deine Anmeldung weiter, sobald sie sich dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach meshy.ai, während du angemeldet bist. Grab verbindet dein Konto und gibt deine Anmeldung weiter, sobald sie sich dort ändert.",
           "Oder von Hand: Melde dich bei meshy.ai an und öffne die Entwicklertools deines Browsers (F12).",
           "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an www.meshy.ai, kopiere ihren Cookie-Header und füge ihn unten ein."
         ],
         "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an meshy.ai"
       },
       "status": {
-        "notConnected": "Verbinde dein Konto, um von Meshy zu importieren: Es gibt seine Dateien nur an ein angemeldetes Konto.",
+        "notConnected": "Verbinde dein Konto, um von Meshy zu importieren: Meshy gibt seine Dateien nur an angemeldete Konten.",
         "expired": "Anmeldung beendet. Melde dich mit Thingport Grab auf meshy.ai an oder verbinde Meshy unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung beendet",
         "disabledReason": "Meshy: Verbinde dein Konto unter Konfiguration → Plattformen"
@@ -7628,7 +7628,7 @@
         "grab": "Sendet deine Anmeldung, wenn du meshy.ai besuchst.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf Meshy und öffne meshy.ai angemeldet.",
-          "Importiere einen beliebigen Beitragslink oder synchronisiere über „Quelle hinzufügen“ eine Sammlung oder deine eigenen Generierungen.",
+          "Importiere einen beliebigen Beitragslink oder synchronisiere eine Sammlung oder deine eigenen Generierungen über „Synchronisierung einrichten“ im Menü einer Sammlung.",
           "Mit einem kostenlosen Tarif lassen sich nur deine eigenen Generierungen herunterladen: Meshy behält Community-Modelle den Tarifen Pro und Studio vor."
         ]
       },
@@ -7651,7 +7651,7 @@
     },
     "owlcad": {
       "status": {
-        "alwaysConnected": "OwlCAD ist standardmäßig verbunden: Es braucht weder Konto noch Schlüssel."
+        "alwaysConnected": "OwlCAD ist standardmäßig verbunden: Konto oder Schlüssel sind nicht nötig."
       },
       "about": {
         "summary": "Eine CAD-App, die im Browser läuft. Die Galerie enthält eine große Bibliothek mit CC0- und CC-BY-Teilen und die CAD-Modelle, die ihre Nutzer teilen.",
@@ -7672,7 +7672,7 @@
     "pixup3d": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach pixup3d.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach pixup3d.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
           "Oder von Hand: Melde dich bei pixup3d.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → pixup3d.com den Wert von _phrozen_session und füge ihn unten ein. Der Cookie-Header einer angemeldeten Anfrage an pixup3d.com funktioniert auch."
         ],
@@ -7709,7 +7709,7 @@
     "fab365": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach fab365.net, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach fab365.net, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
           "Oder von Hand: Melde dich bei fab365.net an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Local storage“ → fab365.net die Werte von accessToken und refreshToken und füge sie unten ein, jeden in einer eigenen Zeile nach seinem Namen (accessToken: … und refreshToken: …). Mit dem Refresh-Token erneuert Thingport die Anmeldung selbst; ein accessToken allein funktioniert nach etwa 100 Minuten nicht mehr und muss erneut eingefügt werden."
         ],
@@ -7740,7 +7740,7 @@
     "threedexport": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach 3dexport.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach 3dexport.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald sich deine dort ändert.",
           "Oder von Hand: Melde dich bei 3dexport.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Wechsle zum Tab „Network“, lade die Seite neu, klicke auf eine beliebige Anfrage an 3dexport.com, kopiere ihren Cookie-Header und füge ihn unten ein. Die Cookies nm_userid und nm_hash sind die Anmeldung, und eine Abmeldung bei 3dexport.com beendet sie."
         ],
@@ -7771,7 +7771,7 @@
     "qidimaker": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach www.qidimaker.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach www.qidimaker.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei www.qidimaker.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.qidimaker.com den Wert des Cookies token und füge ihn unten ein."
         ],
@@ -7802,14 +7802,14 @@
     "voxelshare": {
       "connect": {
         "steps": [
-          "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.com, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+          "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.com, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
           "Oder von Hand: Melde dich bei www.voxelshare.com an und öffne die Entwicklertools deines Browsers (F12).",
           "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.voxelshare.com den Wert des Cookies token und füge ihn unten ein."
         ],
         "placeholder": "Der Wert des Cookies token",
         "cn": {
           "steps": [
-            "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.cn, während du angemeldet bist. Es verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
+            "Am einfachsten: Öffne mit Thingport Grab einfach www.voxelshare.cn, während du angemeldet bist. Grab verbindet dein Konto und sendet eine neue Anmeldung, sobald du dich dort erneut anmeldest.",
             "Oder von Hand: Melde dich bei www.voxelshare.cn an und öffne die Entwicklertools deines Browsers (F12).",
             "Kopiere unter „Application“ (Chrome, Edge) bzw. „Storage“ (Firefox) → „Cookies“ → https://www.voxelshare.cn den Wert des Cookies token und füge ihn unten ein."
           ],
