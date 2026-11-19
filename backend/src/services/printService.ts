@@ -928,9 +928,9 @@ const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {
   "thumbnail.png": 2,
 };
 
-/** Extracts an embedded thumbnail image from a .3mf archive's zip payload, if present. */
-export async function extract3mfThumbnail(plateId: string, srcPath: string): Promise<boolean> {
-  if (!srcPath.toLowerCase().endsWith(".3mf")) return false;
+/** The pictures a .3mf's zip payload holds as its thumbnail, best first; none when it holds none or can't be read. */
+export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
+  if (!srcPath.toLowerCase().endsWith(".3mf")) return [];
   try {
     const entries = await listZipEntries(srcPath);
     const imageNames = entries
@@ -942,14 +942,26 @@ export async function extract3mfThumbnail(plateId: string, srcPath: string): Pro
         const pb = THUMBNAIL_ENTRY_PRIORITY[b.name.toLowerCase().replace(/^\//, "")] ?? 10;
         return pa - pb || a.name.length - b.name.length;
       });
+    const pictures: Buffer[] = [];
     for (const entry of imageNames) {
       const buf = await readZipEntry(srcPath, entry.name, 16 * 1024 * 1024);
-      if (buf && (await saveThumbBuffer(plateId, buf))) return true;
+      if (buf) pictures.push(buf);
     }
+    return pictures;
   } catch {
-    return false;
+    return [];
   }
+}
+
+/** The plate's thumbnail made of the first of `pictures` that makes one. */
+export async function saveThumbFromPictures(plateId: string, pictures: Buffer[]): Promise<boolean> {
+  for (const picture of pictures) if (await saveThumbBuffer(plateId, picture)) return true;
   return false;
+}
+
+/** Extracts an embedded thumbnail image from a .3mf archive's zip payload, if present. */
+export async function extract3mfThumbnail(plateId: string, srcPath: string): Promise<boolean> {
+  return saveThumbFromPictures(plateId, await read3mfThumbnails(srcPath));
 }
 
 export async function ensurePlateThumbnail(plateId: string, srcPath: string): Promise<boolean> {
