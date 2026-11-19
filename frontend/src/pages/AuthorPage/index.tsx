@@ -84,8 +84,10 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     Print,
     AuthorAlongside
   >({ loadingAtFirst: true, alongside: (): AuthorAlongside => ({ author, myLinks }) });
-  const [author, setAuthor] = useState<Author | null>(restored?.author ?? null);
-  const [notFound, setNotFound] = useState(false);
+  const [retainedAuthor, setAuthor] = useState<Author | null>(restored?.author ?? null);
+  const author = retainedAuthor?.id === authorId ? retainedAuthor : null;
+  const [settledAuthorId, setSettledAuthorId] = useState(authorId);
+  const [failedAuthorId, setFailedAuthorId] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [offset, setOffset] = useState(items.length);
   const selection = useModelSelection(items);
@@ -136,7 +138,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     const limit = background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE;
     if (!background) {
       setLoading(true);
-      setNotFound(false);
+      setFailedAuthorId(null);
     }
     (async () => {
       try {
@@ -187,9 +189,12 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       } catch (err) {
         if (cancelled) return;
         if (handleError(err) || background) return;
-        setNotFound(true);
+        setFailedAuthorId(authorId);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setSettledAuthorId(authorId);
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -242,7 +247,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     setLinking(true);
     try {
       const result = await authorsApi.link(author.id);
-      setAuthor(result.author);
+      setAuthor((current) => (current?.id === result.author.id ? result.author : current));
       setMyLinks((prev) => [...prev, result.author]);
       onUserUpdated?.(result.user);
       showToast({ message: t("models:author.linkSuccess", { name: displayName }) });
@@ -280,11 +285,11 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     }
   };
 
-  if (loading && !isSelf && !author) {
+  if (!isSelf && !author && (loading || settledAuthorId !== authorId)) {
     return <ProfileLayoutSkeleton />;
   }
 
-  if (notFound || (!isSelf && !author)) {
+  if (failedAuthorId === authorId || (!isSelf && !author)) {
     return (
       <Stack alignItems="center" spacing={1} sx={{ py: 8, color: "text.secondary" }}>
         <Typography variant="body2">{t("models:author.notFound")}</Typography>
