@@ -1033,6 +1033,7 @@ async function filesFromNestedZips(
   depth: number,
   budget: NestedZipBudget,
   placements?: (string | null)[],
+  beside: NewPlateInput[] = [],
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
     (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
@@ -1055,9 +1056,16 @@ async function filesFromNestedZips(
         budget.bytes -= written;
         const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
         const found: (string | null)[] = [];
-        for (const input of await filesFromZip(tempZipPath, pick, depth + 1, budget, found)) {
-          inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
+        const keptBefore = picksSupporting(pick) ? { ...pick.kept } : null;
+        let got: NewPlateInput[];
+        try {
+          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found);
+        } catch (err) {
+          // Its files went with it, and so does what they took of the model's share; the work it did still counts.
+          if (keptBefore && picksSupporting(pick)) Object.assign(pick.kept, keptBefore);
+          throw err;
         }
+        for (const input of got) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
         // A zip that only wraps yet another has no files of its own to go by: where the model's files turned up in
         // it stands in, however deep, and never a supporting file, which isn't the model's own.
         const placed = (await placedZipEntries(tempZipPath)).map((each) => each.folder);
@@ -1080,10 +1088,12 @@ async function filesFromNestedZips(
   placements?.push(...modelFolders.map((folder) => withoutTopLevels(folder, shared)));
   // A supporting file loses only the levels it shares with the model's files, as supportingZipEntries places one: a
   // guide from a zip of its own beside the model's keeps that zip's folder, so two such guides don't meet on one name.
+  // So do the files `beside` the archives, which the zip that wraps them gave: Frog/docs/guide.pdf beside Frog.zip, whose
+  // model is at the top of it, is docs/guide.pdf.
   const top = sharedTopFolder(everyFolder);
   const keptFolder = (folder: string | null | undefined) =>
     picksSupporting(pick) ? withoutTopOf(folder, top) : withoutTopLevels(folder, shared);
-  return inputs.map((input) => ({ ...input, folder: keptFolder(input.folder) }));
+  return [...beside, ...inputs].map((input) => ({ ...input, folder: keptFolder(input.folder) }));
 }
 
 /** The model files in a downloaded zip, each as its own plate; the zip itself is left for the caller. */
@@ -1100,14 +1110,24 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
 type Kept = { readonly bytes: number; readonly files: number };
 const NOTHING_KEPT: Kept = { bytes: 0, files: 0 };
 
+/** A file beside a model, by its folder and the name it's kept under, which one with the same name in the same folder
+ *  would take. */
+const supportingKey = (folder: string | null | undefined, filename: string) =>
+  `${normalizeFolder(folder) ?? ""}\0${sanitizeFilename(filename).toLowerCase()}`;
+
 /** The other files beside a zip's model files -- instructions, notes, sources -- as far as the admin's limits allow,
- *  marked as supporting, counted on from `kept`, what the model has of them already. Best-effort: a zip whose other
- *  files can't be read gives none, rather than failing the import of its model. */
-export async function supportingFilesFromZip(zipPath: string, kept: Kept = NOTHING_KEPT): Promise<NewPlateInput[]> {
+ *  marked as supporting, counted on from `kept`, what the model has of them already, and none of those `except` names
+ *  (supportingKey). Best-effort: a zip whose other files can't be read gives none, rather than failing the import of its
+ *  model. */
+export async function supportingFilesFromZip(
+  zipPath: string,
+  kept: Kept = NOTHING_KEPT,
+  except?: ReadonlySet<string>,
+): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits) return [];
   try {
-    return await filesFromZip(zipPath, { supporting: limits, kept: { ...kept } });
+    return await filesFromZip(zipPath, { supporting: limits, kept: { ...kept }, except });
   } catch (err) {
     console.warn("Couldn't read the files beside a zip's model files:", err);
     return [];
@@ -1146,6 +1166,7 @@ async function platesAndSourcesFromZip(
  */
 export async function fetchDesignRawFiles(
   meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
+  had?: { kept: Kept; except: ReadonlySet<string> },
 ): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   const scripts =
     meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
@@ -1170,8 +1191,9 @@ export async function fetchDesignRawFiles(
         console.warn("Couldn't read the generator scripts the model points at:", err);
       }
     }
-    // The files beside them come in the same zip, and never fail the import (supportingFilesFromZip).
-    return { sources, supporting: await supportingFilesFromZip(result.input.tempFilePath) };
+    // The files beside them come in the same zip, and never fail the import (supportingFilesFromZip): those the model
+    // `had` already left out, and the rest held to what's left of its share.
+    return { sources, supporting: await supportingFilesFromZip(result.input.tempFilePath, had?.kept, had?.except) };
   } finally {
     await fs.rm(result.input.tempFilePath, { force: true }).catch(() => undefined);
   }
@@ -1188,10 +1210,15 @@ export async function withDesignRawFiles(
 ): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   if (sources.length) return { sources, supporting };
   if (!supporting.length) return fetchDesignRawFiles(meta);
-  const fetched = await fetchDesignRawFiles({ parametricSource: meta.parametricSource });
-  const keyOf = (input: NewPlateInput) =>
-    `${normalizeFolder(input.folder) ?? ""}\0${sanitizeFilename(input.filename).toLowerCase()}`;
+  const keyOf = (input: NewPlateInput) => supportingKey(input.folder, input.filename);
   const given = new Set(supporting.map(keyOf));
+  // What the download gave counts towards the share, and none of it is taken again.
+  let bytes = 0;
+  for (const input of supporting) bytes += (await fs.stat(input.tempFilePath!).catch(() => null))?.size ?? 0;
+  const fetched = await fetchDesignRawFiles(
+    { parametricSource: meta.parametricSource },
+    { kept: { bytes, files: supporting.length }, except: given },
+  );
   const again = fetched.supporting.filter((input) => given.has(keyOf(input)));
   await Promise.all(again.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
   return {
@@ -1199,6 +1226,10 @@ export async function withDesignRawFiles(
     supporting: [...supporting, ...fetched.supporting.filter((input) => !given.has(keyOf(input)))],
   };
 }
+
+/** A zip entry's name as it's kept (`parts`, its path), and what it is goes by that: "photo.png " is a picture. */
+const keptNameOf = (parts: string[]) => sanitizeFilename(parts.at(-1)!);
+const keptExtOf = (parts: string[]) => path.extname(keptNameOf(parts)).toLowerCase();
 
 /** What a zip's folders are worked out over, whichever of its files a call takes, so its plates and scripts, read
  *  twice over (platesAndSourcesFromZip), get the same folders. */
@@ -1218,7 +1249,7 @@ async function zipEntriesInFolders(
   return (await listZipEntries(zipPath))
     .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
-    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()))
+    .filter(({ parts }) => parts.length && ZIP_FOLDER_EXTS.has(keptExtOf(parts)))
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
 }
 
@@ -1232,17 +1263,20 @@ async function supportingZipEntries(
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
     .filter(({ parts }) => parts.length)
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
-  const top = sharedTopFolder(
-    listed.filter(({ parts }) => ZIP_FOLDER_EXTS.has(path.extname(parts.at(-1)!).toLowerCase())).map((p) => p.folder),
-  );
+  const top = sharedTopFolder(listed.filter(({ parts }) => ZIP_FOLDER_EXTS.has(keptExtOf(parts))).map((p) => p.folder));
   return listed
-    .filter(({ parts }) => isSupportingImportFile(parts.at(-1)!))
+    .filter(({ parts }) => isSupportingImportFile(keptNameOf(parts)))
     .map((placed) => ({ ...placed, folder: withoutTopOf(placed.folder, top) }));
 }
 
 /** What one pass over a zip takes: the files with one of these extensions, or the supporting files beside them, as far
  *  as their limits go, counting what the pass has kept so far. */
-type SupportingPick = { supporting: SupportingLimits; kept: { bytes: number; files: number } };
+type SupportingPick = {
+  supporting: SupportingLimits;
+  kept: { bytes: number; files: number };
+  /** The files the model has already, by supportingKey: skipped, taking none of what's left. */
+  except?: ReadonlySet<string>;
+};
 type ZipPick = ReadonlySet<string> | SupportingPick;
 const picksSupporting = (pick: ZipPick): pick is SupportingPick => "supporting" in pick;
 /** All a model keeps of its supporting files is taken, in bytes or in number, so a pass for more finds none. */
@@ -1263,11 +1297,14 @@ async function filesFromZip(
   placements?: (string | null)[],
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
+  // Each one's folder as the zip has it, for placing them with what the archives it wraps hold.
+  const inZip: (string | null)[] = [];
   try {
     const entries = picksSupporting(pick)
       ? await supportingZipEntries(zipPath)
-      : (await placedZipEntries(zipPath)).filter(({ parts }) => pick.has(path.extname(parts.at(-1)!).toLowerCase()));
+      : (await placedZipEntries(zipPath)).filter(({ parts }) => pick.has(keptExtOf(parts)));
     for (const { entry, parts, folder } of entries) {
+      if (picksSupporting(pick) && pick.except?.has(supportingKey(folder, keptNameOf(parts)))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
         console.warn(
@@ -1283,7 +1320,7 @@ async function filesFromZip(
         ? Math.min(pick.supporting.perFile, pick.supporting.perModel - pick.kept.bytes)
         : IMPORT_MAX_BYTES;
       if (cap <= 0) break;
-      const filename = sanitizeFilename(parts.at(-1)!);
+      const filename = keptNameOf(parts);
       const tempFilePath = path.join(
         os.tmpdir(),
         `thingport-zip-${crypto.randomBytes(8).toString("hex")}${path.extname(filename)}`,
@@ -1312,21 +1349,22 @@ async function filesFromZip(
         folder,
         ...(picksSupporting(pick) ? { supporting: true } : {}),
       });
+      inZip.push(normalizeFolder(parts.slice(0, -1)));
     }
     // None of what was wanted here, so it is in an archive this one only wraps. The files beside that archive are kept
     // with what it holds: a site's instructions beside the zip of its model, or a zip of nothing but such files.
     // A script beside the archive doesn't make it the model's: only model files do. Not once a model's supporting
     // files are all taken: nothing more would be kept of what it holds, for all it costs to write it out.
     const wraps = picksSupporting(pick)
-      ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) =>
-          MULTI_FILE_PLATE_EXTS.has(path.extname(parts.at(-1)!).toLowerCase()),
-        )
+      ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts)))
       : !inputs.length;
     if (!wraps || depth >= NESTED_ZIP_DEPTH || allowanceSpent(pick)) {
       placements?.push(...(await placedZipEntries(zipPath)).map((each) => each.folder));
       return inputs;
     }
-    return [...inputs, ...(await filesFromNestedZips(zipPath, pick, depth, budget, placements))];
+    // Its own files go with the archives', placed once, as the model in them is.
+    const beside = inputs.map((input, index) => ({ ...input, folder: inZip[index] }));
+    return await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside);
   } catch (err) {
     // The files written out so far go with it, whichever step failed: the caller is handed all or none.
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
@@ -1378,7 +1416,7 @@ async function downloadSignedFile(
     return null;
   }
   if (!isFileHost(hostname)) return null;
-  if (isSupportingImportFile(file.name)) return take((kept) => signedSupportingFile(file, kept));
+  if (isSupportingImportFile(sanitizeFilename(file.name))) return take((kept) => signedSupportingFile(file, kept));
   const result = await downloadPlainFileToTemp(file.url, file.name);
   if (result && "rateLimited" in result) throw new HttpError(429, blockedMessage);
   if (!result) return null;
@@ -1828,29 +1866,32 @@ async function importLinkedFile(
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length) {
-    plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
-  }
-  // A zip of raw files already gave up its scripts and the files beside them above; a profile's 3MF fetches them.
-  ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
-  const author = await upsertAuthorFromImport(meta.author);
-  const categoryId =
-    body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
-  const printMeta: PrintMetaInput = {
-    title: body.title ?? meta.title ?? null,
-    notes: body.notes ?? meta.description ?? null,
-    tags: body.tags && body.tags.length ? body.tags : meta.tags,
-    categoryId,
-    categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
-    creator: meta.creator ?? null,
-    authorId: author?.id ?? null,
-    sourceProvider: source?.provider ?? null,
-    sourceExternalId: source?.externalId ?? null,
-    generatorScriptWithheld: meta.parametricSource?.withheld === true,
-    licenseColumns: importedLicenseData(source?.provider, meta.license),
-  };
-
+  // The files written for it go at the end, whatever happens from here: the lookups below can fail too.
   try {
+    if (!plates.length) {
+      plates = [
+        { filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null },
+      ];
+    }
+    // A zip of raw files already gave up its scripts and the files beside them above; a profile's 3MF fetches them.
+    ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
+    const author = await upsertAuthorFromImport(meta.author);
+    const categoryId =
+      body.category_id ?? (await resolveCategoryIdByCategory(userId, meta.categorySite, meta.siteCategoryIds));
+    const printMeta: PrintMetaInput = {
+      title: body.title ?? meta.title ?? null,
+      notes: body.notes ?? meta.description ?? null,
+      tags: body.tags && body.tags.length ? body.tags : meta.tags,
+      categoryId,
+      categorySource: body.category_id ? "MANUAL" : categoryId ? "RULE" : null,
+      creator: meta.creator ?? null,
+      authorId: author?.id ?? null,
+      sourceProvider: source?.provider ?? null,
+      sourceExternalId: source?.externalId ?? null,
+      generatorScriptWithheld: meta.parametricSource?.withheld === true,
+      licenseColumns: importedLicenseData(source?.provider, meta.license),
+    };
+
     let result: { print: Print; plates: Plate[] };
     try {
       result = await createPrint(
@@ -1967,7 +2008,14 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   if (!plates.length) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
-  ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
+  try {
+    ({ sources, supporting } = await withDesignRawFiles(meta, sources, supporting));
+  } catch (err) {
+    // The caller is handed all of them or none.
+    const written = [tempPath, ...[...plates, ...sources, ...supporting].map((input) => input.tempFilePath)];
+    await Promise.all(written.map((file) => file && fs.rm(file, { force: true }).catch(() => undefined)));
+    throw err;
+  }
   const profiles = makerworldProfileDetails(meta.makerworldProfile);
   return {
     inputs: nameInputsApart([...plates, ...sources, ...supporting], profiles.titles),

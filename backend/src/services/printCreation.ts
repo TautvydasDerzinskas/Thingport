@@ -377,9 +377,10 @@ async function keepWithin(
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
   const files = await prisma.printFile.findMany({
     where: { printId },
-    select: { filename: true, folder: true, role: true, size: true },
+    select: { id: true, filename: true, folder: true, role: true, size: true },
   });
-  const stored = new Set(files.map((file) => keyOf(file.filename, file.folder)));
+  const stored = new Map(files.map((file) => [keyOf(file.filename, file.folder), file] as const));
+  const added = new Set<string>();
   let kept = 0;
   // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
   let bytes = files.reduce((sum, file) => sum + (file.role === "SUPPORTING" ? file.size : 0), 0);
@@ -397,7 +398,18 @@ async function keepWithin(
     if (!input.tempFilePath) continue;
     const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
     const key = keyOf(filename, input.folder);
-    if (stored.has(key)) continue;
+    if (added.has(key)) continue;
+    // One the model has by that name stays, unless its file is gone for sure: a row a repair's sweep left would
+    // otherwise keep out the file the site gives back. A save of it still under way counts as there.
+    const there = stored.get(key);
+    if (there) {
+      if (!(await removePrintFileIfGone(there.id))) continue;
+      stored.delete(key);
+      if (there.role === "SUPPORTING") {
+        bytes -= there.size;
+        count--;
+      }
+    }
     const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size;
     if (size === undefined || size > limits.perFile || bytes + size > limits.perModel) continue;
     try {
@@ -405,7 +417,7 @@ async function keepWithin(
         role: "SUPPORTING",
         folder: input.folder,
       });
-      stored.add(key);
+      added.add(key);
       bytes += size;
       count++;
       kept++;

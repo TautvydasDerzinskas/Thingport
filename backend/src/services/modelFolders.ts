@@ -1,8 +1,9 @@
 /** A folder tree's files as "Each folder is a model" takes them, in the order their folders were first met: each folder
  *  that directly holds a model file is one model, named after it, and the files of a subfolder below it that holds none
  *  are attached to it, each with its folder below the model's; the other files stand on their own. A file's folder is
- *  its path joined by "/", "" at the top. Shared by the consume folder's folder mode and an imported zip's "A model per
- *  folder", so the two make the same models of the same tree. */
+ *  its path joined by "/", "" at the top. The consume folder's folder mode and an imported zip's "A model per folder"
+ *  share these rules for folders and what's attached to them, while each says which files make a folder a model
+ *  (`isModelFile`): a zip's takes a folder of LightBurn projects for one, the consume folder's doesn't. */
 export type ModelFolderUnit<T> =
   { kind: "model"; folder: string; files: T[]; attached: { item: T; folder: string }[] } | { kind: "file"; item: T };
 

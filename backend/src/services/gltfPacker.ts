@@ -192,11 +192,6 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   return byKeptName.length === 1 ? byKeptName[0] : undefined;
 }
 
-/**
- * Packs each .gltf among `files` with the files it points at. Returns what's left: the files no .gltf used, and for
- * each .gltf a .glb written to a new path from `tempPath`, named as the .gltf was (`made` gives it the rest of its
- * shape). The packed files leave the list but stay on disk, for the caller to clean up with the rest.
- */
 /** The files among `files` the .gltf `gltf` points at, found as packing finds them; none when it can't be read. */
 export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gltf: T): Promise<T[]> {
   let uris: string[];
@@ -209,10 +204,19 @@ export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gl
   return [...new Set(found.filter((file): file is T => !!file && !isGltfName(file.name)))];
 }
 
+/**
+ * Packs each .gltf among `files` with the files it points at. Returns what's left: the files no .gltf used, and for
+ * each .gltf a .glb written to a new path from `tempPath`, named as the .gltf was (`made` gives it the rest of its
+ * shape). The packed files leave the list but stay on disk, for the caller to clean up with the rest. Each .glb holds
+ * every file its scene points at, so scenes sharing one large buffer write it out again and again: `room`, the bytes
+ * the caller lets the .glbs come to, shared by every call it hands it to, is taken from before each is written, and a
+ * scene that wouldn't fit fails the packing (413).
+ */
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
   tempPath: () => string,
   made: (gltf: T, glbPath: string, glbName: string) => T,
+  room?: { bytes: number },
 ): Promise<{ files: T[]; packed: T[] }> {
   const gltfs = files.filter((file) => isGltfName(file.name));
   if (!gltfs.length) return { files, packed: [] };
@@ -229,6 +233,12 @@ export async function packGltfFiles<T extends PackableFile>(
         used.add(file);
         return fs.readFile(file.path);
       });
+      if (room) {
+        if (glb.length > room.bytes) {
+          throw new HttpError(413, "The glTF scenes, packed, would come to more than an import may write");
+        }
+        room.bytes -= glb.length;
+      }
       const glbPath = tempPath();
       // Listed before it's written, so one a failed write leaves part-way goes with the rest.
       written.push(glbPath);

@@ -4,7 +4,7 @@ import path from "node:path";
 import JSZip from "jszip";
 import sharp from "sharp";
 import request from "supertest";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
@@ -100,6 +100,10 @@ beforeAll(async () => {
   token = res.body.token;
   // The setting's routes are an admin's.
   await prisma.user.update({ where: { id: userId }, data: { role: "ADMIN" } });
+});
+
+afterAll(() => {
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 afterEach(async () => {
@@ -275,6 +279,26 @@ describe("a model made with a site's other files", () => {
     expect(await keepSupportingFiles(userId, print.id, later)).toBe(0);
     remove(later);
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
+  });
+
+  it("keeps the site's file in place of the model's own by that name whose file is gone, and not of one that's there", async () => {
+    const made = [input("a.stl", "solid a endsolid"), input("guide.pdf", "%PDF-1.4 old", { supporting: true })];
+    const { print } = await createPrint(userId, { title: "Stale row" }, "Stale row", made);
+    remove(made);
+    // Its file goes, and no sweep took its row.
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: print.id, filename: "guide.pdf" } });
+    fs.rmSync(path.join(STORAGE, old.storagePath));
+    const back = [input("guide.pdf", "%PDF-1.4 back", { supporting: true })];
+    expect(await keepSupportingFiles(userId, print.id, back)).toBe(1);
+    remove(back);
+    const now = await prisma.printFile.findFirstOrThrow({ where: { printId: print.id, filename: "guide.pdf" } });
+    expect(now.id).not.toBe(old.id);
+    expect(fs.readFileSync(path.join(STORAGE, now.storagePath), "utf8")).toBe("%PDF-1.4 back");
+    // One whose file is there is the model's own, and stays.
+    const again = [input("guide.pdf", "%PDF-1.4 again", { supporting: true })];
+    expect(await keepSupportingFiles(userId, print.id, again)).toBe(0);
+    remove(again);
+    expect(fs.readFileSync(path.join(STORAGE, now.storagePath), "utf8")).toBe("%PDF-1.4 back");
   });
 
   it("keeps to a model's limit when two imports bring its files at once", async () => {
@@ -481,6 +505,42 @@ describe("a site's zip", () => {
     const supporting = await supportingFilesFromZip(await zipOf({ "a.stl": "solid a endsolid", ...many }));
     remove(supporting);
     expect(supporting).toHaveLength(SUPPORTING_FILES_PER_MODEL);
+    // And wrote out no more than that, rather than writing them all and dropping the rest.
+    expect(zipReads.written.filter((each) => each.entry.startsWith("notes/"))).toHaveLength(SUPPORTING_FILES_PER_MODEL);
+  });
+
+  it("takes a zip's entry for what its name as kept says it is, so a picture with a space after its name stays out", async () => {
+    const kept = await supportingFilesFromZip(
+      await zipOf({ "body.stl": "solid body endsolid", "photo.png ": "png", "guide.pdf ": "%PDF-1.4" }),
+    );
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["guide.pdf"]);
+  });
+
+  it("places the files beside a zip's archive as the model in that archive is placed", async () => {
+    const frog = fs.readFileSync(await zipOf({ "frog.stl": "solid frog endsolid" }));
+    const kept = await supportingFilesFromZip(
+      await zipOf({ "Frog.zip": frog, "Frog/docs/guide.pdf": "%PDF-1.4 guide", "Extras/notes.txt": "glue it" }),
+    );
+    remove(kept);
+    // The model is at the top of Frog.zip, so the guide beside it loses Frog as the model's files do; Extras is no
+    // folder of the model's, and stays.
+    expect(kept.map((each) => [each.folder, each.filename]).toSorted()).toEqual([
+      ["Extras", "notes.txt"],
+      ["docs", "guide.pdf"],
+    ]);
+  });
+
+  it("gives back what a zip inside took of a model's share when reading it fails part-way, for the next one", async () => {
+    const a = fs.readFileSync(await zipOf({ "a-note.txt": "first" }));
+    const b = fs.readFileSync(await zipOf({ "b-note.txt": "second" }));
+    const wrapper = await zipOf({ "A.zip": a, "B.zip": b });
+    // One file left of what a model keeps, and A.zip's listing after it wrote its note fails: the sixth from here.
+    zipReads.listFailsAt = zipReads.lists + 6;
+    const kept = await supportingFilesFromZip(wrapper, { bytes: 0, files: SUPPORTING_FILES_PER_MODEL - 1 });
+    remove(kept);
+    expect(zipReads.written.some((each) => each.entry === "a-note.txt")).toBe(true);
+    expect(kept.map((each) => [each.folder, each.filename])).toEqual([["B", "b-note.txt"]]);
   });
 
   it("opens a zip beside a script for the files beside its model files, as it does for those", async () => {
@@ -520,8 +580,11 @@ describe("a file a site gives beside a model's own", () => {
     global.fetch = fetchMock as unknown as typeof fetch;
     return fetchMock;
   };
-  const named = (inputs: NewPlateInput[]) =>
-    inputs.map((each) => [each.folder ?? null, each.filename, each.supporting]);
+  // What was downloaded, by folder and name, the downloaded files removed once read.
+  const named = (inputs: NewPlateInput[]) => {
+    remove(inputs);
+    return inputs.map((each) => [each.folder ?? null, each.filename, each.supporting]);
+  };
   const at = (name: string) => ({ url: `https://example.com/${name}`, name });
   afterEach(() => {
     global.fetch = originalFetch;
@@ -701,6 +764,31 @@ describe("a file a site gives beside a model's own", () => {
     expect(await withDesignRawFiles(meta, script, given)).toEqual({ sources: script, supporting: given });
     remove([...script, ...given]);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("holds the scripts' zip to what the raw files left of a model's share, and writes out none they gave", async () => {
+    const scripts = await new JSZip()
+      .file("frog.scad", "cube(1);")
+      .file("a.txt", "a".repeat(40))
+      .file("c.txt", "c".repeat(10))
+      .file("d.txt", "d".repeat(30))
+      .generateAsync({ type: "nodebuffer" });
+    served({ "/scripts.zip": scripts });
+    const meta = {
+      parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: "https://example.com/scripts.zip" },
+    };
+    // Eighty bytes given, of a hundred in all: twenty are left.
+    limits.value = { perFile: 100, perModel: 100 };
+    const given = [
+      input("a.txt", "a".repeat(40), { supporting: true }),
+      input("b.txt", "b".repeat(40), { supporting: true }),
+    ];
+    const { sources, supporting } = await withDesignRawFiles(meta, [], given);
+    remove([...sources, ...supporting]);
+    expect(sources.map((each) => each.filename)).toEqual(["frog.scad"]);
+    expect(supporting.map((each) => each.filename)).toEqual(["a.txt", "b.txt", "c.txt"]);
+    // a.txt was given already, so the zip's never came out of it.
+    expect(zipReads.written.map((each) => each.entry)).not.toContain("a.txt");
   });
 
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {

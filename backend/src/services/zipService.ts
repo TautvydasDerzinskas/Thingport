@@ -222,6 +222,10 @@ const isPhotoEntry = (entry: PickedEntry) =>
  *  zip may be, as model files compress well, and never what a small archive of zeros unpacks to. */
 const PICKED_MAX_BYTES = 4 * IMPORT_MAX_BYTES;
 
+/** A fresh allowance for the .glbs one zip's scenes are packed into: as much again as its picked entries, in all, as a
+ *  scene's .glb holds every file it points at, and scenes sharing one large buffer would write it out over and over. */
+const glbRoom = () => ({ bytes: PICKED_MAX_BYTES });
+
 /** The picked entries of a zip, each read to a temp file with the folder it's in. The ones that couldn't be read, or
  *  didn't fit in PICKED_MAX_BYTES beside the others, are named in `failed`. */
 async function readPickedEntries(
@@ -298,6 +302,7 @@ async function createModelOf(
 async function withScenesPacked(
   entries: ModelEntry[],
   others: PickedEntry[] = [],
+  room: { bytes: number } = glbRoom(),
 ): Promise<{ entries: ModelEntry[]; glbs: string[]; took: PickedEntry[] }> {
   if (!entries.some(({ entry }) => isGltfName(entry.filename))) return { entries, glbs: [], took: [] };
   // Never another folder's scene: packing takes every .gltf it's handed.
@@ -319,6 +324,7 @@ async function withScenesPacked(
         },
       },
     }),
+    room,
   );
   const made = files.filter((file) => !entries.includes(file.item) && !outside.includes(file.item));
   return {
@@ -493,6 +499,8 @@ export async function extractZipEntriesToFolderModels(
     // in goes with it, rather than being a model, or a failure, of its own.
     const packed = new Map<(typeof units)[number], { entries: ModelEntry[] } | { failure: unknown }>();
     const taken = new Set<PickedEntry>();
+    // One allowance for the whole zip: a model whose scenes don't fit what's left of it isn't made.
+    const room = glbRoom();
     for (const unit of units) {
       if (unit.kind === "file" && !isGltfName(unit.item.filename)) continue;
       const own =
@@ -503,7 +511,7 @@ export async function extractZipEntriesToFolderModels(
             ]
           : [{ entry: unit.item, folder: null }];
       try {
-        const scenes = await withScenesPacked(own, entries);
+        const scenes = await withScenesPacked(own, entries, room);
         glbs.push(...scenes.glbs);
         for (const entry of scenes.took) taken.add(entry);
         packed.set(unit, { entries: scenes.entries });
