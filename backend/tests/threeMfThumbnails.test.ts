@@ -44,4 +44,16 @@ describe("a 3MF's thumbnail pictures", () => {
     const file = await threeMfWith({ "Metadata/thumbnail.png": big, "3D/thumbnail.png": big, "thumbnail.png": big });
     expect(await read3mfThumbnails(file)).toHaveLength(2);
   });
+
+  it("pass over one that doesn't fit what's left for a smaller one after it", async () => {
+    const big = Buffer.alloc(12 * 1024 * 1024);
+    const file = await threeMfWith({
+      "Metadata/thumbnail.png": big,
+      "3D/thumbnail.png": big,
+      "thumbnail.png": big,
+      "a/thumbnail.png": Buffer.from("a small picture"),
+    });
+    const pictures = await read3mfThumbnails(file);
+    expect(pictures.map((each) => each.length)).toEqual([big.length, big.length, 15]);
+  });
 });
