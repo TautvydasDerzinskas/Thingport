@@ -140,7 +140,9 @@ export default function DashboardPanel({
         value={tab}
         onChange={(_, value: number) => onTabChange(value)}
         variant="scrollable"
-        scrollButtons={false}
+        // Arrows only appear when the tabs don't fit, so a mouse can reach the ones cut off at the edge.
+        scrollButtons="auto"
+        allowScrollButtonsMobile
         aria-label={name}
         sx={{ minHeight: 44, px: 1, flexShrink: 0, borderBottom: 1, borderColor: "divider" }}
       >
