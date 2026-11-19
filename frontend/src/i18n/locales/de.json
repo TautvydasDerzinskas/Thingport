@@ -949,11 +949,11 @@
         "count_other": "Kategorien & Ordner"
       },
       "topViewed": {
-        "title": "Meistangesehene Modelle",
+        "title": "Meistangesehen",
         "empty": "Noch nichts angesehen – Modelle, die du öffnest, erscheinen hier."
       },
       "topPrinted": {
-        "title": "Meistgedruckte Modelle",
+        "title": "Meistgedruckt",
         "empty": "Noch nichts gedruckt – Modelle, die du herunterlädst oder im Slicer öffnest, erscheinen hier."
       },
       "topAuthors": {
@@ -969,7 +969,7 @@
         "modelCount_other": "{{count}} Modelle"
       },
       "recentlyAdded": {
-        "title": "Zuletzt hinzugefügt",
+        "title": "Neu hinzugefügt",
         "empty": "Noch nichts hinzugefügt – hochgeladene und importierte Modelle erscheinen hier."
       },
       "clock": {
@@ -1767,8 +1767,8 @@
         "subtitle": "Spart Platz, wenn mehrere Personen dasselbe Modell importieren.",
         "modeLabel": "Identische Dateien klonen (Copy-on-Write)",
         "help": "Thingport vergleicht jede neue Modelldatei, Zusatzdatei, jedes Galerie- und Beschreibungsbild mit den bereits gespeicherten, egal welcher Art. Copy-on-Write klont einen Treffer auf btrfs, XFS oder ZFS ab 2.2 und speichert die Datei anderswo ganz normal. Vorschaubilder und Renderings werden nicht geteilt. Jeder Klon ist eine eigene Datei, wer also eine auf dem Speicher bearbeitet, ändert nie die einer anderen Person. Dateien, die vor dem Einschalten gespeichert wurden, werden auch geprüft, siehe „Vorhandene Dateien“.",
-        "failed": "Wie identische Dateien gespeichert werden, konnte nicht gespeichert werden. Bitte versuche es erneut.",
-        "loadFailed": "Wie identische Dateien gespeichert werden, konnte nicht geladen werden.",
+        "failed": "Die Einstellung für identische Dateien konnte nicht gespeichert werden. Bitte versuche es erneut.",
+        "loadFailed": "Die Einstellung für identische Dateien konnte nicht geladen werden.",
         "modeHelp": {
           "off": "Jede Datei belegt ihren eigenen Platz.",
           "reflink": "Eine bereits gespeicherte Datei wird geklont, wo das Dateisystem es kann, und belegt keinen zusätzlichen Platz, bis sich eine Kopie ändert."
@@ -2511,7 +2511,7 @@
       },
       "dashboard": {
         "heading": "Dashboard",
-        "subtitle": "Welche eigenen Widgets Benutzer hinzufügen dürfen, und welche sie nutzen.",
+        "subtitle": "Erlaubte eigene Widgets und ihre Nutzung.",
         "sources": {
           "heading": "Eigene Widgets",
           "help": "Das Skript eines eigenen Widgets läuft im Dashboard seines Benutzers mit dessen Zugriffsrechten auf Thingport. Schalte eine Art auf einer Instanz aus, die du mit Leuten teilst, denen du nicht ganz vertraust: Deren Widgets laden dann nicht mehr, und ihre Panels zeigen das an.",
@@ -2529,9 +2529,9 @@
         },
         "stats": {
           "widgets": "Genutzte Widgets",
-          "users": "Benutzer mit Widgets",
+          "users": "Benutzer",
           "placed": "Auf Dashboards",
-          "installs": "Community-Installationen"
+          "installs": "Installationen"
         },
         "tabs": {
           "inUse": "In Gebrauch",
@@ -2987,7 +2987,7 @@
           "source": "Quelle",
           "check": "Prüfung",
           "people": "Personen",
-          "comes": "Was kommt",
+          "comes": "Was übernommen wird",
           "start": "Start"
         },
         "dialog": {
@@ -3006,7 +3006,7 @@
           "folder": "Speicherordner der alten Instanz, wie dieser Server ihn sieht",
           "folderHelp": "Der Speicherordner der alten Instanz, in diesen Server eingebunden oder darauf kopiert. Seine Dateien werden kopiert, der Ordner selbst bleibt unverändert.",
           "untouched": "Unterwegs wird er auf die Version dieser Instanz gebracht. Die alte Instanz wird nicht angefasst.",
-          "wayIn": "Wie es kommt",
+          "wayIn": "Übertragungsweg",
           "dumpWay": "Datenbank-Dump + Speicher",
           "onlineWay": "Online",
           "address": "Adresse der alten Instanz",
@@ -3395,20 +3395,7 @@
       "more": "Mehr",
       "years": "Jahre",
       "loadError": "Deine Aktivität konnte nicht geladen werden.",
-      "monthsShort": [
-        "Jan",
-        "Feb",
-        "Mär",
-        "Apr",
-        "Mai",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Okt",
-        "Nov",
-        "Dez"
-      ],
+      "monthsShort": ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
       "timeline": {
         "title": "Aktivitätsverlauf",
         "emptyMonth": "Diesen Monat noch keine Aktivität.",
@@ -3471,7 +3458,7 @@
       },
       "printProfiles": {
         "heading": "Druckprofile",
-        "help": "Wie Modelle, die mit Druckprofilen importiert wurden, diese anzeigen: als Liste, Auswahl oder Bildkacheln, jeweils mit Druckzeit, Filament und Platten. Aus zeigt sie als normale Dateien.",
+        "help": "So werden Druckprofile importierter Modelle angezeigt: als Liste, Auswahl oder Bildkacheln, jeweils mit Druckzeit, Filament und Platten. Aus zeigt sie als normale Dateien.",
         "off": "Aus",
         "list": "Liste",
         "picker": "Auswahl",
@@ -3887,7 +3874,7 @@
         "deleted": "{{name}} gelöscht",
         "empty": "Noch keine Tools. Ein Admin installiert sie.",
         "emptyAdmin": "Noch keine Tools. Installiere eines aus dem Repository.",
-        "emptyCreate": "Noch keine Tools. Bau dein eigenes oder bitte einen Admin, welche zu installieren.",
+        "emptyCreate": "Noch keine Tools. Bau dein eigenes oder bitte einen Admin, Tools zu installieren.",
         "install": "Tools installieren",
         "noAccess": "Tools sind für dich auf dieser Thingport-Instanz nicht verfügbar.",
         "dropHere": "Tool hier ablegen",
@@ -4067,7 +4054,7 @@
           "empty": "Dein Tool hat noch keine Beschriftungen. Lege die Wörter, die es anzeigt, in einer Datei pro Sprache ab, und das Skript fragt sie per Schlüssel mit t(\"key\") ab – so muss niemand, der übersetzt, das Skript öffnen."
         },
         "category": "Kategorie",
-        "categoryHelp": "In welchem Regal die Tools-Seite es zeigt. Wer es nutzt, kann es selbst verschieben."
+        "categoryHelp": "Das Regal, in dem das Tool auf der Tools-Seite steht. Wer es nutzt, kann es selbst verschieben."
       }
     },
     "screenshots": {
@@ -6728,7 +6715,7 @@
       "folderWarning": "Eine Kategorie zuzuweisen nimmt Modelle aus der Ordnerstruktur: Danach liegen sie in keinem Ordner mehr.",
       "replaces_one": "{{count}} ausgewähltes Modell hat schon eine Kategorie, die hiermit ersetzt wird.",
       "replaces_other": "{{count}} ausgewählte Modelle haben schon eine Kategorie, die hiermit ersetzt wird.",
-      "empty": "Noch keine Kategorien zur Auswahl. Füge welche unter „Kategorien & Ordner verwalten“ hinzu.",
+      "empty": "Noch keine Kategorien zur Auswahl. Lege sie unter „Kategorien & Ordner verwalten“ an.",
       "done_one": "„{{name}}“ {{count}} Modell zugewiesen.",
       "done_other": "„{{name}}“ {{count}} Modellen zugewiesen.",
       "partlyFailed_one": "{{count}} Modell konnte nicht geändert werden.",
