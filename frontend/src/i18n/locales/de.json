@@ -1618,7 +1618,7 @@
           },
           "flaresolverr": {
             "name": "FlareSolverr",
-            "description": "Kommt an den Cloudflare-Prüfungen von Plattformen vorbei, die sie verwenden, vor allem Thingiverse und Printables. Ohne ihn werden Importe und Synchronisierungen von diesen Plattformen blockiert.",
+            "description": "Umgeht die Cloudflare-Prüfungen von Plattformen, die sie verwenden, vor allem Thingiverse und Printables. Ohne FlareSolverr werden Importe und Synchronisierungen von diesen Plattformen blockiert.",
             "problems": {
               "not_configured": "Nicht eingerichtet. Importe funktionieren, bis eine Plattform eine Cloudflare-Prüfung zeigt; füge eine FlareSolverr-URL hinzu, damit sie auch dann weiter funktionieren.",
               "unreachable": "FlareSolverr antwortet nicht. Prüfe, ob sein Container läuft und die URL unter Verbindungen > FlareSolverr stimmt, einschließlich des Ports (meist 8191).",
@@ -1642,7 +1642,7 @@
           },
           "myminifactory": {
             "name": "MyMiniFactory",
-            "description": "Der MyMiniFactory-API-Schlüssel der Instanz, mit dem Modelle gelesen, Sammlungen synchronisiert und Autoren von MyMiniFactory verknüpft werden. Kostenlose Modelle lassen sich auch ohne herunterladen.",
+            "description": "Der MyMiniFactory-API-Schlüssel der Instanz, mit dem Modelle gelesen, Sammlungen synchronisiert und Autoren von MyMiniFactory verknüpft werden. Kostenlose Modelle lassen sich auch ohne Schlüssel herunterladen.",
             "problems": {
               "disabled": "Unter „Plattformen“ ausgeschaltet, deshalb wird nichts geprüft. Schalte MyMiniFactory dort wieder ein, um es zu nutzen.",
               "not_configured": "Kein API-Schlüssel eingerichtet. MyMiniFactory-Importe und -Synchronisierungen funktionieren erst, wenn unter „Einstellungen“ einer hinzugefügt ist (App erstellen unter myminifactory.com/settings/developer/application).",
@@ -1697,7 +1697,7 @@
         "heading": "Speicherstruktur",
         "subtitle": "Lege fest, wie verwaltete Modelldateien auf dem Speicher organisiert werden.",
         "templateHeading": "Ordnerstruktur",
-        "templateDesc": "Die Ordner, in denen die Dateien jedes Modells gespeichert werden, und wie die Dateien heißen. Die Dateien jeder Person liegen zuerst in einem eigenen Ordner, eine Datei landet also z. B. unter <user>/Props/Workshop/Cable clip/Cable clip.3mf. Zwei Modelle können gleich heißen, wenn sie in verschiedenen Kategorien liegen, deshalb muss der Pfad die Modell-ID enthalten oder sowohl Kategorie bzw. Ordner als auch den Modellnamen; sonst könnten ihre Dateien im selben Ordner landen. Die Zusatzdateien eines Modells liegen neben seinen Modelldateien, seine Bilder in einem Ordner „Images“ daneben.",
+        "templateDesc": "Die Ordner, in denen die Dateien jedes Modells gespeichert werden, und wie die Dateien heißen. Die Dateien jedes Benutzers liegen zuerst in einem eigenen Ordner, eine Datei landet also z. B. unter <user>/Props/Workshop/Cable clip/Cable clip.3mf. Zwei Modelle können gleich heißen, wenn sie in verschiedenen Kategorien liegen, deshalb muss der Pfad die Modell-ID enthalten oder sowohl Kategorie bzw. Ordner als auch den Modellnamen; sonst könnten ihre Dateien im selben Ordner landen. Die Zusatzdateien eines Modells liegen neben seinen Modelldateien, seine Bilder in einem Ordner „Images“ daneben.",
         "templateLabel": "Vorlage",
         "save": "Speichern & Dateien verschieben",
         "saving": "Wird gespeichert …",
@@ -1953,7 +1953,7 @@
         "descriptionsDescription": "Räumt Modellbeschreibungen mit KI auf, beim Import oder in einem Durchlauf: entfernt Eigenwerbung, übersetzt und ordnet sie, zur Prüfung oder direkt angewendet.",
         "privacy": "Bei einer Drittanbieter-API verlassen Titel, Beschreibungen und Tags der Modelle diesen Server. Bilder werden nur gesendet, wenn das eingeschaltet ist.",
         "studio": "Studio-Assistent",
-        "studioDescription": "Lässt Leute im Prompt von Studio eine KI bitten, ihre Designs Schritt für Schritt zu bauen und zu ändern, mit den KIs, die du anbietest."
+        "studioDescription": "Erlaubt Benutzern, im Prompt von Studio eine KI ihre Designs Schritt für Schritt bauen und ändern zu lassen, mit den KIs, die du anbietest."
       },
       "aiCategorization": {
         "heading": "KI-Kategorisierung",
@@ -2494,7 +2494,7 @@
       },
       "mcp": {
         "heading": "MCP-Tools",
-        "subtitle": "Lässt KI-Assistenten wie Claude die Bibliothek mit dem API-Token ihres Benutzers durchsuchen und verwalten.",
+        "subtitle": "Erlaubt KI-Assistenten wie Claude, die Bibliothek mit dem API-Token ihres Benutzers zu durchsuchen und zu verwalten.",
         "accessLabel": "Was API-Tokens dürfen",
         "help": "Innerhalb dieses Rahmens wählt jeder Benutzer die Tools seines eigenen Tokens. Tools, die die Bibliothek ändern, importieren ohne Captcha, wie Thingport Grab.",
         "failed": "Der MCP-Zugriff konnte nicht gespeichert werden. Bitte versuche es erneut.",
@@ -2577,7 +2577,7 @@
           "usersHint": "Neben Admins, die sie immer sehen.",
           "failed": "Konnte nicht ändern, wer Tools sieht",
           "userTools": "Eigene Tools der Benutzer",
-          "userToolsHelp": "Lässt alle, die Tools sehen, eigene erstellen, in einem Editor mit Startskript. Deren Skripte laufen im eigenen Browser mit den eigenen Zugriffsrechten.",
+          "userToolsHelp": "Erlaubt allen, die Tools sehen, eigene zu erstellen, in einem Editor mit Startskript. Deren Skripte laufen im eigenen Browser mit den eigenen Zugriffsrechten.",
           "userToolsOn": "Wer Tools sieht, kann eigene erstellen",
           "userToolsOff": "Nur installierte Tools"
         },
@@ -3188,8 +3188,8 @@
           "settings_other": "{{count}} Instanz-Einstellungen",
           "secrets_one": "{{count}} Geheimnis",
           "secrets_other": "{{count}} Geheimnisse",
-          "failures_one": "{{count}} Sache fehlgeschlagen",
-          "failures_other": "{{count}} Dinge fehlgeschlagen"
+          "failures_one": "{{count}} Fehler",
+          "failures_other": "{{count}} Fehler"
         },
         "errors": {
           "outside": "Gib einen Pfad innerhalb von {{root}} an: Die Dateien der alten Instanz werden nur von dort gelesen.",
@@ -3254,7 +3254,7 @@
         },
         "manyfold": {
           "title": "Von Manyfold",
-          "text": "Seine Modelle mit Dateien, Bildern, Tags und Lizenzen sowie seine Sammlungen, gelesen mit einem dort erstellten API-Schlüssel. Die Modelle jeder Person gehen an die, die du hier auswählst.",
+          "text": "Seine Modelle mit Dateien, Bildern, Tags und Lizenzen sowie seine Sammlungen, gelesen mit einem dort erstellten API-Schlüssel. Wohin die Modelle eines Benutzers dort kommen, legst du hier fest.",
           "apiKey": "API-Schlüssel",
           "anywhere": "LAN oder entfernt",
           "runTitle": "Von Manyfold unter {{name}}",
@@ -3308,7 +3308,7 @@
             "creators_other": "Ersteller"
           },
           "phases": {
-            "owners": "Modelle jeder Person werden gesucht: {{done}} von {{total}}",
+            "owners": "Modelle der Benutzer werden gesucht: {{done}} von {{total}}",
             "collections": "Sammlungen werden gelesen: {{done}} von {{total}}",
             "models": "Modelle werden kopiert: {{done}} von {{total}}"
           },
@@ -3940,7 +3940,7 @@
         "picked_one": "Mit {{count}} Person geteilt",
         "picked_other": "Mit {{count}} Personen geteilt",
         "onlyYou": "Noch niemand ausgewählt, also siehst nur du es.",
-        "loadFailed": "Es ließ sich nicht lesen, wen das erreicht, deshalb kann es noch nicht geändert werden."
+        "loadFailed": "Wen das erreicht, konnte nicht geladen werden, deshalb lässt es sich noch nicht ändern."
       },
       "picker": {
         "title": "Sammlung wählen",
@@ -4414,7 +4414,7 @@
         "designs": "Designs",
         "library": "Bibliothek",
         "search": "Deine Modelle durchsuchen",
-        "help": "STL-, 3MF-, STEP-, OBJ- und GLB-Dateien kommen als Mesh-Körper in ihrer eigenen Größe herein. Das Design behält eine eigene Kopie, spätere Änderungen am Modell kommen also nicht dort an.",
+        "help": "STL-, 3MF-, STEP-, OBJ- und GLB-Dateien werden als Mesh-Körper in ihrer eigenen Größe eingefügt. Das Design behält eine eigene Kopie, spätere Änderungen am Modell wirken sich also nicht darauf aus.",
         "open": "Öffnen",
         "openHelp": "Als neues Design",
         "insert": "Einfügen",
@@ -4610,8 +4610,8 @@
         }
       },
       "imported": {
-        "parts_one": "Das Modell kam als ein Körper aus {{count}} Teil herein",
-        "parts_other": "Das Modell kam als ein Körper aus {{count}} getrennten Teilen herein",
+        "parts_one": "Das Modell wurde als ein Körper aus {{count}} Teil eingefügt",
+        "parts_other": "Das Modell wurde als ein Körper aus {{count}} getrennten Teilen eingefügt",
         "separate": "Trennen"
       },
       "text": {
@@ -6407,7 +6407,7 @@
         "keptPeople_other": "{{names}} bleiben auf der Liste: Wähle „Geteilt“, um wieder zu teilen.",
         "andMore_one": "{{count}} weitere",
         "andMore_other": "{{count}} weitere",
-        "peopleFailed": "Es ließ sich nicht laden, mit wem sie geteilt ist. Bis das klappt, kann nicht geändert werden, wer sie sieht.",
+        "peopleFailed": "Mit wem sie geteilt ist, konnte nicht geladen werden. Bis das klappt, lässt sich nicht ändern, wer sie sieht.",
         "createdNotShared": "„{{name}}“ wurde erstellt, konnte aber nicht geteilt werden. „Teilen …“ in ihrem Menü versucht es erneut.",
         "findPeopleHelp": "Ein beliebiger Teil eines Namens findet jemanden hier oder auf einer verbundenen Instanz; eine E-Mail-Adresse findet nur hier jemanden, und nur vollständig eingegeben – sie wird nie angezeigt. Findest du jemanden von woanders nicht, gib das vollständige Handle ein, etwa name@ihre-instanz."
       },
@@ -6457,10 +6457,10 @@
         "sourceItem": "{{provider}} „{{name}}“",
         "badgeMany_one": "Synchronisiert mit {{count}} Sammlung: {{sources}}",
         "badgeMany_other": "Synchronisiert mit {{count}} Sammlungen: {{sources}}",
-        "introSource_one": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden jede Stunde hierher importiert.",
-        "introSource_other": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden alle {{count}} Stunden hierher importiert.",
-        "overviewIntro_one": "„{{name}}“ folgt {{count}} Sammlung. Modelle, die dort hinzukommen, werden hierher importiert; Modelle, die du selbst hinzufügst, bleiben.",
-        "overviewIntro_other": "„{{name}}“ folgt {{count}} Sammlungen. Modelle, die in einer davon hinzukommen, werden hierher importiert; Modelle, die du selbst hinzufügst, bleiben.",
+        "introSource_one": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden jede Stunde in diese Sammlung importiert.",
+        "introSource_other": "Modelle, die auf {{provider}} zu „{{source}}“ hinzukommen, werden alle {{count}} Stunden in diese Sammlung importiert.",
+        "overviewIntro_one": "„{{name}}“ folgt {{count}} Sammlung. Modelle, die dort hinzukommen, werden in diese Sammlung importiert; Modelle, die du selbst hinzufügst, bleiben.",
+        "overviewIntro_other": "„{{name}}“ folgt {{count}} Sammlungen. Modelle, die in einer davon hinzukommen, werden in diese Sammlung importiert; Modelle, die du selbst hinzufügst, bleiben.",
         "intervalEvery_one": "jede Stunde",
         "intervalEvery_other": "alle {{count}} Stunden",
         "checkedShort": "geprüft {{when}}",
@@ -6479,14 +6479,14 @@
         "sections": {
           "overview": "Übersicht"
         },
-        "intro_one": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden jede Stunde hierher importiert.",
-        "intro_other": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden alle {{count}} Stunden hierher importiert.",
+        "intro_one": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden jede Stunde in diese Sammlung importiert.",
+        "intro_other": "Modelle, die zur {{provider}}-Sammlung hinzukommen, werden alle {{count}} Stunden in diese Sammlung importiert.",
         "intervalLabel": "Auf neue Modelle prüfen, alle",
         "intervalOption_one": "Stunde",
         "intervalOption_other": "{{count}} Stunden",
         "badgeLikes": "Synchronisiert mit den Modellen, die @{{user}} auf {{provider}} gefallen",
-        "introLikes_one": "Modelle, die @{{user}} auf {{provider}} gefallen, werden jede Stunde hierher importiert.",
-        "introLikes_other": "Modelle, die @{{user}} auf {{provider}} gefallen, werden alle {{count}} Stunden hierher importiert.",
+        "introLikes_one": "Modelle, die @{{user}} auf {{provider}} gefallen, werden jede Stunde in diese Sammlung importiert.",
+        "introLikes_other": "Modelle, die @{{user}} auf {{provider}} gefallen, werden alle {{count}} Stunden in diese Sammlung importiert.",
         "browse": {
           "providerLabel": "Plattform",
           "models_one": "{{count}} Modell",
@@ -6644,7 +6644,7 @@
         "modelCount_other": "{{count}} Modelle",
         "noop": "Deine Kategorien entsprechen schon dem Standard.",
         "foldersKept": "Ordner bleiben unberührt.",
-        "previewFailed": "Es ließ sich nicht ermitteln, was ein Zurücksetzen ändern würde."
+        "previewFailed": "Die Auswirkungen des Zurücksetzens konnten nicht ermittelt werden."
       },
       "manager": {
         "title": "Kategorien verwalten",
@@ -6675,7 +6675,7 @@
           "done": "Fertig",
           "noMatches": "Keine Kategorie passt zu „{{query}}“.",
           "empty": "Für {{provider}} sind keine Kategorien bekannt.",
-          "loadFailed": "Die Kategorieliste konnte nicht geladen werden. Schließe das hier und versuche es erneut.",
+          "loadFailed": "Die Kategorieliste konnte nicht geladen werden. Schließe den Dialog und versuche es erneut.",
           "unknown": "Unbekannt #{{id}}"
         }
       }
@@ -6795,7 +6795,7 @@
     "merge": {
       "action": "Zusammenführen",
       "needTwo": "Wähle mindestens 2 zum Zusammenführen aus",
-      "previewFailed": "Es ließ sich nicht ermitteln, was das Zusammenführen bewirken würde. Bitte versuche es erneut.",
+      "previewFailed": "Die Auswirkungen des Zusammenführens konnten nicht ermittelt werden. Bitte versuche es erneut.",
       "failed": "Zusammenführen fehlgeschlagen. Bitte versuche es erneut.",
       "keep": "Zusammenführen in",
       "kept": "Bleibt",
@@ -7154,7 +7154,7 @@
         "placeholder": "Wert von PHPSESSID oder der gesamte Cookie-Header"
       },
       "status": {
-        "notConnected": "Kostenlose Modelle lassen sich auch ohne importieren. Verbinde dein Konto, um gekaufte Modelle und kostenlose, die eine Anmeldung brauchen, zu importieren.",
+        "notConnected": "Kostenlose Modelle lassen sich auch ohne Anmeldung importieren. Verbinde dein Konto, um gekaufte Modelle und kostenlose, die eine Anmeldung brauchen, zu importieren.",
         "expired": "Anmeldung abgelaufen. Besuche myminifactory.com mit Thingport Grab oder verbinde MyMiniFactory unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "MyMiniFactory: Der Admin hat noch keinen API-Schlüssel eingerichtet"
@@ -7169,14 +7169,14 @@
         ]
       },
       "admin": {
-        "description": "Modelle und öffentliche Sammlungen über den API-Schlüssel dieser Thingport-Instanz; gekaufte Modelle über das eigene MyMiniFactory-Konto jeder Person.",
+        "description": "Modelle und öffentliche Sammlungen über den API-Schlüssel dieser Thingport-Instanz; gekaufte Modelle über das jeweils eigene MyMiniFactory-Konto der Benutzer.",
         "keyStatus": {
           "set": "API-Schlüssel eingerichtet",
           "missing": "Kein API-Schlüssel: MyMiniFactory-Importe funktionieren erst, wenn einer eingerichtet ist"
         },
         "key": {
           "heading": "MyMiniFactory-API-Schlüssel",
-          "helpText": "Erstelle unter myminifactory.com/settings/developer/application eine App und füge den angezeigten API-Schlüssel ein. Kostenlose Modelle lassen sich auch ohne herunterladen, aber er wird gebraucht, um ihre Details und deine Sammlungen zu lesen.",
+          "helpText": "Erstelle unter myminifactory.com/settings/developer/application eine App und füge den angezeigten API-Schlüssel ein. Kostenlose Modelle lassen sich auch ohne Schlüssel herunterladen, aber er wird gebraucht, um ihre Details und deine Sammlungen zu lesen.",
           "statusConfigured": "Ein API-Schlüssel ist eingerichtet.",
           "statusNotConfigured": "Noch kein API-Schlüssel eingerichtet – MyMiniFactory-Importe schlagen fehl, bis einer eingerichtet ist.",
           "tokenLabel": "API-Schlüssel",
@@ -7237,7 +7237,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen sowie „Gefällt mir“ und Lesezeichen jeder Person, über das eigene Snapmaker-Konto jeder Person."
+        "description": "Modelle mit ihren Druckprofilen sowie „Gefällt mir“ und Lesezeichen der Benutzer, jeweils über ihr eigenes Snapmaker-Konto."
       },
       "sync": {
         "notConnected": "Verbinde Snapmaker Space unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Lesezeichen zu sehen."
@@ -7269,7 +7269,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen, Sammlungen und „Gefällt mir“ jeder Person. Die Dateien kommen über Thingport Grab: MakerOnline gibt sie nur an die eigenen Seiten."
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen und die „Gefällt mir“ der Benutzer. Die Dateien kommen über Thingport Grab: MakerOnline gibt sie nur an die eigenen Seiten."
       },
       "sync": {
         "notConnected": "Verbinde MakerOnline unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
@@ -7301,7 +7301,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen, Sammlungen und „Gefällt mir“ jeder Person, über das eigene Creality-Cloud-Konto jeder Person."
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen und „Gefällt mir“ der Benutzer, jeweils über ihr eigenes Creality-Cloud-Konto."
       },
       "sync": {
         "notConnected": "Verbinde Creality Cloud unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
@@ -7332,7 +7332,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen und Sammlungen, über das eigene NexPrint-Konto jeder Person."
+        "description": "Modelle mit ihren Druckprofilen und Sammlungen, jeweils über das eigene NexPrint-Konto der Benutzer."
       },
       "sync": {
         "notConnected": "Verbinde NexPrint unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen zu sehen."
@@ -7364,7 +7364,7 @@
         ]
       },
       "admin": {
-        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Sammlungen, über das eigene Thangs-Konto jeder Person."
+        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Sammlungen, jeweils über das eigene Thangs-Konto der Benutzer."
       },
       "sync": {
         "notConnected": "Verbinde Thangs unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
@@ -7413,7 +7413,7 @@
         ]
       },
       "admin": {
-        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Printlists, über den eigenen Cults3D-API-Schlüssel jeder Person. Die Dateien kommen mit der Anmeldung des Browsers, die Thingport Grab sendet."
+        "description": "Kostenlose und gekaufte Modelle, „Gefällt mir“ und Printlists, jeweils über den eigenen Cults3D-API-Schlüssel der Benutzer. Die Dateien kommen mit der Anmeldung des Browsers, die Thingport Grab sendet."
       },
       "sync": {
         "notConnected": "Gib deinen Cults3D-Nicknamen und API-Schlüssel unter Konfiguration > Plattformen ein, um hier deine „Gefällt mir“ und Printlists zu sehen."
@@ -7429,7 +7429,7 @@
         "placeholder": "Der gesamte Wert von mk-userinfo"
       },
       "status": {
-        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ von eufyMake zu lesen. Die Modelle lassen sich auch ohne importieren.",
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ von eufyMake zu lesen. Die Modelle lassen sich auch ohne Anmeldung importieren.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf makeitreal.eufymake.com an oder verbinde eufyMake unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "eufyMake: Verbinde dein Konto unter Konfiguration → Plattformen"
@@ -7444,7 +7444,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle und „Gefällt mir“ jeder Person. Modelle lassen sich ohne Anmeldung importieren; „Gefällt mir“ braucht die eigene Anmeldung der Person."
+        "description": "Modelle und die „Gefällt mir“ der Benutzer. Modelle lassen sich ohne Anmeldung importieren; für „Gefällt mir“ braucht jeder Benutzer seine eigene Anmeldung."
       },
       "sync": {
         "notConnected": "Verbinde eufyMake unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ zu sehen."
@@ -7460,14 +7460,14 @@
         "placeholder": "Das Cookie remember_token oder der Cookie-Header einer angemeldeten Anfrage"
       },
       "status": {
-        "notConnected": "Pinshape gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; Sammlungen und „Gefällt mir“ lassen sich auch ohne lesen.",
+        "notConnected": "Pinshape gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; Sammlungen und „Gefällt mir“ sind auch ohne Anmeldung lesbar.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf pinshape.com an oder verbinde Pinshape unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "Pinshape: Verbinde dein Konto unter Konfiguration → Plattformen"
       },
       "about": {
         "summary": "Eine langjährige Community-Modellplattform, heute von MatterHackers betrieben: kostenlose Modelle und Sammlungen, denen jeder folgen kann.",
-        "signIn": "Deine eigene Anmeldung, für die Dateien; Sammlungen und „Gefällt mir“ lassen sich auch ohne lesen.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien; Sammlungen und „Gefällt mir“ sind auch ohne Anmeldung lesbar.",
         "grab": "Sendet deine Anmeldung, wenn du pinshape.com besuchst.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf Pinshape und öffne pinshape.com angemeldet.",
@@ -7475,7 +7475,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle sowie Sammlungen und „Gefällt mir“ beliebiger Personen. Listen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person."
+        "description": "Modelle sowie Sammlungen und „Gefällt mir“ aller Benutzer. Listen sind ohne Anmeldung lesbar; für die Dateien braucht jeder Benutzer seine eigene Anmeldung."
       },
       "sync": {
         "notConnected": "Verbinde Pinshape unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ und Sammlungen zu sehen."
@@ -7506,7 +7506,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle und die Produkte mit „Gefällt mir“ jeder Person. Beides braucht die eigene Anmeldung der Person; nur die Modellseiten lassen sich ohne lesen."
+        "description": "Modelle und die Produkte mit „Gefällt mir“ der Benutzer. Für beides braucht jeder Benutzer seine eigene Anmeldung; nur die Modellseiten sind ohne Anmeldung lesbar."
       },
       "sync": {
         "notConnected": "Verbinde Toymakr3D unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Produkte mit „Gefällt mir“ zu sehen."
@@ -7522,7 +7522,7 @@
         "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an makerables.com"
       },
       "status": {
-        "notConnected": "Verbinde dein Konto, um die Projekte zu lesen, die du auf Makerables gespeichert hast. Die Projekte lassen sich auch ohne importieren.",
+        "notConnected": "Verbinde dein Konto, um die Projekte zu lesen, die du auf Makerables gespeichert hast. Die Projekte lassen sich auch ohne Anmeldung importieren.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf makerables.com an oder verbinde Makerables unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "Makerables: Verbinde dein Konto unter Konfiguration → Plattformen"
@@ -7537,7 +7537,7 @@
         ]
       },
       "admin": {
-        "description": "Projekte und die gespeicherten Projekte jeder Person. Projekte lassen sich ohne Anmeldung importieren; gespeicherte Projekte brauchen die eigene Anmeldung der Person."
+        "description": "Projekte und die gespeicherten Projekte der Benutzer. Projekte lassen sich ohne Anmeldung importieren; für gespeicherte Projekte braucht jeder Benutzer seine eigene Anmeldung."
       },
       "sync": {
         "notConnected": "Verbinde Makerables unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine gespeicherten Projekte zu sehen."
@@ -7570,7 +7570,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle sowie die Modelle mit „Gefällt mir“ und die Wunschliste jeder Person. Alles braucht die eigene Anmeldung der Person, die Downloads zusätzlich ein Token für die Bot-Prüfung von Grab oder FlareSolverr; nur die Modellseiten lassen sich ohne lesen."
+        "description": "Modelle sowie die Modelle mit „Gefällt mir“ und die Wunschliste der Benutzer. Für alles braucht jeder Benutzer seine eigene Anmeldung, für Downloads zusätzlich ein Token für die Bot-Prüfung von Grab oder FlareSolverr; nur die Modellseiten sind ohne Anmeldung lesbar."
       },
       "sync": {
         "notConnected": "Verbinde CGTrader unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Modelle mit „Gefällt mir“ und deine Wunschliste zu sehen."
@@ -7586,14 +7586,14 @@
         "placeholder": "Das Cookie _grabcad_session oder der Cookie-Header einer angemeldeten Anfrage"
       },
       "status": {
-        "notConnected": "GrabCAD gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; „Gefällt mir“ beliebiger Personen lassen sich auch ohne lesen.",
+        "notConnected": "GrabCAD gibt seine Dateien nur angemeldeten Nutzern. Verbinde dein Konto, um seine Modelle zu importieren; „Gefällt mir“ aller Benutzer sind auch ohne Anmeldung lesbar.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf grabcad.com an oder verbinde GrabCAD unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "GrabCAD: Verbinde dein Konto unter Konfiguration → Plattformen"
       },
       "about": {
         "summary": "Die Ingenieurs-Community von Stratasys: eine kostenlose Bibliothek mit Millionen CAD-Modellen, von Maschinenteilen bis zu ganzen Baugruppen, meist als STEP-Dateien.",
-        "signIn": "Deine eigene Anmeldung, für die Dateien; „Gefällt mir“ beliebiger Personen lassen sich auch ohne lesen.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien; „Gefällt mir“ aller Benutzer sind auch ohne Anmeldung lesbar.",
         "grab": "Sendet deine Anmeldung, wenn du grabcad.com besuchst. Sie gilt zwei Tage ab der letzten Nutzung dort, ein gelegentlicher Besuch hält sie also aktiv.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf GrabCAD und öffne grabcad.com angemeldet.",
@@ -7601,7 +7601,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle und „Gefällt mir“ beliebiger Personen. „Gefällt mir“ lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Thingport importiert STEP-, STL-, 3MF- und OBJ-Dateien, nicht die eigenen Formate von CAD-Systemen."
+        "description": "Modelle und „Gefällt mir“ aller Benutzer. „Gefällt mir“ sind ohne Anmeldung lesbar; für die Dateien braucht jeder Benutzer seine eigene Anmeldung. Thingport importiert STEP-, STL-, 3MF- und OBJ-Dateien, nicht die eigenen Formate von CAD-Systemen."
       },
       "sync": {
         "notConnected": "Verbinde GrabCAD unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine „Gefällt mir“ zu sehen."
@@ -7643,7 +7643,7 @@
         }
       },
       "admin": {
-        "description": "Community-Beiträge, Sammlungen und die eigenen Generierungen jeder Person, alle mit der eigenen Anmeldung der Person heruntergeladen. Community-Modelle brauchen einen Meshy-Tarif Pro oder Studio."
+        "description": "Community-Beiträge, Sammlungen und die eigenen Generierungen der Benutzer, jeweils mit ihrer eigenen Anmeldung heruntergeladen. Community-Modelle brauchen einen Meshy-Tarif Pro oder Studio."
       },
       "sync": {
         "notConnected": "Verbinde Meshy unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Generierungen und Sammlungen zu sehen."
@@ -7679,14 +7679,14 @@
         "placeholder": "Das Cookie _phrozen_session oder der Cookie-Header einer angemeldeten Anfrage"
       },
       "status": {
-        "notConnected": "PIXUP gibt seine Dateien nur angemeldeten Mitgliedern, auch die kostenlosen Modelle. Verbinde dein Konto, um die zu importieren, die dir gehören; Wunschlisten und Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "notConnected": "PIXUP gibt seine Dateien nur angemeldeten Mitgliedern, auch die kostenlosen Modelle. Verbinde dein Konto, um die zu importieren, die dir gehören; Wunschlisten und Sammlungen aller Benutzer sind auch ohne Anmeldung lesbar.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf pixup3d.com an oder verbinde PIXUP unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "PIXUP: Verbinde dein Konto unter Konfiguration → Plattformen"
       },
       "about": {
         "summary": "Der Modell-Marktplatz von Phrozen: Figuren, Büsten und Tabletop-Miniaturen, viele mit vorbereiteten Stützstrukturen für den Resin-Druck, kostenlos und kostenpflichtig.",
-        "signIn": "Deine eigene Anmeldung, für die Dateien der Modelle, die dir gehören; Wunschlisten und Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien der Modelle, die dir gehören; Wunschlisten und Sammlungen aller Benutzer sind auch ohne Anmeldung lesbar.",
         "grab": "Sendet deine Anmeldung, wenn du pixup3d.com besuchst, und markiert die kostenpflichtigen Modelle, die du nicht gekauft hast.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf PIXUP und öffne pixup3d.com angemeldet.",
@@ -7694,7 +7694,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle, Wunschlisten und Sammlungen. Listen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Ein kostenloses Modell wird zuerst mit einer 0-$-Bestellung in die PIXUP-Bibliothek der Person gelegt; ein kostenpflichtiges wird erst nach dem Kauf importiert."
+        "description": "Modelle, Wunschlisten und Sammlungen. Listen sind ohne Anmeldung lesbar; für die Dateien braucht jeder Benutzer seine eigene Anmeldung. Ein kostenloses Modell wird zuerst mit einer 0-$-Bestellung in die PIXUP-Bibliothek des Benutzers gelegt; ein kostenpflichtiges wird erst nach dem Kauf importiert."
       },
       "sync": {
         "notConnected": "Verbinde PIXUP unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Wunschliste und Sammlungen zu sehen."
@@ -7723,7 +7723,7 @@
       },
       "about": {
         "summary": "Ein südkoreanischer Modell-Marktplatz, bekannt für fein konstruierte Drucke – SpaceX-Raketen, faltbare Roboter, Star-Wars-Schiffe –, die meisten so entworfen, dass sie ohne Stützstrukturen drucken.",
-        "signIn": "Deine eigene Anmeldung, für die Dateien und deine Favoriten; die Modellseiten lassen sich auch ohne lesen.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien und deine Favoriten; die Modellseiten sind auch ohne Anmeldung lesbar.",
         "grab": "Sendet deine Anmeldung, wenn du fab365.net besuchst, damit Thingport die Dateien herunterladen und deine Favoriten lesen kann.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf Fab365 und öffne fab365.net angemeldet.",
@@ -7731,7 +7731,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle und deine Favoriten. Modellseiten lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Kostenlose Modelle und die, die dir gehören, werden importiert; ein kostenpflichtiges oder Ticket-Modell, das du nicht hast, musst du zuerst auf Fab365 kaufen oder einlösen."
+        "description": "Modelle und deine Favoriten. Modellseiten sind ohne Anmeldung lesbar; für die Dateien braucht jeder Benutzer seine eigene Anmeldung. Kostenlose Modelle und die, die dir gehören, werden importiert; ein kostenpflichtiges oder Ticket-Modell, das du nicht hast, musst du zuerst auf Fab365 kaufen oder einlösen."
       },
       "sync": {
         "notConnected": "Verbinde Fab365 unter Konfiguration > Plattformen oder besuche es angemeldet mit Thingport Grab, um hier deine Favoriten zu sehen."
@@ -7747,14 +7747,14 @@
         "placeholder": "Der Cookie-Header einer angemeldeten Anfrage an 3dexport.com"
       },
       "status": {
-        "notConnected": "3DExport gibt seine Dateien nur angemeldeten Nutzern, auch die kostenlosen Modelle. Verbinde dein Konto, um sie und deine eigenen Sammlungen zu importieren; öffentliche Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "notConnected": "3DExport gibt seine Dateien nur angemeldeten Nutzern, auch die kostenlosen Modelle. Verbinde dein Konto, um sie und deine eigenen Sammlungen zu importieren; öffentliche Sammlungen aller Benutzer sind auch ohne Anmeldung lesbar.",
         "expired": "Anmeldung abgelaufen: Eine Abmeldung bei 3dexport.com beendet sie. Melde dich dort mit Thingport Grab erneut an oder verbinde 3DExport unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "3DExport: Verbinde dein Konto unter Konfiguration → Plattformen"
       },
       "about": {
         "summary": "Einer der ältesten 3D-Modell-Marktplätze, seit 2004 online: Assets für Spiele und Filme, Texturen und ein großer 3D-Druck-Katalog, teils kostenlos.",
-        "signIn": "Deine eigene Anmeldung, für die Dateien und deine eigenen Sammlungen; öffentliche Sammlungen beliebiger Personen lassen sich auch ohne lesen.",
+        "signIn": "Deine eigene Anmeldung, für die Dateien und deine eigenen Sammlungen; öffentliche Sammlungen aller Benutzer sind auch ohne Anmeldung lesbar.",
         "grab": "Sendet deine Anmeldung, wenn du 3dexport.com besuchst, und markiert die kostenpflichtigen Modelle, die du nicht gekauft hast.",
         "setup": [
           "Installiere Thingport Grab, erlaube es auf 3DExport und öffne 3dexport.com angemeldet.",
@@ -7762,7 +7762,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle und Sammlungen: die eigenen jeder Person und öffentliche beliebiger Personen. Modellseiten und öffentliche Sammlungen lassen sich ohne Anmeldung lesen; die Dateien brauchen die eigene Anmeldung jeder Person. Kostenlose Modelle werden importiert, ein kostenpflichtiges erst nach dem Kauf, und nur die Formate, die ein Slicer öffnet."
+        "description": "Modelle und Sammlungen: die eigenen der Benutzer und die öffentlichen aller Benutzer. Modellseiten und öffentliche Sammlungen sind ohne Anmeldung lesbar; für die Dateien braucht jeder Benutzer seine eigene Anmeldung. Kostenlose Modelle werden importiert, ein kostenpflichtiges erst nach dem Kauf, und nur die Formate, die ein Slicer öffnet."
       },
       "sync": {
         "notConnected": "Verbinde 3DExport unter Konfiguration > Plattformen oder besuche es angemeldet mit Thingport Grab, um hier deine Sammlungen zu sehen."
@@ -7778,7 +7778,7 @@
         "placeholder": "Der Wert des Cookies token"
       },
       "status": {
-        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von QIDI Maker zu lesen. Die Modelle und öffentlichen Sammlungen beliebiger Personen lassen sich auch ohne importieren.",
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von QIDI Maker zu lesen. Die Modelle und öffentlichen Sammlungen aller Benutzer lassen sich auch ohne Anmeldung importieren.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf www.qidimaker.com an oder verbinde QIDI Maker unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "QIDI Maker: Verbinde dein Konto unter Konfiguration → Plattformen"
@@ -7793,7 +7793,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen jeder Person und öffentliche beliebiger Personen) und „Gefällt mir“ jeder Person. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; „Gefällt mir“ und private Sammlungen brauchen die eigene Anmeldung der Person."
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen der Benutzer und die öffentlichen aller Benutzer) und die „Gefällt mir“ der Benutzer. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; für „Gefällt mir“ und private Sammlungen braucht jeder Benutzer seine eigene Anmeldung."
       },
       "sync": {
         "notConnected": "Verbinde QIDI Maker unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen und „Gefällt mir“ zu sehen."
@@ -7817,7 +7817,7 @@
         }
       },
       "status": {
-        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von VoxelShare zu lesen. Die Modelle und öffentlichen Sammlungen beliebiger Personen lassen sich auch ohne importieren.",
+        "notConnected": "Verbinde dein Konto, um deine „Gefällt mir“ und privaten Sammlungen von VoxelShare zu lesen. Die Modelle und öffentlichen Sammlungen aller Benutzer lassen sich auch ohne Anmeldung importieren.",
         "expired": "Anmeldung abgelaufen. Melde dich mit Thingport Grab auf www.voxelshare.com an oder verbinde VoxelShare unter Konfiguration → Plattformen erneut.",
         "expiredStatus": "Anmeldung abgelaufen",
         "disabledReason": "VoxelShare: Verbinde dein Konto unter Konfiguration → Plattformen",
@@ -7836,7 +7836,7 @@
         ]
       },
       "admin": {
-        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen jeder Person und öffentliche beliebiger Personen) und „Gefällt mir“ jeder Person. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; „Gefällt mir“ und private Sammlungen brauchen die eigene Anmeldung der Person."
+        "description": "Modelle mit ihren Druckprofilen, Sammlungen (die eigenen der Benutzer und die öffentlichen aller Benutzer) und die „Gefällt mir“ der Benutzer. Modelle und öffentliche Sammlungen lassen sich ohne Anmeldung importieren; für „Gefällt mir“ und private Sammlungen braucht jeder Benutzer seine eigene Anmeldung."
       },
       "sync": {
         "notConnected": "Verbinde VoxelShare unter Konfiguration > Plattformen oder besuche es mit Thingport Grab, um hier deine Sammlungen und „Gefällt mir“ zu sehen."
