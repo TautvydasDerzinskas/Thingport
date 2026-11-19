@@ -30,8 +30,6 @@ import { getStudioDesign, studioPicturePath, type StudioPicture } from "./studio
 
 const log = createLogger("studio-assistant");
 
-/** Tool calls one run may make before it's stopped. */
-export const MAX_STEPS = 30;
 /** How long one run may take in all. */
 const RUN_MS = 10 * 60_000;
 /** How much of the conversation a new prompt is sent with; less for the compact set's small models. */
@@ -264,7 +262,7 @@ function compactState(state: string): string {
 }
 
 export type AssistantStep = { tool: string; title: string; summary: string | null; ok: boolean };
-export type AssistantOutcome = "done" | "stopped" | "limit" | "failed";
+export type AssistantOutcome = "done" | "stopped" | "failed";
 
 type Run = {
   designId: string;
@@ -350,7 +348,7 @@ function historyMessage(message: StudioMessage): ChatMessage | null {
     message.outcome === "stopped"
       ? "The person stopped this run."
       : message.outcome === "limit"
-        ? `This run stopped at the ${MAX_STEPS}-step limit.`
+        ? `This run stopped at the step limit after ${steps.length} steps.`
         : message.outcome === "failed"
           ? `This run failed: ${message.error ?? "unknown error"}.`
           : "";
@@ -562,7 +560,6 @@ async function work(
       const results: ToolResult[] = [];
       for (const call of turn.calls) {
         stillGoing();
-        if (run.steps.length >= MAX_STEPS) break;
         const entry = byName.get(call.name);
         const step: AssistantStep = {
           tool: call.name,
@@ -575,10 +572,6 @@ async function work(
         step.ok = !result.isError;
         step.summary = summary ?? (result.isError ? result.text.slice(0, 300) : null);
         results.push(result);
-      }
-      if (run.steps.length >= MAX_STEPS) {
-        outcome = "limit";
-        break;
       }
       messages.push({ role: "tool", results });
     }

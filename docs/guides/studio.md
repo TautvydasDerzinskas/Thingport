@@ -186,9 +186,9 @@ that's open, and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> start
   to four: the picture button, paste, or drop them on it. A photo or a drawing with sizes on it is something to build
   from; a logo or a silhouette the AI traces into an outline exactly, as **Trace picture** does. The pictures stay
   with the design's conversation.
-- A run takes up to 30 steps and 10 minutes. Not every model can use tools: small local models often can't, and the
-  box says so when one doesn't. An admin can give a small local model the compact tool set, which covers shapes, text,
-  tracing, moving, combining and holes.
+- A run can work for up to 10 minutes. Some small local models lack tool support, and the box tells you when a model
+  can't use tools. An admin can give a small local model the compact tool set, which covers shapes, text, tracing,
+  moving, combining and holes.
 
 The box stays small so you can watch the design change: while the AI works, one line says the step it's on, and then
 its answer; the conversation opens from the box's header. The view keeps the design above the box. If you'd rather

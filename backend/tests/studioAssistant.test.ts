@@ -8,7 +8,6 @@ import { prisma } from "../src/db";
 import { createAiConnection } from "../src/services/aiConnectionService";
 import { setAiRetryDelayForTest } from "../src/services/aiProviderClient";
 import { DEFAULT_STUDIO_ASSISTANT_PREFS, setStudioAssistantPrefs } from "../src/services/settingsService";
-import { MAX_STEPS } from "../src/services/studioAssistant";
 
 // Studio's assistant end to end: the admin's switch and the AIs it offers, then runs against fake AIs that answer
 // with scripted tool calls, OpenAI-style and Claude's, changing a real design through the Studio commands.
@@ -539,7 +538,7 @@ describe("Studio's assistant", () => {
     ]);
   });
 
-  it("stops when asked, takes one prompt at a time, and stops itself at the step limit", async () => {
+  it("stops when asked and takes one prompt at a time", async () => {
     await offer("openai", await startAi());
     const designId = await newDesign(person.token);
     let release = () => {};
@@ -559,12 +558,23 @@ describe("Studio's assistant", () => {
     release();
     expect(stopped.run.status).toBe("stopped");
     expect(stopped.messages.at(-1)).toMatchObject({ role: "assistant", outcome: "stopped" });
+  });
 
-    // An AI that never stops calling tools.
-    script = () => openAi([{ name: "studio_nothing_here", args: {} }]);
-    const limited = await ask(person.token, designId, "Keep going");
-    expect(limited.run.status).toBe("limit");
-    expect(limited.run.steps).toHaveLength(MAX_STEPS);
+  it("finishes a run with more than 30 tool steps", async () => {
+    await offer("openai", await startAi());
+    const designId = await newDesign(person.token);
+    const read = { name: "studio_get_design", args: {} };
+    script = (_body, index) => {
+      if (index === 0) return openAi(Array.from({ length: 29 }, () => read));
+      if (index === 1) return openAi([read, read]);
+      return openAi([], "Finished checking the design.");
+    };
+
+    const thread = await ask(person.token, designId, "Keep checking the design");
+    expect(thread.run.status).toBe("done");
+    expect(thread.run.steps).toHaveLength(31);
+    expect(thread.run.steps.every((step: { ok: boolean }) => step.ok)).toBe(true);
+    expect(thread.messages.at(-1)).toMatchObject({ outcome: "done", text: "Finished checking the design." });
   });
 
   it("says plainly when the AI can't use tools", async () => {
