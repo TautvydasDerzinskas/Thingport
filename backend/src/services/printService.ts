@@ -928,7 +928,14 @@ const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {
   "thumbnail.png": 2,
 };
 
-/** The pictures a .3mf's zip payload holds as its thumbnail, best first; none when it holds none or can't be read. */
+/** How large a .3mf's thumbnail picture may be, and how many of them, and how much in all, are held to choose from:
+ *  all are read before one is tried, and an archive can name any number. */
+const THUMBNAIL_ENTRY_MAX = 16 * 1024 * 1024;
+const THUMBNAIL_CANDIDATES = 4;
+const THUMBNAIL_CANDIDATES_MAX = 32 * 1024 * 1024;
+
+/** The pictures a .3mf's zip payload holds as its thumbnail, best first, as many as THUMBNAIL_CANDIDATES and
+ *  THUMBNAIL_CANDIDATES_MAX allow; none when it holds none or can't be read. */
 export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
   if (!srcPath.toLowerCase().endsWith(".3mf")) return [];
   try {
@@ -936,16 +943,22 @@ export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
     const imageNames = entries
       .filter((e) => !e.isDirectory)
       .filter((e) => /\.(png|jpe?g|webp)$/i.test(e.name) && /thumbnail/i.test(path.basename(e.name)))
-      .filter((e) => e.size <= 16 * 1024 * 1024)
+      .filter((e) => e.size <= THUMBNAIL_ENTRY_MAX)
       .toSorted((a, b) => {
         const pa = THUMBNAIL_ENTRY_PRIORITY[a.name.toLowerCase().replace(/^\//, "")] ?? 10;
         const pb = THUMBNAIL_ENTRY_PRIORITY[b.name.toLowerCase().replace(/^\//, "")] ?? 10;
         return pa - pb || a.name.length - b.name.length;
       });
     const pictures: Buffer[] = [];
+    let bytes = 0;
     for (const entry of imageNames) {
-      const buf = await readZipEntry(srcPath, entry.name, 16 * 1024 * 1024);
-      if (buf) pictures.push(buf);
+      // Checked before each read, the read held to what's left: a size the archive lists can be wrong.
+      const room = Math.min(THUMBNAIL_ENTRY_MAX, THUMBNAIL_CANDIDATES_MAX - bytes);
+      if (pictures.length >= THUMBNAIL_CANDIDATES || entry.size > room) break;
+      const buf = await readZipEntry(srcPath, entry.name, room);
+      if (!buf) continue;
+      pictures.push(buf);
+      bytes += buf.length;
     }
     return pictures;
   } catch {
