@@ -1745,7 +1745,7 @@
         "yourArea": "Вашае месцазнаходжанне",
         "loadError": "Не ўдалося загрузіць надвор’е.",
         "highLow": "Макс. {{high}}° Мін. {{low}}°",
-        "later": "Праз {{hours}} г: {{temperature}}°, {{condition}}",
+        "later": "Праз {{hours}} г: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Ясна",
           "partly": "Пераменная воблачнасць",

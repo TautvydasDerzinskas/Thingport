@@ -259,7 +259,7 @@ export default function WeatherCard({ unit, showLater, place, onPlace }: Props) 
             {t("dashboard.weather.later", {
               hours: weather.later.hours,
               temperature: weather.later.temperature,
-              condition: t(`dashboard.weather.conditions.${later}`).toLowerCase(),
+              condition: t(`dashboard.weather.conditions.${later}`),
             })}
           </Typography>
         )}

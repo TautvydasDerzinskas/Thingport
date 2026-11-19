@@ -1747,7 +1747,7 @@
         "yourArea": "Ваше місцезнаходження",
         "loadError": "Не вдалося завантажити погоду.",
         "highLow": "Макс. {{high}}° Мін. {{low}}°",
-        "later": "Через {{hours}} год: {{temperature}}°, {{condition}}",
+        "later": "Через {{hours}} год: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Ясно",
           "partly": "Мінлива хмарність",

@@ -1038,7 +1038,7 @@
         "yourArea": "Tu zona",
         "loadError": "No se pudo cargar el tiempo.",
         "highLow": "Máx. {{high}}° Mín. {{low}}°",
-        "later": "En {{hours}} h: {{temperature}}°, {{condition}}",
+        "later": "En {{hours}} h: {{temperature}}°, {{condition, lowercase}}",
         "conditions": {
           "clear": "Despejado",
           "partly": "Parcialmente nublado",
