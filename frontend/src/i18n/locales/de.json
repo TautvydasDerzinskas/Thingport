@@ -4925,7 +4925,7 @@
       "chatActions": "Chat-Aktionen",
       "notFound": "Diesen Chat gibt es nicht mehr, oder du darfst ihn nicht sehen.",
       "backToChats": "Zurück zu den Chats",
-      "notAMember": "Dieser private Raum ist nur für seine Mitglieder. Du kannst dich unter „Raum bearbeiten“ selbst hinzufügen.",
+      "notAMember": "Dieser private Raum ist nur für seine Mitglieder. Du kannst dich unter „Raum bearbeiten“ hinzufügen – bei einem Raum einer verbundenen Instanz kann das nur deren Admin.",
       "readingRoom": "Du liest diesen Raum mit. Tritt ihm bei, um zu schreiben und benachrichtigt zu werden.",
       "recipientGone": "Das Konto dieser Person wurde gelöscht, deshalb können keine Nachrichten gesendet werden.",
       "emptyRoom": "Hier wurde noch nichts geschrieben.",
