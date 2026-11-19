@@ -952,9 +952,11 @@ export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
     const pictures: Buffer[] = [];
     let bytes = 0;
     for (const entry of imageNames) {
-      // Checked before each read, the read held to what's left: a size the archive lists can be wrong.
+      // Checked before each read, the read held to what's left: a size the archive lists can be wrong. One that doesn't
+      // fit is passed over for a smaller one after it.
       const room = Math.min(THUMBNAIL_ENTRY_MAX, THUMBNAIL_CANDIDATES_MAX - bytes);
-      if (pictures.length >= THUMBNAIL_CANDIDATES || entry.size > room) break;
+      if (pictures.length >= THUMBNAIL_CANDIDATES) break;
+      if (entry.size > room) continue;
       const buf = await readZipEntry(srcPath, entry.name, room);
       if (!buf) continue;
       pictures.push(buf);

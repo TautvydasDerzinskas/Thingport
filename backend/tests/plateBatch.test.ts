@@ -123,7 +123,7 @@ import { assetTarget, plateThumbFile } from "../src/services/modelAssets";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { mergeModels } from "../src/services/modelMergeService";
 import { saveFileFromTemp } from "../src/services/printFileService";
-import { relocatePrint, saveThumbFromBytes } from "../src/services/printService";
+import { read3mfThumbnails, relocatePrint, saveThumbFromBytes } from "../src/services/printService";
 import { addUploadedFiles } from "../src/services/uploadService";
 import { withStorageLock } from "../src/utils/storageLock";
 import { register } from "./helpers/fileReuse";
@@ -791,5 +791,53 @@ describe("a model's plates, changed by two requests at once", () => {
     expect(assetsPath).toContain("Pictures moved");
     expect(fs.existsSync(assetTarget(assetsPath!, plateThumbFile(plateId)))).toBe(false);
     expect(await prisma.plate.count({ where: { id: plateId } })).toBe(0);
+  });
+});
+
+// The pictures a 3MF names as its thumbnail, read before one is tried: as many as an archive names, they're held to a
+// few, and to so much in all.
+describe("a 3MF's thumbnail pictures", () => {
+  async function threeMfWith(pictures: Record<string, Buffer>): Promise<string> {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    zip.file("3D/3dmodel.model", MODEL_XML);
+    for (const [name, bytes] of Object.entries(pictures)) zip.file(name, bytes);
+    const file = path.join(dir, `pictures-${count++}.3mf`);
+    fs.writeFileSync(file, await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+    return file;
+  }
+
+  it("are read best first, and no more than four of them", async () => {
+    const names = [
+      "Metadata/thumbnail.png",
+      "3D/thumbnail.png",
+      "thumbnail.png",
+      "a/thumbnail.png",
+      "b/thumbnail.png",
+      "c/thumbnail.png",
+    ];
+    const file = await threeMfWith(
+      Object.fromEntries(names.map((name, index) => [name, Buffer.from(`picture ${index}`)])),
+    );
+    const pictures = await read3mfThumbnails(file);
+    expect(pictures.map((each) => each.toString())).toEqual(["picture 0", "picture 1", "picture 2", "picture 3"]);
+  });
+
+  it("come to no more than 32 MiB in all, however large the archive says each is", async () => {
+    const big = Buffer.alloc(12 * 1024 * 1024);
+    const file = await threeMfWith({ "Metadata/thumbnail.png": big, "3D/thumbnail.png": big, "thumbnail.png": big });
+    expect(await read3mfThumbnails(file)).toHaveLength(2);
+  });
+
+  it("pass over one that doesn't fit what's left for a smaller one after it", async () => {
+    const big = Buffer.alloc(12 * 1024 * 1024);
+    const file = await threeMfWith({
+      "Metadata/thumbnail.png": big,
+      "3D/thumbnail.png": big,
+      "thumbnail.png": big,
+      "a/thumbnail.png": Buffer.from("a small picture"),
+    });
+    const pictures = await read3mfThumbnails(file);
+    expect(pictures.map((each) => each.length)).toEqual([big.length, big.length, 15]);
   });
 });
