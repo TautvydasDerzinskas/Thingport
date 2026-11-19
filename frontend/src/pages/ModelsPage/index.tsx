@@ -199,7 +199,12 @@ export default function ModelsPage({
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
     const background = isBackgroundReload() || kept !== null;
-    if (!background) setLoading(true);
+    if (!background) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setLoading(true);
+    }
     (async () => {
       try {
         let result: Awaited<ReturnType<typeof printsApi.list>>;

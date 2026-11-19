@@ -107,7 +107,13 @@ export default function TagDetailPage({ theme, previewMode, onUnauthorized, onBo
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const background = isBackgroundReload() || kept !== null;
-    if (!background) setLoading(true);
+    if (!background) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(true);
+    }
     (async () => {
       try {
         const result = await printsApi.list({

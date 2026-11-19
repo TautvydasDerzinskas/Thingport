@@ -87,7 +87,13 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
     const kept = returning();
     if (kept !== null) setOffset(kept);
     const quiet = background || kept !== null;
-    if (!quiet) setLoading(true);
+    if (!quiet) {
+      // Only a successful replacement can make this list pageable again.
+      setItems([]);
+      setHasMore(false);
+      setOffset(0);
+      setLoading(true);
+    }
     (async () => {
       try {
         const result = await printsApi.list({
