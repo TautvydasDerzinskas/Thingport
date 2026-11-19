@@ -1396,6 +1396,481 @@
         }
       }
     },
+    "adminSettings": {
+      "providers": {
+        "heading": "Plattformen",
+        "subtitle": "Die Plattformen, von denen Thingport importiert und mit denen es synchronisiert. Schaltest du eine aus, kommt für niemanden mehr etwas Neues von dort; bereits importierte Modelle bleiben.",
+        "turnOff": "{{name}} ausschalten",
+        "turnOn": "{{name}} einschalten",
+        "disableTitle": "{{name}} ausschalten?",
+        "disableMessage": "Niemand kann von {{name}} importieren, bis die Plattform wieder eingeschaltet ist: Links, Thingport Grab und die Importwarteschlange werden abgewiesen, ihre Sammlungs-Synchronisierungen pausieren, und Hintergrundaufgaben überspringen sie. Bereits von dort importierte Modelle bleiben, wie sie sind.",
+        "disableConfirm": "Ausschalten",
+        "sortOldest": "Älteste",
+        "status": {
+          "label": "Anzeigen",
+          "all": "Alle ({{n}})",
+          "on": "An ({{n}})",
+          "off": "Aus ({{n}})"
+        },
+        "filters": {
+          "signIn": {
+            "none": "Keine",
+            "optional": "Optional",
+            "user": "Je Person",
+            "key": "Admin-Schlüssel"
+          },
+          "grabOnly": "Nur Grab"
+        },
+        "chips": {
+          "profiles": "Profile",
+          "paid": "Kostenpflichtig",
+          "modelsOnly": "Nur Modelle"
+        },
+        "signInLine": {
+          "none": "Keine Anmeldung nötig",
+          "userOptional": "Anmeldung optional",
+          "user": "Benutzer melden sich an",
+          "admin": "Admin-Schlüssel",
+          "adminUser": "Admin-Schlüssel, Benutzer melden sich an"
+        },
+        "keyMissing": "Schlüssel fehlt",
+        "shown": "{{shown}} von {{total}} angezeigt",
+        "noMatch": "Keine Plattform passt zu diesen Filtern.",
+        "selection": {
+          "enter": "Plattformen auswählen",
+          "toolbar": "Aktionen für die ausgewählten Plattformen",
+          "turnOn": "Einschalten",
+          "turnOff": "Ausschalten",
+          "allOn": "Die ausgewählten sind alle eingeschaltet",
+          "allOff": "Die ausgewählten sind alle ausgeschaltet"
+        },
+        "bulkDisableTitle_one": "{{count}} Plattform ausschalten?",
+        "bulkDisableTitle_other": "{{count}} Plattformen ausschalten?",
+        "bulkDisableMessage": "Niemand kann von {{names}} importieren, bis sie wieder eingeschaltet sind: Links, Thingport Grab und die Importwarteschlange werden abgewiesen, ihre Sammlungs-Synchronisierungen pausieren, und Hintergrundaufgaben überspringen sie. Bereits von dort importierte Modelle bleiben, wie sie sind.",
+        "turnedOn_one": "{{count}} Plattform eingeschaltet",
+        "turnedOn_other": "{{count}} Plattformen eingeschaltet",
+        "turnedOff_one": "{{count}} Plattform ausgeschaltet",
+        "turnedOff_other": "{{count}} Plattformen ausgeschaltet",
+        "turnedOnNamed": "{{name}} eingeschaltet",
+        "turnedOffNamed": "{{name}} ausgeschaltet"
+      },
+      "storageSettings": {
+        "heading": "Speicher"
+      },
+      "auth": {
+        "heading": "Anmeldung"
+      },
+      "storageUsage": {
+        "heading": "Speicher",
+        "subtitle": "Speicherplatz, den die Dateien von Thingport belegen: Modelle, ihre Bilder und Vorschauen.",
+        "summary_one": "{{total}} insgesamt belegt, davon {{models}} durch {{count}} Modell und {{pictures}} durch Bilder und Vorschauen",
+        "summary_other": "{{total}} insgesamt belegt, davon {{models}} durch {{count}} Modelle und {{pictures}} durch Bilder und Vorschauen",
+        "totalHint": "Alles im Speicherordner von Thingport: Modelldateien ({{models}}), Bilder und Vorschauen (Vorschaubilder, Galerie- und Beschreibungsbilder, 3D-Vorschauen, Tag-Bilder: {{pictures}}) und andere erzeugte Dateien (Slicer-Kopien und Download-Pakete: {{other}}). Wird höchstens alle paar Minuten gemessen.",
+        "onDisk": "{{total}} belegt",
+        "modelCount_one": "{{count}} Modell",
+        "modelCount_other": "{{count}} Modelle",
+        "breakdownHint": "Wird höchstens alle paar Minuten gemessen. Alte 3D-Vorschauen sind frühere Versionen, die nichts mehr anzeigt, und Vorschauen von gelöschten Modellen. „Sonstiges“ ist der Rest des Speichers: Studio-Designs, Tag-Bilder, Icons und Profilbilder.",
+        "chartLabel": "Speichernutzung nach Art",
+        "failed": "Der Speicher konnte nicht gemessen werden.",
+        "kinds": {
+          "models": "Modelldateien",
+          "previews": "3D-Vorschauen",
+          "old": "Alte 3D-Vorschauen",
+          "photos": "Fotos",
+          "thumbnails": "Vorschaubilder und Renderings",
+          "description": "Beschreibungsbilder",
+          "slicer": "Slicer-Kopien",
+          "other": "Sonstiges"
+        }
+      },
+      "photosPerModel": {
+        "label": "Behaltene Fotos pro Modell",
+        "help": "Wie viele Fotos ein Import oder eine erneute Synchronisierung von der Seite eines Modells behält, das Titelbild zuerst. „Alle“ behält jedes. Bereits gespeicherte Modelle behalten ihre; „Speicher freigeben“ kann sie kürzen. Fotos, die du hochlädst, sind nicht begrenzt.",
+        "all": "Alle",
+        "saveFailed": "Die Anzahl der zu behaltenden Fotos konnte nicht gespeichert werden",
+        "loadFailed": "Die Anzahl der zu behaltenden Fotos konnte nicht geladen werden."
+      },
+      "freeSpace": {
+        "open": "Speicher freigeben",
+        "freeing": "Speicher wird freigegeben …",
+        "title": "Speicher freigeben",
+        "tasks": {
+          "old": {
+            "title": "Alte 3D-Vorschauen",
+            "detail": "Frühere Versionen, die nichts mehr anzeigt",
+            "help": "Jedes Mal, wenn sich ihr Format ändert, wird neben der alten eine neue 3D-Vorschau oder ein neues Rendering erstellt, und Vorschauen gelöschter Modelle sind liegen geblieben. Nichts zeigt sie an, also ändert sich nichts, was du siehst."
+          },
+          "compress": {
+            "title": "3D-Vorschauen komprimieren",
+            "detail": "Gleiches Aussehen, etwa ein Fünftel der Größe",
+            "help": "Packt jede 3D-Vorschau mit Mesh-Kompression und rundet Formen auf wenige Tausendstel Millimeter – feiner, als der Viewer zeigt. Neue Vorschauen werden gleich beim Erstellen gepackt. Eine, die zum Packen zu groß ist, bleibt, wie sie ist."
+          },
+          "slicer": {
+            "title": "Slicer-Kopien",
+            "detail": "Werden beim nächsten Öffnen eines Modells im Slicer neu erstellt",
+            "help": "Kopien von 3MFs, angepasst für einen Slicer oder Drucker. Sie werden neu erstellt, wenn ein Modell das nächste Mal in einem geöffnet wird, was ein paar Sekunden dauert."
+          },
+          "photos": {
+            "title": "Überzählige Fotos",
+            "detail": "Nur die ersten Fotos jedes Modells behalten",
+            "help": "Löscht bei jedem Modell die Fotos nach den ersten paar, das Titelbild bleibt immer. Importe und erneute Synchronisierungen behalten danach dieselbe Anzahl („Behaltene Fotos pro Modell“)."
+          }
+        },
+        "cantUndo": "Nicht rückgängig zu machen",
+        "keep": "Behalten",
+        "keepLabel": "Zu behaltende Fotos pro Modell",
+        "about": "~{{size}}",
+        "nothing": "Nichts freizugeben",
+        "frees": "Gibt etwa {{size}} frei",
+        "start": "{{size}} freigeben",
+        "confirmPhotosTitle": "Überzählige Fotos löschen?",
+        "confirmPhotosMessage_one": "Jedes Modell behält sein erstes Foto, das Titelbild; der Rest wird endgültig gelöscht. Importe und erneute Synchronisierungen behalten ab jetzt {{count}}.",
+        "confirmPhotosMessage_other": "Jedes Modell behält seine ersten {{count}} Fotos, das Titelbild eingeschlossen; der Rest wird endgültig gelöscht. Importe und erneute Synchronisierungen behalten ab jetzt {{count}}.",
+        "confirmPhotosAction": "Fotos löschen",
+        "queued": "Wartet",
+        "freed": "{{size}} freigegeben",
+        "filesDone": "{{done}} von {{total}}",
+        "someFailed_one": "{{count}} Datei konnte nicht bearbeitet werden",
+        "someFailed_other": "{{count}} Dateien konnten nicht bearbeitet werden",
+        "taskFailed": "Mit einem Fehler beendet",
+        "taskDone": "Fertig",
+        "runningFooter": "Bisher {{size}} freigegeben · Schließen hält es nicht an",
+        "finishedFooter": "{{size}} freigegeben",
+        "done": "Fertig",
+        "startFailed": "Das Freigeben von Speicher konnte nicht gestartet werden",
+        "refused": {
+          "running": "Es wird bereits Speicher freigegeben",
+          "moving": "Modelldateien werden gerade verschoben; versuche es danach erneut",
+          "checking": "Identische Dateien werden gerade geprüft; versuche es danach erneut"
+        }
+      },
+      "website": {
+        "link": "Thingport-Website & Doku",
+        "hint": "Installationsanleitungen, Einrichtung der Plattformen und Neuigkeiten zu Thingport"
+      },
+      "health": {
+        "heading": "Systemzustand",
+        "subtitle": "Alles, worauf Thingport angewiesen ist, wofür es da ist und ob es funktioniert. Getestet wird erst, wenn du es anstößt.",
+        "testAll": "Vollständigen Test starten",
+        "test": "Testen",
+        "settings": "Einstellungen",
+        "download": "Herunterladen",
+        "testedAgo": "Getestet {{when}}",
+        "neverTested": "Noch nicht getestet",
+        "lastFullTest": "Letzter vollständiger Test: {{when}} ({{ago}})",
+        "neverFullTest": "Es wurde noch kein vollständiger Test durchgeführt.",
+        "need": {
+          "required": "Erforderlich",
+          "recommended": "Empfohlen",
+          "optional": "Optional"
+        },
+        "status": {
+          "ok": "OK",
+          "warning": "Warnung",
+          "error": "Fehler",
+          "not_configured": "Nicht eingerichtet",
+          "untested": "Nicht getestet"
+        },
+        "facts": {
+          "diskFree": "{{free}} von {{total}} frei",
+          "memory": "{{available}} von {{total}} verfügbar",
+          "memoryContainer": "{{available}} von {{total}} des Containers verfügbar",
+          "process": "Thingport belegt {{used}}",
+          "latency": "antwortete in {{ms}} ms",
+          "lastSeen": "zuletzt gesehen {{when}}"
+        },
+        "problems": {
+          "unknown": "Diese Komponente hat ein Problem gemeldet. Die Details unten stammen direkt von ihr."
+        },
+        "components": {
+          "database": {
+            "name": "Datenbank",
+            "description": "PostgreSQL speichert jedes Modell, jede Sammlung, jede Person und jede Einstellung. Ohne sie funktioniert nichts in Thingport.",
+            "problems": {
+              "unreachable": "Thingport erreicht die Datenbank nicht. Prüfe, ob der Datenbank-Container läuft und DATABASE_URL darauf zeigt, und starte dann das Backend neu.",
+              "timeout": "Die Datenbank hat nicht rechtzeitig geantwortet. Sie ist vielleicht überlastet, oder dem Host gehen die Ressourcen aus.",
+              "failed": "Die Datenbankprüfung ist unerwartet fehlgeschlagen."
+            }
+          },
+          "storage": {
+            "name": "Dateispeicher",
+            "description": "Hier liegen die Modelldateien, ihre Bilder und 3D-Vorschauen. Uploads, Importe und Downloads brauchen ihn beschreibbar und mit genug freiem Platz.",
+            "problems": {
+              "not_writable": "Thingport kann nicht in seinen Speicherordner schreiben. Prüfe, ob das Volume eingebunden und nicht schreibgeschützt ist und ob PUID/PGID zum Eigentümer des Ordners passen.",
+              "low_space": "Der Speicher wird knapp. Neue Uploads und Importe schlagen fehl, sobald er voll ist: Gib Speicher frei oder vergrößere das Volume.",
+              "timeout": "Die Prüfung des Speicherordners hat zu lange gedauert. Eine Netzwerkfreigabe ist vielleicht langsam oder nicht verfügbar."
+            }
+          },
+          "memory": {
+            "name": "Arbeitsspeicher",
+            "description": "Das Erstellen und Vereinfachen von 3D-Vorschauen großer Modelle braucht am meisten Arbeitsspeicher. Ist zu wenig da, schlagen Vorschauen fehl oder der Server startet neu.",
+            "problems": {
+              "low_memory": "Der Arbeitsspeicher wird knapp. Gib dem Container mehr Arbeitsspeicher oder schalte unter „Rendering“ das Vereinfachen von Vorschauen ein, damit schwere Modelle weniger brauchen."
+            }
+          },
+          "internet": {
+            "name": "Internet",
+            "description": "Die Verbindung des Servers nach außen. Ohne sie sind die Plattformen nicht erreichbar: Modelle importieren, Sammlungen synchronisieren und nach Updates suchen funktioniert dann nicht.",
+            "problems": {
+              "offline": "Der Server erreicht das Internet nicht. Prüfe sein Netzwerk, DNS und einen eventuellen Proxy oder eine Firewall davor; Docker-Container brauchen außerdem ausgehenden Zugriff. Hochladen und das Durchstöbern deiner Bibliothek funktionieren weiterhin.",
+              "timeout": "Nichts hat rechtzeitig geantwortet. Die Verbindung ist vielleicht sehr langsam, oder etwas im Netzwerk verwirft Anfragen."
+            }
+          },
+          "flaresolverr": {
+            "name": "FlareSolverr",
+            "description": "Kommt an den Cloudflare-Prüfungen von Plattformen vorbei, die sie verwenden, vor allem Thingiverse und Printables. Ohne ihn werden Importe und Synchronisierungen von diesen Plattformen blockiert.",
+            "problems": {
+              "not_configured": "Nicht eingerichtet. Importe funktionieren, bis eine Plattform eine Cloudflare-Prüfung zeigt; füge eine FlareSolverr-URL hinzu, damit sie auch dann weiter funktionieren.",
+              "unreachable": "FlareSolverr antwortet nicht. Prüfe, ob sein Container läuft und die URL unter Verbindungen > FlareSolverr stimmt, einschließlich des Ports (meist 8191).",
+              "timeout": "FlareSolverr hat nicht rechtzeitig geantwortet. Er startet vielleicht noch oder ist ausgelastet.",
+              "insecure": "Funktioniert, aber über reines HTTP zu einem anderen Rechner, sodass Cookies und API-Tokens der Plattformen unverschlüsselt durchs Netzwerk gehen. Stell FlareSolverr hinter HTTPS oder betreibe ihn im selben Compose-Stack als http://flaresolverr:8191.",
+              "insecure_refused": "FLARESOLVERR_REQUIRE_HTTPS ist aktiv, daher wird diese reine HTTP-URL abgewiesen und nichts an sie gesendet. Stelle die URL auf HTTPS um oder entferne die Variable.",
+              "https_ready": "Die Verbindung ist sicher. Setze FLARESOLVERR_REQUIRE_HTTPS=true, um unsichere Solver-URLs ab jetzt abzuweisen."
+            }
+          },
+          "thingiverse": {
+            "name": "Thingiverse",
+            "description": "Das Thingiverse App Token der Instanz, mit dem Modelle importiert, Sammlungen und Modelle mit „Gefällt mir“ synchronisiert und Autoren von Thingiverse verknüpft werden.",
+            "problems": {
+              "disabled": "Unter „Plattformen“ ausgeschaltet, deshalb wird nichts geprüft. Schalte Thingiverse dort wieder ein, um es zu nutzen.",
+              "not_configured": "Kein App Token eingerichtet. Thingiverse-Importe und -Synchronisierungen funktionieren erst, wenn unter „Einstellungen“ eines hinzugefügt ist (erstellen unter thingiverse.com/apps/create).",
+              "token_rejected": "Thingiverse hat das App Token abgelehnt. Erzeuge unter thingiverse.com/apps/create ein neues und speichere es unter „Einstellungen“.",
+              "blocked": "Thingiverse hat mit einer Cloudflare-Prüfung geantwortet, die nichts über das Token aussagt. Richte FlareSolverr ein oder warte: Meist verschwindet sie nach einer Weile.",
+              "unreachable": "Thingport konnte Thingiverse nicht erreichen. Prüfe den Internetzugang des Servers oder versuche es später erneut.",
+              "timeout": "Thingiverse hat nicht rechtzeitig geantwortet. Versuche es später erneut."
+            }
+          },
+          "myminifactory": {
+            "name": "MyMiniFactory",
+            "description": "Der MyMiniFactory-API-Schlüssel der Instanz, mit dem Modelle gelesen, Sammlungen synchronisiert und Autoren von MyMiniFactory verknüpft werden. Kostenlose Modelle lassen sich auch ohne herunterladen.",
+            "problems": {
+              "disabled": "Unter „Plattformen“ ausgeschaltet, deshalb wird nichts geprüft. Schalte MyMiniFactory dort wieder ein, um es zu nutzen.",
+              "not_configured": "Kein API-Schlüssel eingerichtet. MyMiniFactory-Importe und -Synchronisierungen funktionieren erst, wenn unter „Einstellungen“ einer hinzugefügt ist (App erstellen unter myminifactory.com/settings/developer/application).",
+              "token_rejected": "MyMiniFactory hat den API-Schlüssel abgelehnt. Prüfe ihn unter myminifactory.com/settings/developer und speichere ihn erneut unter „Einstellungen“.",
+              "blocked": "MyMiniFactory hat mit einer Cloudflare-Prüfung geantwortet, die nichts über den Schlüssel aussagt. Richte FlareSolverr ein oder warte: Meist verschwindet sie nach einer Weile.",
+              "unreachable": "Thingport konnte MyMiniFactory nicht erreichen. Prüfe den Internetzugang des Servers oder versuche es später erneut.",
+              "timeout": "MyMiniFactory hat nicht rechtzeitig geantwortet. Versuche es später erneut."
+            }
+          },
+          "grab": {
+            "name": "Thingport Grab",
+            "description": "Die Browser-Erweiterung, mit der du Modelle von MakerWorld, Printables, Thingiverse und MyMiniFactory beim Stöbern importierst, auch ganze Sammlungen, ohne Links zu kopieren. Sie bringt auch deine „Gefällt mir“ von Printables mit, die nur du sehen kannst.",
+            "problems": {
+              "not_seen": "Bisher hat noch kein Browser Grab mit dieser Instanz genutzt. Installiere es unter „Downloads“ und verbinde es mit Thingport. Es ist der einfachste Weg zum Importieren, und manche Plattformen geben ihre Dateien nur an einen Browser."
+            }
+          },
+          "ai": {
+            "name": "KI-Anbieter",
+            "description": "Das Standard-KI-Modell hinter der KI-Kategorisierung und den verbesserten Beschreibungen. Alles andere funktioniert ohne.",
+            "problems": {
+              "not_configured": "Kein KI-Modell hinzugefügt. KI-Funktionen bleiben aus, bis du unter „KI“ eines hinzufügst.",
+              "unreachable": "Der KI-Anbieter antwortet nicht. Prüfe, ob er läuft und ob API-Basis-URL und Schlüssel unter „KI“ stimmen.",
+              "model_missing": "Der Anbieter hat geantwortet, führt das gewählte Modell aber nicht. Prüfe den Modellnamen unter „KI“ oder lade das Modell beim Anbieter herunter.",
+              "timeout": "Der KI-Anbieter hat nicht rechtzeitig geantwortet. Ein lokaler lädt vielleicht noch ein Modell."
+            }
+          },
+          "smtp": {
+            "name": "E-Mail (SMTP)",
+            "description": "Versendet Einladungen, Bestätigungen von E-Mail-Adressen und Passwort-Zurücksetzungen. Optional: Ohne lädst du Leute per Link ein und setzt Passwörter als Admin zurück.",
+            "problems": {
+              "not_configured": "Nicht eingerichtet. Thingport versendet keine E-Mails: Einladungslinks werden stattdessen zum Kopieren angezeigt, und neue Konten müssen ihre Adresse nicht bestätigen.",
+              "unreachable": "Thingport konnte sich nicht mit dem Mailserver verbinden oder anmelden. Prüfe Host, Port, Sicherheitseinstellung und Anmeldedaten unter Verbindungen > SMTP.",
+              "timeout": "Der Mailserver hat nicht rechtzeitig geantwortet. Prüfe Host und Port und ob das Netzwerk des Servers ausgehende E-Mails erlaubt."
+            }
+          }
+        }
+      },
+      "updateCheck": {
+        "heading": "Update-Prüfung",
+        "subtitle": "Prüft, ob für dieses Backend und Frontend eine neuere Thingport-Version verfügbar ist.",
+        "running": "Läuft mit Backend {{backend}} · Frontend {{frontend}}",
+        "checking": "Suche nach Updates …",
+        "unknown": "Updates können nicht geprüft werden – dieser Build wurde nicht als Docker-Image veröffentlicht (z. B. ein lokaler Entwicklungs-Build).",
+        "failed": "Updates konnten nicht geprüft werden. Versuche es später erneut.",
+        "upToDate": "Du nutzt die neueste Thingport-Version.",
+        "availableTitle": "Ein Update ist verfügbar",
+        "backendOutdated": "Für das Backend gibt es eine neuere Version.",
+        "frontendOutdated": "Für das Frontend gibt es eine neuere Version.",
+        "howTo": "Aktualisiere, indem du die neuesten Docker-Images holst: Führe „docker compose pull“ und danach „docker compose up -d“ aus (oder das Entsprechende für deine Installation)."
+      },
+      "storage": {
+        "heading": "Speicherstruktur",
+        "subtitle": "Lege fest, wie verwaltete Modelldateien auf dem Speicher organisiert werden.",
+        "templateHeading": "Ordnerstruktur",
+        "templateDesc": "Die Ordner, in denen die Dateien jedes Modells gespeichert werden, und wie die Dateien heißen. Die Dateien jeder Person liegen zuerst in einem eigenen Ordner, eine Datei landet also z. B. unter <user>/Props/Workshop/Cable clip/Cable clip.3mf. Zwei Modelle können gleich heißen, wenn sie in verschiedenen Kategorien liegen, deshalb muss der Pfad die Modell-ID enthalten oder sowohl Kategorie bzw. Ordner als auch den Modellnamen; sonst könnten ihre Dateien im selben Ordner landen. Die Zusatzdateien eines Modells liegen neben seinen Modelldateien, seine Bilder in einem Ordner „Images“ daneben.",
+        "templateLabel": "Vorlage",
+        "save": "Speichern & Dateien verschieben",
+        "saving": "Wird gespeichert …",
+        "failed": "Die Speichereinstellungen konnten nicht gespeichert werden.",
+        "tokens": {
+          "category-or-folder": "Die Kategorie oder der Ordner des Modells, übergeordnete als übergeordnete Ordner",
+          "collection": "Die Sammlung, in der das Modell ist. Modelle ohne Sammlung kommen nach „Uncollected“, Modelle in mehreren nach „Multiple collections“",
+          "tags": "Die Tags des Modells, verbunden mit „ + “",
+          "creator": "Der auf der Modellseite angezeigte Autor; eigene Uploads verwenden den Anzeigenamen der Person",
+          "model": "Der Name des Modells",
+          "filename": "Der Name der Datei; immer zuletzt",
+          "id": "Die dauerhafte ID des Modells",
+          "plate": "Die Position der Datei im Modell, beginnend bei 1"
+        },
+        "addFolder": "Ordner hinzufügen",
+        "customFolder": "Ordner mit eigenem Namen",
+        "customFolderHint": "Ein fester Name wie „Library“. Er kann auch Platzhalter wie {model} ({id}) enthalten.",
+        "customFolderSlash": "Jeweils ein Ordner: kein „/“",
+        "dragToReorder": "Zum Umsortieren ziehen",
+        "fileNameLabel": "Dateiname",
+        "fileNamePlain": "Dateiname (Base.3mf)",
+        "fileNamePlate": "Plattennummer, dann Dateiname (1 - Base.3mf)",
+        "editAsText": "Als Text bearbeiten",
+        "editAsFolders": "Als Ordner bearbeiten",
+        "useDefault": "Standard verwenden",
+        "savedHasProblems": "Die gespeicherte Struktur wurde vor diesen Regeln festgelegt. Sie funktioniert weiter, und eine neue Datei, deren Pfad schon belegt ist, kommt in einen Ordner mit der ID ihres Modells, statt eine andere zu ersetzen. Wähle eine Struktur, die den Regeln folgt, um eine neue zu speichern.",
+        "tokenNames": {
+          "category-or-folder": "Kategorie oder Ordner",
+          "collection": "Sammlung",
+          "tags": "Tags",
+          "creator": "Ersteller",
+          "model": "Modellname",
+          "filename": "Dateiname",
+          "id": "Modell-ID",
+          "plate": "Plattennummer"
+        },
+        "problems": {
+          "empty": "Füge mindestens den Dateinamen hinzu.",
+          "unknown_token": "„{{token}}“ ist kein Platzhalter, den Thingport kennt.",
+          "stray_brace": "Da ist eine { oder }, die nicht zu einem Platzhalter gehört.",
+          "empty_folder": "Ein Ordner ist leer oder heißt . oder ..",
+          "filename_count": "Der Dateiname muss genau einmal vorkommen.",
+          "filename_not_last": "Der Dateiname muss zuletzt kommen, damit jede Datei ihre Endung behält.",
+          "duplicate_token": "{{token}} wird mehr als einmal verwendet.",
+          "plate_in_folder": "Die Plattennummer kann nur Teil des Dateinamens sein; ein Ordner pro Platte würde die Dateien eines Modells auseinanderreißen.",
+          "category_not_whole_folder": "Kategorie oder Ordner muss ein eigener Ordner sein, da er mehrere Ordner tief sein kann.",
+          "not_unique": "Zwei Modelle könnten denselben Pfad bekommen. Füge die Modell-ID hinzu oder sowohl die Kategorie als auch den Modellnamen.",
+          "unsafe_text": "„{{segment}}“ kann kein Ordnername sein: Er darf kein < > : \" | ? * oder \\ enthalten und nicht mit einem Leerzeichen oder Punkt beginnen oder enden.",
+          "too_deep": "Verwende höchstens {{max}} Ordner."
+        },
+        "moveConfirmTitle": "Modelldateien verschieben?",
+        "moveConfirmMessage_one": "Beim Speichern wird {{count}} Datei von {{models}} im Hintergrund in diese Struktur verschoben. Links zu Modellen funktionieren weiter, aber Backups und freigegebene Ordner sehen die verschobene Datei als neue.",
+        "moveConfirmMessage_other": "Beim Speichern werden {{count}} Dateien von {{models}} im Hintergrund in diese Struktur verschoben. Links zu Modellen funktionieren weiter, aber Backups und freigegebene Ordner sehen die verschobenen Dateien als neue.",
+        "modelCount_one": "{{count}} Modell",
+        "modelCount_other": "{{count}} Modellen",
+        "moveConfirm": "Speichern und verschieben",
+        "savedMoving": "Gespeichert. Die Dateien werden im Hintergrund verschoben, und eine Benachrichtigung meldet, wenn sie fertig sind.",
+        "savedInPlace": "Gespeichert. Jede Datei folgt bereits dieser Struktur.",
+        "moving": "Modelldateien werden in diese Struktur verschoben: {{done}} von {{total}} Modellen. Du kannst diese Seite verlassen.",
+        "outOfPlace_one": "{{count}} Datei von {{models}} liegt noch in einer früheren Struktur.",
+        "outOfPlace_other": "{{count}} Dateien von {{models}} liegen noch in einer früheren Struktur.",
+        "moveThem": "Verschieben",
+        "pathLabel": "Pfad"
+      },
+      "fileReuse": {
+        "heading": "Identische Dateien",
+        "subtitle": "Spart Platz, wenn mehrere Personen dasselbe Modell importieren.",
+        "modeLabel": "Identische Dateien klonen (Copy-on-Write)",
+        "help": "Thingport vergleicht jede neue Modelldatei, Zusatzdatei, jedes Galerie- und Beschreibungsbild mit den bereits gespeicherten, egal welcher Art. Copy-on-Write klont einen Treffer auf btrfs, XFS oder ZFS ab 2.2 und speichert die Datei anderswo ganz normal. Vorschaubilder und Renderings werden nicht geteilt. Jeder Klon ist eine eigene Datei, wer also eine auf dem Speicher bearbeitet, ändert nie die einer anderen Person. Dateien, die vor dem Einschalten gespeichert wurden, werden auch geprüft, siehe „Vorhandene Dateien“.",
+        "failed": "Wie identische Dateien gespeichert werden, konnte nicht gespeichert werden. Bitte versuche es erneut.",
+        "loadFailed": "Wie identische Dateien gespeichert werden, konnte nicht geladen werden.",
+        "modeHelp": {
+          "off": "Jede Datei belegt ihren eigenen Platz.",
+          "reflink": "Eine bereits gespeicherte Datei wird geklont, wo das Dateisystem es kann, und belegt keinen zusätzlichen Platz, bis sich eine Kopie ändert."
+        },
+        "backfill": {
+          "label": "Vorhandene Dateien",
+          "help": "Beim Einschalten des Klonens werden die bereits gespeicherten Dateien durchgegangen: Für jede wird der Hash festgehalten, dann werden Dateien mit gleichem Inhalt durch Klone der ältesten ersetzt und behalten dabei Namen, Ort und Eigentümer. Nur Dateien im Speicherordner von Thingport werden angefasst, und eine Datei, die sich zwischendurch ändert, bleibt, wie sie ist. Führe es erneut aus, wenn das Klonen eine Zeit lang aus war, oder für Dateien, die nicht geprüft werden konnten. Snapshots des Speichers können die alten Kopien behalten, der freigegebene Platz ist also ein Höchstwert.",
+          "idle": "Seit dem Serverstart nicht geprüft",
+          "starting": "Wird gestartet …",
+          "restarting": "Wird gestoppt und neu gestartet …",
+          "hashing": "Hashes werden festgehalten: {{done}} von {{total}}",
+          "cloning": "Identische Dateien werden geklont: {{done}} von {{total}}, {{cloned}} geklont",
+          "result_one": "{{count}} Datei geklont, bis zu {{size}} freigegeben",
+          "result_other": "{{count}} Dateien geklont, bis zu {{size}} freigegeben",
+          "nothing": "Nichts zu klonen",
+          "unsupported": "Dieses Dateisystem kann keine Dateien klonen; die Hashes wurden festgehalten",
+          "stopped": "Gestoppt: Klonen wurde ausgeschaltet",
+          "failedRun": "Wegen eines Fehlers vorzeitig gestoppt; siehe Server-Log",
+          "skippedNote": "{{count}} nicht geprüft",
+          "checkAgain": "Erneut prüfen",
+          "confirmTitle": "Vorhandene Dateien prüfen?",
+          "confirmMessage": "Thingport geht jede gespeicherte Datei durch und ersetzt identische durch Klone. Das läuft im Hintergrund und kann bei einer großen Bibliothek eine Weile dauern.",
+          "confirmAction": "Prüfen",
+          "failed": "Die Prüfung konnte nicht gestartet werden. Bitte versuche es erneut."
+        }
+      },
+      "licenseFiles": {
+        "heading": "Lizenzdateien",
+        "subtitle": "Die Lizenz jedes Modells neben seinen Dateien aufbewahren.",
+        "label": "LICENSE.txt neben Modelldateien schreiben",
+        "help": "Für jedes Modell mit Lizenz legt Thingport eine LICENSE.txt in seinen Ordner: wer es gemacht hat, woher es stammt, seine Lizenz und was sie erlaubt, und eine Zeile für die Quellenangabe. Sie wird neu geschrieben, wenn sich die Lizenz ändert, und zieht mit dem Modell um oder verschwindet mit ihm. Ausschalten entfernt sie; ZIP-Downloads enthalten in jedem Fall eine.",
+        "on": "Der Ordner jedes lizenzierten Modells hat seine LICENSE.txt.",
+        "off": "Es wird keine LICENSE.txt geschrieben; ZIP-Downloads enthalten trotzdem eine.",
+        "failed": "Die LICENSE.txt-Einstellung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+        "loadFailed": "Die LICENSE.txt-Einstellung konnte nicht geladen werden."
+      },
+      "consume": {
+        "heading": "Eingangsordner",
+        "subtitle": "Importiert alles, was in einem überwachten Ordner landet: Dateien, Ordnerstrukturen und ZIPs.",
+        "notSetUpTitle": "Kein Eingangsordner eingerichtet",
+        "notSetUpBody": "Unter {{path}} ist nichts eingebunden, daher wird kein Ordner überwacht. Um einen zu nutzen, füge dem Backend-Dienst in docker-compose.yml ein Volume hinzu, z. B. „- /path/on/host:/app/consume“, und führe „docker compose up -d“ erneut aus. Die Einstellungen unten kannst du schon vorher festlegen.",
+        "activeBody": "{{path}} wird überwacht. Dateien werden ein paar Sekunden, nachdem sie sich nicht mehr ändern, importiert und in den Speicher verschoben, der Ordner leert sich also von selbst. Ordner werden zu Ordnern, und ZIPs werden wie Ordner entpackt. Was sich nicht importieren lässt, wird in diesem Ordner nach „{{notImported}}“ verschoben.",
+        "userLabel": "Importieren in die Bibliothek von",
+        "modeLabel": "Importmodus",
+        "modeSeparateDesc": "Jede STL-, 3MF-, STEP- oder OBJ-Datei wird ein eigenes Modell.",
+        "modeFolderDesc": "Ein Ordner mit Modelldateien wird ein einzelnes Modell mit dem Namen des Ordners. Seine Modelldateien werden zu Platten, seine Bilder zu Vorschaubildern, und andere Dateien werden angehängt.",
+        "save": "Eingangsordner-Einstellungen speichern",
+        "saving": "Wird gespeichert …",
+        "saved": "Eingangsordner-Einstellungen gespeichert.",
+        "failed": "Die Eingangsordner-Einstellungen konnten nicht gespeichert werden.",
+        "modeSeparateShort": "Jede Datei ist ein Modell",
+        "modeFolderShort": "Jeder Ordner ist ein Modell"
+      },
+      "registrations": {
+        "heading": "Registrierungen",
+        "subtitle": "Wer auf dieser Instanz ein Konto erstellen kann.",
+        "allowLabel": "Neue Registrierungen erlauben",
+        "openHelp": "Alle, die diese Instanz erreichen, können auf der Anmeldeseite ein Konto erstellen.",
+        "closedHelp": "Die Anmeldeseite hat keine Registrierung, und neue Konten lassen sich nur über eine Einladung erstellen.",
+        "inviteButton": "Benutzer einladen",
+        "inviteHelp": "Sendet einen Registrierungslink per E-Mail. Er gilt für eine Adresse, einmal, 7 Tage lang.",
+        "inviteLinkHelp": "Gibt dir einen Registrierungslink zum Weitergeben. Er gilt für eine Adresse, einmal, 7 Tage lang.",
+        "failed": "Die Registrierungseinstellungen konnten nicht aktualisiert werden",
+        "invite": {
+          "title": "Benutzer einladen",
+          "description": "Die Person bekommt eine E-Mail mit einem Link, um ihr Konto zu erstellen. Nur diese Adresse kann ihn verwenden.",
+          "emailLabel": "E-Mail-Adresse",
+          "send": "Einladung senden",
+          "sending": "Wird gesendet …",
+          "close": "Schließen",
+          "sent_one": "Einladung an {{email}} gesendet. Der Link gilt {{count}} Tag.",
+          "sent_other": "Einladung an {{email}} gesendet. Der Link gilt {{count}} Tage.",
+          "failed": "Die Einladung konnte nicht gesendet werden",
+          "linkTitle": "Benutzer einladen",
+          "linkDescription": "E-Mail ist nicht eingerichtet, daher gibst du jeden Link selbst weiter. Er gilt nur für diese Adresse, einmal, 7 Tage lang.",
+          "create": "Link erstellen",
+          "creating": "Wird erstellt …",
+          "worksUntil": "Gültig bis {{date}}",
+          "copyLink": "Link kopieren",
+          "copyLinkFor": "Link für {{email}} kopieren",
+          "copied": "Kopiert",
+          "copyFailed": "Hier kann nicht kopiert werden. Der Link ist markiert: Drücke Strg+C oder ⌘C."
+        }
+      },
+      "previews": {
+        "heading": "Modellvorschauen",
+        "subtitle": "Steuert die Erstellung von Vorschauen im Hintergrund für die ganze Instanz.",
+        "modeLabel": "Fehlende Vorschaubilder auf Karten",
+        "infoTitle": "Was das steuert",
+        "infoScope": "Das betrifft nur das kleine 3D-Vorschaubild auf Modellkarten (Modelle, Sammlungen) – nie den vollständigen Modell-Viewer. Und es gilt nur für Dateien, die noch kein Vorschaubild haben: Ein eingebettetes Vorschaubild aus einer im Slicer erstellten .3mf-Datei oder ein schon früher erstelltes wird unabhängig von dieser Einstellung immer automatisch wiederverwendet. Diese Wahl entscheidet nur, was mit dem Rest passiert – typischerweise .stl/.obj-Dateien oder eine .3mf ohne eingebettetes Vorschaubild:",
+        "infoAutomatic": "Automatisch – der Browser eines Besuchers rendert und speichert das fehlende Vorschaubild, sobald die Karte ins Bild scrollt.",
+        "infoOnDemand": "Bei Bedarf – eine Karte zeigt stattdessen den Knopf „Vorschau erstellen“; gerendert wird erst, wenn jemand darauf klickt.",
+        "infoDisabled": "Deaktiviert – Karten zeigen immer einen Platzhalter; es wird nie ein Vorschaubild gerendert.",
+        "automaticLabel": "Automatisch",
+        "automaticDesc": "Fehlende Vorschauen erst laden, wenn Karten ins Bild kommen, und dann für spätere Besuche speichern.",
+        "onDemandLabel": "Bei Bedarf",
+        "onDemandDesc": "Gespeicherte Vorschauen sofort anzeigen und fehlende nur auf Anforderung erstellen.",
+        "disabledLabel": "Deaktiviert",
+        "disabledDesc": "Nie Kartenvorschauen erstellen. Die interaktive Ansicht bleibt beim Öffnen eines Modells verfügbar.",
+        "failed": "Die Vorschaueinstellungen konnten nicht gespeichert werden."
+      }
+    },
     "download": {
       "pageTitle": "Downloads",
       "intro": "Begleit-Apps, die mit deiner Thingport-Instanz zusammenarbeiten.",
