@@ -1,4 +1,5 @@
 import { authHeaders } from "../utils/auth";
+import type { SortDirection } from "../utils/sortDirection";
 import type { SendTargetSummary } from "./sendTargets";
 import { apiBase, assertOk, readErrorMessage, UnauthorizedError } from "./client";
 import type { AccentColor, RenderColor, ThemeSelection } from "../constants/settingsOptions";
@@ -342,7 +343,12 @@ export type ToolLayout = "flat" | "categories";
 /** The orders the Tools page offers. */
 export type ToolSort = "name" | "newest" | "author";
 /** How the user arranged their Tools page; `categories` holds only the tools they moved themselves. */
-export type ToolsView = { layout: ToolLayout; sort: ToolSort; categories: Record<string, string> };
+export type ToolsView = {
+  layout: ToolLayout;
+  sort: ToolSort;
+  sortDirection?: SortDirection;
+  categories: Record<string, string>;
+};
 
 export const settingsApi = {
   getToolsView: async (): Promise<ToolsView> => {

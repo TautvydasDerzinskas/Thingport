@@ -3,8 +3,6 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 
-// Three fixed metrics, like MakerWorld's sort row.
-
 const app = createApp();
 let token: string;
 let userId: string;
@@ -94,6 +92,73 @@ describe("GET /prints -- orderBy", () => {
     const ids = res.body.map((p: { id: string }) => p.id);
     expect(ids.indexOf(newestId)).toBeLessThan(ids.indexOf(middleId));
     expect(ids.indexOf(middleId)).toBeLessThan(ids.indexOf(oldestId));
+  });
+
+  it("sorts filtered model names naturally in either direction before paginating", async () => {
+    const category = await prisma.category.create({ data: { userId, name: "Name sort category" } });
+    const prints = await Promise.all(
+      ["Bearing", "Áxle 10", "axle 2", "Axle 1"].map((name) =>
+        prisma.print.create({
+          data: {
+            userId,
+            name: name === "Áxle 10" ? "Imported filename" : name,
+            nameNormalized: name === "Áxle 10" ? "imported filename" : name.toLowerCase(),
+            title: name === "Áxle 10" ? name : null,
+            categoryId: category.id,
+            tags: name === "Axle 1" ? [] : ["hardware"],
+          },
+        }),
+      ),
+    );
+    const collection = await prisma.collection.create({
+      data: {
+        userId,
+        name: "Name sort collection",
+        nameNormalized: "name sort collection",
+        items: { create: prints.map(({ id: printId }) => ({ printId })) },
+      },
+    });
+
+    const query = { category_id: category.id, collection_id: collection.id, tags: "hardware", limit: 2 };
+    const ascending = ["axle 2", "Áxle 10", "Bearing"];
+    const modelNames = (body: { name: string; title: string | null }[]) => body.map((p) => p.title || p.name);
+    for (const orderDirection of [undefined, "desc"]) {
+      const expected = orderDirection === "desc" ? ascending.toReversed() : ascending;
+      const sort = orderDirection ? { orderBy: "name", orderDirection } : { orderBy: "name" };
+      const first = await request(app)
+        .get("/api/prints")
+        .set(auth())
+        .query({ ...query, ...sort })
+        .expect(200);
+      expect(modelNames(first.body)).toEqual(expected.slice(0, 2));
+      expect(first.headers["x-has-more"]).toBe("true");
+      expect(first.headers["x-next-offset"]).toBe("2");
+
+      const next = await request(app)
+        .get("/api/prints")
+        .set(auth())
+        .query({ ...query, ...sort, offset: first.headers["x-next-offset"] })
+        .expect(200);
+      expect(modelNames(next.body)).toEqual(expected.slice(2));
+      expect(next.headers["x-has-more"]).toBe("false");
+    }
+  });
+
+  it("can reverse each numeric sort without changing its default direction", async () => {
+    for (const [orderBy, firstId, lastId] of [
+      ["newest", oldestId, newestId],
+      ["popular", newestId, oldestId],
+      ["downloads", oldestId, newestId],
+    ]) {
+      const { body } = await request(app)
+        .get("/api/prints")
+        .set(auth())
+        .query({ orderBy, orderDirection: "asc" })
+        .expect(200);
+      const ids = body.map((p: { id: string }) => p.id);
+      expect(ids.indexOf(firstId)).toBeLessThan(ids.indexOf(middleId));
+      expect(ids.indexOf(middleId)).toBeLessThan(ids.indexOf(lastId));
+    }
   });
 
   it("falls back to newest for an unrecognized orderBy value", async () => {

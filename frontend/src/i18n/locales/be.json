@@ -7610,7 +7610,15 @@
       "newest": "Самы новы",
       "popular": "папулярны",
       "downloads": "Загрузкі",
-      "relevance": "Актуальнасць"
+      "relevance": "Актуальнасць",
+      "oldest": "Найстарэйшыя",
+      "leastPopular": "Найменш папулярныя",
+      "fewestDownloads": "Найменш спампоўванняў",
+      "leastRelevant": "Найменш рэлевантныя",
+      "fewestModels": "Найменш мадэляў",
+      "reverseAlphabetical": "{{label}} (Я–А)",
+      "reverseAscending": "Па ўзрастанні. Змяніць кірунак сартавання",
+      "reverseDescending": "Па змяншэнні. Змяніць кірунак сартавання"
     },
     "view": {
       "label": "Паказаць катэгорыі або папкі",

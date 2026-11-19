@@ -7604,7 +7604,15 @@
       "newest": "Новые",
       "popular": "Популярные",
       "downloads": "Загрузки",
-      "relevance": "Актуальность"
+      "relevance": "Актуальность",
+      "oldest": "Старые",
+      "leastPopular": "Наименее популярные",
+      "fewestDownloads": "Меньше всего скачиваний",
+      "leastRelevant": "Наименее релевантные",
+      "fewestModels": "Меньше всего моделей",
+      "reverseAlphabetical": "{{label}} (Я–А)",
+      "reverseAscending": "По возрастанию. Изменить направление сортировки",
+      "reverseDescending": "По убыванию. Изменить направление сортировки"
     },
     "view": {
       "label": "Показать категории или папки",

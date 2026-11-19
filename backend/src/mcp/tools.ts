@@ -25,6 +25,7 @@ import { getDashboardSummary } from "../services/dashboardService";
 import { printOutById } from "../services/printLoader";
 import type { PrintProfileOut } from "../services/printProfileService";
 import { listPrints, PRINT_SORT_MODES, SELF_AUTHOR_ID, type PrintListPage } from "../services/printQuery";
+import { parseSortDirection, SORT_DIRECTIONS } from "../utils/sortDirection";
 import { search } from "../services/searchService";
 import { getImportTask, startImportTask, type ImportTaskState } from "../services/importTaskService";
 import { importAndDescribe, prepareSingleImport } from "../services/singleImport";
@@ -162,7 +163,14 @@ const listModels: McpToolDefinition = {
     sort: z
       .enum(PRINT_SORT_MODES)
       .optional()
-      .describe("newest (default), popular (most viewed), downloads (most printed), or relevance (needs query)."),
+      .describe(
+        "newest (default), popular (most viewed), downloads (most printed), relevance (needs query), " +
+          "or name (A–Z).",
+      ),
+    sort_direction: z
+      .enum(SORT_DIRECTIONS)
+      .optional()
+      .describe("Defaults to ascending for name, descending otherwise."),
     ...pageArgs,
   },
   async run(ctx, args) {
@@ -179,6 +187,7 @@ const listModels: McpToolDefinition = {
       },
       {
         sort: args.sort as (typeof PRINT_SORT_MODES)[number] | undefined,
+        direction: parseSortDirection(args.sort_direction),
         limit: (args.limit as number | undefined) ?? DEFAULT_PAGE,
         offset: args.offset as number | undefined,
       },

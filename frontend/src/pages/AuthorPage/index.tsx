@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
@@ -20,7 +20,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { authorsApi, type Author } from "../../api/authors";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -43,6 +43,7 @@ import { profileApi } from "../../api/profile";
 import ProfileLayout, { ProfileLayoutSkeleton } from "../../components/profile/ProfileLayout";
 import { useSocialStatus } from "../../hooks/useSocialStatus";
 import MyAchievements from "../../components/achievements/MyAchievements";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "../ModelsPage/SortTabs";
 import EditProfileDialog from "./EditProfileDialog";
 import HandleChip from "../../components/profile/HandleChip";
@@ -99,21 +100,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
   const socialOn = social?.enabled === true;
   // Handles mean something once this instance connects with others.
   const handleHost = social?.federation ? social.instance_host : null;
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
-  const setSortMode = (mode: PrintSortMode) =>
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (mode === "newest") next.delete("orderBy");
-        else next.set("orderBy", mode);
-        return next;
-      },
-      { replace: true },
-    );
-
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort({ replace: true });
   const displayName = isSelf
     ? viewer?.display_name || t("models:card.unknownAuthor")
     : author?.name || author?.handle || t("models:card.unknownAuthor");
@@ -141,6 +128,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     if (!authorId) return;
     let cancelled = false;
     listRun.current += 1;
+    setLoadingMore(false);
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
     if (kept !== null) setOffset(kept);
@@ -161,6 +149,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
               license_allows: licenseAllows,
               licensed: licensed || undefined,
               order_by: sortMode,
+              order_direction: direction,
               limit,
               offset: 0,
             }),
@@ -183,6 +172,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             license_allows: licenseAllows,
             licensed: licensed || undefined,
             order_by: sortMode,
+            order_direction: direction,
             limit,
             offset: 0,
           }),
@@ -206,10 +196,10 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authorId, isSelf, generative, hiddenProviders, licenseAllows, licensed, sortMode, finishedVersion]);
+  }, [authorId, isSelf, generative, hiddenProviders, licenseAllows, licensed, sortMode, direction, finishedVersion]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || !authorId) return;
+    if (loading || loadingMore || !hasMore || !authorId) return;
     const run = listRun.current;
     setLoadingMore(true);
     try {
@@ -220,6 +210,7 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         offset,
       });
@@ -228,9 +219,9 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) handleError(err, t("models:errors.loadFailed"));
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
@@ -289,9 +280,8 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
     }
   };
 
-  if (loading) {
-    // Whose page it is is known already for the user's own, and so is their cover.
-    return <ProfileLayoutSkeleton cover={isSelf ? viewer : undefined} />;
+  if (loading && !isSelf && !author) {
+    return <ProfileLayoutSkeleton />;
   }
 
   if (notFound || (!isSelf && !author)) {
@@ -461,12 +451,16 @@ export default function AuthorPage({ theme, previewMode, onUnauthorized, viewer,
             onUnauthorized={onUnauthorized}
           />
           <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <SortTabs value={sortMode} onChange={setSortMode} />
+            <SortTabs value={sortMode} onChange={setSortMode} direction={direction} onDirectionChange={setDirection} />
             <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
             <ModelFiltersButton filters={filters} sources={sources} />
           </Box>
         </Box>
-        {items.length ? (
+        {loading ? (
+          <Box sx={cardGridSx(5)}>
+            <CardSkeletons count={12} />
+          </Box>
+        ) : items.length ? (
           <Stack spacing={2}>
             <Box sx={cardGridSx(5)}>
               {items.map((item) => (

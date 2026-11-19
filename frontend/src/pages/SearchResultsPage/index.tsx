@@ -6,7 +6,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -17,6 +17,7 @@ import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import ModelCard from "../ModelsPage/ModelCard";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
@@ -26,7 +27,6 @@ import ModelSelectionToolbar from "../../components/modelSelection/ModelSelectio
 import { replacePrints, useModelSelection } from "../../hooks/useModelSelection";
 
 const PAGE_SIZE = 24;
-const SORT_MODES: PrintSortMode[] = ["relevance", "newest", "popular", "downloads"];
 
 type Props = {
   theme: ResolvedTheme;
@@ -39,7 +39,7 @@ type Props = {
  *  leaves `?q=` alone on this page. */
 export default function SearchResultsPage({ theme, previewMode, onUnauthorized, viewer }: Props) {
   const { t } = useTranslation(["models", "app"]);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim();
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning } = useRememberedList<Print>({
     loadingAtFirst: true,
@@ -51,24 +51,11 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
   const selection = useModelSelection(items);
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "newest" || sortModeParam === "popular" || sortModeParam === "downloads"
-      ? sortModeParam
-      : "relevance";
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort({ search: true });
 
   const filters = useModelFilters();
   const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
-
-  const setSortMode = (mode: PrintSortMode) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "relevance") next.delete("orderBy");
-      else next.set("orderBy", mode);
-      return next;
-    });
-  };
 
   usePageHeader({
     title: query ? t("app:search.resultsTitle", { query }) : undefined,
@@ -88,6 +75,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
   useEffect(() => {
     const background = isBackgroundReload();
     listRun.current += 1;
+    setLoadingMore(false);
     if (!query) {
       setItems([]);
       setHasMore(false);
@@ -109,6 +97,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           license_allows: licenseAllows,
           licensed: licensed || undefined,
           order_by: sortMode,
+          order_direction: direction,
           limit: quiet ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
           offset: 0,
         });
@@ -127,10 +116,10 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
+  }, [query, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || !query) return;
+    if (loading || loadingMore || !hasMore || !query) return;
     const run = listRun.current;
     setLoadingMore(true);
     try {
@@ -141,6 +130,7 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         offset,
       });
@@ -149,23 +139,13 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) handleError(err, t("models:errors.loadFailed"));
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
   const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
-
-  if (loading) {
-    return (
-      <Box sx={{ maxWidth: "1920px", mx: "auto", pt: 7 }}>
-        <Box sx={cardGridSx(6)}>
-          <CardSkeletons count={12} />
-        </Box>
-      </Box>
-    );
-  }
 
   return (
     <Stack spacing={2} sx={{ maxWidth: "1920px", mx: "auto" }}>
@@ -179,12 +159,22 @@ export default function SearchResultsPage({ theme, previewMode, onUnauthorized, 
           onUnauthorized={onUnauthorized}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} modes={SORT_MODES} onChange={setSortMode} />
+          <SortTabs
+            value={sortMode}
+            onChange={setSortMode}
+            direction={direction}
+            onDirectionChange={setDirection}
+            search
+          />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
       </Box>
-      {items.length ? (
+      {loading ? (
+        <Box sx={cardGridSx(6)}>
+          <CardSkeletons count={12} />
+        </Box>
+      ) : items.length ? (
         <Stack spacing={2}>
           <Box sx={cardGridSx(6)}>
             {items.map((item) => (
