@@ -12,8 +12,8 @@ import {
   availableModelName,
   availablePlateFilename,
   ensureAssetHome,
-  ensurePlateThumbnail,
   managedPlatePath,
+  read3mfThumbnails,
   pruneEmptyStorageDirs,
   relocatePlate,
   relocatePrint,
@@ -21,13 +21,13 @@ import {
   assetOwnerIds,
   removePlatePictures,
   renderPlateStoragePath,
-  saveThumbFromFile,
+  saveThumbFromPictures,
 } from "./printService";
 import { generateModelPreviewGlb, canRenderModelImage } from "./modelPreviewCache";
 import { generateCardRender } from "./previewImageService";
-import { plateAssetHome, plateThumbFile, printAssetHome, removeAsset, type AssetHome } from "./modelAssets";
+import { printAssetHome, type AssetHome } from "./modelAssets";
 import { deleteAdapted3mfs } from "./adapted3mfCache";
-import { storePlateFormat } from "./threeMfFormat";
+import { keepPlateFormat, readPlateFormat, type PlateFormatReading } from "./threeMfFormat";
 import { getPreviewMode } from "./settingsService";
 import { reuseMarker, shareStoredCopy, type ReuseMarker } from "./fileReuse";
 import { findStoredCopies } from "./storedContent";
@@ -158,15 +158,29 @@ async function resolveSize(input: NewPlateInput, effectivePath: string | null): 
   }
 }
 
-async function thumbnailAndSniff(plateId: string, filename: string, mime: string, effectivePath: string | null) {
-  if (!effectivePath || !fsSync.existsSync(effectivePath)) return;
+/** What a new plate's file is read for, nothing of it kept yet: the pictures its thumbnail is made of, and a 3MF's
+ *  format (`format` is set, if null, for a 3MF only). */
+type PlateReading = { pictures: Buffer[]; format?: PlateFormatReading | null };
+
+async function readPlateFile(filename: string, mime: string, filePath: string | null): Promise<PlateReading | null> {
+  if (!filePath || !fsSync.existsSync(filePath)) return null;
   const ext = path.extname(filename).toLowerCase();
   if (mime.toLowerCase().startsWith("image/") && IMAGE_EXTS.has(ext)) {
-    await saveThumbFromFile(plateId, effectivePath);
-  } else if (ext === ".3mf") {
-    await storePlateFormat(plateId, filename, effectivePath);
-    await ensurePlateThumbnail(plateId, effectivePath);
+    const picture = await fs.readFile(filePath).catch(() => null);
+    return { pictures: picture ? [picture] : [] };
   }
+  if (ext === ".3mf") {
+    const format = await readPlateFormat(filename, filePath);
+    return { pictures: await read3mfThumbnails(filePath), format };
+  }
+  return null;
+}
+
+/** What `readPlateFile` found, kept as the plate's: its thumbnail, and a 3MF's format, or none where it had none. */
+async function keepPlateReading(plateId: string, reading: PlateReading | null): Promise<void> {
+  if (!reading) return;
+  if (reading.format !== undefined) await keepPlateFormat(plateId, reading.format);
+  if (reading.pictures.length) await saveThumbFromPictures(plateId, reading.pictures);
 }
 
 /** The previews made of a plate's file in the background, from `filePath` once that's known to hold it. */
@@ -283,10 +297,10 @@ async function createPlateAtPosition(
     console.warn(`Couldn't move ${desiredFilename}, just stored, to where model ${print.id}'s files are:`, err);
   });
   // Its file read where it is now, whoever moved it: the row read under the storage lock, which a move holds from
-  // renaming the file to saving where it went. What the reading made is kept only when nothing else had the lock while
-  // it was made (storageLockTurn), as firstPlateReading's is: a move then could have taken the file away, or put another
-  // where it was read, even one gone again by now. Otherwise the thumbnail made goes, being perhaps another file's, and
-  // the file is read again with the lock held throughout.
+  // renaming the file to saving where it went. The reading is trusted only when nothing else had the lock while it was
+  // made (storageLockTurn), as firstPlateReading's is: a move then could have taken the file away, or put another where
+  // it was read, even one gone again by now. Otherwise the file is read again with the lock held throughout. Nothing of
+  // a reading is kept before then: a thumbnail served once stays in a browser for good.
   const findIt = async () => {
     const now = await prisma.plate.findUnique({ where: { id: record.id } });
     if (now) {
@@ -295,8 +309,8 @@ async function createPlateAtPosition(
     }
   };
   const readIt = () =>
-    thumbnailAndSniff(record.id, desiredFilename, mime, effectivePath).then(
-      () => null,
+    readPlateFile(desiredFilename, mime, effectivePath).then(
+      (reading) => ({ reading }),
       (err: unknown) => ({ err }),
     );
 
@@ -305,17 +319,17 @@ async function createPlateAtPosition(
       await findIt();
       return storageLockTurn();
     });
-    let failure = await readIt();
+    let read = await readIt();
     if (!(await withStorageLock(async () => storageLockTurn() === turn + 1))) {
-      failure = await withStorageLock(async () => {
-        await removeAsset(await plateAssetHome(record.id), plateThumbFile(record.id));
+      read = await withStorageLock(async () => {
         await findIt();
         return readIt();
       });
     }
-    if (failure) throw failure.err;
-    const read = effectivePath;
-    if (read && fsSync.existsSync(read)) await startPreviews(record.id, desiredFilename, read);
+    if ("err" in read) throw read.err;
+    await keepPlateReading(record.id, read.reading);
+    const at = effectivePath;
+    if (at && fsSync.existsSync(at)) await startPreviews(record.id, desiredFilename, at);
   } catch (err) {
     // Nothing of it left: the caller never learns this plate's id, so a retry would bring it in twice. Its row is read
     // again under the storage lock, as a reorganisation may have moved its file meanwhile, and the file only goes once

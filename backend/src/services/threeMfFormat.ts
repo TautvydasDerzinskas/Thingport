@@ -102,24 +102,48 @@ async function stampOf(filePath: string): Promise<FileStamp | null> {
   }
 }
 
-/** Reads and keeps the plate's format. Never throws: a format it can't read is left for the next look. */
+/** A 3MF's format, with the stamp of the file it was read from. */
+export type PlateFormatReading = { format: ThreeMfFormat; file: FileStamp };
+
+/** The format `filePath` holds, stamped with the file as it was read: null when it can't be read, or when the file
+ *  changed while it was, so a format is never kept under another file's stamp. Never throws. */
+export async function readPlateFormat(filename: string, filePath: string): Promise<PlateFormatReading | null> {
+  if (!isThreeMfFile(filename)) return null;
+  try {
+    const before = await stampOf(filePath);
+    const format = await readThreeMfFormat(filePath);
+    const after = await stampOf(filePath);
+    if (!format || !before || !after || before.size !== after.size || before.mtimeMs !== after.mtimeMs) return null;
+    return { format, file: after };
+  } catch (err) {
+    console.warn(`Reading the 3MF format of ${path.basename(filePath)} failed:`, err);
+    return null;
+  }
+}
+
+/** `reading` kept as the plate's format, or with none, the one it had cleared, so the next look reads the file again. */
+export async function keepPlateFormat(plateId: string, reading: PlateFormatReading | null): Promise<void> {
+  const format = reading
+    ? ({ ...reading.format, file: reading.file } as unknown as Prisma.InputJsonValue)
+    : Prisma.DbNull;
+  await prisma.plate.update({ where: { id: plateId }, data: { format } });
+}
+
+/** Reads and keeps the plate's format (readPlateFormat, keepPlateFormat). Never throws: one it can't read is cleared,
+ *  for the next look to read again. */
 export async function storePlateFormat(
   plateId: string,
   filename: string,
   filePath: string,
 ): Promise<ThreeMfFormat | null> {
   if (!isThreeMfFile(filename)) return null;
+  const reading = await readPlateFormat(filename, filePath);
   try {
-    const file = await stampOf(filePath);
-    const format = await readThreeMfFormat(filePath);
-    if (!format || !file) return null;
-    const stored = { ...format, file } as unknown as Prisma.InputJsonValue;
-    await prisma.plate.update({ where: { id: plateId }, data: { format: stored } });
-    return format;
+    await keepPlateFormat(plateId, reading);
   } catch (err) {
-    console.warn(`Reading the 3MF format of plate ${plateId} failed:`, err);
-    return null;
+    console.warn(`Keeping the 3MF format of plate ${plateId} failed:`, err);
   }
+  return reading?.format ?? null;
 }
 
 /** The plate's format as stored, when it's from the current classification. */

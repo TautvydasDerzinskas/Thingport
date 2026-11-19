@@ -538,7 +538,8 @@ export async function deleteAllPrintFiles(printId: string): Promise<void> {
 }
 
 /** Removes the model's prepared print; `fileId`, only while it's that file, as for undoing a save of one that another
- *  upload may have replaced since. */
+ *  upload may have replaced since. The slot is read again with the model's row locked, as a save of a prepared print
+ *  locks it: one that replaced this print meanwhile stays the model's, and this one, on its way out, goes all the same. */
 export async function deletePreparedFile(userId: string, printId: string, fileId?: string): Promise<Print> {
   const filePath = await removeRowAndFile(async () => {
     const print = await prisma.print.findFirst({ where: { id: printId, userId } });
@@ -550,10 +551,15 @@ export async function deletePreparedFile(userId: string, printId: string, fileId
       throw new HttpError(404, "No prepared print file");
     }
     const where = managedPrintFilePath(record);
-    await prisma.$transaction([
-      prisma.print.update({ where: { id: printId }, data: { preparedFileId: null } }),
-      prisma.printFile.delete({ where: { id: record.id } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Print" WHERE id = ${printId} FOR UPDATE`;
+      const now = await tx.print.findUnique({ where: { id: printId }, select: { preparedFileId: true } });
+      if (fileId && now?.preparedFileId !== fileId) throw new HttpError(404, "No prepared print file");
+      if (now?.preparedFileId === record.id) {
+        await tx.print.update({ where: { id: printId }, data: { preparedFileId: null } });
+      }
+      await tx.printFile.delete({ where: { id: record.id } });
+    });
     return where;
   });
   await pruneEmptyStorageDirs(path.dirname(filePath));

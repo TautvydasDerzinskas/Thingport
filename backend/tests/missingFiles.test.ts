@@ -34,6 +34,7 @@ import { syncLicenseFile } from "../src/services/licenseFile";
 import { getLicenseFiles, setLicenseFiles } from "../src/services/settingsService";
 import {
   batchFileSaver,
+  deletePreparedFile,
   removeAbandonedPrintFileSaves,
   removeMissingPrintFiles,
   renameSupportingFile,
@@ -744,6 +745,48 @@ describe("models whose files are gone", () => {
     }
   });
 
+  it("leaves the model the prepared print that replaced the one being removed after the removal read it", async () => {
+    const model = await makePrint(dir, owner.id, "Removed as replaced");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    // Just after the removal reads the old print, an upload's save makes another the model's prepared print, as its
+    // last step does, marking the old one on its way out.
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let replacement = "";
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      const row = await findUnique(args);
+      if (!replacement && args.where.id === old.id) {
+        const made = await prisma.printFile.create({
+          data: {
+            printId: model.print.id,
+            filename: "new.gcode",
+            mime: "text/x-gcode",
+            role: "PREPARED",
+            storagePath: `${old.storagePath}.new`,
+            ready: true,
+          },
+        });
+        replacement = made.id;
+        await prisma.$transaction([
+          prisma.printFile.update({ where: { id: old.id }, data: { ready: false } }),
+          prisma.print.update({ where: { id: model.print.id }, data: { preparedFileId: made.id } }),
+        ]);
+      }
+      return row;
+    }) as never);
+    try {
+      await deletePreparedFile(owner.id, model.print.id);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(replacement).not.toBe("");
+    // The new one is still the model's, and the old one is gone all the same.
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } })).preparedFileId).toBe(replacement);
+    expect(await prisma.printFile.count({ where: { id: old.id } })).toBe(0);
+  });
+
   it("leaves a file just saved where its model's rename took it, rather than move it back", async () => {
     const model = await makePrint(dir, owner.id, "Saved then renamed");
     // A second Notes.pdf is kept as "Notes (2).pdf", so once saved it's read as out of place.
@@ -1013,9 +1056,15 @@ describe("models whose files are gone", () => {
         held();
         for (let tries = 0; ; tries++) {
           await tx.$executeRaw`SELECT pg_stat_clear_snapshot()`;
+          // Only the sessions this one holds up, the second save behind the first among them: another process's waits
+          // are none of this test's.
           const [{ waiting }] = await tx.$queryRaw<{ waiting: number }[]>`
-            SELECT count(*)::int AS waiting FROM pg_stat_activity
-            WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%"Print"%'`;
+            WITH RECURSIVE held AS (
+              SELECT pid FROM pg_stat_activity WHERE pg_backend_pid() = ANY(pg_blocking_pids(pid))
+              UNION
+              SELECT activity.pid FROM pg_stat_activity activity JOIN held ON held.pid = ANY(pg_blocking_pids(activity.pid))
+            )
+            SELECT count(*)::int AS waiting FROM held`;
           if (waiting >= 2) return;
           if (tries >= 200) throw new Error("The saves never reached the model's row");
           await new Promise((resolve) => setTimeout(resolve, 50));
@@ -1030,8 +1079,12 @@ describe("models whose files are gone", () => {
         saveFileFromTemp(owner.id, model.print.id, tempFile(dir, `; ${name}\nG28\n`), name, null),
       ),
     );
-    // Lets go once both are waiting on the row.
-    await holder;
+    // Lets go once both are waiting on the row; the saves are done with before the test is, whatever the holder did.
+    try {
+      await holder;
+    } finally {
+      await saves;
+    }
     expect((await saves).map((save) => save.status)).toEqual(["fulfilled", "fulfilled"]);
     const print = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id }, include: { files: true } });
     const prepared = print.files.filter((file) => file.role === "PREPARED");
