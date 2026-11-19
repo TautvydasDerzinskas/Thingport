@@ -360,7 +360,7 @@
             }
           },
           "writeConfirmTitle": "¿Dejar que el asistente use «{{tool}}»?",
-          "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez. Nada de lo que haga elimina modelos.",
+          "writeConfirmMessage": "Esta herramienta cambia tu biblioteca. Un asistente conectado con este token podrá usarla sin preguntarte cada vez.",
           "writeConfirm": "Activar",
           "reads": "Lee tu biblioteca",
           "studio": {
@@ -2782,7 +2782,7 @@
           "infoTitle": "Qué hace conectar instancias",
           "infoPair": "Las instancias de Thingport con las que te conectas pasan a ser asociadas: sus usuarios, colecciones públicas y modelos aparecen aquí como si estuvieran en esta instancia, y los tuyos allí.",
           "infoApprove": "Apruebas cada instancia antes de que se conecte. Tus usuarios pueden pedirte que te conectes con una.",
-          "infoShare": "Solo pasa lo público: las bibliotecas, las colecciones privadas y los ajustes se quedan aquí.",
+          "infoShare": "El contenido público, las colecciones compartidas con personas de instancias conectadas y los chats con ellas pueden pasar de una instancia a otra. Las bibliotecas, las colecciones privadas y los ajustes se quedan aquí.",
           "infoOff": "Desactivarlo oculta las asociadas y deja de hablar con ellas. No se borra nada, y todo vuelve al activarlo de nuevo.",
           "settingsLoadFailed": "No se pudieron cargar los ajustes de las instancias conectadas.",
           "keyAria": "Clave: {{key}}",
@@ -5031,7 +5031,7 @@
     },
     "chats": {
       "open": "Abrir",
-      "off": "Los chats están desactivados en esta instancia. Un administrador puede activarlos en Administración > Usuarios.",
+      "off": "Los chats están desactivados en esta instancia. Un administrador puede activarlos en Administración > Social.",
       "welcome": "Elige un chat o empieza uno nuevo.",
       "deletedUser": "Usuario eliminado",
       "today": "Hoy",
@@ -5117,7 +5117,7 @@
       "chatActions": "Acciones del chat",
       "notFound": "Este chat ya no existe, o no es tuyo.",
       "backToChats": "Volver a los chats",
-      "notAMember": "Esta sala privada es solo para sus miembros. Puedes añadirte en Editar sala.",
+      "notAMember": "Esta sala privada es solo para sus miembros. Si está alojada aquí, puedes añadirte en «Editar sala». Si está alojada en una instancia conectada, un administrador de esa instancia puede añadirte.",
       "readingRoom": "Estás leyendo esta sala. Únete para escribir y recibir avisos.",
       "recipientGone": "La cuenta de esta persona se eliminó, así que no se pueden enviar mensajes.",
       "emptyRoom": "Aquí aún no se ha dicho nada.",
