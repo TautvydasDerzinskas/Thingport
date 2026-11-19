@@ -355,7 +355,7 @@
             }
           },
           "writeConfirmTitle": "Den Assistenten „{{tool}}“ nutzen lassen?",
-          "writeConfirmMessage": "Dieses Tool ändert deine Bibliothek. Ein mit diesem Token verbundener Assistent kann es nutzen, ohne dich jedes Mal zu fragen. Nichts davon löscht Modelle.",
+          "writeConfirmMessage": "Dieses Tool ändert deine Bibliothek. Ein mit diesem Token verbundener Assistent kann es nutzen, ohne dich jedes Mal zu fragen.",
           "writeConfirm": "Einschalten",
           "adminOff": "Ein Admin hat MCP auf dieser Thingport-Instanz ausgeschaltet.",
           "adminReadOnly": "Ein Admin erlaubt nur die lesenden Tools.",
@@ -2686,7 +2686,7 @@
           "infoTitle": "Was das Verbinden von Instanzen bewirkt",
           "infoPair": "Andere Thingport-Instanzen, mit denen du dich verbindest, werden zu Partnern: Deren Leute, öffentliche Sammlungen und Modelle erscheinen hier, als wären sie auf dieser Instanz, und deine dort.",
           "infoApprove": "Du genehmigst jede Instanz, bevor sie sich verbindet. Deine Benutzer können dich bitten, dich mit einer zu verbinden.",
-          "infoShare": "Nur Öffentliches geht hinüber: Bibliotheken, private Sammlungen und Einstellungen bleiben hier.",
+          "infoShare": "Nur Öffentliches, mit Leuten dort geteilte Sammlungen und Chats mit ihnen gehen hinüber: Bibliotheken, private Sammlungen und Einstellungen bleiben hier.",
           "infoOff": "Ausschalten blendet Partner aus und beendet die Kommunikation mit ihnen. Nichts wird gelöscht, und alles ist wieder da, wenn es wieder eingeschaltet ist.",
           "settingsLoadFailed": "Die Einstellungen für verbundene Instanzen konnten nicht geladen werden.",
           "keyAria": "Schlüssel: {{key}}",
@@ -3806,11 +3806,11 @@
         "step": "Führe das in einem Terminal aus:"
       },
       "claude": {
-        "step": "Öffne in Claude <strong>Einstellungen → Konnektoren</strong>, wähle <strong>Benutzerdefinierten Konnektor hinzufügen</strong> und gib diese Adresse ein. Füge unter den Request-Headern diesen Authorization-Header hinzu:",
+        "step": "Öffne in Claude <strong>Settings → Connectors</strong>, wähle <strong>Add custom connector</strong> und gib diese Adresse ein. Füge unter den Request-Headern diesen Authorization-Header hinzu:",
         "note": "Claude verbindet sich von den Servern von Anthropic aus, deshalb muss Thingport aus dem Internet über HTTPS erreichbar sein. Request-Header sind in der Beta und hängen eventuell von deinem Tarif ab."
       },
       "chatgpt": {
-        "step": "Schalte in ChatGPT unter <strong>Einstellungen → Apps & Konnektoren</strong> den <strong>Entwicklermodus</strong> ein, erstelle einen Konnektor mit dieser Adresse und wähle <strong>Token</strong> als Authentifizierung:",
+        "step": "Schalte in ChatGPT unter <strong>Settings → Apps & Connectors</strong> den <strong>Developer mode</strong> ein, erstelle einen Konnektor mit dieser Adresse und wähle <strong>Token</strong> als Authentifizierung:",
         "note": "ChatGPT verbindet sich von den Servern von OpenAI aus, deshalb muss Thingport aus dem Internet über HTTPS erreichbar sein. Die Option „Token“ hängt von deinem Tarif ab; ohne sie nutze Codex CLI."
       },
       "codex": {
@@ -4839,7 +4839,7 @@
     },
     "chats": {
       "open": "Öffnen",
-      "off": "Chats sind auf dieser Instanz ausgeschaltet. Ein Admin kann sie unter Administration > Benutzer einschalten.",
+      "off": "Chats sind auf dieser Instanz ausgeschaltet. Ein Admin kann sie unter Administration > Soziales einschalten.",
       "welcome": "Wähle einen Chat oder starte einen neuen.",
       "deletedUser": "Gelöschter Benutzer",
       "today": "Heute",
