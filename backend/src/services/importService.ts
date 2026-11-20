@@ -1459,13 +1459,14 @@ async function importLinkedFile(
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   let sources: NewPlateInput[] = [];
+  let whole: boolean;
   try {
-    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+    ({ plates, sources, whole } = await rawFilesZipContents(source, tempPath, filename));
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length && !sources.length) {
+  if (whole) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
   // A zip of raw files already gave up its scripts above; anything else has to fetch them separately.
@@ -1522,19 +1523,29 @@ async function importLinkedFile(
 
 /** A zip of a model's raw files, from a provider whose links download them so (MakerWorld's, for a model with no print
  *  profiles): its model files, one plate each, and the scripts it can be generated from again, which become SUPPORTING
- *  files -- the scripts alone make a model too. The zip itself is removed once it gave up either. Empty for anything
- *  else, or a zip with neither in it, which is kept as it came. */
+ *  files -- the scripts alone make a model too. The zip itself is removed once it gave up either, unless `whole`: it
+ *  is still the model's file. That's a zip of neither, anything but a raw-files zip, or one of scripts beside other
+ *  files -- an outline or height map a script reads -- that nothing else would keep. */
 async function rawFilesZipContents(
   source: { provider: string } | null,
   tempPath: string,
   filename: string,
-): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[] }> {
+): Promise<{ plates: NewPlateInput[]; sources: NewPlateInput[]; whole: boolean }> {
   const zipOfFiles = source && isProviderId(source.provider) && manifestOf(source.provider).capabilities.rawFilesZip;
-  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [] };
+  if (!zipOfFiles || path.extname(filename).toLowerCase() !== ".zip") return { plates: [], sources: [], whole: true };
   const { plates, sources } = await platesAndSourcesFromZip(tempPath);
-  // Only once it has given up something: a zip of neither stands in as the model's file itself.
-  if (plates.length || sources.length) await fs.rm(tempPath, { force: true }).catch(() => undefined);
-  return { plates, sources };
+  // Unreadable now, though it was read just above: kept, as nothing is lost by keeping it.
+  const whole = !plates.length && (!sources.length || (await holdsOtherFiles(tempPath).catch(() => true)));
+  if (!whole) await fs.rm(tempPath, { force: true }).catch(() => undefined);
+  return { plates, sources, whole };
+}
+
+/** Whether a zip holds a file that is neither a model file nor a script (a nested zip counts, unopened). */
+async function holdsOtherFiles(zipPath: string): Promise<boolean> {
+  return (await listZipEntries(zipPath)).some(
+    (entry) =>
+      !entry.isDirectory && !isZipJunk(entry.name) && !ZIP_FOLDER_EXTS.has(path.extname(entry.name).toLowerCase()),
+  );
 }
 
 /** A model's files, downloaded without a print to put them on: what a repair needs when the row is already there
@@ -1585,13 +1596,14 @@ export async function downloadLinkedModelFiles(url: string, body: ImportRequestB
   const { tempPath, filename, mime, meta } = await downloadImportToTemp(url, body);
   let plates: NewPlateInput[] = [];
   let sources: NewPlateInput[] = [];
+  let whole: boolean;
   try {
-    ({ plates, sources } = await rawFilesZipContents(source, tempPath, filename));
+    ({ plates, sources, whole } = await rawFilesZipContents(source, tempPath, filename));
   } catch (err) {
     await fs.rm(tempPath, { force: true }).catch(() => undefined);
     throw err;
   }
-  if (!plates.length && !sources.length) {
+  if (whole) {
     plates = [{ filename, mime, tempFilePath: tempPath, sourceInstanceId: meta.makerworldProfile?.instanceId ?? null }];
   }
   if (!sources.length) sources = await fetchParametricSources(meta.parametricSource);

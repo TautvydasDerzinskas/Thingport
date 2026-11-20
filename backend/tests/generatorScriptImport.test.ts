@@ -134,6 +134,18 @@ describe("importing a model built from a script", () => {
     expect(print.supporting_file_count).toBe(1);
   }, 120000);
 
+  // A height map or outline the script reads would go with the zip, so the zip stays the model's file, as before.
+  it("keeps the zip of a model's scripts when it holds other files too", async () => {
+    const designId = String((stamp % 1_000_000_000) + 4);
+    mockMakerworld(designId, false, await zipOf({ "generator.scad": SCRIPT, "height.dat": "1 2\n3 4\n" }), false);
+    const printId = await importDesign(designId);
+
+    const print = (await request(app).get(`/api/print/${printId}`).set(auth())).body;
+    expect(print.generator_scripts).toEqual([{ id: expect.any(String), filename: "generator.scad", folder: null }]);
+    expect(print.plates).toHaveLength(1);
+    expect(print.plates[0].filename).toMatch(/\.zip$/);
+  }, 120000);
+
   it("records why there is no script when the creator withheld it, and asks for nothing", async () => {
     const designId = String((stamp % 1_000_000_000) + 2);
     // Withheld, so nothing should ask for the raw files at all; an empty zip is what would come back.
