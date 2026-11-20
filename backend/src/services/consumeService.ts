@@ -5,7 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "../db";
 import { CONSUME_DIR, IMPORT_MAX_BYTES, RENDERABLE_MODEL_EXTS, UPLOADABLE_EXTS } from "../config";
-import { HttpError, guessMimeFromPath, sanitizeFilename } from "../utils/fileUtils";
+import { HttpError, guessMimeFromPath, sanitizeFilename, trimFilename } from "../utils/fileUtils";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
 import { normalizeZipEntryPath, resolveZipCategoryId } from "./zipService";
 import { createPrint, type NewPlateInput } from "./printCreation";
@@ -109,7 +109,8 @@ type Item = { rel: string; path: string; size: number };
 
 export type ConsumeSummary = { models: number; files: number; failed: string[]; printIds: string[] };
 
-const extOf = (name: string) => path.extname(name).toLowerCase();
+// By the name it's kept as (trimFilename): "body.stl " is a model file, and its folder a model's.
+const extOf = (name: string) => path.extname(trimFilename(name)).toLowerCase();
 const foldersOf = (rel: string) => rel.split("/").slice(0, -1);
 const byName = (a: Item, b: Item) =>
   path.basename(a.rel).localeCompare(path.basename(b.rel), undefined, { numeric: true, sensitivity: "base" });

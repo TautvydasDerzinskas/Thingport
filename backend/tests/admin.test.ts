@@ -5,7 +5,8 @@ import path from "node:path";
 import os from "node:os";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
-import { TAG_MOSAICS } from "../src/config";
+import { STORAGE, TAG_MOSAICS } from "../src/config";
+import { ensureAssetHome } from "../src/services/printService";
 
 const app = createApp();
 let adminToken: string;
@@ -300,5 +301,46 @@ describe("admin storage usage", () => {
       "usage-guide.pdf": "file",
       "usage-sliced.gcode": "prepared",
     });
+  });
+
+  it("lists no file in a pictures folder whose save is still under way, as a picture or as a file", async () => {
+    const upload = await request(app)
+      .post("/api/upload")
+      .set(auth(memberToken))
+      .attach("files", tmpFile("half-saved-pictures.stl", "solid half endsolid"));
+    expect(upload.status).toBe(200);
+    const printId = upload.body.prints[0].id;
+    const home = await ensureAssetHome(printId);
+    // A file of the model's on its way in where its pictures are, as a category can put the model's files there.
+    const storagePath = path.join(home, "half-saved.pdf");
+    fs.mkdirSync(path.join(STORAGE, home), { recursive: true });
+    fs.writeFileSync(path.join(STORAGE, storagePath), "%PDF-1.4 half");
+    // And a picture of the model's beside it, which is listed.
+    const picture = path.join(STORAGE, home, "side.png");
+    fs.writeFileSync(picture, "not really a picture");
+    const row = await prisma.printFile.create({
+      data: {
+        printId,
+        filename: "half-saved.pdf",
+        mime: "application/pdf",
+        role: "SUPPORTING",
+        storagePath,
+        ready: false,
+      },
+    });
+    try {
+      const browse = await request(app)
+        .get("/api/admin/storage/browse")
+        .query({ path: home.split(path.sep).join("/") })
+        .set(auth(adminToken));
+      expect(browse.status).toBe(200);
+      const names = (browse.body.files as { name: string }[]).map((file) => file.name);
+      expect(names).toContain("side.png");
+      expect(names).not.toContain("half-saved.pdf");
+    } finally {
+      await prisma.printFile.deleteMany({ where: { id: row.id } });
+      fs.rmSync(path.join(STORAGE, storagePath), { force: true });
+      fs.rmSync(picture, { force: true });
+    }
   });
 });

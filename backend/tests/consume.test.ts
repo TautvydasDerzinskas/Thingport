@@ -144,6 +144,22 @@ describe("consume folder", () => {
     expect(chick.files.map((file) => [file.filename, file.folder])).toEqual([["feeding.pdf", "docs"]]);
   });
 
+  it("takes a folder for a model's by a model file whose name ends in a space, as the name it's kept by", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
+    await setConsumeSettings({ mode: "folder" });
+    put("Coop/Rooster/rooster.stl", STL);
+    put("Coop/Rooster/Pullet/pullet.stl ", STL);
+    put("Coop/Rooster/Pullet/docs/feeding.pdf", "%PDF-1.4 feeding");
+
+    const summary = await consumeFolder(dir);
+    expect(summary).toMatchObject({ models: 2, failed: [] });
+    const [pullet] = await printsNamed("Pullet");
+    expect(pullet.plates.map((plate) => plate.filename)).toEqual(["pullet.stl"]);
+    expect(pullet.files.map((file) => [file.filename, file.folder])).toEqual([["feeding.pdf", "docs"]]);
+    const [rooster] = await printsNamed("Rooster");
+    expect(rooster.files).toEqual([]);
+  });
+
   it("keeps a model folder's subfolders with it: documents in their folder, pictures as photos", async () => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), "consume-"));
     await setConsumeSettings({ mode: "folder" });
