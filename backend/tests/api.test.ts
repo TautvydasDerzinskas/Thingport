@@ -362,7 +362,9 @@ describe("plate add/remove/reorder/rename", () => {
     const modelId = made.body.prints[0].id;
     await trackPrint(modelId);
     const spy = failingThumbnailStep();
+    // Neither its own clean-up nor the batch's taking back of it, after, can remove its row.
     const remove = vi.spyOn(prisma.plate, "delete").mockRejectedValue(new Error("the database went away"));
+    const removeMany = vi.spyOn(prisma.plate, "deleteMany").mockRejectedValue(new Error("the database went away"));
     try {
       const res = await auth(request(app).post(`/api/print/${modelId}/plates`)).attach(
         "files",
@@ -372,6 +374,7 @@ describe("plate add/remove/reorder/rename", () => {
     } finally {
       spy.mockRestore();
       remove.mockRestore();
+      removeMany.mockRestore();
     }
     const lid = await prisma.plate.findFirstOrThrow({ where: { printId: modelId, filename: "lid.stl" } });
     expect(fs.existsSync(path.join(STORAGE, lid.storagePath))).toBe(true);
