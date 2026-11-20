@@ -35,7 +35,7 @@ every device:
 
 ## The tools in the repository
 
-Eleven come with Thingport, for an admin to install:
+Twelve come with Thingport, for an admin to install:
 
 | Tool                      | Shelf       | What it does                                                                                                                                                       |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -49,10 +49,20 @@ Eleven come with Thingport, for an admin to install:
 | Print cost estimator      | Calculators | A model's print time, filament and real cost, and the price to charge for the margin you want.                                                                     |
 | Print queue               | Planners    | A print queue the household shares: who has a model queued, printing or printed, on its page, and a board to move each print along.                                |
 | Filament shelf            | Planners    | Everyone's filament spools on one shelf, and on each model's page the filaments it needs and who has them, matched by material and colour.                         |
+| Notes                     | Library     | Pin personal or public notes to a model's preview image. Open Notes to see and search the notes you've written.                                                    |
 | MakerWorld 3MF normalizer | Files       | Makes Bambu Studio and MakerWorld 3MFs open in other slicers with their colours, plates and print settings.                                                        |
 
 A model that came with its script doesn't need the Script customizer: **Customize…** on its own page opens its
 parameters whether the tool is installed or not.
+
+### Notes
+
+Once an admin installs Notes, use the note icon on a model's preview to pick a spot and write. A **Personal** note is
+visible only to you. A **Public** note is shared with everyone who can use Notes on this Thingport instance. On the
+model page, pins stay on the preview image or saved render where you placed them.
+
+Open **Tools → Notes** to filter your own notes by model title or note text. Select a model on a card to open it.
+You can edit or delete your own notes from their pins and delete them from the board.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../frontend/src/assets/screenshots/dark/32_tool_window.png">

@@ -22,6 +22,7 @@ type Props = {
   alt: string;
   /** Called once the server says it can't draw this model, or it still hasn't after the last retry. */
   onUnavailable: () => void;
+  onImageLoad?: (image: HTMLImageElement) => void;
   /** Shown until the render is in, e.g. the model's own picture; a skeleton without one. */
   placeholder?: ReactNode;
 };
@@ -31,7 +32,7 @@ type Props = {
  * transparent: the accent fills the model's silhouette and the shading is multiplied over it, so one picture serves
  * every theme and colour and a switch needs nothing new from the server.
  */
-export default function ModelRender({ url, alt, onUnavailable, placeholder }: Props) {
+export default function ModelRender({ url, alt, onUnavailable, onImageLoad, placeholder }: Props) {
   const tint = renderSwatch(useRenderColor()).color;
   // Failed loads so far; past the last retry the card falls back.
   const [attempt, setAttempt] = useState(0);
@@ -101,7 +102,10 @@ export default function ModelRender({ url, alt, onUnavailable, placeholder }: Pr
           src={src}
           alt={alt}
           loading="lazy"
-          onLoad={() => setLoaded(true)}
+          onLoad={(event) => {
+            setLoaded(true);
+            onImageLoad?.(event.currentTarget);
+          }}
           onError={() => {
             const checking = url;
             // Only a render still being made is worth waiting for; the server says which it is.

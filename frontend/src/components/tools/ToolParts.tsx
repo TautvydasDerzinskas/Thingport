@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useCallback, useMemo, useState, type ReactNode, type RefObject } from "react";
 import Box from "@mui/material/Box";
 import { useTools } from "../../hooks/useTools";
 import type { Tool } from "../../api/tools";
@@ -28,6 +28,7 @@ type PartProps = {
   modelId: string;
   /** The file picked on the page; the part is drawn again when it changes. */
   fileId: string | null;
+  preview?: { key: string; host: RefObject<HTMLDivElement | null> };
   /** Drawn again when it changes too: whether the model's print profiles are still filling in. */
   revision?: string;
   onUnauthorized?: () => void;
@@ -39,7 +40,7 @@ const noClose = () => undefined;
  * A tool's part of a model's page: an empty element its script draws into. Nothing shows until it does, and nothing at
  * all while it draws nothing, so a tool can leave a model it has nothing to say about alone.
  */
-export function ToolPart({ tool, place, modelId, fileId, revision, onUnauthorized }: PartProps) {
+export function ToolPart({ tool, place, modelId, fileId, preview, revision, onUnauthorized }: PartProps) {
   const context = useMemo(() => ({ modelId, ...(fileId ? { fileId } : {}) }), [modelId, fileId]);
   return (
     <Box
@@ -55,6 +56,7 @@ export function ToolPart({ tool, place, modelId, fileId, revision, onUnauthorize
         <ToolRunner
           tool={tool}
           place={place}
+          preview={preview}
           context={context}
           revision={revision}
           onClose={noClose}
