@@ -246,7 +246,7 @@ describe("shared entries", () => {
 });
 
 describe("entries about a model", () => {
-  it("identifies writer-local public note keys on equivalent copies of the same preview", async () => {
+  it.each(["note:", ""])("matches previews on equivalent copies with prefix %j", async (prefix) => {
     writeRepo();
     toolId = await install();
     const original = await upload(dad, "preview.stl");
@@ -275,17 +275,21 @@ describe("entries about a model", () => {
     });
     const stored = fs.readFileSync(previewImagePath(originalImage.id, assetsPath));
     const copyImage = (await addPreviewImage(copy, stored, { keepExif: true }))!;
-    const legacyKey = `note:${original}:image:${originalImage.id}:before-review`;
-    const otherKey = `note:${original}:image:${otherImage.id}:elsewhere`;
-    const spoofedKey = `note:${original}:image:${copyImage.id}:unrelated-id`;
+    const legacyKey = `${prefix}${original}:image:${originalImage.id}:before-review`;
+    const otherKey = `${prefix}${original}:image:${otherImage.id}:elsewhere`;
+    const spoofedKey = `${prefix}${original}:image:${copyImage.id}:unrelated-id`;
     for (const key of [legacyKey, otherKey, spoofedKey]) {
       expect((await share(dad, key, { value: {}, model: original })).status).toBe(204);
     }
 
-    const query = `?prefix=note:&model=${copy}&preview=image:${copyImage.id}`;
+    const previewQuery = `model=${copy}&preview=image:${copyImage.id}`;
+    const query = `?prefix=${prefix}&${previewQuery}`;
     const matches = await list(son, query);
     expect(matches.filter((entry) => entry.preview_match).map(({ key }) => key)).toEqual([legacyKey]);
     expect(matches).toHaveLength(3);
+    const withoutPrefix = await list(son, `?${previewQuery}`);
+    expect(withoutPrefix).toHaveLength(3);
+    expect(withoutPrefix.every((entry) => entry.preview_match === undefined)).toBe(true);
     await request(app).put(`/api/tools/${toolId}/audience`).set(auth(dad.token)).send({ everyone: false });
     expect(await list(son, query)).toEqual([]);
   });

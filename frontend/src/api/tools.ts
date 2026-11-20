@@ -242,7 +242,7 @@ export const toolsApi = {
     query: { prefix?: string; model?: string; before?: string; preview?: string } = {},
   ): Promise<SharedEntry[]> => {
     const params = new URLSearchParams();
-    if (query.prefix) params.set("prefix", query.prefix);
+    if (query.prefix !== undefined) params.set("prefix", query.prefix);
     if (query.model) params.set("model", query.model);
     if (query.before) params.set("before", query.before);
     if (query.preview) params.set("preview", query.preview);

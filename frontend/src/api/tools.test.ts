@@ -76,6 +76,15 @@ describe("toolsApi", () => {
     },
   );
 
+  it("preserves an explicit empty shared prefix", async () => {
+    const options = { model: "model-a", preview: "image:image-a" };
+    await toolsApi.sharedList("id", { ...options, prefix: "" });
+    await toolsApi.sharedList("id", options);
+
+    expect(new URL(sent[0].url).searchParams.get("prefix")).toBe("");
+    expect(new URL(sent[1].url).searchParams.has("prefix")).toBe(false);
+  });
+
   // The browser resolves "." and ".." in a path, escaped or not: "shared/.." is the tool itself, which a delete removes.
   it.each([".", ".."])("never sends a request for the key %s", async (key) => {
     await expect(toolsApi.storageDelete("id", key)).rejects.toThrow("A key can't be . or ..");

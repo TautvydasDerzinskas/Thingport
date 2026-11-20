@@ -54,6 +54,7 @@ For a tool, the type is `ToolSdk`.
 | [`tool`](#tool)                           |        |  ✓   | The tool itself.                                                                                                                                              |
 | [`user`](#user)                           |        |  ✓   | Who's using the tool: the signed-in user, as the others see them, so a tool can say "you" with their own name and picture before they've shared anything.     |
 | [`context`](#context)                     |        |  ✓   | What the tool was opened on, empty when it's opened from the Tools page.                                                                                      |
+| [`preview`](#preview)                     |        |  ✓   | The static preview available to a model page's `modelImage` contribution when an overlay can be drawn.                                                        |
 | [`storage`](#storage)                     |        |  ✓   | JSON kept for this user and this tool, so the window opens where they left it.                                                                                |
 | [`shared`](#shared)                       |        |  ✓   | JSON the tool's users share with each other, each entry its writer's own, and the part of a model's page that shows the ones about it.                        |
 | [`toolModels`](#toolmodels)               |        |  ✓   | The models a tool from the repository brings, by the keys its metadata gives them.                                                                            |
@@ -1206,6 +1207,23 @@ const { command, modelId, fileId } = thingport.context;
 if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
 ```
 
+### `preview`
+
+_Tools only_
+
+```ts
+thingport.preview?: { key: string; root: HTMLElement }
+```
+
+The static preview available to a model page's `modelImage` contribution when an overlay can be drawn. Draw on `root` to place elements over the preview. Use `key` to identify the gallery image or rendered plate on this model, and pass it to `shared.list` to match the preview on other copies.
+
+```js
+const { preview } = thingport;
+if (preview) {
+  preview.root.dataset.preview = preview.key;
+}
+```
+
 ### `storage`
 
 _Tools only_
@@ -1293,9 +1311,9 @@ thingport.shared.list(options?: { prefix?: string; model?: string; before?: stri
 
 The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read. When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
 
-| Parameter | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `options` | `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for the entries after it. With both `prefix` and `model`, pass the current `preview.key` as `preview` to annotate the results with `previewMatch`. Entries use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`. |
+| Parameter | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options` | Use `prefix` to filter by the start of each key, `model` to find entries about that model or any copy of it (the same original or imported from the same page), and `before` to continue after an entry's cursor. To get `previewMatch` on the results, pass `thingport.preview.key` as `preview` along with `model` and the key prefix, which can be an empty string. Use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`. |
 
 See [`SdkSharedEntry`](#sdksharedentry).
 

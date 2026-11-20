@@ -138,7 +138,7 @@ export async function listSharedData(
   );
   const [cards, matches] = await Promise.all([
     userCards(rows.map((row) => row.userId)),
-    keys && options.prefix && options.preview
+    keys && options.prefix !== undefined && options.preview
       ? matchingSharedPreviews(keys.id, options.preview, options.prefix, rows)
       : null,
   ]);

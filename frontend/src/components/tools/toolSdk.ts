@@ -72,7 +72,7 @@ type Build = {
   context?: ToolContext;
   root: HTMLElement;
   /** An image contribution can optionally draw over the visible static preview. */
-  preview?: { key: string; root: HTMLElement };
+  preview?: ToolSdk["preview"];
   selector: string;
   theme: ToolTheme;
   language: string;
@@ -101,7 +101,7 @@ export function buildToolSdk({
   onResize,
   ui,
   pickAudience,
-}: Build): ToolSdk & { preview?: Build["preview"] } {
+}: Build): ToolSdk {
   const translate: Translate = translator(tool.locales ?? {}, language);
   // Kept with the session, as the app keeps it, so every place a tool runs knows who's signed in.
   const viewer = readUser();

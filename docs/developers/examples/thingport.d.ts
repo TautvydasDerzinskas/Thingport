@@ -830,10 +830,10 @@ export interface SdkShared {
    * The entries the user may read, newest first: their own and everyone else's that reach them, 5,000 at most a read.
    * When a read gives that many, there may be more: read again with `before` set to the last one's `cursor`.
    *
-   * @param options `prefix`: only keys that start with it. `model`: only entries about that model, or about any copy
-   * of it in anyone's library (the same original, or imported from the same page). `before`: an entry's `cursor`, for
-   * the entries after it. With both `prefix` and `model`, pass the current `preview.key` as `preview` to annotate
-   * the results with `previewMatch`. Entries use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`.
+   * @param options Use `prefix` to filter by the start of each key, `model` to find entries about that model or any
+   * copy of it (the same original or imported from the same page), and `before` to continue after an entry's cursor.
+   * To get `previewMatch` on the results, pass `thingport.preview.key` as `preview` along with `model` and the key
+   * prefix, which can be an empty string. Use keys of the form `<prefix><writer's model ID>:<preview key>:<suffix>`.
    * @example
    * const queued = (await thingport.shared.list({ prefix: "job:", model: modelId })).filter((e) => !e.mine);
    * @example
@@ -1166,6 +1166,19 @@ export interface ToolSdk extends SdkBase {
    * if (command === "estimate") measure(await thingport.models.file(modelId, fileId));
    */
   context: { modelId?: string; fileId?: string; command?: string; place?: "info" | "tab" | "image" };
+  /**
+   * The static preview available to a model page's `modelImage` contribution when an overlay can be drawn.
+   * Draw on `root` to place elements over the preview. Use `key` to identify the gallery image or rendered plate
+   * on this model, and pass it to `shared.list` to match the preview on other copies.
+   *
+   * @group Tool only
+   * @example
+   * const { preview } = thingport;
+   * if (preview) {
+   *   preview.root.dataset.preview = preview.key;
+   * }
+   */
+  preview?: { key: string; root: HTMLElement };
   /**
    * JSON kept for this user and this tool, so the window opens where they left it. In the editor's preview of a tool
    * not saved yet, it lasts only as long as the preview.
