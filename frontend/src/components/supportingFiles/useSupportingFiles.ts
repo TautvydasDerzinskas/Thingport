@@ -82,6 +82,9 @@ export function useSupportingFiles(
   const upload = useCallback(
     async (files: File[], target: string | undefined = printId) => {
       if (!files.length || !target) return;
+      // Whose these are: the account signed in when they were picked, not one another tab signed in while they waited
+      // for their turn, so a notice kept of them is that account's.
+      const account = noticeOwner();
       const queued = files.map((file) => ({ key: newLocalId(), name: file.name, file }));
       setPending((current) => [...current, ...queued.map(({ key, name }) => ({ key, name, printId: target }))]);
       const settle = (done: { key: string }[]) => {
@@ -106,8 +109,6 @@ export function useSupportingFiles(
           return;
         }
         const packed = new Set([...packedWith.values()].flat());
-        // Whose these are: a notice kept of them is that account's, not one another tab signed in meanwhile.
-        const account = noticeOwner();
         let added = 0;
         let modelFilesAdded = false;
         // The first sliced print among them becomes the prepared print; the rest are kept as supporting files.
