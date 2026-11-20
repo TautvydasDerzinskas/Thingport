@@ -10,7 +10,7 @@ import { createApp } from "../src/app";
 import { ADAPTED_3MFS, MODEL_PREVIEWS, STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
-import { assetTarget, plateGlbFile } from "../src/services/modelAssets";
+import { assetTarget, plateGlbFile, PREVIEW_FORMAT_VERSION } from "../src/services/modelAssets";
 import { generateModelPreviewGlb } from "../src/services/modelPreviewCache";
 import { reorderPreviewImages } from "../src/services/previewImageService";
 import { currentStorageCleanup, startStorageCleanup } from "../src/services/storageCleanup";
@@ -200,14 +200,14 @@ describe("Free up space", () => {
     const folder = (...parts: string[]) => path.join(STORAGE, home, ...parts);
     const glb = await plainGlb();
     const files = {
-      current: write(folder("3D previews", `${plateId}.v5.glb`), glb),
-      olderPreview: write(folder("3D previews", `${plateId}.v4.glb`), "older"),
+      current: write(folder("3D previews", plateGlbFile(plateId).name), glb),
+      olderPreview: write(folder("3D previews", plateGlbFile(plateId, PREVIEW_FORMAT_VERSION - 1).name), "older"),
       olderRender: write(folder("Renders", `${plateId}.render.v3.png`), "older"),
       currentRender: write(folder("Renders", `${plateId}.render.v4.png`), "current"),
       copy: write(folder("Slicer copies", `${plateId}.bambu.v4.3mf`), "copy"),
       sharedCopy: write(path.join(ADAPTED_3MFS, `${plateId}.bambu.v3.3mf`), "older copy"),
       // A plate long gone left its preview behind.
-      orphan: write(path.join(MODEL_PREVIEWS, `gone-${stamp}.v5.glb`), "orphan"),
+      orphan: write(path.join(MODEL_PREVIEWS, plateGlbFile(`gone-${stamp}`).name), "orphan"),
     };
 
     const inventory = await takeInventory();
@@ -339,7 +339,10 @@ describe("Free up space", () => {
 
   it("counts an older version it couldn't remove as failed, and leaves it", async () => {
     const { plateId, home } = await uploadStl();
-    const older = write(path.join(STORAGE, home, "3D previews", `${plateId}.v4.glb`), "older");
+    const older = write(
+      path.join(STORAGE, home, "3D previews", plateGlbFile(plateId, PREVIEW_FORMAT_VERSION - 1).name),
+      "older",
+    );
     const spy = refuseToRemove(older);
     try {
       const run = await runCleanup(["old"], null);
