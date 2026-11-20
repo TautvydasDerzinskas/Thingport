@@ -74,12 +74,13 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   const existing = await libraryCopyOf(userId, source);
   if (existing) return { print: existing, copied: false };
 
-  // A model made of its scripts alone is made of them here too: createPrint needs something to make it of.
-  const scriptsAlone = source.plates.length
-    ? []
-    : source.files.filter((file) => file.role === "SUPPORTING" && isGeneratorScript(file.filename));
+  // A model made of its scripts alone is made of one of them here too, as createPrint needs something to make it of.
+  // The rest follow with its other files: createPrint would skip one named as another is but for its case.
+  const madeOf = source.plates.length
+    ? undefined
+    : source.files.find((file) => file.role === "SUPPORTING" && isGeneratorScript(file.filename));
   // A model left without a file to its name (a replacement of its files that failed halfway) has nothing to copy.
-  if (!source.plates.length && !scriptsAlone.length)
+  if (!source.plates.length && !madeOf)
     throw new HttpError(409, "This model can't be copied: it has no files", "copy_no_plates");
   // All of it or nothing: a copy missing a file would quietly be a different model.
   const plates = source.plates.map((plate) => ({ plate, from: resolvePlateFilePath(plate) }));
@@ -99,15 +100,15 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
   }
 
   const categoryId = await matchingCategoryId(userId, await categoryRefOf(source.categoryId));
-  const scriptsDir = scriptsAlone.length ? await fs.mkdtemp(path.join(os.tmpdir(), "thingport-copy-")) : null;
+  const scriptDir = madeOf ? await fs.mkdtemp(path.join(os.tmpdir(), "thingport-copy-")) : null;
   let created: Awaited<ReturnType<typeof createPrint>>;
   try {
-    // Through a temporary copy each, as createPrint keeps a script from the file it's given.
+    // Through a temporary copy, as createPrint keeps a script from the file it's given.
     const scriptInputs: NewPlateInput[] = [];
-    for (const [index, file] of scriptsAlone.entries()) {
-      const temp = path.join(scriptsDir!, String(index));
-      await fs.copyFile(managedPrintFilePath(file), temp);
-      scriptInputs.push({ filename: file.filename, folder: file.folder, mime: file.mime, tempFilePath: temp });
+    if (madeOf) {
+      const temp = path.join(scriptDir!, "script");
+      await fs.copyFile(managedPrintFilePath(madeOf), temp);
+      scriptInputs.push({ filename: madeOf.filename, folder: madeOf.folder, mime: madeOf.mime, tempFilePath: temp });
     }
     created = await createPrint(
       userId,
@@ -163,10 +164,9 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
     if (!arrived) throw err;
     return { print: arrived, copied: false };
   } finally {
-    if (scriptsDir) await fs.rm(scriptsDir, { recursive: true, force: true }).catch(() => undefined);
+    if (scriptDir) await fs.rm(scriptDir, { recursive: true, force: true }).catch(() => undefined);
   }
   const { print } = created;
-  const keptAlready = new Set(scriptsAlone.map((file) => file.id));
 
   // Supporting files and the prepared print: what the model is, so a copy without them would be a different one.
   try {
@@ -175,7 +175,7 @@ async function copyNow(userId: string, printId: string): Promise<{ print: Print;
       userId,
       print.id,
       source.files.flatMap((file) =>
-        file.role === "LICENSE" || keptAlready.has(file.id) ? [] : [{ ...file, role: file.role }],
+        file.role === "LICENSE" || file.id === madeOf?.id ? [] : [{ ...file, role: file.role }],
       ),
     );
   } catch (err) {

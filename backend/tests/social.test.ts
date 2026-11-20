@@ -10,6 +10,7 @@ import { setSocialSettings } from "../src/services/settingsService";
 import { descriptionImagePath, saveDescriptionImage } from "../src/services/descriptionImageService";
 import { STORAGE } from "../src/config";
 import { createPrint } from "../src/services/printCreation";
+import { saveFileFromTemp } from "../src/services/printFileService";
 
 const app = createApp();
 
@@ -392,6 +393,26 @@ describe("copying, more closely", () => {
       .get(`/api/print/${copy.id}/files/${copy.generator_scripts[0].id}`)
       .set(auth(viewer));
     expect(file.text).toBe(script);
+  });
+
+  // createPrint keeps one of two scripts named alike but for their case, which a model's own files can hold.
+  it("copies every script of a model made of them, named alike but for their case", async () => {
+    const { print: source } = await createPrint(owner.id, { title: `Cased ${Date.now()}` }, "cased", [
+      { filename: "part.scad", tempFilePath: tmpFile("part.scad", "a = 1;\n") },
+    ]);
+    await saveFileFromTemp(owner.id, source.id, tmpFile("PART.scad", "b = 2;\n"), "PART.scad", "text/plain");
+    await shareModel(owner, source.id);
+
+    const res = await request(app).post(`/api/print/${source.id}/copy`).set(auth(viewer));
+    expect(res.status).toBe(200);
+    const copy = (await request(app).get(`/api/print/${res.body.print.id}`).set(auth(viewer))).body;
+    const texts = await Promise.all(
+      copy.generator_scripts.map(
+        async (script: { id: string; filename: string }) =>
+          `${script.filename}: ${(await request(app).get(`/api/print/${copy.id}/files/${script.id}`).set(auth(viewer))).text}`,
+      ),
+    );
+    expect(texts.toSorted()).toEqual(["PART.scad: b = 2;\n", "part.scad: a = 1;\n"]);
   });
 
   it("refuses a model left with no files", async () => {

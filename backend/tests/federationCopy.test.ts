@@ -525,6 +525,8 @@ describe("a partner's model, copied", () => {
     const printId = await sharedModel(owner, "Scripted", "scripted.stl");
     for (const [name, text] of [
       ["box.scad", "width = 10;\n"],
+      // Named as the first is but for its case, which createPrint would keep only one of.
+      ["BOX.scad", "width = 20;\n"],
       ["README.md", "Print it flat.\n"],
     ]) {
       await saveFileFromTemp(owner.id, printId, tmpFile(name, text), name, null, { role: "SUPPORTING" });
@@ -551,9 +553,10 @@ describe("a partner's model, copied", () => {
       where: { id: await copied(await register("Scripts"), row.id) },
       include: { plates: true, files: { orderBy: { filename: "asc" } } },
     });
-    // Neither is a plate: the script is what the model is made of, the notes stay notes.
+    // None is a plate: the scripts are what the model is made of, the notes stay notes.
     expect(copy.plates).toEqual([]);
     expect(copy.files.map((file) => [file.filename, file.role]).toSorted()).toEqual([
+      ["BOX.scad", "SUPPORTING"],
       ["README.md", "SUPPORTING"],
       ["box.scad", "SUPPORTING"],
     ]);

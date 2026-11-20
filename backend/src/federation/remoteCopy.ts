@@ -332,8 +332,9 @@ async function makeCopy(
 
 /** Which files are the copy's plates and which are kept beside them: as the partner says, or for one too old to say,
  *  the 3D files plates and a sliced print beside them its prepared print, as files added to a model are
- *  (addUploadedFiles). With no 3D file, a model made of its scripts alone is made of those (createPrint keeps them as
- *  files), and anything else makes every file a plate. */
+ *  (addUploadedFiles). With no 3D file, a model made of its scripts alone is made of the first (createPrint keeps it
+ *  as a file) with the rest beside it, as createPrint would skip one named as another is but for its case; anything
+ *  else makes every file a plate. */
 function splitFiles(fetched: Fetched[]): { plates: Fetched[]; supporting: Fetched[] } {
   const said = fetched.filter(({ file }) => file.kind !== "file");
   if (fetched.some(({ file }) => file.kind) && said.length) {
@@ -341,8 +342,8 @@ function splitFiles(fetched: Fetched[]): { plates: Fetched[]; supporting: Fetche
   }
   const renderable = fetched.filter(({ file }) => RENDERABLE_MODEL_EXTS.has(path.extname(file.name).toLowerCase()));
   const geometry = renderable.filter(({ file }) => !isPreparedPrintFilename(file.name));
-  const scripts = fetched.filter(({ file }) => isGeneratorScript(sanitizeFilename(file.name) || "file"));
-  const plates = geometry.length ? geometry : renderable.length ? renderable : scripts;
+  const script = fetched.find(({ file }) => isGeneratorScript(sanitizeFilename(file.name) || "file"));
+  const plates = geometry.length ? geometry : renderable.length ? renderable : script ? [script] : [];
   if (!plates.length) return { plates: fetched, supporting: [] };
   return { plates, supporting: fetched.filter((item) => !plates.includes(item)) };
 }
