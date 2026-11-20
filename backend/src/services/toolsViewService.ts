@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../db";
+import { SORT_DIRECTIONS } from "../utils/sortDirection";
 import { TOOL_CATEGORIES } from "./toolFormat";
 
 // How the user arranged their Tools page. Kept per user rather than per browser, so the page opens the same way on
@@ -19,6 +20,7 @@ export type ToolSort = (typeof TOOL_SORTS)[number];
 export const toolsViewSchema = z.object({
   layout: z.enum(TOOL_LAYOUTS).default("categories"),
   sort: z.enum(TOOL_SORTS).default("newest"),
+  sortDirection: z.enum(SORT_DIRECTIONS).optional(),
   /** Where the user moved a tool, by its id; anything else sits where its metadata says. */
   categories: z.record(z.string().max(60), z.enum(TOOL_CATEGORIES)).default({}),
 });
@@ -26,8 +28,8 @@ export type ToolsView = z.infer<typeof toolsViewSchema>;
 
 export const DEFAULT_TOOLS_VIEW: ToolsView = { layout: "categories", sort: "newest", categories: {} };
 
-export async function getToolsView(userId: string): Promise<ToolsView> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { toolsView: true } });
+export async function getToolsView(userId: string, db: Pick<typeof prisma, "user"> = prisma): Promise<ToolsView> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { toolsView: true } });
   const parsed = toolsViewSchema.safeParse(user?.toolsView ?? {});
   // Something stored that no longer fits the shape is the same as never having chosen.
   return parsed.success ? parsed.data : DEFAULT_TOOLS_VIEW;
@@ -35,13 +37,19 @@ export async function getToolsView(userId: string): Promise<ToolsView> {
 
 /** Changes only what's given: the layout, the order, or where one tool sits. */
 export async function setToolsView(userId: string, patch: Partial<ToolsView>): Promise<ToolsView> {
-  const current = await getToolsView(userId);
-  const next: ToolsView = {
-    layout: patch.layout ?? current.layout,
-    sort: patch.sort ?? current.sort,
-    categories: patch.categories ? { ...current.categories, ...patch.categories } : current.categories,
-  };
-  // A tool moved back to where its metadata puts it leaves nothing behind.
-  await prisma.user.update({ where: { id: userId }, data: { toolsView: next } });
-  return next;
+  return prisma.$transaction(async (tx) => {
+    // Save concurrent changes to different parts of the view without overwriting one another.
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    const current = await getToolsView(userId, tx);
+    const sort = patch.sort ?? current.sort;
+    const sortDirection = patch.sortDirection ?? (sort === current.sort ? current.sortDirection : undefined);
+    const next: ToolsView = {
+      layout: patch.layout ?? current.layout,
+      sort,
+      ...(sortDirection ? { sortDirection } : {}),
+      categories: patch.categories ? { ...current.categories, ...patch.categories } : current.categories,
+    };
+    await tx.user.update({ where: { id: userId }, data: { toolsView: next } });
+    return next;
+  });
 }

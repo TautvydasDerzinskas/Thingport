@@ -135,6 +135,10 @@ const sharedListSchema = z.object({
   prefix: z.string().max(200).optional(),
   model: z.string().min(1).max(100).optional(),
   before: z.string().min(1).max(200).optional(),
+  preview: z
+    .string()
+    .regex(/^(image|render):[a-zA-Z0-9_-]{1,100}$/)
+    .optional(),
 });
 router.get(
   "/tools/:id/shared",

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import { UnauthorizedError } from "../../api/client";
 import { type Collection, collectionsApi } from "../../api/collections";
-import { type Print, type PrintSortMode, printsApi } from "../../api/prints";
+import { type Print, printsApi } from "../../api/prints";
 import { type PreviewMode } from "../../api/settings";
 import type { AuthUser } from "../../api/auth";
 import { type ResolvedTheme } from "../../constants/settingsOptions";
@@ -17,6 +17,7 @@ import { useRememberedList } from "../../hooks/useRememberedList";
 import { useLibrarySources, useModelFilters } from "../../hooks/useModelFilters";
 import { collectionDisplayName } from "../../utils/collectionDisplay";
 import ModelCard from "../ModelsPage/ModelCard";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import SortTabs from "../ModelsPage/SortTabs";
 import ModelFiltersButton from "../../components/ModelFilters/ModelFiltersButton";
 import FiltersEmptyNote from "../../components/ModelFilters/FiltersEmptyNote";
@@ -45,14 +46,19 @@ type Props = {
   viewer?: AuthUser | null;
 };
 
-export default function CollectionDetailPage({
+export default function CollectionDetailPage(props: Props) {
+  const { collectionId } = useParams<{ collectionId: string }>();
+  return <CollectionDetail key={collectionId} {...props} collectionId={collectionId} />;
+}
+
+function CollectionDetail({
+  collectionId,
   theme,
   previewMode,
   onUnauthorized,
   onBookmarksChanged,
   viewer,
-}: Props) {
-  const { collectionId } = useParams<{ collectionId: string }>();
+}: Props & { collectionId?: string }) {
   const navigate = useNavigate();
   const { t } = useTranslation(["models", "common"]);
   const { items, setItems, hasMore, setHasMore, loading, setLoading, returning, restored } = useRememberedList<
@@ -69,23 +75,11 @@ export default function CollectionDetailPage({
   // A page on its way when the list reloads belongs to the old list, and is dropped.
   const listRun = useRef(0);
   const selection = useModelSelection(items);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const sortModeParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode =
-    sortModeParam === "popular" || sortModeParam === "downloads" ? sortModeParam : "newest";
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort();
 
   const filters = useModelFilters();
   const { generative, hiddenProviders, licenseAllows, licensed } = filters;
   const sources = useLibrarySources(null);
-
-  const setSortMode = (mode: PrintSortMode) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (mode === "newest") next.delete("orderBy");
-      else next.set("orderBy", mode);
-      return next;
-    });
-  };
 
   const goBack = () => navigate("/models/collections");
   // Another user's public collection: theirs to change. Its models can be opened, downloaded and filed into the
@@ -152,6 +146,7 @@ export default function CollectionDetailPage({
     if (!collectionId) return;
     let cancelled = false;
     listRun.current += 1;
+    setLoadingMore(false);
     // Back to this list puts it back as it was left, then checks it quietly, like a reload nobody asked for.
     const kept = returning();
     if (kept !== null) setOffset(kept);
@@ -171,6 +166,7 @@ export default function CollectionDetailPage({
             license_allows: licenseAllows,
             licensed: licensed || undefined,
             order_by: sortMode,
+            order_direction: direction,
             limit: background ? keepLoaded(PAGE_SIZE, kept ?? offset) : PAGE_SIZE,
             offset: 0,
           }),
@@ -190,12 +186,13 @@ export default function CollectionDetailPage({
     })();
     return () => {
       cancelled = true;
+      listRun.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionId, sortMode, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
+  }, [collectionId, sortMode, direction, generative, hiddenProviders, licenseAllows, licensed, finishedVersion]);
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore || !collectionId) return;
+    if (loading || loadingMore || !hasMore || !collectionId) return;
     const run = listRun.current;
     setLoadingMore(true);
     try {
@@ -206,6 +203,7 @@ export default function CollectionDetailPage({
         license_allows: licenseAllows,
         licensed: licensed || undefined,
         order_by: sortMode,
+        order_direction: direction,
         limit: PAGE_SIZE,
         offset,
       });
@@ -214,15 +212,15 @@ export default function CollectionDetailPage({
       setOffset(offset + result.items.length);
       setHasMore(result.hasMore);
     } catch (err) {
-      handleError(err, t("models:errors.loadFailed"));
+      if (run === listRun.current) handleError(err, t("models:errors.loadFailed"));
     } finally {
-      setLoadingMore(false);
+      if (run === listRun.current) setLoadingMore(false);
     }
   };
 
   const loadMoreSentinelRef = useInfiniteScroll(loadMore, hasMore, loading || loadingMore);
 
-  if (loading) {
+  if (loading && !collection) {
     return (
       <Box sx={{ maxWidth: "1920px", mx: "auto", pt: 7 }}>
         <Box sx={cardGridSx(6)}>
@@ -266,7 +264,7 @@ export default function CollectionDetailPage({
           onRemovedFromCollection={(ids) => setItems((prev) => prev.filter((i) => !ids.includes(i.id)))}
         />
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} onChange={setSortMode} />
+          <SortTabs value={sortMode} onChange={setSortMode} direction={direction} onDirectionChange={setDirection} />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <ModelFiltersButton filters={filters} sources={sources} />
         </Box>
@@ -281,7 +279,11 @@ export default function CollectionDetailPage({
           onUnauthorized={onUnauthorized}
         />
       )}
-      {items.length ? (
+      {loading ? (
+        <Box sx={cardGridSx(6)}>
+          <CardSkeletons count={12} />
+        </Box>
+      ) : items.length ? (
         <Stack spacing={2}>
           <Box sx={cardGridSx(6)}>
             {items.map((item) => (

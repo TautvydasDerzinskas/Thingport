@@ -4,6 +4,7 @@ import { apiBase, assertOkWithMessage, readErrorMessage, UnauthorizedError } fro
 import { sharePeopleIn, type Collection, type SharePerson } from "./collections";
 import { FederationError } from "./federation";
 import type { ListPrintsResult, Print, PrintSortMode } from "./prints";
+import type { SortDirection } from "../utils/sortDirection";
 import type { ProfileCoverValue } from "../constants/profileCovers";
 import type { Achievement } from "./achievements";
 
@@ -378,10 +379,11 @@ export const socialApi = {
   /** A page of a user's own models, once they made them public; null while they're private. */
   userModels: async (
     userId: string,
-    params: { order_by?: PrintSortMode; limit: number; offset: number },
+    params: { order_by?: PrintSortMode; order_direction?: SortDirection; limit: number; offset: number },
   ): Promise<ListPrintsResult | null> => {
     const qs = new URLSearchParams({ limit: String(params.limit), offset: String(params.offset) });
     if (params.order_by) qs.set("orderBy", params.order_by);
+    if (params.order_direction) qs.set("orderDirection", params.order_direction);
     const res = await fetch(`${apiBase()}/explore/user/${encodeURIComponent(userId)}/models?${qs}`, {
       headers: authHeaders(),
     });

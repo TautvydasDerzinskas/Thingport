@@ -1,0 +1,152 @@
+<style>
+  .tp-notes-board {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100%;
+    padding: 18px;
+    color: var(--tp-text);
+    background: var(--tp-background);
+    font: 14px/1.45 var(--tp-font);
+  }
+  .tp-notes-board [hidden] {
+    display: none;
+  }
+  .tp-notes-board header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tp-notes-board h2,
+  .tp-notes-board p {
+    margin: 0;
+  }
+  .tp-notes-board h2 {
+    font-size: 20px;
+  }
+  .tp-notes-board :is(input, button) {
+    color: inherit;
+    font: inherit;
+  }
+  .tp-notes-board input {
+    width: min(100%, 310px);
+    padding: 8px 10px;
+    border: 1px solid var(--tp-divider);
+    border-radius: 8px;
+    background: var(--tp-paper);
+  }
+  .tp-notes-board :is(input, button):focus-visible {
+    outline: 2px solid var(--tp-accent);
+    outline-offset: 3px;
+  }
+  .tp-notes-board button {
+    cursor: pointer;
+  }
+  .tp-notes-board .notes-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+    align-items: start;
+    gap: 14px;
+  }
+  .tp-notes-board .note-card {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    border-radius: 10px;
+    border: 1px solid var(--tp-divider);
+    padding: 12px;
+    background: color-mix(in srgb, #efb345 20%, var(--tp-paper));
+  }
+  .tp-notes-board .note-card[data-public="true"] {
+    background: color-mix(in srgb, #36a88e 16%, var(--tp-paper));
+  }
+  .tp-notes-board .note-model {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-self: start;
+    min-width: 0;
+    max-width: 100%;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    text-align: left;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .tp-notes-board .note-model:hover {
+    text-decoration: underline;
+  }
+  .tp-notes-board .note-thumbnail {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 42px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 5px;
+    background: var(--tp-paper);
+  }
+  .tp-notes-board .note-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .tp-notes-board .note-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .tp-notes-board .note-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--tp-text-muted);
+  }
+  .tp-notes-board .note-footer button,
+  .tp-notes-board .notes-more,
+  .tp-notes-board .notes-retry {
+    border: 1px solid var(--tp-divider);
+    border-radius: 6px;
+    background: var(--tp-paper);
+    padding: 4px 8px;
+  }
+  .tp-notes-board .notes-status {
+    color: var(--tp-text-muted);
+  }
+  @media (pointer: coarse) {
+    .tp-notes-board input {
+      font-size: 16px;
+    }
+    .tp-notes-board button {
+      min-height: 44px;
+    }
+  }
+</style>
+<section class="tp-notes-board">
+  <header>
+    <h2 data-t="board.title"></h2>
+    <input type="search" data-t-aria="board.search" data-t-placeholder="board.search" maxlength="200" />
+  </header>
+  <p class="notes-status" role="status"></p>
+  <div class="notes-cards"></div>
+  <div>
+    <button class="notes-more" type="button" data-t="board.more" hidden></button>
+    <button class="notes-retry" type="button" data-t="board.retry" hidden></button>
+  </div>
+  <template class="note-template">
+    <article class="note-card">
+      <button type="button" class="note-model">
+        <span class="note-thumbnail" aria-hidden="true"></span><span></span>
+      </button>
+      <p class="note-text"></p>
+      <footer class="note-footer">
+        <span class="note-visibility"></span>
+        <button type="button" class="note-delete" data-t="board.delete"></button>
+      </footer>
+    </article>
+  </template>
+</section>

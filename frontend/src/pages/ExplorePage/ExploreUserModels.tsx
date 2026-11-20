@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import type { AuthUser } from "../../api/auth";
 import { UnauthorizedError } from "../../api/client";
 import type { Print, PrintSortMode } from "../../api/prints";
+import type { SortDirection } from "../../utils/sortDirection";
 import type { PreviewMode } from "../../api/settings";
 import { SocialOffError, socialApi } from "../../api/social";
 import { CardSkeletons } from "../../components/media/CardSkeleton";
@@ -23,6 +24,7 @@ const MOST_AT_ONCE = 100;
 type Props = {
   userId: string;
   sortMode: PrintSortMode;
+  direction: SortDirection;
   theme: ResolvedTheme;
   previewMode: PreviewMode;
   viewer?: AuthUser | null;
@@ -39,6 +41,7 @@ type Props = {
 export default function ExploreUserModels({
   userId,
   sortMode,
+  direction,
   theme,
   previewMode,
   viewer,
@@ -103,7 +106,12 @@ export default function ExploreUserModels({
     try {
       for (let offset = 0; offset < count; offset += MOST_AT_ONCE) {
         const limit = Math.min(MOST_AT_ONCE, count - offset);
-        const page = await socialApi.userModels(userId, { order_by: sortMode, limit, offset });
+        const page = await socialApi.userModels(userId, {
+          order_by: sortMode,
+          order_direction: direction,
+          limit,
+          offset,
+        });
         if (mine !== run.current) return;
         if (!page) return goneWithModels();
         fresh.push(...page.items);
@@ -144,7 +152,7 @@ export default function ExploreUserModels({
     setLoadingMore(false);
     setLoading(true);
     setFailed(false);
-    socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: 0 }).then(
+    socialApi.userModels(userId, { order_by: sortMode, order_direction: direction, limit: PAGE_SIZE, offset: 0 }).then(
       (page) => {
         if (mine !== run.current) return;
         setLoading(false);
@@ -162,14 +170,19 @@ export default function ExploreUserModels({
     // Gone from the page, or read again: what's still on its way is dropped.
     return dropLate;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, sortMode, attempt]);
+  }, [userId, sortMode, direction, attempt]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore || failed) return;
     const mine = run.current;
     setLoadingMore(true);
     try {
-      const page = await socialApi.userModels(userId, { order_by: sortMode, limit: PAGE_SIZE, offset: items.length });
+      const page = await socialApi.userModels(userId, {
+        order_by: sortMode,
+        order_direction: direction,
+        limit: PAGE_SIZE,
+        offset: items.length,
+      });
       if (mine !== run.current) return;
       if (!page) return goneWithModels();
       setItems((prev) => [...prev, ...page.items]);

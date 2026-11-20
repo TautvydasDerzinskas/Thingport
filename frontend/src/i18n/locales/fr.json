@@ -372,7 +372,7 @@
             }
           },
           "writeConfirmTitle": "Laisser l'assistant utiliser « {{tool}} » ?",
-          "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois. Rien de ce qu'il fait ne supprime de modèles.",
+          "writeConfirmMessage": "Cet outil modifie votre bibliothèque. Un assistant connecté avec ce jeton pourra l'utiliser sans vous demander à chaque fois.",
           "writeConfirm": "Activer",
           "reads": "Lit votre bibliothèque",
           "studio": {
@@ -2796,7 +2796,7 @@
           "infoTitle": "Ce que fait la connexion d'instances",
           "infoPair": "Les instances Thingport avec lesquelles vous vous connectez deviennent partenaires : leurs utilisateurs, collections publiques et modèles apparaissent ici comme s'ils étaient sur cette instance, et les vôtres là-bas.",
           "infoApprove": "Vous approuvez chaque instance avant qu'elle se connecte. Vos utilisateurs peuvent vous demander de vous connecter à l'une d'elles.",
-          "infoShare": "Seul ce qui est public passe : bibliothèques, collections privées et réglages restent ici.",
+          "infoShare": "Les contenus publics, les collections partagées avec des personnes sur des instances connectées et les discussions avec elles peuvent passer d’une instance à l’autre. Les bibliothèques, les collections privées et les réglages restent ici.",
           "infoOff": "La désactiver masque les partenaires et cesse de leur parler. Rien n'est supprimé, et tout revient quand elle est réactivée.",
           "settingsLoadFailed": "Impossible de charger les paramètres des instances connectées.",
           "keyAria": "Clé : {{key}}",
@@ -5059,7 +5059,7 @@
     },
     "chats": {
       "open": "Ouvrir",
-      "off": "Les discussions sont désactivées sur cette instance. Un administrateur peut les activer dans Administration > Utilisateurs.",
+      "off": "Les discussions sont désactivées sur cette instance. Un administrateur peut les activer dans Administration > Social.",
       "welcome": "Choisissez une discussion, ou commencez-en une.",
       "deletedUser": "Utilisateur supprimé",
       "today": "Aujourd'hui",
@@ -5145,7 +5145,7 @@
       "chatActions": "Actions de la discussion",
       "notFound": "Cette discussion n'existe plus, ou ne vous est pas accessible.",
       "backToChats": "Retour aux discussions",
-      "notAMember": "Ce salon privé est réservé à ses membres. Vous pouvez vous ajouter via Modifier le salon.",
+      "notAMember": "Ce salon privé est réservé à ses membres. S’il est hébergé ici, vous pouvez vous ajouter via « Modifier le salon ». S’il est hébergé sur une instance connectée, un administrateur de cette instance peut vous ajouter.",
       "readingRoom": "Vous lisez ce salon. Rejoignez-le pour écrire et être notifié.",
       "recipientGone": "Le compte de cette personne a été supprimé : impossible d'envoyer des messages.",
       "emptyRoom": "Rien n'a encore été dit ici.",
@@ -5984,7 +5984,15 @@
       "newest": "Plus récents",
       "popular": "Populaires",
       "downloads": "Téléchargements",
-      "relevance": "Pertinence"
+      "relevance": "Pertinence",
+      "oldest": "Plus anciens",
+      "leastPopular": "Moins populaires",
+      "fewestDownloads": "Moins de téléchargements",
+      "leastRelevant": "Moins pertinents",
+      "fewestModels": "Moins de modèles",
+      "reverseAlphabetical": "{{label}} (Z–A)",
+      "reverseAscending": "Ordre croissant. Inverser l’ordre de tri",
+      "reverseDescending": "Ordre décroissant. Inverser l’ordre de tri"
     },
     "card": {
       "unknownAuthor": "Inconnu",

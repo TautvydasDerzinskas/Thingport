@@ -1,6 +1,7 @@
 import { Prisma, type Collection, type Print } from "@prisma/client";
 import { prisma } from "../db";
 import { toCollectionOut, type CollectionOut, type PrintOut, type UserCardOut } from "../dto";
+import type { SortDirection } from "../utils/sortDirection";
 import { printOutById, printOutsByIds } from "./printLoader";
 import { getAchievementSettings, getPublicUrl, getSocialSettings } from "./settingsService";
 import { isFederationLive } from "../federation/settings";
@@ -641,7 +642,7 @@ export async function exploreUserModels(
   viewerId: string,
   userId: string,
   filters: Pick<PrintFilters, "generative" | "excludeProviders" | "licenseAllows" | "licensed">,
-  options: { sort: PrintSortMode; limit: number; offset: number },
+  options: { sort: PrintSortMode; direction?: SortDirection; limit: number; offset: number },
 ): Promise<PrintListPage | null> {
   const owner = await prisma.user.findUnique({ where: { id: userId }, select: { modelsPublic: true } });
   if (!owner?.modelsPublic) return null;

@@ -17,7 +17,8 @@ import ToggleOnOutlinedIcon from "@mui/icons-material/ToggleOnOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { type ImportProvider, settingsApi } from "../../api/settings";
 import { useConfirm } from "../../components/ConfirmProvider";
-import SortTabs from "../../components/controls/SortTabs";
+import SortTabs, { type SortOption } from "../../components/controls/SortTabs";
+import { useListSort } from "../../hooks/useListSort";
 import { COMING_SOON_PROVIDERS } from "../../components/Layout/ConfigurationDialog/providerLogos";
 import SectionHeader from "../../components/SectionHeader";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
@@ -57,7 +58,8 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [keyOpen, setKeyOpen] = React.useState<ImportProvider | null>(null);
-  const [sort, setSort] = React.useState<ProviderSort>("oldest");
+  const sort = useListSort<ProviderSort>("newest", "asc");
+  const { value: sortMode, direction } = sort;
   const [filters, setFilters] = React.useState<ProviderFilters>(NO_FILTERS);
 
   const fail = React.useCallback(
@@ -79,10 +81,11 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
     () =>
       sortProviders(
         PROVIDER_IDS.filter((id) => matchesFilters(id, enabled.get(id) ?? true, filters)),
-        sort,
+        sortMode,
         i18n.language,
+        direction,
       ),
-    [enabled, filters, sort, i18n.language],
+    [enabled, filters, sortMode, i18n.language, direction],
   );
   const selection = useSelection(shown, idOf);
   const onCount = PROVIDER_IDS.filter(isOn).length;
@@ -150,10 +153,15 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
   };
 
   const picked = selection.selected.length > 0;
-  const sortOptions: { value: ProviderSort; label: string }[] = [
-    { value: "newest", label: t("models:sort.newest") },
-    { value: "oldest", label: t("adminSettings.providers.sortOldest") },
-    { value: "name", label: t("models:tags.sortByName") },
+  const nameLabel = t("models:tags.sortByName");
+  const sortOptions: SortOption<ProviderSort>[] = [
+    {
+      value: "newest",
+      label: t("models:sort.oldest"),
+      reverseLabel: t("models:sort.newest"),
+      defaultDirection: "asc",
+    },
+    { value: "name", label: nameLabel, reverseLabel: t("models:sort.reverseAlphabetical", { label: nameLabel }) },
   ];
 
   return (
@@ -193,7 +201,7 @@ export default function ProvidersPage({ onUnauthorized }: Props) {
             />
           </SelectionToolbar>
           <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <SortTabs value={sort} options={sortOptions} onChange={setSort} />
+            <SortTabs {...sort} options={sortOptions} />
             <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
             <ProviderFiltersButton filters={filters} onChange={setFilters} onCount={onCount} shown={shown.length} />
           </Box>

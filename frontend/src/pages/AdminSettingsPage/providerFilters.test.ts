@@ -62,9 +62,18 @@ describe("provider filters", () => {
 
 describe("provider sort", () => {
   it("orders by when they were added, or by name", () => {
-    expect(sortProviders(PROVIDER_IDS, "oldest").slice(0, 3)).toEqual(["makerworld", "printables", "thingiverse"]);
+    expect(sortProviders(PROVIDER_IDS, "newest", "en", "asc").slice(0, 3)).toEqual([
+      "makerworld",
+      "printables",
+      "thingiverse",
+    ]);
     expect(sortProviders(PROVIDER_IDS, "newest")[0]).toBe(PROVIDER_IDS.at(-1));
     // Case doesn't split eufyMake from the rest.
     expect(sortProviders(["thangs", "eufymake", "cgtrader"], "name", "en")).toEqual(["cgtrader", "eufymake", "thangs"]);
+    expect(sortProviders(["thangs", "eufymake", "cgtrader"], "name", "en", "desc")).toEqual([
+      "thangs",
+      "eufymake",
+      "cgtrader",
+    ]);
   });
 });

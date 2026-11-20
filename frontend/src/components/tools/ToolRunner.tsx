@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
@@ -34,6 +34,7 @@ type Props = {
   /** A part of a model's page rather than the window: drawn by that place's export, into an empty element, as tall as
    *  what the tool draws. */
   place?: ModelPagePlace;
+  preview?: { key: string; host: RefObject<HTMLDivElement | null> };
   /** Closes the window it runs in; the tool's `thingport.close()`. */
   onClose: () => void;
   onUnauthorized?: () => void;
@@ -75,7 +76,7 @@ const ORIGINS = {
  * element. What it returns is called as its cleanup when the window closes or the part goes, the theme, the language,
  * the picked file or the script changes.
  */
-export default function ToolRunner({ tool, context, place, onClose, onUnauthorized, revision }: Props) {
+export default function ToolRunner({ tool, context, place, preview, onClose, onUnauthorized, revision }: Props) {
   const { t, i18n } = useTranslation("app");
   const muiTheme = useTheme();
   const navigate = useNavigate();
@@ -162,6 +163,14 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
     // picks the wrong colour for text on the accent — the paper colour is white in the light theme and dark in the
     // dark one, while what reads on an accent is its own contrast colour.
     setThemeVariables(root, theme);
+    const previewHost = preview?.host.current;
+    const previewRoot = previewHost && document.createElement("div");
+    if (previewRoot) {
+      previewRoot.style.position = "absolute";
+      previewRoot.style.inset = "0";
+      setThemeVariables(previewRoot, theme);
+      previewHost.append(previewRoot);
+    }
     // A part of a page has no HTML of the tool's: it draws all of it.
     root.innerHTML = place ? "" : (tool.html ?? "");
     const openModel = (id: string) => {
@@ -172,6 +181,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
       tool,
       context: place ? { ...context, place } : context,
       root,
+      preview: preview && previewRoot ? { key: preview.key, root: previewRoot } : undefined,
       selector: `#${rootId}`,
       theme: JSON.parse(themeKey) as ToolTheme,
       language,
@@ -243,6 +253,7 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
         }
         if (typeof returned === "function") cleanup = returned as () => void;
       } catch (err) {
+        previewRoot?.remove();
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       }
     })();
@@ -260,11 +271,12 @@ export default function ToolRunner({ tool, context, place, onClose, onUnauthoriz
         // A tool's own cleanup failing mustn't stop the next run.
       }
       root.remove();
+      previewRoot?.remove();
     };
     // The tool runs again when its code, the theme, the language or what it's on changes; the objects themselves are
     // rebuilt each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool.sha, tool.id, themeKey, language, rootId, contextKey, place, revision]);
+  }, [tool.sha, tool.id, themeKey, language, rootId, contextKey, place, revision, preview?.key, preview?.host]);
 
   const [anchorOrigin, transformOrigin] = ORIGINS[popover?.placement ?? "bottom"];
   const popoverElement = popover && (
