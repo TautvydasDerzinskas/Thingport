@@ -112,6 +112,23 @@ const command = <S extends z.ZodRawShape>(definition: CommandDefinition<S>) => d
 const coordinate = z.number().finite().min(-LIMITS.size).max(LIMITS.size);
 const vec2 = z.tuple([coordinate, coordinate]);
 const vec3 = z.tuple([coordinate, coordinate, coordinate]);
+const vectorChange = (value: z.ZodNumber) =>
+  z.union([
+    z.tuple([value, value, value]),
+    z
+      .object({ x: value, y: value, z: value })
+      .partial()
+      .strict()
+      .refine(
+        ({ x, y, z: last }) => x !== undefined || y !== undefined || last !== undefined,
+        "Give at least one axis.",
+      ),
+  ]);
+
+function changedVector(before: Vec3, change: Vec3 | { x?: number; y?: number; z?: number } | undefined): Vec3 {
+  if (!change) return before;
+  return Array.isArray(change) ? change : [change.x ?? before[0], change.y ?? before[1], change.z ?? before[2]];
+}
 const length = (description: string) => z.number().positive().max(LIMITS.size).describe(description);
 const splitConnector = z
   .object({
@@ -1775,6 +1792,7 @@ export const STUDIO_COMMANDS = {
 
   update_split_connector: command({
     title: "Edit matching split connectors",
+    destructive: true,
     description: "Edits the connectors on both halves of a planar split. Only provided values change.",
     args: {
       feature_id: bodyId,
@@ -1810,6 +1828,7 @@ export const STUDIO_COMMANDS = {
 
   apply_fit_clearance: command({
     title: "Use a measured fit clearance",
+    destructive: true,
     description:
       "Updates both halves of the split to the chosen radial clearance. Optionally stores the same value as a design parameter in mm.",
     args: {
@@ -2078,12 +2097,15 @@ export const STUDIO_COMMANDS = {
     destructive: true,
     args: {
       feature_id: featureId,
-      position: vec3.optional().describe("Where its origin goes, in mm, as [x, y, z]."),
-      rotation: vec3.optional().describe("Degrees about the world X, then Y, then Z axis."),
-      scale: z
-        .tuple([z.number().positive().max(1000), z.number().positive().max(1000), z.number().positive().max(1000)])
+      position: vectorChange(coordinate)
         .optional()
-        .describe("A factor along each axis, as [x, y, z]; [1, 1, 1] is its own size."),
+        .describe("Position in mm, as [x, y, z] or the axes to change, e.g. { x: 10 }."),
+      rotation: vectorChange(coordinate)
+        .optional()
+        .describe("Degrees about the world axes, as [x, y, z] or the axes to change."),
+      scale: vectorChange(z.number().positive().max(1000))
+        .optional()
+        .describe("Scale factors as [x, y, z] or the axes to change. A factor of 1 keeps the original size."),
     },
     apply(doc, args) {
       const body = findBody(doc, args.feature_id);
@@ -2091,9 +2113,9 @@ export const STUDIO_COMMANDS = {
         throw new CommandError("Give a position, a rotation or a scale to change.");
       const before = body.transform;
       body.transform = {
-        position: args.position ?? before.position,
-        rotation: args.rotation ?? before.rotation,
-        scale: args.scale ?? before.scale,
+        position: changedVector(before.position, args.position),
+        rotation: changedVector(before.rotation, args.rotation),
+        scale: changedVector(before.scale, args.scale),
       };
       // A number given by hand lets go of its formula; the axes left as they were keep theirs.
       dropExpressions(
@@ -2378,6 +2400,7 @@ export const STUDIO_COMMANDS = {
 
   set_print_setup: command({
     title: "Set the Studio printer",
+    destructive: true,
     description:
       "Sets the printer, nozzle and centered bed used by print checks and plate arrangement. Null clears it.",
     args: {
@@ -2414,6 +2437,7 @@ export const STUDIO_COMMANDS = {
 
   lock_plate_positions: command({
     title: "Lock or unlock plate positions",
+    destructive: true,
     description: "Keeps body positions fixed during automatic plate arrangement, or unlocks them.",
     args: {
       feature_ids: z.array(bodyId).min(1).max(LIMITS.features).describe("Top-level body IDs to lock or unlock."),
@@ -2439,6 +2463,7 @@ export const STUDIO_COMMANDS = {
   arrange_plate: command({
     kind: "measure",
     title: "Arrange a build plate",
+    destructive: true,
     description:
       "Packs visible bodies on a plate with the requested spacing and keeps locked positions. Can add plates for overflow. Uses the design's printer setup if present.",
     args: {
@@ -2455,6 +2480,7 @@ export const STUDIO_COMMANDS = {
 
   rename_plate: command({
     title: "Rename a build plate",
+    destructive: true,
     description: "Gives an existing build plate a new name.",
     args: { plate_id: plateId, name: z.string().trim().min(1).max(80).describe("The plate’s new name.") },
     apply(doc, { plate_id, name }) {
@@ -2484,6 +2510,7 @@ export const STUDIO_COMMANDS = {
 
   move_to_plate: command({
     title: "Move features to a build plate",
+    destructive: true,
     description: "Moves one or more top-level bodies or sketches to a plate, preserving their positions and rotations.",
     args: {
       plate_id: plateId,
@@ -2501,6 +2528,7 @@ export const STUDIO_COMMANDS = {
 
   set_body_color: command({
     title: "Set body colors",
+    destructive: true,
     description:
       "Sets the whole-body color of one or more top-level bodies. It is shown in Studio and exported to 3MF.",
     args: {
@@ -2524,6 +2552,7 @@ export const STUDIO_COMMANDS = {
 
   set_filament_slots: command({
     title: "Map body colors to slicer filament slots",
+    destructive: true,
     description:
       "Replaces the design's color to filament slot assignments for Bambu-compatible 3MF handoff. Use one slot per color. An empty list restores automatic assignment.",
     args: {

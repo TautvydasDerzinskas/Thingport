@@ -796,11 +796,6 @@ function OpenWarning() {
 function TransformFields({ feature, run }: { feature: BodyFeature; run: RunCommand }) {
   const { t } = useTranslation("app");
   const { position, rotation, scale } = feature.transform;
-  const set = (key: "position" | "rotation" | "scale", vector: Vec3, axis: number, value: number) => {
-    const next = [...vector] as Vec3;
-    next[axis] = value;
-    void run("set_transform", { feature_id: feature.id, [key]: next });
-  };
   const row = (key: "position" | "rotation" | "scale", vector: Vec3, unit: string) => (
     <Section title={t(`studio.properties.${key}`)}>
       <Box sx={triple}>
@@ -810,7 +805,9 @@ function TransformFields({ feature, run }: { feature: BodyFeature; run: RunComma
             label={axis}
             value={vector[index]}
             unit={unit}
-            onCommit={(v) => set(key, vector, index, v)}
+            onCommit={(value) =>
+              void run("set_transform", { feature_id: feature.id, [key]: { [axis.toLowerCase()]: value } })
+            }
             expression={feature.expressions?.[`${key}.${axis.toLowerCase()}`]}
             onExpression={(expression) =>
               void run("set_expression", {

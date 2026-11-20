@@ -187,7 +187,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     [onUnauthorized, toast],
   );
   const onError = useCallback((message: string) => toast({ message, severity: "error" }), [toast]);
-  const { design, loadFailed, run, reload } = useStudioDesign(designId, { onError, onUnauthorized });
+  const { design, loadFailed, run, reload, waitForSaves } = useStudioDesign(designId, { onError, onUnauthorized });
   const doc = design?.document ?? null;
 
   // With no design asked for, the latest one opens; with none at all, the empty state offers a new one.
@@ -688,8 +688,10 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const downloadDesign = async () => {
     if (!design) return;
     try {
-      const filename = studioExportName(design.name);
-      await saveResponseToDisk(await studioApi.export(design.id, filename), filename);
+      const saved = await waitForSaves(design.id);
+      if (!saved) return;
+      const filename = studioExportName(saved.name);
+      await saveResponseToDisk(await studioApi.export(saved.id, filename), filename);
     } catch (error) {
       showError(error);
     }
@@ -701,12 +703,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     if (!design || saving) return;
     setSaving(true);
     try {
-      const plateHasBodies = topLevel(design.document).some(
+      const saved = await waitForSaves(design.id);
+      if (!saved) return;
+      const plateHasBodies = topLevel(saved.document).some(
         (feature) => isBody(feature) && feature.visible && plateOf(feature) === activePlate,
       );
       const snapshot = plateHasBodies ? await viewport.current?.snapshot() : null;
-      const picture = snapshot ? await studioApi.addPicture(design.id, snapshot) : null;
-      const { model } = await studioApi.saveToLibrary(design.id, picture ? { picture_id: picture.id } : {});
+      const picture = snapshot ? await studioApi.addPicture(saved.id, snapshot) : null;
+      const { model } = await studioApi.saveToLibrary(saved.id, picture ? { picture_id: picture.id } : {});
       toast({
         message: t("studio.design.saved", { name: model.title || model.name }),
         severity: "success",
@@ -1063,7 +1067,12 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           onOpenDesign={() => setDesignsOpen(true)}
           onRenameDesign={() => setRenaming({ kind: "design" })}
           onExport={() => void downloadDesign()}
-          onOpenSlicer={() => setSlicerOpen(true)}
+          onOpenSlicer={() => {
+            if (design)
+              void waitForSaves(design.id).then((saved) => {
+                if (saved) setSlicerOpen(true);
+              });
+          }}
           onSaveToLibrary={() => void saveToLibrary()}
           onParameters={() => setParametersOpen(true)}
           measuring={Boolean(measureTool)}

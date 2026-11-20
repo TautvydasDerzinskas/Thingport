@@ -258,8 +258,8 @@ function parseModelSettingsConfig(xml: string): StructuralData {
   $("plate").each((_i, plateEl) => {
     const $plate = $(plateEl);
     let plateId: number | null = null;
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX: number | undefined;
+    let offsetY: number | undefined;
     let plateName: string | undefined;
     $plate.find("> metadata").each((_j, metaEl) => {
       const $meta = $(metaEl);
@@ -280,7 +280,8 @@ function parseModelSettingsConfig(xml: string): StructuralData {
     });
     if (plateId == null) return;
     data.plateIds.add(plateId);
-    if (offsetX !== 0 || offsetY !== 0) data.plateOffsets.set(plateId, { offsetX, offsetY });
+    if (offsetX !== undefined || offsetY !== undefined)
+      data.plateOffsets.set(plateId, { offsetX: offsetX ?? 0, offsetY: offsetY ?? 0 });
     if (plateName) data.plateNames.set(plateId, plateName);
 
     $plate.find("model_instance").each((_j, instEl) => {
@@ -326,6 +327,56 @@ type InternalComponentRef = { refId: string; transform: number[] | null; extrude
 
 const MAX_COMPONENT_DEPTH = 8;
 
+type MainComponent = { attrs: string; objectId: string | null; path: string | null };
+type MainObject = { attrs: string; inner: string; components: MainComponent[] };
+type MainPlacement = { attrs: string; objectId: string; instance: number };
+
+function readMainObjects(xml: string, nonModelParts?: Set<string>): Map<string, MainObject> {
+  const objects = new Map<string, MainObject>();
+  for (const [, attrs, inner] of xml.matchAll(OBJECT_RE)) {
+    const id = getAttr(attrs, "id");
+    if (!id) continue;
+    const components: MainComponent[] = [];
+    for (const [, component] of inner.matchAll(COMPONENT_RE)) {
+      const objectId = getAttr(component, "objectid");
+      if (objectId && nonModelParts?.has(`${id}:${objectId}`)) continue;
+      components.push({ attrs: component, objectId, path: getAttr(component, "p:path") ?? getAttr(component, "path") });
+    }
+    objects.set(id, { attrs, inner, components });
+  }
+  return objects;
+}
+
+function readMainPlacements(xml: string, forStudio: boolean): MainPlacement[] {
+  const build = xml.match(/<build\b[\s\S]*?<\/build>/)?.[0] ?? "";
+  const counts = new Map<string, number>();
+  const placements: MainPlacement[] = [];
+  for (const [, attrs] of build.matchAll(ITEM_RE)) {
+    const objectId = getAttr(attrs, "objectid");
+    if (!objectId) continue;
+    const instance = counts.get(objectId) ?? 0;
+    counts.set(objectId, instance + 1);
+    const printable = getAttr(attrs, "printable");
+    if (forStudio && (printable === "0" || printable === "false")) continue;
+    placements.push({ attrs, objectId, instance });
+  }
+  return placements;
+}
+
+/** Studio only needs the objects reachable from printable placements. */
+function studioMainObjects(objects: Map<string, MainObject>, placements: MainPlacement[]) {
+  const depths = new Map<string, number>();
+  const visit = (id: string, depth: number) => {
+    const object = objects.get(id);
+    if (!object || depth >= (depths.get(id) ?? Infinity)) return;
+    depths.set(id, depth);
+    if (depth < MAX_COMPONENT_DEPTH)
+      for (const ref of object.components) if (!ref.path && ref.objectId) visit(ref.objectId, depth + 1);
+  };
+  for (const item of placements) visit(item.objectId, 0);
+  return new Map([...objects].filter(([id]) => depths.has(id)));
+}
+
 /** Counts <triangle .../> tags without allocating a match array. */
 function countTriangleTags(xml: string): number {
   let count = 0;
@@ -344,9 +395,7 @@ function partFileTargetIds(objects: Map<string, string>, objectId: string | null
 }
 
 /** Bambu Studio keeps every part of a multi-part object in one file and references each part by
- * objectid, so a component takes only the object it names.
- *
- * Uses its own regex instances: callers are mid-way through a global OBJECT_RE/COMPONENT_RE scan. */
+ * objectid, so a component takes only the object it names. */
 /** One part file's objects, by id: what is inside each, what it declares, and the file's own colour groups. */
 type PartFile = {
   objects: Map<string, string>;
@@ -449,24 +498,18 @@ type PartFileResolver = ReturnType<typeof createPartFileResolver>;
 
 /** Triangles the preview would materialize after expanding components and placements, counted
  * from tags so an over-budget file never allocates its geometry. */
-async function countRenderedTriangles(xml: string, partFiles: PartFileResolver): Promise<number> {
+async function countRenderedTriangles(
+  objects: Map<string, MainObject>,
+  placements: MainPlacement[],
+  partFiles: PartFileResolver,
+): Promise<number> {
   const ownCount = new Map<string, number>();
   const internalRefs = new Map<string, string[]>();
 
-  OBJECT_RE.lastIndex = 0;
-  let om: RegExpExecArray | null;
-  while ((om = OBJECT_RE.exec(xml))) {
-    const objectId = getAttr(om[1], "id");
-    if (!objectId) continue;
-    const inner = om[2];
+  for (const [objectId, { inner, components }] of objects) {
     let count = countTriangleTags(inner);
     const refs: string[] = [];
-    COMPONENT_RE.lastIndex = 0;
-    let cm: RegExpExecArray | null;
-    while ((cm = COMPONENT_RE.exec(inner))) {
-      const cAttrs = cm[1];
-      const extPath = getAttr(cAttrs, "p:path") ?? getAttr(cAttrs, "path");
-      const compObjectId = getAttr(cAttrs, "objectid");
+    for (const { path: extPath, objectId: compObjectId } of components) {
       if (extPath) {
         count += await partFiles.triangles(extPath, compObjectId);
       } else if (compObjectId) {
@@ -491,17 +534,7 @@ async function countRenderedTriangles(xml: string, partFiles: PartFileResolver):
     return total;
   };
 
-  let rendered = 0;
-  const buildMatch = xml.match(/<build\b[\s\S]*?<\/build>/);
-  if (buildMatch) {
-    ITEM_RE.lastIndex = 0;
-    let im: RegExpExecArray | null;
-    while ((im = ITEM_RE.exec(buildMatch[0]))) {
-      const objectId = getAttr(im[1], "objectid");
-      if (objectId) rendered += totalFor(objectId, 0);
-    }
-  }
-  return rendered;
+  return placements.reduce((sum, { objectId }) => sum + totalFor(objectId, 0), 0);
 }
 
 const PAINT_ATTR_RE = /(?:^|\s)paint_color="([^"]*)"/;
@@ -543,7 +576,8 @@ function objectTriangleSlot(objectAttrs: string, inner: string, colors: ThreeMfC
 }
 
 async function parseMainModel(
-  xml: string,
+  mainObjects: Map<string, MainObject>,
+  placements: MainPlacement[],
   structural: StructuralData,
   plateAssignmentsByName: Map<string, number>,
   partFiles: PartFileResolver,
@@ -555,14 +589,7 @@ async function parseMainModel(
   // guaranteed, so these are resolved in a second pass.
   const internalRefsByObjectId = new Map<string, InternalComponentRef[]>();
 
-  OBJECT_RE.lastIndex = 0;
-  let om: RegExpExecArray | null;
-  while ((om = OBJECT_RE.exec(xml))) {
-    const attrs = om[1];
-    const inner = om[2];
-    const objectId = getAttr(attrs, "id");
-    if (!objectId) continue;
-
+  for (const [objectId, { attrs, inner, components }] of mainObjects) {
     const objectPlateId = findPlateIdAttr(attrs) ?? structural.plateAssignmentsByObjectId.get(objectId) ?? null;
     let defaultExtruder = structural.extruderMapById.get(objectId) ?? -1;
     if (defaultExtruder < 0) {
@@ -576,15 +603,9 @@ async function parseMainModel(
     const meshes = extractMeshesFast(inner, defaultExtruder, objectTriangleSlot(attrs, inner, colors) ?? undefined);
     if (objectSlot != null) for (const mesh of meshes) mesh.ownColor = true;
 
-    COMPONENT_RE.lastIndex = 0;
-    let cm: RegExpExecArray | null;
-    while ((cm = COMPONENT_RE.exec(inner))) {
-      const cAttrs = cm[1];
-      const extPath = getAttr(cAttrs, "p:path") ?? getAttr(cAttrs, "path");
-      const compObjectId = getAttr(cAttrs, "objectid");
+    for (const { attrs: cAttrs, path: extPath, objectId: compObjectId } of components) {
       const transform = parseTransform3MF(getAttr(cAttrs, "transform"));
       const partKey = compObjectId ? `${objectId}:${compObjectId}` : null;
-      if (forStudio && partKey && structural.nonModelParts.has(partKey)) continue;
       const compExtruder = partKey ? (structural.partExtruderMap.get(partKey) ?? defaultExtruder) : defaultExtruder;
 
       if (extPath) {
@@ -628,7 +649,9 @@ async function parseMainModel(
   };
   // Resolve everything before appending, or nested references get counted twice per level.
   const resolvedByObjectId = new Map<string, FastMesh[]>();
-  for (const objectId of internalRefsByObjectId.keys()) {
+  const roots = forStudio ? new Set(placements.map((item) => item.objectId)) : internalRefsByObjectId.keys();
+  for (const objectId of roots) {
+    if (!internalRefsByObjectId.has(objectId)) continue;
     resolvedByObjectId.set(objectId, resolveInternalRefs(objectId, 0));
   }
   for (const [objectId, resolved] of resolvedByObjectId) {
@@ -636,33 +659,19 @@ async function parseMainModel(
     if (object) for (const mesh of resolved) object.meshes.push(mesh);
   }
 
-  const buildItems: BuildItem[] = [];
-  const instanceCounts = new Map<string, number>();
-  const buildMatch = xml.match(/<build\b[\s\S]*?<\/build>/);
-  if (buildMatch) {
-    ITEM_RE.lastIndex = 0;
-    let im: RegExpExecArray | null;
-    while ((im = ITEM_RE.exec(buildMatch[0]))) {
-      const attrs = im[1];
-      const objectId = getAttr(attrs, "objectid");
-      if (!objectId) continue;
-      const instance = instanceCounts.get(objectId) ?? 0;
-      instanceCounts.set(objectId, instance + 1);
-      const printable = getAttr(attrs, "printable");
-      if (forStudio && (printable === "0" || printable === "false")) continue;
-      const instancePlate = structural.plateAssignmentsByInstance.get(`${objectId}:${instance}`);
-      const transform = parseTransform3MF(getAttr(attrs, "transform"));
-      const itemPlateId = findPlateIdAttr(attrs);
-      const objectPlateId = objects.get(objectId)?.plateId ?? null;
-      const objectName = structural.objectNameById.get(objectId);
-      const namePlateId = objectName ? (plateAssignmentsByName.get(objectName) ?? null) : null;
-      buildItems.push({
-        objectId,
-        transform,
-        plateId: itemPlateId ?? instancePlate ?? objectPlateId ?? namePlateId ?? null,
-      });
-    }
-  }
+  const buildItems: BuildItem[] = placements.map(({ attrs, objectId, instance }) => {
+    const instancePlate = structural.plateAssignmentsByInstance.get(`${objectId}:${instance}`);
+    const transform = parseTransform3MF(getAttr(attrs, "transform"));
+    const itemPlateId = findPlateIdAttr(attrs);
+    const objectPlateId = objects.get(objectId)?.plateId ?? null;
+    const objectName = structural.objectNameById.get(objectId);
+    const namePlateId = objectName ? (plateAssignmentsByName.get(objectName) ?? null) : null;
+    return {
+      objectId,
+      transform,
+      plateId: itemPlateId ?? instancePlate ?? objectPlateId ?? namePlateId ?? null,
+    };
+  });
 
   return { objects, buildItems };
 }
@@ -786,12 +795,16 @@ async function parseThreeMfFast(srcPath: string, studioMaxTriangles?: number): P
   };
 
   // Before any geometry is allocated, so an over-budget file fails cheaply.
+  const placements = readMainPlacements(mainModelXml, forStudio);
+  const allObjects = readMainObjects(mainModelXml, forStudio ? structural.nonModelParts : undefined);
+  const mainObjects = forStudio ? studioMainObjects(allObjects, placements) : allObjects;
   const partFiles = createPartFileResolver(loadExternalModel, filamentColors);
-  if ((await countRenderedTriangles(mainModelXml, partFiles)) > (studioMaxTriangles ?? MAX_TRIANGLES))
+  if ((await countRenderedTriangles(mainObjects, placements, partFiles)) > (studioMaxTriangles ?? MAX_TRIANGLES))
     return "too-complex";
 
   const { objects, buildItems } = await parseMainModel(
-    mainModelXml,
+    mainObjects,
+    placements,
     structural,
     plateAssignmentsByName,
     partFiles,

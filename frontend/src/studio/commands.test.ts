@@ -61,6 +61,23 @@ describe("Studio commands", () => {
     expect(doc.features).toHaveLength(0);
   });
 
+  it("saves separate transform axes without replacing the other axes or their formulas", () => {
+    let doc = run(emptyDocument(), "add_box", { width: 10, depth: 10, height: 10 });
+    doc = run(doc, "set_parameter", { name: "lift", value: 12, unit: "mm" });
+    doc = run(doc, "set_expression", { feature_id: "box-1", field: "position.z", expression: "lift" });
+    doc = run(doc, "set_transform", { feature_id: "box-1", position: { x: 10 } });
+    doc = run(doc, "set_transform", { feature_id: "box-1", position: { y: 20 }, scale: { x: 2 } });
+    expect(doc.features[0]).toMatchObject({
+      transform: { position: [10, 20, 12], scale: [2, 1, 1] },
+      expressions: { "position.z": "lift" },
+    });
+    doc = run(doc, "set_transform", { feature_id: "box-1", position: { z: 30 }, rotation: [0, 90, 0] });
+    expect(doc.features[0]).toMatchObject({ transform: { position: [10, 20, 30], rotation: [0, 90, 0] } });
+    expect(doc.features[0]).not.toHaveProperty("expressions");
+    expect(() => run(doc, "set_transform", { feature_id: "box-1", position: {} })).toThrow(/at least one axis/);
+    expect(() => run(doc, "set_transform", { feature_id: "box-1", scale: { y: 0 } })).toThrow(CommandError);
+  });
+
   it("refuses arguments a command doesn't take, and says why", () => {
     const doc = run(emptyDocument(), "add_box", { width: 10, depth: 10, height: 10 });
     expect(() => applyCommand(doc, "add_box", { width: 10, depth: 10, height: 10, radius: 4 })).toThrow(CommandError);

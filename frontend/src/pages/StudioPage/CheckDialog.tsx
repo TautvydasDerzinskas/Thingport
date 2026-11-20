@@ -271,8 +271,8 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
             label={t("studio.check.overhangLimit")}
             value={effective.overhang}
             unit="°"
+            validate={(value) => value >= 0 && value <= 90}
             onCommit={(value) => {
-              if (value < 0 || value > 90) return;
               if (setup) void run("set_print_setup", { setup: { ...setup, overhang: value } });
               else change({ overhang: value });
             }}
@@ -281,8 +281,8 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
             label={t("studio.check.minWall")}
             value={effective.minWall}
             unit="mm"
+            validate={(value) => value >= 0 && value <= 20}
             onCommit={(value) => {
-              if (value < 0) return;
               if (setup) void run("set_print_setup", { setup: { ...setup, minWall: value } });
               else change({ minWall: value });
             }}

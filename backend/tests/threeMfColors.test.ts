@@ -77,7 +77,7 @@ afterAll(async () => {
 });
 
 /** A .3mf holding this model XML, and a project config where one is given. */
-async function threeMf(name: string, xml: string, settings?: string): Promise<string> {
+async function threeMf(name: string, xml: string, settings?: string, modelSettings?: string): Promise<string> {
   const modelPath = path.join(dir, `${name}.model`);
   await fs.writeFile(modelPath, xml);
   const entries = [{ arcname: "3D/3dmodel.model", filePath: modelPath }];
@@ -85,6 +85,11 @@ async function threeMf(name: string, xml: string, settings?: string): Promise<st
     const settingsPath = path.join(dir, `${name}.config`);
     await fs.writeFile(settingsPath, settings);
     entries.push({ arcname: "Metadata/project_settings.config", filePath: settingsPath });
+  }
+  if (modelSettings) {
+    const modelSettingsPath = path.join(dir, `${name}-model.config`);
+    await fs.writeFile(modelSettingsPath, modelSettings);
+    entries.push({ arcname: "Metadata/model_settings.config", filePath: modelSettingsPath });
   }
   const file = path.join(dir, `${name}.3mf`);
   await writeZip(file, entries);
@@ -137,6 +142,52 @@ it("uses separate limits for a Studio 3MF project and each of its bodies", async
   ).toEqual([2, 2]);
   expect(await loadStudioThreeMf(file, 3, 2, 2)).toBe("too-complex");
   expect(await loadStudioThreeMf(file, 4, 2, 1)).toBe("body-too-complex");
+});
+
+it("budgets only printable Studio placements and their model components", async () => {
+  const duplicate = COLOURED_XML.match(/<object id="2"[\s\S]*?<\/object>/)![0].replace('id="2"', 'id="3"');
+  const model = COLOURED_XML.replace(
+    "</resources>",
+    `${duplicate}<object id="4"><components><component objectid="2"/><component objectid="3"/></components></object></resources>`,
+  ).replace(
+    '<item objectid="2"/>',
+    '<item objectid="4"/><item objectid="3" printable="0"/><item objectid="3" printable="false"/>',
+  );
+  const file = await threeMf(
+    "studio-printable-budget",
+    model,
+    undefined,
+    '<config><object id="4"><part id="3" subtype="modifier_part"/></object></config>',
+  );
+  const project = await loadStudioThreeMf(file, 2, 1, 2);
+  expect(
+    typeof project === "string" ? project : project.plates[0].parts.map((part) => part.triangles.length / 9),
+  ).toEqual([2]);
+  const preview = await loadThreeMfGroup(file);
+  if (typeof preview === "string") throw new Error(preview);
+  expect(meshColors(preview).reduce((sum, mesh) => sum + mesh.triangles, 0)).toBe(8);
+});
+
+it("keeps explicit zero offsets on a later Studio plate", async () => {
+  const model = COLOURED_XML.replace(
+    '<item objectid="2"/>',
+    '<item objectid="2" transform="1 0 0 0 1 0 0 0 1 60 55 0"/><item objectid="2" transform="1 0 0 0 1 0 0 0 1 65 52 0"/>',
+  );
+  const settings = JSON.stringify({ printable_area: ["0x0", "100x0", "100x100", "0x100"] });
+  const plate = (number: number, offsets = "") => `<plate><metadata key="plater_id" value="${number}"/>${offsets}
+    <model_instance><metadata key="object_id" value="2"/><metadata key="instance_id" value="${number - 1}"/></model_instance></plate>`;
+  const file = await threeMf(
+    "studio-explicit-zero",
+    model,
+    settings,
+    `<config>${plate(1)}${plate(2, '<metadata key="pos_x" value="0"/><metadata key="pos_y" value="0"/>')}</config>`,
+  );
+  const project = await loadStudioThreeMf(file, 4, 2);
+  if (typeof project === "string") throw new Error(project);
+  expect(project.plates.map(({ parts }) => Array.from(parts[0].triangles.subarray(0, 3)))).toEqual([
+    [10, 5, 0],
+    [15, 2, 0],
+  ]);
 });
 
 describe("readColorGroups", () => {

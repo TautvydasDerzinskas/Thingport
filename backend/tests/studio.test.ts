@@ -621,6 +621,32 @@ describe("Studio", () => {
       .set(auth(alice))
       .send({ mcp_tools: [...DEFAULT_MCP_TOOL_NAMES, ...STUDIO_TOOLS] });
     const token = res.body.token as string;
+    const listed = await request(app)
+      .post("/api/mcp")
+      .set(auth(token))
+      .set("Accept", "application/json, text/event-stream")
+      .send({ jsonrpc: "2.0", id: nextRpc++, method: "tools/list", params: {} });
+    const tools = listed.body.result.tools as { name: string; annotations?: { destructiveHint?: boolean } }[];
+    for (const name of [
+      "update_split_connector",
+      "apply_fit_clearance",
+      "set_print_setup",
+      "lock_plate_positions",
+      "arrange_plate",
+      "rename_plate",
+      "move_to_plate",
+      "set_body_color",
+      "set_filament_slots",
+    ]) {
+      expect(tools.find((tool) => tool.name === `studio_${name}`)?.annotations).toMatchObject({
+        destructiveHint: true,
+      });
+    }
+    for (const name of ["create_plate", "make_fit_test"]) {
+      expect(tools.find((tool) => tool.name === `studio_${name}`)?.annotations).toMatchObject({
+        destructiveHint: false,
+      });
+    }
 
     const created = await callTool(token, "studio_create_design", { name: "From an assistant" });
     const id = created.data.design_id as string;

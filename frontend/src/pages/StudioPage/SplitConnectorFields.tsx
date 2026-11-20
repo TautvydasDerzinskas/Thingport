@@ -65,15 +65,14 @@ export default function SplitConnectorFields({
         live={live}
         onCommit={(v) => onChange({ offset: [connector.offset[0], v] })}
       />
-      {connector.count > 1 && (
-        <NumberField
-          label={t("studio.print.spacing")}
-          value={connector.spacing}
-          unit="mm"
-          live={live}
-          onCommit={(spacing) => spacing > 0 && onChange({ spacing })}
-        />
-      )}
+      <NumberField
+        label={t("studio.print.spacing")}
+        value={connector.spacing}
+        unit="mm"
+        live={live}
+        validate={(spacing) => spacing > 0}
+        onCommit={(spacing) => onChange({ spacing })}
+      />
     </Box>
   );
 }
