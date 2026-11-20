@@ -71,6 +71,8 @@ type Build = {
   tool: RunnableTool;
   context?: ToolContext;
   root: HTMLElement;
+  /** An image contribution can optionally draw over the visible static preview. */
+  preview?: ToolSdk["preview"];
   selector: string;
   theme: ToolTheme;
   language: string;
@@ -90,6 +92,7 @@ export function buildToolSdk({
   tool,
   context,
   root,
+  preview,
   selector,
   theme,
   language,
@@ -137,6 +140,7 @@ export function buildToolSdk({
             user: person(entry.user),
             mine: entry.mine,
             modelId: entry.model_id,
+            previewMatch: entry.preview_match,
             updatedAt: entry.updated_at,
             cursor: entry.cursor,
           }))
@@ -165,6 +169,7 @@ export function buildToolSdk({
   // What each member does is written once, in sdk/types.ts, which the reference is generated from.
   return {
     root,
+    preview,
     selector,
     library,
     libraries: LIBRARIES,
