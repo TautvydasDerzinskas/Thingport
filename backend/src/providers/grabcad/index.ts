@@ -13,7 +13,6 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import type { NewPlateInput } from "../../services/printCreation";
 import { HttpError } from "../../utils/fileUtils";
-import { joinFolders } from "../../utils/fileFolder";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type {
@@ -83,9 +82,10 @@ async function download(
 ): Promise<void> {
   for (const file of files) {
     const url = await resolveGrabcadFileUrl(file, session);
-    const inputs = (await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED)) ?? [];
-    // A zip's own folders go inside the one it was in.
-    into.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
+    // In the folder it's in, a zip's own folders inside that.
+    into.push(
+      ...((await kit.downloadSignedFile({ url, name: file.name }, isGrabcadFileHost, RATE_LIMITED, file.folder)) ?? []),
+    );
   }
 }
 
@@ -119,14 +119,18 @@ export const grabcadImport: SourcedImport<GrabcadSession, GrabcadModelResolution
         const documents = files.filter(
           (file) => file.system?.toLowerCase() !== "rendering" && kit.isDocumentFile(file.name),
         );
-        // One at a time, each link asked for only while the model has room for the file, and in the folder it's in.
-        for (const file of documents) {
-          const inputs = await kit.downloadSupportingFiles(
-            [{ name: file.name, url: () => resolveGrabcadFileUrl(file, session) }],
+        // One at a time, each link asked for only while the model has room for the file, which is counted in the
+        // folder it's in: a guide in each of two is two.
+        downloaded.push(
+          ...(await kit.downloadSupportingFiles(
+            documents.map((file) => ({
+              name: file.name,
+              url: () => resolveGrabcadFileUrl(file, session),
+              folder: file.folder,
+            })),
             isGrabcadFileHost,
-          );
-          downloaded.push(...inputs.map((input) => ({ ...input, folder: joinFolders(file.folder, input.folder) })));
-        }
+          )),
+        );
       }
     } catch (err) {
       await Promise.all(downloaded.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

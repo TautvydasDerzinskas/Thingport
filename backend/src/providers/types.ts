@@ -31,11 +31,13 @@ export type ResolvedModel = {
 /** What the pipeline lends a provider to fetch files with. */
 export type ImportKit = {
   /** A signed file link on one of the provider's own hosts, downloaded; a zip unpacked into its model files. Null
-   *  when it didn't download; a block is thrown as a 429 with `blockedMessage`. */
+   *  when it didn't download; a block is thrown as a 429 with `blockedMessage`. `folder`, the one the site has the file
+   *  in: what it gives goes inside it, and its supporting files count by where they're kept (`downloadSupportingFile`). */
   downloadSignedFile(
     file: { url: string; name: string },
     isFileHost: (hostname: string) => boolean,
     blockedMessage: string,
+    folder?: string | null,
   ): Promise<NewPlateInput[] | null>;
   /** A plain file link, downloaded as it is; a block is retried once, then reported. Null when it didn't download. */
   downloadFile(url: string, name: string): Promise<PlainDownloadResult>;
@@ -55,6 +57,9 @@ export type ImportKit = {
    * the admin's limits and skips it rather than failing the import.
    */
   isSupportingFile(name: string): boolean;
+  /** A supporting file, or one sliced for the designer's printer: what's kept beside a model of what a site gives where
+   *  none of it becomes a plate, as beside a profile. A sliced file stays a supporting one, and a plain 3MF stays out. */
+  isKeptBesideModel(name: string): boolean;
   /** A supporting file that's a document or a 2D drawing -- instructions, a parts list, a cut file -- rather than the
    *  model again in another format: what's worth asking for of a site that offers a model in many. */
   isDocumentFile(name: string): boolean;
@@ -64,7 +69,8 @@ export type ImportKit = {
   /**
    * A file a site gives beside a model's own, from one of its hosts, kept within the admin's limits. Never fails the
    * import: a block, an error, or a file over the limit is skipped. A zip is unpacked into the supporting files it
-   * holds, and only those, so a format a site also offers the model in never becomes more plates. Every such file of
+   * holds, and only those, so a format a site also offers the model in never becomes more plates; a sliced file is
+   * kept as one too (`isKeptBesideModel`). Every such file of
    * the model, this way or through `downloadSignedFile`, shares what the model keeps of them: they're fetched one at a
    * time, each held to the room the ones before it left, so ones asked for at once can't each take the same room.
    */
@@ -76,10 +82,11 @@ export type ImportKit = {
    * Several such files, fetched one at a time and only as far as what a model keeps of them goes: once the ones fetched
    * fill it, in bytes or in number, the rest aren't fetched at all. For a site that lists them all at once, rather than
    * starting every download together. Never fails the import either. A `url` may be a function that asks the site for
-   * the file's link (a signed one), called only when there's room for the file; null or a throw skips it.
+   * the file's link (a signed one), called only when there's room for the file; null or a throw skips it. `folder`, the
+   * one the site has a file in, which it's kept in and counted by: a guide in each of two folders is two.
    */
   downloadSupportingFiles(
-    files: { url: string | (() => Promise<string | null>); name: string }[],
+    files: { url: string | (() => Promise<string | null>); name: string; folder?: string | null }[],
     isFileHost: (hostname: string) => boolean,
   ): Promise<NewPlateInput[]>;
 };

@@ -271,6 +271,56 @@ describe("GrabCAD specifics", () => {
     expect(asked).not.toContain("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
   });
 
+  it("counts a document in each of two folders as two, asking for no link once they fill what a model keeps", async () => {
+    await connect(ctx.userId);
+    const recorded = loadFixture<Folder>("grabcad", "files");
+    const model = { id: 1, name: "Arduino Uno R3" };
+    const folder = (id: number, name: string, file: FileRow) => ({
+      folder_path: [model, { id, name }],
+      files: [file],
+      folders: [],
+    });
+    const stub = ctx.install(
+      handlerFor("ok", {
+        folders: {
+          root: {
+            ...recorded,
+            folder_path: [model],
+            folders: [
+              { id: 7, name: "A" },
+              { id: 8, name: "B" },
+              { id: 9, name: "C" },
+            ],
+          },
+          7: folder(7, "A", fileRow("guide.pdf", "Other", "1a".repeat(16))),
+          8: folder(8, "B", fileRow("guide.pdf", "Other", "2b".repeat(16))),
+          9: folder(9, "C", fileRow("notes.pdf", "Other", "3c".repeat(16))),
+        } as Record<string, Folder>,
+      }),
+    );
+    // "guide.pdf: a drawing" is twenty bytes, and a model keeps forty: the two guides fill it.
+    limits.value = { perFile: 100, perModel: 40 };
+    try {
+      expectStatus(await ctx.importUrl(), 200);
+    } finally {
+      limits.value = undefined;
+    }
+    const [print] = await ctx.prints();
+    const files = await prisma.printFile.findMany({
+      where: { printId: print.id, role: "SUPPORTING" },
+      orderBy: { folder: "asc" },
+    });
+    expect(files.map((file) => [file.folder, file.filename])).toEqual([
+      ["A", "guide.pdf"],
+      ["B", "guide.pdf"],
+    ]);
+    const asked = stub.calls
+      .filter((call) => call.url.pathname.endsWith("/files/download"))
+      .map((call) => call.url.searchParams.get("cadid"));
+    expect(asked).toContain("2b".repeat(16));
+    expect(asked).not.toContain("3c".repeat(16));
+  });
+
   it("finds model files in the model's folders, and opens a CAD system's zip only when nothing else brought one", async () => {
     await connect(ctx.userId);
     const parts = {

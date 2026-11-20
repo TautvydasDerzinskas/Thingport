@@ -98,9 +98,9 @@ import {
   withoutTopLevels,
   withoutTopOf,
 } from "../utils/fileFolder";
-import { isPreparedPrintFilename } from "./preparedPrint";
 import {
   isDocumentFile,
+  isKeptBesideModel,
   isSupportingImportFile,
   SUPPORTING_FILES_PER_MODEL,
   supportingImportName,
@@ -1066,9 +1066,11 @@ async function filesFromNestedZips(
   beside: NewPlateInput[] = [],
   topIsModelTop = false,
 ): Promise<NewPlateInput[]> {
-  const nested = (await listZipEntries(zipPath)).filter(
-    (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
-  );
+  // A zip by the name it's kept by, as supportingZipEntries takes one: "Frog.zip " is one.
+  const nested = (await listZipEntries(zipPath))
+    .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
+    .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
+    .filter(({ parts }) => parts.length && keptExtOf(parts) === ".zip");
   const inputs: NewPlateInput[] = [];
   // Every importable file's folder, of both kinds whichever this call takes, so the plates and the scripts of a zip
   // read twice over (platesAndSourcesFromZip) lose the same levels. The files beside the zips count too: a script at
@@ -1079,7 +1081,7 @@ async function filesFromNestedZips(
   // model's own (sharedTopFolder below), so the top of that zip, where it holds model files, is the model's top too.
   const alone = topIsModelTop && nested.length === 1 && !everyFolder.length;
   try {
-    for (const entry of nested) {
+    for (const { entry, parts } of nested) {
       // Not for a model's supporting files once they're all taken: none of what the archive holds would be kept.
       if (budget.archives <= 0 || budget.bytes <= 0 || allowanceSpent(pick)) break;
       budget.archives -= 1;
@@ -1088,15 +1090,16 @@ async function filesFromNestedZips(
         const written = await extractZipEntryToFile(zipPath, entry.name, tempZipPath, budget.bytes);
         if (written === null) continue;
         budget.bytes -= written;
-        const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
+        const folder = normalizeFolder([...parts.slice(0, -1), keptNameOf(parts).replace(/\.zip$/i, "")]);
         const found: (string | null)[] = [];
         const keptBefore = picksSupporting(pick) ? { ...pick.kept } : null;
-        const folders = async () => (await placedZipEntries(tempZipPath)).map((each) => each.folder);
-        // Its top is the model's only where it holds model files: those are what the levels come off down to.
-        const early = alone ? await folders() : null;
+        // Where its model files are, read before any of its files are taken: a zip that can't be listed for that is
+        // skipped with none of them, rather than leaving them in with no place to go by.
+        const placed = (await placedZipEntries(tempZipPath)).map((each) => each.folder);
         let got: NewPlateInput[];
         try {
-          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found, Boolean(early?.length));
+          // Its top is the model's only where it holds model files: those are what the levels come off down to.
+          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found, alone && placed.length > 0);
         } catch (err) {
           // Its files went with it, and so does what they took of the model's share; the work it did still counts.
           if (keptBefore && picksSupporting(pick)) Object.assign(pick.kept, keptBefore);
@@ -1105,7 +1108,6 @@ async function filesFromNestedZips(
         for (const input of got) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
         // A zip that only wraps yet another has no files of its own to go by: where the model's files turned up in
         // it stands in, however deep, and never a supporting file, which isn't the model's own.
-        const placed = early ?? (await folders());
         for (const each of placed.length ? placed : found) {
           everyFolder.push(joinFolders(folder, each));
           modelFolders.push(joinFolders(folder, each));
@@ -1211,7 +1213,7 @@ async function platesAndSourcesFromZip(
  */
 export async function fetchDesignRawFiles(
   meta: Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">,
-  had?: { kept: Kept; except: ReadonlySet<string> },
+  had?: { kept: Kept; except?: ReadonlySet<string> },
 ): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   const scripts =
     meta.parametricSource?.zipUrl && !meta.parametricSource.withheld ? meta.parametricSource.zipUrl : null;
@@ -1255,14 +1257,19 @@ export async function withDesignRawFiles(
 ): Promise<{ sources: NewPlateInput[]; supporting: NewPlateInput[] }> {
   if (sources.length) return { sources, supporting };
   if (!supporting.length) return fetchDesignRawFiles(meta);
-  const keyOf = (input: NewPlateInput) => supportingKey(input.folder, input.filename);
+  // By the name each is stored under, as the zip's pass tells them apart (Kept's `names`): the download's root
+  // "LICENSE.txt" and the zip's "LICENSE (original).txt" are one file.
+  const keyOf = (input: NewPlateInput) => {
+    const folder = normalizeFolder(input.folder);
+    return supportingKey(folder, supportingImportName(sanitizeFilename(input.filename), folder));
+  };
   const given = new Set(supporting.map(keyOf));
   // What the download gave counts towards the share, and none of it is taken again.
   let bytes = 0;
   for (const input of supporting) bytes += (await fs.stat(input.tempFilePath!).catch(() => null))?.size ?? 0;
   const fetched = await fetchDesignRawFiles(
     { parametricSource: meta.parametricSource },
-    { kept: { bytes, files: supporting.length }, except: given },
+    { kept: { bytes, files: supporting.length, names: given } },
   );
   const again = fetched.supporting.filter((input) => given.has(keyOf(input)));
   await Promise.all(again.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
@@ -1316,15 +1323,12 @@ async function supportingZipEntries(
     .map((placed) => ({ ...placed, folder: normalizeFolder(placed.parts.slice(0, -1)) }));
   const top = sharedTopFolder(listed.filter(({ parts }) => ZIP_FOLDER_EXTS.has(keptExtOf(parts))).map((p) => p.folder));
   const entries = listed
-    .filter(
-      ({ parts }) =>
-        isSupportingImportFile(keptNameOf(parts)) || (sliced && isPreparedPrintFilename(keptNameOf(parts))),
-    )
+    .filter(({ parts }) => (sliced ? isKeptBesideModel : isSupportingImportFile)(keptNameOf(parts)))
     .map((placed) => ({ ...placed, folder: withoutTopOf(placed.folder, top) }));
   return {
     entries,
     holdsModels: listed.some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts))),
-    holdsZips: listed.some(({ entry }) => path.extname(entry.name).toLowerCase() === ".zip"),
+    holdsZips: listed.some(({ parts }) => keptExtOf(parts) === ".zip"),
   };
 }
 
@@ -1408,6 +1412,9 @@ async function filesFromZip(
         ? Math.min(pick.supporting.perFile, pick.supporting.perModel - pick.kept.bytes)
         : IMPORT_MAX_BYTES;
       if (cap <= 0) break;
+      // One the listing says is too large is skipped as extracting it would, without opening the zip again for it: the
+      // extraction still stops at the cap for one whose listed size is understated.
+      if (entry.size > cap) continue;
       const filename = keptNameOf(parts);
       const tempFilePath = path.join(
         os.tmpdir(),
@@ -1523,14 +1530,36 @@ export function supportingAllowance(): SupportingTake {
   };
 }
 
+/** What a download gives, inside the folder on the site its file is in: where the model keeps it, so what it takes of
+ *  the model's share goes by that (supportingAllowance), and a guide in each of two folders is two. */
+function inFolder(folder: string | null | undefined, inputs: NewPlateInput[]): NewPlateInput[] {
+  if (!normalizeFolder(folder)) return inputs;
+  return inputs.map((input) => ({ ...input, folder: joinFolders(folder, input.folder) }));
+}
+
+/** What's kept, with the names of those in `folder` as they're named from inside it, for a zip's pass there: that goes
+ *  by where its files are in the zip (filesFromZip). */
+function keptInside(kept: Kept, folder: string | null | undefined): Kept {
+  const top = normalizeFolder(folder);
+  if (!top || !kept.names) return kept;
+  const names = new Set<string>();
+  for (const name of kept.names) {
+    const at = name.slice(0, name.indexOf("\0"));
+    if (at === top) names.add(name.slice(at.length));
+    else if (at.startsWith(`${top}/`)) names.add(name.slice(top.length + 1));
+  }
+  return { ...kept, names };
+}
+
 /** A provider's signed file link, on one of its own hosts; a zip is unpacked into its model files. Null when it
  *  didn't download. A file beside the model's own, and the ones in a zip beside its model files, take their turn at
- *  what the model keeps of them (`take`). */
+ *  what the model keeps of them (`take`), in `folder`, the one the site has the file in. */
 async function downloadSignedFile(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
   blockedMessage: string,
   take: SupportingTake = takeAlone,
+  folder?: string | null,
 ): Promise<NewPlateInput[] | null> {
   let hostname: string;
   try {
@@ -1539,7 +1568,9 @@ async function downloadSignedFile(
     return null;
   }
   if (!isFileHost(hostname)) return null;
-  if (isSupportingImportFile(sanitizeFilename(file.name))) return take((kept) => signedSupportingFile(file, kept));
+  if (isSupportingImportFile(sanitizeFilename(file.name))) {
+    return take(async (kept) => inFolder(folder, await signedSupportingFile(file, kept)));
+  }
   const result = await downloadPlainFileToTemp(file.url, file.name);
   if (result && "rateLimited" in result) throw new HttpError(429, blockedMessage);
   if (!result) return null;
@@ -1548,16 +1579,16 @@ async function downloadSignedFile(
     try {
       // The scripts and the other files come along with the model files; createPrint keeps each as what it is.
       const { plates, sources, supporting } = await platesAndSourcesFromZip(result.input.tempFilePath!, (zip) =>
-        take((kept) => supportingFilesFromZip(zip, kept)),
+        take(async (kept) => inFolder(folder, await supportingFilesFromZip(zip, keptInside(kept, folder)))),
       );
-      return [...plates, ...sources, ...supporting];
+      return [...inFolder(folder, plates), ...inFolder(folder, sources), ...supporting];
     } finally {
       await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
   // A site that lists a model's files one by one -- Thingiverse's customizable models, Printables' sources --
   // offers the script as a file of its own rather than inside a zip.
-  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return [result.input];
+  if (MULTI_FILE_PLATE_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return inFolder(folder, [result.input]);
   await fs.rm(result.input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
@@ -1597,9 +1628,9 @@ export async function downloadSupportingFile(
 /** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), each in its turn at what the model keeps
  *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched, nor their links
  *  asked for where a function gives them. One that fails or is over the limit is skipped and counts for nothing, as
- *  is one whose link can't be had, however the function says so. */
+ *  is one whose link can't be had, however the function says so. Each goes in `folder`, the one the site has it in. */
 export async function downloadSupportingFiles(
-  files: { url: string | (() => Promise<string | null>); name: string }[],
+  files: { url: string | (() => Promise<string | null>); name: string; folder?: string | null }[],
   isFileHost: (hostname: string) => boolean,
   take: SupportingTake = supportingAllowance(),
 ): Promise<NewPlateInput[]> {
@@ -1617,7 +1648,11 @@ export async function downloadSupportingFiles(
       } catch {
         // Skipped, as one whose link comes back empty is.
       }
-      return url ? downloadSupportingFile({ url, name: file.name }, isFileHost, kept) : [];
+      if (!url) return [];
+      return inFolder(
+        file.folder,
+        await downloadSupportingFile({ url, name: file.name }, isFileHost, keptInside(kept, file.folder)),
+      );
     });
     if (filled) break;
     fetched.push(...inputs);
@@ -1633,6 +1668,7 @@ async function supportingDownload(
   const limits = await supportingLimits();
   if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
   const room = limits.perModel - kept.bytes;
+  if (room <= 0) return [];
   let hostname: string;
   try {
     hostname = new URL(file.url).hostname;
@@ -1640,10 +1676,11 @@ async function supportingDownload(
     return [];
   }
   if (!isFileHost(hostname)) return [];
-  // A zip's files are held to the limits as it's opened, so the zip may be as large as all a model keeps: two guides
-  // that each fit can make one too large for a file of its own. By the name it's kept by, as it's opened by that.
+  // A zip's files are held to the limits as it's opened, each to the room left, so the zip may be as large as all a
+  // model keeps, whatever it has already: two guides that each fit can make one too large for a file of its own, or
+  // for the room. By the name it's kept by, as it's opened by that.
   const isZip = path.extname(sanitizeFilename(file.name)).toLowerCase() === ".zip";
-  const cap = Math.min(isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : limits.perFile, room);
+  const cap = isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : Math.min(limits.perFile, room);
   if (cap <= 0) return [];
   const result = await downloadPlainFileToTemp(file.url, file.name, cap);
   if (!result || "rateLimited" in result) return [];
@@ -1655,7 +1692,7 @@ async function supportingDownload(
       await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
-  if (isSupportingImportFile(input.filename)) return [{ ...input, supporting: true }];
+  if (isKeptBesideModel(input.filename)) return [{ ...input, supporting: true }];
   await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
@@ -1763,21 +1800,23 @@ export function importKit(): PipelineKit {
   const take = supportingAllowance();
   return {
     ...IMPORT_KIT,
-    downloadSignedFile: (file, isFileHost, blockedMessage) =>
-      downloadSignedFile(file, isFileHost, blockedMessage, take),
+    downloadSignedFile: (file, isFileHost, blockedMessage, folder) =>
+      downloadSignedFile(file, isFileHost, blockedMessage, take, folder),
     downloadSupportingFile: (file, isFileHost) => take((kept) => downloadSupportingFile(file, isFileHost, kept)),
     downloadSupportingFiles: (files, isFileHost) => downloadSupportingFiles(files, isFileHost, take),
   };
 }
 
 const IMPORT_KIT: PipelineKit = {
-  downloadSignedFile,
+  downloadSignedFile: (file, isFileHost, blockedMessage, folder) =>
+    downloadSignedFile(file, isFileHost, blockedMessage, takeAlone, folder),
   downloadFile: downloadPlainFileToTemp,
   isModelFile: (name) => MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()),
   isImportableFile: (name) =>
     MULTI_FILE_PLATE_EXTS.has(path.extname(name).toLowerCase()) ||
     PARAMETRIC_SOURCE_EXTS.has(path.extname(name).toLowerCase()),
   isSupportingFile: isSupportingImportFile,
+  isKeptBesideModel,
   isDocumentFile: (name) => Boolean(path.extname(name)) && isDocumentFile(name),
   supportingLimit: async () => (await supportingLimits())?.perFile ?? null,
   downloadSupportingFile: (file, isFileHost) => downloadSupportingFile(file, isFileHost),

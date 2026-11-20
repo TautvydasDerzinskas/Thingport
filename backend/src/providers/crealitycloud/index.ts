@@ -84,9 +84,9 @@ async function supportingFiles(
   } catch {
     return [];
   }
-  // A zip among them too, opened for the files it holds beside the model's own alone (downloadSupportingFiles), so the
-  // profile stays the only plate.
-  const wanted = (files ?? []).filter((file) => kit.isSupportingFile(file.name) || /\.zip$/i.test(file.name.trim()));
+  // A zip among them too, opened for the files it holds beside the model's own alone (downloadSupportingFiles), and a
+  // sliced 3MF kept as one of those, so the profile stays the only plate.
+  const wanted = (files ?? []).filter((file) => kit.isKeptBesideModel(file.name) || /\.zip$/i.test(file.name.trim()));
   return kit.downloadSupportingFiles(wanted, isCrealitycloudFileHost);
 }
 

@@ -382,6 +382,24 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
     expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(false);
   });
 
+  it("fetches the raw files for a sliced 3MF Grab's file list names, which their zip keeps, and not for a plain 3MF", async () => {
+    const listing = (...names: string[]) => ({
+      id: 831106,
+      designExtension: {
+        model_files: names.map((modelName) => ({ modelName, modelType: modelName.split(".").pop() })),
+      },
+    });
+    mockGrabImport(designWithProfiles([]));
+    const plain = await grabImport(listing("body.stl", "body.3mf"));
+    await plain.response.body?.cancel();
+    expect(plain.meta.supportingZipUrl).toBeNull();
+
+    mockGrabImport(designWithProfiles([]));
+    const sliced = await grabImport(listing("body.stl", "body.gcode.3mf"));
+    await sliced.response.body?.cancel();
+    expect(sliced.meta.supportingZipUrl).toBe(SOURCES_ZIP);
+  });
+
   it("asks for the raw files once for a script and a document Grab's list names, though the first was turned away", async () => {
     const fetched = mockGrabImport(designWithProfiles([]));
     global.fetch = vi.fn<(input: RequestInfo | URL) => Promise<Response>>(async (input) => {

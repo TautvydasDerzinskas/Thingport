@@ -6,6 +6,7 @@ import sharp from "sharp";
 import request from "supertest";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
+import { PrismaClient } from "@prisma/client";
 import { prisma } from "../src/db";
 import { createPrint, keepSupportingFiles, type NewPlateInput } from "../src/services/printCreation";
 import {
@@ -711,8 +712,8 @@ describe("a site's zip", () => {
     const a = fs.readFileSync(await zipOf({ "a-note.txt": "first" }));
     const b = fs.readFileSync(await zipOf({ "b-note.txt": "second" }));
     const wrapper = await zipOf({ "A.zip": a, "B.zip": b });
-    // One file left of what a model keeps, and A.zip's listing after it wrote its note fails: the sixth from here.
-    zipReads.listFailsAt = zipReads.lists + 6;
+    // One file left of what a model keeps, and A.zip's listing after it wrote its note fails: the seventh from here.
+    zipReads.listFailsAt = zipReads.lists + 7;
     const kept = await supportingFilesFromZip(wrapper, { bytes: 0, files: SUPPORTING_FILES_PER_MODEL - 1 });
     remove(kept);
     expect(zipReads.written.some((each) => each.entry === "a-note.txt")).toBe(true);
@@ -1056,6 +1057,46 @@ describe("a file a site gives beside a model's own", () => {
     );
     remove(kept);
     expect(kept.map((each) => each.filename)).toEqual(["guide.pdf", "guide.pdf", "notes.txt"]);
+  });
+
+  it("reads what a model keeps again after a save whose answer was lost, keeping none past what fits", async () => {
+    // Ten bytes a file and twenty-five in all, ten of them kept already.
+    limits.value = { perFile: 10, perModel: 25 };
+    const made = [input("a.stl", "solid a endsolid"), input("one.txt", "x".repeat(10), { supporting: true })];
+    const { print } = await createPrint(userId, { title: "Answer lost" }, "Answer lost", made);
+    remove(made);
+    // The next save's last step commits and its answer never comes back, nor does the look at whether it went in.
+    const transaction = PrismaClient.prototype.$transaction;
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let lost = false;
+    const commit = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+      this: PrismaClient,
+      ...args: unknown[]
+    ) {
+      await (transaction as (...a: unknown[]) => Promise<unknown>).apply(this, args);
+      lost = true;
+      throw new Error("Connection terminated unexpectedly");
+    } as never);
+    const read = vi.spyOn(prisma.printFile, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      if (!lost) return findUnique(args);
+      lost = false;
+      return Promise.reject(new Error("the database went away"));
+    }) as never);
+    const later = [
+      input("two.txt", "y".repeat(10), { supporting: true }),
+      input("three.txt", "z".repeat(10), { supporting: true }),
+    ];
+    try {
+      await keepSupportingFiles(userId, print.id, later);
+    } finally {
+      commit.mockRestore();
+      read.mockRestore();
+      remove(later);
+    }
+    // two.txt went in, so three.txt doesn't fit beside it.
+    expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
   });
 
   it("takes none of a model's share for a file in a later zip by the name of one a link gave already", async () => {
@@ -1422,5 +1463,128 @@ describe("the admin's setting", () => {
     expect((await auth(request(app).post("/api/settings/import-supporting-files")).send({ limit: 42 })).status).toBe(
       400,
     );
+  });
+});
+
+describe("a zip's files beside a model, by what its listing and names say", () => {
+  const site = (hostname: string) => hostname === "example.com";
+  const originalFetch = global.fetch;
+  const served = (files: Record<string, string | Buffer>) => {
+    const fetchMock = vi.fn<(target: string | URL | Request) => Promise<Response>>(async (target) => {
+      const body = files[new URL(String(target instanceof Request ? target.url : target)).pathname];
+      return body === undefined ? new Response("missing", { status: 404 }) : new Response(body, { status: 200 });
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+    return fetchMock;
+  };
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("opens the zip for none of the entries its listing says are too large to keep", async () => {
+    const guides = Object.fromEntries(Array.from({ length: 5 }, (_, n) => [`guides/${n}.pdf`, "g".repeat(200)]));
+    limits.value = { perFile: 100, perModel: 1000 };
+    const kept = await supportingFilesFromZip(
+      await zipOf({ "a.stl": "solid a endsolid", ...guides, "notes.txt": "x" }),
+    );
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["notes.txt"]);
+    expect(zipReads.written.filter((each) => each.entry.startsWith("guides/"))).toEqual([]);
+  });
+
+  it("opens a zip inside whose name ends in a space as one named without, in a folder named so", async () => {
+    const inner = fs.readFileSync(await zipOf({ "frog.stl": "solid frog endsolid", "guide.pdf": "%PDF-1.4" }));
+    const zip = await zipOf({ "Frog.zip ": inner });
+    const plates = await modelFilesFromZip(zip);
+    const supporting = await supportingFilesFromZip(zip);
+    remove([...plates, ...supporting]);
+    expect(plates.map((each) => [each.folder ?? null, each.filename])).toEqual([[null, "frog.stl"]]);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([[null, "guide.pdf"]]);
+    // Beside the model's own, its files keep the folder its name as kept gives.
+    const frog = fs.readFileSync(await zipOf({ "frog.stl": "solid frog endsolid" }));
+    const a = fs.readFileSync(await zipOf({ "guide.pdf": "%PDF-1.4 a" }));
+    const apart = await supportingFilesFromZip(await zipOf({ "Frog.zip": frog, "A.zip ": a }));
+    remove(apart);
+    expect(apart.map((each) => [each.folder ?? null, each.filename])).toEqual([["A", "guide.pdf"]]);
+    // And the files beside it are placed by their folders in the zip, as beside one named without.
+    const parts = fs.readFileSync(await zipOf({ "part.stl": "solid part endsolid" }));
+    const beside = await supportingFilesFromZip(
+      await zipOf({
+        "scripts/source.scad": "cube(1);",
+        "guide.pdf": "%PDF-1.4 a",
+        "scripts/guide.pdf": "%PDF-1.4 b",
+        "parts.zip ": parts,
+      }),
+    );
+    remove(beside);
+    expect(beside.map((each) => [each.folder ?? null, each.filename]).toSorted()).toEqual([
+      [null, "guide.pdf"],
+      ["scripts", "guide.pdf"],
+    ]);
+  });
+
+  it("takes none of a design's raw licence for the one the download gave, both stored by one name at the top", async () => {
+    const meta = {
+      parametricSource: { filenames: ["frog.scad"], withheld: false, zipUrl: "https://example.com/scripts.zip" },
+    };
+    served({
+      "/scripts.zip": await new JSZip()
+        .file("frog.scad", "cube(1);")
+        .file("LICENSE (original).txt", "l".repeat(40))
+        .file("notes.txt", "n".repeat(30))
+        .generateAsync({ type: "nodebuffer" }),
+    });
+    // Forty bytes given, of a hundred: the zip's licence is the one given, so the notes fit.
+    limits.value = { perFile: 100, perModel: 100 };
+    const given = [input("LICENSE.txt", "L".repeat(40), { supporting: true })];
+    const { sources, supporting } = await withDesignRawFiles(meta, [], given);
+    remove([...sources, ...supporting]);
+    expect(supporting.map((each) => each.filename)).toEqual(["LICENSE.txt", "notes.txt"]);
+    expect(zipReads.written.map((each) => each.entry)).not.toContain("LICENSE (original).txt");
+    // In a folder, where neither is renamed, they're two files.
+    served({
+      "/scripts.zip": await new JSZip()
+        .file("frog.scad", "cube(1);")
+        .file("docs/LICENSE (original).txt", "l".repeat(40))
+        .generateAsync({ type: "nodebuffer" }),
+    });
+    const inDocs = [input("LICENSE.txt", "L".repeat(40), { supporting: true, folder: "docs" })];
+    const both = await withDesignRawFiles(meta, [], inDocs);
+    remove([...both.sources, ...both.supporting]);
+    expect(both.supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([
+      ["docs", "LICENSE.txt"],
+      ["docs", "LICENSE (original).txt"],
+    ]);
+  });
+
+  it("downloads a zip larger than what's left of a model's share for a file in it that fits, and none once it's taken", async () => {
+    const zip = await new JSZip()
+      .file("guide.pdf", "g".repeat(40))
+      .file("big.txt", "b".repeat(600))
+      .generateAsync({ type: "nodebuffer" });
+    const fetchMock = served({ "/docs.zip": zip });
+    // Fifty bytes left: less than the zip, more than its guide.
+    limits.value = { perFile: 1000, perModel: 1000 };
+    expect(zip.length).toBeGreaterThan(50);
+    const docs = { url: "https://example.com/docs.zip", name: "docs.zip" };
+    const kept = await downloadSupportingFile(docs, site, { bytes: 950, files: 1 });
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["guide.pdf"]);
+    fetchMock.mockClear();
+    expect(await downloadSupportingFile(docs, site, { bytes: 1000, files: 1 })).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps none of a zip inside whose listing fails once it has given its files, and goes on to the next", async () => {
+    const a = fs.readFileSync(await zipOf({ "a-note.txt": "first" }));
+    const b = fs.readFileSync(await zipOf({ "b-note.txt": "second" }));
+    const wrapper = await zipOf({ "A.zip": a, "B.zip": b });
+    // The ninth listing from here, A.zip's last, comes once its note is written.
+    zipReads.listFailsAt = zipReads.lists + 9;
+    const kept = await supportingFilesFromZip(wrapper);
+    remove(kept);
+    const note = zipReads.written.find((each) => each.entry === "a-note.txt");
+    expect(note && fs.existsSync(note.to)).toBe(false);
+    expect(kept.map((each) => [each.folder, each.filename])).toEqual([["B", "b-note.txt"]]);
   });
 });

@@ -407,21 +407,24 @@ async function keepWithin(
 ): Promise<number> {
   const keyOf = (filename: string, folder: string | null | undefined) =>
     `${normalizeFolder(folder) ?? ""}\0${filename.toLowerCase()}`;
-  const files = await prisma.printFile.findMany({
-    where: { printId },
-    select: { id: true, filename: true, folder: true, role: true, size: true },
-  });
+  // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
   // Every row by each name: nothing keeps a model from holding two (a merge brings each model's along).
-  const stored = new Map<string, typeof files>();
-  for (const file of files) {
-    const key = keyOf(file.filename, file.folder);
-    stored.set(key, [...(stored.get(key) ?? []), file]);
-  }
+  const read = async () => {
+    const files = await prisma.printFile.findMany({
+      where: { printId },
+      select: { id: true, filename: true, folder: true, role: true, size: true },
+    });
+    const stored = new Map<string, typeof files>();
+    for (const file of files) {
+      const key = keyOf(file.filename, file.folder);
+      stored.set(key, [...(stored.get(key) ?? []), file]);
+    }
+    const supporting = files.filter((file) => file.role === "SUPPORTING");
+    return { stored, bytes: supporting.reduce((sum, file) => sum + file.size, 0), count: supporting.length };
+  };
+  let { stored, bytes, count } = await read();
   const added = new Set<string>();
   let kept = 0;
-  // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
-  let bytes = files.reduce((sum, file) => sum + (file.role === "SUPPORTING" ? file.size : 0), 0);
-  let count = files.filter((file) => file.role === "SUPPORTING").length;
   let leftOut = 0;
   for (const input of inputs) {
     if (!input.tempFilePath) continue;
@@ -431,7 +434,7 @@ async function keepWithin(
     // One the model has by that name stays, unless its file is gone for sure: a row a repair's sweep left would
     // otherwise keep out the file the site gives back. A save of it still under way counts as there. Each row by the
     // name is looked at, as keepScripts does: one gone beside one that's there leaves the name taken.
-    const held: typeof files = [];
+    const held: NonNullable<ReturnType<typeof stored.get>> = [];
     for (const there of stored.get(key) ?? []) {
       if (!(await removePrintFileIfGone(there.id))) {
         held.push(there);
@@ -462,6 +465,18 @@ async function keepWithin(
       kept++;
     } catch (err) {
       console.warn(`Couldn't keep ${filename} beside the model:`, err);
+      // A save whose answer was lost may have gone in all the same (saveFileFromTemp), so what the model keeps is read
+      // again before the next; where that can't be read either, no more are kept.
+      try {
+        ({ stored, bytes, count } = await read());
+      } catch (readErr) {
+        console.warn(`Couldn't read what model ${printId} keeps beside it after that, so it keeps no more:`, readErr);
+        break;
+      }
+      if (stored.get(key)?.length) {
+        added.add(key);
+        kept++;
+      }
     }
   }
   if (leftOut) {

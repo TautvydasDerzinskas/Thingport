@@ -12,7 +12,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { CLOUDFLARE_BLOCKED_CODE } from "../../services/flaresolverr";
 import type { NewPlateInput } from "../../services/printCreation";
-import { HttpError } from "../../utils/fileUtils";
+import { HttpError, sanitizeFilename } from "../../utils/fileUtils";
 import { MANIFESTS } from "../index.generated";
 import { detailsOf } from "../details";
 import type { ProviderDetails, ProviderList, ProviderLists, ProviderTrending, SourcedImport } from "../types";
@@ -68,12 +68,14 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
       throw new HttpError(403, `This is a paid Pinshape model (${resolved.price}): Thingport can't download it.`);
     }
     // What a plate takes, a zip to unpack, and the other files a model keeps beside it where the admin keeps any: no
-    // point asking for pictures, nor for a link to a file that would be dropped.
+    // point asking for pictures, nor for a link to a file that would be dropped. Each by the name it's kept under, as
+    // downloadSignedFile tells them apart by: so one it downloads as a model file fails the import when it fails.
     const besideToo = (await kit.supportingLimit()) !== null;
-    const wanted = resolved.files.filter(
-      (file) =>
-        kit.isImportableFile(file.name) || (besideToo && kit.isSupportingFile(file.name)) || /\.zip$/i.test(file.name),
-    );
+    const beside = (file: { name: string }) => kit.isSupportingFile(sanitizeFilename(file.name));
+    const wanted = resolved.files.filter((file) => {
+      const name = sanitizeFilename(file.name);
+      return kit.isImportableFile(name) || (besideToo && beside(file)) || /\.zip$/i.test(name);
+    });
     const files =
       resolved.files.length || !resolved.zipPath
         ? wanted
@@ -88,7 +90,7 @@ export const pinshapeImport: SourcedImport<string, PinshapeModelResolution> = {
           );
         } catch (err) {
           // A file beside the model's own never fails the import.
-          if (!kit.isSupportingFile(file.name)) throw err;
+          if (!beside(file)) throw err;
         }
       }
     } catch (err) {

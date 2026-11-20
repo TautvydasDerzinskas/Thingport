@@ -29,22 +29,23 @@ const DESIGNER_PROFILE = "6ac6f004729f5ba4b35740a6";
 const OTHER_PROFILE = "6ad5fedd23030f2e2c08899b";
 const API = "/api/cxy";
 
-type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "zip" | "refused" };
+type Variant = { profiles?: "none"; model?: "missing"; files?: "missing" | "guide" | "zip" | "sliced" | "refused" };
 
-/** The recorded files with a guide among them, as a model's instructions come, or a zip of notes and a part. */
-function filesWith(extra: "guide" | "zip") {
+const EXTRA_FILES = {
+  guide: { fileName: "Assembly guide", file: "guide.pdf" },
+  zip: { fileName: "Extras", file: "extras.zip" },
+  sliced: { fileName: "Body.gcode.3mf", file: "body.gcode.3mf" },
+};
+
+/** The recorded files with a guide among them, as a model's instructions come, a zip of notes and a part, or the
+ *  designer's sliced 3MF. */
+function filesWith(extra: keyof typeof EXTRA_FILES) {
   const files = loadFixture("crealitycloud", "model-files") as { result: { downloadUrls: unknown[] } };
-  files.result.downloadUrls.push(
-    extra === "guide"
-      ? {
-          fileName: "Assembly guide",
-          url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/guide.pdf?Signature=s",
-        }
-      : {
-          fileName: "Extras",
-          url: "https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/extras.zip?Signature=s",
-        },
-  );
+  const { fileName, file } = EXTRA_FILES[extra];
+  files.result.downloadUrls.push({
+    fileName,
+    url: `https://internal-creality-usa.oss-us-east-1.aliyuncs.com/models/${file}?Signature=s`,
+  });
   return files;
 }
 
@@ -84,7 +85,9 @@ function handlerFor(scenario: string, variant: Variant = {}): FetchHandler {
         if (scenario === "rejected" || variant.files === "refused") {
           return json(loadFixture("crealitycloud", "invalid-token"));
         }
-        if (variant.files === "guide" || variant.files === "zip") return json(filesWith(variant.files));
+        if (variant.files === "guide" || variant.files === "zip" || variant.files === "sliced") {
+          return json(filesWith(variant.files));
+        }
         return json(loadFixture("crealitycloud", variant.files === "missing" ? "model-missing" : "model-files"));
       case "/v2/thematic/detail":
         return json(loadFixture("crealitycloud", scenario === "gone" ? "model-missing" : "collection-info"));
@@ -247,10 +250,24 @@ describe("Creality Cloud specifics", () => {
     expect(files.map((file) => file.filename)).toEqual(["notes.txt"]);
   });
 
+  it("keeps the designer's sliced 3MF beside the profile a link brings, as a file beside it rather than a plate", async () => {
+    await spec.connect(ctx.userId);
+    ctx.install(handlerFor("ok", { files: "sliced" }));
+    expectStatus(await ctx.importUrl(), 200);
+    const [print] = await ctx.prints();
+    const plates = await prisma.plate.findMany({ where: { printId: print.id } });
+    expect(plates).toHaveLength(1);
+    expect(plates[0].sourceInstanceId).not.toBeNull();
+    const files = await prisma.printFile.findMany({ where: { printId: print.id } });
+    expect(files.map((file) => [file.filename, file.role])).toEqual([["Body.gcode.3mf", "SUPPORTING"]]);
+  });
+
   it("keeps the profile when Creality Cloud turns down listing the files beside it", async () => {
     await spec.connect(ctx.userId);
-    ctx.install(handlerFor("ok", { files: "refused" }));
+    const stub = ctx.install(handlerFor("ok", { files: "refused" }));
     expectStatus(await ctx.importUrl(), 200);
+    // Asked for, and turned down.
+    expect(stub.calls.some((call) => call.url.pathname === `${API}/v3/model/memberDownload`)).toBe(true);
     const [print] = await ctx.prints();
     const plates = await prisma.plate.findMany({ where: { printId: print.id } });
     expect(plates.map((plate) => plate.sourceInstanceId)).toHaveLength(1);

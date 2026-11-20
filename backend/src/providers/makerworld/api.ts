@@ -16,7 +16,7 @@ import {
   makerworldListedFileNames,
   makerworldMetaFromDesign,
 } from "./pageData";
-import { isSupportingImportFile, supportingLimits } from "../../services/supportingImports";
+import { isKeptBesideModel, supportingLimits } from "../../services/supportingImports";
 import { maybeSleep, sleep } from "../../utils/concurrency";
 import { HttpError } from "../../utils/fileUtils";
 import {
@@ -471,7 +471,8 @@ export async function resolveMakerworldSupportingUrl(
 ): Promise<string | null> {
   if ((await supportingLimits()) === null) return null;
   const read = design ?? (await fetchMakerworldDesign(designId, bearerToken, paceMs, true).catch(() => null));
-  if (!read || !makerworldListedFileNames(read).some((name) => isSupportingImportFile(name))) return null;
+  // By the rule the zip's pass keeps them by, its sliced 3MFs among them (fetchDesignRawFiles).
+  if (!read || !makerworldListedFileNames(read).some((name) => isKeptBesideModel(name))) return null;
   return resolveMakerworldSourcesUrl(designId, bearerToken, paceMs);
 }
 

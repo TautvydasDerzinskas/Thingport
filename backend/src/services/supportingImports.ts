@@ -1,6 +1,7 @@
 import path from "node:path";
 import { IMPORT_ALLOWED_EXTS, IMPORT_MAX_BYTES, PARAMETRIC_SOURCE_EXTS } from "../config";
 import { sharedTopFolder, withoutTopLevels, withoutTopOf } from "../utils/fileFolder";
+import { isPreparedPrintFilename } from "./preparedPrint";
 import { getImportSupportingFiles } from "./settingsService";
 
 // The files a site gives beside a model's own -- instructions, notes, a parts list, sources -- which an import keeps as
@@ -59,11 +60,25 @@ const JUNK_NAMES = new Set(["thumbs.db", "desktop.ini", ".ds_store"]);
 /** A file a site gives with a model that's kept beside it as a supporting file. Not one a plate takes, nor the script
  *  the model is generated from (kept as one already), nor a zip (opened instead), nor what SKIPPED_EXTS names. */
 export function isSupportingImportFile(name: string): boolean {
-  const base = path.posix.basename(name.replace(/\\/g, "/"));
-  if (!base || base.startsWith("._") || JUNK_NAMES.has(base.toLowerCase())) return false;
+  const base = baseOf(name);
+  if (!base) return false;
   const ext = path.extname(base).toLowerCase();
   if (IMPORT_ALLOWED_EXTS.has(ext) || PARAMETRIC_SOURCE_EXTS.has(ext)) return false;
   return !SKIPPED_EXTS.has(ext);
+}
+
+/** A file kept beside a model from what a site gives where no plate is taken from it: a supporting file, or one sliced
+ *  for the designer's printer, which stays a supporting file rather than taking the owner's prepared slot
+ *  (keepSupportingFiles). A plain 3MF is a model file, and stays out. */
+export function isKeptBesideModel(name: string): boolean {
+  const base = baseOf(name);
+  return isSupportingImportFile(name) || Boolean(base && isPreparedPrintFilename(base));
+}
+
+/** A file's own name, or null for what an OS leaves beside the files it shows. */
+function baseOf(name: string): string | null {
+  const base = path.posix.basename(name.replace(/\\/g, "/"));
+  return !base || base.startsWith("._") || JUNK_NAMES.has(base.toLowerCase()) ? null : base;
 }
 
 // Documents and 2D drawings: of what a site that offers a model in many formats lists, the files that aren't the model
