@@ -1226,6 +1226,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         <Menu
           open={Boolean(menuFeature)}
           onClose={closeMenu}
+          // The menu overlay can receive the browser's contextmenu event after pointerup.
+          onContextMenu={(event) => event.preventDefault()}
           anchorReference="anchorPosition"
           anchorPosition={menu?.at}
         >
