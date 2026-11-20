@@ -111,6 +111,26 @@ describe("checkPrint", () => {
     ]);
   });
 
+  it("places overhang markers above the floor used to count a sloping face", async () => {
+    const result = await check(
+      (m, own) => ({
+        wedge: prism(m, own, [
+          [0, 0],
+          [30, 1],
+          [30, 12],
+          [0, 12],
+        ]),
+      }),
+      {
+        highlight: true,
+      },
+    );
+    const markers = result.bodies[0].highlights?.overhang ?? [];
+    expect(markers).toHaveLength(2);
+    expect(markers.every((point) => point[2] > 0.4)).toBe(true);
+    expect(Math.min(...markers.map((point) => point[2]))).toBeCloseTo(0.6, 5);
+  });
+
   it("measures a ball's underside as the formula does", async () => {
     const { bodies } = await check((m, own) => ({ ball: own(own(m.Manifold.sphere(10, 128)).translate([0, 0, 10])) }));
     // The band of the sphere facing down more than 45°, above the 0.4 mm the bed holds: 2πr × its height.

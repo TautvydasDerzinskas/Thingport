@@ -8,7 +8,6 @@ import { prisma } from "../src/db";
 import { createAiConnection } from "../src/services/aiConnectionService";
 import { setAiRetryDelayForTest } from "../src/services/aiProviderClient";
 import { DEFAULT_STUDIO_ASSISTANT_PREFS, setStudioAssistantPrefs } from "../src/services/settingsService";
-import { MAX_STEPS } from "../src/services/studioAssistant";
 
 // Studio's assistant end to end: the admin's switch and the AIs it offers, then runs against fake AIs that answer
 // with scripted tool calls, OpenAI-style and Claude's, changing a real design through the Studio commands.
@@ -355,7 +354,10 @@ describe("Studio's assistant", () => {
         : index === 1
           ? claude([{ type: "text", text: "Checking it." }], "pause_turn")
           : claude([{ type: "text", text: "I added a 10 mm ball." }], "end_turn");
-    const thread = await ask(person.token, designId, "Add a ball", { selected: ["box-9"] });
+    const thread = await ask(person.token, designId, "Add a ball", {
+      selected: ["box-9"],
+      active_plate: "plate-1",
+    });
     expect(thread.run).toMatchObject({ status: "done", steps: [{ tool: "studio_add_sphere", ok: true }] });
     expect((await documentOf(person.token, designId)).features.map((feature) => feature.type)).toEqual(["sphere"]);
 
@@ -378,6 +380,7 @@ describe("Studio's assistant", () => {
     ]);
     expect(first.cache_control).toEqual({ type: "ephemeral" });
     expect(first.messages[0].content).toMatch(/Selected in the view: box-9/);
+    expect(first.messages[0].content).toMatch(/Active build plate: plate-1/);
 
     // Its answer went back whole, search and thinking included; a result only for the tool Thingport ran.
     const second = seen[1].body as {
@@ -438,8 +441,11 @@ describe("Studio's assistant", () => {
     };
     const names = body.tools.map((tool) => tool.function.name);
     expect(names).toContain("studio_add_box");
+    expect(names).toEqual(
+      expect.arrayContaining(["studio_create_plate", "studio_move_to_plate", "studio_set_body_color"]),
+    );
     expect(names).not.toContain("studio_fillet");
-    expect(names.length).toBeLessThanOrEqual(14);
+    expect(names.length).toBeLessThanOrEqual(17);
     // Its arguments named, not described: the tool's own line says what they are.
     expect(JSON.stringify(body.tools)).not.toMatch(/"properties":\{[^}]*"description"/);
     expect(body.messages[0].content).toMatch(/^You build and change 3D-printable parts/);
@@ -539,7 +545,7 @@ describe("Studio's assistant", () => {
     ]);
   });
 
-  it("stops when asked, takes one prompt at a time, and stops itself at the step limit", async () => {
+  it("stops when asked and takes one prompt at a time", async () => {
     await offer("openai", await startAi());
     const designId = await newDesign(person.token);
     let release = () => {};
@@ -559,12 +565,23 @@ describe("Studio's assistant", () => {
     release();
     expect(stopped.run.status).toBe("stopped");
     expect(stopped.messages.at(-1)).toMatchObject({ role: "assistant", outcome: "stopped" });
+  });
 
-    // An AI that never stops calling tools.
-    script = () => openAi([{ name: "studio_nothing_here", args: {} }]);
-    const limited = await ask(person.token, designId, "Keep going");
-    expect(limited.run.status).toBe("limit");
-    expect(limited.run.steps).toHaveLength(MAX_STEPS);
+  it("finishes a run with more than 30 tool steps", async () => {
+    await offer("openai", await startAi());
+    const designId = await newDesign(person.token);
+    const read = { name: "studio_get_design", args: {} };
+    script = (_body, index) => {
+      if (index === 0) return openAi(Array.from({ length: 29 }, () => read));
+      if (index === 1) return openAi([read, read]);
+      return openAi([], "Finished checking the design.");
+    };
+
+    const thread = await ask(person.token, designId, "Keep checking the design");
+    expect(thread.run.status).toBe("done");
+    expect(thread.run.steps).toHaveLength(31);
+    expect(thread.run.steps.every((step: { ok: boolean }) => step.ok)).toBe(true);
+    expect(thread.messages.at(-1)).toMatchObject({ outcome: "done", text: "Finished checking the design." });
   });
 
   it("says plainly when the AI can't use tools", async () => {

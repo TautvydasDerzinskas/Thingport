@@ -9,6 +9,7 @@ import {
   shapeFill,
   sketchFrame,
   sketchMatrix,
+  plateOf,
   topLevel,
   transformMatrix,
   type BodyFeature,
@@ -25,9 +26,11 @@ import { edgeWork, extrudeRings, holeCutter, loft, roundedCylinder, sectionOf, w
 import { checkPrint, type PrintCheck, type PrintCheckOptions } from "./printCheck";
 import { loftSolid, sweepSolid } from "./sweep";
 import { threadSolid, threadTriangles } from "./threads";
+import { splitWithPins } from "./splitConnectors";
 import { analyze, faceTriangles2d, findEdge, findFace, type Topology } from "./topology";
 import {
   add,
+  applyDirection,
   applyMatrix,
   applyNormal,
   cross,
@@ -406,7 +409,10 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
           const point = applyMatrix(matrix, feature.plane.point);
           const normal = applyNormal(matrix, feature.plane.normal);
           const side = feature.keep === "back" ? -1 : 1;
-          return own(solid.trimByPlane(scale(normal, side), side * dot(normal, point)));
+          const half = own(solid.trimByPlane(scale(normal, side), side * dot(normal, point)));
+          if (!feature.connector) return half;
+          const u = normalize(applyDirection(matrix, feature.connector_u ?? perpendicular(feature.plane.normal)));
+          return splitWithPins(wasm, own, half, feature, point, normal, u, Math.max(1e-4, hairOf(solid)));
         }
         if (!feature.tool_id) throw new Error(`${feature.id} has nothing to split by`);
         const tool = inWorld(feature.tool_id);
@@ -712,13 +718,13 @@ export function measureBounds(
 }
 
 /** Checks the design's visible top-level bodies for printing, where they are. A body that isn't a closed solid can't
- *  be checked, and is said so; one that can't be made is left out, as the view says why. */
+ *  be checked. Bodies that fail to build are reported with the reason. */
 export function checkDesign(
   wasm: ManifoldToplevel,
   doc: StudioDocument,
   options: PrintCheckOptions,
   meshes?: MeshLookup,
-): PrintCheck & { open: string[] } {
+): PrintCheck & { open: string[]; invalid?: { id: string; message: string }[] } {
   const made = evaluator(wasm, doc, meshes);
   const plainDoc = plainThreads(doc);
   const plain = plainDoc ? evaluator(wasm, plainDoc, meshes) : null;
@@ -728,8 +734,9 @@ export function checkDesign(
     return value;
   };
   try {
-    const bodies: { id: string; solid: Manifold; plain?: Manifold }[] = [];
+    const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
+    const invalid: { id: string; message: string }[] = [];
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || !feature.visible) continue;
       try {
@@ -737,18 +744,21 @@ export function checkDesign(
         else
           bodies.push({
             id: feature.id,
+            plate: plateOf(feature),
             solid: made.inWorld(feature.id),
             plain: plain && threaded(doc, feature.id) ? plain.inWorld(feature.id) : undefined,
           });
-      } catch {
-        // Not made: its own error says why.
+      } catch (error) {
+        invalid.push({ id: feature.id, message: error instanceof Error ? error.message : String(error) });
       }
     }
     const report = checkPrint(wasm, own, bodies, options);
     return {
       ...report,
       open,
+      ...(invalid.length ? { invalid } : {}),
       problems: [
+        ...invalid.map(({ id, message }) => `${id} couldn't be made. ${message}`),
         ...report.problems,
         ...open.map((id) => `${id} has gaps, so it isn't a closed solid and can't be checked or printed as it is.`),
       ],
@@ -923,7 +933,7 @@ export function patternCopies(feature: PatternFeature): number {
 
 /** Roughly how many triangles the design makes, before any of it is made: a server refuses one far too heavy. Each
  *  body counts what it's made from, as many times as a pattern copies it. */
-export function estimateTriangles(doc: StudioDocument): number {
+export function estimateTriangles(doc: StudioDocument, ids?: ReadonlySet<string>): number {
   const known = new Map<string, number>();
   const itself = (feature: Feature): number => {
     if (feature.type === "box") return 12;
@@ -978,5 +988,5 @@ export function estimateTriangles(doc: StudioDocument): number {
     known.set(id, total);
     return total;
   };
-  return topLevel(doc).reduce((sum, feature) => sum + of(feature.id), 0);
+  return topLevel(doc).reduce((sum, feature) => sum + (!ids || ids.has(feature.id) ? of(feature.id) : 0), 0);
 }

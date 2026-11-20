@@ -11,6 +11,7 @@ vi.hoisted(() => {
 });
 
 const { writeZip } = await import("../src/utils/zipWriter");
+const { PREVIEW_FORMAT_VERSION } = await import("../src/services/modelAssets");
 const { generateModelPreviewGlb, modelPreviewGlbExists, modelPreviewGlbPath } =
   await import("../src/services/modelPreviewCache");
 
@@ -24,10 +25,13 @@ const MODEL_XML = `<?xml version="1.0" encoding="UTF-8"?>
 describe("modelPreviewCache -- worker limits", () => {
   let fixture: string;
   const plateId = `test-fixture-limits-${Date.now()}`;
-  const cacheDir = () => path.dirname(modelPreviewGlbPath("x"));
+  const glbPath = modelPreviewGlbPath(plateId);
+  const cacheDir = path.dirname(glbPath);
+  const errorPath = path.join(cacheDir, `${plateId}.v${PREVIEW_FORMAT_VERSION}.error`);
+  const pendingPath = path.join(cacheDir, `${plateId}.pending`);
 
   beforeAll(async () => {
-    await fs.mkdir(cacheDir(), { recursive: true });
+    await fs.mkdir(cacheDir, { recursive: true });
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "thingport-3mf-limits-"));
     const modelPath = path.join(dir, "3dmodel.model");
     await fs.writeFile(modelPath, MODEL_XML);
@@ -36,22 +40,21 @@ describe("modelPreviewCache -- worker limits", () => {
   });
 
   afterAll(async () => {
-    for (const ext of [".v5.glb", ".v5.error", ".pending"]) {
-      await fs.rm(path.join(cacheDir(), `${plateId}${ext}`), { force: true });
+    for (const file of [glbPath, errorPath, pendingPath]) {
+      await fs.rm(file, { force: true });
     }
   });
 
   it("kills a render that exceeds its memory budget and keeps the server process alive", async () => {
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(false);
-    const error = fsSync.readFileSync(path.join(cacheDir(), `${plateId}.v5.error`), "utf-8");
+    const error = fsSync.readFileSync(errorPath, "utf-8");
     expect(error).toMatch(/^permanent: (memory grew|worker heap exceeded)/);
-    expect(fsSync.existsSync(path.join(cacheDir(), `${plateId}.pending`))).toBe(false);
-    expect(fsSync.readdirSync(cacheDir()).some((f) => f.startsWith(plateId) && f.endsWith(".tmp"))).toBe(false);
+    expect(fsSync.existsSync(pendingPath)).toBe(false);
+    expect(fsSync.readdirSync(cacheDir).some((f) => f.startsWith(plateId) && f.endsWith(".tmp"))).toBe(false);
   });
 
   it("does not retry a limit failure, even once the cooldown has passed", async () => {
-    const errorPath = path.join(cacheDir(), `${plateId}.v5.error`);
     const longAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     await fs.utimes(errorPath, longAgo, longAgo);
     await generateModelPreviewGlb(plateId, fixture);

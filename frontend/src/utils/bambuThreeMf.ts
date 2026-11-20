@@ -389,9 +389,7 @@ function parseProjectSettings(text: string): {
     if (Array.isArray(json.filament_colour)) {
       // Bambu Studio usually writes these as #RRGGBBAA, and three.js reads only the six-digit spelling, so
       // the alpha comes off here rather than every filament falling back to white where it's there.
-      filamentColors = json.filament_colour
-        .map((c) => (typeof c === "string" ? displayColor(c) : null))
-        .filter((c): c is string => c !== null);
+      filamentColors = json.filament_colour.map((c) => (typeof c === "string" ? (displayColor(c) ?? "") : ""));
     }
     const area = json.printable_area;
     if (Array.isArray(area) && area.length >= 3 && typeof area[2] === "string") {

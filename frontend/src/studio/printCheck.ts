@@ -1,4 +1,6 @@
 import type { Manifold, ManifoldToplevel } from "manifold-3d";
+import type { StudioPrintSetup } from "./document";
+import { footprintOnBed } from "./printLayout";
 import type { Own } from "./solids";
 import { add, cross, dot, length, normalize, scale, sub, type Vec3 } from "./vec";
 
@@ -13,6 +15,8 @@ export type PrintCheckOptions = {
   overhang: number;
   /** Thinnest wall that prints, mm (about two nozzle widths, 0.8 usual). */
   minWall: number;
+  outline?: StudioPrintSetup["outline"];
+  highlight?: boolean;
 };
 
 export type BodyCheck = {
@@ -31,6 +35,7 @@ export type BodyCheck = {
   overhang: { area: number; lowest: number } | null;
   /** Walls thinner than options.minWall: their area and the thinnest found. */
   thinWalls: { area: number; thinnest: number } | null;
+  highlights?: { overhang: Vec3[]; thinWalls: Vec3[] };
 };
 
 export type PrintCheck = {
@@ -102,6 +107,32 @@ function areaAbove([z0, z1, z2]: number[], h: number, area: number): number {
   return area * (1 - (h - z0) ** 2 / ((z1 - z0) * (z2 - z0)));
 }
 
+/** Area-weighted centroid of the triangle clipped against the same floor used for its area. */
+function centroidAbove(corners: [Vec3, Vec3, Vec3], floor: number): Vec3 {
+  if (corners.every((point) => point[2] >= floor)) return scale(add(add(corners[0], corners[1]), corners[2]), 1 / 3);
+  const clipped: Vec3[] = [];
+  for (const [index, end] of corners.entries()) {
+    const start = corners[(index + 2) % 3];
+    const inside = end[2] >= floor;
+    if (inside !== start[2] >= floor) {
+      const at = (floor - start[2]) / (end[2] - start[2]);
+      clipped.push(add(start, scale(sub(end, start), at)));
+    }
+    if (inside) clipped.push(end);
+  }
+  const a = clipped[0];
+  let weighted: Vec3 = [0, 0, 0];
+  let total = 0;
+  for (let i = 1; i + 1 < clipped.length; i++) {
+    const b = clipped[i];
+    const c = clipped[i + 1];
+    const area = length(cross(sub(b, a), sub(c, a)));
+    weighted = add(weighted, scale(add(add(a, b), c), area / 3));
+    total += area;
+  }
+  return total > 0 ? scale(weighted, 1 / total) : a;
+}
+
 /**
  * The faces pointing down more steeply than `limit` degrees from vertical, above `floor`: what needs support. They're
  * gathered into patches by the edges they share. A patch narrower than a printed line, `line` wide, is left out, as
@@ -113,6 +144,7 @@ function overhangOf(
   floor: number,
   limit: number,
   line: number,
+  highlight?: Vec3[],
 ): BodyCheck["overhang"] {
   const steep = Math.sin((Math.min(90, Math.max(0, limit) + ANGLE_SLACK) * Math.PI) / 180);
   const parent = Int32Array.from({ length: triangles.length }, (_, i) => i);
@@ -156,6 +188,14 @@ function overhangOf(
     (patch) => patch.area >= NOISE_AREA && (2 * patch.area) / patch.rim >= line,
   );
   if (!kept.length) return null;
+  if (highlight) {
+    const patchesKept = new Set(kept);
+    const matching = found.filter(({ t }) => patchesKept.has(patchOf(t)));
+    const stride = Math.max(1, Math.ceil(matching.length / 256));
+    for (let i = 0; i < matching.length; i += stride) {
+      highlight.push(centroidAbove(triangles[matching[i].t].corners, floor));
+    }
+  }
   return {
     area: kept.reduce((sum, patch) => sum + patch.area, 0),
     lowest: Math.min(...kept.map((patch) => patch.lowest)),
@@ -167,7 +207,12 @@ function overhangOf(
  * through its far side. The area is the wall's, half the surface found thin, as a wall is found from both its faces;
  * the thinnest is the thinnest over a square millimetre or so, as the slivers a fillet leaves at its ends are thinner.
  */
-function thinWallsOf(solid: Manifold, triangles: Triangle[], minWall: number): BodyCheck["thinWalls"] {
+function thinWallsOf(
+  solid: Manifold,
+  triangles: Triangle[],
+  minWall: number,
+  highlight?: Vec3[],
+): BodyCheck["thinWalls"] {
   if (!(minWall > SLACK) || !triangles.length) return null;
   const samples = Math.min(triangles.length, MAX_SAMPLES);
   const reach = minWall + 0.1;
@@ -183,12 +228,18 @@ function thinWallsOf(solid: Manifold, triangles: Triangle[], minWall: number): B
     const [hit] = solid.rayCast(add(middle, scale(inward, RAY_START)), add(middle, scale(inward, reach)));
     if (!hit) continue;
     const thickness = RAY_START + hit.distance * (reach - RAY_START);
-    if (thickness < minWall - SLACK && dot(normalize(hit.normal), inward) >= ACROSS) thin.push({ thickness, area });
+    if (thickness < minWall - SLACK && dot(normalize(hit.normal), inward) >= ACROSS) {
+      thin.push({ thickness, area });
+      if (highlight && highlight.length < 256) highlight.push(middle);
+    }
   }
   // The wall each sampled square millimetre of surface stands for.
   const share = total / sampled / 2;
   const area = thin.reduce((sum, sample) => sum + sample.area, 0) * share;
-  if (area < NOISE_AREA) return null;
+  if (area < NOISE_AREA) {
+    if (highlight) highlight.length = 0;
+    return null;
+  }
   const thinnestFirst = thin.toSorted((a, b) => a.thickness - b.thickness);
   let covered = 0;
   // The last when rounding leaves the sum a hair short of what `area` came to.
@@ -236,7 +287,7 @@ type Problem = { rank: number; weight: number; text: string };
 export function checkPrint(
   wasm: ManifoldToplevel,
   own: Own,
-  bodies: { id: string; solid: Manifold; plain?: Manifold }[],
+  bodies: { id: string; plate?: string; solid: Manifold; plain?: Manifold }[],
   options: PrintCheckOptions,
 ): PrintCheck {
   const { bed } = options;
@@ -269,7 +320,25 @@ export function checkPrint(
     const tooBig = [0, 1, 2].filter((axis) => size[axis] > bed[axis] + SLACK);
     const off = [0, 1].map((axis) => Math.max(0, max[axis] - bed[axis] / 2, -bed[axis] / 2 - min[axis]));
     const offAxes = [0, 1].filter((axis) => off[axis] > SLACK && !tooBig.includes(axis));
-    const fitsBed = !tooBig.length && off.every((by) => by <= SLACK) && max[2] <= bed[2] + SLACK && min[2] >= -SLACK;
+    const judged = plain ?? solid;
+    const { triangles, vertices } = trianglesOf(judged);
+    const outline = options.outline;
+    const outsideOutline =
+      outline &&
+      (plain ? trianglesOf(solid).triangles : triangles).some(
+        ({ corners }) =>
+          !footprintOnBed(
+            corners.map(([x, y]) => [x, y]),
+            bed,
+            outline,
+          ),
+      );
+    const fitsBed =
+      !tooBig.length &&
+      off.every((by) => by <= SLACK) &&
+      !outsideOutline &&
+      max[2] <= bed[2] + SLACK &&
+      min[2] >= -SLACK;
     if (tooBig.length) {
       const fits = (sizes: number[], room: number[]) => sizes.every((side, axis) => side <= room[axis] + SLACK);
       const sorted = (sides: number[]) => sides.toSorted((a, b) => a - b);
@@ -295,6 +364,10 @@ export function checkPrint(
           `${figure(bed[0])} × ${figure(bed[1])} mm bed, which is centred on x = y = 0.`,
       );
     }
+    if (outsideOutline && !offAxes.length && !tooBig.length)
+      say(RANK.offBed, 0, `${id} extends outside the printer's bed outline: move it inward.`);
+    if (!tooBig.includes(2) && max[2] > bed[2] + SLACK)
+      say(RANK.offBed, max[2] - bed[2], `${id} is above the printer's build height: move it down or reorient it.`);
     if (aboveBed)
       say(
         RANK.floating,
@@ -312,11 +385,17 @@ export function checkPrint(
     const pieces = Math.max(1, solid.decompose().filter((piece) => own(piece).volume() > NOISE_VOLUME).length);
     if (pieces > 1) say(RANK.pieces, pieces, `${id} is in ${pieces} loose pieces: join them if it's meant to be one.`);
 
-    const judged = plain ?? solid;
-    const { triangles, vertices } = trianglesOf(judged);
     // Sunk, the bed cuts it; floating, it's measured as it will be once moved down.
     const floor = Math.max(0, min[2]) + BED_HOLDS;
-    const overhang = overhangOf(triangles, vertices, floor, options.overhang, options.minWall / 2);
+    const highlights = options.highlight ? { overhang: [] as Vec3[], thinWalls: [] as Vec3[] } : undefined;
+    const overhang = overhangOf(
+      triangles,
+      vertices,
+      floor,
+      options.overhang,
+      options.minWall / 2,
+      highlights?.overhang,
+    );
     if (overhang)
       say(
         RANK.overhang,
@@ -324,7 +403,7 @@ export function checkPrint(
         `${id} has ${figure(overhang.area)} mm² of overhang steeper than ${figure(options.overhang)}°, lowest at ` +
           `z = ${figure(overhang.lowest)} mm: it needs support there, or turning so it faces up.`,
       );
-    const thinWalls = thinWallsOf(judged, triangles, options.minWall);
+    const thinWalls = thinWallsOf(judged, triangles, options.minWall, highlights?.thinWalls);
     if (thinWalls)
       say(
         RANK.thin,
@@ -343,6 +422,7 @@ export function checkPrint(
       pieces,
       overhang: overhang && { area: round3(overhang.area), lowest: round3(overhang.lowest) },
       thinWalls: thinWalls && { area: round3(thinWalls.area), thinnest: round3(thinWalls.thinnest) },
+      ...(highlights ? { highlights } : {}),
     };
   });
 
@@ -350,6 +430,7 @@ export function checkPrint(
   const boxes = bodies.map(({ solid }) => solid.boundingBox());
   for (let i = 0; i < bodies.length; i++) {
     for (let j = i + 1; j < bodies.length; j++) {
+      if (bodies[i].plate !== bodies[j].plate) continue;
       const [p, q] = [boxes[i], boxes[j]];
       if (![0, 1, 2].every((axis) => p.min[axis] < q.max[axis] && q.min[axis] < p.max[axis])) continue;
       const volume = own(wasm.Manifold.intersection([bodies[i].solid, bodies[j].solid])).volume();
