@@ -75,11 +75,14 @@ function cloudApiHeaders(bearerToken: string | null): Record<string, string> {
 // treating it as real and triggering the hours-long captcha cooloff.
 const TRANSIENT_418_RETRY_DELAY_MS = 1500;
 
+/** `skip`, asked before each try, the retry too: true gives up with null, sending nothing. */
 async function fetchCloudJson(
   url: string,
   bearerToken: string | null,
+  skip?: () => boolean,
 ): Promise<{ status: number; data: unknown } | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (skip?.()) return null;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CLOUD_API_TIMEOUT_MS);
     try {
@@ -377,10 +380,14 @@ async function fetchMakerworldRawFiles(
   startsCooloff = true,
 ): Promise<{ url: string; filename: string | null } | null> {
   await maybeSleep(paceMs);
-  // An optional request skips a block a required one started while it waited, as it skips one before.
-  if (!startsCooloff && makerworldCaptchaCooloffActive()) return null;
+  // An optional request skips a block a required one started while it waited, as it skips one before: before its
+  // retry after a 418 too, which waits again.
   const body = downloadReplyBody(
-    await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`, bearerToken),
+    await fetchCloudJson(
+      `${DESIGN_API_BASE}/design/${designId}/model?modelType=all&type=download`,
+      bearerToken,
+      startsCooloff ? undefined : makerworldCaptchaCooloffActive,
+    ),
     startsCooloff,
   );
   const url = body && pickString(body, ["url"]);
@@ -432,6 +439,11 @@ export async function resolveMakerworldParametricSource(
   if (!source || source.withheld) return source;
   return { ...source, zipUrl: await resolveMakerworldSourcesUrl(designId, bearerToken, paceMs) };
 }
+
+/** Whether the zip of the design's raw files was asked for already, for its scripts (resolveMakerworldParametricSource
+ *  sets `zipUrl`, null where it wasn't given): the files beside the model are in that same zip, so it isn't asked for
+ *  again for them, which a refusal would only meet again. One whose scripts were withheld was never asked for. */
+export const askedForScripts = (source: ParametricSourceInfo | undefined) => source?.zipUrl !== undefined;
 
 /**
  * The zip of a design's raw files, for the files it keeps beside its own -- instructions, sources -- where its own
@@ -542,7 +554,7 @@ export async function resolveMakerworldViaCloudApi(
   );
   // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched.
   const supportingZipUrl =
-    parametricSource?.zipUrl || !supporting
+    askedForScripts(parametricSource) || !supporting
       ? null
       : await resolveMakerworldSupportingUrl(designId, design, bearerToken, paceMs);
 

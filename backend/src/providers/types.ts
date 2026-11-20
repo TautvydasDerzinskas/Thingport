@@ -75,10 +75,11 @@ export type ImportKit = {
   /**
    * Several such files, fetched one at a time and only as far as what a model keeps of them goes: once the ones fetched
    * fill it, in bytes or in number, the rest aren't fetched at all. For a site that lists them all at once, rather than
-   * starting every download together. Never fails the import either.
+   * starting every download together. Never fails the import either. A `url` may be a function that asks the site for
+   * the file's link (a signed one), called only when there's room for the file; null or a throw skips it.
    */
   downloadSupportingFiles(
-    files: { url: string; name: string }[],
+    files: { url: string | (() => Promise<string | null>); name: string }[],
     isFileHost: (hostname: string) => boolean,
   ): Promise<NewPlateInput[]>;
 };

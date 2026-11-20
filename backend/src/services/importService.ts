@@ -30,11 +30,13 @@ import { createKeyedLock, maybeSleep, sleep } from "../utils/concurrency";
 import { isCloudflareChallenge } from "./flaresolverr";
 import {
   emptyImportedPageMetadata,
+  extractNextDataJson,
   extractPageMetadata,
   findDownloadUrl,
   getPath,
   type ImportCookies,
   type ImportedPageMetadata,
+  type ParametricSourceInfo,
 } from "./importResolvers";
 import {
   makerworldHtmlHeaders,
@@ -51,6 +53,7 @@ import {
 // providers/makerworld/: it is the link import every page link of no provider's goes through too (LINK_PROVIDER),
 // woven into the download, plate and print steps below.
 import {
+  askedForScripts,
   extractMakerworldBearerToken,
   MAKERWORLD_AUTH_CODE,
   MakerworldAuthError,
@@ -200,38 +203,50 @@ async function makerworldMetaFromExtension(url: string, body: ImportRequestBody)
     unverified: true,
   };
   const author = await completeMakerworldAuthor(basicAuthor, body.makerworldPaceMs);
-  // What Grab resolved is one profile's 3MF, as the cloud API's download is, so the scripts the design is
-  // generated from need fetching of their own. Without this an import through Grab brought no script at all,
-  // while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's plates.
-  //
-  // The design Grab sent is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and
-  // older) sends none at all, which reads as a model with no script. So what it sent is taken at its word only
-  // where it has a file list; otherwise the design is read from MakerWorld.
-  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
-  const sentFileList = Array.isArray(getPath(design, "designExtension", "model_files"));
-  const parametricSource = bearerToken
-    ? await resolveMakerworldParametricSource(
-        parsed.designId,
-        sentFileList ? meta.parametricSource : null,
-        bearerToken,
-        body.makerworldPaceMs,
-      )
-    : meta.parametricSource;
-  // And the files it keeps beside its own, which the scripts' zip holds already where it's fetched: from the file list
-  // Grab sent, which names them beside the scripts. One from a Grab that sent scripts only names none, so none is
-  // fetched; MakerWorld isn't asked to say it again.
-  const supportingZipUrl =
-    bearerToken && sentFileList && !parametricSource?.zipUrl && body.makerworldSupporting !== false
-      ? await resolveMakerworldSupportingUrl(parsed.designId, design, bearerToken, body.makerworldPaceMs)
-      : null;
   return {
     ...meta,
     author,
     creator: author?.name ?? meta.creator,
-    parametricSource,
-    supportingZipUrl,
+    ...(await grabbedDesignRawFiles(parsed.designId, design, meta.parametricSource, body)),
     makerworldProfile: extensionProfile(url, body),
   };
+}
+
+/**
+ * What a design Grab resolved one profile's 3MF of doesn't carry, as the cloud API's download doesn't: the scripts it's
+ * generated from, and the zip of the files it keeps beside its own. Without this an import through Grab brought no
+ * script at all, while the same model pasted as a link did. Best-effort: no token, or a refusal, leaves the model's
+ * plates. `design` is the one Grab sent, or the page's where it sent none (too large for the request), and `known` its
+ * scripts as read off it.
+ *
+ * The design Grab sends is trimmed to fit the request, and a Grab from before it kept the file list (1.8.1 and older)
+ * sends none at all, which reads as a model with no script. So a design is taken at its word only where it has a file
+ * list; otherwise it's read from MakerWorld for the scripts. The files beside the model come from that list, which
+ * names them beside the scripts: one from a Grab that sent scripts only names none, so none is fetched, and MakerWorld
+ * isn't asked to say it again. The zip asked for the scripts holds them already, so it isn't asked for twice.
+ */
+async function grabbedDesignRawFiles(
+  designId: string,
+  design: unknown,
+  known: ParametricSourceInfo | undefined,
+  body: ImportRequestBody,
+): Promise<Pick<ImportedPageMetadata, "parametricSource" | "supportingZipUrl">> {
+  const bearerToken = extractMakerworldBearerToken(resolveMakerworldCookie(body));
+  if (!bearerToken) return { parametricSource: known, supportingZipUrl: null };
+  const listed = Array.isArray(getPath(design, "designExtension", "model_files"))
+    ? (design as Record<string, unknown>)
+    : null;
+  const parametricSource = await resolveMakerworldParametricSource(
+    designId,
+    listed ? known : null,
+    bearerToken,
+    body.makerworldPaceMs,
+  );
+  const supportingZipUrl =
+    listed && !askedForScripts(parametricSource) && body.makerworldSupporting !== false
+      ? await resolveMakerworldSupportingUrl(designId, listed, bearerToken, body.makerworldPaceMs)
+      : null;
+  return { parametricSource, supportingZipUrl };
 }
 
 /** The picked profile from the design the extension sent: its picture, limited to MakerWorld's CDN as it's
@@ -518,6 +533,8 @@ export async function openImportResponse(
       makerworldProfile: inheritedMeta.makerworldProfile,
       // Whether the creator withheld the script is read off the design, before anything downloads.
       parametricSource: extracted.parametricSource ?? inheritedMeta.parametricSource,
+      // Found with the download this page is a hop on the way to, which the page says nothing of.
+      supportingZipUrl: inheritedMeta.supportingZipUrl,
     };
     if (URLS.makerworld.isHost(pageHost) && extracted.author) {
       resolvedMeta.author = await completeMakerworldAuthor(extracted.author, body.makerworldPaceMs);
@@ -527,6 +544,16 @@ export async function openImportResponse(
       if (body.resolved_download_url) {
         downloadUrl = body.resolved_download_url;
         resolvedMeta.makerworldProfile = { instanceId: body.resolved_instance_id ?? null };
+        // Grab sent no design, as one too large for the request: the page's stands in, and what the profile's 3MF
+        // doesn't carry is looked up from it as from one Grab sent. None of those lookups starts the cooloff.
+        const designId = depth === 0 ? parseMakerworldModelUrl(validatedUrl)?.designId : undefined;
+        if (designId) {
+          const pageDesign = getPath(extractNextDataJson(html), "props", "pageProps", "design");
+          Object.assign(
+            resolvedMeta,
+            await grabbedDesignRawFiles(designId, pageDesign, resolvedMeta.parametricSource, body),
+          );
+        }
       } else {
         if (!makerworldCookie) makerworldCookie = resolveMakerworldCookie(body);
         const requestedInstanceId = parseMakerworldModelUrl(validatedUrl)?.requestedInstanceId ?? null;
@@ -1303,8 +1330,13 @@ async function filesFromZip(
     const entries = picksSupporting(pick)
       ? await supportingZipEntries(zipPath)
       : (await placedZipEntries(zipPath)).filter(({ parts }) => pick.has(keptExtOf(parts)));
+    // A name the model keeps once, in any case ("GUIDE.pdf" beside "guide.pdf"), is taken once: a second copy would
+    // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
+    // leaves room for a readable second.
+    const taken = new Set<string>();
     for (const { entry, parts, folder } of entries) {
-      if (picksSupporting(pick) && pick.except?.has(supportingKey(folder, keptNameOf(parts)))) continue;
+      const key = supportingKey(folder, keptNameOf(parts));
+      if (picksSupporting(pick) && (pick.except?.has(key) || taken.has(key))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
         console.warn(
@@ -1341,6 +1373,7 @@ async function filesFromZip(
       if (picksSupporting(pick)) {
         pick.kept.bytes += written;
         pick.kept.files += 1;
+        taken.add(key);
       }
       inputs.push({
         filename,
@@ -1472,10 +1505,10 @@ export async function downloadSupportingFile(
 }
 
 /** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), each in its turn at what the model keeps
- *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched. One that fails or
- *  is over the limit is skipped and counts for nothing. */
+ *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched, nor their links
+ *  asked for where a function gives them. One that fails or is over the limit is skipped and counts for nothing. */
 export async function downloadSupportingFiles(
-  files: { url: string; name: string }[],
+  files: { url: string | (() => Promise<string | null>); name: string }[],
   isFileHost: (hostname: string) => boolean,
   take: SupportingTake = supportingAllowance(),
 ): Promise<NewPlateInput[]> {
@@ -1486,7 +1519,9 @@ export async function downloadSupportingFiles(
     let filled = false;
     const inputs = await take(async (kept) => {
       filled = kept.files >= SUPPORTING_FILES_PER_MODEL || kept.bytes >= limits.perModel;
-      return filled ? [] : downloadSupportingFile(file, isFileHost, kept);
+      if (filled) return [];
+      const url = typeof file.url === "string" ? file.url : await file.url().catch(() => null);
+      return url ? downloadSupportingFile({ url, name: file.name }, isFileHost, kept) : [];
     });
     if (filled) break;
     fetched.push(...inputs);
@@ -1510,8 +1545,8 @@ async function supportingDownload(
   }
   if (!isFileHost(hostname)) return [];
   // A zip's files are held to the limits as it's opened, so the zip may be as large as all a model keeps: two guides
-  // that each fit can make one too large for a file of its own.
-  const isZip = path.extname(file.name).toLowerCase() === ".zip";
+  // that each fit can make one too large for a file of its own. By the name it's kept by, as it's opened by that.
+  const isZip = path.extname(sanitizeFilename(file.name)).toLowerCase() === ".zip";
   const cap = Math.min(isZip ? Math.min(limits.perModel, IMPORT_MAX_BYTES) : limits.perFile, room);
   if (cap <= 0) return [];
   const result = await downloadPlainFileToTemp(file.url, file.name, cap);

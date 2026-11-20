@@ -17,14 +17,19 @@ vi.mock("../src/services/settingsService", async (importOriginal) => ({
 describe("the supporting-file limits when the setting can't be read", () => {
   it("keeps none, so a site's other files never fail the import over it", async () => {
     expect(await supportingLimits()).toBeNull();
-    const zip = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "supporting-limits-")), "model.zip");
-    fs.writeFileSync(
-      zip,
-      await new JSZip()
-        .file("a.stl", "solid a endsolid")
-        .file("guide.pdf", "%PDF-1.4")
-        .generateAsync({ type: "nodebuffer" }),
-    );
-    expect(await supportingFilesFromZip(zip)).toEqual([]);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "supporting-limits-"));
+    try {
+      const zip = path.join(dir, "model.zip");
+      fs.writeFileSync(
+        zip,
+        await new JSZip()
+          .file("a.stl", "solid a endsolid")
+          .file("guide.pdf", "%PDF-1.4")
+          .generateAsync({ type: "nodebuffer" }),
+      );
+      expect(await supportingFilesFromZip(zip)).toEqual([]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

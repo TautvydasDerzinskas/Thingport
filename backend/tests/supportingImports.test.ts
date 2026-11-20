@@ -33,6 +33,8 @@ import {
   extractZipEntriesToPrints,
 } from "../src/services/zipService";
 import { STORAGE } from "../src/config";
+import { eufymakeImport } from "../src/providers/eufymake";
+import { eufymakeMetaFromDetail } from "../src/providers/eufymake/api";
 
 // Small limits stand in for the admin's sizes, which are megabytes: undefined leaves the setting to say.
 const limits = vi.hoisted(() => ({ value: undefined as SupportingLimits | null | undefined, fail: false }));
@@ -299,6 +301,24 @@ describe("a model made with a site's other files", () => {
     expect(await keepSupportingFiles(userId, print.id, again)).toBe(0);
     remove(again);
     expect(fs.readFileSync(path.join(STORAGE, now.storagePath), "utf8")).toBe("%PDF-1.4 back");
+    // Nor of one that's there beside another row by its name whose file is gone, as a merge can leave them.
+    const gone = await prisma.printFile.create({
+      data: {
+        printId: print.id,
+        filename: "Guide.pdf",
+        mime: "application/pdf",
+        role: "SUPPORTING",
+        storagePath: `${path.dirname(now.storagePath)}/gone-${Date.now()}/Guide.pdf`,
+      },
+    });
+    const twice = [
+      input("guide.pdf", "%PDF-1.4 twice", { supporting: true }),
+      input("GUIDE.pdf", "%PDF-1.4 twice", { supporting: true }),
+    ];
+    expect(await keepSupportingFiles(userId, print.id, twice)).toBe(0);
+    remove(twice);
+    expect(await prisma.printFile.findUnique({ where: { id: gone.id } })).toBeNull();
+    expect((await filesOf(print.id)).filter(([, name]) => String(name).toLowerCase() === "guide.pdf")).toHaveLength(1);
   });
 
   it("keeps to a model's limit when two imports bring its files at once", async () => {
@@ -473,6 +493,25 @@ describe("a site's zip", () => {
     const supporting = await supportingFilesFromZip(zip);
     remove(supporting);
     expect(supporting.map((each) => each.filename)).toEqual(["guide.pdf"]);
+  });
+
+  it("takes a name a zip holds twice, in two cases, once, leaving its share to the next file", async () => {
+    const zip = await zipOf({
+      "a.stl": "solid a endsolid",
+      "GUIDE.pdf": "%PDF-1.4",
+      "guide.pdf": "%PDF-1.4",
+      "notes.txt": "upright!",
+    });
+    // Room for two of the three eight-byte files: the model would keep one guide, so the notes are the other.
+    limits.value = { perFile: 10, perModel: 20 };
+    const supporting = await supportingFilesFromZip(zip);
+    remove(supporting);
+    expect(supporting.map((each) => each.filename)).toEqual(["GUIDE.pdf", "notes.txt"]);
+    // A first copy that can't be read leaves its name to the second.
+    zipReads.failing = "GUIDE.pdf";
+    const again = await supportingFilesFromZip(zip);
+    remove(again);
+    expect(again.map((each) => each.filename)).toEqual(["guide.pdf", "notes.txt"]);
   });
 
   it("removes the files it wrote out when the zip can't be listed after them", async () => {
@@ -683,6 +722,77 @@ describe("a file a site gives beside a model's own", () => {
     remove(roomy);
     expect(roomy.map((each) => each.filename)).toEqual(["a.pdf", "b.pdf"]);
     expect(asked).toEqual(["/a.pdf", "/b.pdf", "/c.pdf"]);
+  });
+
+  it("asks a site for a file's link only while there's room for it, and goes on past one it won't give", async () => {
+    served({ "/a.pdf": "x".repeat(60), "/c.pdf": "x".repeat(60), "/d.pdf": "x".repeat(60) });
+    limits.value = { perFile: 100, perModel: 120 };
+    const signed: string[] = [];
+    // As CGTrader's links are had: through its bot check, which can turn one away.
+    const link = (name: string, refused = false) => ({
+      name,
+      url: async () => {
+        signed.push(name);
+        if (refused) throw new Error("the bot check turned it away");
+        return `https://example.com/${name}`;
+      },
+    });
+    const kept = await downloadSupportingFiles(
+      [link("a.pdf"), link("b.pdf", true), link("c.pdf"), link("d.pdf")],
+      site,
+    );
+    remove(kept);
+    expect(kept.map((each) => each.filename)).toEqual(["a.pdf", "c.pdf"]);
+    // Two fill it: the last one's link is never asked for.
+    expect(signed).toEqual(["a.pdf", "b.pdf", "c.pdf"]);
+  });
+
+  it("opens an eufyMake model's zip for the files beside its print file, where it lists its files only so", async () => {
+    const CDN = "https://d3c3n9aoannddt.cloudfront.net/makeitreal/makeitreal/ugc_model/default/c4b4/";
+    const detail = (files: { file_type: number; file_name: string }[]) =>
+      eufymakeMetaFromDetail({
+        model_id: "e2e98e9a110011ef91d13a215133689a",
+        name: "Bed scraper",
+        model_file: files.map((file) => ({ ...file, download_link: `${CDN}${file.file_name}?sig` })),
+        model_print_infos: [{ info_id: 546, print_name: "Scraper.3mf", file_3mf_key: `${CDN}Scraper.3mf?sig` }],
+      })!;
+    const asked: string[] = [];
+    const kit = {
+      ...importKit(),
+      downloadSignedFile: async (file: { name: string }) => {
+        asked.push(`print file ${file.name}`);
+        return [input(file.name, "3mf")];
+      },
+      downloadSupportingFile: async (file: { name: string }) => {
+        asked.push(`beside ${file.name}`);
+        return [];
+      },
+    };
+    const target = { userId, externalId: "e2e98e9a110011ef91d13a215133689a" };
+    const zipOnly = detail([{ file_type: 2, file_name: "Bed scraper.zip" }]);
+    remove(await eufymakeImport.downloadModel(target, zipOnly, null, null, kit));
+    expect(asked).toEqual(["print file Scraper.3mf", "beside Bed scraper.zip"]);
+    // Where it lists them one by one, the zip of them all repeats them, and is left.
+    asked.length = 0;
+    const listed = detail([
+      { file_type: 1, file_name: "Scraper.stl" },
+      { file_type: 1, file_name: "Guide.pdf" },
+      { file_type: 2, file_name: "Bed scraper.zip" },
+    ]);
+    remove(await eufymakeImport.downloadModel(target, listed, null, null, kit));
+    expect(asked).toEqual(["print file Scraper.3mf", "beside Guide.pdf"]);
+  });
+
+  it("holds a zip whose name ends in a space to what a model keeps, as one named without", async () => {
+    const zip = await new JSZip()
+      .file("a.txt", "a".repeat(60))
+      .file("b.txt", "b".repeat(60))
+      .generateAsync({ type: "nodebuffer" });
+    served({ "/docs.zip": zip });
+    limits.value = { perFile: 100, perModel: 1000 };
+    const kept = await downloadSupportingFile({ url: "https://example.com/docs.zip", name: "docs.zip " }, site);
+    remove(kept);
+    expect(kept.map((each) => each.filename).toSorted()).toEqual(["a.txt", "b.txt"]);
   });
 
   it("holds a zip that comes after other files to what they left of a model's share", async () => {

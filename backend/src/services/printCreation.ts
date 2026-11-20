@@ -393,7 +393,12 @@ async function keepWithin(
     where: { printId },
     select: { id: true, filename: true, folder: true, role: true, size: true },
   });
-  const stored = new Map(files.map((file) => [keyOf(file.filename, file.folder), file] as const));
+  // Every row by each name: nothing keeps a model from holding two (a merge brings each model's along).
+  const stored = new Map<string, typeof files>();
+  for (const file of files) {
+    const key = keyOf(file.filename, file.folder);
+    stored.set(key, [...(stored.get(key) ?? []), file]);
+  }
   const added = new Set<string>();
   let kept = 0;
   // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
@@ -414,16 +419,21 @@ async function keepWithin(
     const key = keyOf(filename, input.folder);
     if (added.has(key)) continue;
     // One the model has by that name stays, unless its file is gone for sure: a row a repair's sweep left would
-    // otherwise keep out the file the site gives back. A save of it still under way counts as there.
-    const there = stored.get(key);
-    if (there) {
-      if (!(await removePrintFileIfGone(there.id))) continue;
-      stored.delete(key);
+    // otherwise keep out the file the site gives back. A save of it still under way counts as there. Each row by the
+    // name is looked at, as keepScripts does: one gone beside one that's there leaves the name taken.
+    const held: typeof files = [];
+    for (const there of stored.get(key) ?? []) {
+      if (!(await removePrintFileIfGone(there.id))) {
+        held.push(there);
+        continue;
+      }
       if (there.role === "SUPPORTING") {
         bytes -= there.size;
         count--;
       }
     }
+    stored.set(key, held);
+    if (held.length) continue;
     const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size;
     if (size === undefined || size > limits.perFile || bytes + size > limits.perModel) continue;
     try {
