@@ -409,16 +409,8 @@ async function keepWithin(
   // What the model keeps already counts: a later profile's files share the model's allowance, of bytes and of files.
   let bytes = files.reduce((sum, file) => sum + (file.role === "SUPPORTING" ? file.size : 0), 0);
   let count = files.filter((file) => file.role === "SUPPORTING").length;
-  for (const [index, input] of inputs.entries()) {
-    if (count >= SUPPORTING_FILES_PER_MODEL) {
-      console.warn(
-        `Model ${printId} keeps the ${SUPPORTING_FILES_PER_MODEL} files beside it that it may have; left out:`,
-        {
-          files: inputs.length - index,
-        },
-      );
-      break;
-    }
+  let leftOut = 0;
+  for (const input of inputs) {
     if (!input.tempFilePath) continue;
     const filename = supportingImportName(sanitizeFilename(input.filename), normalizeFolder(input.folder));
     const key = keyOf(filename, input.folder);
@@ -439,6 +431,11 @@ async function keepWithin(
     }
     stored.set(key, held);
     if (held.length) continue;
+    // Counted once a row of its name whose file is gone has made way: it takes that one's place.
+    if (count >= SUPPORTING_FILES_PER_MODEL) {
+      leftOut++;
+      continue;
+    }
     const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size;
     if (size === undefined || size > limits.perFile || bytes + size > limits.perModel) continue;
     try {
@@ -453,6 +450,12 @@ async function keepWithin(
     } catch (err) {
       console.warn(`Couldn't keep ${filename} beside the model:`, err);
     }
+  }
+  if (leftOut) {
+    console.warn(
+      `Model ${printId} keeps the ${SUPPORTING_FILES_PER_MODEL} files beside it that it may have; left out:`,
+      { files: leftOut },
+    );
   }
   return kept;
 }

@@ -322,17 +322,28 @@ export function selectMakerworldProfiles(
   return [primary, ...wanted.filter((id) => id !== primary)];
 }
 
+/** A design as the user may read it. `optional`, for a read the import can do without, as fetchMakerworldRawFiles'
+ *  `startsCooloff: false`: none during the cooloff (null, even one that starts while it waits), and a CAPTCHA it meets
+ *  starts none. */
 export async function fetchMakerworldDesign(
   designId: string,
   bearerToken: string,
   paceMs?: number,
+  optional = false,
 ): Promise<Record<string, unknown> | null> {
-  if (makerworldCaptchaCooloffActive()) throw new MakerworldCaptchaError();
+  if (makerworldCaptchaCooloffActive()) {
+    if (optional) return null;
+    throw new MakerworldCaptchaError();
+  }
   await maybeSleep(paceMs);
-  const result = await fetchCloudJson(`${DESIGN_API_BASE}/design/${designId}`, bearerToken);
+  const result = await fetchCloudJson(
+    `${DESIGN_API_BASE}/design/${designId}`,
+    bearerToken,
+    optional ? makerworldCaptchaCooloffActive : undefined,
+  );
   if (!result) return null;
   if (isCaptchaChallenge(result.data)) {
-    noteCaptchaChallenge();
+    if (!optional) noteCaptchaChallenge();
     throw new MakerworldCaptchaError();
   }
   if (result.status === 401 || result.status === 403) throw new MakerworldAuthError();
@@ -421,8 +432,9 @@ export async function resolveMakerworldSourcesUrl(
  * The scripts a design is generated from, with the zip to fetch them from where the creator shared them.
  *
  * `known` is what the caller read off the design already, or null where what it holds has no file list to read it
- * from: the design is fetched for one then. Best-effort, as the zip is -- a design that can't be read leaves the
- * model's plates without a script rather than failing the import.
+ * from: the design is fetched for one then, optionally (fetchMakerworldDesign), as the zip is asked for. Best-effort,
+ * as the zip is -- a design that can't be read leaves the model's plates without a script rather than failing the
+ * import.
  */
 export async function resolveMakerworldParametricSource(
   designId: string,
@@ -432,7 +444,7 @@ export async function resolveMakerworldParametricSource(
 ): Promise<ParametricSourceInfo | undefined> {
   let source = known;
   if (source === null) {
-    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null);
+    const design = await fetchMakerworldDesign(designId, bearerToken, paceMs, true).catch(() => null);
     source = design ? makerworldMetaFromDesign(design).parametricSource : undefined;
   }
   // Only worth a download when the creator shared them.
@@ -458,7 +470,7 @@ export async function resolveMakerworldSupportingUrl(
   paceMs?: number,
 ): Promise<string | null> {
   if ((await supportingLimits()) === null) return null;
-  const read = design ?? (await fetchMakerworldDesign(designId, bearerToken, paceMs).catch(() => null));
+  const read = design ?? (await fetchMakerworldDesign(designId, bearerToken, paceMs, true).catch(() => null));
   if (!read || !makerworldListedFileNames(read).some((name) => isSupportingImportFile(name))) return null;
   return resolveMakerworldSourcesUrl(designId, bearerToken, paceMs);
 }

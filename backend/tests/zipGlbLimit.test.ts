@@ -94,23 +94,52 @@ describe("packing scenes within what an import may write", () => {
     expect(reads).toBe(4);
   });
 
+  // Each file opened or read whole while `run` packs, by name.
+  const readsDuring = async (run: () => Promise<unknown>) => {
+    const reads: string[] = [];
+    const open = fsPromises.open.bind(fsPromises);
+    const readFile = fsPromises.readFile.bind(fsPromises);
+    const spies = [
+      vi.spyOn(fsPromises, "open").mockImplementation(((file: string, ...rest: [never]) => {
+        reads.push(`part of ${path.basename(String(file))}`);
+        return open(file, ...rest);
+      }) as never),
+      vi.spyOn(fsPromises, "readFile").mockImplementation(((file: string, ...rest: [never]) => {
+        reads.push(`all of ${path.basename(String(file))}`);
+        return readFile(file, ...rest);
+      }) as never),
+    ];
+    try {
+      await run();
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
+    return reads.filter((read) => !read.endsWith(".gltf"));
+  };
+
   it("reads a file a scene names again and again once", async () => {
     const files = [write("scene.gltf", repeated(64)), write("mesh.bin", bin)];
-    const readFile = fsPromises.readFile.bind(fsPromises);
-    const reads: string[] = [];
-    const spy = vi.spyOn(fsPromises, "readFile").mockImplementation(((
-      file: Parameters<typeof fsPromises.readFile>[0],
-      ...rest: [never]
-    ) => {
-      reads.push(path.basename(String(file)));
-      return readFile(file, ...rest);
-    }) as never);
-    try {
-      await expect(packGltfFiles(files, tempPath, made, { bytes: 1_000_000 })).resolves.toBeTruthy();
-    } finally {
-      spy.mockRestore();
-    }
-    expect(reads.filter((name) => name === "mesh.bin")).toHaveLength(1);
+    const reads = await readsDuring(() => packGltfFiles(files, tempPath, made, { bytes: 1_000_000 }));
+    expect(reads).toHaveLength(1);
+  });
+
+  it("reads of a large file only what a scene's buffers use, and all of it for a texture", async () => {
+    // A mebibyte, of which the buffers use 1900 bytes, three times over.
+    const large = Buffer.alloc(1024 * 1024);
+    bin.copy(large);
+    const json = JSON.parse(scene("large.png"));
+    json.buffers = Array.from({ length: 3 }, () => ({ uri: "large.png", byteLength: BIN }));
+    const files = [write("scene.gltf", JSON.stringify(json)), write("large.png", large)];
+    let packed: Awaited<ReturnType<typeof packGltfFiles>> | null = null;
+    const reads = await readsDuring(async () => (packed = await packGltfFiles(files, tempPath, made)));
+    expect(reads).toEqual(["part of large.png"]);
+    expect(fs.statSync(packed!.files[0].path).size).toBeLessThan(3 * BIN + 2000);
+    // The same file as the scene's texture is read whole, once more.
+    json.images = [{ uri: "large.png" }];
+    const textured = [write("scene.gltf", JSON.stringify(json)), write("large.png", large)];
+    const again = await readsDuring(async () => (packed = await packGltfFiles(textured, tempPath, made)));
+    expect(again).toEqual(["part of large.png", "all of large.png"]);
+    expect(fs.statSync(packed!.files[0].path).size).toBeGreaterThan(large.length);
   });
 
   it("gives back what a packing that fails took, for the next model's scenes", async () => {

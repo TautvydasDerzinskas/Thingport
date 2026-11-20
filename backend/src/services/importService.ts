@@ -102,6 +102,7 @@ import {
   isDocumentFile,
   isSupportingImportFile,
   SUPPORTING_FILES_PER_MODEL,
+  supportingImportName,
   supportingLimits,
   withoutModelsSharedTop,
   type SupportingLimits,
@@ -1332,11 +1333,14 @@ async function filesFromZip(
       : (await placedZipEntries(zipPath)).filter(({ parts }) => pick.has(keptExtOf(parts)));
     // A name the model keeps once, in any case ("GUIDE.pdf" beside "guide.pdf"), is taken once: a second copy would
     // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
-    // leaves room for a readable second.
+    // leaves room for a readable second. By the name it's stored under (supportingImportName), where its folder here
+    // is the one it's stored in: at the top of the zip the import opened, which stays the top, a licence of the site's
+    // is "LICENSE (original).txt" as one called so is. A nested zip's top may yet be a folder of its own.
     const taken = new Set<string>();
     for (const { entry, parts, folder } of entries) {
       const key = supportingKey(folder, keptNameOf(parts));
-      if (picksSupporting(pick) && (pick.except?.has(key) || taken.has(key))) continue;
+      const stored = depth === 0 ? supportingKey(folder, supportingImportName(keptNameOf(parts), folder)) : key;
+      if (picksSupporting(pick) && (pick.except?.has(key) || taken.has(stored))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
         console.warn(
@@ -1373,7 +1377,7 @@ async function filesFromZip(
       if (picksSupporting(pick)) {
         pick.kept.bytes += written;
         pick.kept.files += 1;
-        taken.add(key);
+        taken.add(stored);
       }
       inputs.push({
         filename,
@@ -1506,21 +1510,27 @@ export async function downloadSupportingFile(
 
 /** Files a site gives beside a model's own (ImportKit.downloadSupportingFiles), each in its turn at what the model keeps
  *  of them (`take`): once the ones fetched fill it, in bytes or in number, the rest aren't fetched, nor their links
- *  asked for where a function gives them. One that fails or is over the limit is skipped and counts for nothing. */
+ *  asked for where a function gives them. One that fails or is over the limit is skipped and counts for nothing, as
+ *  is one whose link can't be had, however the function says so. */
 export async function downloadSupportingFiles(
   files: { url: string | (() => Promise<string | null>); name: string }[],
   isFileHost: (hostname: string) => boolean,
   take: SupportingTake = supportingAllowance(),
 ): Promise<NewPlateInput[]> {
-  const limits = await supportingLimits();
-  if (!limits) return [];
   const fetched: NewPlateInput[] = [];
   for (const file of files) {
     let filled = false;
     const inputs = await take(async (kept) => {
-      filled = kept.files >= SUPPORTING_FILES_PER_MODEL || kept.bytes >= limits.perModel;
+      // The admin's limits read at each turn, before a link is asked for: kept off meanwhile, none is.
+      const limits = await supportingLimits();
+      filled = !limits || kept.files >= SUPPORTING_FILES_PER_MODEL || kept.bytes >= limits.perModel;
       if (filled) return [];
-      const url = typeof file.url === "string" ? file.url : await file.url().catch(() => null);
+      let url: string | null = null;
+      try {
+        url = typeof file.url === "string" ? file.url : await file.url();
+      } catch {
+        // Skipped, as one whose link comes back empty is.
+      }
       return url ? downloadSupportingFile({ url, name: file.name }, isFileHost, kept) : [];
     });
     if (filled) break;

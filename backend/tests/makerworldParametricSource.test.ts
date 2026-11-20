@@ -445,6 +445,18 @@ describe("openImportResponse: the scripts of a design imported through Grab", ()
     expect(fetched.some((url) => url.includes(SOURCES_PATH))).toBe(false);
   });
 
+  // A read of the design the import can do without: a CAPTCHA there mustn't shut out the downloads the user asked for.
+  it("meets a CAPTCHA reading the design for a Grab that sent no file list without starting the cooloff", async () => {
+    const fetched = mockGrabImport({ captchaId: "abc123", error: "We need you to confirm you are not a robot" });
+
+    const result = await grabImport({ id: 831106, designExtension: { design_pictures: [] } });
+    await result.response.body?.cancel();
+
+    expect(fetched.some((url) => url.endsWith("/design-service/design/831106"))).toBe(true);
+    expect(result.meta.parametricSource).toBeUndefined();
+    expect(makerworldCaptchaCooloffActive()).toBe(false);
+  });
+
   it("imports the plates anyway when the design can't be read", async () => {
     noteCaptchaChallenge();
     const fetched = mockGrabImport(designWithProfiles([scadFile("keychain.scad", false)]));

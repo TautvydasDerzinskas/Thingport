@@ -75,15 +75,16 @@ const PACKED_TOO_LARGE = "The glTF scenes, packed, would come to more than an im
 
 /**
  * The .gltf in `bytes` as one .glb, with every buffer and texture it points at read through `read` (a relative URI
- * in, the file's bytes out, or null when it isn't there). A missing buffer is an error, since the scene has no
- * geometry without it; a missing texture is left pointing where it did, and the scene shows without it. A .glb that
- * would come to more than `maxBytes` fails (413) before the buffer or texture that takes it past is added, so a scene
- * naming one large buffer again and again never holds it all again and again.
+ * in, the file's bytes out, or null when it isn't there; `length`, for a buffer, how much of the file from its start
+ * it uses, as more needn't be read, and none for a texture, which takes it all). A missing buffer is an error, since
+ * the scene has no geometry without it; a missing texture is left pointing where it did, and the scene shows without
+ * it. A .glb that would come to more than `maxBytes` fails (413) before the buffer or texture that takes it past is
+ * added, so a scene naming one large buffer again and again never holds it all again and again.
  */
 export async function packGltf(
   bytes: Buffer,
   name: string,
-  read: (uri: string) => Promise<Buffer | null>,
+  read: (uri: string, length?: number) => Promise<Buffer | null>,
   maxBytes = Number.POSITIVE_INFINITY,
 ): Promise<Buffer> {
   const json = parseGltf(bytes, name);
@@ -110,9 +111,10 @@ export async function packGltf(
   for (const buffer of json.buffers ?? []) {
     const uri = buffer.uri;
     fits(Number(buffer.byteLength) || 0);
+    const uses = Number.isSafeInteger(buffer.byteLength) && buffer.byteLength >= 0 ? buffer.byteLength : undefined;
     let data: Buffer | null = null;
     if (typeof uri === "string") {
-      data = isDataUri(uri) ? (decodeDataUri(uri)?.bytes ?? null) : isRemoteUri(uri) ? null : await read(uri);
+      data = isDataUri(uri) ? (decodeDataUri(uri)?.bytes ?? null) : isRemoteUri(uri) ? null : await read(uri, uses);
     }
     if (!data) {
       throw new HttpError(400, `${name} needs ${uri ?? "a buffer"}, which wasn't uploaded with it`);
@@ -175,6 +177,27 @@ export async function packGltf(
   ]);
 }
 
+/** The first `length` bytes of a file, or all of it when `length` is none or it's no longer than that: never more than
+ *  the file holds, whatever a scene says it uses. */
+async function readPart(filePath: string, length?: number): Promise<{ bytes: Buffer; whole: boolean }> {
+  if (length === undefined) return { bytes: await fs.readFile(filePath), whole: true };
+  const handle = await fs.open(filePath, "r");
+  try {
+    const size = (await handle.stat()).size;
+    if (size <= length) return { bytes: await handle.readFile(), whole: true };
+    const bytes = Buffer.alloc(length);
+    let filled = 0;
+    while (filled < length) {
+      const { bytesRead } = await handle.read(bytes, filled, length - filled, filled);
+      if (!bytesRead) break;
+      filled += bytesRead;
+    }
+    return { bytes: filled < length ? bytes.subarray(0, filled) : bytes, whole: false };
+  } finally {
+    await handle.close();
+  }
+}
+
 /** A file among others, as its relative path (or bare name) and where its bytes are on disk. */
 export type PackableFile = { name: string; path: string };
 
@@ -225,7 +248,9 @@ export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gl
  * every file its scene points at, so scenes sharing one large buffer write it out again and again: `room`, the bytes
  * the caller lets the .glbs come to, shared by every call it hands it to, is taken from before each is written, and a
  * scene that wouldn't fit fails the packing (413), as soon as what it's packed into would; what a call that fails took
- * of it is given back, as its .glbs go. Each file is read once, however many of a scene's entries name it.
+ * of it is given back, as its .glbs go. Each file is read once, however many of a scene's entries name it, and only
+ * as much of it as a buffer uses unless a texture takes it all (readPart), so a scene using a few bytes of large
+ * files holds those bytes alone.
  */
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
@@ -243,16 +268,20 @@ export async function packGltfFiles<T extends PackableFile>(
   try {
     for (const gltf of gltfs) {
       const bytes = await fs.readFile(gltf.path);
-      const reads = new Map<T, Promise<Buffer>>();
+      // What's been read of each file, and whether that's all of it. packGltf reads one at a time.
+      const reads = new Map<T, { bytes: Buffer; whole: boolean }>();
       const glb = await packGltf(
         bytes,
         path.basename(gltf.name),
-        async (uri) => {
+        async (uri, length) => {
           const file = findReferenced(files, gltf.name, uri);
           if (!file || isGltfName(file.name)) return null;
           used.add(file);
-          if (!reads.has(file)) reads.set(file, fs.readFile(file.path));
-          return reads.get(file)!;
+          const had = reads.get(file);
+          if (had && (had.whole || (length !== undefined && had.bytes.length >= length))) return had.bytes;
+          const read = await readPart(file.path, length);
+          reads.set(file, read);
+          return read.bytes;
         },
         room?.bytes,
       );

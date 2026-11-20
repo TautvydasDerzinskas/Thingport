@@ -135,7 +135,7 @@ const zipOf = async (files: Record<string, string | Buffer>) => {
   fs.writeFileSync(p, await zip.generateAsync({ type: "nodebuffer" }));
   return p;
 };
-// A glTF scene of one triangle, its buffer in `bin`, and a texture at `image` when given.
+// A glTF scene of one triangle, its buffer in `bin`, and a texture at `image` when given, its material's colour.
 const positions = Buffer.from(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]).buffer);
 const gltfScene = (bin: string, image?: string) =>
   JSON.stringify({
@@ -143,11 +143,17 @@ const gltfScene = (bin: string, image?: string) =>
     scene: 0,
     scenes: [{ nodes: [0] }],
     nodes: [{ mesh: 0 }],
-    meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, ...(image ? { material: 0 } : {}) }] }],
     buffers: [{ uri: bin, byteLength: positions.length }],
     bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: positions.length }],
     accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [0, 0, 0], max: [1, 1, 0] }],
-    ...(image ? { images: [{ uri: image }] } : {}),
+    ...(image
+      ? {
+          images: [{ uri: image }],
+          textures: [{ source: 0 }],
+          materials: [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }],
+        }
+      : {}),
   });
 const filesOf = async (printId: string) =>
   (await prisma.printFile.findMany({ where: { printId }, orderBy: [{ folder: "asc" }, { filename: "asc" }] })).map(
@@ -266,6 +272,16 @@ describe("a model made with a site's other files", () => {
     expect(await prisma.printFile.count({ where: { printId: print.id, role: "SUPPORTING" } })).toBe(
       SUPPORTING_FILES_PER_MODEL,
     );
+    // Full, but one's file is gone and no sweep took its row: the site's file takes its place, and a new one none.
+    const lost = await prisma.printFile.findFirstOrThrow({ where: { printId: print.id, filename: "note-0.txt" } });
+    fs.rmSync(path.join(STORAGE, lost.storagePath));
+    const back = [input("note-new.txt", "x", { supporting: true }), input("note-0.txt", "x", { supporting: true })];
+    expect(await keepSupportingFiles(userId, print.id, back)).toBe(1);
+    remove(back);
+    const names = (await filesOf(print.id)).map(([, name]) => name);
+    expect(names).toContain("note-0.txt");
+    expect(names).not.toContain("note-new.txt");
+    expect(names).toHaveLength(SUPPORTING_FILES_PER_MODEL);
   });
 
   it("counts what a model keeps already against its limit, when a later profile brings more", async () => {
@@ -412,6 +428,15 @@ describe("one model of a zip from a link", () => {
     expect(made.previewImages.filter((image) => !image.generated)).toEqual([]);
     const glb = fs.readFileSync(path.join(STORAGE, made.plates[0].storagePath));
     expect(glb.subarray(0, 4).toString()).toBe("glTF");
+    // The material still takes its colour from the texture, whose picture is in the .glb's own bytes.
+    const jsonLength = glb.readUInt32LE(12);
+    const json = JSON.parse(glb.subarray(20, 20 + jsonLength).toString("utf8"));
+    expect(json.materials[0].pbrMetallicRoughness.baseColorTexture.index).toBe(0);
+    const image = json.images[json.textures[0].source];
+    expect(image.uri).toBeUndefined();
+    const view = json.bufferViews[image.bufferView];
+    const bin = glb.subarray(20 + jsonLength + 8);
+    expect(bin.subarray(view.byteOffset, view.byteOffset + view.byteLength).equals(texture)).toBe(true);
   });
 
   it("keeps the model and says so when a step after it's stored fails", async () => {
@@ -512,6 +537,25 @@ describe("a site's zip", () => {
     const again = await supportingFilesFromZip(zip);
     remove(again);
     expect(again.map((each) => each.filename)).toEqual(["guide.pdf", "notes.txt"]);
+  });
+
+  it("takes the site's licence and one called as it's kept once at the top, and one in a folder of its own", async () => {
+    const zip = await zipOf({
+      "a.stl": "solid a endsolid",
+      "LICENSE.txt": "MIT, A.N.",
+      "LICENSE (original).txt": "MIT, A.N.",
+      "docs/LICENSE.txt": "CC BY 4.",
+      "notes.txt": "upright!",
+    });
+    // Room for three of the four files: the top two are kept as one, "LICENSE (original).txt".
+    limits.value = { perFile: 10, perModel: 27 };
+    const supporting = await supportingFilesFromZip(zip);
+    remove(supporting);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([
+      [null, "LICENSE.txt"],
+      ["docs", "LICENSE.txt"],
+      [null, "notes.txt"],
+    ]);
   });
 
   it("removes the files it wrote out when the zip can't be listed after them", async () => {
@@ -737,14 +781,54 @@ describe("a file a site gives beside a model's own", () => {
         return `https://example.com/${name}`;
       },
     });
+    // One whose asking fails before it's under way, as a throw rather than a refusal.
+    const broken = {
+      name: "broken.pdf",
+      url: (): Promise<string | null> => {
+        signed.push("broken.pdf");
+        throw new Error("the session was gone");
+      },
+    };
     const kept = await downloadSupportingFiles(
-      [link("a.pdf"), link("b.pdf", true), link("c.pdf"), link("d.pdf")],
+      [link("a.pdf"), link("b.pdf", true), broken, link("c.pdf"), link("d.pdf")],
       site,
     );
     remove(kept);
     expect(kept.map((each) => each.filename)).toEqual(["a.pdf", "c.pdf"]);
     // Two fill it: the last one's link is never asked for.
-    expect(signed).toEqual(["a.pdf", "b.pdf", "c.pdf"]);
+    expect(signed).toEqual(["a.pdf", "b.pdf", "broken.pdf", "c.pdf"]);
+  });
+
+  it("asks for no more links once an admin keeps no files beside a model", async () => {
+    served({ "/a.pdf": "x".repeat(60), "/b.pdf": "x".repeat(60) });
+    limits.value = { perFile: 100, perModel: 1000 };
+    const signed: string[] = [];
+    const link = (name: string) => ({
+      name,
+      url: async () => {
+        signed.push(name);
+        return `https://example.com/${name}`;
+      },
+    });
+    const first = link("a.pdf");
+    const kept = await downloadSupportingFiles(
+      [
+        {
+          ...first,
+          url: async () => {
+            const url = await first.url();
+            // Turned off as its link comes back.
+            limits.value = null;
+            return url;
+          },
+        },
+        link("b.pdf"),
+      ],
+      site,
+    );
+    remove(kept);
+    expect(kept).toEqual([]);
+    expect(signed).toEqual(["a.pdf"]);
   });
 
   it("opens an eufyMake model's zip for the files beside its print file, where it lists its files only so", async () => {
@@ -904,6 +988,8 @@ describe("a file a site gives beside a model's own", () => {
   it("skips what isn't on the site's hosts, what fails, what's over the limit, and asks nothing when kept off", async () => {
     const fetchMock = served({ "/guide.pdf": "%PDF-1.4 a longer guide" });
     expect(await downloadSupportingFile({ url: "https://example.org/guide.pdf", name: "guide.pdf" }, site)).toEqual([]);
+    // Not asked for at all, its host being none of the site's.
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(await downloadSupportingFile(at("missing.pdf"), site)).toEqual([]);
     limits.value = { perFile: 8, perModel: 20 };
     expect(await downloadSupportingFile(at("guide.pdf"), site)).toEqual([]);
