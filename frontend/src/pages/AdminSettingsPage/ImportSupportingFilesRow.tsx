@@ -27,6 +27,8 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
   // The last pick; one made while another is saving is saved once that's done, so the last pick is what's kept.
   const wanted = React.useRef<SupportingFileLimit | null>(null);
   const saving = React.useRef(false);
+  // Counts each pick and each save's answer: a read that started before the latest is older than what shows.
+  const changes = React.useRef(0);
   // Off once the row has gone: a pick still waiting then isn't saved over one made since.
   const mounted = React.useRef(true);
   React.useEffect(() => {
@@ -38,12 +40,15 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
 
   React.useEffect(() => {
     let active = true;
+    const since = changes.current;
     settingsApi.getImportSupportingFiles().then(
       (saved) => {
         if (!active) return;
         // Read again after it couldn't be, as a sign-in starts it over: the choice shows rather than the error.
         setFailed(false);
-        if (wanted.current === null) setLimit(saved);
+        // Not over a pick, or a save's answer, that came while it was read; one read since, as when another admin
+        // changed it, shows.
+        if (changes.current === since) setLimit(saved);
       },
       (err: unknown) => {
         if (err instanceof UnauthorizedError) onUnauthorized?.();
@@ -59,6 +64,7 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
     if (limit === undefined) return;
     const next = asLimit(value);
     if (next === null || next === limit) return;
+    changes.current += 1;
     wanted.current = next;
     setLimit(next);
     if (saving.current) return;
@@ -77,6 +83,7 @@ export default function ImportSupportingFilesRow({ onUnauthorized }: { onUnautho
       else toast({ message: t("adminSettings.importSupportingFiles.saveFailed"), severity: "error" });
     } finally {
       saving.current = false;
+      changes.current += 1;
     }
   };
 
