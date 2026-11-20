@@ -105,6 +105,26 @@ export async function withGltfFiles<T>(
   };
 }
 
+/** What gltfFilesFromOthers looks among, each file once: the picks (`item`, which a scene that takes one takes out of
+ *  the lists), then the files already packed with a scene (no `item`: such a file stays with that scene too, as the
+ *  server packs a file into each scene it's sent with). */
+export function stagedFiles<T>(
+  picks: T[],
+  fileOf: (item: T) => File,
+  packed: File[],
+): { item: T | null; file: File }[] {
+  const seen = new Set<File>();
+  const staged: { item: T | null; file: File }[] = [];
+  const stage = (item: T | null, file: File) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    staged.push({ item, file });
+  };
+  for (const item of picks) stage(item, fileOf(item));
+  for (const file of packed) stage(null, file);
+  return staged;
+}
+
 /**
  * Scenes added apart from files they point at, given those files from the other additions staged beside them (Edit
  * model's picks): the server packs a .gltf only with what's sent in its own request. Only what a scene's own addition
@@ -112,13 +132,13 @@ export async function withGltfFiles<T>(
  * own though another addition has one of that name. `took`: each scene's finds; `missing`: what each still lacks;
  * `ambiguous`: the names two staged files could be, which the scene takes neither of.
  */
-export function gltfFilesFromOthers<T>(
-  scenes: { scene: T; file: File; missing: string[] }[],
+export function gltfFilesFromOthers<S, T>(
+  scenes: { scene: S; file: File; missing: string[] }[],
   staged: T[],
   fileOf: (item: T) => File,
-): { took: Map<T, T[]>; missing: Map<T, string[]>; ambiguous: string[] } {
-  const took = new Map<T, T[]>();
-  const missing = new Map<T, string[]>();
+): { took: Map<S, T[]>; missing: Map<S, string[]>; ambiguous: string[] } {
+  const took = new Map<S, T[]>();
+  const missing = new Map<S, string[]>();
   const ambiguous = new Set<string>();
   if (!scenes.length) return { took, missing, ambiguous: [] };
   const entries = staged.map((item) => ({ file: fileOf(item), relativePath: "" }));

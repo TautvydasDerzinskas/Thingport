@@ -55,6 +55,7 @@ import {
   gltfFilesFromOthers,
   isPreparedName,
   sortAddedFiles,
+  stagedFiles,
   storedModelFileName,
   withGltfFiles,
 } from "../../utils/addedFiles";
@@ -407,22 +408,26 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     // A scene picked apart from files it points at takes them from the other picks now, as the server packs a .gltf only
     // with what's sent with it. Two picked files one could be are said before anything is saved.
     type Staged = Extract<PlateItem, { kind: "new" }> | Extract<SupportingItem, { kind: "new" }>;
-    const staged: Staged[] = [
-      ...plateItems.flatMap((p) => (p.kind === "new" ? [p] : [])),
-      ...supportingItems.flatMap((item) => (item.kind === "new" ? [item] : [])),
-    ];
+    const staged = stagedFiles<Staged>(
+      [
+        ...plateItems.flatMap((p) => (p.kind === "new" ? [p] : [])),
+        ...supportingItems.flatMap((item) => (item.kind === "new" ? [item] : [])),
+      ],
+      (item) => item.file,
+      plateItems.flatMap((p) => (p.kind === "new" ? p.packedWith : [])),
+    );
     const across = gltfFilesFromOthers(
       plateItems.flatMap((p) =>
         p.kind === "new" && p.missing.length ? [{ scene: p, file: p.file, missing: p.missing }] : [],
       ),
       staged,
-      (item) => item.file,
+      (each) => each.file,
     );
     if (across.ambiguous.length) {
       setError(t("models:supporting.gltfAmbiguous", { names: across.ambiguous.join(", ") }));
       return;
     }
-    const taken = new Set<Staged>([...across.took.values()].flat());
+    const taken = new Set<Staged>([...across.took.values()].flat().flatMap((each) => (each.item ? [each.item] : [])));
     const takenIn = (list: PlateItem[]) =>
       list.flatMap((p): PlateItem[] => {
         if (p.kind !== "new") return [p];
@@ -432,7 +437,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           ? [
               {
                 ...p,
-                packedWith: [...p.packedWith, ...took.map((item) => item.file)],
+                packedWith: [
+                  ...p.packedWith,
+                  ...took.map((each) => each.file).filter((file) => !p.packedWith.includes(file)),
+                ],
                 missing: across.missing.get(p) ?? [],
               },
             ]
