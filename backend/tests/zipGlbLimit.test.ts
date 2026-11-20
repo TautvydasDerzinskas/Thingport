@@ -3,8 +3,9 @@ import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import JSZip from "jszip";
+import sharp from "sharp";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { packGltf, packGltfFiles } from "../src/services/gltfPacker";
 import { extractZipEntriesToFolderModels } from "../src/services/zipService";
@@ -15,6 +16,32 @@ vi.mock("../src/config", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/config")>()),
   IMPORT_MAX_BYTES: 2000,
 }));
+
+// Making a picture the cover fails while `cover` is set; the page's pictures store `page` and then fail so.
+const failing = vi.hoisted(() => ({ cover: false, page: null as Buffer | null }));
+vi.mock("../src/services/previewImageService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/previewImageService")>();
+  return {
+    ...actual,
+    preferImageOverRenders: async (...args: Parameters<typeof actual.preferImageOverRenders>) => {
+      if (failing.cover) throw new Error("The cover couldn't be changed");
+      return actual.preferImageOverRenders(...args);
+    },
+  };
+});
+vi.mock("../src/services/importService", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/services/importService")>();
+  return {
+    ...actual,
+    attachImportedPreviewImages: async (...args: Parameters<typeof actual.attachImportedPreviewImages>) => {
+      const [printId] = args;
+      if (!failing.page || !printId) return actual.attachImportedPreviewImages(...args);
+      const { addPreviewImage } = await import("../src/services/previewImageService");
+      await addPreviewImage(printId, failing.page);
+      throw new Error("The cover couldn't be changed");
+    },
+  };
+});
 
 let userId: string;
 let dir: string;
@@ -58,6 +85,85 @@ describe("the .glbs a zip's scenes are packed into", () => {
     const { prints, failed } = await extractZipEntriesToFolderModels(userId, zipPath, Object.keys(files), {});
     expect(prints.map((print) => print.title).toSorted()).toEqual(["S1", "S2", "S3"]);
     expect(failed).toEqual(["Models/S4"]);
+  });
+});
+
+describe("a zip's picked entries as a model per folder", () => {
+  afterEach(() => {
+    failing.cover = false;
+    failing.page = null;
+  });
+
+  const bin = Buffer.alloc(BIN);
+  positions.copy(bin);
+  const stl = "solid part\nendsolid part\n";
+  const zipOf = async (name: string, files: Record<string, string | Buffer>) => {
+    const zip = new JSZip();
+    for (const [entry, contents] of Object.entries(files)) zip.file(entry, contents);
+    const zipPath = path.join(dir, name);
+    fs.writeFileSync(zipPath, await zip.generateAsync({ type: "nodebuffer" }));
+    return zipPath;
+  };
+  const photo = (red: number) =>
+    sharp({ create: { width: 8, height: 8, channels: 3, background: { r: red, g: 0, b: 0 } } })
+      .png()
+      .toBuffer();
+
+  it("packs into a scene at the top no other model's file by its name, but a file of its own model's", async () => {
+    const files = {
+      "scene.gltf": scene("mesh.bin"),
+      "Other/mesh.bin": bin,
+      "Other/part.stl": stl,
+      // Not where the scene says, but in its model's folder: found by name.
+      "Kit/scene.gltf": scene("kit.bin"),
+      "Kit/buffers/kit.bin": bin,
+    };
+    const zipPath = await zipOf("by-name.zip", files);
+    const { prints, failed } = await extractZipEntriesToFolderModels(userId, zipPath, Object.keys(files), {});
+    expect(prints.map((print) => print.title).toSorted()).toEqual(["Kit", "Other"]);
+    expect(failed).toEqual(["scene.gltf"]);
+  });
+
+  it("turns down a selection naming no path in the zip", async () => {
+    const zipPath = await zipOf("nothing.zip", { "part.stl": stl });
+    await expect(extractZipEntriesToFolderModels(userId, zipPath, [""], {})).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("counts a scene's .bin in its model from the first report", async () => {
+    const files = { "scene.gltf": scene("mesh.bin"), "mesh.bin": bin };
+    const zipPath = await zipOf("progress.zip", files);
+    const reports: number[][] = [];
+    const { prints, failed } = await extractZipEntriesToFolderModels(
+      userId,
+      zipPath,
+      [...Object.keys(files), "gone.stl"],
+      {},
+      (...report) => reports.push(report),
+    );
+    expect(prints).toHaveLength(1);
+    expect(failed).toEqual(["gone.stl"]);
+    expect(reports).toEqual([
+      [1, 2, 0, 1],
+      [2, 2, 1, 1],
+    ]);
+  });
+
+  it("keeps the rest of a folder's photos when making one the cover fails", async () => {
+    failing.cover = true;
+    const files = { "Frog/frog.stl": stl, "Frog/a.png": await photo(200), "Frog/b.png": await photo(100) };
+    const zipPath = await zipOf("photos.zip", files);
+    const { prints } = await extractZipEntriesToFolderModels(userId, zipPath, Object.keys(files), {});
+    expect(prints[0].previewImages.filter((image) => !image.generated)).toHaveLength(2);
+  });
+
+  it("adds the folder's photos after the page's when making the page's the cover fails", async () => {
+    failing.page = await photo(50);
+    const files = { "Frog/frog.stl": stl, "Frog/a.png": await photo(200), "Frog/b.png": await photo(100) };
+    const zipPath = await zipOf("page-photos.zip", files);
+    const { prints } = await extractZipEntriesToFolderModels(userId, zipPath, Object.keys(files), {
+      previewImageUrl: "https://example.com/cover.png",
+    });
+    expect(prints[0].previewImages.filter((image) => !image.generated)).toHaveLength(3);
   });
 });
 

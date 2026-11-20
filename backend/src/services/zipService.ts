@@ -297,8 +297,9 @@ async function createModelOf(
 /** `entries` with each .gltf packed, with the files it points at, into one .glb in its place, as an upload's is
  *  (uploadService's withGltfPacked): kept as it is, a scene would point at files its model doesn't have. They're found
  *  by their paths in the zip, so a scene takes the .bin in its own folder. One of `others`, picked files of another
- *  model's folder or none, is packed in too, and stays theirs: it's read, not taken. `glbs`, the temp files made, and
- *  `took`, the ones of `others` packed in. */
+ *  model's folder or none, is packed in too where the scene names its path, and stays theirs: it's read, not taken.
+ *  By name alone a scene takes only its own model's files. `glbs`, the temp files made, and `took`, the ones of
+ *  `others` packed in. */
 async function withScenesPacked(
   entries: ModelEntry[],
   others: PickedEntry[] = [],
@@ -325,6 +326,7 @@ async function withScenesPacked(
       },
     }),
     room,
+    (file) => !outside.includes(file.item),
   );
   const made = files.filter((file) => !entries.includes(file.item) && !outside.includes(file.item));
   return {
@@ -392,7 +394,8 @@ async function picturedAfterStoring(printId: string, addPictures: () => Promise<
     });
 }
 
-/** A new model's pictures: the page's, then the zip's photos, as many as an import keeps. */
+/** A new model's pictures: the page's, then the zip's photos, as many as an import keeps. Making one the cover is a
+ *  step of its own: a picture stored stays, and counts, when that fails. */
 async function addPicturesOf(
   printId: string,
   plateId: string | undefined,
@@ -404,7 +407,11 @@ async function addPicturesOf(
     plateId,
     options.previewImageUrl,
     options.galleryImages ?? [],
-  );
+  ).catch((err: unknown) => {
+    console.warn(`Zip import: couldn't add all the page's pictures of model ${printId}:`, err);
+    // The model is new: the pictures in its gallery that aren't renders are the page's.
+    return prisma.previewImage.count({ where: { printId, generated: false } });
+  });
   let preferred = fromPage > 0;
   // Administration → Storage's "Photos kept per model", the page's counted first, as this is an import.
   const keep = (await getPhotosPerModel()) ?? PREVIEW_IMAGE_MAX_COUNT;
@@ -417,7 +424,9 @@ async function addPicturesOf(
     // The page's own pictures come first; a zip's stand in for none.
     if (!preferred) {
       preferred = true;
-      await preferImageOverRenders(printId, plateId, buffer, true);
+      await preferImageOverRenders(printId, plateId, buffer, true).catch((err: unknown) =>
+        console.warn(`Zip import: couldn't make a photo the cover of model ${printId}:`, err),
+      );
     }
   }
 }
@@ -474,6 +483,8 @@ export async function extractZipEntriesToFolderModels(
 ): Promise<{ prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[]; failed: string[] }> {
   if (options.categoryId) await validateParentCategory(userId, options.categoryId);
   const { entries, failed } = await readPickedEntries(zipPath, selections);
+  // As a model per file does: a selection naming no path in the zip picks nothing.
+  if (!entries.length && !failed.length) throw new HttpError(400, "No zip entries selected");
   const prints: (Print & { plates: Plate[]; previewImages: PreviewImage[] })[] = [];
   const loose: string[] = [];
   const glbs: string[] = [];
@@ -492,7 +503,6 @@ export async function extractZipEntriesToFolderModels(
     // that couldn't be read, which is done with already.
     total = units.length + failed.length;
     processed = failed.length;
-    if (processed) onProgress?.(processed, total, 0, failed.length);
     // Every model's scenes are packed before any model is stored, as storing one takes its files: a scene may point at
     // a picked file outside its folder ("../../Shared/mesh.bin"), one a model stored before it holds among them. A
     // scene at the top is a model of its own, packed as one in a folder is, and a file on its own that a scene packed
@@ -521,6 +531,8 @@ export async function extractZipEntriesToFolderModels(
     }
     // A file on its own that a scene took is that scene's model, not one more: out of the count it started in.
     total -= units.filter((unit) => unit.kind === "file" && !packed.has(unit) && taken.has(unit.item)).length;
+    // Once the count is what the job will end on, so it never shows a scene's .bin as a model of its own.
+    if (processed) onProgress?.(processed, total, 0, failed.length);
     for (const unit of units) {
       const own = packed.get(unit);
       if (!own) {

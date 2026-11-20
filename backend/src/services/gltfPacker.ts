@@ -205,8 +205,14 @@ export type PackableFile = { name: string; path: string };
  *  file name alone, when only one file in that folder or below has it (an upload carries names, not folders), so a
  *  scene doesn't take a file that belongs to another model's folder. Names as they came first, so "mesh.bin%20" finds
  *  "mesh.bin " beside a "mesh.bin"; only when none matches so, by the name one is kept by ("mesh.bin " for
- *  "mesh.bin"), and only where one file has it. */
-function findReferenced<T extends PackableFile>(files: T[], gltfName: string, uri: string): T | undefined {
+ *  "mesh.bin"), and only where one file has it. By name, only `nameable` files: a zip names every file's folder,
+ *  and a scene at its top would otherwise take another model's .bin. */
+function findReferenced<T extends PackableFile>(
+  files: T[],
+  gltfName: string,
+  uri: string,
+  nameable: (file: T) => boolean = () => true,
+): T | undefined {
   let decoded = uri;
   try {
     decoded = decodeURIComponent(uri);
@@ -219,7 +225,7 @@ function findReferenced<T extends PackableFile>(files: T[], gltfName: string, ur
   const byPath = files.find((file) => pathOf(file) === wanted);
   if (byPath) return byPath;
   const base = path.posix.basename(wanted).toLowerCase();
-  const inFolder = (file: T) => folder === "." || pathOf(file).startsWith(`${folder}/`);
+  const inFolder = (file: T) => nameable(file) && (folder === "." || pathOf(file).startsWith(`${folder}/`));
   const byName = files.filter((file) => path.posix.basename(pathOf(file)).toLowerCase() === base && inFolder(file));
   if (byName.length) return byName.length === 1 ? byName[0] : undefined;
   const kept = trimFilename(base);
@@ -251,13 +257,14 @@ export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gl
  * of it is given back, as its .glbs go. Of each file only as much is read as a buffer uses, unless a texture takes it
  * all (readPart), so a scene using a few bytes of large files holds those bytes alone; an entry naming it again reads
  * it again only where it needs more of it than was read, a longer part or all of it, which then takes the place of
- * what was.
+ * what was. `nameable`, the files a scene may take by name rather than by its path (findReferenced); all by default.
  */
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
   tempPath: () => string,
   made: (gltf: T, glbPath: string, glbName: string) => T,
   room?: { bytes: number },
+  nameable?: (file: T) => boolean,
 ): Promise<{ files: T[]; packed: T[] }> {
   const gltfs = files.filter((file) => isGltfName(file.name));
   if (!gltfs.length) return { files, packed: [] };
@@ -275,7 +282,7 @@ export async function packGltfFiles<T extends PackableFile>(
         bytes,
         path.basename(gltf.name),
         async (uri, length) => {
-          const file = findReferenced(files, gltf.name, uri);
+          const file = findReferenced(files, gltf.name, uri, nameable);
           if (!file || isGltfName(file.name)) return null;
           used.add(file);
           const had = reads.get(file);
