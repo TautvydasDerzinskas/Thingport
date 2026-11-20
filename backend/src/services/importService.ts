@@ -1388,11 +1388,13 @@ async function filesFromZip(
       const placedIn = descends ? normalizeFolder(parts.slice(0, -1)) : folder;
       const named = topIsModelTop ? supportingImportName(keptNameOf(parts), placedIn) : keptNameOf(parts);
       const stored = supportingKey(placedIn, named);
-      // Ones the model has, and where it's stored as here, at the model's top, ones another download kept.
+      // Ones the model has, and ones another download kept, where it's known here where this one is stored: at the
+      // model's top, placed by this zip alone. Elsewhere that's known only once its folders are (withoutHad).
       const had =
         picksSupporting(pick) &&
-        (pick.except?.has(supportingKey(placedIn, keptNameOf(parts))) ||
-          (topIsModelTop && !descends && pick.accepted?.has(stored)));
+        topIsModelTop &&
+        !descends &&
+        (pick.except?.has(supportingKey(placedIn, keptNameOf(parts))) || pick.accepted?.has(stored));
       if (picksSupporting(pick) && (had || taken.has(stored))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
@@ -1448,18 +1450,45 @@ async function filesFromZip(
     const wraps = picksSupporting(pick)
       ? !(await zipEntriesInFolders(zipPath)).some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts)))
       : !inputs.length;
+    // The zip the import opened: its files' folders are where they're stored by now.
+    const placed = async (files: NewPlateInput[]) =>
+      depth === 0 && picksSupporting(pick) ? withoutHad(pick, files) : files;
     if (!wraps || depth >= NESTED_ZIP_DEPTH || allowanceSpent(pick)) {
       placements?.push(...(await placedZipEntries(zipPath)).map((each) => each.folder));
-      return inputs;
+      return await placed(inputs);
     }
     // Its own files go with the archives', placed once, as the model in them is.
     const beside = inputs.map((input, index) => ({ ...input, folder: inZip[index] }));
-    return await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside, topIsModelTop);
+    return await placed(await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside, topIsModelTop));
   } catch (err) {
     // The files written out so far go with it, whichever step failed: the caller is handed all or none.
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));
     throw err;
   }
+}
+
+/** A zip's supporting files, placed where they're stored, less those the model has (`except`) and those another download
+ *  kept (`accepted`), by that placement: what each took of the pass's share is given back, and its file removed. The
+ *  pass leaves out at once those it knows are stored so (filesFromZip); this is every other's, once it's known. */
+async function withoutHad(pick: SupportingPick, files: NewPlateInput[]): Promise<NewPlateInput[]> {
+  if (!pick.except?.size && !pick.accepted?.size) return files;
+  const left: NewPlateInput[] = [];
+  for (const file of files) {
+    const folder = normalizeFolder(file.folder);
+    const name = sanitizeFilename(file.filename);
+    const had =
+      pick.except?.has(supportingKey(folder, name)) ||
+      pick.accepted?.has(supportingKey(folder, supportingImportName(name, folder)));
+    if (!had || !file.tempFilePath) {
+      left.push(file);
+      continue;
+    }
+    const size = (await fs.stat(file.tempFilePath).catch(() => null))?.size ?? 0;
+    pick.kept.bytes -= size;
+    pick.kept.files -= 1;
+    await fs.rm(file.tempFilePath, { force: true }).catch(() => undefined);
+  }
+  return left;
 }
 
 /** A model's turn at what it keeps of the files beside its own: `fetch` is given what it has of them by then, and the

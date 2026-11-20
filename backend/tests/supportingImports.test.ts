@@ -635,6 +635,20 @@ describe("a site's zip", () => {
     const supporting = await supportingFilesFromZip(zip, undefined, new Set(["\u0000guide.pdf"]));
     remove(supporting);
     expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([["scripts", "guide.pdf"]]);
+    // And by where it's stored once the archive is opened, though that's not where it is in the zip: under scripts/
+    // with the archive too, that folder comes off, so one the model has in scripts/ is another file, and one at the
+    // top the same.
+    const under = await zipOf({
+      "scripts/source.scad": "cube(1);",
+      "scripts/guide.pdf": "%PDF-1.4",
+      "scripts/parts.zip": parts,
+    });
+    const moved = await supportingFilesFromZip(under, undefined, new Set(["scripts\u0000guide.pdf"]));
+    remove(moved);
+    expect(moved.map((each) => [each.folder ?? null, each.filename])).toEqual([[null, "guide.pdf"]]);
+    const same = await supportingFilesFromZip(under, undefined, new Set(["\u0000guide.pdf"]));
+    remove(same);
+    expect(same).toEqual([]);
   });
 
   it("removes the files it wrote out when the zip can't be listed after them", async () => {
