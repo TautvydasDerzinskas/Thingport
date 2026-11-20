@@ -94,19 +94,41 @@ describe("packing scenes within what an import may write", () => {
     expect(reads).toBe(4);
   });
 
-  // Each file opened or read whole while `run` packs, by name.
+  // Each file opened or read whole while `run` packs, by name, and how many of its bytes were read, through a handle
+  // it opened too.
   const readsDuring = async (run: () => Promise<unknown>) => {
     const reads: string[] = [];
+    const bytes: Record<string, number> = {};
+    const count = (file: unknown, read: number) => {
+      const name = path.basename(String(file));
+      bytes[name] = (bytes[name] ?? 0) + read;
+    };
     const open = fsPromises.open.bind(fsPromises);
     const readFile = fsPromises.readFile.bind(fsPromises);
     const spies = [
-      vi.spyOn(fsPromises, "open").mockImplementation(((file: string, ...rest: [never]) => {
+      vi.spyOn(fsPromises, "open").mockImplementation((async (file: string, ...rest: [never]) => {
         reads.push(`part of ${path.basename(String(file))}`);
-        return open(file, ...rest);
+        const handle = await open(file, ...rest);
+        const read = handle.read.bind(handle);
+        const readWhole = handle.readFile.bind(handle);
+        handle.read = (async (...args: Parameters<typeof read>) => {
+          const result = await read(...args);
+          count(file, result.bytesRead);
+          return result;
+        }) as typeof handle.read;
+        handle.readFile = (async (...args: Parameters<typeof readWhole>) => {
+          const result = await readWhole(...args);
+          reads.push(`all of ${path.basename(String(file))}`);
+          count(file, result.length);
+          return result;
+        }) as typeof handle.readFile;
+        return handle;
       }) as never),
-      vi.spyOn(fsPromises, "readFile").mockImplementation(((file: string, ...rest: [never]) => {
+      vi.spyOn(fsPromises, "readFile").mockImplementation((async (file: string, ...rest: [never]) => {
+        const result = await readFile(file, ...rest);
         reads.push(`all of ${path.basename(String(file))}`);
-        return readFile(file, ...rest);
+        count(file, (result as Buffer).length);
+        return result;
       }) as never),
     ];
     try {
@@ -114,13 +136,13 @@ describe("packing scenes within what an import may write", () => {
     } finally {
       for (const spy of spies) spy.mockRestore();
     }
-    return reads.filter((read) => !read.endsWith(".gltf"));
+    return { reads: reads.filter((read) => !read.endsWith(".gltf")), bytes };
   };
 
   it("reads a file a scene names again and again once", async () => {
     const files = [write("scene.gltf", repeated(64)), write("mesh.bin", bin)];
-    const reads = await readsDuring(() => packGltfFiles(files, tempPath, made, { bytes: 1_000_000 }));
-    expect(reads).toHaveLength(1);
+    const { bytes } = await readsDuring(() => packGltfFiles(files, tempPath, made, { bytes: 1_000_000 }));
+    expect(bytes["mesh.bin"]).toBe(BIN);
   });
 
   it("reads of a large file only what a scene's buffers use, and all of it for a texture", async () => {
@@ -131,14 +153,16 @@ describe("packing scenes within what an import may write", () => {
     json.buffers = Array.from({ length: 3 }, () => ({ uri: "large.png", byteLength: BIN }));
     const files = [write("scene.gltf", JSON.stringify(json)), write("large.png", large)];
     let packed: Awaited<ReturnType<typeof packGltfFiles>> | null = null;
-    const reads = await readsDuring(async () => (packed = await packGltfFiles(files, tempPath, made)));
-    expect(reads).toEqual(["part of large.png"]);
+    const only = await readsDuring(async () => (packed = await packGltfFiles(files, tempPath, made)));
+    expect(only.reads).toEqual(["part of large.png"]);
+    expect(only.bytes["large.png"]).toBeLessThanOrEqual(BIN);
     expect(fs.statSync(packed!.files[0].path).size).toBeLessThan(3 * BIN + 2000);
     // The same file as the scene's texture is read whole, once more.
     json.images = [{ uri: "large.png" }];
     const textured = [write("scene.gltf", JSON.stringify(json)), write("large.png", large)];
     const again = await readsDuring(async () => (packed = await packGltfFiles(textured, tempPath, made)));
-    expect(again).toEqual(["part of large.png", "all of large.png"]);
+    expect(again.reads).toEqual(["part of large.png", "all of large.png"]);
+    expect(again.bytes["large.png"]).toBe(BIN + large.length);
     expect(fs.statSync(packed!.files[0].path).size).toBeGreaterThan(large.length);
   });
 

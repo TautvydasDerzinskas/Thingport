@@ -373,11 +373,13 @@ export async function keepSupportingFiles(userId: string, printId: string, input
   // Best-effort as each file's save is: a read of the limits, or of what the model keeps, that fails costs the files,
   // never the model, whose plates are in by then.
   try {
-    const limits = await supportingLimits();
-    if (!limits) return 0;
     // One model's at a time, from what's stored to the last save: a repair and a profile's import of the same model
-    // would otherwise both read the same total and each keep a file that fits only alone.
-    return await withSupportingAllowance(printId, () => keepWithin(userId, printId, inputs, limits));
+    // would otherwise both read the same total and each keep a file that fits only alone. The limits are read in its
+    // turn too: one waiting while an admin turned them off keeps none.
+    return await withSupportingAllowance(printId, async () => {
+      const limits = await supportingLimits();
+      return limits ? keepWithin(userId, printId, inputs, limits) : 0;
+    });
   } catch (err) {
     console.warn(`Couldn't keep the files a site gave beside model ${printId}:`, err);
     return 0;
