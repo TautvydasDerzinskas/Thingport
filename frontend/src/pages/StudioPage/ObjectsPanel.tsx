@@ -155,7 +155,7 @@ export default function ObjectsPanel({
             cursor: editing || children.length ? "pointer" : "default",
             opacity: feature.visible || depth > 0 ? 1 : 0.5,
             "& .row-action": { opacity: chosen ? 1 : 0, transition: "opacity 150ms" },
-            "&:hover .row-action, &:focus-visible .row-action": { opacity: 1 },
+            "&:hover .row-action, &:focus-within .row-action": { opacity: 1 },
           }}
         >
           {children.length > 0 ? (

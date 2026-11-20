@@ -923,10 +923,12 @@ export async function loadStudioThreeMf(
   srcPath: string,
   maxTriangles: number,
   maxObjects: number,
+  maxBodyTriangles = maxTriangles,
 ): Promise<
   | { plates: { name: string | null; parts: StudioThreeMfPart[] }[]; mixedColors: boolean }
   | PreviewRefusal
   | "missing-parts"
+  | "body-too-complex"
 > {
   const parsed = await parseThreeMfFast(srcPath, maxTriangles);
   if (typeof parsed === "string") return parsed;
@@ -939,7 +941,9 @@ export async function loadStudioThreeMf(
   let mixedColors = false;
   for (const item of items) {
     const object = parsed.objects.get(item.objectId)!;
-    const triangles = new Float32Array(object.meshes.reduce((sum, mesh) => sum + mesh.triangles.length * 3, 0));
+    const indexCount = object.meshes.reduce((sum, mesh) => sum + mesh.triangles.length, 0);
+    if (indexCount / 3 > maxBodyTriangles) return "body-too-complex";
+    const triangles = new Float32Array(indexCount * 3);
     const colors = new Set<string | undefined>();
     const flip = item.transform && mirrors(item.transform);
     let at = 0;

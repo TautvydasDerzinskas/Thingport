@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { writeZip } from "../src/utils/zipWriter";
 import { readColor, readColorGroups, sharePalette } from "../src/services/threeMfColors";
-import { loadThreeMfGroup } from "../src/services/modelPreviewRender";
+import { loadStudioThreeMf, loadThreeMfGroup } from "../src/services/modelPreviewRender";
 
 // Two triangles, two colours, written the way frontend/src/sdk/threeMf.ts writes a generated model: a colour
 // group the object points at, each triangle naming its own entry, and the same assignment again as the painting
@@ -124,6 +124,19 @@ describe("readColor", () => {
     expect(readColor("#00AE42")).toBe("#00ae42");
     expect(readColor("not a colour")).toBeNull();
   });
+});
+
+it("uses separate limits for a Studio 3MF project and each of its bodies", async () => {
+  const file = await threeMf(
+    "studio-triangle-limits",
+    COLOURED_XML.replace("</build>", '<item objectid="2"/></build>'),
+  );
+  const project = await loadStudioThreeMf(file, 4, 2, 2);
+  expect(
+    typeof project === "string" ? project : project.plates[0].parts.map((part) => part.triangles.length / 9),
+  ).toEqual([2, 2]);
+  expect(await loadStudioThreeMf(file, 3, 2, 2)).toBe("too-complex");
+  expect(await loadStudioThreeMf(file, 4, 2, 1)).toBe("body-too-complex");
 });
 
 describe("readColorGroups", () => {
