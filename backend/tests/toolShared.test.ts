@@ -3,8 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
+import sharp from "sharp";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
+import { addPreviewImage, previewImagePath } from "../src/services/previewImageService";
 import { setToolsAccess } from "../src/services/settingsService";
 import { setToolsRepoForTest, toolFetchSettled } from "../src/services/toolsService";
 
@@ -65,6 +67,7 @@ const list = async (person: Person, query = "") =>
     key: string;
     value: unknown;
     mine: boolean;
+    preview_match?: boolean;
     user: { id: string; display_name: string };
   }[];
 
@@ -243,6 +246,54 @@ describe("shared entries", () => {
 });
 
 describe("entries about a model", () => {
+  it.each(["note:", ""])("matches previews on equivalent copies with prefix %j", async (prefix) => {
+    writeRepo();
+    toolId = await install();
+    const original = await upload(dad, "preview.stl");
+    const copy = await upload(son, "preview-copy.stl");
+    await prisma.print.update({ where: { id: copy }, data: { originalId: original, copiedFromId: original } });
+
+    const photo = await sharp(
+      Buffer.from(
+        '<svg width="320" height="240"><rect width="320" height="240" fill="white"/><circle cx="100" cy="80" r="58" fill="blue"/></svg>',
+      ),
+    )
+      .png()
+      .toBuffer();
+    const otherPhoto = await sharp(
+      Buffer.from(
+        '<svg width="320" height="240"><rect width="320" height="240" fill="white"/><circle cx="215" cy="150" r="58" fill="blue"/></svg>',
+      ),
+    )
+      .png()
+      .toBuffer();
+    const originalImage = (await addPreviewImage(original, photo))!;
+    const otherImage = (await addPreviewImage(original, otherPhoto))!;
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({
+      where: { id: original },
+      select: { assetsPath: true },
+    });
+    const stored = fs.readFileSync(previewImagePath(originalImage.id, assetsPath));
+    const copyImage = (await addPreviewImage(copy, stored, { keepExif: true }))!;
+    const legacyKey = `${prefix}${original}:image:${originalImage.id}:before-review`;
+    const otherKey = `${prefix}${original}:image:${otherImage.id}:elsewhere`;
+    const spoofedKey = `${prefix}${original}:image:${copyImage.id}:unrelated-id`;
+    for (const key of [legacyKey, otherKey, spoofedKey]) {
+      expect((await share(dad, key, { value: {}, model: original })).status).toBe(204);
+    }
+
+    const previewQuery = `model=${copy}&preview=image:${copyImage.id}`;
+    const query = `?prefix=${prefix}&${previewQuery}`;
+    const matches = await list(son, query);
+    expect(matches.filter((entry) => entry.preview_match).map(({ key }) => key)).toEqual([legacyKey]);
+    expect(matches).toHaveLength(3);
+    const withoutPrefix = await list(son, `?${previewQuery}`);
+    expect(withoutPrefix).toHaveLength(3);
+    expect(withoutPrefix.every((entry) => entry.preview_match === undefined)).toBe(true);
+    await request(app).put(`/api/tools/${toolId}/audience`).set(auth(dad.token)).send({ everyone: false });
+    expect(await list(son, query)).toEqual([]);
+  });
+
   it("are found from the model and from any copy of it, as long as they reach the reader", async () => {
     writeRepo();
     toolId = await install();

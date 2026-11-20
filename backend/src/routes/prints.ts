@@ -8,6 +8,7 @@ import { requireAuth } from "../auth";
 import { HttpError, sanitizeFilename } from "../utils/fileUtils";
 import { normalizeFolder } from "../utils/fileFolder";
 import { normalizeTags } from "../utils/tagNormalization";
+import { parseSortDirection } from "../utils/sortDirection";
 import { parseBody } from "../utils/validate";
 import { asyncHandler } from "../utils/asyncHandler";
 import { modelUpload } from "../uploadMiddleware";
@@ -260,6 +261,7 @@ router.get(
     const listAs = shared && shared.userId !== req.userId ? shared.userId : req.userId!;
     const page = await listPrints(listAs, filters, {
       sort: parseSortMode(req.query.orderBy),
+      direction: parseSortDirection(req.query.orderDirection),
       limit,
       offset,
     });

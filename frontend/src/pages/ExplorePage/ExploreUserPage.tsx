@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 import type { Theme } from "@mui/material/styles";
 import { UnauthorizedError } from "../../api/client";
 import type { AuthUser } from "../../api/auth";
-import type { PrintSortMode } from "../../api/prints";
+import { usePrintSort } from "../../hooks/usePrintSort";
 import { type PreviewMode } from "../../api/settings";
 import { SocialOffError, socialApi, type ExploreUserPage as UserPage } from "../../api/social";
 import { refreshSocialStatus, useSocialStatus } from "../../hooks/useSocialStatus";
@@ -65,6 +65,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   const { t } = useTranslation(["models", "common"]);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { sortMode, direction, setSortMode, setDirection } = usePrintSort({ replace: true });
   const [page, setPage] = useState<UserPage | null>(null);
   const [notFound, setNotFound] = useState(false);
   // A read that failed: in place of the page when there's none yet, above it when it was only read again.
@@ -240,8 +241,6 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
   const joined = new Date(page.user.joined_at).toLocaleDateString(undefined, { year: "numeric", month: "long" });
   // Models first, when there are any to show: what they made before what they gathered.
   const tab: Section = page.user.models_public && searchParams.get("tab") !== "collections" ? "models" : "collections";
-  const sortParam = searchParams.get("orderBy");
-  const sortMode: PrintSortMode = sortParam === "popular" || sortParam === "downloads" ? sortParam : "newest";
   const setParam = (key: string, value: string | null, replace = false) =>
     setSearchParams(
       (prev) => {
@@ -299,7 +298,9 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
             <Box sx={{ ml: "auto" }}>
               <SortTabs
                 value={sortMode}
-                onChange={(mode) => setParam("orderBy", mode === "newest" ? null : mode, true)}
+                onChange={setSortMode}
+                direction={direction}
+                onDirectionChange={setDirection}
               />
             </Box>
           )}
@@ -309,6 +310,7 @@ export default function ExploreUserPage({ theme, previewMode, onUnauthorized, vi
           <ExploreUserModels
             userId={page.user.id}
             sortMode={sortMode}
+            direction={direction}
             theme={theme}
             previewMode={previewMode}
             viewer={viewer}

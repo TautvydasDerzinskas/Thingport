@@ -1,6 +1,7 @@
 import type { ThreeMfFormat } from "../adapter/format.generated";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { appendTokenToUrl, authHeaders, readToken } from "../utils/auth";
+import type { SortDirection } from "../utils/sortDirection";
 import { apiBase, assertOk, readErrorMessage, LastPlateError, UnauthorizedError } from "./client";
 import type { RemoteOrigin, UserCard } from "./social";
 
@@ -253,7 +254,7 @@ export type FillGapsResult = {
 };
 
 /** "relevance" ranks by how well a model matches `q`, as the search palette does. */
-export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance";
+export type PrintSortMode = "newest" | "popular" | "downloads" | "relevance" | "name";
 
 /** A site the library's models came from; `provider` is "thingport" for the ones uploaded here. */
 export type PrintSource = { provider: string; model_count: number };
@@ -362,6 +363,7 @@ export const printsApi = {
       /** Only models with a licence. */
       licensed?: boolean;
       order_by?: PrintSortMode;
+      order_direction?: SortDirection;
       limit?: number;
       offset?: number;
     } = {},
@@ -379,6 +381,7 @@ export const printsApi = {
     if (params.collection_id) qs.set("collection_id", params.collection_id);
     if (params.author_id) qs.set("author_id", params.author_id);
     if (params.order_by) qs.set("orderBy", params.order_by);
+    if (params.order_direction) qs.set("orderDirection", params.order_direction);
     if (typeof params.limit === "number") qs.set("limit", String(params.limit));
     if (typeof params.offset === "number") qs.set("offset", String(params.offset));
     const res = await fetch(`${apiBase()}/prints?${qs.toString()}`, {

@@ -560,9 +560,9 @@ export default function App() {
     resetHoverSlideshowEnabled();
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     resetUserPrinters();
     storeToken(tok);
+    resetToolsView();
     storeUser(loggedInUser);
     setToken(tok);
     setUser(loggedInUser);
@@ -592,8 +592,8 @@ export default function App() {
   const expireSession = React.useCallback(() => {
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     clearToken();
+    resetToolsView();
     setToken(null);
     setShowExpiredToast(true);
   }, []);
@@ -642,6 +642,7 @@ export default function App() {
         const stored = readUser();
         if ((stored?.id ?? null) !== userId.current) {
           resetUserPrinters();
+          resetToolsView();
           setSessionKey((key) => key + 1);
         }
         setToken(readToken());
@@ -680,9 +681,9 @@ export default function App() {
     await authApi.logout();
     resetCustomWidgets();
     resetTools();
-    resetToolsView();
     resetUserPrinters();
     clearToken();
+    resetToolsView();
     clearUser();
     setToken(null);
     setUser(null);

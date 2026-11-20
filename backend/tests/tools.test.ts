@@ -199,6 +199,19 @@ describe("the Tools page's arrangement", () => {
     const sorted = await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ sort: "name" });
     expect(sorted.body).toEqual({ layout: "flat", sort: "name", categories: { abc: "files" } });
 
+    await request(app)
+      .patch("/api/settings/tools-view")
+      .set(auth(memberToken))
+      .send({ sortDirection: "desc" })
+      .expect(200);
+    const reopened = await request(app).get("/api/settings/tools-view").set(auth(memberToken)).expect(200);
+    expect(reopened.body).toEqual({
+      layout: "flat",
+      sort: "name",
+      sortDirection: "desc",
+      categories: { abc: "files" },
+    });
+
     expect(
       (await request(app).patch("/api/settings/tools-view").set(auth(memberToken)).send({ layout: "sideways" })).status,
     ).toBe(400);

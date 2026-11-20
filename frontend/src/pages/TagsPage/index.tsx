@@ -14,12 +14,13 @@ import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import { UnauthorizedError } from "../../api/client";
 import { printsApi } from "../../api/prints";
 import { type TagSortMode, type TagSummary, tagsApi } from "../../api/tags";
-import SortTabs from "../../components/controls/SortTabs";
+import SortTabs, { type SortOption } from "../../components/controls/SortTabs";
 import MergeDialog, { type MergeItem } from "../../components/MergeDialog";
 import SelectionToolbar, { SelectionAction } from "../../components/selection/SelectionToolbar";
 import { useConfirm } from "../../components/ConfirmProvider";
 import { useToast } from "../../components/ToastProvider";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useListSort } from "../../hooks/useListSort";
 import { useSelection } from "../../hooks/useSelection";
 import { colorForTag } from "../../utils/tagColors";
 import { readMinCount, saveMinCount } from "./minCount";
@@ -85,7 +86,8 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [anyTags, setAnyTags] = useState(false);
-  const [sortMode, setSortMode] = useState<TagSortMode>("popular");
+  const sort = useListSort<TagSortMode>("popular");
+  const { value: sortMode, direction } = sort;
   const [minCountChoice, setMinCountChoice] = useState(readMinCount);
   // Each change empties the grid and loads it again, so typing 10 shouldn't load the tags for 1 on the way.
   const minCount = useDebouncedValue(minCountChoice, 300);
@@ -128,10 +130,12 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
   useEffect(() => {
     const current = ++generation.current;
     setLoading(true);
+    setLoadingMore(false);
+    setHasMore(false);
     setTags([]);
     (async () => {
       try {
-        const page = await tagsApi.listSummary({ sort: sortMode, limit: pageSize, offset: 0, minCount });
+        const page = await tagsApi.listSummary({ sort: sortMode, direction, limit: pageSize, offset: 0, minCount });
         if (current !== generation.current) return;
         setTags(page.items);
         setHasMore(page.has_more);
@@ -145,25 +149,35 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
         }
       }
     })();
+    return () => {
+      generation.current += 1;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortMode, minCount, pageSize, reloadKey]);
+  }, [sortMode, direction, minCount, pageSize, reloadKey]);
 
   const loadMore = useCallback(async () => {
     const current = generation.current;
     setLoadingMore(true);
     try {
-      const page = await tagsApi.listSummary({ sort: sortMode, limit: pageSize, offset: tags.length, minCount });
+      const page = await tagsApi.listSummary({
+        sort: sortMode,
+        direction,
+        limit: pageSize,
+        offset: tags.length,
+        minCount,
+      });
       if (current !== generation.current) return;
       setTags((prev) => [...prev, ...page.items]);
       setHasMore(page.has_more);
     } catch (err) {
-      if (current === generation.current) handleError(err, t("models:errors.loadFailed"));
+      if (current !== generation.current) return;
+      handleError(err, t("models:errors.loadFailed"));
       setHasMore(false);
     } finally {
-      setLoadingMore(false);
+      if (current === generation.current) setLoadingMore(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortMode, minCount, pageSize, tags.length]);
+  }, [sortMode, direction, minCount, pageSize, tags.length]);
 
   const sentinelRef = useInfiniteScroll(() => void loadMore(), hasMore, loading || loadingMore);
 
@@ -265,10 +279,11 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
     });
   };
 
-  const sortOptions: { value: TagSortMode; label: string }[] = [
-    { value: "popular", label: t("models:sort.popular") },
-    { value: "newest", label: t("models:sort.newest") },
-    { value: "name", label: t("models:tags.sortByName") },
+  const nameLabel = t("models:tags.sortByName");
+  const sortOptions: SortOption<TagSortMode>[] = [
+    { value: "popular", label: t("models:sort.popular"), reverseLabel: t("models:sort.leastPopular") },
+    { value: "newest", label: t("models:sort.newest"), reverseLabel: t("models:sort.oldest") },
+    { value: "name", label: nameLabel, reverseLabel: t("models:sort.reverseAlphabetical", { label: nameLabel }) },
   ];
   const disabled = count === 0 || busy !== null;
   const bookmarkLabel = allBookmarked ? t("models:tags.unbookmarkTag") : t("models:tags.bookmarkTag");
@@ -336,7 +351,7 @@ export default function TagsPage({ onUnauthorized, onBookmarksChanged }: Props) 
           </SelectionToolbar>
         )}
         <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1.5 }}>
-          <SortTabs value={sortMode} options={sortOptions} onChange={setSortMode} />
+          <SortTabs {...sort} options={sortOptions} />
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <TagFiltersButton minCount={minCountChoice} onChange={changeMinCount} />
         </Box>

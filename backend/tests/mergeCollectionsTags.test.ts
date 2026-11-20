@@ -215,6 +215,11 @@ describe("sorting tags by newest", () => {
     await createPrint([tag("Newer")]);
     const res = await request(app).get("/api/tags/summary?sort=newest&limit=100").set(auth());
     const names = (res.body.items as { name: string }[]).map((item) => item.name);
+    expect(names).toEqual(expect.arrayContaining([tag("Older"), tag("Newer")]));
     expect(names.indexOf(tag("Newer"))).toBeLessThan(names.indexOf(tag("Older")));
+    const reversed = await request(app).get("/api/tags/summary?sort=newest&orderDirection=asc&limit=100").set(auth());
+    const reversedNames = (reversed.body.items as { name: string }[]).map((item) => item.name);
+    expect(reversedNames).toEqual(expect.arrayContaining([tag("Older"), tag("Newer")]));
+    expect(reversedNames.indexOf(tag("Older"))).toBeLessThan(reversedNames.indexOf(tag("Newer")));
   });
 });

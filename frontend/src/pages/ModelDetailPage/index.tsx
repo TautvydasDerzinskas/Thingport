@@ -68,6 +68,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [loadedPreview, setLoadedPreview] = useState<{ source: string; aspect: number } | null>(null);
   const [renderUnavailable, setRenderUnavailable] = useState(false);
   const onRenderUnavailable = useCallback(() => setRenderUnavailable(true), []);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -85,6 +86,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
   const descriptionRef = useRef<HTMLDivElement>(null);
   const tabTools = useToolsWithPart("tab");
   const imageTools = useToolsWithPart("image");
+  const toolPreviewHost = useRef<HTMLDivElement>(null);
   const toolWindow = useToolWindowHost(printId ?? "", onUnauthorized);
   const pageTools = useMemo<ModelPageTools>(
     () => ({
@@ -294,6 +296,15 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
     .toSorted((a, b) => a.position - b.position);
   const hasImages = images.length > 0;
   const activeImage = images[activeImageIndex] || images[0];
+  const renderPlate = showRender && print.plates.find((plate) => plate.render_url === print.render_url);
+  const previewKey = activeImage ? `image:${activeImage.id}` : renderPlate ? `render:${renderPlate.id}` : null;
+  const previewSource = activeImage?.url ?? (showRender ? print.render_url : null);
+  const previewAspect = loadedPreview?.source === previewSource ? loadedPreview.aspect : null;
+  const recordPreviewSize = (image: HTMLImageElement) => {
+    if (previewSource && image.naturalWidth && image.naturalHeight) {
+      setLoadedPreview({ source: previewSource, aspect: image.naturalWidth / image.naturalHeight });
+    }
+  };
   const firstPlate = print.plates[0];
   const canPreview3d = Boolean(firstPlate) && MODEL_EXTS.has(extOf(firstPlate?.filename || ""));
   // With no preview image yet, show the live 3D view and generate a snapshot in the background.
@@ -374,8 +385,10 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   />
                   <Box
                     component="img"
+                    key={activeImage.url}
                     src={printsApi.fileUrl(activeImage.url)}
                     alt={print.title || print.name}
+                    onLoad={(event) => recordPreviewSize(event.currentTarget)}
                     sx={{
                       position: "absolute",
                       inset: 0,
@@ -392,9 +405,33 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                   url={print.render_url!}
                   alt={print.title || print.name}
                   onUnavailable={onRenderUnavailable}
+                  onImageLoad={recordPreviewSize}
                 />
               ) : (
                 firstPlate && renderPreviewContent(print, "modal", theme, t, "automatic", firstPlate)
+              )}
+              {previewKey && previewAspect && imageTools.length > 0 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: activeImage ? 0 : "6%",
+                    containerType: "size",
+                    zIndex: 3,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Box
+                    ref={toolPreviewHost}
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: `min(100cqw, calc(100cqh * ${previewAspect}))`,
+                      height: `min(100cqh, calc(100cqw / ${previewAspect}))`,
+                    }}
+                  />
+                </Box>
               )}
 
               {images.length > 1 && (
@@ -465,6 +502,7 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
                       place="image"
                       modelId={print.id}
                       fileId={pickedPlateId}
+                      preview={previewKey && previewAspect ? { key: previewKey, host: toolPreviewHost } : undefined}
                       revision={partsRevision}
                       onUnauthorized={onUnauthorized}
                     />
