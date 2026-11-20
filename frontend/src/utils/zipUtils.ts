@@ -84,15 +84,15 @@ export async function readZipEntries(
   // file, and others are another, listed under a number rather than lost behind the first or uploaded under its name.
   // Numbered once every entry has its own path, so the number is one no entry of the zip is called by. Each numbered
   // one is listed with the path it had too, which a scene naming that path could mean (uploadTree's gltfBundles).
-  const copies = new Map<string, Uint8Array[]>();
+  const copies = new Map<string, DistinctCopies>();
   const numbered: Record<string, string> = Object.create(null);
   for (const [path, content] of later) {
-    const held = [data[path], ...(copies.get(path) ?? [])];
-    if (held.some((each) => sameBytes(each, content))) continue;
+    let held = copies.get(path);
+    if (!held) copies.set(path, (held = new DistinctCopies(data[path])));
+    if (!held.add(content)) continue;
     const next = numberedPath(path, data);
     data[next] = content;
     numbered[next] = path;
-    copies.set(path, [...(copies.get(path) ?? []), content]);
   }
   const entries = Object.keys(data)
     .toSorted((a, b) => a.localeCompare(b))
@@ -168,6 +168,43 @@ function joined(chunks: Uint8Array[]): Uint8Array {
     at += chunk.length;
   }
   return all;
+}
+
+/** One path's distinct contents, told apart by length, then, among those of one length, by a hash of their bytes worked
+ *  out once each: a copy is compared byte by byte only with those it could be, not with every one before it. The hash
+ *  is FNV-1a, as crypto.subtle isn't there on a plain-HTTP instance; equal hashes are still compared in full. */
+class DistinctCopies {
+  private readonly byLength = new Map<number, { only: Uint8Array } | { byHash: Map<number, Uint8Array[]> }>();
+
+  constructor(first: Uint8Array) {
+    this.byLength.set(first.length, { only: first });
+  }
+
+  /** False when `content` is one held already; held from then on when it isn't. */
+  add(content: Uint8Array): boolean {
+    const group = this.byLength.get(content.length);
+    if (!group) {
+      this.byLength.set(content.length, { only: content });
+      return true;
+    }
+    // Most paths a zip repeats have one or two copies: those are only compared, never hashed.
+    if ("only" in group) {
+      if (sameBytes(group.only, content)) return false;
+      this.byLength.set(content.length, { byHash: new Map([[hashBytes(group.only), [group.only]]]) });
+      return this.add(content);
+    }
+    const hash = hashBytes(content);
+    const same = group.byHash.get(hash) ?? [];
+    if (same.some((each) => sameBytes(each, content))) return false;
+    group.byHash.set(hash, [...same, content]);
+    return true;
+  }
+}
+
+function hashBytes(bytes: Uint8Array): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 0x01000193);
+  return hash >>> 0;
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {

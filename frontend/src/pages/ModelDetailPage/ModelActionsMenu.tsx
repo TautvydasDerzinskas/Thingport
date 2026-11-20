@@ -174,14 +174,23 @@ export default function ModelActionsMenu({
   // Only the newest read lands, a retry's too: one for a model the menu has since left would put that model's answer
   // in place of this one's.
   const latestSupportingRead = useRef(0);
+  // Taken when an answer lands, so a new function from the page doesn't read the files again.
+  const unauthorized = useRef(onUnauthorized);
+  useEffect(() => {
+    unauthorized.current = onUnauthorized;
+  });
   const readSupportingFiles = useCallback((printId: string) => {
     const read = ++latestSupportingRead.current;
     printsApi.listFiles(printId).then(
       (files) => {
         if (read === latestSupportingRead.current) setReadSupporting({ printId, files });
       },
-      () => {
-        if (read === latestSupportingRead.current) setReadSupporting({ printId, files: null });
+      (err: unknown) => {
+        if (read !== latestSupportingRead.current) return;
+        // A session that ended goes where the app renews it or signs in again; still said as failed, with a retry, in
+        // case the server couldn't be reached to renew it.
+        if (err instanceof UnauthorizedError) unauthorized.current?.();
+        setReadSupporting({ printId, files: null });
       },
     );
   }, []);

@@ -113,6 +113,29 @@ describe("readZipEntries of entries with one name", () => {
     expect(new TextDecoder().decode(data["A/guide.pdf"])).toBe("first");
     expect(new TextDecoder().decode(data["A/guide (2).pdf"])).toBe("second");
   });
+
+  it("tells many copies of one length apart by their bytes, keeping each once, whichever came first", async () => {
+    const { data, numbered } = await readZipEntries(
+      zipOf([
+        ["part.bin", "copy-1"],
+        ["part.bin", "copy-2"],
+        ["part.bin", "copy-3"],
+        ["part.bin", "copy-2"],
+        ["part.bin", "copy-1"],
+        ["part.bin", "long copy"],
+        ["part.bin", "copy-3"],
+        ["part.bin", "long copy"],
+      ]),
+    );
+    const text = (path: string) => new TextDecoder().decode(data[path]);
+    expect(Object.keys(numbered).toSorted()).toEqual(["part (2).bin", "part (3).bin", "part (4).bin"]);
+    expect(["part.bin", "part (2).bin", "part (3).bin", "part (4).bin"].map(text)).toEqual([
+      "copy-1",
+      "copy-2",
+      "copy-3",
+      "long copy",
+    ]);
+  });
 });
 
 describe("readZipEntries of an unusual zip", () => {
