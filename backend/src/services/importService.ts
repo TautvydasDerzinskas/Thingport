@@ -728,7 +728,10 @@ export async function attachImportedPreviewImages(
     stored++;
     if (!firstAdded) {
       firstAdded = true;
-      await preferImageOverRenders(printId, plateId, buf);
+      // A cover that can't be set leaves its photo stored, and the page's other photos still come.
+      await preferImageOverRenders(printId, plateId, buf).catch((err: unknown) =>
+        console.warn(`Import: couldn't make a photo the cover of model ${printId}:`, err),
+      );
     }
   }
   return stored;

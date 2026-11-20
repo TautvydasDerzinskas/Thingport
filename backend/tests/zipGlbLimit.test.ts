@@ -165,6 +165,30 @@ describe("a zip's picked entries as a model per folder", () => {
     });
     expect(prints[0].previewImages.filter((image) => !image.generated)).toHaveLength(3);
   });
+
+  it("keeps the rest of the page's photos when making the first the cover fails", async () => {
+    failing.cover = true;
+    const images: Record<string, Buffer> = {
+      "https://8.8.8.8/cover.png": await photo(200),
+      "https://8.8.8.8/gallery.png": await photo(120),
+    };
+    const fetching = vi.spyOn(global, "fetch").mockImplementation(async (input: string | URL | Request) => {
+      const body = images[input instanceof Request ? input.url : String(input)];
+      return body
+        ? new Response(body, { headers: { "content-type": "image/png" } })
+        : new Response("", { status: 404 });
+    });
+    try {
+      const zipPath = await zipOf("page-gallery.zip", { "Frog/frog.stl": stl });
+      const { prints } = await extractZipEntriesToFolderModels(userId, zipPath, ["Frog/frog.stl"], {
+        previewImageUrl: "https://8.8.8.8/cover.png",
+        galleryImages: [{ url: "https://8.8.8.8/gallery.png", filename: "gallery.png" }],
+      });
+      expect(prints[0].previewImages.filter((image) => !image.generated)).toHaveLength(2);
+    } finally {
+      fetching.mockRestore();
+    }
+  });
 });
 
 describe("packing scenes within what an import may write", () => {
