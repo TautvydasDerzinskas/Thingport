@@ -218,8 +218,10 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
     setPlateItems((prev) => [...prev, ...newItems]);
     markDirty();
   };
+  // A model keeps a file of its own, unless it had none: one made of its scripts alone can go back to that.
+  const fewestPlates = print.plates.length ? 1 : 0;
   const removePlateItem = (key: string) => {
-    setPlateItems((prev) => (prev.length <= 1 ? prev : prev.filter((p) => plateKey(p) !== key)));
+    setPlateItems((prev) => (prev.length <= fewestPlates ? prev : prev.filter((p) => plateKey(p) !== key)));
     markDirty();
   };
   const movePlateItemBy = (key: string, dir: -1 | 1) => {
@@ -724,7 +726,7 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
                     </IconButton>
                     <IconButton
                       size="small"
-                      disabled={saving || plateItems.length <= 1}
+                      disabled={saving || plateItems.length <= fewestPlates}
                       onClick={() => removePlateItem(key)}
                     >
                       <DeleteIcon fontSize="small" color="error" />
