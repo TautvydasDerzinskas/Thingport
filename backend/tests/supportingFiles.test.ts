@@ -331,34 +331,39 @@ describe("supporting files", () => {
   it("never make a file and a folder of one path in a zip", async () => {
     const model = await makePrint(dir, owner.id, "File or folder");
     const guide = await upload(dir, owner.id, model.print.id, "guide.pdf", "%PDF-1.4 guide");
-    // A supporting file in a folder called as a plate in a folder named "supporting" is.
+    // A supporting file in a folder called as a plate in a folder named "supporting" is. Only its row says so: put
+    // back after, as a storage move over every model would find a folder of a file's name where none can be made.
     await prisma.printFile.update({ where: { id: guide.id }, data: { folder: "Own.STL" } });
-    const print = await prisma.print.findUniqueOrThrow({
-      where: { id: model.print.id },
-      include: { plates: true, category: true },
-    });
-    const [own] = print.plates;
-    // And among plates: one in a folder called as another plate, and one called as another's folder.
-    const plates = [
-      { ...own, id: `${own.id}-1`, position: 0, folder: "supporting", filename: "own.stl" },
-      { ...own, id: `${own.id}-2`, position: 1, folder: null, filename: "lid.stl" },
-      { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl", filename: "inner.stl" },
-      { ...own, id: `${own.id}-4`, position: 3, folder: "parts", filename: "base.stl" },
-      { ...own, id: `${own.id}-5`, position: 4, folder: null, filename: "parts" },
-    ];
-    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
-    const prefix = arcnames[0].split("/supporting/")[0];
-    expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
-      "supporting/own.stl",
-      "lid.stl",
-      "lid.stl (2)/inner.stl",
-      "parts/base.stl",
-      "parts (2)",
-      "supporting/Own.STL (2)/guide.pdf",
-    ]);
-    // Each path a file, and none a folder above another's.
-    const lower = arcnames.map((arcname) => arcname.toLowerCase());
-    for (const arcname of lower) expect(lower.some((each) => each.startsWith(`${arcname}/`))).toBe(false);
+    try {
+      const print = await prisma.print.findUniqueOrThrow({
+        where: { id: model.print.id },
+        include: { plates: true, category: true },
+      });
+      const [own] = print.plates;
+      // And among plates: one in a folder called as another plate, and one called as another's folder.
+      const plates = [
+        { ...own, id: `${own.id}-1`, position: 0, folder: "supporting", filename: "own.stl" },
+        { ...own, id: `${own.id}-2`, position: 1, folder: null, filename: "lid.stl" },
+        { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl", filename: "inner.stl" },
+        { ...own, id: `${own.id}-4`, position: 3, folder: "parts", filename: "base.stl" },
+        { ...own, id: `${own.id}-5`, position: 4, folder: null, filename: "parts" },
+      ];
+      const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+      const prefix = arcnames[0].split("/supporting/")[0];
+      expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
+        "supporting/own.stl",
+        "lid.stl",
+        "lid.stl (2)/inner.stl",
+        "parts/base.stl",
+        "parts (2)",
+        "supporting/Own.STL (2)/guide.pdf",
+      ]);
+      // Each path a file, and none a folder above another's.
+      const lower = arcnames.map((arcname) => arcname.toLowerCase());
+      for (const arcname of lower) expect(lower.some((each) => each.startsWith(`${arcname}/`))).toBe(false);
+    } finally {
+      await prisma.printFile.update({ where: { id: guide.id }, data: { folder: null } });
+    }
   });
 
   it("keep to their own model's folder in a zip, though their categories' names differ only by which slash they hold", async () => {

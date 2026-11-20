@@ -435,9 +435,8 @@ export function batchFileSaver(userId: string, printId: string) {
 /** Deletes the rows of the saves the last process ended before finishing, each a file that isn't there or isn't whole,
  *  and of prepared prints another replaced that it hadn't removed yet. At startup, before this process saves anything.
  *  A replaced print's file goes first, while it's still the bytes its row saved (ownedFile); one that won't go keeps
- *  its row for the next start. A file found at a place an
- *  unfinished save claimed stays: nothing says for sure it's the save's own and not a moved file's or a plate's, so
- *  it's left for the storage browser rather than deleted. */
+ *  its row for the next start. A file found at a place an unfinished save claimed stays: nothing says for sure it's
+ *  the save's own and not a moved file's or a plate's, so it's left for the storage browser rather than deleted. */
 export async function removeAbandonedPrintFileSaves(): Promise<number> {
   const where: Prisma.PrintFileWhereInput = {
     OR: [{ ready: false }, { storagePath: "pending" }, { storagePath: { startsWith: PENDING_STORAGE_PREFIX } }],
