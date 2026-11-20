@@ -18,7 +18,8 @@ export type SignAnswer = { code: number | null; message: string | null; data: un
  *  from its anti-bot script. Where the site asks for a puzzle first and `puzzleMs` allows, it shows the site's own,
  *  as its Download does, and asks again with the answer; `puzzleMs` is how long the user has to solve it. Ends at the
  *  first file it doesn't hand over, whose answer is the last one returned, bar a supporting file, which is passed by,
- *  as one still unanswered after `supportingMs` is. */
+ *  as one still unanswered after `supportingMs` is, and every one once the supporting files have taken
+ *  `supportingTotalMs` in all, gaps included. */
 export async function signInPage(
   requests: DownloadRequest[],
   gapMs: number,
@@ -30,6 +31,7 @@ export async function signInPage(
     requestFailed: "Request failed",
   },
   supportingMs = 30_000,
+  supportingTotalMs = 60_000,
 ): Promise<SignAnswer[]> {
   type Neg = { getToken: () => Promise<{ token?: string } | null> };
   const nuxt = (
@@ -99,6 +101,7 @@ export async function signInPage(
   const ask = async (
     request: DownloadRequest,
     puzzle: { validate: string; level: number } | null,
+    deadlineMs = supportingMs,
   ): Promise<SignAnswer> => {
     if (!request.supporting) return askOnce(request, puzzle);
     const controller = new AbortController();
@@ -107,7 +110,7 @@ export async function signInPage(
       timer = setTimeout(() => {
         controller.abort();
         resolve({ code: null, message: messages.requestFailed, data: null });
-      }, supportingMs);
+      }, deadlineMs);
     });
     try {
       return await Promise.race([askOnce(request, puzzle, controller.signal), late]);
@@ -132,9 +135,19 @@ export async function signInPage(
     }
   };
   const answers: SignAnswer[] = [];
+  // Each supporting ask has its own deadline, and all of them one more: twenty the site never answers would otherwise
+  // hold up the model's files for ten minutes. One reached once it's spent is passed by unasked, its place kept.
+  let supportingLeft = supportingTotalMs;
   for (const [index, request] of requests.entries()) {
+    if (request.supporting && supportingLeft <= 0) {
+      answers.push({ code: null, message: messages.requestFailed, data: null });
+      continue;
+    }
+    const started = Date.now();
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, gapMs));
-    let answer: SignAnswer = await ask(request, null);
+    const left = supportingLeft - (Date.now() - started);
+    let answer: SignAnswer = await ask(request, null, Math.max(0, Math.min(supportingMs, left)));
+    if (request.supporting) supportingLeft -= Date.now() - started;
     for (let shown = 0; answer.code === PUZZLE && !request.supporting && shown < MAX_PUZZLES; shown++) {
       const level = Number((answer.data as { captchaLevel?: unknown } | null)?.captchaLevel);
       if (!puzzleMs || typeof nuxt?.$initCaptcha !== "function" || !(level > 0)) break;

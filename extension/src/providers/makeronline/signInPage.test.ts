@@ -158,6 +158,33 @@ describe("MakerOnline's download call, made in its page", () => {
     expect(asked).toBe(3);
   });
 
+  it("asks for the files beside the model's own only as long as they may take in all, and for the rest", async () => {
+    vi.useFakeTimers();
+    page();
+    let asked = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: { body: string }) => {
+        asked += 1;
+        // Every guide's ask hangs.
+        if (JSON.parse(init.body).key === "guide") return new Promise<never>(() => undefined);
+        return { json: async () => SIGNED };
+      }),
+    );
+    const guides = Array.from({ length: 10 }, (_, index): DownloadRequest => ({
+      payload: { key: "guide" },
+      name: `Guide ${index}.pdf`,
+      profile_id: null,
+      supporting: true,
+    }));
+    const signing = signInPage([REQUEST, ...guides, SECOND], 1500, "mo_access_token", HOSTS, 1000);
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+    const answers = await signing;
+    // Thirty seconds each and a minute in all, gaps included: two guides asked for, the rest passed by in their places.
+    expect(answers.map((answer) => answer.code)).toEqual([0, ...guides.map(() => null), 0]);
+    expect(asked).toBe(4);
+  });
+
   it("stops at a file it isn't handed, as when signed out", async () => {
     page();
     const asks = api({ code: -1, message: "Please sign in", data: null }, SIGNED);
