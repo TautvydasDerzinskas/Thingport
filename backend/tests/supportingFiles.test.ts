@@ -19,6 +19,7 @@ import {
 } from "../src/services/printFileService";
 import { createPrint } from "../src/services/printCreation";
 import { relocatePrint } from "../src/services/printService";
+import { ensurePlateFormat } from "../src/services/threeMfFormat";
 import { withStorageLock } from "../src/utils/storageLock";
 import { makePrint, nonce, register, tempFile, upload } from "./helpers/fileReuse";
 
@@ -449,30 +450,35 @@ describe("supporting files", () => {
         data: { name, nameNormalized: name.toLowerCase() },
         include: { plates: true },
       });
-    // The first rename's move reads the model, and waits there while the second rename is saved and its move runs to
-    // its end; only then does it go on.
+    // The first rename's move takes the plate, then reads the model's files and waits there while the second rename is
+    // saved and its move runs to its end; only then does it go on, to the file and the pictures.
     const first = await rename(`Earlier ${stamp}`);
-    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
     let read = () => {};
     const hasRead = new Promise<void>((resolve) => (read = resolve));
     let goOn = () => {};
     const gate = new Promise<void>((resolve) => (goOn = resolve));
     let held = false;
-    const spy = vi.spyOn(prisma.print, "findUnique").mockImplementation(((
-      args: Parameters<typeof prisma.print.findUnique>[0],
+    const spy = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
     ) => {
-      if (held || args.where.id !== model.print.id) return findUnique(args);
+      if (held || args?.where?.printId !== model.print.id || !args.orderBy) return findMany(args);
       held = true;
-      return findUnique(args).then(async (row) => {
+      return findMany(args).then(async (rows) => {
         read();
         await gate;
-        return row;
+        return rows;
       });
     }) as never);
     let moving: Promise<number> | null = null;
     try {
       moving = relocatePrint(first, first.plates);
-      await hasRead;
+      // A move that ends, or fails, before it reads the model fails the test rather than leaving it waiting.
+      const settled = moving.then(
+        () => "settled",
+        () => "settled",
+      );
+      expect(await Promise.race([hasRead.then(() => "read"), settled])).toBe("read");
       const second = await rename(`Later ${stamp}`);
       await relocatePrint(second, second.plates);
     } finally {
@@ -488,6 +494,46 @@ describe("supporting files", () => {
       expect(stored).toContain(`Later ${stamp}`);
       expect(fs.existsSync(path.join(STORAGE, stored))).toBe(true);
     }
+  });
+
+  it("read the model and its collection once for a move of many files, not again for each", async () => {
+    const model = await makePrint(dir, owner.id, "Moved with many");
+    for (const name of ["a.pdf", "b.pdf", "c.pdf", "d.pdf"]) {
+      await upload(dir, owner.id, model.print.id, name, `%PDF-1.4 ${name}`);
+    }
+    const name = `Many ${nonce()}`;
+    const renamed = await prisma.print.update({
+      where: { id: model.print.id },
+      data: { name, nameNormalized: name.toLowerCase() },
+      include: { plates: true },
+    });
+    const reads = { model: 0, collection: 0 };
+    const findUnique = prisma.print.findUnique.bind(prisma.print);
+    const findMany = prisma.collectionItem.findMany.bind(prisma.collectionItem);
+    const models = vi.spyOn(prisma.print, "findUnique").mockImplementation(((
+      args: Parameters<typeof prisma.print.findUnique>[0],
+    ) => {
+      if (args.where.id === model.print.id) reads.model += 1;
+      return findUnique(args);
+    }) as never);
+    const collections = vi.spyOn(prisma.collectionItem, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.collectionItem.findMany>[0],
+    ) => {
+      if (args?.where?.printId === model.print.id) reads.collection += 1;
+      return findMany(args);
+    }) as never);
+    try {
+      expect(await relocatePrint(renamed, renamed.plates, "{collection}/{model}/{filename}")).toBeGreaterThan(4);
+    } finally {
+      models.mockRestore();
+      collections.mockRestore();
+    }
+    // The pictures' move reads where they are, to move and then to adopt any older ones; nothing reads the model, nor
+    // its collection, again for each file.
+    expect(reads).toEqual({ model: 2, collection: 1 });
+    const files = await prisma.printFile.findMany({ where: { printId: model.print.id } });
+    expect(files).toHaveLength(4);
+    for (const file of files) expect(file.storagePath).toContain(`/${name}/`);
   });
 
   it("keep a 3MF's kind read on its page only when no other file had its place while it was read", async () => {
@@ -506,9 +552,11 @@ describe("supporting files", () => {
     await prisma.plate.update({ where: { id: plates[0].id }, data: { format: Prisma.DbNull } });
     const where = path.join(STORAGE, plates[0].storagePath);
     const swapped = await threeMf("Cura/settings.json");
-    // While it's read, two turns at the lock move it away with another 3MF put in its place, and then back.
+    // While it's read, two turns at the lock move it away with another 3MF put in its place, and then back. The read
+    // made again is made with the lock free: a turn taken during it runs at once, and spoils that read too.
     const stat = fsPromises.stat.bind(fsPromises);
     let looks = 0;
+    let lockFree: boolean | null = null;
     const spy = vi.spyOn(fsPromises, "stat").mockImplementation((async (at: fs.PathLike, ...rest: never[]) => {
       const seen = await stat(at, ...rest);
       if (path.resolve(String(at)) !== path.resolve(where)) return seen;
@@ -521,19 +569,61 @@ describe("supporting files", () => {
       } else if (looks === 2) {
         await withStorageLock(async () => fs.renameSync(`${where}.away`, where));
         return stat(at, ...rest);
+      } else if (looks === 3) {
+        let ran = false;
+        void withStorageLock(async () => {
+          ran = true;
+        });
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        lockFree = ran;
       }
       return seen;
     }) as never);
     try {
       const res = await request(app).get(`/api/print/${print.id}?record=false`).set(auth(owner.token));
       expect(res.status).toBe(200);
-      expect(looks).toBeGreaterThanOrEqual(2);
+      expect(looks).toBeGreaterThanOrEqual(3);
+      expect(lockFree).toBe(true);
     } finally {
       spy.mockRestore();
       if (fs.existsSync(`${where}.away`)) fs.renameSync(`${where}.away`, where);
     }
     const plate = await prisma.plate.findUniqueOrThrow({ where: { id: plates[0].id } });
     expect((plate.format as { kind?: string } | null)?.kind).toBe("prusa");
+  });
+
+  it("give no 3MF kind for a plate that moved from the file while it was read", async () => {
+    const zip = await new JSZip()
+      .file("3D/3dmodel.model", '<?xml version="1.0"?><model unit="millimeter"></model>')
+      .file("Metadata/Slic3r_PE.config", "x")
+      .generateAsync({ type: "nodebuffer" });
+    const { plates } = await createPrint(owner.id, { title: `Moved while read ${nonce()}` }, "Moved while read", [
+      { filename: "part.3mf", tempFilePath: tempFile(dir, zip) },
+    ]);
+    const plate = await prisma.plate.update({ where: { id: plates[0].id }, data: { format: Prisma.DbNull } });
+    const where = path.join(STORAGE, plate.storagePath);
+    // As the file is read, a turn at the lock records the plate somewhere else: what's read is no longer its file.
+    const stat = fsPromises.stat.bind(fsPromises);
+    let moved = false;
+    const spy = vi.spyOn(fsPromises, "stat").mockImplementation((async (at: fs.PathLike, ...rest: never[]) => {
+      const seen = await stat(at, ...rest);
+      if (!moved && path.resolve(String(at)) === path.resolve(where)) {
+        moved = true;
+        await withStorageLock(() =>
+          prisma.plate.update({ where: { id: plate.id }, data: { storagePath: `${plate.storagePath}.moved` } }),
+        );
+      }
+      return seen;
+    }) as never);
+    try {
+      expect(await ensurePlateFormat(plate, where)).toBeNull();
+      expect(moved).toBe(true);
+    } finally {
+      spy.mockRestore();
+      await prisma.plate.update({ where: { id: plate.id }, data: { storagePath: plate.storagePath } });
+    }
+    const after = await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } });
+    expect(after.format).toBeNull();
   });
 
   it("never take a model file's place in a zip", async () => {
@@ -640,6 +730,31 @@ describe("supporting files", () => {
     } finally {
       for (const [id] of folders) await prisma.printFile.update({ where: { id }, data: { folder: null } });
     }
+  });
+
+  it("keep a folder apart from one beside it called as it would be numbered, once the folder above was numbered", async () => {
+    const model = await makePrint(dir, owner.id, "Folder numbered under one numbered");
+    const print = await prisma.print.findUniqueOrThrow({
+      where: { id: model.print.id },
+      include: { plates: true, category: true },
+    });
+    const [own] = print.plates;
+    // A plate called as the folder the others are in, one called as the folder below that, and one in the folder that
+    // one would be numbered to: only in memory, as no folder can be made of a file's name on disk.
+    const plates = [
+      { ...own, id: `${own.id}-1`, position: 0, folder: null, filename: "lid.stl" },
+      { ...own, id: `${own.id}-2`, position: 1, folder: "lid.stl", filename: "pin.stl" },
+      { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl/pin.stl", filename: "a.stl" },
+      { ...own, id: `${own.id}-4`, position: 3, folder: "lid.stl/pin.stl (2)", filename: "b.stl" },
+    ];
+    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+    const prefix = arcnames[0].slice(0, -"/lid.stl".length);
+    expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
+      "lid.stl",
+      "lid.stl (2)/pin.stl",
+      "lid.stl (2)/pin.stl (3)/a.stl",
+      "lid.stl (2)/pin.stl (2)/b.stl",
+    ]);
   });
 
   it("keep to their own model's folder in a zip, though their categories' names differ only by which slash they hold", async () => {

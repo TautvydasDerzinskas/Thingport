@@ -133,12 +133,17 @@ export async function keepPlateFormat(plateId: string, reading: PlateFormatReadi
 /** A plate and where its row had its file when `filePath` was found from it. */
 type PlateFile = Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath">;
 
+// Reads of a plate's file made with the storage lock free, each of which another turn at it may spoil, before one is
+// made with the lock held: a plain 3MF is read through, which can take long enough to hold up every move waiting.
+const UNLOCKED_READS = 3;
+
 /** Reads and keeps the format of the plate's file at `filePath` (readPlateFormat, keepPlateFormat). The plate's row is
  *  read again under the storage lock, as a move renames a file before it saves where it went, and the reading kept only
  *  while the row still has the file there and nothing else had the lock while it was read (storageLockTurn): a move
- *  then, even away and back, could have put another file where it was read. Otherwise it's read again with the lock
- *  held throughout. Never throws: one it can't read is cleared, for the next look to read again, and one that moved is
- *  left for that look. */
+ *  then, even away and back, could have put another file where it was read. Read again so a few times, and only then
+ *  with the lock held throughout. The format, of the plate's own file, or null where the plate is no longer where it
+ *  was read, as what it is then isn't known. Never throws: one it can't read is cleared, for the next look to read
+ *  again, and one that moved is left for that look. */
 async function storePlateFormat(plate: PlateFile, filePath: string): Promise<ThreeMfFormat | null> {
   if (!isThreeMfFile(plate.filename)) return null;
   const stillThere = async () => {
@@ -152,23 +157,25 @@ async function storePlateFormat(plate: PlateFile, filePath: string): Promise<Thr
   let reading: PlateFormatReading | null = null;
   let keep = false;
   try {
-    const found = await withStorageLock(async () => ({ there: await stillThere(), turn: storageLockTurn() }));
-    reading = await read();
-    keep = found.there && (await withStorageLock(async () => storageLockTurn() === found.turn + 1));
-    if (found.there && !keep) {
+    for (let tries = 0; tries < UNLOCKED_READS && !keep; tries++) {
+      const found = await withStorageLock(async () => ({ there: await stillThere(), turn: storageLockTurn() }));
+      if (!found.there) return null;
+      reading = await read();
+      keep = await withStorageLock(async () => storageLockTurn() === found.turn + 1);
+    }
+    if (!keep) {
       ({ reading, keep } = await withStorageLock(async () =>
-        (await stillThere()) ? { reading: await read(), keep: true } : { reading, keep: false },
+        (await stillThere()) ? { reading: await read(), keep: true } : { reading: null, keep: false },
       ));
     }
   } catch (err) {
     console.warn(`Looking for the file of plate ${plate.id} failed:`, err);
-    return reading?.format ?? null;
+    return null;
   }
-  if (keep) {
-    await keepPlateFormat(plate.id, reading).catch((err: unknown) =>
-      console.warn(`Keeping the 3MF format of plate ${plate.id} failed:`, err),
-    );
-  }
+  if (!keep) return null;
+  await keepPlateFormat(plate.id, reading).catch((err: unknown) =>
+    console.warn(`Keeping the 3MF format of plate ${plate.id} failed:`, err),
+  );
   return reading?.format ?? null;
 }
 

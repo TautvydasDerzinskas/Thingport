@@ -231,9 +231,11 @@ class ZipNames {
     for (const folder of ZipNames.above(arcname.toLowerCase())) this.reserved.add(folder);
   }
 
-  /** `folder`, or where a file is called as it is, one numbered onto a path no other folder has: the same one for each
-   *  file of it. */
-  folderAt(folder: string): string {
+  /** `parent/segment`, `parent` being where the folder `original` went, or where a file is called as it is, one
+   *  numbered onto a path no other folder has, nor one beside it in `original` another file still comes to (a folder
+   *  above may have been numbered, which the reservations don't know of): the same one for each file of it. */
+  folderAt(parent: string, original: string, segment: string): string {
+    const folder = `${parent}/${segment}`;
     const lower = folder.toLowerCase();
     if (!this.files.has(lower)) return folder;
     const had = this.numbered.get(lower);
@@ -242,7 +244,8 @@ class ZipNames {
     for (let n = 2; ; n++) {
       next = `${folder} (${n})`;
       const each = next.toLowerCase();
-      if (!this.files.has(each) && !this.folders.has(each) && !this.reserved.has(each)) break;
+      const beside = `${original}/${segment} (${n})`.toLowerCase();
+      if (![this.files, this.folders, this.reserved].some((set) => set.has(each)) && !this.reserved.has(beside)) break;
     }
     this.numbered.set(lower, next);
     return next;
@@ -257,7 +260,11 @@ function freeArcname(base: string, folder: string | null, filename: string, take
   const dot = sliced > 0 ? sliced : filename.lastIndexOf(".");
   const [stem, ext] = dot > 0 ? [filename.slice(0, dot), filename.slice(dot)] : [filename, ""];
   let dir = base;
-  for (const segment of folder ? folder.split("/") : []) dir = taken.folderAt(`${dir}/${segment}`);
+  let original = base;
+  for (const segment of folder ? folder.split("/") : []) {
+    dir = taken.folderAt(dir, original, segment);
+    original = `${original}/${segment}`;
+  }
   let arcname = `${dir}/${filename}`;
   for (let n = 2; !taken.free(arcname); n++) arcname = `${dir}/${stem} (${n})${ext}`;
   return arcname;

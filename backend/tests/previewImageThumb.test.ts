@@ -5,10 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import sharp from "sharp";
+import JSZip from "jszip";
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { attachImportedPreviewImages } from "../src/services/importService";
-import { plateThumbPath, saveThumbFromBytes } from "../src/services/printService";
+import { plateThumbPath, read3mfThumbnails, saveThumbFromBytes } from "../src/services/printService";
 import {
   addPreviewImage,
   galleryThumbPath,
@@ -822,5 +823,50 @@ describe("deleting a tag", () => {
     );
     expect(tagsOf).toEqual([["Kept"], [], ["Kept"]]);
     expect((await request(app).get("/api/tags/bookmarked").set(as)).body).toEqual([]);
+  });
+});
+
+describe("a .3mf's thumbnail pictures", () => {
+  // A .3mf of `entries`, each a picture's name and its bytes, in the order given.
+  const threeMf = async (entries: [string, Buffer][]) => {
+    const zip = new JSZip().file("3D/3dmodel.model", "<model/>");
+    for (const [name, bytes] of entries) zip.file(name, bytes);
+    const at = path.join(os.tmpdir(), `thumbs-${Date.now()}-${Math.random().toString(36).slice(2)}.3mf`);
+    await fs.writeFile(at, await zip.generateAsync({ type: "nodebuffer" }));
+    return at;
+  };
+  const picture = () =>
+    sharp({ create: { width: 4, height: 4, channels: 3, background: "#00cc00" } })
+      .png()
+      .toBuffer();
+  const notOne = Buffer.from("not a picture");
+
+  it("passes over ones that aren't pictures, so they take no place a picture after them could", async () => {
+    const good = await picture();
+    // Four named as the best are no pictures; the one that is comes after them.
+    const at = await threeMf([
+      ["Metadata/thumbnail.png", notOne],
+      ["3D/thumbnail.png", notOne],
+      ["thumbnail.png", notOne],
+      ["a/thumbnail.png", notOne],
+      ["after/thumbnail.png", good],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([good]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
+  });
+
+  it("stops after eight that won't do, however many the archive names", async () => {
+    const at = await threeMf([
+      ...Array.from({ length: 8 }, (_, n): [string, Buffer] => [`${n}/thumbnail.png`, notOne]),
+      ["after-them/thumbnail.png", await picture()],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
   });
 });

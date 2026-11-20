@@ -7,7 +7,7 @@ import { folderLevels } from "../utils/fileFolder";
 import { STORAGE } from "../config";
 import { prisma } from "../db";
 import { listZipEntries, readZipEntry } from "../utils/zipReader";
-import { writePhotoJpeg } from "./imageProcessing";
+import { imageFormat, writePhotoJpeg } from "./imageProcessing";
 import {
   adoptLegacyAsset,
   ASSET_SUBFOLDERS,
@@ -739,21 +739,43 @@ export async function relocatePrint(
 ): Promise<number> {
   const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
   const printValues = await printTemplateValues(print, safeTemplate);
-  // Where each file goes: by the model as given, unless a change of it was saved after this began, which the model is
-  // read again under the lock for at each move. A later rename's move may have got there first and taken the files
-  // where it puts them, and the model as given would send them back.
-  const saved = async () => {
-    const now = await prisma.print.findUnique({ where: { id: print.id } });
-    return now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
-  };
-  const placedBy = (at: { print: PrintLike; values: PrintTemplateValues }) =>
-    JSON.stringify([at.print.userId, at.values]);
-  const began = await saved();
+  const mine = ++movesBegun;
+  latestMove.set(print.id, mine);
+  // Where each file goes: by the model as given, until a later move of it begins, which is one for a change saved
+  // after this began: then by the model as saved, read once for each later move. That move may have got there first
+  // and taken the files where it puts them, and the model as given would send them back. The template's values are
+  // read again only then, rather than for every file, as each read takes the lock's time.
+  let seen = latestMove.get(print.id);
+  let at: { print: PrintLike; values: PrintTemplateValues } | null = { print, values: printValues };
   const placing: Placing = async () => {
-    const now = await saved();
-    if (!now) return null;
-    return began && placedBy(began) === placedBy(now) ? { print, values: printValues } : now;
+    const latest = latestMove.get(print.id);
+    if (latest !== seen) {
+      seen = latest;
+      const now = await prisma.print.findUnique({ where: { id: print.id } });
+      at = now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
+    }
+    return at;
   };
+  try {
+    return await relocatePrintWith(print, plates, safeTemplate, printValues, placing);
+  } finally {
+    if (latestMove.get(print.id) === mine) latestMove.delete(print.id);
+  }
+}
+
+// Every model move begun so far, and each model's latest: a move that finds a later one began for its model knows a
+// change of it was saved after it began, as every save that moves a model's files starts a move of them (relocatePrint).
+let movesBegun = 0;
+const latestMove = new Map<string, number>();
+
+/** relocatePrint's moves of the plates, files and pictures, each placed as `placing` says then. */
+async function relocatePrintWith(
+  print: PrintLike & { assetsPath?: string | null },
+  plates: Plate[],
+  safeTemplate: string,
+  printValues: PrintTemplateValues,
+  placing: Placing,
+): Promise<number> {
   let moved = 0;
   for (const plate of plates) {
     // In place by the caller's read: a change since that moves it runs a move of its own.
@@ -967,9 +989,13 @@ const THUMBNAIL_ENTRY_PRIORITY: Record<string, number> = {
 const THUMBNAIL_ENTRY_MAX = 16 * 1024 * 1024;
 const THUMBNAIL_CANDIDATES = 4;
 const THUMBNAIL_CANDIDATES_MAX = 32 * 1024 * 1024;
+// Pictures that won't read, or aren't pictures, before the rest are left: each read looks through the archive afresh,
+// and it can name any number of them.
+const THUMBNAIL_FAILURES_MAX = 8;
 
 /** The pictures a .3mf's zip payload holds as its thumbnail, best first, as many as THUMBNAIL_CANDIDATES and
- *  THUMBNAIL_CANDIDATES_MAX allow; none when it holds none or can't be read. */
+ *  THUMBNAIL_CANDIDATES_MAX allow, after as many that fail as THUMBNAIL_FAILURES_MAX; none when it holds none or
+ *  can't be read. */
 export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
   if (!srcPath.toLowerCase().endsWith(".3mf")) return [];
   try {
@@ -985,15 +1011,20 @@ export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
       });
     const pictures: Buffer[] = [];
     let bytes = 0;
+    let failed = 0;
     for (const entry of imageNames) {
       // Checked before each read, the read held to what's left: a size the archive lists can be wrong. One that doesn't
       // fit is passed over for a smaller one after it.
       const room = Math.min(THUMBNAIL_ENTRY_MAX, THUMBNAIL_CANDIDATES_MAX - bytes);
-      if (pictures.length >= THUMBNAIL_CANDIDATES) break;
+      if (pictures.length >= THUMBNAIL_CANDIDATES || failed >= THUMBNAIL_FAILURES_MAX) break;
       if (entry.size > room) continue;
-      // One that can't be read is passed over, as one too large is: those read already still count.
+      // One that can't be read, or isn't a picture by its header, is passed over, as one too large is, so it takes no
+      // place a picture after it could have: those read already still count.
       const buf = await readZipEntry(srcPath, entry.name, room).catch(() => null);
-      if (!buf) continue;
+      if (!buf || !(await imageFormat(buf).catch(() => undefined))) {
+        failed += 1;
+        continue;
+      }
       pictures.push(buf);
       bytes += buf.length;
     }
