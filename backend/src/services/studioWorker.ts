@@ -26,6 +26,7 @@ import {
   prepareMesh,
   worldTriangles,
   type BodyDescription,
+  type EvaluatedBody,
 } from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
 import type { PrintCheck, PrintCheckOptions } from "../studio/printCheck.generated";
@@ -33,7 +34,7 @@ import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
-import { writeStudioThreeMf, type StudioExportTarget } from "./studioThreeMf";
+import { STUDIO_3MF_DEFAULT_COLOR, writeStudioThreeMf, type StudioExportTarget } from "./studioThreeMf";
 
 // Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, finding a body's loose
 // parts to separate them, and making the design's own copy of a library model it imports. Runs in a worker thread
@@ -153,6 +154,35 @@ async function findParts(input: Extract<StudioWorkerInput, { kind: "parts" }>): 
   }
 }
 
+/** Combine the triangles and color once when several views show the same bodies. */
+function studioPngRenderer(parts: { body: EvaluatedBody; color?: string }[], size: number, color: string) {
+  const triangles = new Float32Array(parts.reduce((sum, part) => sum + part.body.mesh.indices.length * 3, 0));
+  const faceColors = parts.some((part) => part.color) ? new Uint8Array(triangles.length / 3) : null;
+  let offset = 0;
+  for (const part of parts) {
+    const world = worldTriangles(part.body);
+    triangles.set(world, offset);
+    if (faceColors) {
+      const rgb = Number.parseInt((part.color ?? color).slice(1), 16);
+      const end = (offset + world.length) / 3;
+      for (let i = offset / 3; i < end; i += 3) {
+        faceColors[i] = (rgb >> 16) & 255;
+        faceColors[i + 1] = (rgb >> 8) & 255;
+        faceColors[i + 2] = rgb & 255;
+      }
+    }
+    offset += world.length;
+  }
+  return (view: StudioView) => {
+    const pixels = triangles.length
+      ? renderTrianglesRgba(triangles, CAMERAS[view], { size, color, ambient: 0.3, fill: 0.15 }, faceColors)
+      : Buffer.alloc(size * size * 4);
+    return sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
+      .png()
+      .toBuffer();
+  };
+}
+
 async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): Promise<StudioWorkerResult> {
   const estimate = estimateTriangles(input.document);
   if (estimate > MAX_TRIANGLES) return { status: "too-complex", triangles: Math.round(estimate) };
@@ -171,33 +201,12 @@ async function inspect(input: Extract<StudioWorkerInput, { kind: "inspect" }>): 
     const parts = bodies.flatMap((body) => {
       const feature = featureById(input.document, body.id);
       if (!feature?.visible || !isBody(feature) || plateOf(feature) !== renderPlate) return [];
-      return [{ triangles: worldTriangles(body), color: feature.color }];
+      return [{ body, color: feature.color }];
     });
-    const triangles = new Float32Array(parts.reduce((sum, part) => sum + part.triangles.length, 0));
-    let offset = 0;
     const { size, color } = input.render;
-    const faceColors = parts.some((part) => part.color) ? new Uint8Array(triangles.length / 3) : null;
-    for (const part of parts) {
-      triangles.set(part.triangles, offset);
-      if (faceColors) {
-        const rgb = Number.parseInt((part.color ?? color).slice(1), 16);
-        const end = (offset + part.triangles.length) / 3;
-        for (let i = offset / 3; i < end; i += 3) {
-          faceColors[i] = (rgb >> 16) & 255;
-          faceColors[i + 1] = (rgb >> 8) & 255;
-          faceColors[i + 2] = rgb & 255;
-        }
-      }
-      offset += part.triangles.length;
-    }
+    const renderPng = studioPngRenderer(parts, size, color);
     for (const view of input.render.views) {
-      const pixels =
-        triangles.length > 0
-          ? renderTrianglesRgba(triangles, CAMERAS[view], { size, color, ambient: 0.3, fill: 0.15 }, faceColors)
-          : Buffer.alloc(size * size * 4);
-      const png = await sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
-        .png()
-        .toBuffer();
+      const png = await renderPng(view);
       images.push({ view, png: png.toString("base64") });
     }
   }
@@ -315,10 +324,17 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     );
     if (bad) return { status: "refused", reason: `${bad.name} is outside the build volume for ${recipe.preset}.` };
   }
+  const plates = [];
+  for (const plate of studioPlates(input.document)) {
+    const onPlate = parts.filter((part) => part.plateId === plate.id);
+    if (!onPlate.length) continue;
+    const thumbnail = await studioPngRenderer(onPlate, 256, STUDIO_3MF_DEFAULT_COLOR)("iso");
+    plates.push({ ...plate, thumbnail });
+  }
   return {
     status: "exported",
     format: "3mf",
-    bytes: await writeStudioThreeMf(input.name, parts, studioPlates(input.document), input.target),
+    bytes: await writeStudioThreeMf(input.name, parts, plates, input.target),
   };
 }
 

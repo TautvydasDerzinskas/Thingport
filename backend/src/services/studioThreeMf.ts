@@ -15,6 +15,7 @@ import { contentTypesXml, relsXml } from "../adapter/writers/flatten";
 import { escapeXml } from "../adapter/xml";
 import type { StudioPlate } from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
+import { plateThumbEntry } from "./printProfileFile";
 
 export type StudioExportTarget = {
   slicer: string;
@@ -23,7 +24,7 @@ export type StudioExportTarget = {
 
 type Part = { body: EvaluatedBody; name: string; plateId: string; color?: string };
 const DEFAULT_BED: BedBox = { minX: 0, minY: 0, maxX: 256, maxY: 256 };
-const DEFAULT_COLOR = "#B0B0B0";
+export const STUDIO_3MF_DEFAULT_COLOR = "#B0B0B0";
 const XML = '<?xml version="1.0" encoding="UTF-8"?>';
 const CORE = 'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"';
 const NS = 'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06"';
@@ -62,29 +63,28 @@ function objectModel(part: Part, id: number) {
 export async function writeStudioThreeMf(
   name: string,
   parts: Part[],
-  plates: readonly StudioPlate[],
+  plates: readonly (StudioPlate & { thumbnail: Uint8Array })[],
   target?: StudioExportTarget,
 ): Promise<Uint8Array> {
-  const used = plates.filter((plate) => parts.some((part) => part.plateId === plate.id));
   const recipe = target?.printer?.recipe;
   const bed = recipe?.bed ?? DEFAULT_BED;
   const [cx, cy] = bedCentre(bed);
-  const columns = plateColumns(used.length);
-  const colors = [...new Set(parts.map((part) => part.color?.toUpperCase() ?? DEFAULT_COLOR))];
-  const instances = used.map(() => [] as string[]);
+  const columns = plateColumns(plates.length);
+  const colors = [...new Set(parts.map((part) => part.color?.toUpperCase() ?? STUDIO_3MF_DEFAULT_COLOR))];
+  const instances = plates.map(() => [] as string[]);
   const objects: string[] = [];
   const build: string[] = [];
   const settings: string[] = [];
   const relationships: string[] = [];
   const zip = new JSZip();
-  const add = (path: string, data: string) => zip.file(path, data, { createFolders: false });
+  const add = (path: string, data: string | Uint8Array) => zip.file(path, data, { createFolders: false });
 
   parts.forEach((part, index) => {
     const id = index * 3 + 1;
     const childId = id + 1;
     const file = `/3D/Objects/object_${id}.model`;
-    const slot = colors.indexOf(part.color?.toUpperCase() ?? DEFAULT_COLOR) + 1;
-    const plate = used.findIndex((entry) => entry.id === part.plateId);
+    const slot = colors.indexOf(part.color?.toUpperCase() ?? STUDIO_3MF_DEFAULT_COLOR) + 1;
+    const plate = plates.findIndex((entry) => entry.id === part.plateId);
     const [px, py] = plateOrigin(plate, columns, bed);
     const m = part.body.matrix;
     const transform = formatTransform([
@@ -131,11 +131,12 @@ export async function writeStudioThreeMf(
     XML,
     "<config>",
     ...settings,
-    ...used.map((plate, i) =>
+    ...plates.map((plate, i) =>
       [
         "<plate>",
         meta("plater_id", i + 1),
         meta("plater_name", plate.name),
+        meta("thumbnail_file", plateThumbEntry(i + 1)),
         meta("locked", "false"),
         ...instances[i],
         "</plate>",
@@ -163,7 +164,7 @@ export async function writeStudioThreeMf(
     curr_bed_type: "Textured PEI Plate",
   });
   add("[Content_Types].xml", contentTypesXml());
-  add("_rels/.rels", relsXml(false));
+  add("_rels/.rels", relsXml(true, `/${plateThumbEntry(1)}`));
   add("3D/3dmodel.model", model);
   add(
     "3D/_rels/3dmodel.model.rels",
@@ -176,6 +177,7 @@ export async function writeStudioThreeMf(
   );
   add("Metadata/model_settings.config", modelSettings);
   add("Metadata/project_settings.config", projectSettings);
+  plates.forEach((plate, i) => add(plateThumbEntry(i + 1), plate.thumbnail));
 
   const format = classify3mf({
     entries: Object.keys(zip.files),

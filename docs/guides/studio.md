@@ -25,7 +25,8 @@ also lets you switch plates outside Edit mode.
 
 Select a body and use **Move to plate** in Properties to change its plate while keeping its position and orientation.
 You can select several bodies to move or color them together. Set **Body color** and choose **Apply** to use that
-color in the viewport and the 3MF. Hidden bodies and empty plates are skipped during export.
+color in the viewport and the 3MF. Each plate with visible bodies gets a thumbnail in the 3MF. Hidden bodies and
+empty plates are skipped during export.
 
 **Download design** exports STL for one uncolored body on one plate and 3MF for designs with colors, multiple
 bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **Open with slicer** prepares a 3MF for your selected

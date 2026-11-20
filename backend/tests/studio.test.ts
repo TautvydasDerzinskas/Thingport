@@ -215,13 +215,14 @@ describe("Studio", () => {
     expect(missing.status).toBe(400);
   });
 
-  it("edits plates and colors through MCP and exports an adapted project without saving", async () => {
+  it("exports only populated plates with colored thumbnails in an adapted project", async () => {
     const { body: design } = await request(app)
       .post("/api/studio/designs")
       .set(auth(alice))
       .send({ name: "Two plates" });
     const token = await mcpToken(alice);
     const tool = (name: string, args = {}) => callTool(token, `studio_${name}`, { design_id: design.id, ...args });
+    const empty = (await tool("create_plate", { name: "Spare" })).data.created[0];
     const plate = (await tool("create_plate", { name: "Lids" })).data.created[0];
     const box = { width: 12, depth: 12, height: 5 };
     const red = (await tool("add_box", { ...box, color: "#ff0000" })).data.created[0];
@@ -232,6 +233,7 @@ describe("Studio", () => {
     const state = (await tool("get_design")).data;
     expect(state.plates).toEqual([
       { id: "plate-1", name: "Plate 1", feature_ids: [red] },
+      { id: empty, name: "Spare", feature_ids: [] },
       { id: plate, name: "Lids", feature_ids: [blue] },
     ]);
     expect(state.bodies).toMatchObject([
@@ -239,7 +241,7 @@ describe("Studio", () => {
       { id: blue, color: "#0000ff", plate_id: plate },
     ]);
     expect((await tool("undo")).isError).toBe(false);
-    expect((await tool("get_design")).data.plates[1].feature_ids).toEqual([]);
+    expect((await tool("get_design")).data.plates[2].feature_ids).toEqual([]);
     expect((await tool("redo")).isError).toBe(false);
 
     const exportPath = `/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.4/-/Two.3mf`;
@@ -252,10 +254,22 @@ describe("Studio", () => {
     expect(file.status).toBe(200);
     expect(await prisma.print.count()).toBe(before);
     const pkg = await readBambuPackage(file.body);
-    expect(pkg.plates.map(({ name, instances }) => [name, instances.length])).toEqual([
-      ["Plate 1", 1],
-      ["Lids", 1],
+    expect(pkg.plates.map(({ id, name, instances }) => [id, name, instances.length])).toEqual([
+      ["1", "Plate 1", 1],
+      ["2", "Lids", 1],
     ]);
+    expect(pkg.modelSettingsXml?.match(/key="thumbnail_file" value="[^"]+"/g)).toEqual([
+      'key="thumbnail_file" value="Metadata/plate_1.png"',
+      'key="thumbnail_file" value="Metadata/plate_2.png"',
+    ]);
+    expect(pkg.zip.file("Metadata/plate_3.png")).toBeNull();
+    expect(await pkg.zip.file("_rels/.rels")!.async("string")).toContain('Target="/Metadata/plate_1.png"');
+    const redThumb = await sharp(await pkg.zip.file("Metadata/plate_1.png")!.async("nodebuffer")).stats();
+    const blueThumb = await sharp(await pkg.zip.file("Metadata/plate_2.png")!.async("nodebuffer")).stats();
+    expect(redThumb.channels[0].max).toBeGreaterThan(0);
+    expect(redThumb.channels[2].max).toBe(0);
+    expect(blueThumb.channels[0].max).toBe(0);
+    expect(blueThumb.channels[2].max).toBeGreaterThan(0);
     expect(pkg.config).toMatchObject({
       printer_settings_id: "Bambu Lab P1S 0.4 nozzle",
       filament_colour: ["#FF0000", "#0000FF"],
@@ -269,6 +283,9 @@ describe("Studio", () => {
     const single = await request(app).get(`${prusa}/${plate}/Lids.3mf`).set(auth(alice)).buffer(true).parse(readBinary);
     expect(single.status).toBe(200);
     const zip = await JSZip.loadAsync(single.body);
+    expect(await zip.file("Metadata/thumbnail.png")!.async("nodebuffer")).toEqual(
+      await pkg.zip.file("Metadata/plate_2.png")!.async("nodebuffer"),
+    );
     const mesh = await zip.file("3D/3dmodel.model")!.async("string");
     expect(mesh).toMatch(/#0000ff/i);
     expect(mesh).not.toMatch(/#ff0000/i);
@@ -312,6 +329,7 @@ describe("Studio", () => {
     const plate = await prisma.plate.findFirstOrThrow({ where: { printId: model.id } });
     const project = await readBambuPackage(fs.readFileSync(resolvePlateFilePath(plate)!));
     expect(project.plates).toHaveLength(1);
+    expect(project.zip.file("Metadata/plate_1.png")).not.toBeNull();
     const download = await request(app)
       .get(`/api/studio/designs/${design.id}/export/auto/-/-/-/-/Tag.stl`)
       .set(auth(alice))

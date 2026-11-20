@@ -710,13 +710,13 @@ export function contentTypesXml(): string {
   ].join("\n");
 }
 
-export function relsXml(hasThumbnail: boolean): string {
+export function relsXml(hasThumbnail: boolean, thumbnailPath = "/Metadata/thumbnail.png"): string {
   const rels = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
     ` <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="${MODEL_REL}"/>`,
   ];
-  if (hasThumbnail) rels.push(` <Relationship Target="/Metadata/thumbnail.png" Id="rel-2" Type="${THUMB_REL}"/>`);
+  if (hasThumbnail) rels.push(` <Relationship Target="${escapeXml(thumbnailPath)}" Id="rel-2" Type="${THUMB_REL}"/>`);
   rels.push("</Relationships>", "");
   return rels.join("\n");
 }
