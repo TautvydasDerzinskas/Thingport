@@ -43,7 +43,8 @@ Open **Administration → Storage → Consume Folder**. If the volume is mounted
     become models too, except the textures a `.gltf` uses, which go into its model ([glTF files](upload-files.md#upload-a-gltf-model)).
   - **Each folder is a model**: a folder of model files becomes one model named after the folder, with its images as
     photos and its other files attached. Its subfolders without model files of their own, such as `docs` or `photos`,
-    belong to it too: their documents are attached in that subfolder, and their pictures become photos.
+    belong to it too: their documents are attached in that subfolder, and their pictures become photos. A photo is a
+    PNG, JPG, WebP or BMP of up to 8 MiB: a larger picture, or a GIF, is attached in its subfolder instead.
 
 Click **Save consume settings**. You only need to do this again when you want to change something.
 

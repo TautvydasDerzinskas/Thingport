@@ -28,7 +28,8 @@ Select several files in the picker. Thingport asks how to import them:
 - **Import as one model with several files** puts them all in a single new model, for when the files belong together,
   like the parts of one print. STL, 3MF, STEP, OBJ and glTF files are added in the order you picked them, photos
   become the model's photos (with no model file among them, the pictures are the model's files instead), and anything
-  else, such as a PDF, is attached to the model.
+  else, such as a PDF, is attached to the model. A photo is a PNG, JPG, WebP or BMP of up to 8 MiB: a larger picture,
+  or a GIF, is attached like a PDF.
 
 A document picked on its own, like a PDF or notes, can't be a model by itself: Thingport says so rather than uploading
 it. Pick it together with the model's files and choose one model.
@@ -65,7 +66,8 @@ Under the list, **Import as** says how the files become models:
 
 - **One model** (the default) puts every file you ticked into one model named after the ZIP: its model files are the
   model's files, its pictures its photos (or its files, when no model file is ticked), and anything else, like a PDF
-  manual, is attached. Folders inside the ZIP stay as folders within the model, below the folder every ticked file
+  manual, is attached. As when you pick files, only a PNG, JPG, WebP or BMP of up to 8 MiB is a photo; a larger
+  picture, or a GIF, is attached. Folders inside the ZIP stay as folders within the model, below the folder every ticked file
   shares: `Kit/body.stl` and `Kit/docs/guide.pdf` give `body.stl` at the top and `guide.pdf` in `docs`. Use this for a
   model downloaded from a site.
 - **A model per folder** works like [Each folder is one model](upload-folders.md#each-folder-is-one-model) for a
