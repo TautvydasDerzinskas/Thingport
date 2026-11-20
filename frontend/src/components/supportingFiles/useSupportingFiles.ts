@@ -8,7 +8,7 @@ import { copyText } from "../../utils/clipboard";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
 import { newLocalId } from "../../utils/localId";
 import { holdsBackSliced, isPreparedName, sortAddedFiles, withGltfFiles } from "../../utils/addedFiles";
-import { keepNotice } from "../../utils/sessionNotices";
+import { keepNotice, noticeOwner } from "../../utils/sessionNotices";
 
 /** A file on its way up, shown where the model's supporting files are until it's in. */
 export type UploadingFile = { key: string; name: string };
@@ -98,6 +98,8 @@ export function useSupportingFiles(
           return;
         }
         const packed = new Set([...packedWith.values()].flat());
+        // Whose these are: a notice kept of them is that account's, not one another tab signed in meanwhile.
+        const account = noticeOwner();
         let added = 0;
         let modelFilesAdded = false;
         // The first sliced print among them becomes the prepared print; the rest are kept as supporting files.
@@ -176,7 +178,7 @@ export function useSupportingFiles(
             if (err instanceof UnauthorizedError) {
               // The session ended part-way: what's held back is said where signing in again, or the app starting over
               // on a renewed session, doesn't take it away with the toasts.
-              if (heldBackNotice) keepNotice([...notAdded, heldBackNotice].join(" "));
+              if (heldBackNotice) keepNotice([...notAdded, heldBackNotice].join(" "), account);
               settle(queued);
               return;
             }

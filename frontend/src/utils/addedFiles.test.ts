@@ -6,6 +6,7 @@ import {
   isModelFileName,
   isPreparedName,
   sortAddedFiles,
+  stagedFiles,
   storedModelFileName,
   withGltfFiles,
 } from "./addedFiles";
@@ -179,6 +180,27 @@ describe("a .gltf added with the files it points at", () => {
     expect(across.took.size).toBe(0);
     expect(across.ambiguous).toEqual(["mesh.bin"]);
     expect(across.missing.get(sceneFile)).toEqual(["mesh.bin"]);
+  });
+
+  it("finds what a scene lacks among the files packed with another scene, and keeps it with that one too", () => {
+    // The first pick: a scene with the .bin it found. The second: another scene that points at that .bin as well.
+    const shared = file("mesh.bin");
+    const first = scene("first.gltf", "mesh.bin");
+    const second = scene("second.gltf", "mesh.bin");
+    const staged = stagedFiles([first, second], (each) => each, [shared, shared]);
+    // Each file once, and a packed one with no pick of its own to take out of the lists.
+    expect(staged).toEqual([
+      { item: first, file: first },
+      { item: second, file: second },
+      { item: null, file: shared },
+    ]);
+    const across = gltfFilesFromOthers(
+      [{ scene: second, file: second, missing: ["mesh.bin"] }],
+      staged,
+      (each) => each.file,
+    );
+    expect(across.took.get(second)).toEqual([{ item: null, file: shared }]);
+    expect(across.ambiguous).toEqual([]);
   });
 
   it("is stored as a .glb", () => {

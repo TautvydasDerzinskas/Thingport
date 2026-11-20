@@ -12,8 +12,16 @@ let owner: string | null = null;
 const listeners = new Set<() => void>();
 const changed = () => listeners.forEach((listener) => listener());
 
-/** Says `message` where signing in again, or the app starting over on a renewed session, doesn't take it away. */
-export function keepNotice(message: string): void {
+/** The account notices are kept for now, for a caller to name as its own when what it'll tell of starts. */
+export function noticeOwner(): string | null {
+  return owner;
+}
+
+/** Says `message` where signing in again, or the app starting over on a renewed session, doesn't take it away.
+ *  `account`: whose it is (noticeOwner when what it tells of started); dropped once the app is another's, as it names
+ *  that account's files. */
+export function keepNotice(message: string, account: string | null): void {
+  if (account !== owner) return;
   notices = [...notices, message];
   changed();
 }
