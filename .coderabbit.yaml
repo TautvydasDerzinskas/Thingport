@@ -36,6 +36,7 @@ reviews:
     - "!docs/developers/examples/thingport.d.ts"
     # Translations of en.json, which is reviewed; `npm --prefix frontend run i18n:check` finds a key one is missing.
     - "!frontend/src/i18n/locales/be.json"
+    - "!frontend/src/i18n/locales/de.json"
     - "!frontend/src/i18n/locales/es.json"
     - "!frontend/src/i18n/locales/fr.json"
     - "!frontend/src/i18n/locales/lt.json"
