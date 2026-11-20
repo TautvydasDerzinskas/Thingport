@@ -858,6 +858,19 @@ describe("a .3mf's thumbnail pictures", () => {
     }
   });
 
+  it("reads on after seven that won't do, to a picture after them", async () => {
+    const good = await picture();
+    const at = await threeMf([
+      ...Array.from({ length: 7 }, (_, n): [string, Buffer] => [`${n}/thumbnail.png`, notOne]),
+      ["after-them/thumbnail.png", good],
+    ]);
+    try {
+      expect(await read3mfThumbnails(at)).toEqual([good]);
+    } finally {
+      await fs.rm(at, { force: true });
+    }
+  });
+
   it("stops after eight that won't do, however many the archive names", async () => {
     const at = await threeMf([
       ...Array.from({ length: 8 }, (_, n): [string, Buffer] => [`${n}/thumbnail.png`, notOne]),

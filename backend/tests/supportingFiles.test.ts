@@ -19,7 +19,7 @@ import {
 } from "../src/services/printFileService";
 import { createPrint } from "../src/services/printCreation";
 import { relocatePrint } from "../src/services/printService";
-import { ensurePlateFormat } from "../src/services/threeMfFormat";
+import { ensurePlateFormat, PLATE_MOVED } from "../src/services/threeMfFormat";
 import { withStorageLock } from "../src/utils/storageLock";
 import { makePrint, nonce, register, tempFile, upload } from "./helpers/fileReuse";
 
@@ -496,6 +496,170 @@ describe("supporting files", () => {
     }
   });
 
+  /** A model with a plate, a file beside it and a picture, and a rename of it that hands back its plates. */
+  async function renamedModel(name: string) {
+    const model = await makePrint(dir, owner.id, name);
+    await upload(dir, owner.id, model.print.id, "guide.pdf", "%PDF-1.4 guide");
+    const photo = await request(app)
+      .post(`/api/print/${model.print.id}/preview-images`)
+      .set(auth(owner.token))
+      .attach(
+        "files",
+        await sharp({ create: { width: 8, height: 8, channels: 3, background: "#00cc00" } })
+          .png()
+          .toBuffer(),
+        "photo.png",
+      );
+    expect(photo.status).toBe(200);
+    const rename = (to: string) =>
+      prisma.print.update({
+        where: { id: model.print.id },
+        data: { name: to, nameNormalized: to.toLowerCase() },
+        include: { plates: true },
+      });
+    // Where the plate, the file and the pictures are, and whether each is there.
+    const placed = async () => {
+      const plate = await prisma.plate.findFirstOrThrow({ where: { printId: model.print.id } });
+      const file = await prisma.printFile.findFirstOrThrow({
+        where: { printId: model.print.id, filename: "guide.pdf" },
+      });
+      const print = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+      return [plate.storagePath, file.storagePath, print.assetsPath ?? ""].map((stored) => ({
+        stored,
+        there: Boolean(stored) && fs.existsSync(path.join(STORAGE, stored)),
+      }));
+    };
+    return { id: model.print.id, rename, placed };
+  }
+
+  /** A gate a spy holds a read at: `reached` once it's there, and `open` to let it go on. */
+  function gateAt() {
+    let reach = () => {};
+    const reached = new Promise<void>((resolve) => (reach = resolve));
+    let open = () => {};
+    const opened = new Promise<void>((resolve) => (open = resolve));
+    return { reach, reached, open, opened };
+  }
+
+  it("stay where a later rename took them when an earlier rename's move is held reading where they go", async () => {
+    const stamp = nonce();
+    const model = await renamedModel("Renamed while read");
+    const template = "{collection}/{model}/{filename}";
+    const first = await model.rename(`Earlier ${stamp}`);
+    // The first move is held as it reads the collection its template names, before it has moved anything, while the
+    // second rename is saved and its move runs to its end.
+    const findMany = prisma.collectionItem.findMany.bind(prisma.collectionItem);
+    const gate = gateAt();
+    let held = false;
+    const spy = vi.spyOn(prisma.collectionItem, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.collectionItem.findMany>[0],
+    ) => {
+      if (held || args?.where?.printId !== model.id) return findMany(args);
+      held = true;
+      return findMany(args).then(async (rows) => {
+        gate.reach();
+        await gate.opened;
+        return rows;
+      });
+    }) as never);
+    let moving: Promise<number> | null = null;
+    try {
+      moving = relocatePrint(first, first.plates, template);
+      const settled = moving.then(
+        () => "settled",
+        () => "settled",
+      );
+      expect(await Promise.race([gate.reached.then(() => "read"), settled])).toBe("read");
+      const second = await model.rename(`Later ${stamp}`);
+      await relocatePrint(second, second.plates, template);
+    } finally {
+      gate.open();
+      spy.mockRestore();
+      await moving;
+    }
+    for (const { stored, there } of await model.placed()) {
+      expect(stored).toContain(`Later ${stamp}`);
+      expect(there).toBe(true);
+    }
+  });
+
+  it("stay where a later rename took them when an earlier rename's move only begins after it", async () => {
+    const stamp = nonce();
+    const model = await renamedModel("Moves begun out of order");
+    const first = await model.rename(`Earlier ${stamp}`);
+    // A moment apart, as two edits' saves are.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const second = await model.rename(`Later ${stamp}`);
+    await relocatePrint(second, second.plates);
+    // The earlier edit's move begins only now, with the model as that edit saved it.
+    await relocatePrint(first, first.plates);
+    for (const { stored, there } of await model.placed()) {
+      expect(stored).toContain(`Later ${stamp}`);
+      expect(there).toBe(true);
+    }
+  });
+
+  it("stay where the latest rename took them when two later renames' moves come and go during one", async () => {
+    const stamp = nonce();
+    const model = await renamedModel("Renamed thrice");
+    const first = await model.rename(`First ${stamp}`);
+    // The first move takes the plate, then is held before its files while the second rename's move runs to its end,
+    // and held again before its pictures while the third's does.
+    const files = gateAt();
+    const pictures = gateAt();
+    const readFiles = prisma.printFile.findMany.bind(prisma.printFile);
+    const readPlates = prisma.plate.findMany.bind(prisma.plate);
+    let filesHeld = false;
+    let picturesArmed = false;
+    const spies = [
+      vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+        args: Parameters<typeof prisma.printFile.findMany>[0],
+      ) => {
+        if (filesHeld || args?.where?.printId !== model.id || !args.orderBy) return readFiles(args);
+        filesHeld = true;
+        return readFiles(args).then(async (rows) => {
+          files.reach();
+          await files.opened;
+          return rows;
+        });
+      }) as never),
+      vi.spyOn(prisma.plate, "findMany").mockImplementation(((args: Parameters<typeof prisma.plate.findMany>[0]) => {
+        if (!picturesArmed || args?.where?.printId !== model.id || !args.select?.id) return readPlates(args);
+        picturesArmed = false;
+        return readPlates(args).then(async (rows) => {
+          pictures.reach();
+          await pictures.opened;
+          return rows;
+        });
+      }) as never),
+    ];
+    let moving: Promise<number> | null = null;
+    try {
+      moving = relocatePrint(first, first.plates);
+      const settled = moving.then(
+        () => "settled",
+        () => "settled",
+      );
+      expect(await Promise.race([files.reached.then(() => "files"), settled])).toBe("files");
+      const second = await model.rename(`Second ${stamp}`);
+      await relocatePrint(second, second.plates);
+      picturesArmed = true;
+      files.open();
+      expect(await Promise.race([pictures.reached.then(() => "pictures"), settled])).toBe("pictures");
+      const third = await model.rename(`Third ${stamp}`);
+      await relocatePrint(third, third.plates);
+    } finally {
+      files.open();
+      pictures.open();
+      for (const spy of spies) spy.mockRestore();
+      await moving;
+    }
+    for (const { stored, there } of await model.placed()) {
+      expect(stored).toContain(`Third ${stamp}`);
+      expect(there).toBe(true);
+    }
+  });
+
   it("read the model and its collection once for a move of many files, not again for each", async () => {
     const model = await makePrint(dir, owner.id, "Moved with many");
     for (const name of ["a.pdf", "b.pdf", "c.pdf", "d.pdf"]) {
@@ -592,7 +756,7 @@ describe("supporting files", () => {
     expect((plate.format as { kind?: string } | null)?.kind).toBe("prusa");
   });
 
-  it("give no 3MF kind for a plate that moved from the file while it was read", async () => {
+  it("say a plate moved from the file while it was read, rather than giving its kind", async () => {
     const zip = await new JSZip()
       .file("3D/3dmodel.model", '<?xml version="1.0"?><model unit="millimeter"></model>')
       .file("Metadata/Slic3r_PE.config", "x")
@@ -616,7 +780,7 @@ describe("supporting files", () => {
       return seen;
     }) as never);
     try {
-      expect(await ensurePlateFormat(plate, where)).toBeNull();
+      expect(await ensurePlateFormat(plate, where)).toBe(PLATE_MOVED);
       expect(moved).toBe(true);
     } finally {
       spy.mockRestore();
@@ -624,6 +788,101 @@ describe("supporting files", () => {
     }
     const after = await prisma.plate.findUniqueOrThrow({ where: { id: plate.id } });
     expect(after.format).toBeNull();
+  });
+
+  // A project of the kind only Bambu Studio writes, which PrusaSlicer is given a copy of.
+  const bambuProject = () =>
+    new JSZip()
+      .file(
+        "3D/3dmodel.model",
+        '<?xml version="1.0"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><metadata name="Application">BambuStudio-02.07.01.57</metadata><resources><object id="1" type="model"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>',
+      )
+      .file(
+        "Metadata/project_settings.config",
+        JSON.stringify({
+          wall_loops: "3",
+          filament_colour: ["#FF0000"],
+          printer_settings_id: "Bambu Lab A1 0.4 nozzle",
+        }),
+      )
+      .generateAsync({ type: "nodebuffer" });
+  // Renames the model and moves its files there, as an edit of it does.
+  const renameAndMove = async (printId: string, name: string) => {
+    const renamed = await prisma.print.update({
+      where: { id: printId },
+      data: { name, nameNormalized: name.toLowerCase() },
+      include: { plates: true },
+    });
+    await relocatePrint(renamed, renamed.plates);
+  };
+
+  it("serve a plate's copy for a slicer from where it moved to while its kind was read", async () => {
+    const stamp = nonce();
+    const { print, plates } = await createPrint(owner.id, { title: `Moved for a copy ${stamp}` }, `Copy ${stamp}`, [
+      { filename: "part.3mf", tempFilePath: tempFile(dir, await bambuProject()) },
+    ]);
+    // As a 3MF stored before formats were, so asking for a copy reads its kind.
+    await prisma.plate.update({ where: { id: plates[0].id }, data: { format: Prisma.DbNull } });
+    // As the plate's kind is read from its file, the model is renamed and its files moved.
+    const where = path.join(STORAGE, plates[0].storagePath);
+    const stat = fsPromises.stat.bind(fsPromises);
+    let moved = false;
+    const spy = vi.spyOn(fsPromises, "stat").mockImplementation((async (at: fs.PathLike, ...rest: never[]) => {
+      if (!moved && path.resolve(String(at)) === path.resolve(where)) {
+        moved = true;
+        await renameAndMove(print.id, `Moved copy ${stamp}`);
+      }
+      return stat(at, ...rest);
+    }) as never);
+    try {
+      const res = await request(app)
+        .get(`/api/print/${print.id}/plate/${plates[0].id}/adapted/prusaslicer/part.3mf`)
+        .set(auth(owner.token))
+        .buffer(true)
+        .parse((r, cb) => {
+          const chunks: Buffer[] = [];
+          r.on("data", (chunk: Buffer) => chunks.push(chunk));
+          r.on("end", () => cb(null, Buffer.concat(chunks)));
+        });
+      expect(moved).toBe(true);
+      expect(res.status).toBe(200);
+      const xml = await (await JSZip.loadAsync(res.body as Buffer)).file("3D/3dmodel.model")!.async("string");
+      // The copy, made from the file where it is now, rather than the original from a place it left.
+      expect(xml).not.toContain("BambuStudio");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("tell how a plate's copy is coming from where the plate moved to once its kind was known", async () => {
+    const stamp = nonce();
+    const { print, plates } = await createPrint(owner.id, { title: `Moved for a status ${stamp}` }, `Status ${stamp}`, [
+      { filename: "part.3mf", tempFilePath: tempFile(dir, await bambuProject()) },
+    ]);
+    // The plate's kind is known, and the model is renamed and its files moved just after it's planned from.
+    expect((await prisma.plate.findUniqueOrThrow({ where: { id: plates[0].id } })).format).not.toBeNull();
+    const findUnique = prisma.plate.findUnique.bind(prisma.plate);
+    let moved = false;
+    const spy = vi.spyOn(prisma.plate, "findUnique").mockImplementation((async (
+      args: Parameters<typeof prisma.plate.findUnique>[0],
+    ) => {
+      if (!moved && args.where.id === plates[0].id && args.select?.sourcePath && !args.select.format) {
+        moved = true;
+        await renameAndMove(print.id, `Moved status ${stamp}`);
+      }
+      return findUnique(args);
+    }) as never);
+    try {
+      const res = await request(app)
+        .post(`/api/print/${print.id}/plate/${plates[0].id}/adapt`)
+        .set(auth(owner.token))
+        .send({ slicer: "prusaslicer" });
+      expect(moved).toBe(true);
+      expect(res.status).toBe(200);
+      expect(["preparing", "ready"]).toContain(res.body.status);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("never take a model file's place in a zip", async () => {

@@ -733,40 +733,69 @@ async function relocateAssets(
  * storage path is built from. Returns how many files moved.
  */
 export async function relocatePrint(
-  print: PrintLike & { assetsPath?: string | null },
+  print: PrintLike & { assetsPath?: string | null; updatedAt?: Date },
   plates: Plate[],
   template?: string | null,
 ): Promise<number> {
-  const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
-  const printValues = await printTemplateValues(print, safeTemplate);
+  // Counted as begun before anything is awaited, so a move begun after this one is a later one whichever reads first.
   const mine = ++movesBegun;
-  latestMove.set(print.id, mine);
-  // Where each file goes: by the model as given, until a later move of it begins, which is one for a change saved
-  // after this began: then by the model as saved, read once for each later move. That move may have got there first
-  // and taken the files where it puts them, and the model as given would send them back. The template's values are
-  // read again only then, rather than for every file, as each read takes the lock's time.
-  let seen = latestMove.get(print.id);
-  let at: { print: PrintLike; values: PrintTemplateValues } | null = { print, values: printValues };
-  const placing: Placing = async () => {
-    const latest = latestMove.get(print.id);
-    if (latest !== seen) {
-      seen = latest;
-      const now = await prisma.print.findUnique({ where: { id: print.id } });
-      at = now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
-    }
-    return at;
-  };
+  const moves = modelMoves.get(print.id) ?? { latest: 0, active: 0 };
+  moves.latest = mine;
+  moves.active += 1;
+  modelMoves.set(print.id, moves);
+  let seen = mine;
+  const stale = olderThanGiven(print);
   try {
-    return await relocatePrintWith(print, plates, safeTemplate, printValues, placing);
+    const safeTemplate = validateStorageTemplate(template ?? (await getStorageTemplate()));
+    // Given the model as an earlier save left it, after a later save's move began, as two edits' moves can begin in
+    // the other order: placed by the model as saved, or this would take the files back where the earlier save put them.
+    const base = (stale ? await prisma.print.findUnique({ where: { id: print.id } }) : null) ?? print;
+    const printValues = await printTemplateValues(base, safeTemplate);
+    // Where each file goes: by that, until a later move of the model begins, which is one for a change saved after
+    // this began: then by the model as saved, read once for each later move. That move may have got there first and
+    // taken the files where it puts them. The template's values are read again only then, rather than for every
+    // file, as each read takes the lock's time.
+    let at: { print: PrintLike; values: PrintTemplateValues } | null = { print: base, values: printValues };
+    const placing: Placing = async () => {
+      if (moves.latest !== seen) {
+        seen = moves.latest;
+        const now = await prisma.print.findUnique({ where: { id: print.id } });
+        at = now ? { print: now, values: await printTemplateValues(now, safeTemplate) } : null;
+      }
+      return at;
+    };
+    return await relocatePrintWith(base, plates, safeTemplate, printValues, placing);
   } finally {
-    if (latestMove.get(print.id) === mine) latestMove.delete(print.id);
+    // Kept while any move of the model runs, so one that outlasts a later one still sees one begun after that.
+    moves.active -= 1;
+    if (moves.active === 0 && modelMoves.get(print.id) === moves) modelMoves.delete(print.id);
   }
 }
 
-// Every model move begun so far, and each model's latest: a move that finds a later one began for its model knows a
-// change of it was saved after it began, as every save that moves a model's files starts a move of them (relocatePrint).
+// Every model move begun so far, and for each model being moved its latest and how many run: a move that finds a later
+// one began for its model knows a change of it was saved after it began, as every save that moves a model's files
+// starts a move of them (relocatePrint).
 let movesBegun = 0;
-const latestMove = new Map<string, number>();
+const modelMoves = new Map<string, { latest: number; active: number }>();
+
+// The newest version of each model a move was given (its updatedAt), kept after its moves end, as the move of an
+// earlier save can begin after a later one's has ended. The least recently moved go first past the cap.
+const givenVersions = new Map<string, number>();
+const GIVEN_VERSIONS_KEPT = 10_000;
+
+/** Whether `print` is older than a version of it a move was given already, and otherwise noted as the newest. One
+ *  given with no version is taken as it is. */
+function olderThanGiven(print: { id: string; updatedAt?: Date }): boolean {
+  const version = print.updatedAt?.getTime();
+  if (version === undefined) return false;
+  const newest = givenVersions.get(print.id);
+  if (newest !== undefined && version < newest) return true;
+  givenVersions.delete(print.id);
+  givenVersions.set(print.id, version);
+  const oldest = givenVersions.keys().next();
+  if (givenVersions.size > GIVEN_VERSIONS_KEPT && !oldest.done) givenVersions.delete(oldest.value);
+  return false;
+}
 
 /** relocatePrint's moves of the plates, files and pictures, each placed as `placing` says then. */
 async function relocatePrintWith(

@@ -30,7 +30,7 @@ import { fillSourceGaps } from "../services/fillGapsService";
 import { linkPrintToSource } from "../services/modelLinkService";
 import { deletePrint, setPrintTags, updatePrintMeta } from "../services/printEditService";
 import { adapt3mfStatus, adapted3mfFor, isAdaptable3mf } from "../services/adapted3mfCache";
-import { ensurePlateFormat, fillPlateFormats } from "../services/threeMfFormat";
+import { ensurePlateFormat, fillPlateFormats, PLATE_MOVED } from "../services/threeMfFormat";
 import { planAdaptation, slicerProfile, type AdaptPlan, type PrinterRecipe } from "../adapter";
 import { printerTarget } from "../printers/targets";
 import {
@@ -573,18 +573,44 @@ type PrinterAsked = { id: string; nozzle: string } | null;
 type Adaptation = { plan: AdaptPlan; printer: PrinterRecipe | null };
 
 /** The copy of the plate to open in `slicer` (src/adapter/plan.ts), or null to open the plate itself. With a printer
- *  the slicer has a preset for, the copy is made for that printer. */
+ *  the slicer has a preset for, the copy is made for that printer. PLATE_MOVED when the plate's file was moved away
+ *  from `filePath` while its format was read. */
 async function adaptPlanFor(
   plate: ReadablePlate,
   filePath: string,
   slicer: unknown,
   printer: PrinterAsked = null,
-): Promise<Adaptation | null> {
+): Promise<Adaptation | null | typeof PLATE_MOVED> {
   if (!adaptable(plate) || typeof slicer !== "string") return null;
   const target = printer ? printerTarget(slicer, printer.id, printer.nozzle) : null;
-  const plan = planAdaptation(await ensurePlateFormat(plate, filePath), slicerProfile(slicer), target?.choice);
+  const format = await ensurePlateFormat(plate, filePath);
+  if (format === PLATE_MOVED) return PLATE_MOVED;
+  const plan = planAdaptation(format, slicerProfile(slicer), target?.choice);
   if (!plan) return null;
   return { plan, printer: plan.output === "bambu" && plan.printer && target ? target.recipe : null };
+}
+
+// Reads of a plate a move keeps taking from under a request, before it's served from where it was last read.
+const PLATE_LOOKS = 3;
+
+/** The readable plate, where its file is, and the copy of it to open in `slicer` (adaptPlanFor). Read again when it
+ *  moved while that was worked out, or by the time it was: what's handed on is then the plate's file where it is now,
+ *  rather than a place it has left. */
+async function adaptedPlate(
+  req: Request,
+  slicer: unknown,
+  printer: PrinterAsked = null,
+): Promise<{ plate: ReadablePlate; filePath: string; adapt: Adaptation | null }> {
+  for (let look = 1; ; look++) {
+    const { plate, filePath } = await readablePlate(req);
+    const adapt = await adaptPlanFor(plate, filePath, slicer, printer);
+    const now =
+      adapt === PLATE_MOVED
+        ? null
+        : await prisma.plate.findUnique({ where: { id: plate.id }, select: { storagePath: true, sourcePath: true } });
+    const stayed = now?.storagePath === plate.storagePath && now.sourcePath === plate.sourcePath;
+    if (stayed || look >= PLATE_LOOKS) return { plate, filePath, adapt: adapt === PLATE_MOVED ? null : adapt };
+  }
 }
 
 const printerAskedSchema = z
@@ -606,16 +632,17 @@ function sendPlateFile(res: Response, plate: ReadablePlate, filePath: string) {
 router.get(
   "/print/:id/plate/:plateId/file/:filename",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
-    const adapt = req.query.normalize === "1" ? await adaptPlanFor(plate, filePath, NORMALIZED_FOR) : null;
+    const { plate, filePath, adapt } =
+      req.query.normalize === "1"
+        ? await adaptedPlate(req, NORMALIZED_FOR)
+        : { ...(await readablePlate(req)), adapt: null };
     const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan) : null;
     sendPlateFile(res, plate, adapted ?? filePath);
   }),
 );
 
 async function sendAdapted(req: Request, res: Response, printer: PrinterAsked) {
-  const { plate, filePath } = await readablePlate(req);
-  const adapt = await adaptPlanFor(plate, filePath, req.params.slicer, printer);
+  const { plate, filePath, adapt } = await adaptedPlate(req, req.params.slicer, printer);
   const adapted = adapt ? await adapted3mfFor(plate.id, filePath, adapt.plan, adapt.printer) : null;
   sendPlateFile(res, plate, adapted ?? filePath);
 }
@@ -644,9 +671,8 @@ const adaptBodySchema = z.object({ slicer: z.unknown(), printer: printerAskedSch
 router.post(
   "/print/:id/plate/:plateId/adapt",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
     const body = parseBody(adaptBodySchema, req.body ?? {});
-    const adapt = await adaptPlanFor(plate, filePath, body.slicer, body.printer ?? null);
+    const { plate, filePath, adapt } = await adaptedPlate(req, body.slicer, body.printer ?? null);
     res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan, adapt.printer) : "original" });
   }),
 );
@@ -655,9 +681,10 @@ router.post(
 router.post(
   "/print/:id/plate/:plateId/normalize",
   asyncHandler(async (req, res) => {
-    const { plate, filePath } = await readablePlate(req);
-    if (!adaptable(plate)) throw new HttpError(400, "Only a plain 3MF project can be normalized.");
-    const adapt = await adaptPlanFor(plate, filePath, NORMALIZED_FOR);
+    if (!adaptable((await readablePlate(req)).plate)) {
+      throw new HttpError(400, "Only a plain 3MF project can be normalized.");
+    }
+    const { plate, filePath, adapt } = await adaptedPlate(req, NORMALIZED_FOR);
     // Ready to open: the file itself, when it isn't a project a copy is made of.
     res.json({ status: adapt ? await adapt3mfStatus(plate.id, filePath, adapt.plan) : "ready" });
   }),

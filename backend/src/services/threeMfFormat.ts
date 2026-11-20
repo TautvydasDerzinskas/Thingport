@@ -133,6 +133,10 @@ export async function keepPlateFormat(plateId: string, reading: PlateFormatReadi
 /** A plate and where its row had its file when `filePath` was found from it. */
 type PlateFile = Pick<Plate, "id" | "filename" | "storagePath" | "sourcePath">;
 
+/** What a look at a plate's format gives when the plate moved while it was read: its row has its file elsewhere by
+ *  then, so the path it was read from is no longer the plate's, and the plate is to be read again from its row. */
+export const PLATE_MOVED = "moved";
+
 // Reads of a plate's file made with the storage lock free, each of which another turn at it may spoil, before one is
 // made with the lock held: a plain 3MF is read through, which can take long enough to hold up every move waiting.
 const UNLOCKED_READS = 3;
@@ -141,10 +145,13 @@ const UNLOCKED_READS = 3;
  *  read again under the storage lock, as a move renames a file before it saves where it went, and the reading kept only
  *  while the row still has the file there and nothing else had the lock while it was read (storageLockTurn): a move
  *  then, even away and back, could have put another file where it was read. Read again so a few times, and only then
- *  with the lock held throughout. The format, of the plate's own file, or null where the plate is no longer where it
- *  was read, as what it is then isn't known. Never throws: one it can't read is cleared, for the next look to read
- *  again, and one that moved is left for that look. */
-async function storePlateFormat(plate: PlateFile, filePath: string): Promise<ThreeMfFormat | null> {
+ *  with the lock held throughout. The format, of the plate's own file; PLATE_MOVED where the plate is no longer where
+ *  it was read, as what it is then isn't known; null for none, or a look that failed. Never throws: one it can't read
+ *  is cleared, for the next look to read again, and one that moved is left for that look. */
+async function storePlateFormat(
+  plate: PlateFile,
+  filePath: string,
+): Promise<ThreeMfFormat | null | typeof PLATE_MOVED> {
   if (!isThreeMfFile(plate.filename)) return null;
   const stillThere = async () => {
     const now = await prisma.plate.findUnique({
@@ -159,7 +166,7 @@ async function storePlateFormat(plate: PlateFile, filePath: string): Promise<Thr
   try {
     for (let tries = 0; tries < UNLOCKED_READS && !keep; tries++) {
       const found = await withStorageLock(async () => ({ there: await stillThere(), turn: storageLockTurn() }));
-      if (!found.there) return null;
+      if (!found.there) return PLATE_MOVED;
       reading = await read();
       keep = await withStorageLock(async () => storageLockTurn() === found.turn + 1);
     }
@@ -172,7 +179,7 @@ async function storePlateFormat(plate: PlateFile, filePath: string): Promise<Thr
     console.warn(`Looking for the file of plate ${plate.id} failed:`, err);
     return null;
   }
-  if (!keep) return null;
+  if (!keep) return PLATE_MOVED;
   await keepPlateFormat(plate.id, reading).catch((err: unknown) =>
     console.warn(`Keeping the 3MF format of plate ${plate.id} failed:`, err),
   );
@@ -218,10 +225,10 @@ export async function fillPlateFormats(
 }
 
 /** The plate's format, read and kept first when it has none from the file as it is now. `filePath`, where its row as
- *  given has its file. */
+ *  given has its file; PLATE_MOVED when it no longer does by the time that's read (storePlateFormat). */
 export async function ensurePlateFormat(
   plate: PlateFile & Pick<Plate, "format">,
   filePath: string,
-): Promise<ThreeMfFormat | null> {
+): Promise<ThreeMfFormat | null | typeof PLATE_MOVED> {
   return (await currentFormat(plate, filePath)) ?? (await storePlateFormat(plate, filePath));
 }
