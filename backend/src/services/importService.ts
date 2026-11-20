@@ -65,7 +65,7 @@ import {
   completeMakerworldAuthor,
 } from "../providers/makerworld/api";
 import { openSourceGaps, type SourceGap } from "./sourceGaps";
-import { replaceModelPlates } from "./modelFilesReplace";
+import { galleryFileThere, replaceModelPlates } from "./modelFilesReplace";
 import { modelFilesMissing } from "./missingFilesService";
 import { createLogger } from "../logger";
 
@@ -108,7 +108,6 @@ import {
 } from "./printCreation";
 import { availablePlateFilename, relocatePrint, saveThumbFromBytes } from "./printService";
 import { addPreviewImage, preferImageOverRenders, removePreviewImage } from "./previewImageService";
-import { assetExists, galleryImageFile } from "./modelAssets";
 import { withStorageLock } from "../utils/storageLock";
 import { getPhotosPerModel } from "./settingsService";
 import { localizeDescriptionImages } from "./descriptionImageService";
@@ -1632,12 +1631,21 @@ async function settleRepairedGallery(printId: string, gallery: string[], fetched
       },
     });
     const there = new Set(now.previewImages.map((image) => image.id));
-    const hasFile = (id: string) => assetExists(now.assetsPath, galleryImageFile(id));
+    // A look that fails throws, before anything goes, rather than read as a picture gone: both sets then stay.
+    const hasFile = (id: string) => galleryFileThere(now.assetsPath, id);
+    const every = async (ids: string[]) => {
+      for (const id of ids) if (!(await hasFile(id))) return false;
+      return true;
+    };
+    const some = async (ids: string[]) => {
+      for (const id of ids) if (await hasFile(id)) return true;
+      return false;
+    };
     const left = gallery.filter((id) => there.has(id));
     const replacing = fetched.filter((id) => there.has(id));
-    const whole = left.length > 0 && left.every(hasFile);
+    const whole = left.length > 0 && (await every(left));
     // With none of the fetched left, the gallery the repair found is all the model has: it stays, gaps and all.
-    const removing = whole ? replacing : replacing.some(hasFile) ? left : [];
+    const removing = whole ? replacing : (await some(replacing)) ? left : [];
     for (const id of removing) await removePreviewImage(printId, id).catch(() => undefined);
   }).catch((error: unknown) =>
     log.warn("couldn't look at a repaired model's gallery again, so both sets of pictures stay", {

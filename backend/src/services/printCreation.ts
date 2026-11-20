@@ -94,13 +94,15 @@ export type PrintMetaInput = {
 
 /** Never over another file: a link fails on one that's there, where a rename would replace it. Only the placing is
  *  under the storage lock (the file reuse backfill's swap renames over a path it has just checked, and mustn't land
- *  after a file saved at a path its row just freed); removing the temp file is not. */
+ *  after a file saved at a path its row just freed); removing the temp file is not. Its folder is made in the same
+ *  turn: one made before could be taken away, emptied, by a removal pruning it in between. */
 async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<string | null> {
-  await fs.mkdir(path.dirname(destAbsPath), { recursive: true });
+  const folder = () => fs.mkdir(path.dirname(destAbsPath), { recursive: true });
   try {
     if (input.tempFilePath) {
       const tempFilePath = input.tempFilePath;
       await withStorageLock(async () => {
+        await folder();
         try {
           await fs.link(tempFilePath, destAbsPath);
         } catch (err: any) {
@@ -114,7 +116,10 @@ async function placeFile(input: NewPlateInput, destAbsPath: string): Promise<str
     }
     if (input.copyFromPath) {
       const copyFromPath = input.copyFromPath;
-      await withStorageLock(() => fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL));
+      await withStorageLock(async () => {
+        await folder();
+        await fs.copyFile(copyFromPath, destAbsPath, fsSync.constants.COPYFILE_EXCL);
+      });
       return destAbsPath;
     }
   } catch (err: any) {
@@ -740,11 +745,12 @@ async function removePlateRows(
   });
 }
 
-/** What's left of plates whose rows and files have gone: their adapted copies, emptied folders and pictures. */
+/** What's left of plates whose rows and files have gone: their adapted copies, emptied folders and pictures. The
+ *  folders in a turn at the storage lock, as a file is put in one in a turn that makes it first (placeFile). */
 async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates): Promise<void> {
   for (const plate of plates) {
     await deleteAdapted3mfs(plate.id).catch(() => undefined);
-    await pruneEmptyStorageDirs(path.dirname(managedPlatePath(plate))).catch(() => undefined);
+    await withStorageLock(() => pruneEmptyStorageDirs(path.dirname(managedPlatePath(plate)))).catch(() => undefined);
     if (!picturesLeft) await removePlatePictures(plate.id, home).catch(() => undefined);
   }
 }
@@ -755,31 +761,48 @@ async function afterPlatesRemoved({ plates, home, picturesLeft }: RemovedPlates)
  * transaction, so the model is never left with neither, and `reading`, the model's prepared reading with them, in it
  * too. Under the storage lock, the rows read there, as removePlateRows does. With the plate order held since the old
  * rows went, which whatever adds plates to a model takes, a merge included: the model's plates are then only those
- * the replacement made.
+ * the replacement made (`made`, as the failed batch recorded them), or `previous` once a try whose answer was lost
+ * put them back.
  */
 export async function restorePlates(
   printId: string,
   previous: Plate[],
   reading?: { preparedMetadata: Prisma.JsonValue | null },
+  made: readonly Plate[] = [],
 ): Promise<void> {
   const removed = await withStorageLock(async () => {
-    const made = await prisma.plate.findMany({ where: { printId } });
+    const now = await prisma.plate.findMany({ where: { printId } });
+    const previousIds = new Set(previous.map((plate) => plate.id));
+    const nowIds = new Set(now.map((plate) => plate.id));
+    // Back already, by a try whose commit went in though its answer didn't (one transaction does it all): the plates
+    // now are the model's own, whose files and pictures stay, and of the replacement's only the pictures are left.
+    if (
+      previous.length &&
+      previous.every((plate) => nowIds.has(plate.id)) &&
+      now.every((plate) => previousIds.has(plate.id))
+    ) {
+      return { ...(await pictureHomeOf(printId)), plates: made.filter((plate) => !nowIds.has(plate.id)) };
+    }
+    const replacing = now.filter((plate) => !previousIds.has(plate.id));
     // Their files first, where their rows say they are now: a plate put back can name the same place, as the
     // replacement took the old names, and would point at the replacement's bytes were one to stay after the swap. One
     // that won't go stops this before the swap, with the made rows still naming it, for a try after to take it then
     // (force: one an earlier try took is no error).
-    for (const plate of made) await fs.rm(managedPlatePath(plate), { force: true });
-    // A place one of the model's other files took while the plates were out -- an attachment's upload doesn't wait for
-    // the plate order -- stays that file's: the plate goes back where nothing is, its own file being gone anyway,
-    // rather than take the attachment's bytes for its own.
+    for (const plate of replacing) await fs.rm(managedPlatePath(plate), { force: true });
+    // A place one of the model's other files, or another model's plate, took while the plates were out -- neither
+    // waits for this model's plate order -- stays theirs: the plate goes back where nothing is, its own file being gone
+    // anyway, rather than take their bytes for its own. This model's rows there are the replacement's, which go. A
+    // plate of another model takes its row outside the lock: one that comes after this look fails the swap on the
+    // path's uniqueness, rolled back whole, and the try after (putPlatesBack) finds it.
+    const takenElsewhere = async (at: string) => {
+      const plate = await prisma.plate.findUnique({ where: { storagePath: at }, select: { printId: true } });
+      if (plate) return plate.printId !== printId;
+      return Boolean(await prisma.printFile.findUnique({ where: { storagePath: at }, select: { id: true } }));
+    };
     const reserved = new Set(previous.map((plate) => plate.storagePath));
     const back: Plate[] = [];
     for (const plate of previous) {
-      const claimed = await prisma.printFile.findUnique({
-        where: { storagePath: plate.storagePath },
-        select: { id: true },
-      });
-      if (!claimed) {
+      if (!(await takenElsewhere(plate.storagePath))) {
         back.push(plate);
         continue;
       }
@@ -817,16 +840,20 @@ export async function restorePlates(
     ]);
     // Read once the rows are back: a read that fails then costs only the made plates' pictures, never the model its
     // own plates, nor the caller the error it's putting them back for.
-    const found = await printAssetHome(printId).then(
-      (home) => ({ home }),
-      (err: unknown) => {
-        console.warn(`Couldn't find model ${printId}'s pictures to take back a failed repair's:`, err);
-        return null;
-      },
-    );
-    return { plates: made, home: found?.home, picturesLeft: !found };
+    return { ...(await pictureHomeOf(printId)), plates: replacing };
   });
   await afterPlatesRemoved(removed);
+}
+
+/** Where a model's pictures are, for taking a failed repair's away; `picturesLeft` when that can't be read. */
+async function pictureHomeOf(printId: string): Promise<{ home: AssetHome; picturesLeft: boolean }> {
+  return printAssetHome(printId).then(
+    (home) => ({ home, picturesLeft: false }),
+    (err: unknown) => {
+      console.warn(`Couldn't find model ${printId}'s pictures to take back a failed repair's:`, err);
+      return { home: null, picturesLeft: true };
+    },
+  );
 }
 
 /** The first place numbered beside `plate`'s that nothing has, on disk or in a row, nor is `reserved` for a plate. */

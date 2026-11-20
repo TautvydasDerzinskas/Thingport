@@ -4,7 +4,7 @@ import { createLogger } from "../logger";
 import { sleep } from "../utils/concurrency";
 import { HttpError } from "../utils/fileUtils";
 import { withStorageLock } from "../utils/storageLock";
-import { assetExists, galleryImageFile } from "./modelAssets";
+import { type AssetHome, assetTarget, galleryImageFile, legacyAssetPath } from "./modelAssets";
 import {
   isGeneratorScript,
   keepGeneratorScripts,
@@ -133,15 +133,31 @@ export async function replaceModelPlates(
       where: { id: printId },
       select: { assetsPath: true, previewImages: { where: { id: { in: gallery } }, select: { id: true } } },
     });
-    return (
-      now.previewImages.length > 0 &&
-      now.previewImages.every((image) => assetExists(now.assetsPath, galleryImageFile(image.id)))
-    );
+    if (!now.previewImages.length) return false;
+    for (const image of now.previewImages) if (!(await galleryFileThere(now.assetsPath, image.id))) return false;
+    return true;
   }).catch((error: unknown) => {
     log.error("couldn't check a repaired model's photos, so they're left as they are", { print: printId, error });
     return true;
   });
   return { plates, galleryWhole, gallery };
+}
+
+/** Whether a gallery picture's file is there, where assetExists looks for it, but a look that fails for any other
+ *  reason than the file being gone throws: a disk that can't be read says nothing of what's on it, and a gallery taken
+ *  for broken on such a look would have the owner's photos replaced. */
+export async function galleryFileThere(home: AssetHome, imageId: string): Promise<boolean> {
+  const file = galleryImageFile(imageId);
+  for (const at of home ? [assetTarget(home, file), legacyAssetPath(file)] : [legacyAssetPath(file)]) {
+    try {
+      await fs.stat(at);
+      return true;
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException)?.code;
+      if (code !== "ENOENT" && code !== "ENOTDIR") throw err;
+    }
+  }
+  return false;
 }
 
 /** The model's plates put back as `old` after a replacement that stopped part-way (restorePlates), with `reading`, its
@@ -159,7 +175,7 @@ async function putPlatesBack(
   for (let tries = 0; tries < 3; tries++) {
     if (tries) await sleep(250 * tries);
     try {
-      await restorePlates(printId, old, { preparedMetadata: reading });
+      await restorePlates(printId, old, { preparedMetadata: reading }, made);
       return true;
     } catch (err) {
       failure = err;

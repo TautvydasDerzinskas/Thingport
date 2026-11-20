@@ -295,6 +295,8 @@ describe("a model's plates, changed by two requests at once", () => {
           include: { plates: true },
         });
         moving = relocatePrint(moved, moved.plates);
+        // Seen at once, so one that fails while the rest is still going isn't left unhandled; awaited after for its error.
+        moving.catch(() => undefined);
       }
       return updated;
     }) as never);
@@ -487,6 +489,8 @@ describe("a model's plates, changed by two requests at once", () => {
         include: { plates: true },
       });
       moving = relocatePrint(moved, moved.plates);
+      // Seen at once, so one that fails while the rest is still going isn't left unhandled; awaited after for its error.
+      moving.catch(() => undefined);
       await vi.waitFor(() => expect(fs.existsSync(filePath)).toBe(false), { timeout: 4000, interval: 10 });
       // The move holds the lock from here until its save: the next lock asked for is the reorder's second look.
       const since = stage.lockCalls;
@@ -1080,6 +1084,8 @@ describe("a model's plates, changed by two requests at once", () => {
       since = stage.lockCalls;
       holding = withStorageLock(() => released);
       moving = relocatePrint({ ...now, name: `Pictures moved ${stamp}` }, []);
+      // Seen at once, so one that fails while the rest is still going isn't left unhandled; awaited after for its error.
+      moving.catch(() => undefined);
       await queuedAtLock(since, 2);
     };
 
