@@ -54,7 +54,7 @@ import { featureLabel } from "./labels";
 import { AssistantPanel } from "./AssistantThread";
 import PromptOverlay from "./PromptOverlay";
 import PropertiesPanel from "./PropertiesPanel";
-import RenameDialog from "./RenameDialog";
+import RenameDialog from "../../components/RenameDialog";
 import SidePanel from "./SidePanel";
 import StudioToolbar, { type BooleanKind, type Primitive, type StudioPanel } from "./StudioToolbar";
 import StudioViewport, {
