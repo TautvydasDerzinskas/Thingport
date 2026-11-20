@@ -84,6 +84,7 @@ type Props = {
   editing: boolean;
   onToggleEditing: () => void;
   handMode: boolean;
+  handModeSuspended: boolean;
   onToggleHandMode: () => void;
   designName: string | null;
   canUndo: boolean;
@@ -553,7 +554,7 @@ export default function StudioToolbar(props: Props) {
           <Tool
             label={t("studio.view.hand")}
             active={props.handMode}
-            disabled={noDesign}
+            disabled={noDesign || props.handModeSuspended}
             onClick={props.onToggleHandMode}
           >
             <PanToolOutlinedIcon />

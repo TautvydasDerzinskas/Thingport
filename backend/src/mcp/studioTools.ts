@@ -178,7 +178,7 @@ const viewDesign: McpToolDefinition = {
   async run(ctx, args) {
     const design = await getStudioDesign(ctx.userId, args.design_id as string);
     const plate = args.plate_id as string | undefined;
-    if (plate && !studioPlates(design.document).some((entry) => entry.id === plate))
+    if (plate !== undefined && !studioPlates(design.document).some((entry) => entry.id === plate))
       throw new HttpError(400, "That plate doesn't belong to this design.");
     const views = (args.views as (typeof STUDIO_VIEWS)[number][] | undefined) ?? ["iso"];
     const size = (args.size as number | undefined) ?? 512;
@@ -313,7 +313,9 @@ const checkPrintTool: McpToolDefinition = {
       .min(0)
       .max(90)
       .optional()
-      .describe("Steepest overhang that prints unsupported, degrees from vertical. Default 45."),
+      .describe(
+        "Steepest overhang that prints unsupported, in degrees from vertical. Uses the saved setting if omitted, or 45° if none is saved.",
+      ),
     min_wall: z
       .number()
       .min(0)

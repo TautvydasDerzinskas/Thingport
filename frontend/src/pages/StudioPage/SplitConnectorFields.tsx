@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
-import type { SplitConnector } from "../../studio/document";
+import { LIMITS, type SplitConnector } from "../../studio/document";
 import { NumberField } from "./fields";
 
 export const DEFAULT_CONNECTOR: SplitConnector = {
@@ -29,27 +29,31 @@ export default function SplitConnectorFields({
         value={connector.diameter}
         unit="mm"
         live={live}
-        onCommit={(diameter) => diameter > 0 && onChange({ diameter })}
+        validate={(diameter) => diameter > 0 && diameter <= LIMITS.size}
+        onCommit={(diameter) => onChange({ diameter })}
       />
       <NumberField
         label={t("studio.print.pinDepth")}
         value={connector.depth}
         unit="mm"
         live={live}
-        onCommit={(depth) => depth > 0 && onChange({ depth })}
+        validate={(depth) => depth > 0 && depth <= LIMITS.size}
+        onCommit={(depth) => onChange({ depth })}
       />
       <NumberField
         label={t("studio.print.clearance")}
         value={connector.clearance}
         unit="mm"
         live={live}
-        onCommit={(clearance) => clearance >= 0 && clearance <= 5 && onChange({ clearance })}
+        validate={(clearance) => clearance >= 0 && clearance <= 5}
+        onCommit={(clearance) => onChange({ clearance })}
       />
       <NumberField
         label={t("studio.print.pinCount")}
         value={connector.count}
         live={live}
-        onCommit={(count) => Number.isInteger(count) && count >= 1 && count <= 8 && onChange({ count })}
+        validate={(count) => Number.isInteger(count) && count >= 1 && count <= 8}
+        onCommit={(count) => onChange({ count })}
       />
       <NumberField
         label={t("studio.print.offsetU")}
@@ -70,7 +74,7 @@ export default function SplitConnectorFields({
         value={connector.spacing}
         unit="mm"
         live={live}
-        validate={(spacing) => spacing > 0}
+        validate={(spacing) => spacing > 0 && spacing <= LIMITS.size}
         onCommit={(spacing) => onChange({ spacing })}
       />
     </Box>

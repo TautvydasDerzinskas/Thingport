@@ -391,7 +391,7 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     const thumbnail = await studioPngRenderer(onPlate, 256, STUDIO_3MF_DEFAULT_COLOR)("iso");
     plates.push({ ...plate, thumbnail });
   }
-  const bytes = await writeStudioThreeMf(input.name, parts, plates, input.target);
+  const bytes = await writeStudioThreeMf(input.name, parts, plates, input.target, input.document.print_setup);
   if (!bytes)
     return {
       status: "refused",

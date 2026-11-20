@@ -229,7 +229,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   // Edit adds the design tools and side panels.
   const [editing, setEditing] = useState(false);
   const [editHandMode, setEditHandMode] = useState(false);
-  const handMode = !editing || editHandMode;
   const assistant = useStudioAssistant({
     designId: design?.id ?? null,
     offered: aiModels,
@@ -279,6 +278,8 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
+  const handModeSuspended = Boolean(operation || sketch || measureTool);
+  const handMode = !editing || (editHandMode && !handModeSuspended);
   const [busy, setBusy] = useState(false);
   const [previewFailure, setPreviewFailure] = useState<{ key: string; message: string } | null>(null);
   // A command the server works out, on its way: OK waits for it.
@@ -1050,6 +1051,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           editing={editing}
           onToggleEditing={toggleEditing}
           handMode={handMode}
+          handModeSuspended={handModeSuspended}
           onToggleHandMode={() => setEditHandMode((active) => !active)}
           designName={design?.name ?? null}
           canUndo={Boolean(design?.can_undo)}
@@ -1262,7 +1264,6 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
             setPrintIssue({ doc, id, highlights });
             setChecking(false);
             if (startLayFlat) {
-              setEditHandMode(false);
               setSketch(null);
               setOperation(startOperation("lay_flat", id));
             }

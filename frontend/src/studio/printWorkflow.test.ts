@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { applyCommand, arrangePlate, makeFitTest, previewArrangement } from "./commands";
 import { emptyDocument, plateOf, studioPlates, type StudioDocument, type StudioPrintSetup } from "./document";
 import { checkDesign, evaluateDesign, measureBetween, measureBounds } from "./geometry";
-import { arrangeFootprints } from "./printLayout";
+import { arrangeFootprints, boundsOnBed } from "./printLayout";
 
 const wasm = Module().then((module) => {
   module.setup();
@@ -160,5 +160,77 @@ describe("Studio print workflow", () => {
     expect(checkDesign(m, doc, { bed, outline, overhang: 45, minWall: 0.8 }).bodies[0].fitsBed).toBe(false);
     const moved = cmd(doc, "set_transform", { feature_id: "box-1", position: [-25, 10, 0] });
     expect(checkDesign(m, moved, { bed, outline, overhang: 45, minWall: 0.8 }).bodies[0].fitsBed).toBe(true);
+  });
+
+  it("rejects invalid printer outlines and respects the build dimensions of a valid outline", () => {
+    const setup = { printer: "test", nozzle: "0.4", bed: [24, 24, 30], minWall: 0.8 };
+    for (const points of [
+      [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+      ],
+      [
+        [0, 0],
+        [10, 0],
+        [20, 0],
+      ],
+      [
+        [0, 0],
+        [20, 20],
+        [0, 20],
+        [15, 0],
+      ],
+    ]) {
+      expect(() =>
+        cmd(emptyDocument(), "set_print_setup", { setup: { ...setup, outline: { shape: "polygon", points } } }),
+      ).toThrow(/simple bed outline/);
+    }
+    const doc = cmd(emptyDocument(), "set_print_setup", {
+      setup: {
+        ...setup,
+        outline: {
+          shape: "polygon",
+          points: [
+            [-20, -20],
+            [20, -20],
+            [20, 20],
+            [0, 20],
+            [0, 10],
+            [-5, 10],
+            [-5, 20],
+            [-20, 20],
+          ],
+        },
+      },
+    });
+    const { bed, outline } = doc.print_setup!;
+    expect(boundsOnBed({ min: [13, 0, 0], max: [15, 2, 5] }, bed, outline)).toBe(false);
+    expect(boundsOnBed({ min: [9, 0, 0], max: [12, 2, 5] }, bed, outline)).toBe(true);
+  });
+
+  it("finds a placement against a narrow polygon corridor outside the sampling grid", () => {
+    const outline = {
+      shape: "polygon" as const,
+      points: [
+        [-50, -50],
+        [50, -50],
+        [50, -45],
+        [10, -45],
+        [10, 50],
+        [1, 50],
+        [1, -45],
+        [-50, -45],
+      ],
+    } satisfies StudioPrintSetup["outline"];
+    const result = arrangeFootprints(
+      [{ id: "part", bound: { min: [0, 0, 0], max: [8, 30, 5] } }],
+      [100, 100, 100],
+      0,
+      outline,
+    );
+    expect(result.overflow).toEqual([]);
+    expect(result.planes[0][0].x).toBeGreaterThanOrEqual(1);
+    expect(result.planes[0][0].x).toBeLessThanOrEqual(2);
   });
 });

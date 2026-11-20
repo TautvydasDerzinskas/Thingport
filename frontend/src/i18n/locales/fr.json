@@ -4540,7 +4540,7 @@
         "arrange": "Disposer le plateau",
         "spacing": "Espacement",
         "overflow": "Utiliser de nouveaux plateaux si nécessaire",
-        "tooLarge": "Ces pièces sont trop grandes avec cet espacement. {{parts}}",
+        "tooLarge": "Studio n’a pas trouvé de placement avec cet espacement pour {{parts}}.",
         "needsOverflow": "Autorisez les plateaux supplémentaires ou réduisez l’espacement.",
         "plateLimit": "Cette disposition dépasserait la limite de plateaux de Studio.",
         "previewPlate": "Nouveau plateau {{number}}",

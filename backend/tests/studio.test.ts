@@ -161,6 +161,47 @@ describe("Studio", () => {
     expect(created.body.design.document.plates.at(-1).name).toBe("Fit test");
   });
 
+  it("keeps saved circular beds and catalogue outlines in exported 3MF settings", async () => {
+    const { body: design } = await request(app)
+      .post("/api/studio/designs")
+      .set(auth(alice))
+      .send({ name: "Printer outlines" });
+    await command(alice, design.id, "add_box", { width: 12, depth: 12, height: 4 });
+    const setup = {
+      printer: "flsun-q5",
+      nozzle: "0.4",
+      bed: [200, 200, 200],
+      minWall: 0.8,
+      outline: { shape: "circle" },
+    };
+    expect((await command(alice, design.id, "set_print_setup", { setup })).status).toBe(200);
+    async function exportArea(target: string) {
+      const response = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/3mf/${target}/-/Outline.3mf`)
+        .set(auth(alice))
+        .buffer(true)
+        .parse(readBinary);
+      expect(response.status).toBe(200);
+      const project = await readBambuPackage(response.body);
+      return (project.config.printable_area as string[]).map((point) => point.split("x").map(Number));
+    }
+    const saved = await exportArea("-/-/-");
+    expect(saved.length).toBeGreaterThan(4);
+    for (const [x, y] of saved) expect(Math.hypot(x - 100, y - 100)).toBeCloseTo(100, 5);
+    const circle = await exportArea("orcaslicer/flsun-q5/0.4");
+    expect(circle.length).toBeGreaterThan(4);
+    for (const [x, y] of circle) expect(Math.hypot(x, y)).toBeCloseTo(100, 5);
+    const polygon = await exportArea("orcaslicer/deltamaker-2/0.35");
+    expect(polygon).toEqual([
+      [-69, -120],
+      [-138, 0],
+      [-69, 120],
+      [69, 120],
+      [138, 0],
+      [69, -120],
+    ]);
+  });
+
   it("refuses a seventeenth filament and reuses an inactive assignment's slot", async () => {
     const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Filament limit" }))
       .body;
@@ -309,11 +350,22 @@ describe("Studio", () => {
     expect(read.data.bodies[0].volume_mm3).toBeGreaterThan(volume * 0.95);
     expect(read.data.bodies[0].volume_mm3).toBeLessThan(volume * 1.05);
 
+    const { body: otherPlate } = await command(alice, design.id, "create_plate", { name: "Another plate" });
+    const conflict = await command(alice, design.id, "trace_picture", {
+      picture_id: kept.body.id,
+      width: 18,
+      sketch_id: "sketch-1",
+      index: 0,
+      plate_id: otherPlate.created[0],
+    });
+    expect(conflict.status).toBe(400);
+    expect(conflict.body.detail).toMatch(/sketch-1 is on plate-1/);
     const again = await command(alice, design.id, "trace_picture", {
       picture_id: kept.body.id,
       width: 18,
       sketch_id: "sketch-1",
       index: 0,
+      plate_id: "plate-1",
     });
     expect(again.status).toBe(200);
     expect(again.body.design.document.features[0].shapes[0]).toMatchObject({ type: "trace", width: 18, height: 18 });
@@ -675,6 +727,8 @@ describe("Studio", () => {
     const view = await callTool(token, "studio_view_design", { design_id: id, views: ["iso", "top"], size: 128 });
     expect(view.isError).toBe(false);
     expect(view.content.filter((part) => part.type === "image")).toHaveLength(2);
+    const emptyPlate = await callTool(token, "studio_view_design", { design_id: id, plate_id: "" });
+    expect(emptyPlate).toMatchObject({ isError: true, text: expect.stringMatching(/plate doesn't belong/) });
 
     // The page sees what the assistant did.
     const page = await request(app).get(`/api/studio/designs/${id}`).set(auth(alice));

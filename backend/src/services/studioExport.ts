@@ -1,6 +1,8 @@
 import { slicerProfile } from "../adapter";
+import { printerSummary } from "../printers/catalogue";
 import { printerTarget } from "../printers/targets";
 import { isBody, plateOf, studioPlates, topLevel } from "../studio/document.generated";
+import { centeredPrinterOutline } from "../studio/printLayout.generated";
 import { HttpError } from "../utils/fileUtils";
 import { exportStudioGeometry } from "./studioInspect";
 import { studioAssetDir, type StudioDesignOut } from "./studioService";
@@ -35,9 +37,10 @@ export async function exportStudioDesign(userId: string, design: StudioDesignOut
         : null;
     if (options.printer && printer?.choice.nozzle !== options.printer.nozzle)
       throw new HttpError(400, "This slicer has no preset for that printer and nozzle.");
+    const bed = printer && printerSummary(printer.choice.id)?.bed;
     target = {
       slicer: profile.id,
-      ...(printer ? { printer } : {}),
+      ...(printer ? { printer: { ...printer, outline: bed ? centeredPrinterOutline(bed) : undefined } } : {}),
       ...(profile.reads === "bambu" ? { filamentSlots: document.filament_slots } : {}),
     };
   }

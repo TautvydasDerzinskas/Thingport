@@ -4637,7 +4637,7 @@
         "arrange": "Išdėstyti platformoje",
         "spacing": "Tarpas",
         "overflow": "Netelpančioms detalėms naudoti naujas platformas",
-        "tooLarge": "Su tokiu tarpu šios detalės netelpa. {{parts}}",
+        "tooLarge": "Naudojant tokį atstumą „Studio“ nerado vietos šioms detalėms. {{parts}}",
         "needsOverflow": "Leiskite pridėti platformų arba sumažinkite tarpą.",
         "plateLimit": "Šis išdėstymas viršytų „Studio“ platformų limitą.",
         "previewPlate": "Nauja platforma {{number}}",

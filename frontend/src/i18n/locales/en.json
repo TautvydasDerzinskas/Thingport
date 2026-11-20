@@ -4342,7 +4342,7 @@
         "arrange": "Arrange plate",
         "spacing": "Spacing",
         "overflow": "Use new plates for overflow",
-        "tooLarge": "These parts are too large at this spacing. {{parts}}",
+        "tooLarge": "Studio couldn’t find a placement at this spacing for {{parts}}.",
         "needsOverflow": "Enable overflow or reduce the spacing.",
         "plateLimit": "This layout would exceed Studio’s plate limit.",
         "previewPlate": "New plate {{number}}",

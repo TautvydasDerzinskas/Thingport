@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -31,6 +31,7 @@ import {
 import { useUserPrinters } from "../../hooks/useUserPrinters";
 import type { checkDesign, measureBetween } from "../../studio/geometry";
 import type { BodyCheck, PrintCheckOptions } from "../../studio/printCheck";
+import { centeredPrinterOutline } from "../../studio/printLayout";
 import { NumberField } from "./fields";
 import { checkInWorker, measureBetweenInWorker } from "./geometryClient";
 import { featureLabel } from "./labels";
@@ -85,6 +86,19 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
   const { printers } = useUserPrinters();
   const setup = doc?.print_setup;
   const [options, setOptions] = useState(storedOptions);
+  const [savingSetup, setSavingSetup] = useState(false);
+  const setupSave = useRef(false);
+  const saveSetup = async (next: StudioPrintSetup | null) => {
+    if (setupSave.current) return;
+    setupSave.current = true;
+    setSavingSetup(true);
+    try {
+      await run("set_print_setup", { setup: next }, { waitForSave: true });
+    } finally {
+      setupSave.current = false;
+      setSavingSetup(false);
+    }
+  };
   const change = (next: Partial<PrintCheckOptions>) =>
     setOptions((prev) => {
       const merged = { ...prev, ...next };
@@ -95,30 +109,21 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
     });
   const choosePrinter = (id: string) => {
     if (!id) {
-      void run("set_print_setup", { setup: null });
+      void saveSetup(null);
       return;
     }
     const found = printers.find((entry) => entry.printer.id === id);
     const bed = found?.printer.bed;
     const height = found?.printer.height;
     if (!found || !bed || !height) return;
-    let outline: StudioPrintSetup["outline"];
-    if (bed.shape === "circle") outline = { shape: "circle" };
-    if (bed.shape === "polygon" && bed.points?.length)
-      outline = {
-        shape: "polygon",
-        points: bed.points.map(([x, y]) => [x - bed.origin[0] - bed.x / 2, y - bed.origin[1] - bed.y / 2]),
-      };
     const diameter = Number(found.nozzle.match(/\d+(?:\.\d+)?$/)?.[0]);
-    void run("set_print_setup", {
-      setup: {
-        printer: id,
-        nozzle: found.nozzle,
-        bed: [bed.x, bed.y, height],
-        outline,
-        minWall: diameter > 0 ? 2 * diameter : 0.8,
-        overhang: options.overhang,
-      },
+    void saveSetup({
+      printer: id,
+      nozzle: found.nozzle,
+      bed: [bed.x, bed.y, height],
+      outline: centeredPrinterOutline(bed),
+      minWall: diameter > 0 ? 2 * diameter : 0.8,
+      overhang: options.overhang,
     });
   };
   const effective = useMemo<PrintCheckOptions>(
@@ -237,6 +242,7 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
           fullWidth
           label={t("studio.plates.printer")}
           value={setup?.printer ?? ""}
+          disabled={savingSetup}
           onChange={(event) => choosePrinter(event.target.value)}
           sx={{ mt: 1 }}
         >
@@ -260,20 +266,20 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
               key={axis}
               label={t(`studio.check.bed_${axis}`)}
               value={effective.bed[index]}
-              disabled={Boolean(setup)}
+              disabled={savingSetup || Boolean(setup)}
               unit="mm"
-              onCommit={(value) =>
-                value > 0 && change({ bed: options.bed.map((side, i) => (i === index ? value : side)) as Vec3 })
-              }
+              validate={(value) => value > 0}
+              onCommit={(value) => change({ bed: options.bed.map((side, i) => (i === index ? value : side)) as Vec3 })}
             />
           ))}
           <NumberField
             label={t("studio.check.overhangLimit")}
             value={effective.overhang}
             unit="°"
+            disabled={savingSetup}
             validate={(value) => value >= 0 && value <= 90}
             onCommit={(value) => {
-              if (setup) void run("set_print_setup", { setup: { ...setup, overhang: value } });
+              if (setup) void saveSetup({ ...setup, overhang: value });
               else change({ overhang: value });
             }}
           />
@@ -281,9 +287,10 @@ export default function CheckDialog({ format, open, designId, doc, selected, run
             label={t("studio.check.minWall")}
             value={effective.minWall}
             unit="mm"
+            disabled={savingSetup}
             validate={(value) => value >= 0 && value <= 20}
             onCommit={(value) => {
-              if (setup) void run("set_print_setup", { setup: { ...setup, minWall: value } });
+              if (setup) void saveSetup({ ...setup, minWall: value });
               else change({ minWall: value });
             }}
           />

@@ -147,7 +147,8 @@ why, and OK waits until it can.
 
 Studio opens in **Hand** mode. Drag with the left mouse button or one finger anywhere on the model or grid to
 pan the view. Drag with the right mouse button or two fingers to rotate. Pinch or scroll to zoom. In Edit mode,
-use the hand icon to pause viewport selection and editing while you navigate. Tap it again to resume.
+use the hand icon to pause viewport selection and editing while you navigate. Tap it again to resume. Sketch, Measure,
+and other editing tools temporarily suspend Hand so you can pick geometry.
 
 With **Hand** off in Edit mode:
 

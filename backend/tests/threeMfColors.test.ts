@@ -144,6 +144,21 @@ it("uses separate limits for a Studio 3MF project and each of its bodies", async
   expect(await loadStudioThreeMf(file, 4, 2, 1)).toBe("body-too-complex");
 });
 
+it("reads 3MF vertex coordinates in any XML attribute order", async () => {
+  const reordered = COLOURED_XML.replace(
+    /<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g,
+    '<vertex z=\'$3\' y="$2" x = "$1"',
+  );
+  const [canonical, mixedOrder] = await Promise.all([
+    threeMf("studio-canonical-vertices", COLOURED_XML),
+    threeMf("studio-reordered-vertices", reordered),
+  ]);
+  const expected = await loadStudioThreeMf(canonical, 2, 1);
+  const actual = await loadStudioThreeMf(mixedOrder, 2, 1);
+  if (typeof expected === "string" || typeof actual === "string") throw new Error("Expected both fixtures to import");
+  expect(actual.plates[0].parts[0].triangles).toEqual(expected.plates[0].parts[0].triangles);
+});
+
 it("budgets only printable Studio placements and their model components", async () => {
   const duplicate = COLOURED_XML.match(/<object id="2"[\s\S]*?<\/object>/)![0].replace('id="2"', 'id="3"');
   const model = COLOURED_XML.replace(

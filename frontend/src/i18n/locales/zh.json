@@ -4160,7 +4160,7 @@
         "arrange": "排列打印板",
         "spacing": "间距",
         "overflow": "空间不足时使用新打印板",
-        "tooLarge": "以下零件在此间距下放不下。{{parts}}",
+        "tooLarge": "Studio 未能以此间距放置以下零件。{{parts}}",
         "needsOverflow": "允许添加打印板或减小间距。",
         "plateLimit": "此布局将超出 Studio 的打印板数量上限。",
         "previewPlate": "新打印板 {{number}}",

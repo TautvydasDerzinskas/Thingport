@@ -77,7 +77,8 @@ export default function ArrangeDialog({
               value={spacing}
               unit="mm"
               live
-              onCommit={(value) => value >= 0 && value <= 100 && setSpacing(value)}
+              validate={(value) => value >= 0 && value <= 100}
+              onCommit={setSpacing}
             />
             <FormControlLabel
               control={<Checkbox checked={overflow} onChange={(_, checked) => setOverflow(checked)} />}

@@ -53,7 +53,7 @@ import {
 } from "./expressions";
 import { PATH_CHARACTERS } from "./svgPath";
 import { isoPitch, threadProblem } from "./threads";
-import { arrangeFootprints, DEFAULT_PRINT_BED } from "./printLayout";
+import { arrangeFootprints, DEFAULT_PRINT_BED, isSimpleBedPolygon } from "./printLayout";
 import type { TraceShape, Traced, TraceSettings } from "./trace";
 import {
   applyDirection,
@@ -2412,7 +2412,14 @@ export const STUDIO_COMMANDS = {
           outline: z
             .discriminatedUnion("shape", [
               z.object({ shape: z.literal("circle") }),
-              z.object({ shape: z.literal("polygon"), points: z.array(vec2).min(3).max(256) }),
+              z.object({
+                shape: z.literal("polygon"),
+                points: z
+                  .array(vec2)
+                  .min(3)
+                  .max(256)
+                  .refine(isSimpleBedPolygon, "Give a simple bed outline with distinct corners and nonzero area."),
+              }),
             ])
             .optional(),
           minWall: z.number().min(0).max(20),
@@ -2679,7 +2686,9 @@ export const STUDIO_COMMANDS = {
       picture_id: z.string().regex(ASSET_ID).describe("The picture's id, as the prompt listed it."),
       width: length("How wide the traced outline is, in mm."),
       plane: plane.optional(),
-      plate_id: plateId.optional(),
+      plate_id: plateId
+        .optional()
+        .describe("Plate for a new sketch. If sketch_id is given, the sketch must already be on this plate."),
       face: faceArg
         .optional()
         .describe(
@@ -2856,10 +2865,12 @@ export function traceSettings(args: { threshold?: number | null; invert?: boolea
  *  moment. */
 export function traceTarget(
   doc: StudioDocument,
-  args: { sketch_id?: string; index?: number; plane?: string; face?: unknown },
+  args: { sketch_id?: string; index?: number; plane?: string; face?: unknown; plate_id?: string },
 ): void {
   if (args.sketch_id) {
     const sketch = findSketch(doc, args.sketch_id);
+    if (args.plate_id !== undefined && args.plate_id !== plateOf(sketch))
+      throw new CommandError(`${sketch.id} is on ${plateOf(sketch)}, so it cannot be traced on ${args.plate_id}.`);
     if (args.plane || args.face)
       throw new CommandError("Give a sketch_id, or a plane or face for a new sketch, not both.");
     if (args.index !== undefined && shapeAt(sketch, args.index).type !== "trace")
@@ -2867,6 +2878,7 @@ export function traceTarget(
     if (args.index === undefined && sketch.shapes.length >= LIMITS.shapesPerSketch)
       throw new CommandError(`A sketch holds up to ${LIMITS.shapesPerSketch} shapes.`);
   } else {
+    if (args.plate_id !== undefined) findPlate(doc, args.plate_id);
     if (args.index !== undefined) throw new CommandError("index goes with sketch_id.");
     if (Boolean(args.plane) === Boolean(args.face))
       throw new CommandError("Give a plane or a face to sketch on, one of them, or a sketch_id.");
@@ -3028,7 +3040,7 @@ export function arrangePlate(
 ): CommandOutcome {
   const { planes, overflow } = previewArrangement(doc, args, bounds);
   if (overflow.length)
-    throw new CommandError(`These bodies don't fit on an empty bed at this spacing: ${overflow.join(", ")}.`);
+    throw new CommandError(`Studio couldn't find a placement at this spacing for ${overflow.join(", ")}.`);
   if (planes.length > 1 && !args.overflow)
     throw new CommandError("Some bodies need another plate. Enable overflow plates or use less spacing.");
   const result = structuredClone(doc);

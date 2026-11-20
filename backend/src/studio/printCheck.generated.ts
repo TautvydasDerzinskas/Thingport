@@ -109,6 +109,32 @@ function areaAbove([z0, z1, z2]: number[], h: number, area: number): number {
   return area * (1 - (h - z0) ** 2 / ((z1 - z0) * (z2 - z0)));
 }
 
+/** Area-weighted centroid of the triangle clipped against the same floor used for its area. */
+function centroidAbove(corners: [Vec3, Vec3, Vec3], floor: number): Vec3 {
+  if (corners.every((point) => point[2] >= floor)) return scale(add(add(corners[0], corners[1]), corners[2]), 1 / 3);
+  const clipped: Vec3[] = [];
+  for (const [index, end] of corners.entries()) {
+    const start = corners[(index + 2) % 3];
+    const inside = end[2] >= floor;
+    if (inside !== start[2] >= floor) {
+      const at = (floor - start[2]) / (end[2] - start[2]);
+      clipped.push(add(start, scale(sub(end, start), at)));
+    }
+    if (inside) clipped.push(end);
+  }
+  const a = clipped[0];
+  let weighted: Vec3 = [0, 0, 0];
+  let total = 0;
+  for (let i = 1; i + 1 < clipped.length; i++) {
+    const b = clipped[i];
+    const c = clipped[i + 1];
+    const area = length(cross(sub(b, a), sub(c, a)));
+    weighted = add(weighted, scale(add(add(a, b), c), area / 3));
+    total += area;
+  }
+  return total > 0 ? scale(weighted, 1 / total) : a;
+}
+
 /**
  * The faces pointing down more steeply than `limit` degrees from vertical, above `floor`: what needs support. They're
  * gathered into patches by the edges they share. A patch narrower than a printed line, `line` wide, is left out, as
@@ -169,8 +195,7 @@ function overhangOf(
     const matching = found.filter(({ t }) => patchesKept.has(patchOf(t)));
     const stride = Math.max(1, Math.ceil(matching.length / 256));
     for (let i = 0; i < matching.length; i += stride) {
-      const [a, b, c] = triangles[matching[i].t].corners;
-      highlight.push(scale(add(add(a, b), c), 1 / 3));
+      highlight.push(centroidAbove(triangles[matching[i].t].corners, floor));
     }
   }
   return {

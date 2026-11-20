@@ -112,7 +112,8 @@ function placeMesh(mesh: FastMesh, transform: number[] | null): FastMesh {
 }
 
 const MESH_RE = /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/g;
-const VERTEX_RE = /<vertex\s+x="([^"]*)"\s+y="([^"]*)"\s+z="([^"]*)"/g;
+const VERTEX_RE = /<vertex\b([^>]*)>/g;
+const VERTEX_ATTR_RE = /(?:^|\s)([^\s=<>/"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 const TRIANGLE_RE = /<triangle\s+v1="(\d+)"\s+v2="(\d+)"\s+v3="(\d+)"/g;
 // The same, keeping whatever else the triangle carries, for a file that colours its faces one by one. Apart so
 // the common case doesn't allocate a string per triangle on a model of millions of them.
@@ -137,7 +138,22 @@ function extractMeshesFast(xml: string, extruder: number, slotOf?: TriangleSlot)
     VERTEX_RE.lastIndex = 0;
     let vm: RegExpExecArray | null;
     while ((vm = VERTEX_RE.exec(inner))) {
-      vertices.push(parseFloat(vm[1]), parseFloat(vm[2]), parseFloat(vm[3]));
+      // Preserve vertex indices even for a malformed point so its faces cannot silently refer to a different point.
+      let x = NaN;
+      let y = NaN;
+      let z = NaN;
+      VERTEX_ATTR_RE.lastIndex = 0;
+      let attribute: RegExpExecArray | null;
+      while ((attribute = VERTEX_ATTR_RE.exec(vm[1]))) {
+        const name = attribute[1];
+        if (name !== "x" && name !== "y" && name !== "z") continue;
+        const raw = (attribute[2] ?? attribute[3]).trim();
+        const value = raw ? Number(raw) : NaN;
+        if (name === "x") x = value;
+        else if (name === "y") y = value;
+        else z = value;
+      }
+      vertices.push(x, y, z);
     }
     const triangles: number[] = [];
     // One entry per triangle, filled in only once a face names a colour of its own; -1 is a face that didn't,

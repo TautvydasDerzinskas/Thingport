@@ -10,6 +10,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { SplitFeature } from "../../studio/document";
+import { checkParameterName } from "../../studio/expressions";
 import { NumberField } from "./fields";
 import type { RunCommand } from "./useStudioDesign";
 
@@ -30,9 +31,18 @@ export default function FitTestDialog({
   const start = Math.max(0, Math.min(4.8, clearance - 0.1));
   const [variants, setVariants] = useState([start, start + 0.1, start + 0.2]);
   const [chosen, setChosen] = useState(clearance);
-  const [parameter, setParameter] = useState(
-    joint.expressions?.["connector.clearance"] ?? `fit_clearance_${joint.source_id.split("-").at(-1)}`,
-  );
+  const [parameter, setParameter] = useState(() => {
+    const expression = joint.expressions?.["connector.clearance"]?.trim();
+    if (expression) {
+      try {
+        checkParameterName(expression);
+        return expression;
+      } catch {
+        /* Use a new parameter for a clearance that now follows a formula. */
+      }
+    }
+    return `fit_clearance_${joint.source_id.split("-").at(-1)}`;
+  });
   const [working, setWorking] = useState(false);
   const active = useRef(false);
   useLayoutEffect(() => {
@@ -84,9 +94,8 @@ export default function FitTestDialog({
                 label={t("studio.print.variant", { number })}
                 value={variants[i]}
                 unit="mm"
-                onCommit={(next) =>
-                  next >= 0 && next <= 5 && setVariants((values) => values.map((each, j) => (i === j ? next : each)))
-                }
+                validate={(next) => next >= 0 && next <= 5}
+                onCommit={(next) => setVariants((values) => values.map((each, j) => (i === j ? next : each)))}
               />
             ))}
           </Box>
@@ -99,7 +108,8 @@ export default function FitTestDialog({
               label={t("studio.print.clearance")}
               value={chosen}
               unit="mm"
-              onCommit={(next) => next >= 0 && next <= 5 && setChosen(next)}
+              validate={(next) => next >= 0 && next <= 5}
+              onCommit={setChosen}
             />
             <TextField
               label={t("studio.print.clearanceParameter")}

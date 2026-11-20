@@ -4,6 +4,58 @@ import type { Vec2, Vec3 } from "./vec";
 
 export const DEFAULT_PRINT_BED: Vec3 = [256, 256, 256];
 
+export function centeredPrinterOutline(bed: {
+  shape: "rectangle" | "circle" | "polygon";
+  x: number;
+  y: number;
+  origin: Vec2;
+  points?: readonly Vec2[];
+}): StudioPrintSetup["outline"] {
+  if (bed.shape === "circle") return { shape: "circle" };
+  if (bed.shape === "polygon" && bed.points?.length) {
+    const points = bed.points.map<Vec2>(([x, y]) => [x - bed.origin[0] - bed.x / 2, y - bed.origin[1] - bed.y / 2]);
+    if (points[0][0] === points.at(-1)![0] && points[0][1] === points.at(-1)![1]) points.pop();
+    return { shape: "polygon", points };
+  }
+  return undefined;
+}
+
+/** Rejects zero-area outlines, repeated corners, and edges that cross, touch, or double back. */
+export function isSimpleBedPolygon(points: readonly Vec2[]): boolean {
+  const epsilon = 1e-8;
+  const cross = (a: Vec2, b: Vec2, p: Vec2) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  const sign = (value: number) => (Math.abs(value) <= epsilon ? 0 : Math.sign(value));
+  const between = (p: Vec2, a: Vec2, b: Vec2) =>
+    p.every((value, i) => value >= Math.min(a[i], b[i]) - epsilon && value <= Math.max(a[i], b[i]) + epsilon);
+  const count = points.length;
+  if (count < 3) return false;
+  let area = 0;
+  for (let i = 0; i < count; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % count];
+    const next = points[(i + 2) % count];
+    if (Math.hypot(b[0] - a[0], b[1] - a[1]) <= epsilon) return false;
+    if (sign(cross(a, b, next)) === 0 && (b[0] - a[0]) * (next[0] - b[0]) + (b[1] - a[1]) * (next[1] - b[1]) < 0)
+      return false;
+    area += a[0] * b[1] - a[1] * b[0];
+    for (let j = i + 2; j < count; j++) {
+      if (i === 0 && j === count - 1) continue;
+      const c = points[j];
+      const d = points[(j + 1) % count];
+      const [abC, abD, cdA, cdB] = [cross(a, b, c), cross(a, b, d), cross(c, d, a), cross(c, d, b)].map(sign);
+      if (
+        (abC * abD < 0 && cdA * cdB < 0) ||
+        (!abC && between(c, a, b)) ||
+        (!abD && between(d, a, b)) ||
+        (!cdA && between(a, c, d)) ||
+        (!cdB && between(b, c, d))
+      )
+        return false;
+    }
+  }
+  return Math.abs(area) > epsilon;
+}
+
 export function bedOutline(bed: Vec3, outline?: StudioPrintSetup["outline"]): Vec2[] {
   const [x, y] = bed.map((size) => size / 2);
   if (outline?.shape === "polygon") return outline.points;
@@ -21,8 +73,9 @@ export function bedOutline(bed: Vec3, outline?: StudioPrintSetup["outline"]): Ve
 }
 
 export function onBed(x: number, y: number, bed: Vec3, outline?: StudioPrintSetup["outline"]): boolean {
+  if (!(Math.abs(x) <= bed[0] / 2 + 0.01 && Math.abs(y) <= bed[1] / 2 + 0.01)) return false;
   if (outline?.shape === "circle") return Math.hypot(x / (bed[0] / 2), y / (bed[1] / 2)) <= 1.00001;
-  if (outline?.shape !== "polygon") return Math.abs(x) <= bed[0] / 2 + 0.01 && Math.abs(y) <= bed[1] / 2 + 0.01;
+  if (outline?.shape !== "polygon") return true;
   const points = outline.points;
   let inside = false;
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -129,28 +182,41 @@ export function arrangeFootprints(
     .map((body) => Object.assign(footprint(body.bound), { id: body.id }))
     .toSorted((a, b) => b.width * b.depth - a.width * a.depth);
   for (const part of movable) {
+    if (part.width > -2 * floorX || part.depth > -2 * floorY) {
+      overflow.push(part.id);
+      continue;
+    }
+    const bedXs = [floorX, -part.width / 2];
+    const bedYs = [floorY, -part.depth / 2];
+    if (outline?.shape === "polygon") {
+      // Align either padded edge with a bed corner, including narrow corridors between corners.
+      for (const [x, y] of outline.points) {
+        bedXs.push(x + spacing, x - part.width - spacing);
+        bedYs.push(y + spacing, y - part.depth - spacing);
+      }
+    }
+    // Sample inward from the edges for curves and slanted boundaries.
+    if (outline) {
+      for (let i = 1; i <= 12; i++) {
+        bedXs.push(floorX + ((bed[0] - 2 * spacing - part.width) * i) / 12);
+        bedYs.push(floorY + ((bed[1] - 2 * spacing - part.depth) * i) / 12);
+      }
+    }
     const find = (placed: PlatePlacement[]) => {
-      const xs = new Set([floorX, -part.width / 2]);
-      const ys = new Set([floorY, -part.depth / 2]);
+      const xs = new Set(bedXs);
+      const ys = new Set(bedYs);
       for (const item of placed) {
         xs.add(item.x + item.width + spacing);
         xs.add(item.x - part.width - spacing);
         ys.add(item.y + item.depth + spacing);
         ys.add(item.y - part.depth - spacing);
       }
-      // Sample inward from the edges for curved and irregular beds.
-      if (outline) {
-        for (let i = 1; i <= 12; i++) {
-          xs.add(floorX + ((bed[0] - 2 * spacing - part.width) * i) / 12);
-          ys.add(floorY + ((bed[1] - 2 * spacing - part.depth) * i) / 12);
-        }
-      }
-      const columns = [...xs].toSorted((a, b) => a - b);
-      for (const y of [...ys].toSorted((a, b) => a - b)) {
+      const columns = [...xs].filter((x) => x >= floorX && x + part.width <= -floorX).toSorted((a, b) => a - b);
+      const rows = [...ys].filter((y) => y >= floorY && y + part.depth <= -floorY).toSorted((a, b) => a - b);
+      for (const y of rows) {
         for (const x of columns) {
           const x1 = x + part.width;
           const y1 = y + part.depth;
-          if (x < floorX || y < floorY || x1 > -floorX || y1 > -floorY) continue;
           if (outline && !footprintOnBed(rectangle(x - spacing, y - spacing, x1 + spacing, y1 + spacing), bed, outline))
             continue;
           if (

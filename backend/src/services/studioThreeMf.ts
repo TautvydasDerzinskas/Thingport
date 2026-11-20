@@ -18,13 +18,15 @@ import {
   STUDIO_FILAMENT_SLOT_LIMIT,
   type StudioFilamentSlot,
   type StudioPlate,
+  type StudioPrintSetup,
 } from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
+import { bedOutline } from "../studio/printLayout.generated";
 import { plateThumbEntry } from "./printProfileFile";
 
 export type StudioExportTarget = {
   slicer: string;
-  printer?: { choice: PrinterChoice; recipe: PrinterRecipe };
+  printer?: { choice: PrinterChoice; recipe: PrinterRecipe; outline?: StudioPrintSetup["outline"] };
   filamentSlots?: StudioFilamentSlot[];
 };
 
@@ -71,10 +73,13 @@ export async function writeStudioThreeMf(
   parts: Part[],
   plates: readonly (StudioPlate & { thumbnail: Uint8Array })[],
   target?: StudioExportTarget,
+  setup?: StudioPrintSetup,
 ): Promise<Uint8Array | null> {
   const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
-  const bed = recipe?.bed ?? DEFAULT_BED;
+  const bed = recipe?.bed ?? (setup ? { minX: 0, minY: 0, maxX: setup.bed[0], maxY: setup.bed[1] } : DEFAULT_BED);
+  const height = recipe?.height ?? setup?.bed[2] ?? 256;
+  const outline = recipe ? target?.printer?.outline : setup?.outline;
   const [cx, cy] = bedCentre(bed);
   const columns = plateColumns(plates.length);
   const colorOf = (part: Part) => part.color?.toLowerCase() ?? STUDIO_DEFAULT_BODY_COLOR;
@@ -169,13 +174,10 @@ export async function writeStudioThreeMf(
     "</config>",
   ].join("\n");
   const projectSettings = JSON.stringify({
-    printable_area: [
-      `${bed.minX}x${bed.minY}`,
-      `${bed.maxX}x${bed.minY}`,
-      `${bed.maxX}x${bed.maxY}`,
-      `${bed.minX}x${bed.maxY}`,
-    ],
-    printable_height: String(recipe?.height ?? 256),
+    printable_area: bedOutline([bed.maxX - bed.minX, bed.maxY - bed.minY, height], outline).map(
+      ([x, y]) => `${number(x + cx)}x${number(y + cy)}`,
+    ),
+    printable_height: String(height),
     printer_settings_id: "",
     print_settings_id: "",
     nozzle_diameter: Array.from({ length: recipe?.extruders || 1 }, () => String(recipe?.nozzle ?? 0.4)),

@@ -4527,7 +4527,7 @@
         "arrange": "Distribuir placa",
         "spacing": "Separación",
         "overflow": "Usar placas nuevas si falta espacio",
-        "tooLarge": "Estas piezas son demasiado grandes con esta separación. {{parts}}",
+        "tooLarge": "Studio no encontró una posición con esta separación para {{parts}}.",
         "needsOverflow": "Permite añadir placas o reduce la separación.",
         "plateLimit": "Esta distribución superaría el límite de placas de Studio.",
         "previewPlate": "Placa nueva {{number}}",
