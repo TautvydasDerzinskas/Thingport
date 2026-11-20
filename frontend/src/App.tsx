@@ -799,7 +799,7 @@ export default function App() {
           )}
         </Box>
         {sessionExpiredToast}
-        <SessionNotices />
+        <SessionNotices account={user?.id ?? null} />
       </ThemeProvider>
     );
   }
@@ -826,7 +826,7 @@ export default function App() {
       </BrowserRouter>
       <ThemeProvider theme={muiTheme}>
         {sessionExpiredToast}
-        <SessionNotices />
+        <SessionNotices account={user?.id ?? null} />
       </ThemeProvider>
     </>
   );

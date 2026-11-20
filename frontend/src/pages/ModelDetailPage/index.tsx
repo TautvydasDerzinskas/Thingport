@@ -191,7 +191,13 @@ export default function ModelDetailPage({ theme, onSelectCategory, onUnauthorize
       try {
         const data = await printsApi.get(printId);
         if (cancelled) return;
-        setPrint(data);
+        // Back on the model still shown (left before the next one loaded): a download counted from its header while
+        // this was read stays counted, as the count only grows.
+        setPrint((prev) =>
+          prev && prev.id === data.id && prev.print_count > data.print_count
+            ? { ...data, print_count: prev.print_count }
+            : data,
+        );
         setActiveImageIndex(0);
         setSelectedFileKey(null);
         // The side panel says which plate is picked once it shows this model; until then, none of the last one's.

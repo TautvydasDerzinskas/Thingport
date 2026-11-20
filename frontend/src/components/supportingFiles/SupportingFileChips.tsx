@@ -2,6 +2,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
 import ButtonBase from "@mui/material/ButtonBase";
+import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Tooltip from "@mui/material/Tooltip";
@@ -22,6 +23,7 @@ export type ChipFile = { key: string; name: string; size?: number | null; folder
 const MAX_CHIPS = 8;
 
 const NONE_UPLOADING: UploadingFile[] = [];
+const NONE_BUSY: ReadonlySet<string> = new Set();
 
 const appear = keyframes`from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; }`;
 
@@ -42,6 +44,9 @@ const chipSx = {
 type Props = {
   files: ChipFile[];
   uploading?: UploadingFile[];
+  /** The keys of those on their way down, shown as such: another click on one is the caller's to ignore. Not disabled, so
+   *  a keyboard's focus stays where it was. */
+  busy?: ReadonlySet<string>;
   /** A click: the viewer, where there is one. */
   onOpen: (key: string) => void;
   onDownload: (key: string) => void;
@@ -58,6 +63,7 @@ type Props = {
 export default function SupportingFileChips({
   files,
   uploading = NONE_UPLOADING,
+  busy = NONE_BUSY,
   onOpen,
   onDownload,
   onMenu,
@@ -132,6 +138,7 @@ export default function SupportingFileChips({
       {shown.map((file) => (
         <Box
           key={file.key}
+          aria-busy={busy.has(file.key) || undefined}
           onContextMenu={
             onMenu
               ? (event) => {
@@ -180,10 +187,15 @@ export default function SupportingFileChips({
               className="chip-download"
               size="small"
               aria-label={t("models:supporting.downloadNamed", { name: inFolder(file.name, file.folder) })}
+              aria-disabled={busy.has(file.key) || undefined}
               onClick={() => onDownload(file.key)}
               sx={{ mr: 0.375, color: "text.secondary" }}
             >
-              <DownloadOutlinedIcon sx={{ fontSize: 19 }} />
+              {busy.has(file.key) ? (
+                <CircularProgress size={17} color="inherit" aria-hidden />
+              ) : (
+                <DownloadOutlinedIcon sx={{ fontSize: 19 }} />
+              )}
             </IconButton>
           </Tooltip>
         </Box>

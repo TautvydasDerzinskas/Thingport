@@ -5955,6 +5955,7 @@
       "updateSuccess": "模型已更新",
       "updateFailed": "更新模型失败，请重试。",
       "photosNotSaved": "无法保存这些照片：{{names}}。请将其移除或重试。",
+      "renamesGone": "这些文件已在别处删除，未重命名：{{names}}。",
       "platesUnsettled": "这些文件已上传，但模型中现在没有它们：{{names}}。请再次保存以重新发送，或将其移除。",
       "descriptionWrite": "编写",
       "descriptionPreview": "预览",

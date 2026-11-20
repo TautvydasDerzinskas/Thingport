@@ -167,6 +167,11 @@ function normalizeSegments(path: string) {
   return out.join("/");
 }
 
+const pathOf = (entry: UploadEntry) => normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
+const pathsOf = (entry: UploadEntry) =>
+  entry.zipPath ? [pathOf(entry), normalizeSegments(normalizeRelativePath(entry.zipPath))] : [pathOf(entry)];
+const nameOf = (path: string) => path.split("/").pop()!.toLowerCase();
+
 /** The files a .gltf points at (its .bin buffers and textures), as written in it. None when it doesn't parse: the
  *  server says what's wrong with it when it's uploaded. */
 async function gltfReferences(file: File): Promise<string[]> {
@@ -185,21 +190,32 @@ async function gltfReferences(file: File): Promise<string[]> {
  * images beside it; they upload with it as one model, which the server packs into a .glb, rather than as models or
  * gallery pictures of their own. Found as the server finds them: by path from the .gltf's folder, or by name when only one
  * file in that folder or below has it. Where more than one file could be the one it means, none is taken, and the name
- * goes in `ambiguous`, under the scene.
+ * goes in `ambiguous`, under the scene. `unresolved`: what it points at, as written in it, that it took none for.
  */
 export async function gltfBundles(
   entries: UploadEntry[],
   ambiguous?: Map<UploadEntry, string[]>,
+  unresolved?: Map<UploadEntry, string[]>,
 ): Promise<Map<UploadEntry, UploadEntry[]>> {
   const bundles = new Map<UploadEntry, UploadEntry[]>();
+  const find = gltfFinder(entries);
+  for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
+    const { found, unclear, left } = find(gltf, await gltfReferences(gltf.file));
+    bundles.set(gltf, found);
+    if (unclear.length) ambiguous?.set(gltf, unclear);
+    if (left.length) unresolved?.set(gltf, left);
+  }
+  return bundles;
+}
+
+/**
+ * What a .gltf points at among `entries` (none of them a .gltf), found as gltfBundles finds it: of `uris`, as the scene
+ * writes them, `found` the entries, `unclear` the names more than one entry could be, which it takes neither of, and
+ * `left` the uris it took none for. Each entry's places are worked out once, for every scene and name looked for.
+ */
+export function gltfFinder(entries: UploadEntry[]) {
   // By their paths as they were picked, as the server finds them (gltfPacker's findReferenced), and the path a zip
   // gave a numbered copy too, which the scene could mean as well.
-  const pathOf = (entry: UploadEntry) =>
-    normalizeSegments(normalizeRelativePath(entry.relativePath || entry.file.name));
-  const pathsOf = (entry: UploadEntry) =>
-    entry.zipPath ? [pathOf(entry), normalizeSegments(normalizeRelativePath(entry.zipPath))] : [pathOf(entry)];
-  const nameOf = (path: string) => path.split("/").pop()!.toLowerCase();
-  // Each file's places worked out once, as every name each scene points at is looked for among them.
   const others = entries
     .filter((entry) => !isGltf(entry.file.name))
     .map((entry) => ({
@@ -209,12 +225,14 @@ export async function gltfBundles(
   type Place = (typeof others)[number]["places"][number];
   const matching = (test: (place: Place) => boolean) =>
     others.filter(({ places }) => places.some(test)).map(({ entry }) => entry);
-  for (const gltf of entries.filter((entry) => isGltf(entry.file.name))) {
+  return (gltf: UploadEntry, uris: string[]) => {
     const folder = pathOf(gltf).split("/").slice(0, -1).join("/");
     // Only within the scene's own folder tree, so it can't take another model's file; a flat pick has no folders.
     const inFolder = (path: string) => !folder || path.startsWith(`${folder}/`);
     const found = new Set<UploadEntry>();
-    for (const uri of await gltfReferences(gltf.file)) {
+    const unclear = new Set<string>();
+    const left: string[] = [];
+    for (const uri of uris) {
       let decoded = uri;
       try {
         decoded = decodeURIComponent(uri);
@@ -233,11 +251,11 @@ export async function gltfBundles(
       // Two entries of one file are one file; two files are two the scene could mean, and it takes neither.
       const distinct = new Set(candidates.map((entry) => entry.file));
       if (distinct.size === 1) found.add(candidates[0]);
-      else if (distinct.size > 1) ambiguous?.set(gltf, [...new Set([...(ambiguous.get(gltf) ?? []), named])]);
+      else left.push(uri);
+      if (distinct.size > 1) unclear.add(named);
     }
-    bundles.set(gltf, [...found]);
-  }
-  return bundles;
+    return { found: [...found], unclear: [...unclear], left };
+  };
 }
 
 /** The pictures the gallery took, by the id its answer gave each in turn: one it couldn't keep (null) is named among

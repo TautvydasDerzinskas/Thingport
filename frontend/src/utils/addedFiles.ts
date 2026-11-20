@@ -1,6 +1,6 @@
 import { LIGHTBURN_EXTS, MODEL_EXTS } from "../constants/fileTypes";
 import { keptExt, keptName } from "./fileExtensions";
-import { gltfBundles } from "./uploadTree";
+import { gltfBundles, gltfFinder } from "./uploadTree";
 
 // Where a file added to a model goes. Mirrors the backend's split of an upload (services/uploadService.ts): 3D files
 // are the model's files, and anything else is kept beside them as a supporting file.
@@ -64,23 +64,29 @@ export function sortAddedFiles<T extends { name: string }>(
  * one request, never as files of their own. `packedWith` has every file each .gltf points at, one two scenes share
  * under both, though `model` lists it once. Found as a folder upload finds them. `ambiguous`: the names a .gltf points
  * at that more than one file of the addition could be, which it then takes none of, as the server can't tell either.
+ * `missing`: what a .gltf points at, as written in it, that it took no file of the addition for (gltfFilesFromOthers).
  */
 export async function withGltfFiles<T>(
   sorted: { model: T[]; supporting: T[] },
   fileOf: (item: T) => File,
-): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]>; ambiguous: string[] }> {
+): Promise<{ model: T[]; supporting: T[]; packedWith: Map<T, T[]>; ambiguous: string[]; missing: Map<T, string[]> }> {
   const all = [...sorted.model, ...sorted.supporting];
   const packedWith = new Map<T, T[]>();
+  const missing = new Map<T, string[]>();
   // By the name it's kept by, as the server packs it: "scene.gltf " is a scene too.
-  if (!all.some((item) => keptExt(fileOf(item).name) === "gltf")) return { ...sorted, packedWith, ambiguous: [] };
+  if (!all.some((item) => keptExt(fileOf(item).name) === "gltf")) {
+    return { ...sorted, packedWith, ambiguous: [], missing };
+  }
   const entries = all.map((item) => ({ file: fileOf(item), relativePath: "" }));
   const unclear = new Map<(typeof entries)[number], string[]>();
-  for (const [gltf, found] of await gltfBundles(entries, unclear)) {
+  const unresolved = new Map<(typeof entries)[number], string[]>();
+  for (const [gltf, found] of await gltfBundles(entries, unclear, unresolved)) {
     packedWith.set(
       all[entries.indexOf(gltf)],
       found.map((entry) => all[entries.indexOf(entry)]),
     );
   }
+  for (const [gltf, uris] of unresolved) missing.set(all[entries.indexOf(gltf)], uris);
   const packed = new Set([...packedWith.values()].flat());
   // A file two scenes share goes up once, after the first: the server packs it into both.
   const sent = new Set<T>();
@@ -95,7 +101,39 @@ export async function withGltfFiles<T>(
     supporting: sorted.supporting.filter((item) => !packed.has(item)),
     packedWith,
     ambiguous: [...new Set([...unclear.values()].flat())],
+    missing,
   };
+}
+
+/**
+ * Scenes added apart from files they point at, given those files from the other additions staged beside them (Edit
+ * model's picks): the server packs a .gltf only with what's sent in its own request. Only what a scene's own addition
+ * didn't have (withGltfFiles' `missing`) is looked for, found by name as within one, so a file it found there stays its
+ * own though another addition has one of that name. `took`: each scene's finds; `missing`: what each still lacks;
+ * `ambiguous`: the names two staged files could be, which the scene takes neither of.
+ */
+export function gltfFilesFromOthers<T>(
+  scenes: { scene: T; file: File; missing: string[] }[],
+  staged: T[],
+  fileOf: (item: T) => File,
+): { took: Map<T, T[]>; missing: Map<T, string[]>; ambiguous: string[] } {
+  const took = new Map<T, T[]>();
+  const missing = new Map<T, string[]>();
+  const ambiguous = new Set<string>();
+  if (!scenes.length) return { took, missing, ambiguous: [] };
+  const entries = staged.map((item) => ({ file: fileOf(item), relativePath: "" }));
+  const find = gltfFinder(entries);
+  for (const { scene, file, missing: wanted } of scenes) {
+    const { found, unclear, left } = find({ file, relativePath: "" }, wanted);
+    if (found.length)
+      took.set(
+        scene,
+        found.map((entry) => staged[entries.indexOf(entry)]),
+      );
+    for (const name of unclear) ambiguous.add(name);
+    missing.set(scene, left);
+  }
+  return { took, missing, ambiguous: [...ambiguous] };
 }
 
 /** The name a file added as a model file is stored by: a .gltf is packed into a .glb. */

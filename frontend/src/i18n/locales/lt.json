@@ -6548,6 +6548,7 @@
       "updateSuccess": "Modelis atnaujintas",
       "updateFailed": "Nepavyko atnaujinti modelio. Bandykite dar kartą.",
       "photosNotSaved": "Nepavyko išsaugoti šių nuotraukų: {{names}}. Pašalinkite jas arba bandykite dar kartą.",
+      "renamesGone": "Nepervadinta, nes jie pašalinti kitur: {{names}}.",
       "platesUnsettled": "Šie failai buvo įkelti, bet modelyje jų dabar nėra: {{names}}. Išsaugokite dar kartą, kad jie būtų išsiųsti iš naujo, arba pašalinkite juos.",
       "descriptionWrite": "Rašyti",
       "descriptionPreview": "Peržiūra",

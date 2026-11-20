@@ -78,6 +78,7 @@ export default function SupportingFiles({ print, actions: fileActions, canEdit }
         <SupportingFileChips
           files={files.map((file) => ({ key: file.id, name: file.filename, size: file.size, folder: file.folder }))}
           uploading={fileActions.uploading}
+          busy={fileActions.downloading}
           onOpen={openViewer}
           onDownload={(id) => {
             const file = byId(id);
