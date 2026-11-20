@@ -611,6 +611,32 @@ describe("a site's zip", () => {
     ]);
   });
 
+  it("takes once a name two folders of a zip with no archive in it place in one, leaving its share to the next file", async () => {
+    const zip = await zipOf({
+      "scripts/source.scad": "cube(1);",
+      "guide.pdf": "%PDF-1.4",
+      "scripts/guide.pdf": "%PDF-1.5",
+      "notes.txt": "upright!",
+    });
+    // The script's folder comes off, so both guides are at the top, where the model keeps one: room for it and the notes.
+    limits.value = { perFile: 10, perModel: 20 };
+    const supporting = await supportingFilesFromZip(zip);
+    remove(supporting);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([
+      [null, "guide.pdf"],
+      [null, "notes.txt"],
+    ]);
+  });
+
+  it("leaves out a file the model has only where the zip places it as that one is", async () => {
+    const parts = fs.readFileSync(await zipOf({ "part.stl": "solid part endsolid" }));
+    const zip = await zipOf({ "scripts/source.scad": "cube(1);", "scripts/guide.pdf": "%PDF-1.4", "parts.zip": parts });
+    // The model has a guide at its top; this one keeps its scripts folder once the archive is opened.
+    const supporting = await supportingFilesFromZip(zip, undefined, new Set(["\u0000guide.pdf"]));
+    remove(supporting);
+    expect(supporting.map((each) => [each.folder ?? null, each.filename])).toEqual([["scripts", "guide.pdf"]]);
+  });
+
   it("removes the files it wrote out when the zip can't be listed after them", async () => {
     // The first listing finds the files to keep; the next, for whether the zip only wraps another, fails.
     const inner = fs.readFileSync(await zipOf({ "a.stl": "solid a endsolid" }));
@@ -1013,6 +1039,22 @@ describe("a file a site gives beside a model's own", () => {
     );
     remove(kept);
     expect(kept.map((each) => each.filename)).toEqual(["guide.pdf", "guide.pdf", "notes.txt"]);
+  });
+
+  it("takes none of a model's share for a file in a later zip by the name of one a link gave already", async () => {
+    const docs = await new JSZip()
+      .file("guide.pdf", "g".repeat(300))
+      .file("notes.txt", "n".repeat(300))
+      .generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    served({ "/guide.pdf": "x".repeat(10), "/docs.zip": docs });
+    // Room for the first guide and one more file: the zip's guide is the model's already, so its notes are that one.
+    limits.value = { perFile: 400, perModel: 500 };
+    const kit = importKit();
+    const first = await kit.downloadSupportingFile(at("guide.pdf"), site);
+    const then = await kit.downloadSupportingFile(at("docs.zip"), site);
+    remove([...first, ...then]);
+    expect(first.map((each) => each.filename)).toEqual(["guide.pdf"]);
+    expect(then.map((each) => each.filename)).toEqual(["notes.txt"]);
   });
 
   it("fetches a design's scripts where its raw files gave the files beside the model but no script", async () => {

@@ -1144,7 +1144,8 @@ export async function parametricSourcesFromZip(zipPath: string): Promise<NewPlat
 }
 
 /** What a model has kept so far of the files beside its own, in bytes and in number. */
-type Kept = { readonly bytes: number; readonly files: number };
+/** `names`, those of them by the key they're stored under (supportingAllowance's), where a download's share keeps it. */
+type Kept = { readonly bytes: number; readonly files: number; readonly names?: ReadonlySet<string> };
 const NOTHING_KEPT: Kept = { bytes: 0, files: 0 };
 
 /** A file beside a model, by its folder and the name it's kept under, which one with the same name in the same folder
@@ -1165,7 +1166,13 @@ export async function supportingFilesFromZip(
   const limits = await supportingLimits();
   if (!limits) return [];
   try {
-    return await filesFromZip(zipPath, { supporting: limits, kept: { ...kept }, except, sliced });
+    return await filesFromZip(zipPath, {
+      supporting: limits,
+      kept: { bytes: kept.bytes, files: kept.files },
+      except,
+      sliced,
+      accepted: kept.names,
+    });
   } catch (err) {
     console.warn("Couldn't read the files beside a zip's model files:", err);
     return [];
@@ -1295,11 +1302,16 @@ async function zipEntriesInFolders(
 }
 
 /** A zip's supporting files where its plates and scripts are, each in its folder less what it shares of the levels
- *  those all share, so it lands beside them; `holdsModels`, whether it has model files of its own. */
+ *  those all share, so it lands beside them; `holdsModels`, whether it has model files of its own, and `holdsZips`,
+ *  zips (filesFromNestedZips). */
 async function supportingZipEntries(
   zipPath: string,
   sliced = false,
-): Promise<{ entries: { entry: ZipEntryInfo; parts: string[]; folder: string | null }[]; holdsModels: boolean }> {
+): Promise<{
+  entries: { entry: ZipEntryInfo; parts: string[]; folder: string | null }[];
+  holdsModels: boolean;
+  holdsZips: boolean;
+}> {
   const listed = (await listZipEntries(zipPath))
     .filter((entry) => !entry.isDirectory && !isZipJunk(entry.name))
     .map((entry) => ({ entry, parts: entry.name.replace(/\\/g, "/").split("/").filter(Boolean) }))
@@ -1312,7 +1324,11 @@ async function supportingZipEntries(
         isSupportingImportFile(keptNameOf(parts)) || (sliced && isPreparedPrintFilename(keptNameOf(parts))),
     )
     .map((placed) => ({ ...placed, folder: withoutTopOf(placed.folder, top) }));
-  return { entries, holdsModels: listed.some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts))) };
+  return {
+    entries,
+    holdsModels: listed.some(({ parts }) => MULTI_FILE_PLATE_EXTS.has(keptExtOf(parts))),
+    holdsZips: listed.some(({ entry }) => path.extname(entry.name).toLowerCase() === ".zip"),
+  };
 }
 
 /** What one pass over a zip takes: the files with one of these extensions, or the supporting files beside them, as far
@@ -1325,6 +1341,9 @@ type SupportingPick = {
   /** Sliced 3MFs too, for a zip no plate is taken from: one beside its model files is the designer's print file, kept
    *  beside the model's own as an upload keeps one (zipService), where a zip read for plates too makes it a plate. */
   sliced?: boolean;
+  /** The files other downloads kept beside the model already (Kept's `names`): skipped where an entry's key is the one
+   *  it's stored under too, taking none of what's left. */
+  accepted?: ReadonlySet<string>;
 };
 type ZipPick = ReadonlySet<string> | SupportingPick;
 const picksSupporting = (pick: ZipPick): pick is SupportingPick => "supporting" in pick;
@@ -1359,17 +1378,22 @@ async function filesFromZip(
     // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
     // leaves room for a readable second. By the name it's stored under (supportingImportName), where its folder here
     // is the one it's stored in: at the top of the model (`topIsModelTop`), a licence of the site's is
-    // "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own. In a zip
-    // that only wraps the archives the model's files are in, by the folder each has in it: they're placed from that,
-    // with what the archives hold (filesFromNestedZips), not by what of it this zip's own files share.
-    const wrapsModels = supporting ? !supporting.holdsModels : false;
+    // "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own. Its folder
+    // is the one it's placed in here, as this zip's own files share levels, unless the zip only wraps archives it will
+    // be opened for: then they're placed from the folders they have in it, with what those hold (filesFromNestedZips),
+    // and told apart by those, which one placed folder never holds two of.
+    const descends = Boolean(supporting && !supporting.holdsModels && supporting.holdsZips && depth < NESTED_ZIP_DEPTH);
     const taken = new Set<string>();
     for (const { entry, parts, folder } of entries) {
-      const key = supportingKey(folder, keptNameOf(parts));
-      const placedIn = wrapsModels ? normalizeFolder(parts.slice(0, -1)) : folder;
+      const placedIn = descends ? normalizeFolder(parts.slice(0, -1)) : folder;
       const named = topIsModelTop ? supportingImportName(keptNameOf(parts), placedIn) : keptNameOf(parts);
       const stored = supportingKey(placedIn, named);
-      if (picksSupporting(pick) && (pick.except?.has(key) || taken.has(stored))) continue;
+      // Ones the model has, and where it's stored as here, at the model's top, ones another download kept.
+      const had =
+        picksSupporting(pick) &&
+        (pick.except?.has(supportingKey(placedIn, keptNameOf(parts))) ||
+          (topIsModelTop && !descends && pick.accepted?.has(stored)));
+      if (picksSupporting(pick) && (had || taken.has(stored))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
         console.warn(
@@ -1450,8 +1474,9 @@ const takeAlone: SupportingTake = (fetch) => fetch(NOTHING_KEPT);
  *  files asked for at once can't each take the same room. A file by the name and folder of one a turn before gave
  *  takes none of it, as the model keeps one by each (keepSupportingFiles); one that failed gave nothing. */
 export function supportingAllowance(): SupportingTake {
-  let kept = NOTHING_KEPT;
+  // Handed to each turn as what's kept by name too, so a zip's pass leaves out a file one before gave (filesFromZip).
   const names = new Set<string>();
+  let kept: Kept = { ...NOTHING_KEPT, names };
   let turn: Promise<unknown> = Promise.resolve();
   return (fetch) => {
     const next = turn.then(async () => {
@@ -1463,7 +1488,7 @@ export function supportingAllowance(): SupportingTake {
         if (names.has(name)) continue;
         names.add(name);
         const size = (await fs.stat(input.tempFilePath).catch(() => null))?.size ?? 0;
-        kept = { bytes: kept.bytes + size, files: kept.files + 1 };
+        kept = { bytes: kept.bytes + size, files: kept.files + 1, names };
       }
       return inputs;
     });
