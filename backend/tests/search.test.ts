@@ -101,6 +101,11 @@ describe('GET /prints?q= -- the palette\'s "see all results"', () => {
   it("orders by relevance when asked: a name match before a tag match", async () => {
     const res = await request(app).get("/api/prints").query({ q: tagWord, orderBy: "relevance" }).set(auth(session));
     expect(res.body.map((p: { id: string }) => p.id)).toEqual([nameMatchId, tagMatchId]);
+    const reversed = await request(app)
+      .get("/api/prints")
+      .query({ q: tagWord, orderBy: "relevance", orderDirection: "asc" })
+      .set(auth(session));
+    expect(reversed.body.map((p: { id: string }) => p.id)).toEqual([tagMatchId, nameMatchId]);
   });
 
   it("pages through all of them", async () => {

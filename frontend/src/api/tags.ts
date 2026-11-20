@@ -1,4 +1,5 @@
 import { authHeaders } from "../utils/auth";
+import type { SortDirection } from "../utils/sortDirection";
 import { apiBase, assertOk, assertOkWithMessage } from "./client";
 
 export type TagSortMode = "popular" | "name" | "newest";
@@ -32,6 +33,7 @@ const postJson = (path: string, body: unknown) =>
 export const tagsApi = {
   listSummary: async (params: {
     sort: TagSortMode;
+    direction?: SortDirection;
     limit: number;
     offset: number;
     minCount: number;
@@ -42,6 +44,7 @@ export const tagsApi = {
       offset: String(params.offset),
       min_count: String(params.minCount),
     });
+    if (params.direction) query.set("orderDirection", params.direction);
     const res = await fetch(`${apiBase()}/tags/summary?${query}`, { headers: authHeaders() });
     assertOk(res, "Failed to list tags");
     return res.json();

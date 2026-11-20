@@ -1,8 +1,9 @@
 import { MANIFESTS, type ProviderId } from "../../providers/index.generated";
+import { defaultSortDirection, type SortDirection } from "../../utils/sortDirection";
 
 export type ProviderStatus = "all" | "on" | "off";
-/** Newest and oldest by `order`, which is the order providers were added in. */
-export type ProviderSort = "newest" | "oldest" | "name";
+/** Dates use `order`, which is the order providers were added in. */
+export type ProviderSort = "newest" | "name";
 
 export const FEATURES = ["collections", "likes", "profiles", "paidModels"] as const;
 export type Feature = (typeof FEATURES)[number];
@@ -62,10 +63,14 @@ export function activeFilterCount(filters: ProviderFilters): number {
   return (filters.status === "all" ? 0 : 1) + filters.features.length + filters.signIns.length + filters.needs.length;
 }
 
-export function sortProviders(ids: readonly ProviderId[], sort: ProviderSort, locale?: string): ProviderId[] {
-  const byOrder = (a: ProviderId, b: ProviderId) => MANIFESTS[a].order - MANIFESTS[b].order;
-  if (sort === "oldest") return ids.toSorted(byOrder);
-  if (sort === "newest") return ids.toSorted((a, b) => byOrder(b, a));
-  const collator = new Intl.Collator(locale, { sensitivity: "base" });
-  return ids.toSorted((a, b) => collator.compare(MANIFESTS[a].name, MANIFESTS[b].name));
+export function sortProviders(
+  ids: readonly ProviderId[],
+  sort: ProviderSort,
+  locale?: string,
+  direction: SortDirection = defaultSortDirection(sort),
+): ProviderId[] {
+  const sign = direction === "asc" ? 1 : -1;
+  if (sort === "newest") return ids.toSorted((a, b) => sign * (MANIFESTS[a].order - MANIFESTS[b].order));
+  const collator = new Intl.Collator(locale, { sensitivity: "base", numeric: true });
+  return ids.toSorted((a, b) => sign * collator.compare(MANIFESTS[a].name, MANIFESTS[b].name));
 }

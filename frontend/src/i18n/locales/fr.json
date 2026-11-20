@@ -5969,7 +5969,15 @@
       "newest": "Plus récents",
       "popular": "Populaires",
       "downloads": "Téléchargements",
-      "relevance": "Pertinence"
+      "relevance": "Pertinence",
+      "oldest": "Plus anciens",
+      "leastPopular": "Moins populaires",
+      "fewestDownloads": "Moins de téléchargements",
+      "leastRelevant": "Moins pertinents",
+      "fewestModels": "Moins de modèles",
+      "reverseAlphabetical": "{{label}} (Z–A)",
+      "reverseAscending": "Ordre croissant. Inverser l’ordre de tri",
+      "reverseDescending": "Ordre décroissant. Inverser l’ordre de tri"
     },
     "card": {
       "unknownAuthor": "Inconnu",

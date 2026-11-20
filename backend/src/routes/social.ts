@@ -37,6 +37,7 @@ import { sendRemoteZip, streamRemoteFile } from "../federation/remoteFiles";
 import { syncStale } from "../federation/remoteIndex";
 import { isFederationLive } from "../federation/settings";
 import { licenseAllowsFromQuery, parseSortMode, splitList } from "../services/printQuery";
+import { parseSortDirection } from "../utils/sortDirection";
 import { MAX_SHARES, remoteShareOut, sharingOf, updateSharing } from "../services/collectionSharing";
 import { personByHandle } from "../federation/sharedCollections";
 import { searchPeople } from "../services/chatService";
@@ -365,7 +366,12 @@ router.get(
         licenseAllows: licenseAllowsFromQuery(splitList(req.query.license_allows)),
         licensed: req.query.licensed === "1" || req.query.licensed === "true",
       },
-      { sort: parseSortMode(req.query.orderBy), limit, offset },
+      {
+        sort: parseSortMode(req.query.orderBy),
+        direction: parseSortDirection(req.query.orderDirection),
+        limit,
+        offset,
+      },
     );
     if (!page) throw new HttpError(404, "This user's models aren't public");
     res.setHeader("X-Has-More", page.hasMore ? "true" : "false");

@@ -6082,7 +6082,15 @@
       "newest": "Naujausi",
       "popular": "Populiariausi",
       "downloads": "Atsisiuntimai",
-      "relevance": "Tinkamiausi"
+      "relevance": "Tinkamiausi",
+      "oldest": "Seniausi",
+      "leastPopular": "Mažiausiai populiarūs",
+      "fewestDownloads": "Mažiausiai atsisiuntimų",
+      "leastRelevant": "Mažiausias atitikimas",
+      "fewestModels": "Mažiausiai modelių",
+      "reverseAlphabetical": "{{label}} (Ž–A)",
+      "reverseAscending": "Didėjimo tvarka. Apversti rikiavimo tvarką",
+      "reverseDescending": "Mažėjimo tvarka. Apversti rikiavimo tvarką"
     },
     "card": {
       "unknownAuthor": "Nežinomas",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "../auth";
 import { asyncHandler } from "../utils/asyncHandler";
 import { normalizeTag } from "../utils/tagNormalization";
+import { SORT_DIRECTIONS } from "../utils/sortDirection";
 import { parseBody } from "../utils/validate";
 import { addTagBookmark, listBookmarkedTagSet, removeTagBookmark } from "../services/bookmarkService";
 import { createLog } from "../services/auditLog";
@@ -27,16 +28,20 @@ function sortedBookmarks(tags: Iterable<string>): string[] {
 
 const summaryQuery = z.object({
   sort: z.enum(["popular", "name", "newest"]).catch("popular"),
+  orderDirection: z.enum(SORT_DIRECTIONS).optional().catch(undefined),
   limit: z.coerce.number().int().min(1).max(100).catch(48),
   offset: z.coerce.number().int().min(0).catch(0),
   // Tags on fewer models are left out, so a page holds only what's shown.
   min_count: z.coerce.number().int().min(1).catch(1),
 });
+const tagNameCollator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
 
 router.get(
   "/tags/summary",
   asyncHandler(async (req, res) => {
-    const { sort, limit, offset, min_count: minCount } = summaryQuery.parse(req.query);
+    const { sort, orderDirection, limit, offset, min_count: minCount } = summaryQuery.parse(req.query);
+    const direction = orderDirection ?? (sort === "name" ? "asc" : "desc");
+    const sign = direction === "asc" ? 1 : -1;
     const [prints, bookmarked] = await Promise.all([listTaggedPrints(req.userId!), listBookmarkedTagSet(req.userId!)]);
     const counts = new Map<string, number>();
     for (const print of prints) {
@@ -44,14 +49,16 @@ router.get(
         if (tag) counts.set(tag, (counts.get(tag) ?? 0) + 1);
       }
     }
-    // Prints come newest first, so a map's insertion order is each tag's newest model; "newest" keeps it.
-    const byName = (a: string, b: string) => a.toLowerCase().localeCompare(b.toLowerCase());
+    // Prints come newest first, so the insertion order is by each tag's newest model.
+    const byName = (a: string, b: string) => tagNameCollator.compare(a, b) || a.localeCompare(b);
     const entries = [...counts.entries()].filter(([, count]) => count >= minCount);
     const matching =
       sort === "newest"
-        ? entries
+        ? direction === "desc"
+          ? entries
+          : entries.toReversed()
         : entries.toSorted(([a, countA], [b, countB]) =>
-            sort === "name" ? byName(a, b) : countB - countA || byName(a, b),
+            sort === "name" ? sign * byName(a, b) : sign * (countA - countB) || byName(a, b),
           );
     const page = matching.slice(offset, offset + limit);
 

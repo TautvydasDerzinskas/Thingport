@@ -5520,7 +5520,15 @@
       "newest": "最新",
       "popular": "最受欢迎",
       "downloads": "下载量",
-      "relevance": "相关度"
+      "relevance": "相关度",
+      "oldest": "最早",
+      "leastPopular": "热度最低",
+      "fewestDownloads": "下载最少",
+      "leastRelevant": "相关性最低",
+      "fewestModels": "模型最少",
+      "reverseAlphabetical": "{{label}}（倒序）",
+      "reverseAscending": "升序。反转排序方向",
+      "reverseDescending": "降序。反转排序方向"
     },
     "card": {
       "unknownAuthor": "未知",
