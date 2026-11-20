@@ -37,6 +37,7 @@ import {
 import { checkPrint, type PrintCheck, type PrintCheckOptions } from "./printCheck.generated";
 import { loftSolid, sweepSolid } from "./sweep.generated";
 import { threadSolid, threadTriangles } from "./threads.generated";
+import { splitWithPins } from "./splitConnectors.generated";
 import { analyze, faceTriangles2d, findEdge, findFace, type Topology } from "./topology.generated";
 import {
   add,
@@ -418,7 +419,10 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
           const point = applyMatrix(matrix, feature.plane.point);
           const normal = applyNormal(matrix, feature.plane.normal);
           const side = feature.keep === "back" ? -1 : 1;
-          return own(solid.trimByPlane(scale(normal, side), side * dot(normal, point)));
+          const half = own(solid.trimByPlane(scale(normal, side), side * dot(normal, point)));
+          return feature.connector
+            ? splitWithPins(wasm, own, half, feature, point, normal, Math.max(1e-4, hairOf(solid)))
+            : half;
         }
         if (!feature.tool_id) throw new Error(`${feature.id} has nothing to split by`);
         const tool = inWorld(feature.tool_id);
@@ -724,13 +728,13 @@ export function measureBounds(
 }
 
 /** Checks the design's visible top-level bodies for printing, where they are. A body that isn't a closed solid can't
- *  be checked, and is said so; one that can't be made is left out, as the view says why. */
+ *  be checked. Bodies that fail to build are reported with the reason. */
 export function checkDesign(
   wasm: ManifoldToplevel,
   doc: StudioDocument,
   options: PrintCheckOptions,
   meshes?: MeshLookup,
-): PrintCheck & { open: string[] } {
+): PrintCheck & { open: string[]; invalid?: { id: string; message: string }[] } {
   const made = evaluator(wasm, doc, meshes);
   const plainDoc = plainThreads(doc);
   const plain = plainDoc ? evaluator(wasm, plainDoc, meshes) : null;
@@ -742,6 +746,7 @@ export function checkDesign(
   try {
     const bodies: { id: string; plate: string; solid: Manifold; plain?: Manifold }[] = [];
     const open: string[] = [];
+    const invalid: { id: string; message: string }[] = [];
     for (const feature of topLevel(doc)) {
       if (!isBody(feature) || !feature.visible) continue;
       try {
@@ -753,15 +758,17 @@ export function checkDesign(
             solid: made.inWorld(feature.id),
             plain: plain && threaded(doc, feature.id) ? plain.inWorld(feature.id) : undefined,
           });
-      } catch {
-        // Not made: its own error says why.
+      } catch (error) {
+        invalid.push({ id: feature.id, message: error instanceof Error ? error.message : String(error) });
       }
     }
     const report = checkPrint(wasm, own, bodies, options);
     return {
       ...report,
       open,
+      ...(invalid.length ? { invalid } : {}),
       problems: [
+        ...invalid.map(({ id, message }) => `${id} couldn't be made. ${message}`),
         ...report.problems,
         ...open.map((id) => `${id} has gaps, so it isn't a closed solid and can't be checked or printed as it is.`),
       ],

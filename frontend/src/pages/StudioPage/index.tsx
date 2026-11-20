@@ -43,6 +43,9 @@ import {
   type Transform,
 } from "../../studio/document";
 import CheckDialog from "./CheckDialog";
+import ArrangeDialog from "./ArrangeDialog";
+import FitTestDialog from "./FitTestDialog";
+import type { BodyCheck } from "../../studio/printCheck";
 import DesignsDialog from "./DesignsDialog";
 import StudioSlicerDialog, { studioExportName } from "./StudioSlicerDialog";
 import { saveResponseToDisk } from "../../utils/downloadResponse";
@@ -264,6 +267,15 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [measureTool, setMeasureTool] = useState<{ filter: MeasureFilter; picks: Picked[] } | null>(null);
   const [bodyGap, setBodyGap] = useState<BodyGap | null>(null);
   const [checking, setChecking] = useState(false);
+  const [arranging, setArranging] = useState<{ designId: string; plate: string } | null>(null);
+  const [fitTest, setFitTest] = useState<string | null>(null);
+  const [fitArrival, setFitArrival] = useState<string | null>(null);
+  const fitJoint = fitTest && doc ? featureById(doc, fitTest) : null;
+  const [printIssue, setPrintIssue] = useState<{
+    doc: StudioDocument;
+    id: string;
+    highlights?: BodyCheck["highlights"];
+  } | null>(null);
   const [renaming, setRenaming] = useState<{ kind: "design" } | { kind: "feature"; id: string } | null>(null);
   // A tool that takes more than a click, while its panel is open, and what making its preview said.
   const [operation, setOperation] = useState<Operation | null>(null);
@@ -316,6 +328,14 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setMeasureTool(null);
     setMenu(null);
   };
+  useEffect(() => {
+    if (!fitArrival || !doc) return;
+    const body = featureById(doc, fitArrival);
+    if (!body) return;
+    setPickedPlate(plateOf(body));
+    setSelected([body.id]);
+    setFitArrival(null);
+  }, [doc, fitArrival]);
 
   // A model opened here from its own page: the mesh it brought in, to say if it's in parts. Taken once, so going back
   // or reloading doesn't say it again.
@@ -554,7 +574,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         const outcome = addParts(doc, { feature_id: partsFound.target }, partsFound.parts ?? []);
         return { document: outcome.document, created: outcome.created, error: null };
       }
-      const outcome = applyCommand(doc, draft.name, draft.args);
+      const outcome = applyCommand(
+        doc,
+        draft.name,
+        draft.name === "split" ? { ...draft.args, separate_plates: false } : draft.args,
+      );
       return { document: outcome.document, created: outcome.created, error: null };
     } catch (error) {
       return { document: null, created: [], error: error instanceof CommandError ? error.message : String(error) };
@@ -599,6 +623,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setOperation(null);
     setPreviewFailure(null);
     if (operation.kind === "separate") return setSelected(created);
+    if (operation.kind === "split" && operation.separatePlates) return setSelected(created.slice(0, 1));
     if (operation.kind === "sketch_face" && created[0]) {
       setSelected([created[0]]);
       setSketch({ id: created[0], tool: "rectangle" });
@@ -880,6 +905,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           mode={mode}
           handMode={handMode}
           activePlate={activePlate}
+          printIssue={printIssue?.doc === doc && selected.includes(printIssue.id) ? printIssue : undefined}
           sketch={sketch}
           onSelect={select}
           onBoxSelect={boxSelect}
@@ -1097,6 +1123,11 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                   errors={errors}
                   onHide={() => togglePanel("features")}
                   onChangePlate={changePlate}
+                  onArrange={(plate) => {
+                    if (!design) return;
+                    changePlate(plate);
+                    setArranging({ designId: design.id, plate });
+                  }}
                   onSelect={(plate, id, additive) => {
                     changePlate(plate);
                     select(id, plate === activePlate && additive);
@@ -1146,6 +1177,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                       run={run}
                       onSelect={(id) => setSelected([id])}
                       onSeparate={separateBody}
+                      onFitTest={setFitTest}
                       onEditSketch={(id) => {
                         setSelected([id]);
                         setSketch({ id, tool: "rectangle" });
@@ -1213,7 +1245,42 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           selected={selected}
           run={run}
           onClose={() => setChecking(false)}
+          onLocate={(id, highlights, startLayFlat) => {
+            const feature = doc && featureById(doc, id);
+            if (!feature || !doc) return;
+            changePlate(plateOf(feature));
+            setSelected([id]);
+            setPrintIssue({ doc, id, highlights });
+            setChecking(false);
+            if (startLayFlat) {
+              setEditHandMode(false);
+              setSketch(null);
+              setOperation(startOperation("lay_flat", id));
+            }
+          }}
         />
+        {arranging && design && arranging.designId === design.id && doc && (
+          <ArrangeDialog
+            doc={doc}
+            designId={design.id}
+            plateId={arranging.plate}
+            run={run}
+            onClose={() => setArranging(null)}
+          />
+        )}
+        {fitJoint?.type === "split" && design && doc && (
+          <FitTestDialog
+            designId={design.id}
+            doc={doc}
+            joint={fitJoint}
+            run={run}
+            onClose={() => setFitTest(null)}
+            onCreated={(ids) => {
+              setFitTest(null);
+              setFitArrival(ids[0]);
+            }}
+          />
+        )}
         {tracing && design && (
           <TraceDialog
             designId={design.id}
@@ -1296,6 +1363,26 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
               <ListItemText>{t("studio.actions.duplicate")}</ListItemText>
             </MenuItem>,
             isBody(menuFeature) && !consumerOf(doc!, menuFeature.id) && (
+              <MenuItem
+                key="lock"
+                onClick={menuAction(
+                  () =>
+                    void run("lock_plate_positions", {
+                      feature_ids: [menuFeature.id],
+                      locked: !doc?.locked_layout?.includes(menuFeature.id),
+                    }),
+                )}
+              >
+                <ListItemText>
+                  {t(
+                    doc?.locked_layout?.includes(menuFeature.id)
+                      ? "studio.print.unlockPosition"
+                      : "studio.print.lockPosition",
+                  )}
+                </ListItemText>
+              </MenuItem>
+            ),
+            isBody(menuFeature) && !consumerOf(doc!, menuFeature.id) && (
               <MenuItem key="separate" onClick={menuAction(() => separateBody(menuFeature.id))}>
                 <ListItemIcon>
                   <SeparateIcon fontSize="small" />
@@ -1321,6 +1408,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           <StudioSlicerDialog
             design={design}
             activePlate={activePlate}
+            run={run}
             onClose={() => setSlicerOpen(false)}
             onError={showError}
           />

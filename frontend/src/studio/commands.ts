@@ -10,7 +10,11 @@ import {
   isSolid,
   LIMITS,
   MAX_PLATES,
+  STUDIO_FILAMENT_MATERIALS,
+  STUDIO_FILAMENT_SLOT_LIMIT,
+  plateOf,
   studioPlates,
+  topLevel,
   shapeContours,
   transformMatrix,
   type BodyFeature,
@@ -30,6 +34,8 @@ import {
   turnOnto,
   type SketchFeature,
   type SketchShape,
+  type SplitConnector,
+  type SplitFeature,
   type StudioDocument,
   type Transform,
   type Vec3,
@@ -47,6 +53,7 @@ import {
 } from "./expressions";
 import { PATH_CHARACTERS } from "./svgPath";
 import { isoPitch, threadProblem } from "./threads";
+import { arrangeFootprints, DEFAULT_PRINT_BED } from "./printLayout";
 import type { TraceShape, Traced, TraceSettings } from "./trace";
 import { applyMatrix, applyNormal, cross, invertAffine, normalize, perpendicular, sub, type Vec2 } from "./vec";
 
@@ -96,6 +103,21 @@ const coordinate = z.number().finite().min(-LIMITS.size).max(LIMITS.size);
 const vec2 = z.tuple([coordinate, coordinate]);
 const vec3 = z.tuple([coordinate, coordinate, coordinate]);
 const length = (description: string) => z.number().positive().max(LIMITS.size).describe(description);
+const splitConnector = z
+  .object({
+    diameter: length("Pin diameter in mm"),
+    depth: length("Pin protrusion and socket depth in mm"),
+    clearance: z.number().min(0).max(5).describe("Radial clearance added to the socket in mm"),
+    offset: vec2.describe("The center of the pin pattern in the plane, in mm [u, v]."),
+    count: z.number().int().min(1).max(8),
+    spacing: length("Distance between pins along the plane's u axis in mm"),
+  })
+  .strict();
+
+function checkConnector(connector: SplitConnector) {
+  if (connector.count > 1 && connector.spacing <= connector.diameter + 2 * connector.clearance)
+    throw new CommandError("Increase the spacing so the connector sockets are separate.");
+}
 const signedLength = (description: string) =>
   z
     .number()
@@ -323,6 +345,16 @@ function findPlate(doc: StudioDocument, id: string) {
   return plate;
 }
 
+function addPlate(doc: StudioDocument, name: string): string {
+  const plates = studioPlates(doc);
+  if (plates.length >= MAX_PLATES) throw new CommandError(`A design holds up to ${MAX_PLATES} plates.`);
+  const next = doc.next_plate_id ?? Math.max(...plates.map((plate) => Number(plate.id.slice(6)))) + 1;
+  const id = `plate-${next}`;
+  doc.next_plate_id = next + 1;
+  doc.plates = [...plates, { id, name }];
+  return id;
+}
+
 function addFeature(doc: StudioDocument, feature: Feature): void {
   if (doc.features.length >= LIMITS.features)
     throw new CommandError(`A design holds up to ${LIMITS.features} features. Delete or combine some first.`);
@@ -349,6 +381,23 @@ function findBody(doc: StudioDocument, id: string): BodyFeature {
   const feature = find(doc, id);
   if (!isBody(feature)) throw new CommandError(`${id} is a sketch, not a body. Extrude it first.`);
   return feature;
+}
+
+function splitWithConnector(
+  doc: StudioDocument,
+  id: string,
+): SplitFeature & { connector: SplitConnector; plane: FaceRef } {
+  const feature = findBody(doc, id);
+  if (feature.type !== "split" || !feature.connector || !feature.plane || feature.fit_sample)
+    throw new CommandError("Choose a split body with matching pins and sockets.");
+  return { ...feature, connector: feature.connector, plane: feature.plane };
+}
+
+function splitPair(doc: StudioDocument, sourceId: string) {
+  return doc.features.filter(
+    (feature): feature is SplitFeature =>
+      feature.type === "split" && feature.source_id === sourceId && Boolean(feature.connector) && !feature.fit_sample,
+  );
 }
 
 function findSketch(doc: StudioDocument, id: string): SketchFeature {
@@ -715,6 +764,8 @@ const AXIS_INDEX = { x: 0, y: 1, z: 2, u: 0, v: 1 } as const;
 
 /** A field's number now, or undefined where the feature has no such number. */
 function fieldValue(feature: Feature, field: string): number | undefined {
+  if (field === "connector.clearance" && feature.type === "split" && !feature.fit_sample)
+    return feature.connector?.clearance;
   const transform = TRANSFORM_FIELD.exec(field);
   if (transform && isBody(feature))
     return feature.transform[transform[1] as "position"][AXIS_INDEX[transform[2] as "x"]];
@@ -734,6 +785,13 @@ function fieldValue(feature: Feature, field: string): number | undefined {
 
 /** Sets a field to a formula's value, checked as the command that sets it by hand would check it. */
 function setField(doc: StudioDocument, feature: Feature, field: string, value: number): void {
+  if (field === "connector.clearance" && feature.type === "split" && feature.connector && !feature.fit_sample) {
+    if (value < 0 || value > 5) throw new CommandError("Connector clearance has to be between 0 and 5 mm.");
+    const connector = { ...feature.connector, clearance: value };
+    checkConnector(connector);
+    feature.connector = connector;
+    return;
+  }
   const transform = TRANSFORM_FIELD.exec(field);
   if (transform && isBody(feature)) {
     const part = transform[1] as "position" | "rotation" | "scale";
@@ -1634,7 +1692,8 @@ export const STUDIO_COMMANDS = {
     description:
       "Splits a body in two, by a plane or by another body, making two bodies that stay editable: by a plane, the part on " +
       "the side its normal points to and the part on the other side; by a body, the part inside it and the part outside " +
-      "it (the cutting body stays as it is). Handy for cutting a model into printable pieces. " +
+      "it (the cutting body stays as it is). A plane can add matching pins and sockets. Optionally put the second " +
+      "piece on a new plate. " +
       BODY_REF_HELP,
     args: {
       feature_id: bodyId,
@@ -1647,12 +1706,20 @@ export const STUDIO_COMMANDS = {
         .optional()
         .describe("A plane to split by."),
       tool_id: z.string().min(1).optional().describe("A body to split by, instead of a plane."),
+      connector: splitConnector
+        .optional()
+        .describe("Adds pins to the front half and matching sockets to the back half."),
+      separate_plates: z.boolean().optional().describe("Put the second half on a new plate."),
     },
     apply(doc, args) {
       if (Boolean(args.plane) === Boolean(args.tool_id))
         throw new CommandError("Give a plane or a tool_id to split by, one of them.");
       const body = freeBody(doc, args.feature_id);
       assertSolid(body);
+      if (args.connector) {
+        if (!args.plane) throw new CommandError("Use a plane to make split connectors.");
+        checkConnector(args.connector);
+      }
       let toolCopy: string | null = null;
       let planeRef: FaceRef | null = null;
       if (args.tool_id) {
@@ -1663,7 +1730,10 @@ export const STUDIO_COMMANDS = {
       } else {
         planeRef = intoFrame(body).face(args.plane!);
       }
-      const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep) => {
+      const secondPlate = args.separate_plates
+        ? addPlate(doc, `${(body.name || body.id).slice(0, 65)} · 2`)
+        : undefined;
+      const parts = (toolCopy ? (["inside", "outside"] as const) : (["front", "back"] as const)).map((keep, index) => {
         const id = nextId(doc, "split");
         addFeature(doc, {
           id,
@@ -1675,10 +1745,127 @@ export const STUDIO_COMMANDS = {
           plane: planeRef,
           tool_id: toolCopy,
           keep,
+          ...(args.connector ? { connector: { ...args.connector } } : {}),
+          ...(index === 1 && secondPlate ? { plate_id: secondPlate } : {}),
         });
         return id;
       });
       return { document: doc, created: parts, summary: `Split ${body.id} into ${parts.join(" and ")}` };
+    },
+  }),
+
+  update_split_connector: command({
+    title: "Edit matching split connectors",
+    description: "Edits the connectors on both halves of a planar split. Only provided values change.",
+    args: {
+      feature_id: bodyId,
+      connector: splitConnector.partial().describe("Connector values to change on the matching halves."),
+    },
+    apply(doc, args) {
+      const feature = splitWithConnector(doc, args.feature_id);
+      const connector = { ...feature.connector, ...args.connector };
+      checkConnector(connector);
+      for (const part of splitPair(doc, feature.source_id)) {
+        part.connector = { ...connector };
+        if (args.connector.clearance !== undefined) dropExpressions(part, ["connector.clearance"]);
+      }
+      return { document: doc, created: [], summary: `Updated the connectors on ${feature.source_id}` };
+    },
+  }),
+
+  make_fit_test: command({
+    title: "Make a connector fit test plate",
+    description:
+      "Takes the mating region from a planar split with connectors. Puts one pin sample and a socket sample for each radial clearance on a new plate. The clearance in mm is engraved on each socket.",
+    args: {
+      feature_id: bodyId,
+      clearances: z
+        .array(z.number().min(0).max(5))
+        .min(1)
+        .max(9)
+        .describe("Radial clearances in mm, one per socket sample."),
+      name: z.string().trim().min(1).max(80).optional().describe("Name of the new fit test plate."),
+    },
+    apply(doc, args) {
+      const joint = splitWithConnector(doc, args.feature_id);
+      const clearances = [...new Set(args.clearances.map((value) => Number(value.toFixed(3))))];
+      const size = Math.max(14, joint.connector.diameter + 2 * Math.max(...clearances) + 8);
+      const step = size + 3;
+      const plate = addPlate(doc, args.name ?? "Fit test");
+      const count = clearances.length + 1;
+      const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
+      const columns = Math.min(count, Math.max(1, Math.floor(bed[0] / step)));
+      const rows = Math.ceil(count / columns);
+      const created: string[] = [];
+      for (let i = 0; i < count; i++) {
+        const clearance = i === 0 ? 0 : clearances[i - 1];
+        const label = `${fmt(clearance)}`;
+        const id = nextId(doc, "split");
+        addFeature(doc, {
+          id,
+          type: "split",
+          name: i === 0 ? "Fit test pin" : `Socket ${label} mm`,
+          visible: true,
+          transform: placed({
+            position: [
+              ((i % columns) - (columns - 1) / 2) * step,
+              (Math.floor(i / columns) - (rows - 1) / 2) * step,
+              0,
+            ],
+          }),
+          source_id: joint.source_id,
+          plate_id: plate,
+          plane: joint.plane,
+          tool_id: null,
+          keep: i === 0 ? "front" : "back",
+          connector: {
+            ...joint.connector,
+            offset: [
+              joint.connector.offset[0] - ((joint.connector.count - 1) / 2) * joint.connector.spacing,
+              joint.connector.offset[1],
+            ],
+            clearance,
+            count: 1,
+          },
+          fit_sample: { size, label: i === 0 ? "" : label },
+        });
+        created.push(id);
+      }
+      return { document: doc, created, summary: `Made ${count} fit samples on ${plate}` };
+    },
+  }),
+
+  apply_fit_clearance: command({
+    title: "Use a measured fit clearance",
+    description:
+      "Updates both halves of the split to the chosen radial clearance. Optionally stores the same value as a design parameter in mm.",
+    args: {
+      feature_id: bodyId,
+      clearance: z.number().min(0).max(5).describe("Chosen radial clearance in mm."),
+      parameter: z
+        .string()
+        .min(1)
+        .max(40)
+        .optional()
+        .describe("Name of the length parameter the connector clearance will follow."),
+    },
+    apply(doc, args) {
+      const joint = splitWithConnector(doc, args.feature_id);
+      const connector = { ...joint.connector, clearance: args.clearance };
+      checkConnector(connector);
+      const changed = args.parameter
+        ? applyCommand(doc, "set_parameter", { name: args.parameter, value: args.clearance, unit: "mm" }).document
+        : doc;
+      for (const part of splitPair(changed, joint.source_id)) {
+        part.connector = { ...connector };
+        dropExpressions(part, ["connector.clearance"]);
+        if (args.parameter) part.expressions = { ...part.expressions, "connector.clearance": args.parameter };
+      }
+      return {
+        document: changed,
+        created: [],
+        summary: `Applied ${fmt(args.clearance)} mm clearance ${args.parameter ? `as ${args.parameter}` : "to the joint"}`,
+      };
     },
   }),
 
@@ -2211,13 +2398,85 @@ export const STUDIO_COMMANDS = {
     description: "Creates an empty named build plate and returns its plate ID in created.",
     args: { name: z.string().trim().min(1).max(80).describe("The name to show for the plate.") },
     apply(doc, { name }) {
-      const plates = studioPlates(doc);
-      if (plates.length >= MAX_PLATES) throw new CommandError(`A design holds up to ${MAX_PLATES} plates.`);
-      const next = doc.next_plate_id ?? Math.max(...plates.map((plate) => Number(plate.id.slice(6)))) + 1;
-      const id = `plate-${next}`;
-      doc.next_plate_id = next + 1;
-      doc.plates = [...plates, { id, name }];
+      const id = addPlate(doc, name);
       return { document: doc, created: [id], summary: `Created ${id} “${name}”` };
+    },
+  }),
+
+  set_print_setup: command({
+    title: "Set the Studio printer",
+    description:
+      "Sets the printer, nozzle and centered bed used by print checks and plate arrangement. Null clears it.",
+    args: {
+      setup: z
+        .object({
+          printer: z.string().min(1).max(120),
+          nozzle: z.string().min(1).max(16),
+          bed: z.tuple([length("Bed width in mm"), length("Bed depth in mm"), length("Build height in mm")]),
+          outline: z
+            .discriminatedUnion("shape", [
+              z.object({ shape: z.literal("circle") }),
+              z.object({ shape: z.literal("polygon"), points: z.array(vec2).min(3).max(256) }),
+            ])
+            .optional(),
+          minWall: z.number().min(0).max(20),
+          overhang: z.number().min(0).max(90).optional(),
+        })
+        .strict()
+        .nullable()
+        .describe(
+          "Printer and nozzle with centered bed dimensions, optional outline and minimum wall thickness, or null to clear.",
+        ),
+    },
+    apply(doc, { setup }) {
+      if (setup) doc.print_setup = setup;
+      else delete doc.print_setup;
+      return {
+        document: doc,
+        summary: setup ? `Set up printing with ${setup.printer}` : "Cleared the printer setup",
+        created: [],
+      };
+    },
+  }),
+
+  lock_plate_positions: command({
+    title: "Lock or unlock plate positions",
+    description: "Keeps body positions fixed during automatic plate arrangement, or unlocks them.",
+    args: {
+      feature_ids: z.array(bodyId).min(1).max(LIMITS.features).describe("Top-level body IDs to lock or unlock."),
+      locked: z.boolean(),
+    },
+    apply(doc, { feature_ids, locked }) {
+      const ids = new Set((doc.locked_layout ?? []).filter((id) => featureById(doc, id)));
+      for (const id of feature_ids) {
+        freeBody(doc, id);
+        if (locked) ids.add(id);
+        else ids.delete(id);
+      }
+      if (ids.size) doc.locked_layout = [...ids];
+      else delete doc.locked_layout;
+      return {
+        document: doc,
+        summary: `${locked ? "Locked" : "Unlocked"} ${feature_ids.join(", ")} for arrangement`,
+        created: [],
+      };
+    },
+  }),
+
+  arrange_plate: command({
+    kind: "measure",
+    title: "Arrange a build plate",
+    description:
+      "Packs visible bodies on a plate with the requested spacing and keeps locked positions. Can add plates for overflow. Uses the design's printer setup if present.",
+    args: {
+      plate_id: plateId,
+      spacing: z
+        .number()
+        .min(0)
+        .max(100)
+        .optional()
+        .describe("Spacing between bodies and from the edge in mm. Defaults to 3."),
+      overflow: z.boolean().optional().describe("Add plates for bodies that cannot share the first plate."),
     },
   }),
 
@@ -2286,6 +2545,40 @@ export const STUDIO_COMMANDS = {
         document: doc,
         created: [],
         summary: `${color ? `Set color to ${color} on` : "Cleared color on"} ${feature_ids.join(", ")}`,
+      };
+    },
+  }),
+
+  set_filament_slots: command({
+    title: "Map body colors to slicer filament slots",
+    description:
+      "Replaces the design's color to filament slot assignments for Bambu-compatible 3MF handoff. Use one slot per color. An empty list restores automatic assignment.",
+    args: {
+      slots: z
+        .array(
+          z
+            .object({
+              color: bodyColor,
+              slot: z.number().int().min(1).max(STUDIO_FILAMENT_SLOT_LIMIT),
+              material: z.enum(STUDIO_FILAMENT_MATERIALS),
+            })
+            .strict(),
+        )
+        .max(STUDIO_FILAMENT_SLOT_LIMIT)
+        .describe("Color, loaded slot number and material for each assignment."),
+    },
+    apply(doc, { slots }) {
+      if (
+        new Set(slots.map(({ color }) => color)).size !== slots.length ||
+        new Set(slots.map(({ slot }) => slot)).size !== slots.length
+      )
+        throw new CommandError("Each color and slot can appear once in the filament mapping.");
+      if (slots.length) doc.filament_slots = slots.toSorted((a, b) => a.slot - b.slot);
+      else delete doc.filament_slots;
+      return {
+        document: doc,
+        created: [],
+        summary: slots.length ? `Mapped ${slots.length} filament slots` : "Restored automatic filament assignment",
       };
     },
   }),
@@ -2652,6 +2945,64 @@ export function addTrace(
 /** A body's extent in the world, as the server or the page measures it for align and lay_flat. */
 export type Bounds = { min: Vec3; max: Vec3 };
 type AlignMode = "start" | "center" | "end" | "before" | "after";
+
+export function arrangeMeasures(doc: StudioDocument, args: { plate_id: string }): string[] {
+  findPlate(doc, args.plate_id);
+  const ids = topLevel(doc)
+    .filter((feature) => isBody(feature) && feature.visible && plateOf(feature) === args.plate_id)
+    .map((feature) => feature.id);
+  if (!ids.length) throw new CommandError("This plate has no visible bodies to arrange.");
+  return ids;
+}
+
+export function previewArrangement(
+  doc: StudioDocument,
+  args: { plate_id: string; spacing?: number },
+  bounds: Record<string, Bounds>,
+) {
+  const locked = new Set(doc.locked_layout);
+  const bodies = arrangeMeasures(doc, args).map((id) => {
+    if (!bounds[id]) throw new CommandError(`Couldn't measure ${id} to arrange it.`);
+    return { id, bound: bounds[id], locked: locked.has(id) };
+  });
+  return arrangeFootprints(
+    bodies,
+    doc.print_setup?.bed ?? DEFAULT_PRINT_BED,
+    args.spacing ?? 3,
+    doc.print_setup?.outline,
+  );
+}
+
+export function arrangePlate(
+  doc: StudioDocument,
+  args: { plate_id: string; spacing?: number; overflow?: boolean },
+  bounds: Record<string, Bounds>,
+): CommandOutcome {
+  const { planes, overflow } = previewArrangement(doc, args, bounds);
+  if (overflow.length)
+    throw new CommandError(`These bodies don't fit on an empty bed at this spacing: ${overflow.join(", ")}.`);
+  if (planes.length > 1 && !args.overflow)
+    throw new CommandError("Some bodies need another plate. Enable overflow plates or use less spacing.");
+  const result = structuredClone(doc);
+  const name = findPlate(result, args.plate_id).name;
+  const created: string[] = [];
+  for (const [index, placements] of planes.entries()) {
+    const id = index === 0 ? args.plate_id : addPlate(result, `${name.slice(0, 67)} · ${index + 1}`);
+    if (index > 0) created.push(id);
+    for (const place of placements) {
+      if (place.locked) continue;
+      const body = findBody(result, place.id);
+      body.plate_id = id;
+      body.transform.position = body.transform.position.map((position, axis) => position + place.shift[axis]) as Vec3;
+      dropExpressions(body, ["position.x", "position.y"]);
+    }
+  }
+  return {
+    document: result,
+    created,
+    summary: `Arranged ${name} across ${planes.length} ${planes.length === 1 ? "plate" : "plates"}`,
+  };
+}
 
 /** The bodies align measures, or why it can't: checked before they're measured. */
 export function alignMeasures(

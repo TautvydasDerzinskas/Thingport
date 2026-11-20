@@ -36,6 +36,7 @@ export function NumberField({
   unit,
   onCommit,
   live,
+  disabled,
   expression,
   onExpression,
 }: {
@@ -45,6 +46,7 @@ export function NumberField({
   onCommit: (value: number) => void;
   /** Every valid number as it's typed, for a preview. */
   live?: boolean;
+  disabled?: boolean;
   /** The formula the number follows, if it does. */
   expression?: string;
   onExpression?: (expression: string) => void;
@@ -83,6 +85,7 @@ export function NumberField({
   return (
     <Tooltip title={follows ? t("studio.parameters.follows", { expression }) : ""} placement="top">
       <TextField
+        disabled={disabled}
         size="small"
         label={
           follows ? (

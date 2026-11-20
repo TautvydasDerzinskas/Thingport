@@ -46,6 +46,7 @@ import PictureThumb from "./PictureThumb";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
 import { featureLabel } from "./labels";
 import { FeatureIcon, SeparateIcon } from "./studioIcons";
+import SplitConnectorFields from "./SplitConnectorFields";
 
 type Props = {
   designId: string;
@@ -56,6 +57,7 @@ type Props = {
   onSelect: (id: string) => void;
   /** Opens the Separate tool on a body. */
   onSeparate: (id: string) => void;
+  onFitTest: (id: string) => void;
   onEditSketch: (id: string) => void;
 };
 
@@ -154,6 +156,7 @@ export default function PropertiesPanel({
   run,
   onSelect,
   onSeparate,
+  onFitTest,
   onEditSketch,
 }: Props) {
   const { t } = useTranslation("app");
@@ -712,7 +715,7 @@ export default function PropertiesPanel({
           </Stack>
         </Section>
       )}
-      {feature.type === "split" && (
+      {feature.type === "split" && !feature.connector && (
         <Section title={t("studio.ops.split.title")}>
           <Segmented
             fullWidth
@@ -726,6 +729,17 @@ export default function PropertiesPanel({
             )}
             onChange={(keep) => void run("update_feature", { feature_id: id, keep })}
           />
+        </Section>
+      )}
+      {feature.type === "split" && feature.connector && !feature.fit_sample && (
+        <Section title={t("studio.print.connectors")}>
+          <SplitConnectorFields
+            connector={feature.connector}
+            onChange={(connector) => void run("update_split_connector", { feature_id: id, connector })}
+          />
+          <Button size="small" onClick={() => onFitTest(id)} sx={{ mt: 1 }}>
+            {t("studio.print.fitPlate")}
+          </Button>
         </Section>
       )}
       {feature.type === "boolean" && (

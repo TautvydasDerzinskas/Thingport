@@ -13,6 +13,8 @@ import {
   alignBody,
   alignMeasures,
   applyCommand,
+  arrangeMeasures,
+  arrangePlate,
   layFlat,
   layFlatTurn,
   CommandError,
@@ -469,6 +471,11 @@ async function measuredFor(
   const doc = documentOf(design);
   const assetDir = studioAssetDir(userId, id);
   const featureId = String(args.feature_id);
+  if (name === "arrange_plate") {
+    const given = args as Parameters<typeof arrangePlate>[1];
+    const bounds = await boundsIn(doc, assetDir, arrangeMeasures(doc, given));
+    return { version: design.version, apply: (now) => arrangePlate(now, given, bounds) };
+  }
   if (name === "align") {
     const given = args as Parameters<typeof alignBody>[1];
     const bounds = await boundsIn(doc, assetDir, alignMeasures(doc, given));

@@ -80,6 +80,50 @@ describe("Studio", () => {
     bob = await register("bob");
   });
 
+  it("uses the same printer setup for MCP print checks and arrangement and writes selected filament slots", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Print workflow" }))
+      .body;
+    const token = await mcpToken(alice);
+    const tool = (name: string, args: Record<string, unknown> = {}) =>
+      callTool(token, `studio_${name}`, { design_id: design.id, ...args });
+    const setup = { printer: "bambulab-p1s", nozzle: "0.4", bed: [24, 24, 256], minWall: 0.8 };
+    expect((await command(alice, design.id, "set_print_setup", { setup })).status).toBe(200);
+    const shape = { width: 14, depth: 14, height: 4 };
+    const red = (await tool("add_box", { ...shape, color: "#ff0000" })).data.created[0];
+    const blue = (await tool("add_box", { ...shape, color: "#0000ff", position: [30, 0, 0] })).data.created[0];
+    const check = (await tool("check_print")).data;
+    expect(check.printer).toBe(setup.printer);
+    expect(check.bodies).toMatchObject([
+      { id: red, fitsBed: true },
+      { id: blue, fitsBed: false },
+    ]);
+    expect((await tool("lock_plate_positions", { feature_ids: [red], locked: true })).isError).toBe(false);
+    expect((await tool("arrange_plate", { plate_id: "plate-1" })).isError).toBe(true);
+    expect((await tool("arrange_plate", { plate_id: "plate-1", overflow: true })).data.created).toEqual(["plate-2"]);
+    expect((await tool("check_print")).data.ready).toBe(true);
+
+    expect(
+      (
+        await tool("set_filament_slots", {
+          slots: [
+            { color: "#ff0000", slot: 3, material: "PETG" },
+            { color: "#0000ff", slot: 1, material: "PLA" },
+          ],
+        })
+      ).isError,
+    ).toBe(false);
+    const file = await request(app)
+      .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.4/-/Workflow.3mf`)
+      .set(auth(alice))
+      .buffer(true)
+      .parse(readBinary);
+    expect(file.status).toBe(200);
+    const pkg = await readBambuPackage(file.body);
+    expect(pkg.config.filament_colour).toEqual(["#0000FF", "#B0B0B0", "#FF0000"]);
+    expect(pkg.config.filament_type).toEqual(["PLA", "PLA", "PETG"]);
+    expect(Object.values(pkg.modelSettings).map(({ extruder }) => extruder)).toEqual([3, 1]);
+  });
+
   it("says it's on, and keeps each user's designs to themselves", async () => {
     expect((await request(app).get("/api/studio/status").set(auth(alice))).body).toEqual({ enabled: true });
     const created = await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Bracket" });

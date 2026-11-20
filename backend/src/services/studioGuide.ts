@@ -122,8 +122,9 @@ A bent pipe:
 2. sweep sketch-1 along [[0, -60, 40], [0, 0, 40], [0, 0, 100]], smooth false: 60 mm along +Y, then up.
 
 A model cut in two for printing:
-1. import_model the library model; split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
-2. Optionally hole both parts at matching points for dowel pins.
+1. import_model the library model. Split it with plane { point: [0, 0, h / 2], normal: [0, 0, 1] }.
+2. Give split a connector for matching pins and sockets and separate_plates to place the second half on another plate.
+3. make_fit_test makes cropped samples with candidate clearances. Use apply_fit_clearance when the user reports a fit.
 
 A name tag:
 1. add_box 60 × 20 × 3; fillet its four vertical edges with radius 3.
@@ -132,6 +133,8 @@ A name tag:
 Check a part meant for printing with studio_check_print (floating or sunk bodies, overlaps, overhangs, thin walls,
 loose pieces), and a fit or a clearance with studio_measure (the gap between two bodies, or their overlap). As CAD
 does, the check judges a thread as the plain cylinder it's cut on, so its ridges aren't counted as overhang or thin walls.
+The check uses the saved print_setup unless overridden. Arrange a plate with arrange_plate, preserve specific body
+positions with lock_plate_positions, and use set_filament_slots to map its body colors before Bambu-compatible export.
 
 For a design someone will want to change, set_parameter names its key numbers, each with its unit (wall = 2 mm,
 hole_d = 5 mm, holes = 6 with unit none) and set_expression makes features follow them (width = wall * 2 + 30 mm):

@@ -19,6 +19,7 @@ import {
   MAX_PLATES,
   featureById,
   inputsOf,
+  isBody,
   plateOf,
   studioPlates,
   topLevel,
@@ -38,6 +39,7 @@ type Props = {
   selected: readonly string[];
   errors: Record<string, string>;
   onChangePlate: (id: string) => void;
+  onArrange: (id: string) => void;
   onSelect: (plateId: string, featureId: string, additive: boolean) => void;
   onMenu: (plateId: string, featureId: string, at: { top: number; left: number }) => void;
   onHide: () => void;
@@ -61,6 +63,7 @@ export default function ObjectsPanel({
   selected,
   errors,
   onChangePlate,
+  onArrange,
   onSelect,
   onMenu,
   onHide,
@@ -341,6 +344,17 @@ export default function ObjectsPanel({
       {canEditPlates && (
         <>
           <Menu anchorEl={plateMenu?.anchor} open={Boolean(menuPlate)} onClose={() => setPlateMenu(null)}>
+            <MenuItem
+              disabled={
+                !menuPlate || !rootsByPlate.get(menuPlate.id)?.some((feature) => isBody(feature) && feature.visible)
+              }
+              onClick={() => {
+                if (menuPlate) onArrange(menuPlate.id);
+                setPlateMenu(null);
+              }}
+            >
+              {t("studio.print.arrange")}
+            </MenuItem>
             <MenuItem
               onClick={() => {
                 if (menuPlate) setPlateDialog({ kind: "rename", id: menuPlate.id });

@@ -16,7 +16,11 @@ import { fontsLoadedFor, loadFontsFor } from "./studioFonts";
 // How often an open design asks whether something else, an assistant, changed it.
 const POLL_MS = 2000;
 
-export type RunCommand = <N extends StudioCommandName>(name: N, args: StudioCommandArgs<N>) => Promise<string[] | null>;
+export type RunCommand = <N extends StudioCommandName>(
+  name: N,
+  args: StudioCommandArgs<N>,
+  options?: { waitForSave?: boolean },
+) => Promise<string[] | null>;
 
 export function useStudioDesign(
   designId: string | null,
@@ -82,7 +86,7 @@ export function useStudioDesign(
   }, [designId, reload]);
 
   const run: RunCommand = useCallback(
-    async (name, args) => {
+    async (name, args, options) => {
       // Text is drawn in its font, fetched the first time it's used.
       if (!fontsLoadedFor(args)) {
         try {
@@ -113,7 +117,7 @@ export function useStudioDesign(
       };
       // A change to the feature tree shows at once, and what it made can be selected at once; the server's answer
       // then takes over. Undo, redo and the design's name wait for the server, which keeps the history.
-      if (!studioCommand(name)?.apply) return send();
+      if (options?.waitForSave || !studioCommand(name)?.apply) return send();
       try {
         const outcome = applyCommand(open.document, name, args);
         const next = { ...open, document: outcome.document, can_undo: true, can_redo: false };

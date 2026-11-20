@@ -11,6 +11,8 @@ import Tooltip from "@mui/material/Tooltip";
 import { alpha, useTheme } from "@mui/material/styles";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { paletteForTheme } from "../../utils/modelLoaders";
+import { bedOutline } from "../../studio/printLayout";
+import type { BodyCheck } from "../../studio/printCheck";
 import {
   featureById,
   inputsOf,
@@ -91,6 +93,7 @@ type Props = {
   mode: StudioMode;
   handMode: boolean;
   activePlate: string;
+  printIssue?: { id: string; highlights?: BodyCheck["highlights"] };
   /** The sketch being drawn on, and with what. */
   sketch: { id: string; tool: SketchTool } | null;
   onSelect: (id: string | null, additive: boolean) => void;
@@ -220,6 +223,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     /** What picking shows: what's under the pointer, and what's been picked. */
     hoverLayer: THREE.Group;
     chosenLayer: THREE.Group;
+    printIssues: THREE.Group;
     drawing: Drawing | null;
     pointer: Pointer | null;
     hovered: string | null;
@@ -391,7 +395,8 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     const preview = new THREE.Group();
     const hoverLayer = new THREE.Group();
     const chosenLayer = new THREE.Group();
-    scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer);
+    const printIssues = new THREE.Group();
+    scene.add(bed, sketches, sketchGrid, preview, hoverLayer, chosenLayer, printIssues);
     const grids = { bed: new AdaptiveGrid(), sketch: new AdaptiveGrid() };
     grids.bed.setPlane(
       new THREE.Vector3(),
@@ -449,6 +454,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       preview,
       hoverLayer,
       chosenLayer,
+      printIssues,
       drawing: null,
       pointer: null,
       hovered: null,
@@ -472,7 +478,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       gizmo.dispose();
       orbit.dispose();
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
           object.geometry.dispose();
           (Array.isArray(object.material) ? object.material : [object.material]).forEach((m) => m.dispose());
         }
@@ -508,9 +514,20 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
         new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 }),
       );
     s.bed.add(axis(new THREE.Vector3(BED / 2, 0, 0.01), colors.x), axis(new THREE.Vector3(0, BED / 2, 0.01), colors.y));
+    const setup = props.document.print_setup;
+    if (setup) {
+      s.bed.add(
+        new THREE.LineLoop(
+          new THREE.BufferGeometry().setFromPoints(
+            bedOutline(setup.bed, setup.outline).map(([x, y]) => new THREE.Vector3(x, y, 0.02)),
+          ),
+          new THREE.LineBasicMaterial({ color: colors.accent, transparent: true, opacity: 0.8 }),
+        ),
+      );
+    }
     s.render();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [colorKey]);
+  }, [colorKey, props.document.print_setup]);
   // A grid setting changed, or the design's units: drawn again with them.
   useEffect(() => {
     stage.current?.render();
@@ -637,6 +654,10 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       }
       latest.current.onErrors(Object.fromEntries(s.errors));
       place();
+      const issue = latest.current.printIssue;
+      const located = issue && stale.includes(issue.id) && s.bodies.get(issue.id);
+      if (located)
+        frame(s.camera.position.clone().sub(s.orbit.target).normalize(), new THREE.Box3().setFromObject(located.group));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.document, props.activePlate]);
@@ -830,6 +851,32 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
     s.moveCamera(to.position, to.target);
   };
 
+  useEffect(() => {
+    const s = stage.current;
+    if (!s) return;
+    clear(s.printIssues);
+    const issue = props.printIssue;
+    if (issue) {
+      const body = s.bodies.get(issue.id);
+      if (body)
+        frame(s.camera.position.clone().sub(s.orbit.target).normalize(), new THREE.Box3().setFromObject(body.group));
+      const mark = (points: readonly Vec3[], color: string) => {
+        if (!points.length) return;
+        const positions = new THREE.BufferGeometry().setFromPoints(points.map((at) => new THREE.Vector3(...at)));
+        const cloud = new THREE.Points(
+          positions,
+          new THREE.PointsMaterial({ color, size: 8, sizeAttenuation: false, depthTest: false }),
+        );
+        cloud.renderOrder = 5;
+        s.printIssues.add(cloud);
+      };
+      mark(issue.highlights?.overhang ?? [], theme.palette.warning.main);
+      mark(issue.highlights?.thinWalls ?? [], theme.palette.error.main);
+    }
+    s.render();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.printIssue, colorKey]);
+
   const cancelBox = () => {
     const s = stage.current;
     if (!s?.pointer?.boxing) return false;
@@ -888,7 +935,7 @@ const StudioViewport = forwardRef<StudioViewportHandle, Props>(function StudioVi
       const s = stage.current;
       if (!s) return Promise.resolve(null);
       s.settleCamera();
-      const hidden = [s.gizmo.getHelper(), s.hoverLayer, s.chosenLayer, s.preview, s.sketchGrid];
+      const hidden = [s.gizmo.getHelper(), s.hoverLayer, s.chosenLayer, s.preview, s.sketchGrid, s.printIssues];
       const shown = hidden.map((object) => object.visible);
       hidden.forEach((object) => (object.visible = false));
       snapshotting.current = true;
@@ -1519,7 +1566,7 @@ function clear(group: THREE.Group) {
     const child = group.children[0];
     group.remove(child);
     child.traverse((object) => {
-      if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
         object.geometry.dispose();
         (Array.isArray(object.material) ? object.material : [object.material]).forEach((m) => m.dispose());
       }
