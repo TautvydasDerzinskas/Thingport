@@ -1427,6 +1427,72 @@ describe("models whose files are gone", () => {
     expect(fs.existsSync(assetTarget(assetsPath!, galleryImageFile(kept!.id)))).toBe(true);
   });
 
+  it("holds the owner's removal of a picture until a repair's look at its gallery has done what it found", async () => {
+    const model = await makePrint(dir, owner.id, "Gone picture removed after the look");
+    const kept = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    const lost = await addPreviewImage(model.print.id, await uniqueImage("jpeg"));
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } });
+    fs.rmSync(assetTarget(assetsPath!, galleryImageFile(lost!.id)), { force: true });
+    fs.rmSync(path.join(STORAGE, model.plate.storagePath), { force: true });
+    const image = await uniqueImage("jpeg");
+    const fetchBefore = global.fetch;
+    global.fetch = (async () => new Response(image, { headers: { "content-type": "image/jpeg" } })) as typeof fetch;
+    // The repair is held just after its second look at the gallery, the one it removes pictures on, in its turn at the
+    // storage lock, while the owner removes the picture that was gone. Its first look found it gone too.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let looked = () => {};
+    const atLook = new Promise<void>((resolve) => (looked = resolve));
+    const findUniqueOrThrow = prisma.print.findUniqueOrThrow.bind(prisma.print);
+    let looks = 0;
+    const look = vi.spyOn(prisma.print, "findUniqueOrThrow").mockImplementation((async (
+      args: Parameters<typeof prisma.print.findUniqueOrThrow>[0],
+    ) => {
+      const found = await findUniqueOrThrow(args);
+      if (args.where.id === model.print.id && args.select?.previewImages && ++looks === 2) {
+        looked();
+        await held;
+      }
+      return found;
+    }) as never);
+    let removedAt: "during" | "after" | null = null;
+    let repairing: Promise<unknown> | null = null;
+    let removing: Promise<request.Response> | null = null;
+    try {
+      repairing = replaceModelFiles(owner.id, model.print.id, {
+        inputs: [{ filename: "fetched.stl", tempFilePath: tempFile(dir, "solid fetched\nendsolid\n") }],
+        coverImageUrl: null,
+        galleryImages: [{ url: "http://93.184.216.34/one.jpg", filename: "one.jpg" }],
+        profiles: {},
+      });
+      await atLook;
+      let lookDone = false;
+      removing = request(app)
+        .delete(`/api/print/${model.print.id}/preview-images/${lost!.id}`)
+        .set(auth(owner.token))
+        .then((res) => {
+          removedAt = lookDone ? "after" : "during";
+          return res;
+        });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      lookDone = true;
+      release();
+      expect(await repairing).not.toBeNull();
+      // The look found a picture gone, so the repair took the source's gallery; the owner's removal came after it,
+      // when that picture was gone with the rest.
+      expect((await removing).status).toBe(404);
+    } finally {
+      release();
+      look.mockRestore();
+      global.fetch = fetchBefore;
+      await Promise.allSettled([repairing, removing].filter(Boolean));
+    }
+    expect(removedAt).toBe("after");
+    const left = await prisma.previewImage.findMany({ where: { printId: model.print.id } });
+    expect(left.map((each) => each.id)).not.toContain(kept!.id);
+    expect(left).toHaveLength(1);
+  });
+
   /** A repair of `model` whose second plate fails as its row is saved, `meanwhile` running just before, by which time
    *  the first plate (a picture) is stored, its thumbnail with it. The ids of the plates it made. */
   async function repairStoppedAtSecond(
