@@ -9,7 +9,15 @@ import {
   type PrinterChoice,
 } from "../adapter";
 import { COMPATIBLE_TAG } from "../adapter/plan";
-import { bedCentre, plateColumns, plateOrigin, type BedBox, type PrinterRecipe } from "../adapter/printer";
+import {
+  bedBoxOf,
+  bedCentre,
+  plateColumns,
+  plateOrigin,
+  rectangle,
+  type BedBox,
+  type PrinterRecipe,
+} from "../adapter/printer";
 import { formatTransform } from "../adapter/transform";
 import { contentTypesXml, relsXml } from "../adapter/writers/flatten";
 import { escapeXml } from "../adapter/xml";
@@ -81,6 +89,19 @@ export async function writeStudioThreeMf(
   const height = recipe?.height ?? setup?.bed[2] ?? 256;
   const outline = recipe ? target?.printer?.outline : setup?.outline;
   const [cx, cy] = bedCentre(bed);
+  const printableArea =
+    recipe?.bed && !recipe.bed.outline
+      ? rectangle(recipe.bed)
+      : bedOutline([bed.maxX - bed.minX, bed.maxY - bed.minY, height], outline).map(
+          ([x, y]) => `${number(x + cx)}x${number(y + cy)}`,
+        );
+  const layoutBed = bedBoxOf(printableArea) ?? bed;
+  const [layoutX, layoutY] = bedCentre(layoutBed);
+  // Spacing follows the printable area. An off-center outline still shares the design's original XY origin.
+  const centerOffset = [number(cx - layoutX), number(cy - layoutY)];
+  const originAttribute = centerOffset.some((offset) => offset !== "0")
+    ? ` thingport_bed_center_offset="${centerOffset.join(" ")}"`
+    : "";
   const columns = plateColumns(plates.length);
   const colorOf = (part: Part) => part.color?.toLowerCase() ?? STUDIO_DEFAULT_BODY_COLOR;
   const usedColors = new Set(parts.map(colorOf));
@@ -114,7 +135,7 @@ export async function writeStudioThreeMf(
     const file = `/3D/Objects/object_${id}.model`;
     const slot = byColor.get(colorOf(part))!;
     const plate = plates.findIndex((entry) => entry.id === part.plateId);
-    const [px, py] = plateOrigin(plate, columns, bed);
+    const [px, py] = plateOrigin(plate, columns, layoutBed);
     const m = part.body.matrix;
     const transform = formatTransform([
       m[0],
@@ -158,7 +179,7 @@ export async function writeStudioThreeMf(
   ].join("\n");
   const modelSettings = [
     XML,
-    "<config>",
+    `<config${originAttribute}>`,
     ...settings,
     ...plates.map((plate, i) =>
       [
@@ -174,9 +195,7 @@ export async function writeStudioThreeMf(
     "</config>",
   ].join("\n");
   const projectSettings = JSON.stringify({
-    printable_area: bedOutline([bed.maxX - bed.minX, bed.maxY - bed.minY, height], outline).map(
-      ([x, y]) => `${number(x + cx)}x${number(y + cy)}`,
-    ),
+    printable_area: printableArea,
     printable_height: String(height),
     printer_settings_id: "",
     print_settings_id: "",
@@ -213,6 +232,7 @@ export async function writeStudioThreeMf(
     prusaConfig: null,
   });
   const plan = target && planAdaptation(format, profile, target.printer?.choice);
-  const result = plan ? (await adapt3mf(zip, plan, { printer: target.printer?.recipe })).zip : zip;
+  const printer = recipe?.bed ? { ...recipe, bed: { ...layoutBed, outline: recipe.bed.outline } } : recipe;
+  const result = plan ? (await adapt3mf(zip, plan, { printer })).zip : zip;
   return result.generateAsync({ type: "uint8array", ...ADAPT_ZIP_OPTIONS });
 }

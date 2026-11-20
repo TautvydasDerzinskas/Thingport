@@ -856,9 +856,38 @@ describe("Studio", () => {
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
 
-    it("reopens a Studio project with its named plates, objects, colors, and placements", async () => {
+    it.each([
+      { bed: "the default bed", points: null },
+      {
+        bed: "a polygon smaller than the declared bed",
+        points: [
+          [-50, -50],
+          [50, -50],
+          [0, 50],
+        ],
+      },
+      {
+        bed: "an off-center polygon",
+        points: [
+          [-70, -60],
+          [80, -60],
+          [80, 40],
+          [-70, 55],
+        ],
+      },
+    ])("reopens a Studio project on $bed with its plates, objects, colors, and placements", async ({ points }) => {
       const original = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Round trip" }))
         .body;
+      const setup = points
+        ? {
+            printer: "polygon-bed",
+            nozzle: "0.4",
+            bed: [200, 200, 200],
+            minWall: 0.8,
+            outline: { shape: "polygon", points },
+          }
+        : null;
+      expect((await command(alice, original.id, "set_print_setup", { setup })).status).toBe(200);
       const lids = (await command(alice, original.id, "create_plate", { name: "Lids" })).body.created[0];
       const box = { width: 10, depth: 20, height: 6 };
       await command(alice, original.id, "add_box", {

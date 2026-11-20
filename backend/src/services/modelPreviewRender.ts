@@ -226,6 +226,7 @@ type StructuralData = {
   nonModelParts: Set<string>;
   plateNames: Map<number, string>;
   plateOffsets: Map<number, { offsetX: number; offsetY: number }>;
+  bedCenterOffset: [number, number];
 };
 
 function parseModelSettingsConfig(xml: string): StructuralData {
@@ -239,6 +240,7 @@ function parseModelSettingsConfig(xml: string): StructuralData {
     nonModelParts: new Set(),
     plateNames: new Map(),
     plateOffsets: new Map(),
+    bedCenterOffset: [0, 0],
   };
   let $: cheerio.CheerioAPI;
   try {
@@ -246,6 +248,10 @@ function parseModelSettingsConfig(xml: string): StructuralData {
   } catch {
     return data;
   }
+
+  const centerOffset = $("config").first().attr("thingport_bed_center_offset")?.trim().split(/\s+/).map(Number);
+  if (centerOffset?.length === 2 && centerOffset.every(Number.isFinite))
+    data.bedCenterOffset = [centerOffset[0], centerOffset[1]];
 
   $("object").each((_i, objEl) => {
     const $obj = $(objEl);
@@ -700,6 +706,7 @@ type ParsedModel = {
   plateThumbnails: Map<number, string>;
   plateIds: Set<number>;
   bed: BedBox | null;
+  bedCenterOffset: [number, number];
   unitMm: number;
   projectFilaments: number;
   filamentColors: string[];
@@ -842,6 +849,7 @@ async function parseThreeMfFast(srcPath: string, studioMaxTriangles?: number): P
     plateThumbnails,
     plateIds: structural.plateIds,
     bed,
+    bedCenterOffset: structural.bedCenterOffset,
     unitMm:
       ({ micron: 0.001, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 } as Record<string, number>)[
         getAttr(mainModelXml.match(/<model\b([^>]*)>/)?.[1] ?? "", "unit") ?? ""
@@ -1008,10 +1016,13 @@ export async function loadStudioThreeMf(
         const [cx, cy] = bedCentre(bed);
         const [gx, gy] = plateOrigin(plateIds.indexOf(id), plateColumns(plateIds.length), bed);
         const offset = parsed.plateOffsets.get(id);
+        const [dx, dy] = parsed.bedCenterOffset;
+        const x = cx + dx + (offset?.offsetX ?? gx);
+        const y = cy + dy + (offset?.offsetY ?? gy);
         for (const { triangles } of parts) {
           for (let i = 0; i < triangles.length; i += 3) {
-            triangles[i] -= cx + (offset?.offsetX ?? gx);
-            triangles[i + 1] -= cy + (offset?.offsetY ?? gy);
+            triangles[i] -= x;
+            triangles[i + 1] -= y;
           }
         }
       } else {
