@@ -1054,7 +1054,8 @@ function isUnreadableZip(err: unknown): boolean {
 /** The files wanted from the zips a zip holds, for an archive that wraps the model's own instead of its files. Each
  *  nested zip's files go in a folder named after it, where it sat ("Base/32mm.zip" gives "Base/32mm"), less what all of
  *  them share: one zip wrapped in another adds no folder, two side by side keep theirs apart. `placements` is told the
- *  folders the model's own files ended up in, for an archive wrapping this one to go by. */
+ *  folders the model's own files ended up in, for an archive wrapping this one to go by. `topIsModelTop`, as
+ *  filesFromZip's. */
 async function filesFromNestedZips(
   zipPath: string,
   pick: ZipPick,
@@ -1062,6 +1063,7 @@ async function filesFromNestedZips(
   budget: NestedZipBudget,
   placements?: (string | null)[],
   beside: NewPlateInput[] = [],
+  topIsModelTop = false,
 ): Promise<NewPlateInput[]> {
   const nested = (await listZipEntries(zipPath)).filter(
     (entry) => !entry.isDirectory && !isZipJunk(entry.name) && path.extname(entry.name).toLowerCase() === ".zip",
@@ -1072,6 +1074,9 @@ async function filesFromNestedZips(
   // the top keeps the folder the zip of its parts gives them.
   const everyFolder: (string | null)[] = (await zipEntriesInFolders(zipPath)).map((placed) => placed.folder);
   const modelFolders: (string | null)[] = [];
+  // The one zip this one wraps, beside none of the model's files: the levels every file shares come off down to the
+  // model's own (sharedTopFolder below), so the top of that zip, where it holds model files, is the model's top too.
+  const alone = topIsModelTop && nested.length === 1 && !everyFolder.length;
   try {
     for (const entry of nested) {
       // Not for a model's supporting files once they're all taken: none of what the archive holds would be kept.
@@ -1085,9 +1090,12 @@ async function filesFromNestedZips(
         const folder = normalizeFolder(entry.name.replace(/\.zip$/i, ""));
         const found: (string | null)[] = [];
         const keptBefore = picksSupporting(pick) ? { ...pick.kept } : null;
+        const folders = async () => (await placedZipEntries(tempZipPath)).map((each) => each.folder);
+        // Its top is the model's only where it holds model files: those are what the levels come off down to.
+        const early = alone ? await folders() : null;
         let got: NewPlateInput[];
         try {
-          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found);
+          got = await filesFromZip(tempZipPath, pick, depth + 1, budget, found, Boolean(early?.length));
         } catch (err) {
           // Its files went with it, and so does what they took of the model's share; the work it did still counts.
           if (keptBefore && picksSupporting(pick)) Object.assign(pick.kept, keptBefore);
@@ -1096,7 +1104,7 @@ async function filesFromNestedZips(
         for (const input of got) inputs.push({ ...input, folder: joinFolders(folder, input.folder) });
         // A zip that only wraps yet another has no files of its own to go by: where the model's files turned up in
         // it stands in, however deep, and never a supporting file, which isn't the model's own.
-        const placed = (await placedZipEntries(tempZipPath)).map((each) => each.folder);
+        const placed = early ?? (await folders());
         for (const each of placed.length ? placed : found) {
           everyFolder.push(joinFolders(folder, each));
           modelFolders.push(joinFolders(folder, each));
@@ -1316,13 +1324,15 @@ const allowanceSpent = (pick: ZipPick) =>
  *  zip, less the top folders every file in it shares (a zip named after its model holding one folder named after it
  *  again); the zip itself is left for the caller. An archive holding none of the files wanted is opened a level
  *  deeper, where the ones that only wrap another zip keep them. Supporting files are looked for where the model's
- *  files are, so only an archive holding none of those is opened for them. */
+ *  files are, so only an archive holding none of those is opened for them. `topIsModelTop`: what's at the top of this
+ *  zip is at the top of the model, as for the zip the import opened, and one it only wraps (filesFromNestedZips). */
 async function filesFromZip(
   zipPath: string,
   pick: ZipPick,
   depth = 0,
   budget: NestedZipBudget = { archives: NESTED_ZIP_BUDGET, bytes: IMPORT_MAX_BYTES },
   placements?: (string | null)[],
+  topIsModelTop = depth === 0,
 ): Promise<NewPlateInput[]> {
   const inputs: NewPlateInput[] = [];
   // Each one's folder as the zip has it, for placing them with what the archives it wraps hold.
@@ -1334,12 +1344,12 @@ async function filesFromZip(
     // A name the model keeps once, in any case ("GUIDE.pdf" beside "guide.pdf"), is taken once: a second copy would
     // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
     // leaves room for a readable second. By the name it's stored under (supportingImportName), where its folder here
-    // is the one it's stored in: at the top of the zip the import opened, which stays the top, a licence of the site's
-    // is "LICENSE (original).txt" as one called so is. A nested zip's top may yet be a folder of its own.
+    // is the one it's stored in: at the top of the model (`topIsModelTop`), a licence of the site's is
+    // "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own.
     const taken = new Set<string>();
     for (const { entry, parts, folder } of entries) {
       const key = supportingKey(folder, keptNameOf(parts));
-      const stored = depth === 0 ? supportingKey(folder, supportingImportName(keptNameOf(parts), folder)) : key;
+      const stored = topIsModelTop ? supportingKey(folder, supportingImportName(keptNameOf(parts), folder)) : key;
       if (picksSupporting(pick) && (pick.except?.has(key) || taken.has(stored))) continue;
       // As many files as a model keeps, whatever their size: each is written out before it's counted.
       if (picksSupporting(pick) && pick.kept.files >= SUPPORTING_FILES_PER_MODEL) {
@@ -1401,7 +1411,7 @@ async function filesFromZip(
     }
     // Its own files go with the archives', placed once, as the model in them is.
     const beside = inputs.map((input, index) => ({ ...input, folder: inZip[index] }));
-    return await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside);
+    return await filesFromNestedZips(zipPath, pick, depth, budget, placements, beside, topIsModelTop);
   } catch (err) {
     // The files written out so far go with it, whichever step failed: the caller is handed all or none.
     await Promise.all(inputs.map((input) => fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined)));

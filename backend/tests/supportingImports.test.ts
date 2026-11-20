@@ -556,6 +556,14 @@ describe("a site's zip", () => {
       ["docs", "LICENSE.txt"],
       [null, "notes.txt"],
     ]);
+    // So does a zip the import's only wraps, whose top is the model's.
+    const wrapped = await supportingFilesFromZip(await zipOf({ "Frog.zip": fs.readFileSync(zip) }));
+    remove(wrapped);
+    expect(wrapped.map((each) => [each.folder ?? null, each.filename])).toEqual([
+      [null, "LICENSE.txt"],
+      ["docs", "LICENSE.txt"],
+      [null, "notes.txt"],
+    ]);
   });
 
   it("removes the files it wrote out when the zip can't be listed after them", async () => {

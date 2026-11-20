@@ -248,9 +248,10 @@ export async function gltfReferencedFiles<T extends PackableFile>(files: T[], gl
  * every file its scene points at, so scenes sharing one large buffer write it out again and again: `room`, the bytes
  * the caller lets the .glbs come to, shared by every call it hands it to, is taken from before each is written, and a
  * scene that wouldn't fit fails the packing (413), as soon as what it's packed into would; what a call that fails took
- * of it is given back, as its .glbs go. Each file is read once, however many of a scene's entries name it, and only
- * as much of it as a buffer uses unless a texture takes it all (readPart), so a scene using a few bytes of large
- * files holds those bytes alone.
+ * of it is given back, as its .glbs go. Of each file only as much is read as a buffer uses, unless a texture takes it
+ * all (readPart), so a scene using a few bytes of large files holds those bytes alone; an entry naming it again reads
+ * it again only where it needs more of it than was read, a longer part or all of it, which then takes the place of
+ * what was.
  */
 export async function packGltfFiles<T extends PackableFile>(
   files: T[],
