@@ -45,6 +45,63 @@ export function onBed(x: number, y: number, bed: Vec3, outline?: StudioPrintSetu
   return inside;
 }
 
+/** Check between polygon crossings as well as at the endpoints, including crossings through a corner of a notch. */
+function segmentOnBed(
+  a: Vec2,
+  b: Vec2,
+  bed: Vec3,
+  outline: Extract<StudioPrintSetup["outline"], { shape: "polygon" }>,
+) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const cuts = [0, 1];
+  for (const [i, p] of outline.points.entries()) {
+    const q = outline.points[(i + 1) % outline.points.length];
+    const ex = q[0] - p[0];
+    const ey = q[1] - p[1];
+    const cross = dx * ey - dy * ex;
+    if (Math.abs(cross) < 1e-12) continue;
+    const px = p[0] - a[0];
+    const py = p[1] - a[1];
+    const t = (px * ey - py * ex) / cross;
+    const u = (px * dy - py * dx) / cross;
+    if (t > 0 && t < 1 && u >= -1e-9 && u <= 1 + 1e-9) cuts.push(t);
+  }
+  if (cuts.length === 2) return onBed((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, bed, outline);
+  const sorted = cuts.toSorted((x, y) => x - y);
+  return sorted.slice(1).every((end, i) => {
+    if (end - sorted[i] < 1e-9) return true;
+    const t = (end + sorted[i]) / 2;
+    return onBed(a[0] + t * dx, a[1] + t * dy, bed, outline);
+  });
+}
+
+/** A closed footprint fits if its boundary fits a simple bed outline. Curved and rectangular beds are convex. */
+export function footprintOnBed(points: readonly Vec2[], bed: Vec3, outline?: StudioPrintSetup["outline"]): boolean {
+  return (
+    points.every(([x, y]) => onBed(x, y, bed, outline)) &&
+    (outline?.shape !== "polygon" ||
+      points.every((point, i) => segmentOnBed(point, points[(i + 1) % points.length], bed, outline)))
+  );
+}
+
+function rectangle(x0: number, y0: number, x1: number, y1: number): Vec2[] {
+  return [
+    [x0, y0],
+    [x1, y0],
+    [x1, y1],
+    [x0, y1],
+  ];
+}
+
+export function boundsOnBed({ min, max }: Bounds, bed: Vec3, outline?: StudioPrintSetup["outline"]): boolean {
+  return (
+    min[2] >= -0.01 &&
+    max[2] <= bed[2] + 0.01 &&
+    footprintOnBed(rectangle(min[0], min[1], max[0], max[1]), bed, outline)
+  );
+}
+
 type Footprint = { x: number; y: number; width: number; depth: number };
 export type LayoutBody = { id: string; bound: Bounds; locked?: boolean };
 export type PlatePlacement = Footprint & { id: string; plate: number; shift: Vec3; locked: boolean };
@@ -96,11 +153,7 @@ export function arrangeFootprints(
           const x1 = x + part.width;
           const y1 = y + part.depth;
           if (x < floorX || y < floorY || x1 > -floorX || y1 > -floorY) continue;
-          if (
-            ![x - spacing, (x + x1) / 2, x1 + spacing].every((px) =>
-              [y - spacing, (y + y1) / 2, y1 + spacing].every((py) => onBed(px, py, bed, outline)),
-            )
-          )
+          if (outline && !footprintOnBed(rectangle(x - spacing, y - spacing, x1 + spacing, y1 + spacing), bed, outline))
             continue;
           if (
             placed.some(

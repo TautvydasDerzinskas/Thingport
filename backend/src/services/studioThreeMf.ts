@@ -13,7 +13,12 @@ import { bedCentre, plateColumns, plateOrigin, type BedBox, type PrinterRecipe }
 import { formatTransform } from "../adapter/transform";
 import { contentTypesXml, relsXml } from "../adapter/writers/flatten";
 import { escapeXml } from "../adapter/xml";
-import { STUDIO_DEFAULT_BODY_COLOR, type StudioFilamentSlot, type StudioPlate } from "../studio/document.generated";
+import {
+  STUDIO_DEFAULT_BODY_COLOR,
+  STUDIO_FILAMENT_SLOT_LIMIT,
+  type StudioFilamentSlot,
+  type StudioPlate,
+} from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
 import { plateThumbEntry } from "./printProfileFile";
 
@@ -66,16 +71,19 @@ export async function writeStudioThreeMf(
   parts: Part[],
   plates: readonly (StudioPlate & { thumbnail: Uint8Array })[],
   target?: StudioExportTarget,
-): Promise<Uint8Array> {
+): Promise<Uint8Array | null> {
+  const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
   const bed = recipe?.bed ?? DEFAULT_BED;
   const [cx, cy] = bedCentre(bed);
   const columns = plateColumns(plates.length);
   const colorOf = (part: Part) => part.color?.toLowerCase() ?? STUDIO_DEFAULT_BODY_COLOR;
   const usedColors = new Set(parts.map(colorOf));
+  if (profile?.reads === "bambu" && usedColors.size > STUDIO_FILAMENT_SLOT_LIMIT) return null;
   const byColor = new Map<string, number>();
   const palette: ({ color: string; material: string } | undefined)[] = [];
   for (const { color, slot, material } of target?.filamentSlots ?? []) {
+    if (!usedColors.has(color)) continue;
     palette[slot - 1] = { color, material };
     byColor.set(color, slot);
   }
@@ -202,7 +210,7 @@ export async function writeStudioThreeMf(
     modelSettings,
     prusaConfig: null,
   });
-  const plan = target && planAdaptation(format, slicerProfile(target.slicer), target.printer?.choice);
+  const plan = target && planAdaptation(format, profile, target.printer?.choice);
   const result = plan ? (await adapt3mf(zip, plan, { printer: target.printer?.recipe })).zip : zip;
   return result.generateAsync({ type: "uint8array", ...ADAPT_ZIP_OPTIONS });
 }

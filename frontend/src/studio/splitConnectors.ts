@@ -1,7 +1,7 @@
 import type { Manifold, ManifoldToplevel, Mat4 } from "manifold-3d";
 import { DEFAULT_SEGMENTS, type SplitFeature } from "./document";
 import type { Own } from "./solids";
-import { add, cross, frameMatrix, invertAffine, perpendicular, scale, type Vec3 } from "./vec";
+import { add, cross, frameMatrix, invertAffine, scale, type Vec3 } from "./vec";
 
 const DIGITS = ["abcdef", "bc", "abdeg", "abcdg", "bcfg", "acdfg", "acdefg", "abc", "abcdefg", "abcdfg"];
 const SEGMENTS: Record<string, [number, number, number, number]> = {
@@ -16,18 +16,36 @@ const SEGMENTS: Record<string, [number, number, number, number]> = {
 };
 
 /** Engraves the radial clearance so the pieces remain identifiable after printing. */
-function engrave(wasm: ManifoldToplevel, own: Own, solid: Manifold, label: string, y: number, z: number) {
+function engrave(wasm: ManifoldToplevel, own: Own, solid: Manifold, label: string) {
+  if (!label) return solid;
+  const depth = 0.45;
+  const cutterHeight = 0.65;
   const cuts: Manifold[] = [];
-  let x = -label.length;
+  let x = 0;
   for (const char of label) {
     for (const segment of char === "." ? "p" : (DIGITS[Number(char)] ?? "")) {
       const [dx, dy, width, height] = SEGMENTS[segment];
-      const block = own(wasm.Manifold.cube([width, height, 0.65]));
-      cuts.push(own(block.translate([x + dx, y + dy, z - 0.45])));
+      const block = own(wasm.Manifold.cube([width, height, cutterHeight]));
+      cuts.push(own(block.translate([x + dx, dy, 0])));
     }
     x += char === "." ? 0.75 : 2.2;
   }
-  return cuts.length ? own(solid.subtract(own(wasm.Manifold.union(cuts)))) : solid;
+  const cutter = own(wasm.Manifold.union(cuts));
+  const mark = cutter.boundingBox();
+  const face = solid.boundingBox();
+  const expected = (cutter.volume() * depth) / cutterHeight;
+  const offsets = (axis: 0 | 1) => {
+    const start = face.min[axis] - mark.min[axis] + 0.4;
+    const end = face.max[axis] - mark.max[axis] - 0.4;
+    return start <= end ? [start, end, (start + end) / 2] : [];
+  };
+  for (const y of offsets(1)) {
+    for (const left of offsets(0)) {
+      const placed = own(cutter.translate([left, y, face.max[2] - depth]));
+      if (own(solid.intersect(placed)).volume() >= expected * 0.999) return own(solid.subtract(placed));
+    }
+  }
+  throw new Error(`The socket sample has no flat area for its ${label} mm label.`);
 }
 
 export function splitWithPins(
@@ -37,10 +55,10 @@ export function splitWithPins(
   feature: SplitFeature,
   point: Vec3,
   normal: Vec3,
+  u: Vec3,
   hair: number,
 ): Manifold {
   const spec = feature.connector!;
-  const u = perpendicular(normal);
   const v = cross(normal, u);
   const front = feature.keep === "front";
   const radius = spec.diameter / 2 + (front ? 0 : spec.clearance);
@@ -79,5 +97,5 @@ export function splitWithPins(
   const facedUp = front ? own(cut.rotate(180, 0, 0)) : cut;
   const minimum = facedUp.boundingBox().min[2];
   const placed = own(facedUp.translate([0, 0, -minimum]));
-  return front ? placed : engrave(wasm, own, placed, sample.label, -side / 2 + 0.55, -minimum);
+  return front ? placed : engrave(wasm, own, placed, sample.label);
 }

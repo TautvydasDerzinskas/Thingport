@@ -6,7 +6,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { printerBrands, printerForName, printerSummary, type PrinterSummary } from "../printers/catalogue";
-import { printerPresetNames } from "../printers/targets";
+import { exactPrinterNozzles, printerPresetNames } from "../printers/targets";
 import { PROVIDER_IDS, type ProviderId } from "../providers/index.generated";
 import { PROVIDERS } from "../providers/registry";
 import { getDisabledProviders } from "./providerSettingsService";
@@ -19,6 +19,7 @@ export type UserPrinterView = {
   nozzle: string;
   /** Each slicer's printer preset for it and its nozzle, null where the slicer has none. */
   presets: Record<string, string | null>;
+  exact_nozzles: Record<string, string[]>;
 };
 
 export type PrinterSuggestion = {
@@ -55,6 +56,7 @@ function view(summary: PrinterSummary, nozzle: string): UserPrinterView {
     brandName: brandName(summary.brand),
     nozzle,
     presets: printerPresetNames(summary.id, nozzle, SLICERS),
+    exact_nozzles: exactPrinterNozzles(summary.id, summary.nozzles.length ? summary.nozzles : [nozzle], SLICERS),
   };
 }
 

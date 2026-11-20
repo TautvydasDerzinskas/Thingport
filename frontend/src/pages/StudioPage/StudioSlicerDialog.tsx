@@ -13,6 +13,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { slicerProfile } from "../../adapter/slicers/index.generated";
 import { printsApi } from "../../api/prints";
+import type { UserPrinter } from "../../api/printers";
 import { studioApi, studioExportPath, type StudioDesign, type StudioExport } from "../../api/studio";
 import { SLICER_OPTIONS } from "../../constants/settingsOptions";
 import { useSlicerSettings } from "../../hooks/useSlicerPreference";
@@ -66,9 +67,30 @@ export default function StudioSlicerDialog({
   const profile = slicerProfile(slicer);
   const compatible = profile?.targetsPrinter ? printers.filter((entry) => entry.presets[slicer]) : [];
   const setup = design.document.print_setup;
-  const intoPrinter =
-    setup && compatible.some((entry) => entry.printer.id === setup.printer) ? setup.printer : settings.printers[slicer];
-  const printer = compatible.find((entry) => entry.printer.id === (chosenPrinter ?? intoPrinter));
+  const supportsNozzle = (entry: UserPrinter, nozzle: string) =>
+    entry.exact_nozzles?.[slicer]?.includes(nozzle) ??
+    (entry.nozzle === nozzle || entry.printer.nozzles?.includes(nozzle));
+  const printerChoices = compatible
+    .filter((entry) => supportsNozzle(entry, entry.nozzle))
+    .map(({ printer, nozzle }) => ({ key: `${printer.id}/${nozzle}`, printer, nozzle }));
+  const checkedPrinter = compatible.find(({ printer }) => printer.id === setup?.printer);
+  if (
+    setup &&
+    checkedPrinter &&
+    setup.nozzle !== checkedPrinter.nozzle &&
+    supportsNozzle(checkedPrinter, setup.nozzle)
+  ) {
+    printerChoices.unshift({
+      key: `${setup.printer}/${setup.nozzle}`,
+      printer: checkedPrinter.printer,
+      nozzle: setup.nozzle,
+    });
+  }
+  const defaultPrinter =
+    setup && checkedPrinter
+      ? `${setup.printer}/${setup.nozzle}`
+      : printerChoices.find(({ printer }) => printer.id === settings.printers[slicer])?.key;
+  const printer = printerChoices.find(({ key }) => key === (chosenPrinter ?? defaultPrinter));
   const bodies = topLevel(design.document)
     .filter(isBody)
     .filter((body) => body.visible);
@@ -84,6 +106,7 @@ export default function StudioSlicerDialog({
     colorsByPlate.get(color)!.add(plateOf(body));
   }
   const savedSlots = design.document.filament_slots ?? [];
+  const tooManyColors = canAssignSlots && colorsByPlate.size > STUDIO_FILAMENT_SLOT_LIMIT;
   const slots = slotDraft ?? savedSlots;
   const missing = [...colorsByPlate.keys()].filter((color) => !slots.some((assignment) => assignment.color === color));
   const setSlot = (color: string, slot: number, material: StudioFilamentSlot["material"]) => {
@@ -91,10 +114,12 @@ export default function StudioSlicerDialog({
     setSlotDraft(slot ? [...other, { color, slot, material }] : other);
   };
   const saveSlots = async () => {
-    if (!slotDraft) return;
+    const submitted = slotDraft;
+    if (!submitted) return;
     setSavingSlots(true);
     try {
-      if (await run("set_filament_slots", { slots: slotDraft }, { waitForSave: true })) setSlotDraft(null);
+      if (await run("set_filament_slots", { slots: submitted }, { waitForSave: true }))
+        setSlotDraft((latest) => (latest === submitted ? null : latest));
     } finally {
       setSavingSlots(false);
     }
@@ -145,21 +170,24 @@ export default function StudioSlicerDialog({
               </MenuItem>
             ))}
           </TextField>
-          {compatible.length > 0 && (
+          {printerChoices.length > 0 && (
             <TextField
               select
               size="small"
               label={t("studio.plates.printer")}
-              value={printer?.printer.id ?? ""}
+              value={printer?.key ?? ""}
               onChange={(event) => setChosenPrinter(event.target.value)}
             >
               <MenuItem value="">{t("studio.plates.noPreset")}</MenuItem>
-              {compatible.map((entry) => (
-                <MenuItem key={entry.printer.id} value={entry.printer.id}>
+              {printerChoices.map((entry) => (
+                <MenuItem key={entry.key} value={entry.key}>
                   {entry.printer.model} · {entry.nozzle}
                 </MenuItem>
               ))}
             </TextField>
+          )}
+          {tooManyColors && (
+            <Alert severity="error">{t("studio.print.tooManySlots", { limit: STUDIO_FILAMENT_SLOT_LIMIT })}</Alert>
           )}
           {onePlate && (
             <TextField
@@ -273,14 +301,14 @@ export default function StudioSlicerDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{common("cancel")}</Button>
-        <Button disabled={downloading || !bodies.length || unsaved} onClick={() => void download()}>
+        <Button disabled={downloading || !bodies.length || unsaved || tooManyColors} onClick={() => void download()}>
           {t("studio.plates.download3mf")}
         </Button>
         <Button
           variant="contained"
           disableElevation
-          disabled={!bodies.length || unsaved}
-          href={unsaved || !bodies.length ? undefined : href}
+          disabled={!bodies.length || unsaved || tooManyColors}
+          href={unsaved || !bodies.length || tooManyColors ? undefined : href}
         >
           {t("studio.plates.open")}
         </Button>

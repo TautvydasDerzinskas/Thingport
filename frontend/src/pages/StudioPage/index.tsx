@@ -268,9 +268,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
   const [bodyGap, setBodyGap] = useState<BodyGap | null>(null);
   const [checking, setChecking] = useState(false);
   const [arranging, setArranging] = useState<{ designId: string; plate: string } | null>(null);
-  const [fitTest, setFitTest] = useState<string | null>(null);
-  const [fitArrival, setFitArrival] = useState<string | null>(null);
-  const fitJoint = fitTest && doc ? featureById(doc, fitTest) : null;
+  const [fitTest, setFitTest] = useState<{ designId: string; id: string } | null>(null);
+  const [fitArrival, setFitArrival] = useState<{ designId: string; id: string } | null>(null);
+  const fitJoint = fitTest && fitTest.designId === designId && doc ? featureById(doc, fitTest.id) : null;
   const [printIssue, setPrintIssue] = useState<{
     doc: StudioDocument;
     id: string;
@@ -329,13 +329,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
     setMenu(null);
   };
   useEffect(() => {
-    if (!fitArrival || !doc) return;
-    const body = featureById(doc, fitArrival);
+    if (!fitArrival || !doc || fitArrival.designId !== designId) return;
+    const body = featureById(doc, fitArrival.id);
     if (!body) return;
     setPickedPlate(plateOf(body));
     setSelected([body.id]);
     setFitArrival(null);
-  }, [doc, fitArrival]);
+  }, [doc, fitArrival, designId]);
 
   // A model opened here from its own page: the mesh it brought in, to say if it's in parts. Taken once, so going back
   // or reloading doesn't say it again.
@@ -1177,7 +1177,7 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
                       run={run}
                       onSelect={(id) => setSelected([id])}
                       onSeparate={separateBody}
-                      onFitTest={setFitTest}
+                      onFitTest={(id) => setFitTest({ designId: design!.id, id })}
                       onEditSketch={(id) => {
                         setSelected([id]);
                         setSketch({ id, tool: "rectangle" });
@@ -1270,14 +1270,13 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
         )}
         {fitJoint?.type === "split" && design && doc && (
           <FitTestDialog
-            designId={design.id}
-            doc={doc}
+            key={`${design.id}:${fitJoint.id}`}
             joint={fitJoint}
             run={run}
             onClose={() => setFitTest(null)}
             onCreated={(ids) => {
               setFitTest(null);
-              setFitArrival(ids[0]);
+              if (ids[0]) setFitArrival({ designId: design.id, id: ids[0] });
             }}
           />
         )}

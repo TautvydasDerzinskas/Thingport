@@ -4545,7 +4545,6 @@
         "fitHelp": "Imprime una muestra de pin y un alojamiento para cada holgura. Cada alojamiento lleva su medida en milímetros.",
         "variant": "Holgura {{number}}",
         "makeFitPlate": "Crear placa de prueba",
-        "fitOutside": "Las muestras superan el volumen de impresión. Usa una cama mayor o conectores más pequeños.",
         "useFit": "Usar la holgura medida",
         "clearanceParameter": "Parámetro de holgura",
         "filaments": "Asignaciones de filamento",
@@ -4553,6 +4552,7 @@
         "automatic": "Automático",
         "material": "Material",
         "unmapped": "Los colores sin ranura asignada ({{number}}) se asignan automáticamente.",
+        "tooManySlots": "Este laminador admite hasta {{limit}} ranuras de filamento. Reduce el número de colores antes de exportar.",
         "saveSlots": "Guardar asignaciones"
       },
       "plates": {

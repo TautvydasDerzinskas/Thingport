@@ -1,6 +1,6 @@
 import type { Manifold, ManifoldToplevel } from "manifold-3d";
 import type { StudioPrintSetup } from "./document";
-import { onBed } from "./printLayout";
+import { footprintOnBed } from "./printLayout";
 import type { Own } from "./solids";
 import { add, cross, dot, length, normalize, scale, sub, type Vec3 } from "./vec";
 
@@ -300,8 +300,13 @@ export function checkPrint(
     const outline = options.outline;
     const outsideOutline =
       outline &&
-      (plain ? trianglesOf(solid).triangles : triangles).some(({ corners }) =>
-        corners.some(([x, y]) => !onBed(x, y, bed, outline)),
+      (plain ? trianglesOf(solid).triangles : triangles).some(
+        ({ corners }) =>
+          !footprintOnBed(
+            corners.map(([x, y]) => [x, y]),
+            bed,
+            outline,
+          ),
       );
     const fitsBed =
       !tooBig.length &&

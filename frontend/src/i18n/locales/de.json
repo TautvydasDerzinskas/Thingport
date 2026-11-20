@@ -4363,7 +4363,6 @@
         "fitHelp": "Drucke einen gekürzten Stift und für jedes Spiel eine passende Bohrung. Auf jeder Probe steht das Spiel in Millimetern.",
         "variant": "Spiel {{number}}",
         "makeFitPlate": "Platte für die Passprobe erstellen",
-        "fitOutside": "Die Proben überschreiten den Bauraum. Verwende ein größeres Bett oder kleinere Verbinder.",
         "useFit": "Gemessenes Spiel übernehmen",
         "clearanceParameter": "Parameter für das Spiel",
         "filaments": "Filamentzuordnung",
@@ -4371,6 +4370,7 @@
         "automatic": "Automatisch",
         "material": "Material",
         "unmapped": "Farben ohne Steckplatz ({{number}}) werden automatisch zugeordnet.",
+        "tooManySlots": "Dieser Slicer unterstützt bis zu {{limit}} Filamentplätze. Verringere vor dem Export die Anzahl der Farben.",
         "saveSlots": "Zuordnung speichern"
       },
       "plates": {

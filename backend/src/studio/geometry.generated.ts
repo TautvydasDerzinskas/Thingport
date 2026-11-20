@@ -41,6 +41,7 @@ import { splitWithPins } from "./splitConnectors.generated";
 import { analyze, faceTriangles2d, findEdge, findFace, type Topology } from "./topology.generated";
 import {
   add,
+  applyDirection,
   applyMatrix,
   applyNormal,
   cross,
@@ -420,9 +421,9 @@ function evaluator(wasm: ManifoldToplevel, doc: StudioDocument, meshes?: MeshLoo
           const normal = applyNormal(matrix, feature.plane.normal);
           const side = feature.keep === "back" ? -1 : 1;
           const half = own(solid.trimByPlane(scale(normal, side), side * dot(normal, point)));
-          return feature.connector
-            ? splitWithPins(wasm, own, half, feature, point, normal, Math.max(1e-4, hairOf(solid)))
-            : half;
+          if (!feature.connector) return half;
+          const u = normalize(applyDirection(matrix, feature.connector_u ?? perpendicular(feature.plane.normal)));
+          return splitWithPins(wasm, own, half, feature, point, normal, u, Math.max(1e-4, hairOf(solid)));
         }
         if (!feature.tool_id) throw new Error(`${feature.id} has nothing to split by`);
         const tool = inWorld(feature.tool_id);

@@ -28,11 +28,13 @@ export function useStudioDesign(
 ) {
   const [design, setDesign] = useState<StudioDesign | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const activeId = useRef<string | null>(null);
   // The design as run() sees it, which a command updates before the page renders again.
   const current = useRef<StudioDesign | null>(null);
-  useEffect(() => {
-    current.current = design;
-  }, [design]);
+  const showDesign = useCallback((next: StudioDesign | null) => {
+    current.current = next;
+    setDesign(next);
+  }, []);
   // Commands go to the server one after another, in the order they were run.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const inFlight = useRef(0);
@@ -52,21 +54,23 @@ export function useStudioDesign(
         const loaded = await studioApi.get(id);
         // Its text shows in its fonts, so they come in first; one that won't load leaves its text undrawn.
         await loadFontsFor(loaded.document).catch(() => undefined);
-        if (current.current === null || current.current.id === id) setDesign(loaded);
+        if (activeId.current !== id || (current.current && loaded.version < current.current.version)) return;
+        showDesign(loaded);
         setLoadFailed(false);
       } catch (error) {
+        if (activeId.current !== id) return;
         setLoadFailed(true);
         fail(error);
       }
     },
-    [fail],
+    [fail, showDesign],
   );
 
   useEffect(() => {
-    setDesign(null);
-    current.current = null;
+    activeId.current = designId;
+    showDesign(null);
     if (designId) void reload(designId);
-  }, [designId, reload]);
+  }, [designId, reload, showDesign]);
 
   // Picks up what an assistant did while the page is open. Not while a command of the page's own is on its way, whose
   // answer brings the design back anyway.
@@ -97,32 +101,31 @@ export function useStudioDesign(
         }
       }
       const open = current.current;
-      if (!open) return null;
+      if (!open || open.id !== designId || open.id !== activeId.current) return null;
       const send = async (): Promise<string[] | null> => {
         inFlight.current += 1;
         const sent = queue.current.then(() => studioApi.run(open.id, name, args));
         queue.current = sent.catch(() => undefined);
         try {
           const result = await sent;
-          inFlight.current -= 1;
-          // With more of the page's commands still on their way, the newer local state stands until the last answer.
-          if (inFlight.current === 0 && current.current?.id === result.design.id) setDesign(result.design);
+          if (activeId.current === result.design.id) showDesign(result.design);
           return result.created;
         } catch (error) {
-          inFlight.current -= 1;
-          fail(error);
-          if (inFlight.current === 0) void reload(open.id);
+          if (activeId.current === open.id) {
+            fail(error);
+            if (inFlight.current === 1) await reload(open.id);
+          }
           return null;
+        } finally {
+          inFlight.current -= 1;
         }
       };
-      // A change to the feature tree shows at once, and what it made can be selected at once; the server's answer
-      // then takes over. Undo, redo and the design's name wait for the server, which keeps the history.
-      if (options?.waitForSave || !studioCommand(name)?.apply) return send();
+      // An earlier command can consume the next feature or plate ID. Use the server's IDs until the queue settles.
+      if (inFlight.current > 0 || options?.waitForSave || !studioCommand(name)?.apply) return send();
       try {
         const outcome = applyCommand(open.document, name, args);
         const next = { ...open, document: outcome.document, can_undo: true, can_redo: false };
-        current.current = next;
-        setDesign(next);
+        showDesign(next);
         void send();
         return outcome.created;
       } catch (error) {
@@ -131,7 +134,7 @@ export function useStudioDesign(
         return null;
       }
     },
-    [fail, reload],
+    [designId, fail, reload, showDesign],
   );
 
   return { design, loadFailed, run, reload };

@@ -4178,7 +4178,6 @@
         "fitHelp": "打印一个定位销样件和各个间隙对应的插孔样件。每个插孔都刻有以毫米为单位的间隙值。",
         "variant": "间隙 {{number}}",
         "makeFitPlate": "创建配合测试打印板",
-        "fitOutside": "样件超出打印范围。请使用更大的平台或更小的连接件。",
         "useFit": "使用实测间隙",
         "clearanceParameter": "间隙参数",
         "filaments": "耗材分配",
@@ -4186,6 +4185,7 @@
         "automatic": "自动",
         "material": "材料",
         "unmapped": "未指定料槽的颜色（{{number}} 种）将自动分配。",
+        "tooManySlots": "此切片软件最多支持 {{limit}} 个料槽。请减少颜色数量后再导出。",
         "saveSlots": "保存分配"
       },
       "plates": {

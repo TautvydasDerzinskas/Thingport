@@ -17,6 +17,7 @@ import {
   arrangePlate,
   layFlat,
   layFlatTurn,
+  makeFitTest,
   CommandError,
   parseCommandArgs,
   separableBody,
@@ -39,6 +40,7 @@ import {
   type Vec3,
 } from "../studio/document.generated";
 import { applyMatrix } from "../studio/vec.generated";
+import { boundsOnBed, DEFAULT_PRINT_BED } from "../studio/printLayout.generated";
 import { resolvePlateFilePath } from "./printCreation";
 import { readablePrintWhere } from "./socialService";
 import { listPrints } from "./printQuery";
@@ -471,6 +473,23 @@ async function measuredFor(
   const doc = documentOf(design);
   const assetDir = studioAssetDir(userId, id);
   const featureId = String(args.feature_id);
+  if (name === "make_fit_test") {
+    const outcome = makeFitTest(doc, args as Parameters<typeof makeFitTest>[1]);
+    const bounds = await boundsIn(outcome.document, assetDir, outcome.created);
+    const { bed = DEFAULT_PRINT_BED, outline } = doc.print_setup ?? {};
+    return {
+      version: design.version,
+      apply: () => {
+        if (outcome.created.some((createdId) => !bounds[createdId] || !boundsOnBed(bounds[createdId], bed, outline)))
+          throw new HttpError(
+            422,
+            "The samples exceed the build volume. Use a larger bed or smaller connectors.",
+            "studio_fit_outside",
+          );
+        return outcome;
+      },
+    };
+  }
   if (name === "arrange_plate") {
     const given = args as Parameters<typeof arrangePlate>[1];
     const bounds = await boundsIn(doc, assetDir, arrangeMeasures(doc, given));

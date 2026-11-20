@@ -166,6 +166,8 @@ export type SplitFeature = Body & {
   /** By a plane: the side its normal points to (front) or the other (back). By a body: inside it or outside it. */
   keep: "front" | "back" | "inside" | "outside";
   connector?: SplitConnector;
+  /** In-plane connector U axis in the source's own frame. */
+  connector_u?: Vec3;
   fit_sample?: { size: number; label: string };
 };
 export type SketchFeature = Common & {

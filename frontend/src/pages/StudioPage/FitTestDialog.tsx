@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -10,23 +9,16 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { applyCommand } from "../../studio/commands";
-import type { SplitFeature, StudioDocument } from "../../studio/document";
-import { DEFAULT_PRINT_BED, onBed } from "../../studio/printLayout";
+import type { SplitFeature } from "../../studio/document";
 import { NumberField } from "./fields";
-import { measureBoundsInWorker } from "./geometryClient";
 import type { RunCommand } from "./useStudioDesign";
 
 export default function FitTestDialog({
-  designId,
-  doc,
   joint,
   run,
   onCreated,
   onClose,
 }: {
-  designId: string;
-  doc: StudioDocument;
   joint: SplitFeature;
   run: RunCommand;
   onCreated: (ids: string[]) => void;
@@ -42,37 +34,28 @@ export default function FitTestDialog({
     joint.expressions?.["connector.clearance"] ?? `fit_clearance_${joint.source_id.split("-").at(-1)}`,
   );
   const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
+  const active = useRef(false);
+  useLayoutEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   const create = async () => {
     setWorking(true);
-    setError("");
     try {
       const args = { feature_id: joint.id, clearances: variants, name: t("studio.print.fitPlate") };
-      const preview = applyCommand(doc, "make_fit_test", args);
-      const bounds = await measureBoundsInWorker(designId, preview.document, preview.created);
-      const { bed = DEFAULT_PRINT_BED, outline } = doc.print_setup ?? {};
-      if (
-        Object.values(bounds).some(
-          ({ min, max }) =>
-            max[2] > bed[2] || ![min[0], max[0]].every((x) => [min[1], max[1]].every((y) => onBed(x, y, bed, outline))),
-        )
-      ) {
-        setError(t("studio.print.fitOutside"));
-        return;
-      }
-      const made = await run("make_fit_test", args, { waitForSave: true });
-      if (made) onCreated(made);
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
+      const made = await run("make_fit_test", args);
+      if (made && active.current) onCreated(made);
     } finally {
-      setWorking(false);
+      if (active.current) setWorking(false);
     }
   };
   const apply = async () => {
     setWorking(true);
     try {
       if (
-        await run(
+        (await run(
           "apply_fit_clearance",
           {
             feature_id: joint.id,
@@ -80,15 +63,16 @@ export default function FitTestDialog({
             parameter: parameter.trim() || undefined,
           },
           { waitForSave: true },
-        )
+        )) &&
+        active.current
       )
         onClose();
     } finally {
-      setWorking(false);
+      if (active.current) setWorking(false);
     }
   };
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={working ? undefined : onClose} fullWidth maxWidth="sm" disableEscapeKeyDown={working}>
       <DialogTitle>{t("studio.print.fitPlate")}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
@@ -109,7 +93,6 @@ export default function FitTestDialog({
           <Button variant="outlined" disabled={working} onClick={() => void create()}>
             {t("studio.print.makeFitPlate")}
           </Button>
-          {error && <Alert severity="error">{error}</Alert>}
           <Typography variant="subtitle2">{t("studio.print.useFit")}</Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <NumberField
@@ -128,7 +111,9 @@ export default function FitTestDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{common("cancel")}</Button>
+        <Button onClick={onClose} disabled={working}>
+          {common("cancel")}
+        </Button>
         <Button variant="contained" disabled={working} onClick={() => void apply()}>
           {t("studio.print.useFit")}
         </Button>

@@ -4360,7 +4360,6 @@
         "fitHelp": "Print one cropped pin and a matching socket for each clearance. Each socket is marked in millimetres.",
         "variant": "Clearance {{number}}",
         "makeFitPlate": "Create fit test plate",
-        "fitOutside": "The samples exceed the build volume. Use a larger bed or smaller connectors.",
         "useFit": "Use measured clearance",
         "clearanceParameter": "Clearance parameter",
         "filaments": "Filament assignments",
@@ -4368,6 +4367,7 @@
         "automatic": "Automatic",
         "material": "Material",
         "unmapped": "Colors without an assigned slot ({{number}}) use automatic assignment.",
+        "tooManySlots": "This slicer supports up to {{limit}} filament slots. Reduce the number of colors before exporting.",
         "saveSlots": "Save assignments"
       },
       "plates": {

@@ -33,7 +33,8 @@ bodies, or multiple plates. **Save to Thingport** saves a 3MF in the library. **
 slicer and compatible saved printer and nozzle, without adding a model to your library. For slicers that take one
 plate at a time, choose which plate to open. For Bambu-compatible slicers, **Filament assignments** shows which plates
 need each color. Choose the slot and material you loaded and save the assignments before opening or downloading the
-3MF. Studio marks unassigned colors and assigns those to free slots automatically.
+3MF. Studio marks unassigned colors and assigns those to free slots automatically. This handoff supports up to 16
+colors. When the slicer has a preset for the design's checked printer and nozzle, Studio selects that preset by default.
 
 Use **Arrange plate** from a plate's menu to preview where visible bodies will go before committing the move. It uses
 the chosen printer's bed and the spacing you set, keeping each body's orientation. Use **Lock position for arrangement**

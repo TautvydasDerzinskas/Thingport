@@ -88,6 +88,12 @@ describe("Studio", () => {
       callTool(token, `studio_${name}`, { design_id: design.id, ...args });
     const setup = { printer: "bambulab-p1s", nozzle: "0.4", bed: [24, 24, 256], minWall: 0.8 };
     expect((await command(alice, design.id, "set_print_setup", { setup })).status).toBe(200);
+    const savedPrinter = await request(app)
+      .put("/api/me/printers/bambulab-p1s")
+      .set(auth(alice))
+      .send({ nozzle: "0.6" });
+    expect(savedPrinter.body.nozzle).toBe("0.6");
+    expect(savedPrinter.body.exact_nozzles.orcaslicer).toContain("0.4");
     const shape = { width: 14, depth: 14, height: 4 };
     const red = (await tool("add_box", { ...shape, color: "#ff0000" })).data.created[0];
     const blue = (await tool("add_box", { ...shape, color: "#0000ff", position: [30, 0, 0] })).data.created[0];
@@ -121,7 +127,67 @@ describe("Studio", () => {
     const pkg = await readBambuPackage(file.body);
     expect(pkg.config.filament_colour).toEqual(["#0000FF", "#B0B0B0", "#FF0000"]);
     expect(pkg.config.filament_type).toEqual(["PLA", "PLA", "PETG"]);
+    expect(pkg.config.printer_settings_id).toBe("Bambu Lab P1S 0.4 nozzle");
     expect(Object.values(pkg.modelSettings).map(({ extruder }) => extruder)).toEqual([3, 1]);
+    const missingNozzle = await request(app)
+      .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/bambulab-p1s/0.7/-/Workflow.3mf`)
+      .set(auth(alice));
+    expect(missingNozzle.status).toBe(400);
+  });
+
+  it("measures fit samples against the saved bed before writing a revision", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Fit samples" })).body;
+    const { id } = design;
+    await command(alice, id, "add_box", { width: 40, depth: 30, height: 20 });
+    const split = await command(alice, id, "split", {
+      feature_id: "box-1",
+      plane: { point: [0, 0, 10], normal: [0, 0, 1] },
+      connector: { diameter: 3, depth: 3, clearance: 0.2, offset: [0, 0], count: 1, spacing: 10 },
+    });
+    expect(split.status).toBe(200);
+    const setup = { printer: "small-bed", nozzle: "0.4", bed: [12, 12, 20], minWall: 0.8 };
+    const chosen = await command(alice, id, "set_print_setup", { setup });
+    const args = { feature_id: split.body.created[0], clearances: [0.2] };
+    const refused = await command(alice, id, "make_fit_test", args);
+    expect(refused.status).toBe(422);
+    expect(refused.body.code).toBe("studio_fit_outside");
+    const persisted = await request(app).get(`/api/studio/designs/${id}`).set(auth(alice));
+    expect(persisted.body.version).toBe(chosen.body.design.version);
+    expect(persisted.body.document.plates).toBeUndefined();
+    await command(alice, id, "set_print_setup", { setup: { ...setup, bed: [50, 50, 20] } });
+    const created = await command(alice, id, "make_fit_test", args);
+    expect(created.status).toBe(200);
+    expect(created.body.created).toHaveLength(2);
+    expect(created.body.design.document.plates.at(-1).name).toBe("Fit test");
+  });
+
+  it("refuses a seventeenth filament and reuses an inactive assignment's slot", async () => {
+    const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({ name: "Filament limit" }))
+      .body;
+    const colors = Array.from({ length: 17 }, (_, i) => `#${(i + 1).toString(16).padStart(6, "0")}`);
+    for (const [i, color] of colors.entries()) {
+      expect(
+        (await command(alice, design.id, "add_box", { width: 2, depth: 2, height: 2, color, position: [5 * i, 0, 0] }))
+          .status,
+      ).toBe(200);
+    }
+    expect(
+      (
+        await command(alice, design.id, "set_filament_slots", {
+          slots: colors.slice(0, 16).map((color, i) => ({ color, slot: i + 1, material: "PLA" })),
+        })
+      ).status,
+    ).toBe(200);
+    const url = `/api/studio/designs/${design.id}/export/3mf/orcaslicer/-/-/-/Filament.3mf`;
+    const refused = await request(app).get(url).set(auth(alice));
+    expect(refused.status).toBe(422);
+    expect(refused.body.detail).toMatch(/16 filament slots/);
+    await command(alice, design.id, "set_visibility", { feature_id: "box-1", visible: false });
+    const exported = await request(app).get(url).set(auth(alice)).buffer(true).parse(readBinary);
+    expect(exported.status).toBe(200);
+    const pkg = await readBambuPackage(exported.body);
+    expect(pkg.config.filament_colour).toHaveLength(16);
+    expect(pkg.config.filament_colour?.[0]).toBe(colors[16].toUpperCase());
   });
 
   it("says it's on, and keeps each user's designs to themselves", async () => {

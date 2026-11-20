@@ -4655,7 +4655,6 @@
         "fitHelp": "Atspausdinkite vieną kaiščio ir po vieną lizdo bandinį kiekvienam tarpui. Ant lizdų tarpai pažymėti milimetrais.",
         "variant": "Tarpas {{number}}",
         "makeFitPlate": "Sukurti bandymo platformą",
-        "fitOutside": "Bandiniai netelpa. Naudokite didesnę platformą arba mažesnes jungtis.",
         "useFit": "Naudoti išmatuotą tarpą",
         "clearanceParameter": "Tarpo parametras",
         "filaments": "Filamentų priskyrimas",
@@ -4663,6 +4662,7 @@
         "automatic": "Automatiškai",
         "material": "Medžiaga",
         "unmapped": "Spalvos be priskirto lizdo ({{number}}) priskiriamos automatiškai.",
+        "tooManySlots": "Ši pjaustyklė palaiko iki {{limit}} filamento lizdų. Prieš eksportuodami sumažinkite spalvų skaičių.",
         "saveSlots": "Išsaugoti priskyrimą"
       },
       "plates": {

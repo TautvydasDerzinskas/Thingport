@@ -55,7 +55,17 @@ import { PATH_CHARACTERS } from "./svgPath";
 import { isoPitch, threadProblem } from "./threads";
 import { arrangeFootprints, DEFAULT_PRINT_BED } from "./printLayout";
 import type { TraceShape, Traced, TraceSettings } from "./trace";
-import { applyMatrix, applyNormal, cross, invertAffine, normalize, perpendicular, sub, type Vec2 } from "./vec";
+import {
+  applyDirection,
+  applyMatrix,
+  applyNormal,
+  cross,
+  invertAffine,
+  normalize,
+  perpendicular,
+  sub,
+  type Vec2,
+} from "./vec";
 
 // Every change to a Studio design, as a command: the toolbar, the panels and the viewport run these and nothing else,
 // and each one is also an MCP tool (backend/src/mcp/studioTools.ts) and, later, a tool for Studio's own AI. So whatever a
@@ -1730,6 +1740,15 @@ export const STUDIO_COMMANDS = {
       } else {
         planeRef = intoFrame(body).face(args.plane!);
       }
+      const connectorU =
+        args.connector && args.plane
+          ? normalize(
+              applyDirection(
+                invertAffine(transformMatrix(body.transform)),
+                perpendicular(normalize(args.plane.normal)),
+              ),
+            )
+          : undefined;
       const secondPlate = args.separate_plates
         ? addPlate(doc, `${(body.name || body.id).slice(0, 65)} · 2`)
         : undefined;
@@ -1745,7 +1764,7 @@ export const STUDIO_COMMANDS = {
           plane: planeRef,
           tool_id: toolCopy,
           keep,
-          ...(args.connector ? { connector: { ...args.connector } } : {}),
+          ...(args.connector ? { connector: { ...args.connector }, connector_u: connectorU } : {}),
           ...(index === 1 && secondPlate ? { plate_id: secondPlate } : {}),
         });
         return id;
@@ -1774,6 +1793,7 @@ export const STUDIO_COMMANDS = {
   }),
 
   make_fit_test: command({
+    kind: "measure",
     title: "Make a connector fit test plate",
     description:
       "Takes the mating region from a planar split with connectors. Puts one pin sample and a socket sample for each radial clearance on a new plate. The clearance in mm is engraved on each socket.",
@@ -1785,53 +1805,6 @@ export const STUDIO_COMMANDS = {
         .max(9)
         .describe("Radial clearances in mm, one per socket sample."),
       name: z.string().trim().min(1).max(80).optional().describe("Name of the new fit test plate."),
-    },
-    apply(doc, args) {
-      const joint = splitWithConnector(doc, args.feature_id);
-      const clearances = [...new Set(args.clearances.map((value) => Number(value.toFixed(3))))];
-      const size = Math.max(14, joint.connector.diameter + 2 * Math.max(...clearances) + 8);
-      const step = size + 3;
-      const plate = addPlate(doc, args.name ?? "Fit test");
-      const count = clearances.length + 1;
-      const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
-      const columns = Math.min(count, Math.max(1, Math.floor(bed[0] / step)));
-      const rows = Math.ceil(count / columns);
-      const created: string[] = [];
-      for (let i = 0; i < count; i++) {
-        const clearance = i === 0 ? 0 : clearances[i - 1];
-        const label = `${fmt(clearance)}`;
-        const id = nextId(doc, "split");
-        addFeature(doc, {
-          id,
-          type: "split",
-          name: i === 0 ? "Fit test pin" : `Socket ${label} mm`,
-          visible: true,
-          transform: placed({
-            position: [
-              ((i % columns) - (columns - 1) / 2) * step,
-              (Math.floor(i / columns) - (rows - 1) / 2) * step,
-              0,
-            ],
-          }),
-          source_id: joint.source_id,
-          plate_id: plate,
-          plane: joint.plane,
-          tool_id: null,
-          keep: i === 0 ? "front" : "back",
-          connector: {
-            ...joint.connector,
-            offset: [
-              joint.connector.offset[0] - ((joint.connector.count - 1) / 2) * joint.connector.spacing,
-              joint.connector.offset[1],
-            ],
-            clearance,
-            count: 1,
-          },
-          fit_sample: { size, label: i === 0 ? "" : label },
-        });
-        created.push(id);
-      }
-      return { document: doc, created, summary: `Made ${count} fit samples on ${plate}` };
     },
   }),
 
@@ -1853,12 +1826,12 @@ export const STUDIO_COMMANDS = {
       const joint = splitWithConnector(doc, args.feature_id);
       const connector = { ...joint.connector, clearance: args.clearance };
       checkConnector(connector);
+      for (const part of splitPair(doc, joint.source_id)) dropExpressions(part, ["connector.clearance"]);
       const changed = args.parameter
         ? applyCommand(doc, "set_parameter", { name: args.parameter, value: args.clearance, unit: "mm" }).document
         : doc;
       for (const part of splitPair(changed, joint.source_id)) {
         part.connector = { ...connector };
-        dropExpressions(part, ["connector.clearance"]);
         if (args.parameter) part.expressions = { ...part.expressions, "connector.clearance": args.parameter };
       }
       return {
@@ -2945,6 +2918,52 @@ export function addTrace(
 /** A body's extent in the world, as the server or the page measures it for align and lay_flat. */
 export type Bounds = { min: Vec3; max: Vec3 };
 type AlignMode = "start" | "center" | "end" | "before" | "after";
+
+export function makeFitTest(source: StudioDocument, args: StudioCommandArgs<"make_fit_test">): CommandOutcome {
+  const doc = structuredClone(source);
+  const joint = splitWithConnector(doc, args.feature_id);
+  const clearances = [...new Set(args.clearances.map((value) => Number(value.toFixed(3))))];
+  const size = Math.max(14, joint.connector.diameter + 2 * Math.max(...clearances) + 8);
+  const step = size + 3;
+  const plate = addPlate(doc, args.name ?? "Fit test");
+  const count = clearances.length + 1;
+  const bed = doc.print_setup?.bed ?? DEFAULT_PRINT_BED;
+  const columns = Math.min(count, Math.max(1, Math.floor(bed[0] / step)));
+  const rows = Math.ceil(count / columns);
+  const created: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const clearance = i === 0 ? 0 : clearances[i - 1];
+    const label = `${fmt(clearance)}`;
+    const id = nextId(doc, "split");
+    addFeature(doc, {
+      id,
+      type: "split",
+      name: i === 0 ? "Fit test pin" : `Socket ${label} mm`,
+      visible: true,
+      transform: placed({
+        position: [((i % columns) - (columns - 1) / 2) * step, (Math.floor(i / columns) - (rows - 1) / 2) * step, 0],
+      }),
+      source_id: joint.source_id,
+      plate_id: plate,
+      plane: joint.plane,
+      connector_u: joint.connector_u,
+      tool_id: null,
+      keep: i === 0 ? "front" : "back",
+      connector: {
+        ...joint.connector,
+        offset: [
+          joint.connector.offset[0] - ((joint.connector.count - 1) / 2) * joint.connector.spacing,
+          joint.connector.offset[1],
+        ],
+        clearance,
+        count: 1,
+      },
+      fit_sample: { size, label: i === 0 ? "" : label },
+    });
+    created.push(id);
+  }
+  return { document: doc, created, summary: `Made ${count} fit samples on ${plate}` };
+}
 
 export function arrangeMeasures(doc: StudioDocument, args: { plate_id: string }): string[] {
   findPlate(doc, args.plate_id);
