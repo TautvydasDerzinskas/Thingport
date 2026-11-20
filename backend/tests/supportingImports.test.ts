@@ -50,12 +50,14 @@ vi.mock("../src/services/supportingImports", async (importOriginal) => {
   };
 });
 // The zip reader as it is, unless told otherwise: the entry named `failing` can't be read, the listing numbered
-// `listFailsAt` from when it was set fails, and every entry written out is noted with where it went.
+// `listFailsAt` from when it was set fails, and every entry written out is noted with where it went; `onDiskAtFailure`,
+// the entries whose files were there when that listing failed.
 const zipReads = vi.hoisted(() => ({
   failing: null as string | null,
   listFailsAt: null as number | null,
   lists: 0,
   written: [] as { entry: string; to: string }[],
+  onDiskAtFailure: [] as string[],
 }));
 vi.mock("../src/utils/zipReader", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/utils/zipReader")>();
@@ -64,6 +66,8 @@ vi.mock("../src/utils/zipReader", async (importOriginal) => {
     listZipEntries: async (...args: Parameters<typeof actual.listZipEntries>) => {
       zipReads.lists += 1;
       if (zipReads.listFailsAt !== null && zipReads.lists === zipReads.listFailsAt) {
+        const { existsSync } = await import("node:fs");
+        zipReads.onDiskAtFailure = zipReads.written.filter((each) => existsSync(each.to)).map((each) => each.entry);
         throw new Error("the zip couldn't be listed");
       }
       return actual.listZipEntries(...args);
@@ -116,6 +120,7 @@ afterEach(async () => {
   zipReads.failing = null;
   zipReads.listFailsAt = null;
   zipReads.written = [];
+  zipReads.onDiskAtFailure = [];
   await prisma.setting.deleteMany({ where: { key: "import_supporting_files" } });
 });
 
@@ -1068,13 +1073,16 @@ describe("a file a site gives beside a model's own", () => {
     // The next save's last step commits and its answer never comes back, nor does the look at whether it went in.
     const transaction = PrismaClient.prototype.$transaction;
     const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
     let lost = false;
+    const happened: string[] = [];
     const commit = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
       this: PrismaClient,
       ...args: unknown[]
     ) {
       await (transaction as (...a: unknown[]) => Promise<unknown>).apply(this, args);
       lost = true;
+      happened.push("answer lost");
       throw new Error("Connection terminated unexpectedly");
     } as never);
     const read = vi.spyOn(prisma.printFile, "findUnique").mockImplementation(((
@@ -1082,7 +1090,15 @@ describe("a file a site gives beside a model's own", () => {
     ) => {
       if (!lost) return findUnique(args);
       lost = false;
+      happened.push("look failed");
       return Promise.reject(new Error("the database went away"));
+    }) as never);
+    // What the model keeps, as keepWithin reads it: once to start, and again after the save that failed.
+    const reads = vi.spyOn(prisma.printFile, "findMany").mockImplementation(((
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      if (args?.where?.printId === print.id && args.select?.role) happened.push("kept read");
+      return findMany(args);
     }) as never);
     const later = [
       input("two.txt", "y".repeat(10), { supporting: true }),
@@ -1093,8 +1109,10 @@ describe("a file a site gives beside a model's own", () => {
     } finally {
       commit.mockRestore();
       read.mockRestore();
+      reads.mockRestore();
       remove(later);
     }
+    expect(happened).toEqual(["kept read", "answer lost", "look failed", "kept read"]);
     // two.txt went in, so three.txt doesn't fit beside it.
     expect((await filesOf(print.id)).map(([, name]) => name)).toEqual(["one.txt", "two.txt"]);
   });
@@ -1113,6 +1131,30 @@ describe("a file a site gives beside a model's own", () => {
     remove([...first, ...then]);
     expect(first.map((each) => each.filename)).toEqual(["guide.pdf"]);
     expect(then.map((each) => each.filename)).toEqual(["notes.txt"]);
+  });
+
+  it("tells a zip's licences apart by the folder it goes in, where neither is renamed", async () => {
+    const docs = await new JSZip()
+      .file("LICENSE.txt", "l".repeat(300))
+      .file("LICENSE (original).txt", "o".repeat(300))
+      .file("notes.txt", "n".repeat(300))
+      .generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+    served({ "/LICENSE.txt": "k".repeat(300), "/docs.zip": docs });
+    // Room for three: the link's licence, then the zip's other licence and its notes, as its LICENSE.txt is the link's.
+    limits.value = { perFile: 400, perModel: 1000 };
+    const kept = await importKit().downloadSupportingFiles(
+      [
+        { ...at("LICENSE.txt"), folder: "docs" },
+        { ...at("docs.zip"), folder: "docs" },
+      ],
+      site,
+    );
+    remove(kept);
+    expect(kept.map((each) => `${each.folder}/${each.filename}`)).toEqual([
+      "docs/LICENSE.txt",
+      "docs/LICENSE (original).txt",
+      "docs/notes.txt",
+    ]);
   });
 
   it("fetches a design's scripts where its raw files gave the files beside the model but no script", async () => {
@@ -1583,6 +1625,8 @@ describe("a zip's files beside a model, by what its listing and names say", () =
     zipReads.listFailsAt = zipReads.lists + 9;
     const kept = await supportingFilesFromZip(wrapper);
     remove(kept);
+    // Its note was written out before the listing failed, and is gone after.
+    expect(zipReads.onDiskAtFailure).toContain("a-note.txt");
     const note = zipReads.written.find((each) => each.entry === "a-note.txt");
     expect(note && fs.existsSync(note.to)).toBe(false);
     expect(kept.map((each) => [each.folder, each.filename])).toEqual([["B", "b-note.txt"]]);

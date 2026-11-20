@@ -1161,23 +1161,27 @@ const supportingKey = (folder: string | null | undefined, filename: string) =>
 /** The other files beside a zip's model files -- instructions, notes, sources -- as far as the admin's limits allow,
  *  marked as supporting, counted on from `kept`, what the model has of them already, and none of those `except` names
  *  (supportingKey). Best-effort: a zip whose other files can't be read gives none, rather than failing the import of its
- *  model. `sliced`, for a zip no plate is taken from: its sliced 3MFs too (SupportingPick). */
+ *  model. `sliced`, for a zip no plate is taken from: its sliced 3MFs too (SupportingPick). `into`, the model's folder
+ *  the zip's files go in, where they're placed, named and told apart from what's kept as they'll be stored there. */
 export async function supportingFilesFromZip(
   zipPath: string,
   kept: Kept = NOTHING_KEPT,
   except?: ReadonlySet<string>,
   sliced = false,
+  into?: string | null,
 ): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits) return [];
   try {
-    return await filesFromZip(zipPath, {
+    const files = await filesFromZip(zipPath, {
       supporting: limits,
       kept: { bytes: kept.bytes, files: kept.files },
       except,
       sliced,
-      accepted: kept.names,
+      accepted: keptInside(kept, into).names,
+      into: normalizeFolder(into),
     });
+    return inFolder(into, files);
   } catch (err) {
     console.warn("Couldn't read the files beside a zip's model files:", err);
     return [];
@@ -1348,6 +1352,9 @@ type SupportingPick = {
   /** The files other downloads kept beside the model already (Kept's `names`): skipped where an entry's key is the one
    *  it's stored under too, taking none of what's left. */
   accepted?: ReadonlySet<string>;
+  /** The model's folder the zip's files go in, which `except` and `accepted` are named from inside of: a licence
+   *  there keeps its name, as only one at the model's top is renamed (supportingImportName). */
+  into?: string | null;
 };
 type ZipPick = ReadonlySet<string> | SupportingPick;
 const picksSupporting = (pick: ZipPick): pick is SupportingPick => "supporting" in pick;
@@ -1381,16 +1388,19 @@ async function filesFromZip(
     // A name the model keeps once, in any case ("GUIDE.pdf" beside "guide.pdf"), is taken once: a second copy would
     // take a share of what the model keeps that it then wouldn't. Noted once it's out, so an unreadable first copy
     // leaves room for a readable second. By the name it's stored under (supportingImportName), where its folder here
-    // is the one it's stored in: at the top of the model (`topIsModelTop`), a licence of the site's is
-    // "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own. Its folder
+    // is the one it's stored in: at the top of the model (`topIsModelTop`, and no folder it goes `into`), a licence of
+    // the site's is "LICENSE (original).txt" as one called so is. Another nested zip's top may yet be a folder of its own. Its folder
     // is the one it's placed in here, as this zip's own files share levels, unless the zip only wraps archives it will
     // be opened for: then they're placed from the folders they have in it, with what those hold (filesFromNestedZips),
     // and told apart by those, which one placed folder never holds two of.
     const descends = Boolean(supporting && !supporting.holdsModels && supporting.holdsZips && depth < NESTED_ZIP_DEPTH);
     const taken = new Set<string>();
+    const into = picksSupporting(pick) ? pick.into : null;
     for (const { entry, parts, folder } of entries) {
       const placedIn = descends ? normalizeFolder(parts.slice(0, -1)) : folder;
-      const named = topIsModelTop ? supportingImportName(keptNameOf(parts), placedIn) : keptNameOf(parts);
+      const named = topIsModelTop
+        ? supportingImportName(keptNameOf(parts), joinFolders(into, placedIn))
+        : keptNameOf(parts);
       const stored = supportingKey(placedIn, named);
       // Ones the model has, and ones another download kept, where it's known here where this one is stored: at the
       // model's top, placed by this zip alone. Elsewhere that's known only once its folders are (withoutHad).
@@ -1485,7 +1495,7 @@ async function withoutHad(pick: SupportingPick, files: NewPlateInput[]): Promise
     const name = sanitizeFilename(file.filename);
     const had =
       pick.except?.has(supportingKey(folder, name)) ||
-      pick.accepted?.has(supportingKey(folder, supportingImportName(name, folder)));
+      pick.accepted?.has(supportingKey(folder, supportingImportName(name, joinFolders(pick.into, folder))));
     if (!had || !file.tempFilePath) {
       left.push(file);
       continue;
@@ -1582,7 +1592,7 @@ async function downloadSignedFile(
     try {
       // The scripts and the other files come along with the model files; createPrint keeps each as what it is.
       const { plates, sources, supporting } = await platesAndSourcesFromZip(result.input.tempFilePath!, (zip) =>
-        take(async (kept) => inFolder(folder, await supportingFilesFromZip(zip, keptInside(kept, folder)))),
+        take((kept) => supportingFilesFromZip(zip, kept, undefined, false, folder)),
       );
       return [...inFolder(folder, plates), ...inFolder(folder, sources), ...supporting];
     } finally {
@@ -1619,9 +1629,10 @@ export async function downloadSupportingFile(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
   kept: Kept = NOTHING_KEPT,
+  folder?: string | null,
 ): Promise<NewPlateInput[]> {
   try {
-    return await supportingDownload(file, isFileHost, kept);
+    return await supportingDownload(file, isFileHost, kept, folder);
   } catch (err) {
     console.warn(`Couldn't keep ${file.name} beside the model:`, err);
     return [];
@@ -1651,11 +1662,7 @@ export async function downloadSupportingFiles(
       } catch {
         // Skipped, as one whose link comes back empty is.
       }
-      if (!url) return [];
-      return inFolder(
-        file.folder,
-        await downloadSupportingFile({ url, name: file.name }, isFileHost, keptInside(kept, file.folder)),
-      );
+      return url ? downloadSupportingFile({ url, name: file.name }, isFileHost, kept, file.folder) : [];
     });
     if (filled) break;
     fetched.push(...inputs);
@@ -1667,6 +1674,7 @@ async function supportingDownload(
   file: { url: string; name: string },
   isFileHost: (hostname: string) => boolean,
   kept: Kept,
+  folder?: string | null,
 ): Promise<NewPlateInput[]> {
   const limits = await supportingLimits();
   if (!limits || kept.files >= SUPPORTING_FILES_PER_MODEL) return [];
@@ -1690,12 +1698,12 @@ async function supportingDownload(
   const input = result.input;
   if (path.extname(input.filename).toLowerCase() === ".zip") {
     try {
-      return await supportingFilesFromZip(input.tempFilePath!, kept, undefined, true);
+      return await supportingFilesFromZip(input.tempFilePath!, kept, undefined, true, folder);
     } finally {
       await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
     }
   }
-  if (isKeptBesideModel(input.filename)) return [{ ...input, supporting: true }];
+  if (isKeptBesideModel(input.filename)) return inFolder(folder, [{ ...input, supporting: true }]);
   await fs.rm(input.tempFilePath!, { force: true }).catch(() => undefined);
   return [];
 }
