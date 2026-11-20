@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -33,6 +34,8 @@ const stage = vi.hoisted(() => ({
   keepFormatFails: false,
   // The next look for this model's pictures folder fails.
   assetHomeFailsFor: null as string | null,
+  // Reading this entry of a zip fails, as a broken one would.
+  zipEntryFails: null as string | null,
   lockCalls: 0,
 }));
 
@@ -124,6 +127,16 @@ vi.mock("../src/services/modelAssets", async (original) => {
     },
   };
 });
+vi.mock("../src/utils/zipReader", async (original) => {
+  const actual = await original<typeof import("../src/utils/zipReader")>();
+  return {
+    ...actual,
+    readZipEntry: (...args: Parameters<typeof actual.readZipEntry>) =>
+      stage.zipEntryFails !== null && args[1] === stage.zipEntryFails
+        ? Promise.reject(new Error("a broken entry"))
+        : actual.readZipEntry(...args),
+  };
+});
 vi.mock("../src/utils/storageLock", async (original) => {
   const actual = await original<typeof import("../src/utils/storageLock")>();
   return {
@@ -139,7 +152,7 @@ import { createApp } from "../src/app";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { addPlatesToPrint, createPrint } from "../src/services/printCreation";
-import { assetTarget, plateThumbFile } from "../src/services/modelAssets";
+import { assetTarget, legacyAssetPath, plateThumbFile } from "../src/services/modelAssets";
 import { replaceModelPlates } from "../src/services/modelFilesReplace";
 import { mergeModels } from "../src/services/modelMergeService";
 import { saveFileFromTemp } from "../src/services/printFileService";
@@ -252,6 +265,7 @@ afterEach(() => {
   stage.afterThumbnail = null;
   stage.keepFormatFails = false;
   stage.assetHomeFailsFor = null;
+  stage.zipEntryFails = null;
 });
 
 afterAll(() => {
@@ -694,6 +708,8 @@ describe("a model's plates, changed by two requests at once", () => {
       await relocatePrint(moved, moved.plates);
     };
     let left = "";
+    // Whether the other 3MF is still at `left`, for the clean-up to take it should the reading never get as far.
+    let substitute = false;
     stage.beforeFormat = async (filePath) => {
       // Another tab renames the model as the new plate is read, so its file moves, and another model's 3MF takes the
       // place it left...
@@ -701,16 +717,22 @@ describe("a model's plates, changed by two requests at once", () => {
       left = filePath;
       fs.mkdirSync(path.dirname(left), { recursive: true });
       fs.copyFileSync(other, left);
+      substitute = true;
     };
     stage.afterThumbnail = async () => {
       // ...which leaves again once its picture is taken, and the old name is put back, bringing the plate's file back
       // to where it was read.
+      substitute = false;
       fs.rmSync(left, { force: true });
       await rename(print.name);
     };
-    await addPlatesToPrint(owner.id, print.id, [
-      { filename: "part.3mf", tempFilePath: await threeMf(false, await picture("#ff0000")) },
-    ]);
+    try {
+      await addPlatesToPrint(owner.id, print.id, [
+        { filename: "part.3mf", tempFilePath: await threeMf(false, await picture("#ff0000")) },
+      ]);
+    } finally {
+      if (substitute) fs.rmSync(left, { force: true });
+    }
     const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
     expect(left).not.toBe("");
     expect(path.join(STORAGE, part.storagePath)).toBe(left);
@@ -719,6 +741,225 @@ describe("a model's plates, changed by two requests at once", () => {
     const [red, , blue] = (await sharp(assetTarget(assetsPath!, plateThumbFile(part.id))).stats()).channels;
     expect(red.mean).toBeGreaterThan(200);
     expect(blue.mean).toBeLessThan(50);
+  });
+
+  it("leaves a plate and a file a merge took to another model where that model's move put them", async () => {
+    const a = await model([
+      { filename: "taken.stl", tempFilePath: tempStl("taken") },
+      { filename: "kept.stl", tempFilePath: tempStl("kept") },
+    ]);
+    const b = await model([{ filename: "b.stl", tempFilePath: tempStl("b") }]);
+    const note = path.join(dir, `note-${count++}.txt`);
+    fs.writeFileSync(note, "taken along");
+    await saveFileFromTemp(owner.id, a.print.id, note, "note.txt", null);
+    const file = await prisma.printFile.findFirstOrThrow({ where: { printId: a.print.id, filename: "note.txt" } });
+    // As a merge leaves them: A's first plate and its file are B's now, where B's move put them.
+    // Its move of B's plates only for the plate, so a move of B's for the file doesn't take a plate A moved back again.
+    const merge = async (data: () => Promise<unknown>, plates: boolean) => {
+      await data();
+      const now = await prisma.print.findUniqueOrThrow({ where: { id: b.print.id }, include: { plates: true } });
+      await relocatePrint(now, plates ? now.plates : []);
+    };
+    await merge(
+      () => prisma.plate.update({ where: { id: a.plates[0].id }, data: { printId: b.print.id, position: 5 } }),
+      true,
+    );
+    const plateThere = (await prisma.plate.findUniqueOrThrow({ where: { id: a.plates[0].id } })).storagePath;
+    // A move of A after a rename, with the plates it read before the merge; its files' list read just before the file's
+    // merge, too.
+    const renamed = await prisma.print.update({ where: { id: a.print.id }, data: { name: `Merged away ${stamp}` } });
+    const findMany = prisma.printFile.findMany.bind(prisma.printFile);
+    let fileThere = "";
+    const spy = vi.spyOn(prisma.printFile, "findMany").mockImplementation((async (
+      args: Parameters<typeof prisma.printFile.findMany>[0],
+    ) => {
+      const rows = await findMany(args);
+      if (!fileThere && args?.where?.printId === a.print.id) {
+        await merge(() => prisma.printFile.update({ where: { id: file.id }, data: { printId: b.print.id } }), false);
+        fileThere = (await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } })).storagePath;
+      }
+      return rows;
+    }) as never);
+    try {
+      await relocatePrint(renamed, a.plates);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(fileThere).not.toBe("");
+    const plate = await prisma.plate.findUniqueOrThrow({ where: { id: a.plates[0].id } });
+    expect(plate.storagePath).toBe(plateThere);
+    expect(fs.existsSync(path.join(STORAGE, plate.storagePath))).toBe(true);
+    const row = await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } });
+    expect(row.storagePath).toBe(fileThere);
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("taken along");
+  });
+
+  it("brings a picture in from the old shared folders to where the model's pictures are by then", async () => {
+    const { print, plates } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    // A thumbnail still in the old shared folder, as a model from before has it.
+    const thumb = plateThumbFile(plates[0].id);
+    const legacy = legacyAssetPath(thumb);
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, ONE_PIXEL_PNG);
+    const before = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
+    fs.rmSync(assetTarget(before.assetsPath!, thumb), { force: true });
+    const renamed = await prisma.print.update({ where: { id: print.id }, data: { name: `Pictures in ${stamp}` } });
+    // Another move chooses another folder for its pictures right after this one saved where they go.
+    const update = prisma.print.update.bind(prisma.print);
+    let elsewhere = "";
+    const spy = vi.spyOn(prisma.print, "update").mockImplementation((async (
+      args: Parameters<typeof prisma.print.update>[0],
+    ) => {
+      const row = await update(args);
+      if (!elsewhere && args.where.id === print.id && typeof args.data.assetsPath === "string") {
+        elsewhere = `${args.data.assetsPath} elsewhere ${count++}`;
+        await update({ where: { id: print.id }, data: { assetsPath: elsewhere } });
+      }
+      return row;
+    }) as never);
+    try {
+      await relocatePrint(renamed, plates);
+    } finally {
+      spy.mockRestore();
+      fs.rmSync(legacy, { force: true });
+    }
+    expect(elsewhere).not.toBe("");
+    expect(fs.existsSync(assetTarget(elsewhere, thumb))).toBe(true);
+  });
+
+  it("takes back a plate whose own taking back failed with the rest of the request's", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    // The new 3MF plate's file can't be read, and the plate's own removal after that fails too.
+    stage.formatFails = async () => {};
+    const remove = prisma.plate.delete.bind(prisma.plate);
+    let refused = false;
+    const spy = vi.spyOn(prisma.plate, "delete").mockImplementation(((
+      args: Parameters<typeof prisma.plate.delete>[0],
+    ) => {
+      if (refused) return remove(args);
+      refused = true;
+      return Promise.reject(new Error("the database went away"));
+    }) as never);
+    try {
+      const res = await request(app)
+        .post(`/api/print/${print.id}/plates`)
+        .set(auth())
+        .attach("files", fs.readFileSync(await threeMf(false)), "bad.3mf");
+      expect(res.status).toBeGreaterThanOrEqual(400);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(refused).toBe(true);
+    expect((await platesOf(print.id)).map((plate) => plate.filename)).toEqual(["a.stl"]);
+  });
+
+  it("keeps no reading of a file at the place a new plate was put first, once its row says it's elsewhere and gone", async () => {
+    const { print } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    const picture = async (background: string) =>
+      sharp({ create: { width: 8, height: 8, channels: 3, background } })
+        .png()
+        .toBuffer();
+    const other = await threeMf(true, await picture("#0000ff"));
+    const create = prisma.plate.create.bind(prisma.plate);
+    let first = "";
+    const spy = vi.spyOn(prisma.plate, "create").mockImplementation((async (
+      args: Parameters<typeof prisma.plate.create>[0],
+    ) => {
+      const made = await create(args);
+      if (!first && args.data.printId === print.id && args.data.filename === "part.3mf") {
+        first = path.join(STORAGE, String(args.data.storagePath));
+        // Another tab renames the model, whose move takes the new plate along; its file is then lost there, and another
+        // model's sliced 3MF takes the place it was put first.
+        const moved = await prisma.print.update({
+          where: { id: print.id },
+          data: { name: `Lost on the way ${stamp}` },
+          include: { plates: true },
+        });
+        await relocatePrint(moved, moved.plates);
+        const now = await prisma.plate.findUniqueOrThrow({ where: { id: made.id } });
+        fs.rmSync(path.join(STORAGE, now.storagePath), { force: true });
+        fs.mkdirSync(path.dirname(first), { recursive: true });
+        fs.copyFileSync(other, first);
+      }
+      return made;
+    }) as never);
+    try {
+      await addPlatesToPrint(owner.id, print.id, [
+        { filename: "part.3mf", tempFilePath: await threeMf(false, await picture("#ff0000")) },
+      ]);
+    } finally {
+      spy.mockRestore();
+      if (first) fs.rmSync(first, { force: true });
+    }
+    expect(first).not.toBe("");
+    const part = (await platesOf(print.id)).find((plate) => plate.filename === "part.3mf")!;
+    const { assetsPath } = await prisma.print.findUniqueOrThrow({ where: { id: print.id } });
+    expect(fs.existsSync(assetTarget(assetsPath!, plateThumbFile(part.id)))).toBe(false);
+    expect(part.format).toBeNull();
+  });
+
+  it("puts a failed repair's plates back only once the files it made are gone, trying again when one won't go", async () => {
+    const { print, plates } = await model([
+      { filename: "a.stl", tempFilePath: tempStl("a") },
+      { filename: "b.stl", tempFilePath: tempStl("b") },
+    ]);
+    for (const plate of plates) fs.rmSync(path.join(STORAGE, plate.storagePath), { force: true });
+    // The repair's second file never comes, and its first, which takes a.stl's old place, won't go at the first try.
+    const place = path.join(STORAGE, plates[0].storagePath);
+    const rm = fsPromises.rm.bind(fsPromises);
+    let refused = 0;
+    const spy = vi.spyOn(fsPromises, "rm").mockImplementation((async (
+      target: Parameters<typeof fsPromises.rm>[0],
+      options?: Parameters<typeof fsPromises.rm>[1],
+    ) => {
+      if (!refused && String(target) === place && fs.existsSync(place)) {
+        refused += 1;
+        throw Object.assign(new Error("resource busy"), { code: "EBUSY" });
+      }
+      return rm(target, options);
+    }) as never);
+    try {
+      await expect(
+        replaceModelPlates(owner.id, print.id, [
+          { filename: "a.stl", tempFilePath: tempStl("a") },
+          { filename: "b.stl", tempFilePath: path.join(dir, `never-${count++}.stl`) },
+        ]),
+      ).rejects.toThrow(/ENOENT/);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(refused).toBe(1);
+    // The model's own rows are back, pointing at files that are gone, as it was found: the scan offers it again.
+    expect((await platesOf(print.id)).map((plate) => plate.id)).toEqual(plates.map((plate) => plate.id));
+    expect(fs.existsSync(place)).toBe(false);
+  });
+
+  it("keeps a repair whose plates are in though its look at the model's photos fails", async () => {
+    const { print, plates } = await model([{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    fs.rmSync(path.join(STORAGE, plates[0].storagePath), { force: true });
+    const findUniqueOrThrow = prisma.print.findUniqueOrThrow.bind(prisma.print);
+    let refused = false;
+    const spy = vi.spyOn(prisma.print, "findUniqueOrThrow").mockImplementation(((
+      args: Parameters<typeof prisma.print.findUniqueOrThrow>[0],
+    ) => {
+      if (refused || args.where.id !== print.id || !args.select || !("previewImages" in args.select)) {
+        return findUniqueOrThrow(args);
+      }
+      refused = true;
+      return Promise.reject(new Error("the database went away"));
+    }) as never);
+    let replaced: Awaited<ReturnType<typeof replaceModelPlates>> = null;
+    try {
+      replaced = await replaceModelPlates(owner.id, print.id, [{ filename: "a.stl", tempFilePath: tempStl("a") }]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(refused).toBe(true);
+    // The photos are left as they are, not replaced for a gallery that couldn't be looked at.
+    expect(replaced?.galleryWhole).toBe(true);
+    const now = await platesOf(print.id);
+    expect(now.map((plate) => plate.filename)).toEqual(["a.stl"]);
+    expect(fs.existsSync(path.join(STORAGE, now[0].storagePath))).toBe(true);
   });
 
   it("takes back the plate a failed upload added to a model that had none, so asking again adds it once", async () => {
@@ -876,19 +1117,33 @@ describe("a 3MF's thumbnail pictures", () => {
   }
 
   it("are read best first, and no more than four of them", async () => {
+    // The best ones last in the archive, so only reading them best first takes them.
     const names = [
+      "a/thumbnail.png",
+      "b/thumbnail.png",
+      "c/thumbnail.png",
+      "thumbnail.png",
+      "3D/thumbnail.png",
+      "Metadata/thumbnail.png",
+    ];
+    const file = await threeMfWith(Object.fromEntries(names.map((name) => [name, Buffer.from(name)])));
+    const pictures = await read3mfThumbnails(file);
+    expect(pictures.map((each) => each.toString())).toEqual([
       "Metadata/thumbnail.png",
       "3D/thumbnail.png",
       "thumbnail.png",
       "a/thumbnail.png",
-      "b/thumbnail.png",
-      "c/thumbnail.png",
-    ];
-    const file = await threeMfWith(
-      Object.fromEntries(names.map((name, index) => [name, Buffer.from(`picture ${index}`)])),
-    );
-    const pictures = await read3mfThumbnails(file);
-    expect(pictures.map((each) => each.toString())).toEqual(["picture 0", "picture 1", "picture 2", "picture 3"]);
+    ]);
+  });
+
+  it("keep the ones read already when a later one can't be read", async () => {
+    const file = await threeMfWith({
+      "Metadata/thumbnail.png": Buffer.from("best"),
+      "3D/thumbnail.png": Buffer.from("broken"),
+      "thumbnail.png": Buffer.from("third"),
+    });
+    stage.zipEntryFails = "3D/thumbnail.png";
+    expect((await read3mfThumbnails(file)).map((each) => each.toString())).toEqual(["best", "third"]);
   });
 
   it("come to no more than 32 MiB in all, however large the archive says each is", async () => {

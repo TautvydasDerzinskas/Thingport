@@ -201,6 +201,11 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
 
   // Numbers each read of the files, so only the latest one's answer lands, and none once the dialog has gone.
   const supportingRead = useRef(0);
+  // Taken when an answer lands, so a new function from the page doesn't read the files again.
+  const unauthorized = useRef(onUnauthorized);
+  useEffect(() => {
+    unauthorized.current = onUnauthorized;
+  });
   const readSupportingFiles = useCallback(() => {
     const read = ++supportingRead.current;
     setSupportingLoadFailed(false);
@@ -211,9 +216,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
         // Before any added while they were read.
         if (read === supportingRead.current) setSupportingItems((current) => [...files.map(existingItem), ...current]);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        if (read !== supportingRead.current) return;
+        // A session that ended goes where the app renews it or signs in again; still said as failed, with a retry, in
+        // case the server couldn't be reached to renew it.
+        if (err instanceof UnauthorizedError) unauthorized.current?.();
         // Said, with a retry: the empty list would claim the model has none, and leave them out of reach here.
-        if (read === supportingRead.current) setSupportingLoadFailed(true);
+        setSupportingLoadFailed(true);
       })
       .finally(() => {
         if (read === supportingRead.current) setSupportingLoading(false);
@@ -221,7 +230,13 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
   }, [print.id]);
 
   useEffect(() => {
-    if (print.supporting_files || !print.supporting_file_count) return;
+    if (print.supporting_files) return;
+    // None now (taken away while they were read): nothing to wait for or retry. The read before was given up already.
+    if (!print.supporting_file_count) {
+      setSupportingLoading(false);
+      setSupportingLoadFailed(false);
+      return;
+    }
     readSupportingFiles();
     return () => {
       supportingRead.current += 1;
@@ -510,10 +525,14 @@ export default function EditModelModal({ print, onClose, onUnauthorized, onUpdat
           continue;
         }
         storedImages.set(img.localId, { id, url });
+        // Our own render gives way to the first picture stored: out of the list now, not after the last, so a later
+        // photo failing doesn't leave it there to be removed, a removal the next try would fail on.
+        const present = new Set(latest.preview_images.map((each) => each.id));
         setImages((current) =>
-          current.map((each): ImageItem =>
-            each.kind === "new" && each.localId === img.localId ? { kind: "existing", id, url } : each,
-          ),
+          current.flatMap((each): ImageItem[] => {
+            if (each.kind === "new") return [each.localId === img.localId ? { kind: "existing", id, url } : each];
+            return present.has(each.id) ? [each] : [];
+          }),
         );
       }
       if (images.length) {

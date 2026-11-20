@@ -38,12 +38,20 @@ export function useSupportingFiles(
   // The hidden file input the picker is, bound by the component that renders it.
   const [input, setInput] = useState<HTMLInputElement | null>(null);
 
-  // Each change answers with the whole model, so they go one at a time: an answer that set out first lands first, never
-  // over a newer one.
-  const turn = useRef<Promise<unknown>>(Promise.resolve());
-  const inTurn = useCallback(<T>(task: () => Promise<T>): Promise<T> => {
-    const next = turn.current.then(task);
-    turn.current = next.catch(() => undefined);
+  // Each change answers with the whole model, so a model's go one at a time: an answer that set out first lands first,
+  // never over a newer one. Each model has its own line, as one's answers don't touch another's: a slow upload to the
+  // model before doesn't hold up the next one's. A line goes once it's empty.
+  const turns = useRef(new Map<string, Promise<unknown>>());
+  const inTurn = useCallback(<T>(model: string, task: () => Promise<T>): Promise<T> => {
+    const next = (turns.current.get(model) ?? Promise.resolve()).then(task);
+    const done = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    turns.current.set(model, done);
+    void done.then(() => {
+      if (turns.current.get(model) === done) turns.current.delete(model);
+    });
     return next;
   }, []);
 
@@ -81,7 +89,7 @@ export function useSupportingFiles(
         setPending((current) => current.filter((item) => !keys.has(item.key)));
       };
       // In line at once, before reading anything: a pick made after this one goes up after it.
-      await inTurn(async () => {
+      await inTurn(target, async () => {
         // A .gltf's .bin and textures go up with it, packed into its .glb.
         const { model, supporting, packedWith, ambiguous } = await withGltfFiles(
           sortAddedFiles(queued, "supporting"),
@@ -217,7 +225,7 @@ export function useSupportingFiles(
         destructive: true,
       });
       if (!confirmed) return;
-      await inTurn(async () => {
+      await inTurn(printId, async () => {
         try {
           const { print: updated } = await printsApi.deleteFile(printId, file.id);
           onUpdated?.(updated);
@@ -232,7 +240,7 @@ export function useSupportingFiles(
   const rename = useCallback(
     async (file: PrintFile, filename: string) => {
       if (!printId) return;
-      await inTurn(async () => {
+      await inTurn(printId, async () => {
         try {
           const { print: updated } = await printsApi.renameFile(printId, file.id, filename);
           onUpdated?.(updated);

@@ -49,7 +49,15 @@ export default function SupportingFiles({ print, actions: fileActions, canEdit }
       openedByLink.current = false;
       return;
     }
-    if (opened.current === linked || !files.some((file) => file.id === linked)) return;
+    if (opened.current === linked) return;
+    // A link to a file that isn't there (taken away in another tab, then gone Back to): the viewer another link opened
+    // doesn't stay open under it. Not held as opened, so it opens should the file be listed after all.
+    if (!files.some((file) => file.id === linked)) {
+      opened.current = null;
+      if (openedByLink.current) setViewing(null);
+      openedByLink.current = false;
+      return;
+    }
     opened.current = linked;
     openedByLink.current = true;
     setViewing(linked);

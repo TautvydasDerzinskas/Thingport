@@ -674,7 +674,12 @@ describe.skipIf(!hasPgTools)("migrating from an older Thingport instance", () =>
       expect(again.status).toBe(409);
       expect(again.body.code).toBe("not_ready");
     } finally {
-      await removeRun(prepared.body.id);
+      // A run Start set going is let finish first, as removeRun turns a running one away; a clean-up that still can't
+      // be done is said apart, so it doesn't stand in for what failed above.
+      await until(prepared.body.id, (status) => status !== "running").catch(() => undefined);
+      await removeRun(prepared.body.id).catch((err: unknown) =>
+        console.error(`Couldn't remove migration ${prepared.body.id} after its test:`, err),
+      );
     }
   }, 240_000);
 

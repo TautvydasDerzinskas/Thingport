@@ -21,8 +21,9 @@ export function withStorageLock<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** The number of the turn at the lock, read in a `fn`: a later turn of the caller's whose number is just one more
- *  had no other in between, so nothing in storage moved meanwhile -- not even away and back. */
+/** The number of the turn at the lock, read in a `fn`: a later turn of the caller's whose number is just one more had
+ *  no other in between, so nothing that takes this process's storage lock moved a file meanwhile -- not even away and
+ *  back. It says nothing of a writer outside it, such as someone editing the storage folder by hand. */
 export function storageLockTurn(): number {
   return turns;
 }

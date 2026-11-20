@@ -19,7 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { createApp } from "../src/app";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { STORAGE } from "../src/config";
 import { prisma } from "../src/db";
 import { makePrint, register, tempFile, uniqueImage, upload } from "./helpers/fileReuse";
@@ -229,7 +229,7 @@ describe("models whose files are gone", () => {
     const movedTo = note.storagePath.replace(/notes\.txt$/, "moved notes.txt");
     // A move as a rename of the model makes one, under the storage lock: the file goes first, its row after.
     let reachMidway!: () => void;
-    let finishMove!: () => void;
+    let finishMove = () => {};
     const midway = new Promise<void>((resolve) => (reachMidway = resolve));
     const move = withStorageLock(async () => {
       fs.renameSync(path.join(STORAGE, note.storagePath), path.join(STORAGE, movedTo));
@@ -237,12 +237,18 @@ describe("models whose files are gone", () => {
       await new Promise<void>((resolve) => (finishMove = resolve));
       await prisma.printFile.update({ where: { id: note.id }, data: { storagePath: movedTo } });
     });
-    await midway;
-
-    // The row still names where the file was: read now, it would be taken for gone.
-    const removal = removeMissingPrintFiles(model.print.id);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    finishMove();
+    let removal: Promise<void> | undefined;
+    try {
+      // A move that fails before it gets there fails the test with its own error, rather than leaving it waiting.
+      await Promise.race([midway, move]);
+      // The row still names where the file was: read now, it would be taken for gone.
+      removal = removeMissingPrintFiles(model.print.id);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    } finally {
+      // Both done before the test is, whichever way it went.
+      finishMove();
+      await Promise.allSettled([move, removal]);
+    }
     await move;
     await removal;
 
@@ -808,6 +814,119 @@ describe("models whose files are gone", () => {
     expect(await prisma.printFile.count({ where: { id: old.id } })).toBe(0);
   });
 
+  it("keeps a prepared print whose save committed though its answer was lost, and takes the one it replaced", async () => {
+    const model = await makePrint(dir, owner.id, "Answer lost");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    // The save's last step commits, and its answer never comes back, as when the connection drops just then. On the
+    // client's own method: `prisma` is a proxy that forwards to it.
+    const transaction = PrismaClient.prototype.$transaction;
+    const spy = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce(async function (
+      this: PrismaClient,
+      ...args: unknown[]
+    ) {
+      await (transaction as (...a: unknown[]) => Promise<unknown>).apply(this, args);
+      throw new Error("Connection terminated unexpectedly");
+    } as never);
+    try {
+      await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X9\n"), "new.gcode", null);
+    } finally {
+      spy.mockRestore();
+    }
+    const row = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "new.gcode" } });
+    expect(row.ready).toBe(true);
+    expect(fs.readFileSync(path.join(STORAGE, row.storagePath), "utf8")).toBe("G1 X9\n");
+    expect((await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } })).preparedFileId).toBe(row.id);
+    // And the one it replaced went, as after any save of a prepared print.
+    expect(await prisma.printFile.count({ where: { id: old.id } })).toBe(0);
+    expect(fs.existsSync(path.join(STORAGE, old.storagePath))).toBe(false);
+  });
+
+  it("leaves a save as it is when whether its last step committed can't be told", async () => {
+    const model = await makePrint(dir, owner.id, "Outcome unknown");
+    await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
+    const old = await prisma.printFile.findFirstOrThrow({ where: { printId: model.print.id, filename: "old.gcode" } });
+    // The last step's answer is lost, and so is the look at whether it went through.
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    let lost = false;
+    const transaction = vi.spyOn(PrismaClient.prototype, "$transaction").mockImplementationOnce((async () => {
+      lost = true;
+      throw new Error("Connection terminated unexpectedly");
+    }) as never);
+    const read = vi
+      .spyOn(prisma.printFile, "findUnique")
+      .mockImplementation(((args: Parameters<typeof prisma.printFile.findUnique>[0]) =>
+        lost ? Promise.reject(new Error("the database went away")) : findUnique(args)) as never);
+    let failed: unknown;
+    try {
+      failed = await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X9\n"), "new.gcode", null).catch(
+        (err: unknown) => err,
+      );
+    } finally {
+      transaction.mockRestore();
+      read.mockRestore();
+    }
+    const left = await prisma.printFile.findFirst({ where: { printId: model.print.id, filename: "new.gcode" } });
+    try {
+      expect(failed).toMatchObject({ message: "Connection terminated unexpectedly" });
+      // Nothing undone: its file and row are there for the clean-up at startup, and the model keeps its own print.
+      expect(left).not.toBeNull();
+      expect(fs.existsSync(path.join(STORAGE, left!.storagePath))).toBe(true);
+      expect((await prisma.print.findUniqueOrThrow({ where: { id: model.print.id } })).preparedFileId).toBe(old.id);
+    } finally {
+      if (left) {
+        await prisma.printFile.deleteMany({ where: { id: left.id } });
+        fs.rmSync(path.join(STORAGE, left.storagePath), { force: true });
+      }
+    }
+  });
+
+  it("goes on at startup past a replaced print's file that won't go, keeping its row for the next start", async () => {
+    const model = await makePrint(dir, owner.id, "Stuck at startup");
+    const write = (content: string) => {
+      const storagePath = `stuck-${randomUUID()}/old.gcode`;
+      fs.mkdirSync(path.dirname(path.join(STORAGE, storagePath)), { recursive: true });
+      fs.writeFileSync(path.join(STORAGE, storagePath), content);
+      return storagePath;
+    };
+    const stuck = write("G1 X1\n");
+    const freed = write("G1 X2\n");
+    const rows = await Promise.all(
+      [stuck, freed].map((storagePath) =>
+        prisma.printFile.create({
+          data: {
+            printId: model.print.id,
+            filename: "old.gcode",
+            mime: "text/x-gcode",
+            role: "PREPARED",
+            storagePath,
+            size: 6,
+            ready: false,
+          },
+        }),
+      ),
+    );
+    // The disk refuses to remove the first: the second goes all the same.
+    const rm = fsPromises.rm.bind(fsPromises);
+    const spy = vi.spyOn(fsPromises, "rm").mockImplementation((async (where: fs.PathLike, options?: fs.RmOptions) => {
+      if (path.resolve(String(where)) === path.resolve(STORAGE, stuck)) {
+        throw Object.assign(new Error("EBUSY: resource busy"), { code: "EBUSY" });
+      }
+      return rm(where, options);
+    }) as never);
+    try {
+      await removeAbandonedPrintFileSaves();
+      expect(await prisma.printFile.count({ where: { id: rows[0].id } })).toBe(1);
+      expect(fs.existsSync(path.join(STORAGE, stuck))).toBe(true);
+      expect(await prisma.printFile.count({ where: { id: rows[1].id } })).toBe(0);
+      expect(fs.existsSync(path.join(STORAGE, freed))).toBe(false);
+    } finally {
+      spy.mockRestore();
+      await prisma.printFile.deleteMany({ where: { id: { in: rows.map((row) => row.id) } } });
+      fs.rmSync(path.join(STORAGE, stuck), { force: true });
+    }
+  });
+
   it("doesn't show a prepared print that was replaced after the model was read", async () => {
     const model = await makePrint(dir, owner.id, "Replaced while read");
     await saveFileFromTemp(owner.id, model.print.id, tempFile(dir, "G1 X0\n"), "old.gcode", null);
@@ -960,10 +1079,12 @@ describe("models whose files are gone", () => {
     }) as never);
     try {
       await request(app).delete(`/api/print/${model.print.id}/files/${note.id}`).set(auth(owner.token)).expect(200);
-      await moving;
     } finally {
       spy.mockRestore();
+      // Done before the test is, though the removal failed: its error is the test's, the move's left to settle.
+      await Promise.allSettled([moving]);
     }
+    await moving;
     expect(askedForLock).toBe(true);
     const newPlace = path.join(STORAGE, path.dirname(path.dirname(note.storagePath)), moved.name, "gone.txt");
     expect(fs.existsSync(path.join(STORAGE, note.storagePath))).toBe(false);
@@ -1210,10 +1331,12 @@ describe("models whose files are gone", () => {
         galleryImages: [],
         profiles: {},
       });
-      await moving;
     } finally {
       spy.mockRestore();
+      // Done before the test is, though the repair failed: its error is the test's, the move's left to settle.
+      await Promise.allSettled([moving]);
     }
+    await moving;
     expect(moving).not.toBeNull();
     expect(replaced).toBeNull();
     const plates = await prisma.plate.findMany({ where: { printId: model.print.id } });

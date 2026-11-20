@@ -565,7 +565,8 @@ function movePrintFile(
   return moveStored(
     async () => {
       const now = await prisma.printFile.findUnique({ where: { id: fileId } });
-      if (!now || isUnsettled(now)) return null;
+      // Another model's by now, as a plate a merge took is (relocatePrint).
+      if (!now || isUnsettled(now) || now.printId !== print.id) return null;
       const place = renderFilePath(print, template, printValues, now.filename, null, now.folder);
       // Where it already is counts as free, so a file numbered apart from another ("Notes (2).pdf") stays put.
       return {
@@ -704,12 +705,19 @@ async function relocateAssets(
       }
     },
   );
-  const home = chosen.home;
-  print.assetsPath = home;
-  for (const file of await modelAssetFiles(print.id, plateIds)) {
-    if (await adoptLegacyAsset(home, file)) moved += 1;
-  }
-  return moved;
+  // Those still in the old shared folders brought to where the model's pictures are as the lock is held, read again
+  // there: another move of them since the one above may have chosen another folder, which these would then miss.
+  const adopted = await withStorageLock(async () => {
+    const now = await prisma.print.findUnique({ where: { id: print.id }, select: { assetsPath: true } });
+    if (!now?.assetsPath) return { home: chosen.home, moved: 0 };
+    let count = 0;
+    for (const file of await modelAssetFiles(print.id, plateIds)) {
+      if (await adoptLegacyAsset(now.assetsPath, file)) count += 1;
+    }
+    return { home: now.assetsPath, moved: count };
+  });
+  print.assetsPath = adopted.home;
+  return moved + adopted.moved;
 }
 
 /**
@@ -734,7 +742,8 @@ export async function relocatePrint(
     const didMove = await moveStored(
       async () => {
         const now = await prisma.plate.findUnique({ where: { id: plate.id } });
-        if (!now) return null;
+        // Another model's by now, which a merge made it: that model's move takes it where its files go.
+        if (!now || now.printId !== print.id) return null;
         const place = renderFilePath(print, safeTemplate, printValues, now.filename, now.position, now.folder);
         // Where it already is counts as free, so a plate moved aside by freePlatePath stays put.
         const to = samePath(now.storagePath, place) ? place : await freePlatePath(place, print.id, { plateId: now.id });
@@ -957,7 +966,8 @@ export async function read3mfThumbnails(srcPath: string): Promise<Buffer[]> {
       const room = Math.min(THUMBNAIL_ENTRY_MAX, THUMBNAIL_CANDIDATES_MAX - bytes);
       if (pictures.length >= THUMBNAIL_CANDIDATES) break;
       if (entry.size > room) continue;
-      const buf = await readZipEntry(srcPath, entry.name, room);
+      // One that can't be read is passed over, as one too large is: those read already still count.
+      const buf = await readZipEntry(srcPath, entry.name, room).catch(() => null);
       if (!buf) continue;
       pictures.push(buf);
       bytes += buf.length;

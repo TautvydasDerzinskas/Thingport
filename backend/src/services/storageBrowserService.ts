@@ -97,10 +97,11 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
       where: below ? { storagePath: below } : undefined,
       select: { id: true, storagePath: true, sourcePath: true, size: true, print: MODEL_SELECT },
     }),
-    // Not a save still under way: its place isn't a file yet, or not a whole one.
+    // A save still under way too, though it isn't listed (its place isn't a file yet, or not a whole one): what's at
+    // its place in a pictures folder isn't a picture either.
     prisma.printFile.findMany({
-      where: below ? { storagePath: below, ready: true } : { ready: true },
-      select: { storagePath: true, size: true, role: true, print: MODEL_SELECT },
+      where: below ? { storagePath: below } : undefined,
+      select: { storagePath: true, size: true, role: true, ready: true, print: MODEL_SELECT },
     }),
     prisma.print.findMany({
       where: below ? { OR: [{ assetsPath: below }, { assetsPath: { in: enclosing } }] } : { assetsPath: { not: null } },
@@ -117,23 +118,25 @@ async function entriesUnder(folder: string): Promise<{ entries: Entry[]; picture
       print: plate.print,
       location: () => plateLocation(plate.storagePath, plate.sourcePath),
     })),
-    ...files.map((file) => ({
-      path: toSlash(file.storagePath),
-      size: Number(file.size),
-      kind:
-        file.role === "LICENSE"
-          ? ("license" as const)
-          : file.role === "PREPARED"
-            ? ("prepared" as const)
-            : ("file" as const),
-      plateId: null,
-      print: file.print,
-      location: (): StorageFileLocation => (exists(file.storagePath) ? "managed" : "missing"),
-    })),
+    ...files
+      .filter((file) => file.ready)
+      .map((file) => ({
+        path: toSlash(file.storagePath),
+        size: Number(file.size),
+        kind:
+          file.role === "LICENSE"
+            ? ("license" as const)
+            : file.role === "PREPARED"
+              ? ("prepared" as const)
+              : ("file" as const),
+        plateId: null,
+        print: file.print,
+        location: (): StorageFileLocation => (exists(file.storagePath) ? "managed" : "missing"),
+      })),
   ];
   // Another model's files can be in a pictures folder, when a category puts them there; they're listed as its own.
   // The deepest folders go first, so a model's pictures folder inside another's keeps its pictures.
-  const listed = new Set(entries.map((entry) => entry.path));
+  const listed = new Set([...entries.map((entry) => entry.path), ...files.map((file) => toSlash(file.storagePath))]);
   const deepestFirst = homes.toSorted((a, b) => b.assetsPath!.length - a.assetsPath!.length);
   const pictures = await mapWithConcurrency(deepestFirst, PICTURE_FOLDER_READS, async (print) => {
     const home = toSlash(print.assetsPath!);

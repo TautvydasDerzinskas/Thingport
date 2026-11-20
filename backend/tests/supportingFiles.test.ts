@@ -19,6 +19,13 @@ import { makePrint, nonce, register, tempFile, upload } from "./helpers/fileReus
 const app = createApp();
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
+/** Waits for every one of `work` before failing on the first that did: none goes on after its test, using the
+ *  database or the storage lock while the next one runs. */
+async function allSettledOrThrow(work: Promise<unknown>[]): Promise<void> {
+  const failed = (await Promise.allSettled(work)).find((result) => result.status === "rejected");
+  if (failed) throw (failed as PromiseRejectedResult).reason;
+}
+
 let dir: string;
 let owner: { id: string; token: string };
 let other: { id: string; token: string };
@@ -136,7 +143,7 @@ describe("supporting files", () => {
     const files = [];
     for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"])
       files.push(await upload(dir, owner.id, model.print.id, name, name));
-    await Promise.all(files.map((file) => renameSupportingFile(owner.id, model.print.id, file.id, "notes")));
+    await allSettledOrThrow(files.map((file) => renameSupportingFile(owner.id, model.print.id, file.id, "notes")));
     const after = await prisma.printFile.findMany({ where: { id: { in: files.map((file) => file.id) } } });
     expect(after.map((file) => file.filename).toSorted()).toEqual([
       "notes (2).txt",
@@ -144,6 +151,29 @@ describe("supporting files", () => {
       "notes (4).txt",
       "notes.txt",
     ]);
+  });
+
+  it("aren't renamed once they're another model's, though they were this one's when the rename began", async () => {
+    const model = await makePrint(dir, owner.id, "Given away");
+    const taker = await makePrint(dir, owner.id, "Taken in");
+    const file = await upload(dir, owner.id, model.print.id, "notes.txt", "notes");
+    // Read as this model's, then made the other's, as a merge that ran while the rename waited for the lock would.
+    const findUnique = prisma.printFile.findUnique.bind(prisma.printFile);
+    const spy = vi.spyOn(prisma.printFile, "findUnique").mockImplementationOnce((async (
+      args: Parameters<typeof prisma.printFile.findUnique>[0],
+    ) => {
+      const row = await findUnique(args);
+      await prisma.printFile.update({ where: { id: file.id }, data: { printId: taker.print.id } });
+      return row;
+    }) as never);
+    let renamed: unknown;
+    try {
+      renamed = await renameSupportingFile(owner.id, model.print.id, file.id, "guide").catch((err: unknown) => err);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(renamed).toMatchObject({ status: 404 });
+    expect((await prisma.printFile.findUniqueOrThrow({ where: { id: file.id } })).filename).toBe("notes.txt");
   });
 
   it("are renamed into the folder the model's name puts them in now, though it changed while the rename waited", async () => {
@@ -185,14 +215,16 @@ describe("supporting files", () => {
       for (const name of ["a.txt", "b.txt", "c.txt", "d.txt"])
         files.push(await upload(dir, owner.id, print.id, name, name));
       // Each rename moves every file of the model, all at once.
-      await Promise.all(files.map((file, n) => renameSupportingFile(owner.id, print.id, file.id, `part ${n + 1}`)));
+      await allSettledOrThrow(
+        files.map((file, n) => renameSupportingFile(owner.id, print.id, file.id, `part ${n + 1}`)),
+      );
       // And four times at once to a new folder, as changes to the model's name would.
       const moved = await prisma.print.update({
         where: { id: print.id },
         data: { name: `Moved ${nonce()}` },
         include: { plates: true },
       });
-      await Promise.all([1, 2, 3, 4].map(() => relocatePrint(moved, moved.plates)));
+      await allSettledOrThrow([1, 2, 3, 4].map(() => relocatePrint(moved, moved.plates)));
 
       const rows = [
         ...(await prisma.plate.findMany({ where: { printId: print.id } })),
@@ -277,50 +309,61 @@ describe("supporting files", () => {
 
   it("never take a model file's place in a zip", async () => {
     const model = await makePrint(dir, owner.id, "Beside");
-    await upload(dir, owner.id, model.print.id, "own.stl", "kept beside");
+    const beside = await upload(dir, owner.id, model.print.id, "own.stl", "kept beside");
     const print = await prisma.print.findUniqueOrThrow({
       where: { id: model.print.id },
       include: { plates: true, category: true },
     });
     // A model file in a folder named "supporting" sits where a supporting file of its name would.
     const plates = print.plates.map((plate) => ({ ...plate, folder: "supporting" }));
-    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+    const entries = await buildZipEntries([{ ...print, plates }]);
+    const arcnames = entries.map((entry) => entry.arcname);
     expect(new Set(arcnames).size).toBe(arcnames.length);
-    expect(arcnames.filter((name) => name.endsWith("/supporting/own.stl"))).toHaveLength(1);
-    expect(arcnames.filter((name) => name.endsWith("/supporting/own (2).stl"))).toHaveLength(1);
+    // The plate keeps the name, and the supporting file is the one numbered.
+    const at = (suffix: string) =>
+      entries
+        .filter((entry) => entry.arcname.endsWith(suffix))
+        .map((entry) => ("filePath" in entry ? entry.filePath : null));
+    expect(at("/supporting/own.stl")).toEqual([path.join(STORAGE, model.plate.storagePath)]);
+    expect(at("/supporting/own (2).stl")).toEqual([path.join(STORAGE, beside.storagePath)]);
   });
 
   it("never make a file and a folder of one path in a zip", async () => {
     const model = await makePrint(dir, owner.id, "File or folder");
     const guide = await upload(dir, owner.id, model.print.id, "guide.pdf", "%PDF-1.4 guide");
-    // A supporting file in a folder called as a plate in a folder named "supporting" is.
+    // A supporting file in a folder called as a plate in a folder named "supporting" is. Only its row says so: put
+    // back after, as a storage move over every model would find a folder of a file's name where none can be made.
     await prisma.printFile.update({ where: { id: guide.id }, data: { folder: "Own.STL" } });
-    const print = await prisma.print.findUniqueOrThrow({
-      where: { id: model.print.id },
-      include: { plates: true, category: true },
-    });
-    const [own] = print.plates;
-    // And among plates: one in a folder called as another plate, and one called as another's folder.
-    const plates = [
-      { ...own, id: `${own.id}-1`, position: 0, folder: "supporting", filename: "own.stl" },
-      { ...own, id: `${own.id}-2`, position: 1, folder: null, filename: "lid.stl" },
-      { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl", filename: "inner.stl" },
-      { ...own, id: `${own.id}-4`, position: 3, folder: "parts", filename: "base.stl" },
-      { ...own, id: `${own.id}-5`, position: 4, folder: null, filename: "parts" },
-    ];
-    const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
-    const prefix = arcnames[0].split("/supporting/")[0];
-    expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
-      "supporting/own.stl",
-      "lid.stl",
-      "lid.stl (2)/inner.stl",
-      "parts/base.stl",
-      "parts (2)",
-      "supporting/Own.STL (2)/guide.pdf",
-    ]);
-    // Each path a file, and none a folder above another's.
-    const lower = arcnames.map((arcname) => arcname.toLowerCase());
-    for (const arcname of lower) expect(lower.some((each) => each.startsWith(`${arcname}/`))).toBe(false);
+    try {
+      const print = await prisma.print.findUniqueOrThrow({
+        where: { id: model.print.id },
+        include: { plates: true, category: true },
+      });
+      const [own] = print.plates;
+      // And among plates: one in a folder called as another plate, and one called as another's folder.
+      const plates = [
+        { ...own, id: `${own.id}-1`, position: 0, folder: "supporting", filename: "own.stl" },
+        { ...own, id: `${own.id}-2`, position: 1, folder: null, filename: "lid.stl" },
+        { ...own, id: `${own.id}-3`, position: 2, folder: "lid.stl", filename: "inner.stl" },
+        { ...own, id: `${own.id}-4`, position: 3, folder: "parts", filename: "base.stl" },
+        { ...own, id: `${own.id}-5`, position: 4, folder: null, filename: "parts" },
+      ];
+      const arcnames = (await buildZipEntries([{ ...print, plates }])).map((entry) => entry.arcname);
+      const prefix = arcnames[0].split("/supporting/")[0];
+      expect(arcnames.map((arcname) => arcname.slice(prefix.length + 1))).toEqual([
+        "supporting/own.stl",
+        "lid.stl",
+        "lid.stl (2)/inner.stl",
+        "parts/base.stl",
+        "parts (2)",
+        "supporting/Own.STL (2)/guide.pdf",
+      ]);
+      // Each path a file, and none a folder above another's.
+      const lower = arcnames.map((arcname) => arcname.toLowerCase());
+      for (const arcname of lower) expect(lower.some((each) => each.startsWith(`${arcname}/`))).toBe(false);
+    } finally {
+      await prisma.printFile.update({ where: { id: guide.id }, data: { folder: null } });
+    }
   });
 
   it("keep to their own model's folder in a zip, though their categories' names differ only by which slash they hold", async () => {

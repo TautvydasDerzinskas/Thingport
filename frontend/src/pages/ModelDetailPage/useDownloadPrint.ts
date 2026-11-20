@@ -51,11 +51,13 @@ export function useDownloadPrint(
         // The owner of the model's state puts it in as it is when this lands, which a change queued just before (a
         // file added) may not have reached this hook's copy of yet.
         if (onCounted) return onCounted(updated.id, updated.print_count);
-        // Two downloads' answers can land in either order, and the count only grows.
+        // Two downloads' answers can land in either order, and the count only grows. Kept here at once too: a second
+        // answer landing before the page has drawn this one measures from it, not from the count before both.
         const now = current.current;
-        onRecorded?.(
-          now.id === updated.id ? { ...now, print_count: Math.max(now.print_count, updated.print_count) } : updated,
-        );
+        if (now.id !== updated.id) return onRecorded?.(updated);
+        const next = { ...now, print_count: Math.max(now.print_count, updated.print_count) };
+        current.current = next;
+        onRecorded?.(next);
       })
       .catch(() => {});
   };

@@ -124,6 +124,8 @@ export async function replaceModelPlates(
   // read above, those still there: one the owner removed meanwhile has no file either, and would have the rest
   // replaced for it.
   const gallery = print.previewImages.map((image) => image.id);
+  // A look that fails leaves the photos as they are: the plates are in by then, and a gallery that can't be checked
+  // isn't one known to be gone.
   const galleryWhole = await withStorageLock(async () => {
     const now = await prisma.print.findUniqueOrThrow({
       where: { id: printId },
@@ -133,6 +135,9 @@ export async function replaceModelPlates(
       now.previewImages.length > 0 &&
       now.previewImages.every((image) => assetExists(now.assetsPath, galleryImageFile(image.id)))
     );
+  }).catch((error: unknown) => {
+    log.error("couldn't check a repaired model's photos, so they're left as they are", { print: printId, error });
+    return true;
   });
   return { plates, galleryWhole, gallery };
 }
