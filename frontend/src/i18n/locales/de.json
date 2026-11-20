@@ -2282,7 +2282,8 @@
           "migration_export_read": "Von einer anderen Instanz kopiert",
           "achievement_settings_changed": "Erfolge geändert",
           "storage_cleanup_started": "Speicherfreigabe gestartet",
-          "photos_per_model_changed": "Anzahl behaltener Fotos pro Modell geändert"
+          "photos_per_model_changed": "Anzahl behaltener Fotos pro Modell geändert",
+          "import_supporting_files_changed": "Behaltene Zusatzdateien aus Importen geändert"
         },
         "authorsLinked": "{{count}} Modell(e) verknüpft",
         "descriptionsRefetched": "{{email}} – {{updated}} von {{total}} Beschreibung(en) geändert",
@@ -3333,6 +3334,15 @@
             "missingFiles_other": "{{count}} Dateien, die Manyfold nicht hatte"
           }
         }
+      },
+      "importSupportingFiles": {
+        "label": "Zusatzdateien aus Importen",
+        "help": "Die Dateien, die die Seite eines Modells neben seinen Modelldateien anbietet – Anleitungen, Notizen, eine Teileliste, Quelldateien –, werden als seine Zusatzdateien behalten, jede bis zu dieser Größe. Ein Modell behält insgesamt das Zweieinhalbfache davon. Bilder bleiben außen vor, da die Fotos eines Modells von seiner Seite kommen. „Aus“ behält keine; bereits importierte Modelle behalten ihre.",
+        "off": "Aus",
+        "any": "Beliebige Größe",
+        "size": "{{count}} MB",
+        "saveFailed": "Die Einstellung für Zusatzdateien aus Importen konnte nicht gespeichert werden",
+        "loadFailed": "Die Einstellung für Zusatzdateien aus Importen konnte nicht geladen werden."
       }
     },
     "download": {
