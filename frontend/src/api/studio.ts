@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { requestAchievementCheck } from "../components/achievements/achievementEvents";
 import { authHeaders } from "../utils/auth";
 import { apiBase, UnauthorizedError } from "./client";
@@ -89,6 +90,7 @@ async function requestResponse(path: string, method = "GET", payload?: unknown):
       if (typeof body.detail === "string") message = body.detail;
       if (typeof body.code === "string") code = body.code;
     } catch {}
+    if (code === "studio_arrange_empty") message = i18next.t("studio.print.arrangeEmpty", { ns: "app" });
     throw new StudioError(message, res.status, code);
   }
   return res;

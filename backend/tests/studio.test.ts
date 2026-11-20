@@ -1,7 +1,8 @@
 import fs from "node:fs";
+import fsPromises from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import sharp from "sharp";
 import JSZip from "jszip";
@@ -10,10 +11,13 @@ import { readBambuPackage, readBambuModels } from "../src/adapter/readers/bambuP
 import { createApp } from "../src/app";
 import { prisma } from "../src/db";
 import { DEFAULT_MCP_TOOL_NAMES, MCP_TOOLS } from "../src/mcp/tools";
-import { STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
-import { decodeMesh } from "../src/studio/meshAsset.generated";
+import { addMesh, STUDIO_COMMAND_LIST } from "../src/studio/commands.generated";
+import { emptyDocument, LIMITS } from "../src/studio/document.generated";
+import { decodeMesh, encodeMesh } from "../src/studio/meshAsset.generated";
 import { resolvePlateFilePath } from "../src/services/printCreation";
 import { studioAssetDir } from "../src/services/studioService";
+import { exportStudioGeometry } from "../src/services/studioInspect";
+import { HttpError } from "../src/utils/fileUtils";
 
 // Studio end to end: designs are their owner's, every change is a command kept as a revision, and every command is
 // an MCP tool an assistant can run the same way.
@@ -200,6 +204,58 @@ describe("Studio", () => {
       [138, 0],
       [69, -120],
     ]);
+    expect(
+      (await command(alice, design.id, "set_transform", { feature_id: "box-1", position: [85, 90, 0] })).status,
+    ).toBe(200);
+    for (const printer of ["flsun-q5/0.4", "deltamaker-2/0.35"]) {
+      const response = await request(app)
+        .get(`/api/studio/designs/${design.id}/export/3mf/orcaslicer/${printer}/-/Outline.3mf`)
+        .set(auth(alice));
+      expect(response.status).toBe(422);
+      expect(response.body.detail).toMatch(/box-1 is outside the build volume/);
+    }
+    await exportArea("orcaslicer/bambulab-p1s/0.4");
+    await command(alice, design.id, "set_visibility", { feature_id: "box-1", visible: false });
+    await command(alice, design.id, "add_cylinder", { radius: 90, height: 4 });
+    expect(await exportArea("orcaslicer/flsun-q5/0.4")).toEqual(circle);
+  });
+
+  it("refuses a 3MF body that Studio could not reopen", async () => {
+    const assetDir = fs.mkdtempSync(path.join(os.tmpdir(), "thingport-dense-body-"));
+    const triangles = LIMITS.meshTriangles + 1;
+    const indices = new Uint32Array(triangles * 3);
+    for (let i = 0; i < indices.length; i += 3) {
+      indices[i + 1] = 1;
+      indices[i + 2] = 2;
+    }
+    const asset_id = "dense";
+    try {
+      fs.writeFileSync(
+        path.join(assetDir, `${asset_id}.tpsm`),
+        encodeMesh({
+          positions: new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]),
+          indices,
+        }),
+      );
+      const { document } = addMesh(
+        emptyDocument(),
+        {
+          asset_id,
+          solid: false,
+          triangles,
+          size: [1, 1, 0],
+          source: { model_id: "fixture", file_id: "fixture", file_name: "dense.stl", model_title: "Dense body" },
+        },
+        {},
+      );
+      const result = await exportStudioGeometry({ name: "Dense body", document, assetDir, format: "3mf" });
+      expect(result).toMatchObject({
+        status: "refused",
+        reason: expect.stringMatching(/1,000,000 triangles per 3MF body/),
+      });
+    } finally {
+      fs.rmSync(assetDir, { recursive: true, force: true });
+    }
   });
 
   it("refuses a seventeenth filament and reuses an inactive assignment's slot", async () => {
@@ -385,6 +441,9 @@ describe("Studio", () => {
     const token = await mcpToken(alice);
     const tool = (name: string, args = {}) => callTool(token, `studio_${name}`, { design_id: design.id, ...args });
     const empty = (await tool("create_plate", { name: "Spare" })).data.created[0];
+    const arrangeEmpty = await command(alice, design.id, "arrange_plate", { plate_id: empty });
+    expect(arrangeEmpty.status).toBe(400);
+    expect(arrangeEmpty.body.code).toBe("studio_arrange_empty");
     const plate = (await tool("create_plate", { name: "Lids" })).data.created[0];
     const box = { width: 12, depth: 12, height: 5 };
     const red = (await tool("add_box", { ...box, color: "#ff0000" })).data.created[0];
@@ -855,6 +914,67 @@ describe("Studio", () => {
       if (res.status !== 200) throw new Error(`upload: ${res.status} ${JSON.stringify(res.body)}`);
       return { modelId: res.body.prints[0].id as string, fileId: res.body.prints[0].plates[0].id as string };
     }
+
+    it.each([
+      { stage: "moving a mesh", failRename: true, status: 422, detail: "Couldn't move the third mesh", count: 2 },
+      {
+        stage: "applying the command",
+        failRename: false,
+        status: 400,
+        detail: "There's no plate plate-999 in this design.",
+        count: 3,
+      },
+    ])(
+      "keeps the import error from $stage when an asset cannot be removed",
+      async ({ failRename, status, detail, count }) => {
+        const zip = new JSZip();
+        zip.file(
+          "3D/3dmodel.model",
+          `<model unit="millimeter"><resources><object id="1" type="model">
+        <mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="1" y="0" z="0"/><vertex x="0" y="1" z="0"/></vertices>
+        <triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources>
+        <build><item objectid="1"/><item objectid="1"/><item objectid="1"/></build></model>`,
+        );
+        const file = await upload(alice, "staged.3mf", await zip.generateAsync({ type: "nodebuffer" }));
+        const design = (await request(app).post("/api/studio/designs").set(auth(alice)).send({})).body;
+        const owner = (await prisma.studioDesign.findUniqueOrThrow({ where: { id: design.id } })).userId;
+        const dir = studioAssetDir(owner, design.id);
+        const remove = fsPromises.rm;
+        const move = fsPromises.rename;
+        const attempted: string[] = [];
+        const cleanupError = new Error("Asset could not be removed");
+        let moved = 0;
+        const rename = vi.spyOn(fsPromises, "rename").mockImplementation(async (source, dest) => {
+          if (failRename && path.dirname(String(dest)) === dir && ++moved === 3) throw new HttpError(422, detail);
+          await move(source, dest);
+        });
+        const rm = vi.spyOn(fsPromises, "rm").mockImplementation(async (assetPath, options) => {
+          const name = String(assetPath);
+          if (path.dirname(name) === dir && name.endsWith(".tpsm")) {
+            attempted.push(name);
+            if (attempted.length === 1) throw cleanupError;
+          }
+          await remove(assetPath, options);
+        });
+        const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        try {
+          const res = await command(alice, design.id, "import_model", {
+            model_id: file.modelId,
+            plate_id: "plate-999",
+          });
+          expect(res.status).toBe(status);
+          expect(res.body.detail).toBe(detail);
+          expect(attempted).toHaveLength(count);
+          expect(fs.readdirSync(dir)).toEqual([path.basename(attempted[0])]);
+          expect(log).toHaveBeenCalledWith(expect.stringContaining(attempted[0]), cleanupError);
+        } finally {
+          rename.mockRestore();
+          rm.mockRestore();
+          log.mockRestore();
+          fs.rmSync(dir, { recursive: true, force: true });
+        }
+      },
+    );
 
     it.each([
       { bed: "the default bed", points: null },

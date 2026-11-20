@@ -55,17 +55,23 @@ if (typeof (globalThis as { FileReader?: unknown }).FileReader === "undefined") 
   (globalThis as unknown as { FileReader: unknown }).FileReader = NodeFileReader;
 }
 
+const ATTRIBUTE_RE = /(?:^|\s)([^\s=<>/"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+
 function getAttr(attrs: string, name: string): string | null {
-  const m = attrs.match(new RegExp(`(?:^|\\s)${name}="([^"]*)"`));
-  return m ? m[1] : null;
+  for (const attribute of attrs.matchAll(ATTRIBUTE_RE)) {
+    if (attribute[1] === name) return attribute[2] ?? attribute[3];
+  }
+  return null;
 }
 
 /** Different Bambu Studio versions spell it plate_id or plater_id. */
 function findPlateIdAttr(attrs: string): number | null {
-  const m = attrs.match(/(?:^|\s)(?:[\w-]+:)?(?:plate_id|plater_id|plateid|platerid)="([^"]*)"/i);
-  if (!m) return null;
-  const parsed = Number.parseInt(m[1], 10);
-  return Number.isFinite(parsed) ? parsed : null;
+  for (const attribute of attrs.matchAll(ATTRIBUTE_RE)) {
+    if (!/^(?:[\w-]+:)?(?:plate_id|plater_id|plateid|platerid)$/i.test(attribute[1])) continue;
+    const parsed = Number.parseInt(attribute[2] ?? attribute[3], 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 /** 3MF's 3x4 affine transform: [m00 m01 m02 m10 m11 m12 m20 m21 m22 tx ty tz], which a point multiplies as a row
@@ -113,7 +119,6 @@ function placeMesh(mesh: FastMesh, transform: number[] | null): FastMesh {
 
 const MESH_RE = /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/g;
 const VERTEX_RE = /<vertex\b([^>]*)>/g;
-const VERTEX_ATTR_RE = /(?:^|\s)([^\s=<>/"']+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 const TRIANGLE_RE = /<triangle\s+v1="(\d+)"\s+v2="(\d+)"\s+v3="(\d+)"/g;
 // The same, keeping whatever else the triangle carries, for a file that colours its faces one by one. Apart so
 // the common case doesn't allocate a string per triangle on a model of millions of them.
@@ -142,9 +147,9 @@ function extractMeshesFast(xml: string, extruder: number, slotOf?: TriangleSlot)
       let x = NaN;
       let y = NaN;
       let z = NaN;
-      VERTEX_ATTR_RE.lastIndex = 0;
+      ATTRIBUTE_RE.lastIndex = 0;
       let attribute: RegExpExecArray | null;
-      while ((attribute = VERTEX_ATTR_RE.exec(vm[1]))) {
+      while ((attribute = ATTRIBUTE_RE.exec(vm[1]))) {
         const name = attribute[1];
         if (name !== "x" && name !== "y" && name !== "z") continue;
         const raw = (attribute[2] ?? attribute[3]).trim();
@@ -327,7 +332,7 @@ function parseProjectSettingsJson(text: string): {
   try {
     const json = JSON.parse(text) as Record<string, unknown>;
     const filamentColors = Array.isArray(json.filament_colour)
-      ? json.filament_colour.map((c) => (typeof c === "string" ? readColor(c) : null)).filter((c) => c !== null)
+      ? json.filament_colour.map((c) => (typeof c === "string" ? (readColor(c) ?? "") : ""))
       : [];
     let buildVolume: { x: number; y: number } | null = null;
     const area = json.printable_area;
@@ -993,9 +998,9 @@ export async function loadStudioThreeMf(
           for (let axis = 0; axis < 3; axis++) triangles[at++] = vertices[vertex + axis] * parsed.unitMm;
         }
       }
-      colors.add(
-        mesh.ownColor || mesh.extruder < parsed.projectFilaments ? parsed.filamentColors[mesh.extruder] : undefined,
-      );
+      const color =
+        mesh.ownColor || mesh.extruder < parsed.projectFilaments ? parsed.filamentColors[mesh.extruder] : "";
+      colors.add(color || undefined);
     }
     if (!triangles.every(Number.isFinite)) return "unsupported";
     if (colors.size > 1) mixedColors = true;

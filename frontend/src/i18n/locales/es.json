@@ -4529,6 +4529,7 @@
         "overflow": "Usar placas nuevas si falta espacio",
         "tooLarge": "Studio no encontró una posición con esta separación para {{parts}}.",
         "needsOverflow": "Permite añadir placas o reduce la separación.",
+        "arrangeEmpty": "No hay cuerpos visibles que distribuir en esta placa.",
         "plateLimit": "Esta distribución superaría el límite de placas de Studio.",
         "previewPlate": "Placa nueva {{number}}",
         "lockPosition": "Fijar posición para la distribución",

@@ -4542,6 +4542,7 @@
         "overflow": "Utiliser de nouveaux plateaux si nécessaire",
         "tooLarge": "Studio n’a pas trouvé de placement avec cet espacement pour {{parts}}.",
         "needsOverflow": "Autorisez les plateaux supplémentaires ou réduisez l’espacement.",
+        "arrangeEmpty": "Ce plateau ne contient aucun corps visible à disposer.",
         "plateLimit": "Cette disposition dépasserait la limite de plateaux de Studio.",
         "previewPlate": "Nouveau plateau {{number}}",
         "lockPosition": "Verrouiller la position pour la disposition",

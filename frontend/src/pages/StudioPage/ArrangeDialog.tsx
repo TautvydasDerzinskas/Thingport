@@ -11,7 +11,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { arrangeMeasures, previewArrangement, type Bounds } from "../../studio/commands";
+import { arrangeMeasures, CommandError, previewArrangement, type Bounds } from "../../studio/commands";
 import { featureById, MAX_PLATES, studioPlates, type StudioDocument } from "../../studio/document";
 import { bedOutline, DEFAULT_PRINT_BED } from "../../studio/printLayout";
 import { NumberField } from "./fields";
@@ -37,7 +37,7 @@ export default function ArrangeDialog({
   const [spacing, setSpacing] = useState(3);
   const [overflow, setOverflow] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [measured, setMeasured] = useState<{ doc: StudioDocument; bounds?: Record<string, Bounds>; error?: string }>();
+  const [measured, setMeasured] = useState<{ doc: StudioDocument; bounds?: Record<string, Bounds>; error?: Error }>();
   useEffect(() => {
     let active = true;
     Promise.resolve()
@@ -47,7 +47,7 @@ export default function ArrangeDialog({
           if (active) setMeasured({ doc, bounds });
         },
         (error: Error) => {
-          if (active) setMeasured({ doc, error: error.message });
+          if (active) setMeasured({ doc, error });
         },
       );
     return () => {
@@ -55,6 +55,7 @@ export default function ArrangeDialog({
     };
   }, [designId, doc, plateId]);
   const bounds = measured?.doc === doc ? measured.bounds : undefined;
+  const error = measured?.doc === doc ? measured.error : undefined;
   const preview = useMemo(
     () => (bounds ? previewArrangement(doc, { plate_id: plateId, spacing }, bounds) : null),
     [doc, plateId, spacing, bounds],
@@ -85,7 +86,13 @@ export default function ArrangeDialog({
               label={t("studio.print.overflow")}
             />
           </Stack>
-          {measured?.doc === doc && measured.error && <Alert severity="error">{measured.error}</Alert>}
+          {error && (
+            <Alert severity="error">
+              {error instanceof CommandError && error.code === "studio_arrange_empty"
+                ? t("studio.print.arrangeEmpty")
+                : error.message}
+            </Alert>
+          )}
           {preview?.overflow.length ? (
             <Alert severity="warning">
               {t("studio.print.tooLarge", { parts: preview.overflow.map(label).join(", ") })}

@@ -27,6 +27,7 @@ import {
   type StudioFilamentSlot,
   type StudioPlate,
   type StudioPrintSetup,
+  type Vec3,
 } from "../studio/document.generated";
 import type { EvaluatedBody } from "../studio/geometry.generated";
 import { bedOutline } from "../studio/printLayout.generated";
@@ -76,6 +77,14 @@ function objectModel(part: Part, id: number) {
   return lines.join("\n");
 }
 
+export function studioThreeMfBed(target?: StudioExportTarget, setup?: StudioPrintSetup) {
+  const recipe = target?.printer?.recipe;
+  const bed = recipe?.bed ?? (setup ? { minX: 0, minY: 0, maxX: setup.bed[0], maxY: setup.bed[1] } : DEFAULT_BED);
+  const size: Vec3 = [bed.maxX - bed.minX, bed.maxY - bed.minY, recipe?.height ?? setup?.bed[2] ?? 256];
+  const outline = recipe?.bed ? target?.printer?.outline : setup?.outline;
+  return { bed, size, outline };
+}
+
 export async function writeStudioThreeMf(
   name: string,
   parts: Part[],
@@ -85,16 +94,13 @@ export async function writeStudioThreeMf(
 ): Promise<Uint8Array | null> {
   const profile = target ? slicerProfile(target.slicer) : null;
   const recipe = target?.printer?.recipe;
-  const bed = recipe?.bed ?? (setup ? { minX: 0, minY: 0, maxX: setup.bed[0], maxY: setup.bed[1] } : DEFAULT_BED);
-  const height = recipe?.height ?? setup?.bed[2] ?? 256;
-  const outline = recipe ? target?.printer?.outline : setup?.outline;
+  const { bed, size, outline } = studioThreeMfBed(target, setup);
+  const height = size[2];
   const [cx, cy] = bedCentre(bed);
   const printableArea =
     recipe?.bed && !recipe.bed.outline
       ? rectangle(recipe.bed)
-      : bedOutline([bed.maxX - bed.minX, bed.maxY - bed.minY, height], outline).map(
-          ([x, y]) => `${number(x + cx)}x${number(y + cy)}`,
-        );
+      : bedOutline(size, outline).map(([x, y]) => `${number(x + cx)}x${number(y + cy)}`);
   const layoutBed = bedBoxOf(printableArea) ?? bed;
   const [layoutX, layoutY] = bedCentre(layoutBed);
   // Spacing follows the printable area. An off-center outline still shares the design's original XY origin.

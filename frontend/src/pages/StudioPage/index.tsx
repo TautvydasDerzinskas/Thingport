@@ -910,7 +910,9 @@ export default function StudioPage({ isAdmin, onUnauthorized }: Props) {
           mode={mode}
           handMode={handMode}
           activePlate={activePlate}
-          printIssue={printIssue?.doc === doc && selected.includes(printIssue.id) ? printIssue : undefined}
+          printIssue={
+            printIssue && printIssue.doc === shown && selected.includes(printIssue.id) ? printIssue : undefined
+          }
           sketch={sketch}
           onSelect={select}
           onBoxSelect={boxSelect}

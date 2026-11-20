@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import Box from "@mui/material/Box";
+import type { SplitConnectorChanges } from "../../studio/commands";
 import { LIMITS, type SplitConnector } from "../../studio/document";
 import { NumberField } from "./fields";
 
@@ -19,7 +20,7 @@ export default function SplitConnectorFields({
 }: {
   connector: SplitConnector;
   live?: boolean;
-  onChange: (changes: Partial<SplitConnector>) => void;
+  onChange: (changes: SplitConnectorChanges) => void;
 }) {
   const { t } = useTranslation("app");
   return (
@@ -60,14 +61,14 @@ export default function SplitConnectorFields({
         value={connector.offset[0]}
         unit="mm"
         live={live}
-        onCommit={(u) => onChange({ offset: [u, connector.offset[1]] })}
+        onCommit={(u) => onChange({ offset: { u } })}
       />
       <NumberField
         label={t("studio.print.offsetV")}
         value={connector.offset[1]}
         unit="mm"
         live={live}
-        onCommit={(v) => onChange({ offset: [connector.offset[0], v] })}
+        onCommit={(v) => onChange({ offset: { v } })}
       />
       <NumberField
         label={t("studio.print.spacing")}

@@ -4347,6 +4347,7 @@
         "overflow": "Bei Platzmangel neue Platten verwenden",
         "tooLarge": "Studio konnte diese Teile mit diesem Abstand nicht platzieren. {{parts}}",
         "needsOverflow": "Erlaube weitere Platten oder verringere den Abstand.",
+        "arrangeEmpty": "Auf dieser Platte sind keine sichtbaren Objekte zum Anordnen.",
         "plateLimit": "Diese Anordnung überschreitet das Plattenlimit von Studio.",
         "previewPlate": "Neue Platte {{number}}",
         "lockPosition": "Position beim Anordnen sperren",

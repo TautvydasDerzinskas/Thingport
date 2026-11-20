@@ -81,7 +81,14 @@ import {
 // are the server's to carry out.
 
 /** A command that can't be carried out as asked. Its message is for whoever asked, person or AI. */
-export class CommandError extends Error {}
+export class CommandError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string,
+  ) {
+    super(message);
+  }
+}
 
 export type CommandOutcome = {
   document: StudioDocument;
@@ -142,6 +149,33 @@ const splitConnector = z
     spacing: length("Distance between pins along the plane's u axis in mm"),
   })
   .strict();
+
+const splitConnectorChanges = splitConnector.partial().extend({
+  offset: z
+    .union([
+      vec2,
+      z
+        .object({ u: coordinate.optional(), v: coordinate.optional() })
+        .strict()
+        .refine(({ u, v }) => u !== undefined || v !== undefined, "Give at least one offset axis."),
+    ])
+    .optional()
+    .describe("The full offset [u, v], or only the axes to change, in mm."),
+});
+
+export type SplitConnectorChanges = z.infer<typeof splitConnectorChanges>;
+
+export function changedSplitConnector(
+  previous: SplitConnector,
+  { offset, ...changes }: SplitConnectorChanges,
+): SplitConnector {
+  const [u, v] = previous.offset;
+  return {
+    ...previous,
+    ...changes,
+    offset: Array.isArray(offset) ? offset : [offset?.u ?? u, offset?.v ?? v],
+  };
+}
 
 function checkConnector(connector: SplitConnector) {
   if (connector.count > 1 && connector.spacing <= connector.diameter + 2 * connector.clearance)
@@ -1798,11 +1832,11 @@ export const STUDIO_COMMANDS = {
     description: "Edits the connectors on both halves of a planar split. Only provided values change.",
     args: {
       feature_id: bodyId,
-      connector: splitConnector.partial().describe("Connector values to change on the matching halves."),
+      connector: splitConnectorChanges.describe("Connector values to change on the matching halves."),
     },
     apply(doc, args) {
       const feature = splitWithConnector(doc, args.feature_id);
-      const connector = { ...feature.connector, ...args.connector };
+      const connector = changedSplitConnector(feature.connector, args.connector);
       checkConnector(connector);
       for (const part of splitPair(doc, feature.source_id)) {
         part.connector = { ...connector };
@@ -3013,7 +3047,7 @@ export function arrangeMeasures(doc: StudioDocument, args: { plate_id: string })
   const ids = topLevel(doc)
     .filter((feature) => isBody(feature) && feature.visible && plateOf(feature) === args.plate_id)
     .map((feature) => feature.id);
-  if (!ids.length) throw new CommandError("This plate has no visible bodies to arrange.");
+  if (!ids.length) throw new CommandError("This plate has no visible bodies to arrange.", "studio_arrange_empty");
   return ids;
 }
 

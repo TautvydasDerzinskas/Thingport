@@ -13,6 +13,29 @@ const wasm = Module().then((module) => {
 const cmd = (doc: StudioDocument, name: string, args: object) => applyCommand(doc, name, args).document;
 
 describe("Studio print workflow", () => {
+  it("merges independent connector offset edits on both halves and accepts a full offset", () => {
+    const source = cmd(emptyDocument(), "add_box", { width: 40, depth: 20, height: 20 });
+    const {
+      document,
+      created: [pin, socket],
+    } = applyCommand(source, "split", {
+      feature_id: "box-1",
+      plane: { point: [0, 0, 10], normal: [0, 0, 1] },
+      connector: { diameter: 5, depth: 3, clearance: 0.2, offset: [0, 0], count: 1, spacing: 10 },
+    });
+    const editedU = cmd(document, "update_split_connector", { feature_id: pin, connector: { offset: { u: 1 } } });
+    const editedV = cmd(editedU, "update_split_connector", { feature_id: socket, connector: { offset: { v: 2 } } });
+    expect(editedV.features.slice(1).map((part) => part.type === "split" && part.connector?.offset)).toEqual([
+      [1, 2],
+      [1, 2],
+    ]);
+    const replaced = cmd(editedV, "update_split_connector", { feature_id: pin, connector: { offset: [3, 4] } });
+    expect(replaced.features.slice(1).map((part) => part.type === "split" && part.connector?.offset)).toEqual([
+      [3, 4],
+      [3, 4],
+    ]);
+  });
+
   it("makes matching, editable split connectors and cropped, engraved fit samples", async () => {
     const m = await wasm;
     const source = cmd(emptyDocument(), "add_box", { width: 60, depth: 50, height: 24 });

@@ -4344,6 +4344,7 @@
         "overflow": "Use new plates for overflow",
         "tooLarge": "Studio couldn’t find a placement at this spacing for {{parts}}.",
         "needsOverflow": "Enable overflow or reduce the spacing.",
+        "arrangeEmpty": "This plate has no visible bodies to arrange.",
         "plateLimit": "This layout would exceed Studio’s plate limit.",
         "previewPlate": "New plate {{number}}",
         "lockPosition": "Lock position for arrangement",

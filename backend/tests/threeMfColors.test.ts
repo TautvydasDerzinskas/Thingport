@@ -159,6 +159,47 @@ it("reads 3MF vertex coordinates in any XML attribute order", async () => {
   expect(actual.plates[0].parts[0].triangles).toEqual(expected.plates[0].parts[0].triangles);
 });
 
+it("reads single-quoted build attributes and converts inch geometry", async () => {
+  const model = COLOURED_XML.replace('unit="millimeter"', "unit = 'inch'").replace(
+    '<item objectid="2"/>',
+    `<item objectid='2'/><item objectid="2" printable='false'/>`,
+  );
+  const file = await threeMf("studio-single-quoted", model);
+  const project = await loadStudioThreeMf(file, 2, 1);
+  if (typeof project === "string") throw new Error(project);
+  const [{ parts }] = project.plates;
+  expect(parts).toHaveLength(1);
+  const xs = Array.from(parts[0].triangles).filter((_, i) => i % 3 === 0);
+  expect(Math.max(...xs) - Math.min(...xs)).toBe(254);
+});
+
+it("preserves an empty project filament slot before later filaments and indexed colors", async () => {
+  const mesh = COLOURED_XML.match(/<mesh>[\s\S]*?<\/mesh>/)![0].replace(/ (?:p1|paint_color)="[^"]*"/g, "");
+  const model = COLOURED_XML.replace(
+    /<object id="2"[\s\S]*?<\/object>/,
+    `<object id="2">${mesh}</object><object id="3">${mesh}</object><object id="4" pid="1" pindex="1">${mesh}</object>`,
+  ).replace('<item objectid="2"/>', '<item objectid="2"/><item objectid="3"/><item objectid="4"/>');
+  const file = await threeMf(
+    "studio-empty-filament-slot",
+    model,
+    JSON.stringify({ filament_colour: ["#ff0000", "", "#008000"] }),
+    `<config><object id="2"><metadata key="extruder" value="3"/></object>
+    <object id="3"><metadata key="extruder" value="2"/></object></config>`,
+  );
+  const project = await loadStudioThreeMf(file, 6, 3);
+  if (typeof project === "string") throw new Error(project);
+  expect(project.plates[0].parts.map((part) => part.color)).toEqual(["#008000", undefined, "#0000ff"]);
+  const preview = await loadThreeMfGroup(file);
+  if (typeof preview === "string") throw new Error(preview);
+  expect(JSON.parse(preview.userData.thingportPreview).filamentColors).toEqual([
+    "#ff0000",
+    "",
+    "#008000",
+    "#ff0000",
+    "#0000ff",
+  ]);
+});
+
 it("budgets only printable Studio placements and their model components", async () => {
   const duplicate = COLOURED_XML.match(/<object id="2"[\s\S]*?<\/object>/)![0].replace('id="2"', 'id="3"');
   const model = COLOURED_XML.replace(

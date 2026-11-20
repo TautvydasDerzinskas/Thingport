@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import HelpTip from "../../components/HelpTip";
 import Segmented from "../../components/controls/Segmented";
+import { changedSplitConnector } from "../../studio/commands";
 import { LIMITS, type PartMeasure } from "../../studio/document";
 import { isoPitch } from "../../studio/threads";
 import { EdgeTreatmentField, NumberField, PathPointsField, StudioFontField } from "./fields";
@@ -371,7 +372,7 @@ export default function OperationPanel({ op, onChange, error, ready, busy, label
                   <SplitConnectorFields
                     connector={op.connector}
                     live
-                    onChange={(changes) => set({ connector: { ...op.connector!, ...changes } })}
+                    onChange={(changes) => set({ connector: changedSplitConnector(op.connector!, changes) })}
                   />
                 )}
               </>

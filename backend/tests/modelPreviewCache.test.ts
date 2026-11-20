@@ -17,7 +17,9 @@ import {
   modelPreviewGlbPath,
   modelPreviewState,
 } from "../src/services/modelPreviewCache";
-import { RENDER_FILE_TAG } from "../src/services/modelAssets";
+import { PREVIEW_FORMAT_VERSION, RENDER_FILE_TAG } from "../src/services/modelAssets";
+
+const CACHE_SUFFIXES = [`.v${PREVIEW_FORMAT_VERSION}.glb`, `.v${PREVIEW_FORMAT_VERSION}.error`, ".pending"];
 
 // A small 2-object/2-extruder/2-plate Bambu-style .3mf.
 const MODEL_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -204,7 +206,7 @@ describe("modelPreviewCache", () => {
 
   it("generates a GLB with both plates, correct colors, and correctly transformed geometry", async () => {
     // One of an earlier format, which nothing reads once the new one is there.
-    const older = path.join(cacheDir(), `${plateId}.v4.glb`);
+    const older = path.join(cacheDir(), `${plateId}.v${PREVIEW_FORMAT_VERSION - 1}.glb`);
     await fs.writeFile(older, "older");
     await generateModelPreviewGlb(plateId, fixturePath);
     expect(modelPreviewGlbExists(plateId)).toBe(true);
@@ -345,7 +347,7 @@ describe("modelPreviewCache -- memory safety", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v5.glb", ".v5.error", ".pending"]) {
+      for (const ext of CACHE_SUFFIXES) {
         await fs.rm(path.join(path.dirname(modelPreviewGlbPath("x")), `${id}${ext}`), { force: true });
       }
     }
@@ -361,7 +363,7 @@ describe("modelPreviewCache -- memory safety", () => {
     const plateId = newPlateId("fanout");
     await generateModelPreviewGlb(plateId, fixture);
     expect(modelPreviewGlbExists(plateId)).toBe(false);
-    const errorPath = path.join(path.dirname(modelPreviewGlbPath("x")), `${plateId}.v5.error`);
+    const errorPath = path.join(cacheDir(), `${plateId}.v${PREVIEW_FORMAT_VERSION}.error`);
     expect(fsSync.readFileSync(errorPath, "utf-8")).toBe("permanent: too-complex");
   });
 
@@ -448,8 +450,7 @@ describe("modelPreviewCache -- multi-part objects sharing one part file", () => 
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v5.glb", ".v5.error", ".pending"])
-        await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
+      for (const ext of CACHE_SUFFIXES) await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });
 
@@ -513,8 +514,7 @@ describe("modelPreviewCache -- where the model is", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v5.glb", ".v5.error", ".pending"])
-        await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
+      for (const ext of CACHE_SUFFIXES) await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });
 
@@ -589,8 +589,7 @@ describe("modelPreviewState", () => {
 
   afterAll(async () => {
     for (const id of plateIds) {
-      for (const ext of [".v5.glb", ".v5.error", ".pending"])
-        await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
+      for (const ext of CACHE_SUFFIXES) await fs.rm(path.join(cacheDir(), `${id}${ext}`), { force: true });
     }
   });
 
@@ -624,7 +623,10 @@ describe("modelPreviewState", () => {
     );
     const plateId = newPlateId("stale-refusal");
     await fs.mkdir(cacheDir(), { recursive: true });
-    await fs.writeFile(path.join(cacheDir(), `${plateId}.v5.error`), "permanent: unsupported");
+    await fs.writeFile(
+      path.join(cacheDir(), `${plateId}.v${PREVIEW_FORMAT_VERSION - 1}.error`),
+      "permanent: unsupported",
+    );
     await fs.writeFile(path.join(cacheDir(), `${plateId}.${RENDER_FILE_TAG}.error`), "permanent: unsupported");
     expect(modelPreviewState(plateId)).toBe("generating");
     expect(modelImageState(plateId, null)).toBe("generating");

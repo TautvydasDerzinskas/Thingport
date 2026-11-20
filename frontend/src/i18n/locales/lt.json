@@ -4639,6 +4639,7 @@
         "overflow": "Netelpančioms detalėms naudoti naujas platformas",
         "tooLarge": "Naudojant tokį atstumą „Studio“ nerado vietos šioms detalėms. {{parts}}",
         "needsOverflow": "Leiskite pridėti platformų arba sumažinkite tarpą.",
+        "arrangeEmpty": "Šioje platformoje nėra matomų kūnų, kuriuos būtų galima išdėstyti.",
         "plateLimit": "Šis išdėstymas viršytų „Studio“ platformų limitą.",
         "previewPlate": "Nauja platforma {{number}}",
         "lockPosition": "Užrakinti padėtį išdėstant",

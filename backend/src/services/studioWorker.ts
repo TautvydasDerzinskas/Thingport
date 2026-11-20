@@ -15,6 +15,7 @@ import {
   type MeshData,
   type PartMeasure,
   type StudioDocument,
+  type StudioPrintSetup,
   type Vec3,
 } from "../studio/document.generated";
 import {
@@ -32,12 +33,18 @@ import {
 } from "../studio/geometry.generated";
 import { decodeMesh, encodeMesh } from "../studio/meshAsset.generated";
 import type { PrintCheck, PrintCheckOptions } from "../studio/printCheck.generated";
+import { boundsOnBed, footprintOnBed } from "../studio/printLayout.generated";
 import { binaryStl } from "../studio/stl.generated";
 import { bright, tracePicture, type Traced, type TraceSettings } from "../studio/trace.generated";
 import { loadStudioThreeMf } from "./modelPreviewRender";
 import { loadTriangles, renderTrianglesRgba, type RenderCamera } from "./modelImageRender";
 import { loadFontsFor } from "./studioFonts";
-import { STUDIO_3MF_DEFAULT_COLOR, writeStudioThreeMf, type StudioExportTarget } from "./studioThreeMf";
+import {
+  STUDIO_3MF_DEFAULT_COLOR,
+  studioThreeMfBed,
+  writeStudioThreeMf,
+  type StudioExportTarget,
+} from "./studioThreeMf";
 
 // Studio's heavy work, off the main thread: measuring and picturing a design for an assistant, finding a body's loose
 // parts to separate them, and making the design's own copy of a library model it imports. Runs in a worker thread
@@ -343,6 +350,22 @@ async function findBounds(input: Extract<StudioWorkerInput, { kind: "bounds" }>)
   }
 }
 
+function bodyFitsPrinterBed(body: EvaluatedBody, bed: Vec3, outline?: StudioPrintSetup["outline"]): boolean {
+  if (!boundsOnBed(body.bounds, bed)) return false;
+  if (!outline || boundsOnBed(body.bounds, bed, outline)) return true;
+  // A part can fit even when its bounding box crosses a corner or notch in the outline.
+  const triangles = worldTriangles(body);
+  for (let i = 0; i < triangles.length; i += 9) {
+    const footprint = [
+      [triangles[i], triangles[i + 1]],
+      [triangles[i + 3], triangles[i + 4]],
+      [triangles[i + 6], triangles[i + 7]],
+    ] satisfies [number, number][];
+    if (!footprintOnBed(footprint, bed, outline)) return false;
+  }
+  return true;
+}
+
 async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }>): Promise<StudioWorkerResult> {
   const visible = topLevel(input.document).filter(
     (feature) => isBody(feature) && feature.visible && (!input.plate || plateOf(feature) === input.plate),
@@ -365,23 +388,16 @@ async function exportDesign(input: Extract<StudioWorkerInput, { kind: "export" }
     const bytes = binaryStl([worldTriangles(parts[0].body)]);
     return bytes ? { status: "exported", bytes, format: "stl" } : { status: "empty" };
   }
+  const tooDetailed = parts.find(({ body }) => body.triangles > LIMITS.meshTriangles);
+  if (tooDetailed)
+    return {
+      status: "refused",
+      reason: `${tooDetailed.name} exceeds Studio's limit of ${LIMITS.meshTriangles.toLocaleString("en")} triangles per 3MF body. Simplify or split it before exporting.`,
+    };
   const recipe = input.target?.printer?.recipe;
   if (recipe) {
-    const bed = recipe.bed;
-    const bad = parts.find(
-      ({
-        body: {
-          bounds: { min, max },
-        },
-      }) =>
-        min[2] < -0.01 ||
-        (recipe.height !== null && max[2] > recipe.height + 0.01) ||
-        (bed &&
-          [0, 1].some((axis) => {
-            const half = (axis === 0 ? bed.maxX - bed.minX : bed.maxY - bed.minY) / 2;
-            return min[axis] < -half - 0.01 || max[axis] > half + 0.01;
-          })),
-    );
+    const { size, outline } = studioThreeMfBed(input.target, input.document.print_setup);
+    const bad = parts.find(({ body }) => !bodyFitsPrinterBed(body, size, outline));
     if (bad) return { status: "refused", reason: `${bad.name} is outside the build volume for ${recipe.preset}.` };
   }
   const plates = [];

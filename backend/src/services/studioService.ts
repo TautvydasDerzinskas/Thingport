@@ -292,6 +292,18 @@ function importFailed(filename: string, result: StudioWorkerResult): never {
   throw new HttpError(422, `Couldn't read ${filename}`, "studio_import_failed");
 }
 
+async function removeImportFiles(files: readonly string[], recursive = false): Promise<void> {
+  await Promise.all(
+    files.map(async (file) => {
+      try {
+        await fs.rm(file, { force: true, recursive });
+      } catch (error) {
+        console.error(`[studio] couldn't remove import file ${file}`, error);
+      }
+    }),
+  );
+}
+
 async function importLibraryProject(
   sourcePath: string,
   dir: string,
@@ -322,10 +334,10 @@ async function importLibraryProject(
     }
     return { kind: "project", destinations, plates, mixedColors: result.mixedColors };
   } catch (error) {
-    await Promise.all(destinations.map((file) => fs.rm(file, { force: true })));
+    await removeImportFiles(destinations);
     throw error;
   } finally {
-    await fs.rm(stage, { recursive: true, force: true }).catch(() => undefined);
+    await removeImportFiles([stage], true);
   }
 }
 
@@ -619,8 +631,8 @@ export async function runStudioCommand(
     }
   } catch (error) {
     // An import that didn't make it into the design leaves no copy behind.
-    if (imported) await Promise.all(imported.destinations.map((file) => fs.rm(file, { force: true })));
-    if (error instanceof CommandError) throw new HttpError(400, error.message, "studio_command_refused");
+    if (imported) await removeImportFiles(imported.destinations);
+    if (error instanceof CommandError) throw new HttpError(400, error.message, error.code ?? "studio_command_refused");
     throw error;
   }
 }
